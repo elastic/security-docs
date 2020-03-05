@@ -1,12 +1,3 @@
----
-name: Custom issue template
-about: Describe this issue template's purpose here.
-title: ''
-labels: ''
-assignees: ''
-
----
-
 **Description** 
 [insert a summary of the doc issue here. Background information is especially useful]. 
 
