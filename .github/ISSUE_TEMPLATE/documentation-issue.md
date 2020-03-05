@@ -19,9 +19,9 @@ If the doc issue includes a procedure, number the steps in sequential order.
 
 ## Notes
 
-Add the **"Team:Docs"** label to new issues. 
-Be sure to add any necessary screenshots for clarity. 
-Include any conditions or caveats that may affect customers. 
+- Add the **"Team:Docs"** label to new issues. 
+- Be sure to add any necessary screenshots for clarity. 
+- Include any conditions or caveats that may affect customers. 
 
 ### Example Issue: 
 **Issue Name:** Document the ability for users to disable artifact updates. 
@@ -33,6 +33,7 @@ Include any conditions or caveats that may affect customers.
 2. In the "ARTIFACT UPDATE CONFIGURATION" section, click **Disable artifact updates**.
 3. In the dialog box that says, "You are about to DISABLE artifact updates. This will prevent you from receiving updated artifacts..." click **Disable**. A 'Successfully updated configuration" confirmation appears.
 4. Click **Finish**.
+
 **Note:** To re-enable cloud updates, follow the aforementioned steps, except in Step 2, click **Enable artifact updates**.
 
 
