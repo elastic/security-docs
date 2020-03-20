@@ -1,0 +1,68 @@
+[[endpoint-ldap]]
+== Configure LDAP
+
+
+Endgame supports LDAP configuration, which allows users who are registered in Active Directory (AD) to log in to the Endpoint app or the Multi-Client Management (MCM) server using their AD credentials. Administrators must configure LDAP via the Endgame Admin Command Line Interface (CLI).
+
+Configuring LDAP requires three steps:
+
+1. Configure LDAP Server connection via the Endgame Admin CLI.
+2. Register LDAP resources with Endpoint user roles.
+3. Log in to the Endgame platform as an authorized LDAP user.
+
+NOTE: If a user has identically named LDAP and local accounts, the local account takes precedence.
+
+Before you configure LDAP, you must generate an SMP (Sensor Management Platform) token:
+
+1. Open a secure shell to the Endgame platform.
+2. Run the `task generate_smp_token` command.
+3. At the command prompts, provide the admin username and password.
+
+[source,console]
+----
+task generate_smp_token provide admin smp username: admin  Password: value
+----
+
+[float]
+[[configure-ldap-rules]]
+=== Configure the LDAP server
+
+1. Open a secure shell to the Endgame platform.
+2. Run the `configure ldap` command.
+3. The command prompt asks if LDAP should be configure. Type `yes`.
+4. Provide the appropriate configuration for the following prompts:
+
+    - *Please enter the LDAP server name*: Type the FQDN of the LDAP server.
+    - *Please enter the LDAP server port*: Type the appropriate port.
+    - *Please enter the auth domain*: Type the full LDAP domain name.
+    - *What is the user search base[cn=Users, dc=my,dc=organization,dc=com]*: Indicate the starting point for searches within the LDAP directory tree.
+    - **Should LDAP server certs be verified\[yes\]:** This property allows the Endgame platform to verify the certificates of the LDAP server to validate its identity. Type `yes` or `no`. If this option is set to `yes`, copy the certificates to `/opt/endgame/ldap/` along with the corresponding filename.
+    - *What version of ssl should the connection use? Options: SSLV3 SSLV23 SSLV2 TLSV1 [TLSv1]*: Specify the SSL version that should be used against your server. Please ensure your LDAP server supports the indicated version.
+    - *Please copy SSL files to /opt/endgame/ldap/ on the server [Hit ENTER to continue...]*: Press Enter.
+    - *Please enter the CA cert (excluding path)*: Example: my-ldap-server.crt
+    - *Does your LDAP server require or utilize certificate-based client authentication? [no]*: Type yes
+    - *Please enter the Client SSL Key file name (excluding path)*: Example: my-ldap-client.key
+    - *Please enter the Client SSL Certificate file name (excluding path)*: Example: `my-ldap-client.crt`
+
+5. Review the configuration. If it is correct, save it to disk. The next time the Endgame platform receives a login attempt, it will read the configuration.
+
+
+[float]
+[[register-ldap-resource]]
+=== Register an LDAP resource
+
+The Endgame Admin CLI contains a top-level command to register, list, update, and delete LDAP resources in the Endgame platform.
+
+NOTE: When registering a LDAP resource, platform authentication can leverage both LDAP groups only.
+
+To register an LDAP resource:
+
+1. In the Endgame Admin CLI, run the `ldap_resources register_resource` command.
+2. At the following command prompts, provide the appropriate user configuration:
+
+    - *What is the distinguished name of the group [name]*: Enter the distinguished name (DN) of the LDAP group (e.g. CN=Test_Group,CN=Users,DC=mycompany,DC=com).
+    - *What smp role should this resource have [Admin | Hunter | Gatherer | Alert Triage]*: Specify the role the group should have. These four roles are access based and define specific permissions within the Endgame platform. For a description of each role, see "Role-based Access and Control Overview."
+    - *Provide SMP/MCM UI username (e.g. admin)*:  Type the admin username.
+    Password: Type the admin password.
+    - *Provide the instance we should connect to [SMP|MCM]*: Type SMP.
+    Is this resource a group [yes]:  Type yes.
