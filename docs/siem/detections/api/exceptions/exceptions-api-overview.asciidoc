@@ -1,0 +1,51 @@
+[[exceptions-api-overview]]
+== Exceptions API
+
+Exceptions are associated with detection and endpoint rules, and are used to
+prevent a rule from generating an alert from incoming events even when the
+rule's other criteria are met. They can be used to reduce the number of false
+positives, and to prevent trusted processes and network activity from
+generating unnecessary alerts.
+
+Exceptions are made up of:
+
+* *Exception containers*: A container for related exceptions. In general, a
+single exception container contains all the exception items relevant for
+a subset of rules. For example, a container can be used to group together
+network-related exceptions that are relevant for a large number of network
+rules. The container can then be associated with all the relevant rules.
+* *Exception items*: The query (fields, values, and logic) used to prevent
+rules from generating alerts. When an exception item's query evaluates to
+`true`, the rule does not generate an alert.
+
+For detection rules, you can also use <<lists-api-overview, lists>> to define
+rule exceptions. A list holds multiple values of the same {es} data type, such
+as IP addresses, which are used to determine when an exception prevents an
+alert from being generated.
+
+IMPORTANT: You cannot use lists with endpoint rule exceptions.
+
+NOTE: Only exception containers can be associated with rules. You cannot
+directly associate an exception item or a
+<<lists-api-create-container, list container>> with a rule. To use list
+exceptions, create an exception item that references the relevant list
+container (see this <<list-item-example, example request>>).
+
+The following diagram represents the logical relationship between rules,
+detections, and lists, and shows the boolean operator used between sibling
+entities:
+
+image::images/exceptions-logic.png[]
+
+IMPORTANT: Before you can create exceptions, you must create `.lists` and
+`.items` indices for the {kib} space (see <<lists-index-api-overview>>).
+
+[float]
+=== Kibana role requirements
+
+To create list containers and items, the user role for the {kib} space must
+have:
+
+* `read`, `write`, `create`, and `view_index_metadata` privileges for the 
+`lists` index (the system index used for storing exception lists).
+* `all` privileges for the {kibana-ref}/xpack-spaces.html[`Security` feature].
