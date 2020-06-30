@@ -49,22 +49,21 @@ the timeline, which can be:
 * `raw`: raw events only
 * `signal`: signals only
 
-|`favorite` |<<favorite-obj, favorite[]>> |Indicates who marked a timeline as a
-favorite, and at what time.
+|`favorite` |<<favorite-obj, favorite[]>> |Indicates when and who marked a
+timeline as a favorite.
 |[[timeline-object-filters]]`filters` |<<filters-obj, filters[]>> |Filters used
 in addition to the dropzone query.
 |[[timeline-object-global-notes]]`globalNotes`
-|<<globalNotes-obj, globalNotes[]>> |Notes added to the timeline.
+|<<globalNotes-obj, globalNotes[]>> |Global notes added to the timeline.
 |[[timeline-object-kqlmode]]`kqlMode` |String a|Indicates whether the KQL bar
 filters the dropzone query results or searches for additional results, where:
 
 * `filter`: filters dropzone query results
 * `search`: displays additional search results
 
-|[[timeline-object-kqlquery]]`kqlQuery` |<<kqlQuery-obj, kqlQuery>> |Object
-describing the KQL bar query.
-|`pinnedEventIds` |pinnedEventIds[] |Object containing the IDs of pinned
-events.
+|[[timeline-object-kqlquery]]`kqlQuery` |<<kqlQuery-obj, kqlQuery>> |KQL bar
+query.
+|`pinnedEventIds` |pinnedEventIds[] |Pinned events IDs.
 |`savedObjectId` |String |The timeline's saved object ID.
 |`savedQueryId` |String |If used, the saved query ID used to filter or search
 dropzone query results.
@@ -75,9 +74,9 @@ dropzone query results.
 `asc`.
 
 |`templateTimelineId` |String a| A unique ID for Timeline templates. For
-timelines, the value is always `null`.
+timelines, the value is `null`.
 |`templateTimelineVersion` |Integer |Timeline template version number. For
-timelines, the value is always `null`.
+timelines, the value is `null`.
 // When creating timeline template via import, can just specify it to 1.
 // We use this version to avoid template timeline to be overwrite when updating
 // via import.
@@ -106,16 +105,21 @@ displaying alerts in Timeline.
 |Name |Type |Description
 
 |`aggregatable` |Boolean |Indicates whether the column field header can be
-aggregated on all indices.
+aggregated on all indices.???
+// SIEM default indices
 |`category` |String |The ECS field set to which the column field header belongs.
 |`description` |String |UI column field description tooltip.
 |`example` |String |UI column field example tooltip.
 |`indexes` |String |List of all indices in which the column field header has
-the same type, or null if all indices have the same type for the field.
-|`id` |String |ECS field alias or user defined field name for the column header.
-|`name` |String |Reserved for future use, typically `null`.
+the same type. `null` when all indices have the same type for the field.???
+// SIEM default indices
+|`id` |String |ECS field alias or user defined field name for the column header.???
+// As displayed in the UI
+|`name` |String |Reserved for future use, typically `null`.???
+// Can `name` be removed?
 |`searchable` |Boolean |Indicates whether the column field header is indexed
-for search on all indices.
+for search on all indices.???
+// SIEM indices? When wouldn't the field be searchable?
 |`type` |String |Column field header type.
 |==============================================
 
@@ -132,16 +136,20 @@ logic.
 |`enabled` |Boolean |Indicates if the dropzone query clause is enabled.
 |`excluded` |Boolean |Indicates if the dropzone query clause uses `NOT` logic.
 |`id` |String |The dropzone query clause's unique ID.
-|`kqlQuery` |String |Always an empty string (not used).
+|`kqlQuery` |String |Always an empty string (not used).???
+// Can be removed?
 |`name` |String |The dropzone query clause's name (the clause's value
-when timelines are exported).
-|`queryMatch` |QueryMatchInput a|The dropzone query clause:
+when timelines are exported from the UI).
+|`queryMatch` |queryMatch a|The dropzone query clause:
 
 * `displayField`: ???
 * `displayValue`: ???
-* `field`: The field used to filter results.
-* `operator`: The operator between clauses.
-* `value`: The field value used to match results.
+* `field` (string): The field used to search SIEM indices.
+* `operator` (string): The clause's operator, which can be:
+** `:` - The `field` has the specified `value`.
+** `:*` - The field exists.
+// ??? Are there missing operators?
+* `value` (string): The field's value used to match results.
 
 |==============================================
 
@@ -192,15 +200,27 @@ timeline as a favorite.
 
 |`exists` |String |{ref}/query-dsl-exists-query.html[Exists term query] for the
 specified field (`null` when undefined). For example, `{"field":"user.name"}`.
-|`meta` |meta a|Object containing filter details:
+|`meta` |meta a|Filter details:
 
-* `alias`: UI filter name.
-* `disabled`: Indicates if the filter is disabled.
-* `key`: Field used for filtering results.
-* `negate`: Indicates if the filter query clause uses `NOT` logic.
-* `params`: Query values ???
-* `type`: Type of filter.
-* `value`: 
+* `alias` (string): UI filter name.
+* `disabled` (boolean): Indicates if the filter is disabled.
+* `key`(string): Field name of the filter. ???
+* `negate` (boolean): Indicates if the filter query clause uses `NOT` logic.
+* `params` (string): Value of `phrase` filter types.
+* `type` (string): Type of filter, which can be one of these:
+** `custom`
+** `phrases`
+** `phrase`
+** `exists`
+** `match_all`
+** `missing`
+** `query_string`
+** `range`
+** `geo_bounding_box`
+** `geo_polygon`
+** `spatial_filter`
+// ??? are all these types relevant?
+* `value`: Value of `custom` filter types.
 
 |`match_all` |String |{ref}/query-dsl-match-all-query.html[Match all term query]
 for the specified field (`null` when undefined). 
@@ -209,7 +229,8 @@ example, `{"match_phrase":{"ecs.version":"1.4.0"}}`.
 |`range` |String |{ref}/query-dsl-range-query.html[Range query] (`null` when
 undefined). For example, `{"@timestamp":{"gte":"now-1d","lt":"now"}}"`.
 |`script` |String |{ref}/query-dsl-script-query.html[Script query] (`null` when
-undefined).
+undefined). For more information on using scripts to query {es}, see
+{ref}/modules-scripting-using.html[How to use scripts].
 |==============================================
 
 [[globalNotes-obj]]
