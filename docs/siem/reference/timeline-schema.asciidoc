@@ -1,22 +1,28 @@
 [[timeline-object-schema]]
 [role="xpack"]
-== Timeline object schema
+== Timeline schema
+
+The Timeline schema lists all the JSON fields and objects required to create a
+Timeline or a Timeline template using the Create timeline API.
+
+IMPORTANT: All column, dropzone, and filter fields must be
+{ecs-ref}[ECS fields].
 
 This screenshot maps the Timeline UI components to their JSON objects:
 
 [role="screenshot"]
 image::images/timeline-object-ui.png[]
 
-. <<timeline-object-title, Title>>
-. <<timeline-object-desc, Description>>
-. <<timeline-object-global-notes, Global notes>>
+. <<timeline-object-title, Title>> (`title`)
+. <<timeline-object-desc, Description>> (`description`)
+. <<timeline-object-global-notes, Global notes>> (`globalNotes`)
 . <<timeline-object-daterange, Time filter>> (`dateRange`)
-. <<timeline-object-dropzone, Dropzone>>: Each clause is contained in
-its own `dataProviders` object.
-. <<timeline-object-kqlmode, KQL bar mode>> (filter results or search for
-additional matches)
-. <<timeline-object-kqlquery, KQL bar query>>
+. <<timeline-object-dropzone, Dropzone>> (each clause is contained in
+its own `dataProviders` object)
+. <<timeline-object-kqlmode, KQL bar mode>> (`kqlMode`)
+. <<timeline-object-kqlquery, KQL bar query>> (`kqlQuery`)
 . <<timeline-object-eventtype, Event types included in Timeline results>>
+(`eventType`)
 . <<timeline-object-filters, Additional filters>> (`filters`)
 . <<timeline-object-columns, Column headers>> (`columns`)
 . <<timeline-object-event-notes, Event-specific notes>> (`eventNotes`)
@@ -25,14 +31,16 @@ additional matches)
 |==============================================
 |Name |Type |Description
 
-|[[timeline-object-columns]]`columns` |<<col-obj, columns[]>> |Timeline columns.
+|[[timeline-object-columns]]`columns` |<<col-obj, columns[]>> |The timeline's
+columns.
 |`created` |Float |The time the timeline was created, using a 13-digit Epoch
 timestamp.
 |`createdBy` |String |The user who created the timeline.
 |[[timeline-object-dropzone]]`dataProviders`
 |<<dataProvider-obj, dataProviders[]>> |Object containing dropzone query
 clauses.
-|[[timeline-object-daterange]]`dateRange` |dateRange a|The timeline's range:
+|[[timeline-object-daterange]]`dateRange` |dateRange a|The timeline's search
+period:
 
 * `end`: The time up to which events are searched, using a 13-digit Epoch
 timestamp.
@@ -86,8 +94,8 @@ timelines, the value is `null`.
 where:
 
 * `default`: Indicates a timeline used to actively investigate events.
-* `template`: Indicates a timeline template used with detection rules for
-displaying alerts in Timeline.
+* `template`: Indicates a timeline template used when detection rule alerts are
+investigated in Timeline.
 
 |[[timeline-object-title]]`title` |String |The timeline's title.
 |`updated` |Float |The last time the timeline was updated, using a
@@ -104,23 +112,18 @@ displaying alerts in Timeline.
 |==============================================
 |Name |Type |Description
 
-|`aggregatable` |Boolean |Indicates whether the column field header can be
-aggregated on all indices.???
-// SIEM default indices
-|`category` |String |The ECS field set to which the column field header belongs.
+|`aggregatable` |Boolean |Indicates whether the field can be aggregated across
+all indices (used to sort columns in the UI).  
+|`category` |String |The ECS field set to which the field belongs.
 |`description` |String |UI column field description tooltip.
 |`example` |String |UI column field example tooltip.
-|`indexes` |String |List of all indices in which the column field header has
-the same type. `null` when all indices have the same type for the field.???
-// SIEM default indices
-|`id` |String |ECS field alias or user defined field name for the column header.???
-// As displayed in the UI
-|`name` |String |Reserved for future use, typically `null`.???
-// Can `name` be removed?
-|`searchable` |Boolean |Indicates whether the column field header is indexed
-for search on all indices.???
-// SIEM indices? When wouldn't the field be searchable?
-|`type` |String |Column field header type.
+|`indexes` |String |Security indices in which the field exists and has the same
+{es} type. `null` when all the security indices have the field with the same
+type.
+|`id` |String |ECS field name, displayed as the column header in the UI.
+// |`searchable` |Boolean |Indicates whether the field is indexed for search on
+// all indices.
+|`type` |String |The field's type.
 |==============================================
 
 [[dataProvider-obj]]
@@ -136,19 +139,15 @@ logic.
 |`enabled` |Boolean |Indicates if the dropzone query clause is enabled.
 |`excluded` |Boolean |Indicates if the dropzone query clause uses `NOT` logic.
 |`id` |String |The dropzone query clause's unique ID.
-|`kqlQuery` |String |Always an empty string (not used).???
-// Can be removed?
 |`name` |String |The dropzone query clause's name (the clause's value
 when timelines are exported from the UI).
 |`queryMatch` |queryMatch a|The dropzone query clause:
 
-* `displayField`: ???
-* `displayValue`: ???
 * `field` (string): The field used to search SIEM indices.
 * `operator` (string): The clause's operator, which can be:
 ** `:` - The `field` has the specified `value`.
 ** `:*` - The field exists.
-// ??? Are there missing operators?
+
 * `value` (string): The field's value used to match results.
 
 |==============================================
@@ -182,7 +181,8 @@ timestamp.
 |==============================================
 |Name |Type |Description
 
-|`favoriteDate` |Float |The time the timeline was marked as a favorite.
+|`favoriteDate` |Float |The time the timeline was marked as a favorite, using a
+13-digit Epoch timestamp.
 |`fullName` |String |The full name of the user who marked the timeline as
 a favorite.
 |`keySearch` |String |`userName` encoded in Base64.
@@ -204,23 +204,12 @@ specified field (`null` when undefined). For example, `{"field":"user.name"}`.
 
 * `alias` (string): UI filter name.
 * `disabled` (boolean): Indicates if the filter is disabled.
-* `key`(string): Field name of the filter. ???
+* `key`(string): Field name or unique string ID.
 * `negate` (boolean): Indicates if the filter query clause uses `NOT` logic.
 * `params` (string): Value of `phrase` filter types.
-* `type` (string): Type of filter, which can be one of these:
-** `custom`
-** `phrases`
-** `phrase`
-** `exists`
-** `match_all`
-** `missing`
-** `query_string`
-** `range`
-** `geo_bounding_box`
-** `geo_polygon`
-** `spatial_filter`
-// ??? are all these types relevant?
-* `value`: Value of `custom` filter types.
+* `type` (string): Type of filter. For example, `exists` and `range`. For more
+information about filtering, see {ref}/query-dsl.html[Query DSL] and
+{ref}\query-filter-context.html#filter-context[Filter context].
 
 |`match_all` |String |{ref}/query-dsl-match-all-query.html[Match all term query]
 for the specified field (`null` when undefined). 
@@ -228,9 +217,6 @@ for the specified field (`null` when undefined).
 example, `{"match_phrase":{"ecs.version":"1.4.0"}}`.
 |`range` |String |{ref}/query-dsl-range-query.html[Range query] (`null` when
 undefined). For example, `{"@timestamp":{"gte":"now-1d","lt":"now"}}"`.
-|`script` |String |{ref}/query-dsl-script-query.html[Script query] (`null` when
-undefined). For more information on using scripts to query {es}, see
-{ref}/modules-scripting-using.html[How to use scripts].
 |==============================================
 
 [[globalNotes-obj]]
