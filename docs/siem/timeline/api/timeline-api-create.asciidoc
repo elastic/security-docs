@@ -26,8 +26,16 @@ corresponding UI components, see <<timeline-object-schema>>.
 |==============================================
 |Name |Type |Description |Required
 
-|`timeline` |<<timeline-object-schema, timeline>> |The timeline object, which
+|`timeline` |<<timeline-object-schema, timeline>> a|The timeline object, which
 defines the search criteria and time range. The only required field is `title`.
+
+When you are creating a timeline template, provide these fields to so you can
+easily <<timeline-api-import, import template>> updates:
+
+* `templateTimelineId`: Unique identifier (for timeline templates only)
+* `templateTimelineVersion`: Template version number (for timeline templates
+only)
+
 |Yes
 |`timelineId` |String |If provided, must be `null` for a new timeline or
 template.
@@ -186,7 +194,9 @@ POST api/timeline
       "start": 1593832919000
     },
     "description": "Template for investigating host events",
-    "timelineType": "template", <2>
+    "templateTimelineId": "HostSysProcess", <2>
+    "templateTimelineVersion": 1, <3>
+    "timelineType": "template", <4>
     "title": "Host event template"
   }
 }
@@ -196,7 +206,9 @@ POST api/timeline
 <1> To ensure the timeline template is displayed correctly in the UI, specify
 the `value` field even though it is replaced when alerts are investigated in
 Timeline.
-<2> To create templates, the `timelineType` field value must be `template`.
+<2> Unique template ID. 
+<3> Template version number.
+<4> To create templates, the `timelineType` field value must be `template`.
 
 *Example 3*
 
@@ -264,6 +276,8 @@ POST api/timeline
         }
       }
     },
+    "templateTimelineId": "WinSysProcess",
+    "templateTimelineVersion": 1,
     "timelineType": "template",
     "title": "Windows event template"
   }
@@ -278,7 +292,11 @@ POST api/timeline
     
 ==== Response payload
 
-A JSON timeline object with a unique `savedObjectId` and its `version`:
+A JSON timeline object with a unique `savedObjectId` and its `version`.
+
+*Example 1*
+
+Timeline response payload:
 
 [source,json]
 --------------------------------------------------
@@ -352,6 +370,90 @@ A JSON timeline object with a unique `savedObjectId` and its `version`:
         "updated": 1594019310069,
         "updatedBy": "LiverpoolFC",
         "timelineType": "default",
+        "status": "active"
+      }
+    }
+  }
+}
+--------------------------------------------------
+
+*Example 2*
+
+Timeline template response payload:
+
+[source,json]
+--------------------------------------------------
+{
+  "data": {
+    "persistTimeline": {
+      "code": 200,
+      "message": "success",
+      "timeline": {
+        "savedObjectId": "75b6cf30-bf82-11ea-9fcd-ed4e5fd0dcd1",
+        "version": "WzQ4MiwxXQ==",
+        "columns": [
+          {
+            "id": "@timestamp"
+          },
+          {
+            "id": "user.name"
+          },
+          {
+            "id": "event.category"
+          },
+          {
+            "id": "event.action"
+          },
+          {
+            "id": "host.name"
+          }
+        ],
+        "dataProviders": [
+          {
+            "and": [
+              {
+                "enabled": true,
+                "excluded": false,
+                "name": "user.name",
+                "queryMatch": {
+                  "field": "user.name",
+                  "operator": ":",
+                  "value": "SYSTEM"
+                }
+              }
+            ],
+            "enabled": true,
+            "excluded": false,
+            "name": "event.category",
+            "queryMatch": {
+              "field": "event.category",
+              "operator": ":",
+              "value": "process"
+            }
+          }
+        ],
+        "dateRange": {
+          "end": 1594005719000,
+          "start": 1593832919000
+        },
+        "description": "Template for investigating Windows events",
+        "kqlMode": "filter",
+        "kqlQuery": {
+          "filterQuery": {
+            "kuery": {
+              "expression": "host.os.platform : windows",
+              "kind": "kuery"
+            }
+          }
+        },
+        "templateTimelineId": "WinSysProcess",
+        "templateTimelineVersion": 1,
+        "timelineType": "template",
+        "title": "Windows event template",
+        "created": 1594037762797,
+        "createdBy": "LiverpoolFC",
+        "updated": 1594037762797,
+        "updatedBy": "LiverpoolFC",
         "status": "active"
       }
     }
