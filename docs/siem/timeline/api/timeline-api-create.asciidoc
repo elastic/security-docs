@@ -36,19 +36,240 @@ template.
 |No
 |==============================================
 
+===== Example requests
 
+*Example 1*
 
-
-===== Example request
-
-
+Creates a new timeline:
 
 [source,console]
 --------------------------------------------------
-
+POST api/timeline
+{
+  "timeline": {
+    "columns": [
+      {
+        "id": "@timestamp"
+      },
+      {
+        "id": "user.name"
+      },
+      {
+        "id": "event.category"
+      },
+      {
+        "id": "event.action"
+      },
+      {
+        "id": "host.name"
+      }
+    ],
+    "dataProviders": [ <1>
+      {
+        "and": [
+          {
+            "name": "event.category",
+            "enabled": true,
+            "excluded": false,
+            "queryMatch": {
+              "field": "event.category",
+              "value": "process",
+              "operator": ":"
+            }
+          },
+          {
+            "name": "user.name",
+            "enabled": true,
+            "excluded": false,
+            "queryMatch": {
+              "field": "user.name",
+              "value": "SYSTEM",
+              "operator": ":"
+            }
+          }
+        ],
+        "enabled": true,
+        "excluded": false,
+        "name": "host.os.platform",
+        "queryMatch": {
+          "field": "host.os.platform",
+          "value": "windows",
+          "operator": ":"
+        }
+      }
+    ],
+    "dateRange": {
+      "end": 1594005719000,
+      "start": 1593832919000
+    },
+    "description": "Gets Windows system processes from all hosts",
+    "title": "Windows system processes"
+  }
+}
 --------------------------------------------------
 // KIBANA
 
+<1> To ensure the timeline is displayed correctly in the UI, specify these
+fields in all `dataProviders` objects:
+
+* `and` (can be empty)
+* `name`
+* `enabled`
+* `excluded`
+* `queryMatch`
+** `field`
+** `value`
+** `operator`
+
+*Example 2*
+
+Creates a new timeline template:
+
+[source,console]
+--------------------------------------------------
+POST api/timeline
+{
+  "timeline": {
+    "columns": [
+      {
+        "id": "@timestamp"
+      },
+      {
+        "id": "user.name"
+      },
+      {
+        "id": "event.category"
+      },
+      {
+        "id": "event.action"
+      },
+      {
+        "id": "host.name"
+      }
+    ],
+    "dataProviders": [
+      {
+        "and": [
+          {
+            "name": "event.category",
+            "enabled": true,
+            "excluded": false,
+            "queryMatch": {
+              "field": "event.category",
+              "operator": ":",
+              "value": "process" <1>
+            }
+          },
+          {
+            "name": "user.name",
+            "enabled": true,
+            "excluded": false,
+            "queryMatch": {
+              "field": "user.name",
+              "operator": ":",
+              "value": "SYSTEM"
+            }
+          }
+        ],
+        "enabled": true,
+        "excluded": false,
+        "name": "host.os.platform",
+        "queryMatch": {
+          "field": "host.os.platform",
+          "operator": ":",
+          "value": "windows"
+        }
+      }
+    ],
+    "dateRange": {
+      "end": 1594005719000,
+      "start": 1593832919000
+    },
+    "description": "Template for investigating host events",
+    "timelineType": "template", <2>
+    "title": "Host event template"
+  }
+}
+--------------------------------------------------
+// KIBANA
+
+<1> To ensure the timeline template is displayed correctly in the UI, specify
+the `value` field even though it is replaced when alerts are investigated in
+Timeline.
+<2> To create templates, the `timelineType` field value must be `template`.
+
+*Example 3*
+
+Creates the a timeline template that uses the `kqlQuery` object (KQL bar in the
+UI) to ensure only Windows alerts are displayed when alerts are investigated in
+Timeline:
+
+[source,console]
+--------------------------------------------------
+POST api/timeline
+{
+  "timeline": {
+    "columns": [
+      {
+        "id": "@timestamp"
+      },
+      {
+        "id": "user.name"
+      },
+      {
+        "id": "event.category"
+      },
+      {
+        "id": "event.action"
+      },
+      {
+        "id": "host.name"
+      }
+    ],
+    "dataProviders": [
+      {
+        "and": [
+          {
+            "enabled": true,
+            "excluded": false,
+            "name": "user.name",
+            "queryMatch": {
+              "field": "user.name",
+              "operator": ":",
+              "value": "SYSTEM"
+            }
+          }
+        ],
+        "enabled": true,
+        "excluded": false,
+        "name": "event.category",
+        "queryMatch": {
+          "field": "event.category",
+          "operator": ":",
+          "value": "process"
+        }
+      }
+    ],
+    "dateRange": {
+      "end": 1594005719000,
+      "start": 1593832919000
+    },
+    "description": "Template for investigating Windows events",
+    "kqlMode": "filter",
+    "kqlQuery": {
+      "filterQuery": {
+        "kuery": {
+          "expression": "host.os.platform : windows",
+          "kind": "kuery"
+        }
+      }
+    },
+    "timelineType": "template",
+    "title": "Windows event template"
+  }
+}
+--------------------------------------------------
+// KIBANA
 
 ==== Response code
 
@@ -57,3 +278,83 @@ template.
     
 ==== Response payload
 
+A JSON timeline object with a unique `savedObjectId` and its `version`:
+
+[source,json]
+--------------------------------------------------
+{
+  "data": {
+    "persistTimeline": {
+      "code": 200,
+      "message": "success",
+      "timeline": {
+        "savedObjectId": "7f069820-bf57-11ea-9fcd-ed4e5fd0dcd1",
+        "version": "WzQwMiwxXQ==",
+        "columns": [
+          {
+            "id": "@timestamp"
+          },
+          {
+            "id": "user.name"
+          },
+          {
+            "id": "event.category"
+          },
+          {
+            "id": "event.action"
+          },
+          {
+            "id": "host.name"
+          }
+        ],
+        "dataProviders": [
+          {
+            "and": [
+              {
+                "name": "event.category",
+                "enabled": true,
+                "excluded": false,
+                "queryMatch": {
+                  "field": "event.category",
+                  "value": "process",
+                  "operator": ":"
+                }
+              },
+              {
+                "name": "user.name",
+                "enabled": true,
+                "excluded": false,
+                "queryMatch": {
+                  "field": "user.name",
+                  "value": "SYSTEM",
+                  "operator": ":"
+                }
+              }
+            ],
+            "enabled": true,
+            "excluded": false,
+            "name": "host.os.platform",
+            "queryMatch": {
+              "field": "host.os.platform",
+              "value": "windows",
+              "operator": ":"
+            }
+          }
+        ],
+        "dateRange": {
+          "end": 1594005719000,
+          "start": 1593832919000
+        },
+        "description": "Gets Windows system processes from all hosts",
+        "title": "Windows system processes",
+        "created": 1594019310069,
+        "createdBy": "LiverpoolFC",
+        "updated": 1594019310069,
+        "updatedBy": "LiverpoolFC",
+        "timelineType": "default",
+        "status": "active"
+      }
+    }
+  }
+}
+--------------------------------------------------
