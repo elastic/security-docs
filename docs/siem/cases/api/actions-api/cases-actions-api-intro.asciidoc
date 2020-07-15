@@ -7,7 +7,7 @@ beta[]
 You can push {siem-soln} cases to these third-party systems:
 
 * {sn}
-* Jira (and Jira Service Desk)
+* Jira (including Jira Service Desk)
 * {ibm-r}
 
 To push cases, you need to create a connector using the {kib} Actions API,
@@ -15,7 +15,8 @@ which stores the information required to interface with the external system.
 For {sn}, cases are send via {sn}'s
 https://developer.servicenow.com/dev.do#!/reference/api/madrid/rest/c_TableAPI[Table API].
 For Jira, the https://developer.atlassian.com/cloud/jira/platform/rest/v2/[REST API v2]
-is used.
+is used. The https://developer.ibm.com/security/resilient/rest/[Resilient REST API]
+is used to send cases to {ibm-r}.
 
 To send cases to an external system and keep the {siem-ui} updated:
 
@@ -37,7 +38,7 @@ systems.
 
 ==== Request URL
 
-`POST <kibana host>:<port>/api/action`
+`POST <kibana host>:<port>/api/actions/action`
 
 ==== Request body
 
@@ -51,6 +52,7 @@ A JSON object with these fields:
 
 * `.servicenow`: Send cases to {sn}
 * `.jira`: Send cases to Jira
+* `.resilient` Send cases to {ibm-r}
 |Yes
 |`config` |<<config-schema, config>> |Object containing the action's
 configuration. |Yes
@@ -67,9 +69,14 @@ For Jira connectors:
 * `email` (string): The account email.
 * `apiToken` (string): Jira API authentication token.
 
+For {ibm-r} connectors:
+
+* `apiKeyId` (string): The authentication key ID.
+* `apiKeySecret` (string): The authentication key secret.
+
 |Yes
 
-|`name` |String |The registered {sn} connector. |Yes
+|`name` |String |The connector's name. |Yes
 |==============================================
 
 [[config-schema]]
@@ -84,7 +91,8 @@ For Jira connectors:
 * `source` (string): The name of the {siem-soln} case field, which can be 
 `title`, `description`, or `comments`.
 * `target` (string): The name of the mapped exterals field. For example:
-`short_description` ({sn}), `title` (Jira), `description`, and `comments`.
+`short_description` ({sn}), `title` (Jira), `name` ({ibm-r}), `description`,
+and `comments`.
 * `actionType` (string): Determines whether {siem-soln} case updates overwrite 
 or append to the mapped incident fields. Valid values are `overwrite` and
 `append`.
@@ -92,8 +100,10 @@ or append to the mapped incident fields. Valid values are `overwrite` and
 |Yes
 
 |`apiUrl` |String |URL of the third-party instance. |Yes
-|`projectKey` |String |Jira project key. |For Jira connectors, yes. For {sn}
+|`projectKey` |String |Jira project key. |For Jira connectors, yes. For other
 connectors, no.
+|`orgId` |String |{ibm-r} organization ID. |For {ibm-r} connectors, yes. For
+other connectors, no.
 |==============================================
 
 ===== Example requests
@@ -102,7 +112,7 @@ Creates a {sn} connector:
 
 [source,sh]
 --------------------------------------------------
-POST api/action
+POST api/actions/action
 {
   "actionTypeId": ".servicenow",
   "config": {
@@ -152,7 +162,7 @@ Creates a Jira connector:
 
 [source,sh]
 --------------------------------------------------
-POST api/action
+POST api/actions/action
 {
   "actionTypeId": ".jira",
   "config": {
@@ -187,7 +197,46 @@ POST api/action
 --------------------------------------------------
 // KIBANA
 
-<1> {siem-soln} case `title` fields are mapped to Jira `summary` fields.
+Creates an {ibm-r} connector:
+
+[source,sh]
+--------------------------------------------------
+POST api/actions/action
+{
+  "actionTypeId": ".resilient",
+  "config": {
+    "casesConfiguration": {
+      "mapping": [
+        {
+          "source": "title", <1>
+          "target": "name",
+          "actionType": "overwrite"
+        },
+        {
+          "source": "description",
+          "target": "description",
+          "actionType": "overwrite"
+        },
+        {
+          "source": "comments",
+          "target": "comments",
+          "actionType": "append"
+        }
+      ]
+    },
+    "apiUrl": "https://ibm-resilient.siem.estc.dev",
+    "orgId": "201"
+  },
+  "secrets": {
+    "apiKeyId": "2ad2bbd3-7cd2-3096-9619-de13c5ab70ca",
+    "apiKeySecret": "Hzol67ZoeATAR-8pQxSp3q_NPTDtWU6_QNBoCSCA-ic"
+  },
+  "name": "IBM"
+}
+--------------------------------------------------
+// KIBANA
+
+<1> {siem-soln} case `title` fields are mapped to {ibm-r} `name` fields.
 
 ===== Response code
 
@@ -198,7 +247,7 @@ POST api/action
 
 A JSON object with a connector `id` that is required to push cases to {sn}.
 
-===== Example responses
+===== Example response
 
 {sn} connector:
 
@@ -234,41 +283,6 @@ A JSON object with a connector `id` that is required to push cases to {sn}.
 }
 --------------------------------------------------
 
-Jira connector:
-
-[source,json]
---------------------------------------------------
-{
-  "id": "05da469f-1fde-4058-99a3-91e4807e2de8",
-  "actionTypeId": ".jira",
-  "name": "Jira",
-  "config": {
-      "casesConfiguration": {
-          "mapping": [
-              {
-                  "source": "title",
-                  "target": "summary",
-                  "actionType": "overwrite"
-              },
-              {
-                  "source": "description",
-                  "target": "description",
-                  "actionType": "overwrite"
-              },
-              {
-                  "source": "comments",
-                  "target": "comments",
-                  "actionType": "append"
-              }
-          ]
-      },
-      "apiUrl": "https://hms.atlassian.net",
-      "projectKey": "HMS"
-  },
-  "isPreconfigured": false
-}
---------------------------------------------------
-
 [[update-connector]]
 === Update connector
 
@@ -276,7 +290,7 @@ Updates a connector.
 
 ==== Request URL
 
-`PUT <kibana host>:<port>/api/action/<connector ID>`
+`PUT <kibana host>:<port>/api/actions/action/<connector ID>`
 
 ===== URL parts
 
@@ -306,9 +320,14 @@ For Jira connectors:
 * `email` (string): The account email.
 * `apiToken` (string): Jira API authentication token.
 
+For {ibm-r} connectors:
+
+* `apiKeyId` (string): The authentication key ID.
+* `apiKeySecret` (string): The authentication key secret.
+
 |Yes
 
-|`name` |String |The registered {sn} connector. |Yes
+|`name` |String |The connector's name. |Yes
 |==============================================
 
 [[config-update-schema]]
@@ -323,15 +342,18 @@ For Jira connectors:
 * `source` (string): The name of the {siem-soln} case field, which can be 
 `title`, `description`, or `comments`.
 * `target` (string): The name of the mapped exterals field. For example:
-`short_description` ({sn}), `title` (Jira), `description`, and `comments`.
+`short_description` ({sn}), `title` (Jira), `name` ({ibm-r}), `description`,
+and `comments`.
 * `actionType` (string): Determines whether {siem-soln} case updates overwrite 
 or append to the mapped fields. Valid values are `overwrite` and `append`.
 
 |Yes
 
 |`apiUrl` |String |URL of the third-party instance. |Yes
-|`projectKey` |String |Jira project key. |For Jira connectors, yes. For {sn}
+|`projectKey` |String |Jira project key. |For Jira connectors, yes. For other
 connectors, no.
+|`orgId` |String |{ibm-r} organization ID. |For {ibm-r} connectors, yes. For
+other connectors, no.
 |==============================================
 
 ===== Example request
@@ -341,7 +363,7 @@ Updates the `description` field mapping of connector ID
 
 [source,sh]
 --------------------------------------------------
-PUT api/action/61787f53-4eee-4741-8df6-8fe84fa616f7
+PUT api/actions/action/61787f53-4eee-4741-8df6-8fe84fa616f7
 {
   "name": "ServiceNow",
   "config": {
@@ -428,7 +450,7 @@ the {siem-soln} case with the returned external incident details.
 
 ==== Request URL
 
-`POST <kibana host>:<port>/api/action/<connector ID>/_execute`
+`POST <kibana host>:<port>/api/actions/action/<connector ID>/_execute`
 
 ===== URL parts
 
@@ -512,7 +534,7 @@ Creates a new {sn} incident:
 
 [source,sh]
 --------------------------------------------------
-POST api/action/7349772f-421a-4de3-b8bb-2d9b22ccee30/_execute
+POST api/actions/action/7349772f-421a-4de3-b8bb-2d9b22ccee30/_execute
 {
   "params": {
     "subAction": "pushToService",
@@ -546,7 +568,7 @@ Updates an existing {sn} incident:
 
 [source,sh]
 --------------------------------------------------
-POST api/action/7349772f-421a-4de3-b8bb-2d9b22ccee30/_execute
+POST api/actions/action/7349772f-421a-4de3-b8bb-2d9b22ccee30/_execute
 {
   "params": {
     "subAction": "pushToService",
