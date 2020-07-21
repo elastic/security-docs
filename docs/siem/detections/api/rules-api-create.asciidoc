@@ -9,8 +9,8 @@ You can create these types of rules:
 a document matches the rule's query.
 * Threshold rules: Searches the defined indices and creates an alert when the
 number of times the specified event field is matched during a single execution
-meets the specified threshold. 
-* {ml-cap} rules, which create a signal when a {ml} job discovers an anomaly above the defined threshold (see <<machine-learning>>).
+meets the threshold. 
+* {ml-cap} rules: Creates an alert when a {ml} job discovers an anomaly above the defined threshold (see <<machine-learning>>).
 
 IMPORTANT: To create {ml} rules, you must have the
 https://www.elastic.co/subscriptions[appropriate license] or use a
@@ -35,7 +35,7 @@ the `groups` field can be used to create rules:
 ...
 --------------------------------------------------
 
-Additionally, you can set up notifications for when rules create signals. The
+Additionally, you can set up notifications for when rules create alerts. The
 notifications use the {kib} {kibana-ref}/alerting-getting-started.html[Alerting and Actions framework].
 Each action type requires a connector. Connectors store the information
 required to send notifications via external systems. These action types are
@@ -46,15 +46,17 @@ supported for rule notifications:
 * PagerDuty
 * Webhook
 
-NOTE: For more information on PagerDuty fields, see https://v2.developer.pagerduty.com/v2/docs/send-an-event-events-api-v2[PagerDuty Send a v2 Event API]. 
+NOTE: For more information on PagerDuty fields, see
+https://developer.pagerduty.com/docs/events-api-v2/trigger-events/[Send a v2 Event]. 
 
 To retrieve connector IDs, which are required to configure rule notifications,
-call `GET <kibana host>:<port>/api/action/_find`.
+call the {kib} {kibana-re}/saved-objects-api-find.html[Find objects API] with
+`"type": "action"` in the request payload..
 
 For detailed information on {kib} actions and alerting, and additional API
 calls, see:
 
-* https://github.com/elastic/kibana/tree/master/x-pack/plugins/alerting
+* https://github.com/elastic/kibana/tree/master/x-pack/plugins/alerts
 * https://github.com/elastic/kibana/tree/master/x-pack/plugins/actions 
 
 ==== Request URL
@@ -63,7 +65,7 @@ calls, see:
 
 ==== Request body
 
-A JSON object that defines the rule's field values.
+A JSON object that defines the rule's values.
 
 ===== Required fields for all rule types
 
@@ -75,7 +77,7 @@ A JSON object that defines the rule's field values.
 
 |name |String |The rule's name.
 
-|risk_score |Integer a|A numerical representation of the signal's severity from 
+|risk_score |Integer a|A numerical representation of the alert's severity from 
 0 to 100, where:
 
 * `0` - `21` represents low severity
@@ -83,7 +85,7 @@ A JSON object that defines the rule's field values.
 * `48` - `73` represents high severity
 * `74` - `100` represents critical severity
 
-|severity |String a|Severity level of signals produced by the rule, which must 
+|severity |String a|Severity level of alerts produced by the rule, which must 
 be one of the following:
 
 * `low`: Signals that are of interest but generally not considered to be 
@@ -110,7 +112,7 @@ occurred
 
 |query |String a|{kibana-ref}/search.html[Query] used by the rule to create
 alerts. Technically this is not required and defaults to an empty string, but
-with an empty query no alerts will be generated.
+then no alerts will ever be generated.
 
 |==============================================
 
@@ -134,7 +136,7 @@ are generated, where:
 |==============================================
 |Name |Type |Description
 
-|saved_id |String |Kibana saved search used by the rule to create signals.
+|saved_id |String |Kibana saved search used by the rule to create alerts.
 
 |==============================================
 
@@ -145,7 +147,7 @@ are generated, where:
 |Name |Type |Description
 
 |anomaly_threshold |Integer |Anomaly score threshold above which the rule
-creates signals. Valid values are from `0` to `100`.
+creates alerts. Valid values are from `0` to `100`.
 
 |machine_learning_job_id |String |{ml-cap} job ID the rule monitors for
 anomaly scores. 
@@ -159,7 +161,7 @@ anomaly scores.
 |Name |Type |Description
 
 |actions |<<actions-object-schema, actions[]>> |Array defining the automated
-actions (notifications) taken when signals are produced.
+actions (notifications) taken when alerts are produced.
 
 |author |String[] |The rule's author.
 
@@ -168,7 +170,7 @@ actions (notifications) taken when signals are produced.
 |enabled |Boolean |Determines whether the rule is enabled. Defaults to `true`.
 
 |false_positives |String[] |String array used to describe common reasons why 
-the rule may issue false-positive signals. Defaults to an empty array.
+the rule may issue false-positive alerts. Defaults to an empty array.
 
 [[detection-rules-from]]
 |from |String |Time from which data is analyzed each time the rule executes,
@@ -183,7 +185,7 @@ means the rule runs every hour. Defaults to `5m` (5 minutes).
 
 |license |String |The rule's license.
 
-|max_signals |Integer |Maximum number of signals the rule can create during a
+|max_signals |Integer |Maximum number of alerts the rule can create during a
 single execution. Defaults to `100`.
 
 |meta |Object |Placeholder for metadata about the rule.
@@ -191,7 +193,7 @@ single execution. Defaults to `100`.
 |note |String |Notes to help investigate alerts produced by the rule.
 
 |output_index |String |Index to which alerts created by the rule are saved. 
-If unspecified signals are saved to `.siem-signals-<space_name>` index, 
+If unspecified alerts are saved to `.siem-signals-<space_name>` index, 
 where `<space_name>` is the name of the {kib} space in which the rule exists.
 
 |references |String[] |Array containing notes about or references to 
@@ -211,7 +213,7 @@ information about the type of threat the rule monitors, see
 |throttle |String a|Determines how often actions are taken:
 
 * `no_actions`: Never
-* `rule`: Every time new signals are detected
+* `rule`: Every time new alerts are detected
 * `1h`: Every hour
 * `1d`: Every day
 * `7d`: Every week
@@ -237,15 +239,16 @@ criteria are met. The object has these fields:
 valid in only the rule's {kib} space (`single`) or in all {kib} spaces
 (`agnostic`). 
 * `type` (string, required): The exception type, which must be either
-a detection rule exception (`detection`) or an endpoint (`endpoint`).
+a detection rule exception (`detection`) or an endpoint exception (`endpoint`).
 
 |filters |Object[] |The {ref}/query-filter-context.html[query and filter 
-context] array used to define the conditions for when signals are created from 
-events. |Defaults to an empty array.
+context] array used to define the conditions for when alerts are created from 
+events. Defaults to an empty array.
 
 |index |String[] |Indices on which the rule functions. Defaults to the
-{siem-soln} indices defined on the {kib} Advanced Settings page
-(*Kibana* → *Management* → *Advanced Settings* → `siem:defaultIndex`).
+Security Solution indices defined on the {kib} Advanced Settings page
+(*Kibana* → *Stack Management* → *Advanced Settings* →
+`securitySolution:defaultIndex`).
 
 |language |String |Determines the query language, which must be
 `kuery` or `lucene`. Defaults to `kuery`.
@@ -276,9 +279,11 @@ timestamp in generated alerts. The source field must an {es} date data type.
 [[actions-object-schema]]
 ===== `actions` schema
 
+All fields are required:
+
 [width="100%",options="header"]
 |==============================================
-|Name |Type |Description |Required
+|Name |Type |Description
 
 |action_type_id |String a|The action type used for sending notifications, can
 be:
@@ -288,12 +293,10 @@ be:
 * `.pagerduty`
 * `.webhook`
 
-|Yes
+|group |String |Optionally groups actions by use cases. Use `default` for alert
+notifications.
 
-|group |String |Optionally groups actions by use cases. Use `default` for signal
-notifications.|Yes
-
-|id |String |The connector ID. |Yes
+|id |String |The connector ID.
 
 |params |Object a|Object containing the allowed connector fields, which varies according to the connector type:
 
@@ -307,15 +310,15 @@ sent. At least one field must have a value.
 * For Webhook:
 ** `body` (string, required): JSON payload.
 * For PagerDuty:
-** `severity` (string, required): Severity of on the signal notification, can
+** `severity` (string, required): Severity of on the alert notification, can
 be: `Critical`, `Error`, `Warning` or `Info`.
 ** `eventAction` (string, required):  Event https://v2.developer.pagerduty.com/docs/events-api-v2#event-action[action type], which can be `trigger`,
 `resolve`, or `acknowledge`.
-** `dedupKey` (string, optional): Groups signal notifications with the same
+** `dedupKey` (string, optional): Groups alert notifications with the same
 PagerDuty alert.
 ** `timestamp` (DateTime, optional): https://v2.developer.pagerduty.com/v2/docs/types#datetime[ISO-8601 format timestamp].
 ** `component` (string, optional): Source machine component responsible for the
-event, for example `siem`.
+event, for example `security-solution`.
 ** `group` (string, optional): Enables logical grouping of service components.
 ** `source` (string, optional): The affected system. Defaults to the {kib}
 saved object ID of the action. 
@@ -323,17 +326,15 @@ saved object ID of the action.
 `No summary provided`. Maximum length is 1024 characters.
 ** `class` (string, optional): Value indicating the class/type of the event.
 
-|Yes
-
 |==============================================
 
 All text fields (such as `message` fields) can contain placeholders for rule
-and signal details:
+and alert details:
 
-* `{{state.signals_count}}`: Number of signals detected
-* `{{{context.results_link}}}`: URL to the signals in {kib}
+* `{{state.signals_count}}`: Number of alerts detected
+* `{{{context.results_link}}}`: URL to the alerts in {kib}
 * `{{context.rule.anomaly_threshold}}`: Anomaly threshold score above which
-signals are generated ({ml} rules only)
+alerts are generated ({ml} rules only)
 * `{{context.rule.description}}`: Rule description
 * `{{context.rule.false_positives}}`: Rule false positives
 * `{{context.rule.filters}}`: Rule filters (query-based rules only)
@@ -342,10 +343,10 @@ signals are generated ({ml} rules only)
 * `{{context.rule.language}}`: Rule query language (query-based rules only)
 * `{{context.rule.machine_learning_job_id}}`: ID of associated {ml} job ({ml}
 rules only)
-* `{{context.rule.max_signals}}`: Maximum allowed number of signals per rule
+* `{{context.rule.max_signals}}`: Maximum allowed number of alerts per rule
 execution
 * `{{context.rule.name}}`: Rule name
-* `{{context.rule.output_index}}`: Index to which signals are written
+* `{{context.rule.output_index}}`: Index to which alerts are written
 * `{{context.rule.query}}`: Rule query (query-based rules only)
 * `{{context.rule.references}}`: Rule references
 * `{{context.rule.risk_score}}`: Rule risk score
@@ -363,14 +364,16 @@ used as an identifier across systems
 ===== `threat` schema
 
 NOTE: Only threats described using the MITRE ATT&CK^TM^ framework are displayed 
-in the UI (*SIEM* -> *Detections* -> *Manage signal detection rules* ->
-<rule name>).
+in the UI (*Security* -> *Detections* -> *Manage detection rules* -> <rule
+name>).
+
+All fields are required:
 
 [width="100%",options="header"]
 |==============================================
-|Name |Type |Description |Required
+|Name |Type |Description
 
-|framework |String |Relevant attack framework. |Yes
+|framework |String |Relevant attack framework.
 
 |tactic |Object a|Object containing information on the attack type:
 
@@ -378,16 +381,12 @@ in the UI (*SIEM* -> *Detections* -> *Manage signal detection rules* ->
 * `name` - string, required
 * `reference` - string, required
 
-|Yes
-
 |technique |Object a|Object containing information on the attack 
 technique:
 
 * `id` - string, required
 * `name` - string, required
 * `reference` - string, required
-
-|Yes
 
 |==============================================
 
@@ -440,7 +439,7 @@ When it runs next, at 16:00, it will analyze data from 14:50 until 16:00.
 
 *Example 2*
 
-{ml-cap} rule that creates signals, and sends Slack notifications, when the
+{ml-cap} rule that creates alerts, and sends Slack notifications, when the
 `linux_anomalous_network_activity_ecs` {ml} job discovers anomalies with a
 threshold of 70 or above:
 
@@ -452,7 +451,7 @@ POST api/detection_engine/rules
   "rule_id": "ml_linux_network_high_threshold",
   "risk_score": 70,
   "machine_learning_job_id": "linux_anomalous_network_activity_ecs",
-  "description": "Generates signals when the job discovers anomalies over 70",
+  "description": "Generates alerts when the job discovers anomalies over 70",
   "interval": "5m",
   "name": "Anomalous Linux network activity",
   "note": "Shut down the internet.",
@@ -548,7 +547,7 @@ Example response for a {ml} job rule:
   "created_at": "2020-04-07T14:45:15.679Z",
   "updated_at": "2020-04-07T14:45:15.892Z",
   "created_by": "LiverpoolFC",
-  "description": "Generates signals when the job discovers anomalies over 70",
+  "description": "Generates alerts when the job discovers anomalies over 70",
   "enabled": true,
   "false_positives": [],
   "from": "now-6m",
