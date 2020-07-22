@@ -20,6 +20,7 @@ If the doc issue includes a procedure, number the steps in sequential order.
 ## Notes
 
 - Add the **"Team:Docs"** label to new issues. 
+- Be sure to add the version number label. 
 - Be sure to add any necessary screenshots for clarity. 
 - Include any conditions or caveats that may affect customers. 
 
