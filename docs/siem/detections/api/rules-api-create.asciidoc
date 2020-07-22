@@ -97,10 +97,11 @@ occurred
 
 |type |String a|Data type on which the rule is based:
 
-* `query`: query-based conditions with or without additional filters.
+* `query`: query with or without additional filters.
 * `saved_query`: saved search, identified in the `saved_id` field.
 * `machine_learning`: rule based on a {ml} job's anomaly scores.
-* `threshold`: rule based on the number of times the `query` is matched.
+* `threshold`: rule based on the number of times a `query` matches the
+specified field.
 
 |==============================================
 
@@ -112,7 +113,7 @@ occurred
 
 |query |String a|{kibana-ref}/search.html[Query] used by the rule to create
 alerts. Technically this is not required and defaults to an empty string, but
-then no alerts will ever be generated.
+that's not very useful.
 
 |==============================================
 
@@ -125,12 +126,15 @@ then no alerts will ever be generated.
 |threshold |Object a|Defines the field and threshold value for when alerts
 are generated, where:
 
-* `field` (string, required): The field on which the threshold is applied.
-* `value` (integer, required): The value from alerts are generated.
+* `field` (string, required): The field on which the threshold is applied. If
+you specify an empty field (`""`), alerts are generated when the query returns
+at least the number of results specified in the `value` field.
+* `value` (integer, required): The threshold value from which an alert is
+generated.
 
 |==============================================
 
-===== Required field for saved query rules
+===== Required field for saved-query rules
 
 [width="100%",options="header"]
 |==============================================
@@ -140,14 +144,14 @@ are generated, where:
 
 |==============================================
 
-===== Required fields for machine learning rules
+===== Required fields for machine-learning rules
 
 [width="100%",options="header"]
 |==============================================
 |Name |Type |Description
 
 |anomaly_threshold |Integer |Anomaly score threshold above which the rule
-creates alerts. Valid values are from `0` to `100`.
+creates an alert. Valid values are from `0` to `100`.
 
 |machine_learning_job_id |String |{ml-cap} job ID the rule monitors for
 anomaly scores. 
@@ -161,11 +165,14 @@ anomaly scores.
 |Name |Type |Description
 
 |actions |<<actions-object-schema, actions[]>> |Array defining the automated
-actions (notifications) taken when alerts are produced.
+actions (notifications) taken when alerts are generated.
 
 |author |String[] |The rule's author.
 
 |building_block_type |String |Determines if the rule acts as a building block.
+By default, building-block alerts are not displayed in the UI. These rules are
+used as a foundation for other rules that do generate alerts. Its value must be
+`default`. For more information, see BEN - add link later.
 
 |enabled |Boolean |Determines whether the rule is enabled. Defaults to `true`.
 
@@ -234,12 +241,14 @@ Required when `actions` are used to send notifications.
 exceptions that prevent the rule from generating alerts even when its other
 criteria are met. The object has these fields:
 
-* `id` (string, required): ID of the exception container.
+* `id` (string, required): List ID of the exception container.
 * `namespace_type` (string required): Determines whether the exceptions are
 valid in only the rule's {kib} space (`single`) or in all {kib} spaces
 (`agnostic`). 
 * `type` (string, required): The exception type, which must be either
 a detection rule exception (`detection`) or an endpoint exception (`endpoint`).
+
+BEN - add link later
 
 |filters |Object[] |The {ref}/query-filter-context.html[query and filter 
 context] array used to define the conditions for when alerts are created from 
@@ -271,8 +280,9 @@ values from the source event:
 `medium`, `high`, or `critical`.
 * `value`(string, required): Field value used to determine the `severity`.
 
-|timestamp_override |String |Specifies a source event field to use as the
-timestamp in generated alerts. The source field must an {es} date data type.
+|timestamp_override |String |Determines the time field used to query indices.
+When unspecified, rules query the `@timestamp` field. The source field
+must an {es} date data type.
 
 |==============================================
 
@@ -337,17 +347,17 @@ and alert details:
 alerts are generated ({ml} rules only)
 * `{{context.rule.description}}`: Rule description
 * `{{context.rule.false_positives}}`: Rule false positives
-* `{{context.rule.filters}}`: Rule filters (query-based rules only)
+* `{{context.rule.filters}}`: Rule filters (query rules only)
 * `{{context.rule.id}}`: Unique rule ID returned after creating the rule
-* `{{context.rule.index}}`: Indices rule runs on (query-based rules only)
-* `{{context.rule.language}}`: Rule query language (query-based rules only)
+* `{{context.rule.index}}`: Indices rule runs on (query rules only)
+* `{{context.rule.language}}`: Rule query language (query rules only)
 * `{{context.rule.machine_learning_job_id}}`: ID of associated {ml} job ({ml}
 rules only)
 * `{{context.rule.max_signals}}`: Maximum allowed number of alerts per rule
 execution
 * `{{context.rule.name}}`: Rule name
 * `{{context.rule.output_index}}`: Index to which alerts are written
-* `{{context.rule.query}}`: Rule query (query-based rules only)
+* `{{context.rule.query}}`: Rule query (query rules only)
 * `{{context.rule.references}}`: Rule references
 * `{{context.rule.risk_score}}`: Rule risk score
 * `{{context.rule.rule_id}}`: Generated or user-defined rule ID that can be
@@ -355,6 +365,7 @@ used as an identifier across systems
 * `{{context.rule.saved_id}}`: Saved search ID
 * `{{context.rule.severity}}`: Rule severity
 * `{{context.rule.threat}}`: Rule threat framework
+* `{{context.rule.threshold}}`: Rule threshold (threshold rules only)
 * `{{context.rule.timeline_id}}`: Associated timeline ID
 * `{{context.rule.timeline_title}}`: Associated timeline name
 * `{{context.rule.type}}`: Rule type
@@ -394,7 +405,7 @@ name>).
 
 *Example 1*
 
-Query-based rule that searches for processes started by MS Office: 
+Query rule that searches for processes started by MS Office: 
 
 [source,console]
 --------------------------------------------------
@@ -438,6 +449,78 @@ If the rule starts to run at 15:00, it analyzes data from 13:50 until 15:00.
 When it runs next, at 16:00, it will analyze data from 14:50 until 16:00.
 
 *Example 2*
+
+Threshold rule that detects multiple failed login attempts to a Windows host
+from the same external source IP address, and maps the `severity` value to
+custom source event fields:
+
+[source,console]
+--------------------------------------------------
+POST api/detection_engine/rules
+{
+  "description": "Detects when there are 20 or more failed login attempts from the same IP address with a 2 minute time frame.",
+  "enabled": true,
+  "exceptions_list": [ <1>
+    {
+      "id": "int-ips",
+      "namespace_type": "single",
+      "type": "detection"
+    }
+  ],
+  "from": "now-180s",
+  "index": [
+    "winlogbeat-*"
+  ],
+  "interval": "2m",
+  "name": "Liverpool Windows server prml-19",
+  "query": "host.name:prml-19 and event.category:authentication and event.outcome:failure",
+  "risk_score": 30,
+  "rule_id": "liv-win-ser-logins",
+  "severity": "low",
+  "severity_mapping": [ <2>
+    {
+      "field": "source.geo.city_name",
+      "operator": "equals",
+      "severity": "low",
+      "value": "Liverpool"
+    },
+    {
+      "field": "source.geo.city_name",
+      "operator": "equals",
+      "severity": "medium",
+      "value": "West Ham"
+    },
+    {
+      "field": "source.geo.city_name",
+      "operator": "equals",
+      "severity": "high",
+      "value": "Everton"
+    },
+    {
+      "field": "source.geo.city_name",
+      "operator": "equals",
+      "severity": "critical",
+      "value": "Manchester"
+    }
+  ],
+  "tags": [
+    "Brute force"
+  ],
+  "threshold": { <3>
+    "field": "source.ip",
+    "value": 20
+  },
+  "type": "threshold"
+}
+--------------------------------------------------
+// KIBANA
+
+<1> Exception list container used to exclude internal IP addresses.
+<2> Alert severity levels are mapped according to the defined field values.
+<3> Alerts are generated when the same source IP address is discovered in at
+least 20 results.
+
+*Example 3*
 
 {ml-cap} rule that creates alerts, and sends Slack notifications, when the
 `linux_anomalous_network_activity_ecs` {ml} job discovers anomalies with a
@@ -489,7 +572,7 @@ A JSON object that includes a unique ID, the time the rule was created, and its
 version number. If the request payload did not include a `rule_id` field, a
 unique rule ID is also generated.
 
-Example response for a query-based rule:
+Example response for a query rule:
 
 [source,json]
 --------------------------------------------------
@@ -586,5 +669,84 @@ Example response for a {ml} job rule:
   "status_date": "2020-04-07T14:45:21.685Z",
   "anomaly_threshold": 70,
   "machine_learning_job_id": "linux_anomalous_network_activity_ecs"
+}
+--------------------------------------------------
+
+Example response for a threshold rule:
+
+[source,json]
+--------------------------------------------------
+{
+  "author": [],
+  "created_at": "2020-07-22T10:27:23.486Z",
+  "updated_at": "2020-07-22T10:27:23.673Z",
+  "created_by": "LiverpoolFC",
+  "description": "Detects when there are 20 or more failed login attempts from the same IP address with a 2 minute time frame.",
+  "enabled": true,
+  "false_positives": [],
+  "from": "now-180s",
+  "id": "15dbde26-b627-4d74-bb1f-a5e0ed9e4993",
+  "immutable": false,
+  "interval": "2m",
+  "rule_id": "liv-win-ser-logins",
+  "output_index": ".siem-signals-default",
+  "max_signals": 100,
+  "risk_score": 30,
+  "risk_score_mapping": [],
+  "name": "Liverpool Windows server prml-19",
+  "references": [],
+  "severity": "low",
+  "severity_mapping": [
+    {
+      "field": "source.geo.city_name",
+      "operator": "equals",
+      "severity": "low",
+      "value": "Liverpool"
+    },
+    {
+      "field": "source.geo.city_name",
+      "operator": "equals",
+      "severity": "medium",
+      "value": "West Ham"
+    },
+    {
+      "field": "source.geo.city_name",
+      "operator": "equals",
+      "severity": "high",
+      "value": "Everton"
+    },
+    {
+      "field": "source.geo.city_name",
+      "operator": "equals",
+      "severity": "critical",
+      "value": "Manchester"
+    }
+  ],
+  "updated_by": "LiverpoolFC",
+  "tags": [
+    "Brute force"
+  ],
+  "to": "now",
+  "type": "threshold",
+  "threat": [],
+  "version": 1,
+  "exceptions_list": [
+    {
+      "id": "int-ips",
+      "namespace_type": "single",
+      "type": "detection"
+    }
+  ],
+  "actions": [],
+  "index": [
+    "winlogbeat-*"
+  ],
+  "throttle": "no_actions",
+  "query": "host.name:prml-19 and event.category:authentication and event.outcome:failure",
+  "language": "kuery",
+  "threshold": {
+    "field": "source.ip",
+    "value": 20
+  }
 }
 --------------------------------------------------
