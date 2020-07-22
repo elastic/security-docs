@@ -2,17 +2,17 @@
 [role="xpack"]
 === Signals endpoint
 
-The signals endpoint is for retrieving, aggregating, and updating signals. 
-For detailed information on how to retrieve and aggregate results from the 
-indices, see:
+The signals endpoint is for retrieving, aggregating, and updating detection
+alerts. For detailed information on how to retrieve and aggregate results from
+the indices, see:
 
 * {ref}/getting-started-search.html[Start searching]
 * {ref}/search-aggregations.html[Aggregations]
 * {ref}/query-dsl.html[Query DSL]
 
-==== Get signals
+==== Get alerts
 
-Aggregates and returns signals.
+Aggregates and returns alerts.
 
 ===== Request URL
 
@@ -24,9 +24,9 @@ A query DSL that determines which results are returned.
 
 ====== Example request
 
-Gets aggregated results of all open signals with a risk score equal to or 
+Gets aggregated results of all open alerts with a risk score equal to or 
 greater than 70. It also returns the timestamps of the oldest and 
-newest signals that meet the query's criteria.
+newest alerts that meet the query's criteria.
 
 [source,console]
 --------------------------------------------------
@@ -61,8 +61,35 @@ POST api/detection_engine/signals/search
         }
       ]
     }
-  },
-  "size": 0
+  }
+}
+--------------------------------------------------
+
+Gets all in-progress alerts with a risk score equal to or 
+greater than 70.
+
+[source,console]
+--------------------------------------------------
+POST api/detection_engine/signals/search
+{
+  "query": {
+    "bool": {
+      "filter": [
+        {
+          "match": {
+            "signal.status": "in-progress"
+          }
+        },
+        {
+          "range": {
+            "signal.rule.risk_score": {
+              "gte": 70
+            }
+          }
+        }
+      ]
+    }
+  }
 }
 --------------------------------------------------
 // KIBANA
@@ -74,7 +101,7 @@ POST api/detection_engine/signals/search
     
 ====== Response payload
 
-A JSON object with the aggregated values and requested signals.
+A JSON object with the aggregated values and requested alerts.
 
 Example response:
 
@@ -110,9 +137,9 @@ Example response:
 }
 --------------------------------------------------
 
-==== Set signal status
+==== Set alert status
 
-Sets the status of one or more signals.
+Sets the status of one or more alert.
 
 ===== Request URL
 
@@ -126,17 +153,20 @@ A JSON object with either a `query` or `signals_id` field:
 |==============================================
 |Name |Type |Description |Required
 
-|`signal_ids` |String[] |Array of rule IDs. |Yes, when the `query` field is not used.
+|`signal_ids` |String[] |Array of alert IDs. |Yes, when the `query` field is
+not used.
 
-|`query` |Query DSL |Query that determines which signals are updated. |Yes, when the `signal_ids` field is not used.
+|`query` |Query DSL |Query that determines which alerts are updated. |Yes, when 
+the `signal_ids` field is not used.
 
-|`status` |String |The new status, which can be `open` or `closed`. |Yes.
+|`status` |String |The new status, which can be `open`, `in-progress` or
+`closed`. |Yes.
 
 |==============================================
 
 ====== Example requests
 
-Closes signal with signal IDs:
+Closes alerts with `signal_ids`:
 
 [source,console]
 --------------------------------------------------
@@ -151,7 +181,7 @@ POST api/detection_engine/signals/status
 --------------------------------------------------
 // KIBANA
 
-Closes signals that are over a month old and have a risk score less than or 
+Closes alerts that are over a month old and have a risk score less than or 
 equal to 20:
 
 [source,json]
@@ -190,7 +220,7 @@ POST api/detection_engine/signals/status
     
 ====== Response payload
 
-A JSON object containing the number of updated signals.
+A JSON object containing the number of updated alerts.
 
 Example response:
 
