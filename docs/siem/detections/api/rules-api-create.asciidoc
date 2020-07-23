@@ -7,9 +7,16 @@ You can create these types of rules:
 
 * Query rules: Searches the defined indices and creates an alert when
 a document matches the rule's query.
-* Threshold rules: Searches the defined indices and creates an alert when the
-number of times the specified event field is matched during a single execution
-meets the threshold. 
+* Threshold rules: Searches the defined indices and create an alert when the
+number of times the specified field's value meets the threshold during a single
+execution. When there are multiple values that meet the threshold, an alert is
+generated for each value.
++
+For example, if the threshold `field` is `source.ip` and its `value` is `10`, an
+alert is generated for every source IP address that appears in at least 10 of
+the rule's search results. If you're interested, see
+{ref}/search-aggregations-bucket-terms-aggregation.html[Terms Aggregation] for
+more information.
 * {ml-cap} rules: Creates an alert when a {ml} job discovers an anomaly above the defined threshold (see <<machine-learning>>).
 
 IMPORTANT: To create {ml} rules, you must have the
@@ -112,7 +119,7 @@ specified field.
 |Name |Type |Description
 
 |query |String a|{kibana-ref}/search.html[Query] used by the rule to create
-alerts. Technically, this is not required and defaults to an empty string, but
+alerts. Technically, this is not required and defaults to an empty string but
 that's not very useful.
 
 |==============================================
@@ -270,6 +277,11 @@ a value from the source event:
 * `operator` (string, required): Must be `equals`.
 * `value`(string, required): Must be an empty string (`""`).
 
+|rule_name_override |String |Sets the value used to populate an alert's
+`signal.rule.name` field (in the UI, this value is displayed in the *Rule*
+column on the Detections page). When unspecified, the rule's `name` value is
+used.
+
 |severity_mapping |Object[] a|Overrides generated alerts' `severity` with
 values from the source event:
 
@@ -280,7 +292,7 @@ values from the source event:
 `medium`, `high`, or `critical`.
 * `value`(string, required): Field value used to determine the `severity`.
 
-|timestamp_override |String |Determines the time field used to query indices.
+|timestamp_override |String |Sets the time field used to query indices.
 When unspecified, rules query the `@timestamp` field. The source field
 must an {es} date data type.
 
@@ -482,25 +494,25 @@ POST api/detection_engine/rules
       "field": "source.geo.city_name",
       "operator": "equals",
       "severity": "low",
-      "value": "Liverpool"
+      "value": "Manchester"
     },
     {
       "field": "source.geo.city_name",
       "operator": "equals",
       "severity": "medium",
-      "value": "West Ham"
+      "value": "London"
     },
     {
       "field": "source.geo.city_name",
       "operator": "equals",
       "severity": "high",
-      "value": "Everton"
+      "value": "Birmingham"
     },
     {
       "field": "source.geo.city_name",
       "operator": "equals",
       "severity": "critical",
-      "value": "Manchester"
+      "value": "Wallingford"
     }
   ],
   "tags": [
@@ -701,25 +713,25 @@ Example response for a threshold rule:
       "field": "source.geo.city_name",
       "operator": "equals",
       "severity": "low",
-      "value": "Liverpool"
+      "value": "Manchester"
     },
     {
       "field": "source.geo.city_name",
       "operator": "equals",
       "severity": "medium",
-      "value": "West Ham"
+      "value": "London"
     },
     {
       "field": "source.geo.city_name",
       "operator": "equals",
       "severity": "high",
-      "value": "Everton"
+      "value": "Birmingham"
     },
     {
       "field": "source.geo.city_name",
       "operator": "equals",
       "severity": "critical",
-      "value": "Manchester"
+      "value": "Wallingford"
     }
   ],
   "updated_by": "LiverpoolFC",
