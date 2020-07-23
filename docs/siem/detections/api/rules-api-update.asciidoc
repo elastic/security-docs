@@ -25,69 +25,19 @@ IMPORTANT: If you call `PUT` to update a rule, all unspecified fields are
 deleted. You cannot modify the `id` or `rule_id` values.
 
 For `PATCH` calls, any of the fields can be modified, whereas for `PUT` calls,
-some fields are required. 
+some fields are required.
+
+===== Fields required for `PUT` calls
 
 [width="100%",options="header"]
 |==============================================
-|Name |Type |Description |Required (`PUT` calls)
+|Name |Type |Description
 
-|actions |<<actions-object-schema-update, actions[]>> |Array defining the
-automated actions (notifications) taken when signals are produced. |No
+|description |String |The rule's description.
 
-|anomaly_threshold |Integer |Anomaly score threshold above which the rule
-creates signals. Valid values are from `0` to `100`. |Yes, for {ml} rules. Not
-allowed in `query` rule types.
+|name |String |The rule's name.
 
-|description |String |The rule's description. |Yes
-
-|enabled |Boolean |Determines whether the rule is enabled. |No, defaults to
-`true`.
-
-|false_positives |String[] |String array used to describe common reasons why 
-the rule may issue false-positive signals. |No, defaults to an empty array.
-
-// |filter |Object |{kibana-ref}/field-filter.html[Filter] used by the rule to 
-// create a signal |Yes, for filter-based rules only
-
-|filters |Object[] |The {ref}/query-filter-context.html[query and filter 
-context] array used to define the conditions for when signals are created from 
-events. |No, defaults to an empty array.
-
-|from |String |Time from which data is analyzed each time the rule executes,
-using a {ref}/common-options.html#date-math[date math range]. For example, 
-`now-4200s` means the rule analyzes data from 70 minutes before its start 
-time. |No, defaults to `now-6m` (analyzes data from 6 minutes before the start 
-time).
-
-|index |String[] |Indices on which the rule functions. |No, defaults to the
-{siem-soln} indices defined on the {kib} Advanced Settings page (*Kibana* → 
-*Management* → *Advanced Settings* → `siem:defaultIndex`).
-
-|interval |String |Frequency of rule execution, using a
-{ref}/common-options.html#date-math[date math range]. For example, `"1h"` 
-means the rule runs every hour. |No, defaults to `5m` (5 minutes).
-
-|machine_learning_job_id |String |{ml-cap} job ID the rule monitors for
-anomaly scores. |Yes, for {ml} rules. Not allowed in `query` rules types.
-
-|query |String |{kibana-ref}/search.html[Query] used by the rule to create a 
-signal. |No. For `query` rules types, defaults to an empty string. Not allowed
-in `machine-learning` rule types.
-
-|language |String |Determines the query language, which must be
-`kuery` or `lucene`. |No. For `query` rule types, defaults to `kuery`. Not
-allowed in `machine-learning` rule types.
-
-|output_index |String |Index to which signals detected by the rule are saved. 
-|No, if unspecified signals are saved to `.siem-signals-<space_name>` index, 
-where `<space_name>` is the name of the {kib} space in which the rule exists.
-
-|saved_id |String |Kibana saved search used by the rule to create signals.
-|Yes, for `saved_query` rules only.
-
-|meta |Object |Placeholder for metadata about the rule. |No
-
-|risk_score |Integer a|A numerical representation of the signal's severity from 
+|risk_score |Integer a|A numerical representation of the alert's severity from 
 0 to 100, where:
 
 * `0` - `21` represents low severity
@@ -95,58 +45,143 @@ where `<space_name>` is the name of the {kib} space in which the rule exists.
 * `48` - `73` represents high severity
 * `74` - `100` represents critical severity
 
-|Yes
-
-|max_signals |Integer |Maximum number of signals the rule can create during a
-single execution. |No, defaults to `100`.
-
-|name |String |The rule's name. |Yes
-
-|note |String |Notes to help investigate signals produced by the rule. |No
-
-|severity |String a|Severity level of signals produced by the rule, which must 
+|severity |String a|Severity level of alerts produced by the rule, which must 
 be one of the following:
 
-* `low`: Signals that are of interest but generally not considered to be 
+* `low`: Alerts that are of interest but generally not considered to be 
 security incidents
-* `medium`: Signals that require investigation
-* `high`: Signals that require immediate investigation
-* `critical`: Signals that indicate it is highly likely a security incident has 
+* `medium`: Alerts that require investigation
+* `high`: Alerts that require immediate investigation
+* `critical`: Alerts that indicate it is highly likely a security incident has 
 occurred
 
-|Yes
+|type |String a|Data type on which the rule is based:
+
+* `query`: query with or without additional filters.
+* `saved_query`: saved search, identified in the `saved_id` field.
+* `machine_learning`: rule based on a {ml} job's anomaly scores.
+* `threshold`: rule based on the number of times a `query` matches the
+specified field.
+
+|==============================================
+
+===== Field required for query and threshold rules `PUT` calls
+
+[width="100%",options="header"]
+|==============================================
+|Name |Type |Description
+
+|query |String a|{kibana-ref}/search.html[Query] used by the rule to create
+alerts. Technically, this is not required and defaults to an empty string but
+that's not very useful.
+
+|==============================================
+
+===== Field required for threshold rules `PUT` calls
+
+[width="100%",options="header"]
+|==============================================
+|Name |Type |Description
+
+|threshold |Object a|Defines the field and threshold value for when alerts
+are generated, where:
+
+* `field` (string, required): The field on which the threshold is applied. If
+you specify an empty field (`""`), alerts are generated when the query returns
+at least the number of results specified in the `value` field.
+* `value` (integer, required): The threshold value from which an alert is
+generated.
+
+|==============================================
+
+===== Field required for saved-query rules `PUT` calls
+
+[width="100%",options="header"]
+|==============================================
+|Name |Type |Description
+
+|saved_id |String |Kibana saved search used by the rule to create alerts.
+
+|==============================================
+
+===== Fields required for machine-learning rules `PUT` calls
+
+[width="100%",options="header"]
+|==============================================
+|Name |Type |Description
+
+|anomaly_threshold |Integer |Anomaly score threshold above which the rule
+creates an alert. Valid values are from `0` to `100`.
+
+|machine_learning_job_id |String |{ml-cap} job ID the rule monitors for
+anomaly scores. 
+
+|==============================================
+
+===== Optional fields for all rule types
+
+[width="100%",options="header"]
+|==============================================
+|Name |Type |Description
+
+|actions |<<actions-object-schema, actions[]>> |Array defining the automated
+actions (notifications) taken when alerts are generated.
+
+|author |String[] |The rule's author.
+
+|building_block_type |String |Determines if the rule acts as a building block.
+By default, building-block alerts are not displayed in the UI. These rules are
+used as a foundation for other rules that do generate alerts. Its value must be
+`default`. For more information, see BEN - add link later.
+
+|enabled |Boolean |Determines whether the rule is enabled. Defaults to `true`.
+
+|false_positives |String[] |String array used to describe common reasons why 
+the rule may issue false-positive alerts. Defaults to an empty array.
+
+[[detection-rules-from]]
+|from |String |Time from which data is analyzed each time the rule executes,
+using a {ref}/common-options.html#date-math[date math range]. For example, 
+`now-4200s` means the rule analyzes data from 70 minutes before its start 
+time. Defaults to `now-6m` (analyzes data from 6 minutes before the start 
+time).
+
+|interval |String |Frequency of rule execution, using a
+{ref}/common-options.html#date-math[date math range]. For example, `"1h"` 
+means the rule runs every hour. Defaults to `5m` (5 minutes).
+
+|license |String |The rule's license.
+
+|max_signals |Integer |Maximum number of alerts the rule can create during a
+single execution. Defaults to `100`.
+
+|meta |Object |Placeholder for metadata about the rule.
+
+|note |String |Notes to help investigate alerts produced by the rule.
+
+|output_index |String |Index to which alerts created by the rule are saved. 
+If unspecified alerts are saved to `.siem-signals-<space_name>` index, 
+where `<space_name>` is the name of the {kib} space in which the rule exists.
+
+|references |String[] |Array containing notes about or references to 
+relevant information about the rule. Defaults to an empty array.
 
 |tags |String[] |String array containing words and phrases to help categorize,
-filter, and search rules. |No, defaults to an empty array.
+filter, and search rules. Defaults to an empty array.
 
-// |to |String |Time to which data is analyzed each time the rule executes, using a
-// {ref}/common-options.html#date-math[date math range]. For example, `"now-300s"` 
-// means the rule analyzes data until 5 minutes before its starts time.
+|threat |<<threats-object-create, threat[]>> |Object containing attack 
+information about the type of threat the rule monitors, see
+{ecs-ref}/ecs-threat.html[ECS threat fields]. Defaults to an empty array.
 
 |throttle |String a|Determines how often actions are taken:
 
 * `no_actions`: Never
-* `rule`: Every time new signals are detected
+* `rule`: Every time new alerts are detected
 * `1h`: Every hour
 * `1d`: Every day
 * `7d`: Every week
 
-|Yes, when actions are used to send notifications.
-
-|type |String a|Data type on which the rule is based:
-
-* `query`: query-based conditions with or without additional filters
-* `saved_query`: saved search, identified in the `saved_id` field
-* `machine_learning`: rule based on a {ml} job's anomaly scores.
-
-|Yes
-
-|threat |<<threats-object-update, threat[]>> |Object containing attack 
-information about the type of threat the rule monitors, see
-{ecs-ref}/ecs-threat.html[ECS threat fields]. |No, defaults to an empty array.
-
-|references |String[] |String array containing notes about or references to 
-relevant information about the rule. |No, defaults to an empty array.
+Required when `actions` are used to send notifications.
 
 |version |Integer a|The rule's version number. If this is not provided, the 
 rule's version number is incremented by 1.
@@ -154,16 +189,76 @@ rule's version number is incremented by 1.
 `PATCH` calls enabling and disabling the rule do not increment its version
 number.
 
-|No
+|==============================================
+
+===== Optional fields for query and threshold rules
+
+[width="100%",options="header"]
+|==============================================
+|Name |Type |Description
+
+|exceptions_list |Object[] a|Array of exception containers, which define
+exceptions that prevent the rule from generating alerts even when its other
+criteria are met. The object has these fields:
+
+* `id` (string, required): List ID of the exception container.
+* `namespace_type` (string required): Determines whether the exceptions are
+valid in only the rule's {kib} space (`single`) or in all {kib} spaces
+(`agnostic`). 
+* `type` (string, required): The exception type, which must be either
+a detection rule exception (`detection`) or an endpoint exception (`endpoint`).
+
+BEN - add link later
+
+|filters |Object[] |The {ref}/query-filter-context.html[query and filter 
+context] array used to define the conditions for when alerts are created from 
+events. Defaults to an empty array.
+
+|index |String[] |Indices on which the rule functions. Defaults to the
+Security Solution indices defined on the {kib} Advanced Settings page
+(*Kibana* → *Stack Management* → *Advanced Settings* →
+`securitySolution:defaultIndex`).
+
+|language |String |Determines the query language, which must be
+`kuery` or `lucene`. Defaults to `kuery`.
+
+|risk_score_mapping |Object[] a|Overrides generated alerts' `risk_score` with
+a value from the source event:
+
+* `field` (string, required): Source event field used to override the default
+`risk_score`. This field must be an integer.
+* `operator` (string, required): Must be `equals`.
+* `value`(string, required): Must be an empty string (`""`).
+
+|rule_name_override |String |Sets which field in the source event is used to
+populate the alert's `signal.rule.name` value (in the UI, this value is
+displayed in the *Rule* column on the Detections page). When unspecified, the
+rule's `name` value is used. The source field must be a string data type.
+
+|severity_mapping |Object[] a|Overrides generated alerts' `severity` with
+values from the source event:
+
+* `field` (string, required): Source event field used to override the default
+`severity`.
+* `operator` (string, required): Must be `equals`.
+* `severity` (string, required): Mapped severity value, must be `low`,
+`medium`, `high`, or `critical`.
+* `value`(string, required): Field value used to determine the `severity`.
+
+|timestamp_override |String |Sets the time field used to query indices.
+When unspecified, rules query the `@timestamp` field. The source field
+must be an {es} date data type.
 
 |==============================================
 
 [[actions-object-schema-update]]
 ===== `actions` schema
 
+These fields are required when calling `PUT` to modify the `actions` object:
+
 [width="100%",options="header"]
 |==============================================
-|Name |Type |Description |Required (`PUT` calls)
+|Name |Type |Description
 
 |action_type_id |String a|The action type used for sending notifications, can
 be:
@@ -173,12 +268,10 @@ be:
 * `.pagerduty`
 * `.webhook`
 
-|Yes
-
 |group |String |Optionally groups actions by use cases. Use `default` for signal
-notifications.|Yes
+notifications.
 
-|id |String |The connector ID. |Yes
+|id |String |The connector ID.
 
 |params |Object a|Object containing the allowed connector fields, which varies according to the connector type:
 
@@ -208,31 +301,25 @@ saved object ID of the action.
 `No summary provided`. Maximum length is 1024 characters.
 ** `class` (string, optional): Value indicating the class/type of the event.
 
-|Yes
-
 |==============================================
 
 
 [[threats-object-update]]
 ===== `threat` schema
 
-NOTE: Only threats described using the MITRE ATT&CK^TM^ framework are displayed 
-in the UI (*SIEM* -> *Detections* -> *Manage signal detection rules* ->
-<rule name>).
+These fields are required when calling `PUT` to modify the `threat` object:
 
 [width="100%",options="header"]
 |==============================================
-|Name |Type |Description  |Required (`PUT` calls)
+|Name |Type |Description
 
-|framework |String |Relevant attack framework. |Yes
+|framework |String |Relevant attack framework.
 
 |tactic |Object a|Object containing information on the attack type:
 
 * `id` - string, required
 * `name` - string, required
 * `reference` - string, required
-
-|Yes
 
 |technique |Object a|Object containing information on the attack 
 technique:
@@ -241,9 +328,11 @@ technique:
 * `name` - string, required
 * `reference` - string, required
 
-|Yes
-
 |==============================================
+
+NOTE: Only threats described using the MITRE ATT&CK^TM^ framework are displayed 
+in the UI (*SIEM* -> *Detections* -> *Manage signal detection rules* ->
+<rule name>).
 
 ===== Example request
 
