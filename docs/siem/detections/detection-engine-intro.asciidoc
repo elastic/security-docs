@@ -1,26 +1,45 @@
 [[detection-engine-overview]]
 [role="xpack"]
 
-= Detections (beta)
+= Detections and Alerts (beta)
 
 beta[]
 
-The SIEM Detections feature automatically searches for threats and creates 
-signals when they are detected. Signal detection rules define the conditions 
-for creating signals. Additionally, you can use the {kib}
-{kibana-ref}/alerting-getting-started.html[Alerting and Actions]
-framework to send notifications via other systems, such as email and Slack,
-when signals are generated.
+The Detections page is used to create and manage detection rules, and view the
+alerts these rules create. Detection rules periodically search indices (such as
+`endgame-*` and `filebeat-*`) for suspicious source events, and detection
+alerts are created when a rule's conditions are matched. When a detection alert
+is created, its status is `Open`. To help track investigations, an alert's
+status can be set as `Open`, `In progress`, or `Closed` (see
+<<detection-alert-status>>).
 
-NOTE: To use {kib} Alerting for signal notifications, you need the
+The {es-sec-app} comes with <<prebuilt-rules, prebuilt detection rules>> that
+search for suspicious activity on your network and hosts. For information on
+how to use the prebuilt rules, see <<load-prebuilt-rules>>. Once the prebuilt
+rules are loaded and running, <<tuning-detection-signals>>, Rule exceptions,
+and Value lists explains how to modify the rules to reduce false positives and
+get a better set of actionable alerts. In addition to loading and modifying
+prebuilt rules, you can <<rules-ui-create, create your own rules from scratch>>.
+
+There are two special prebuilt rules you need to know about:
+
+* *Elastic Endpoint*: This rule automatically creates a detections alert from
+all incoming Elastic Endpoint alerts. To receive Elastic Endpoint alerts, you
+must install the Endpoint agent on your hosts (BEN: see xref).
++
+NOTE: When you load the prebuilt rules, this is the only rule that is enabled
+by default.
+
+* *External Alerts*: This rule automatically creates a detections alert for all incoming third-party system alerts (for example, Suricata alerts).
+
+If you want to be notified via external systems, such as Slack or email, when
+detection alerts are created, you can use the {kib}
+{kibana-ref}/alerting-getting-started.html[Alerting and Actions] framework.
+
+NOTE: To use {kib} Alerting for detection alert notifications, you need the
 https://www.elastic.co/subscriptions[appropriate license].
 
-The {siem-app} comes with <<prebuilt-rules, prebuilt rules>> that search for
-suspicious activity on your network and hosts. For information on how to
-optimize the prebuilt rules, see <<tuning-detection-signals>>. You can also
-<<rules-ui-create, create your own rules>>.
-
-You can manage detection rules and signals via the UI or the
+You can can create and manage detection rules and alerts via the UI or the
 <<rule-api-overview, Detections API>>.
 
 [IMPORTANT]
@@ -36,99 +55,117 @@ image::detections-ui.png[]
 [[det-engine-terminology]]
 == Terminology
 
-Rules::
-Perform background tasks to detect suspicious activity. There are two types of
+Detection rules::
+Perform background tasks to detect suspicious activity. There are a few types of
 rules:
 
-* Query-based rules search indices for documents that match their queries at
-scheduled intervals. When a document matches, a signal is created.
-* {ml-cap} rules create a signal when a {ml} job discovers an anomaly score
-above a rule's defined threshold.
+* *Query rules*: Searches the defined indices and creates a detections alert
+when a source event matches the rule's query.
+* *{ml-cap} rules*: Create a detections alert when a {ml} job discovers an
+anomaly score above a rule's defined threshold (see <<machine-learning>>).
+* *Threshold rules*: Searches the defined indices and creates a detections alert
+when the number of times the specified field's value meets the threshold during
+a single execution. When there are multiple values that meet the threshold, an
+alert is generated for each value.
++
+For example, if the threshold `field` is `source.ip` and its `value` is `10`, an
+alert is generated for every source IP address that appears in at least 10 of
+the rule's search results.
 
-Signals::
-Always refer to {siem-soln} produced detections. Signals are never received 
-from external systems. When a rule's conditions are met, the {siem-app} 
-writes one or more signals to an Elasticsearch `signals` index.
+Detection alerts::
+Always refer to {es-sec} produced detections. Detection alerts are never
+received from external systems. When a rule's conditions are met, the
+{es-sec-app} writes a detection alert to an Elasticsearch `signals` index.
 +
 [NOTE]
 ==============
-Signal indices are created for each {kib} space. The naming convention is:
-`.siem-signals-<space name>`. For the default space, the signals index is named 
-`.siem-signals-default`.
+Detection alert indices are created for each {kib} space. The naming convention
+is: `.siem-signals-<space name>`. For the default space, the signals index is
+named `.siem-signals-default`.
 ==============
 
 Alerts and events::
-Always refer to data the {siem-app} receives from external systems, such as 
-Elastic Endpoint and Suricata.
+Always refer to data the {es-sec-app} receives from external systems, such as 
+Suricata.
 
 Actions::
-Used to send notifications via other systems when a signal is created, such as
-email, Slack, PagerDuty, and Webhook.
+Used to send notifications via other systems when a detections alert is
+created, such as email, Slack, PagerDuty, and Webhook.
 
 [float]
-== Signals and external alerts
+== Detection and external alerts
 
-The Detections page displays all signals and alerts. To view signals created 
-by a rule, you can:
+The Detections page displays all signals and alerts. To view detection alerts
+created by a rule, you can:
 
 * Filter for a specific rule in the KQL bar (for example,
 `signal.rule.name :"SSH (Secure Shell) from the Internet"`).
-* View signals in the *Rule details* page (click
+* View detection alerts in the *Rule details* page (click
 *Manage signal detection rules* -> rule name in the *All rules* table).
 
 NOTE: KQL autocomplete for `.siem-signals-*` indices is available on the 
-*Detections* and *Rule details* pages, and in Timeline when either `All events`
-or `Signal events` is selected. 
+*Detections* and *Rule details* pages, and in Timeline when either `All` or
+`Detection alerts` is selected. 
 
 To view alerts from external data shippers, click *External alerts*.
 
 [float]
-=== Open and close signals
+[[detection-alert-status]]
+=== Change an alert's status
 
-You can close signals to indicate they do not need any further investigation. 
-By default, the All signals table displays open signals. To view closed 
-signals, click *Closed signals*.
+You can set an alert's status to indicate whether it needs to be investigated
+(`Open`), is under active investigation (`In progress`), or resolved
+(`Closed`). By default, the Alerts table displays open signals. To view alerts
+with other statuses, click *In progress* or *Closed*.
 
-To open and close signals, either:
+To change alert statuses, either:
 
-* Click the *Close/Open signal* icon.
-* Select the signals you want to open or close and then click 
-*Close/Open selected*.
+* In the alert's row, click the *more options* icon, and then select the
+required status (*Mark in progress*, *Close alert*, or *Open alert*).
+* In the Alerts table, select all the alerts you want to change, and then select
+*Take action* -> *Close selected*, *Open selected*, or *Mark in progress*.
 
 [float]
 [[signals-to-timelines]]
-=== Investigate signals in Timeline
+=== Investigate alerts in Timeline
 
-To investigate a signal in Timeline, click the *Investigate in timeline*
+To investigate an alert in Timeline, click the *Investigate in timeline*
 icon.
 
-If the rule that generated the signal uses a timeline template, when you
-investigate the signal in Timeline, the following dropzone query values are
-replaced with their corresponding signal values:
+If the rule that generated the alert uses a Timeline template, when you
+investigate the alert in Timeline, the dropzone query values defined in the
+template are replaced with their corresponding signal values.
 
-* `host.name`
-* `host.hostname`
-* `host.domain`
-* `host.id`
-* `host.ip`
-* `client.ip`
-* `destination.ip`
-* `server.ip`
-* `source.ip`
-* `network.community_id`
-* `user.name`
-* `process.name`
+// * `host.name`
+// * `host.hostname`
+// * `host.domain`
+// * `host.id`
+// * `host.ip`
+// * `client.ip`
+// * `destination.ip`
+// * `server.ip`
+// * `source.ip`
+// * `network.community_id`
+// * `user.name`
+// * `process.name`
 
 *Example*
 
-The timeline template used in the rule has this dropzone query:
-`host.name: "Linux-LiverpoolFC"`. When signals generated by the rule are
-investigated in Timeline, the `host.name` value is replaced with the signal's
-`host.name` value. If the signal's `host.name` value is `Windows-ArsenalFC`,
-the timeline dropzone query is `host.name: "Windows-ArsenalFC"`.
+The Timeline template used in the rule has this dropzone query:
+`host.name: "Linux-LiverpoolFC"`. When alerts generated by the rule are
+investigated in Timeline, the `host.name` value is replaced with the alert's
+`host.name` value. If the alerts's `host.name` value is `Windows-ArsenalFC`,
+the Timeline dropzone query is `host.name: "Windows-ArsenalFC"`.
 
-NOTE: For information on how to add timeline templates to rules, see
+NOTE: See BEN: xref for information on creating Timelines and Timeline
+templates. For information on how to add timeline templates to rules, see
 <<create-rule-ui>>.
+
+[float]
+[[alerts-to-resolver]]
+=== Analyze alerts in Timeline resolver
+
+BEN: Short explanation and link
 
 [float]
 [[detections-permissions]]
@@ -150,14 +187,14 @@ of at least 32 characters. For example:
 
 For *all* deployments (on-premises and hosted):
 
-* To view signals and detection rules, you must have at least:
+* To view detection rules and alerts, you must have at least:
 ** `read` permissions for the `.siem-signals-<space name>` index, where
 `<space name>` is the name of the {kib} space you are using to view Detections
 (see {ref}/security-privileges.html#privileges-list-indices[Indices privileges]).
-** {kib} space `Read` privileges for the `SIEM` feature (see
+** {kib} space `Read` privileges for the `Security` feature (see
 {kibana-ref}/xpack-spaces.html#spaces-control-user-access[Feature access based on user privileges]).
 * To create and modify detection rules, you must have:
-** {kib} space `All` privileges for the `SIEM` feature (see
+** {kib} space `All` privileges for the `Security` feature (see
 {kibana-ref}/xpack-spaces.html#spaces-control-user-access[Feature access based on user privileges]).
 ** Write permissions for the `.siem-signals-<space name>` index, such as 
 `create` `create_doc`, `write`, `index`, and `all`
@@ -173,11 +210,11 @@ when you try to open the *Detections* page.
 *`Let’s set up your detection engine`*
 
 If you see this message, a user with these privileges must visit the 
-*Detections* page before you can view signals and rules:
+*Detections* page before you can view detection rules and alerts:
 
 * The `manage` cluster privilege (see {ref}/security-privileges.html[{es} security privileges]).
 * The `create_index` index privilege (see {ref}/security-privileges.html[{es} security privileges]).
-* {kib} space `All` privileges for the `SIEM` feature (see
+* {kib} space `All` privileges for the `Security` feature (see
 {kibana-ref}/xpack-spaces.html#spaces-control-user-access[Feature access based on user privileges]).
 
 NOTE: For *on-premises* {stack} deployments only, this message may be displayed 
