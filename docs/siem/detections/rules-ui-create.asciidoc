@@ -4,8 +4,16 @@
 
 beta[]
 
-Rules run periodically and search for documents or {ml} job anomaly scores 
-that meet their criteria. For both prebuilt and custom rules, you can use the
+Rules run periodically and search for source events or {ml} job anomaly scores 
+that meet their criteria. When a rule's criteria are met, a detections alert is
+created.
+
+When creating or modifying rules, you can add exceptions that prevent a rule
+from generating an alert even when its criteria are met. This is useful for
+reducing noise, such as preventing alerts from trusted processes and internal
+IP addresses. BEN xref describes how to add exceptions to a rule.
+
+For both prebuilt and custom rules, you can use the
 {kib} {kibana-ref}/alerting-getting-started.html[Alerting and Actions] feature
 to send notifications when signals are created. Notifications can be sent via
 Email, PagerDuty, Slack, and Webhook, and can be configured in the {siem-app}
@@ -17,7 +25,7 @@ After you activate a rule, periodically check the rule is running as expected
 in the <<monitor-rule-exe, Monitoring tab>> on the All rules page. If you see
 values in the `Gap` column, you can <<troubleshoot-signals>>.
 
-When a rule fails to run, the {siem-app} tries to rerun it at its next 
+When a rule fails to run, the {es-sec-app} tries to rerun it at its next 
 scheduled run time.
 ==============
 
@@ -38,18 +46,19 @@ image::all-rules.png[]
 [[load-prebuilt-rules]]
 === Load prebuilt Elastic rules
 
-To load the {siem-app}'s <<prebuilt-rules, prebuilt rules>>, click
-*Load Elastic prebuilt rules* on the *Signal detection rules* page (*SIEM* -> 
-*Detections* -> *Manage signal detection rules*).
+To load the {es-sec-app}'s <<prebuilt-rules, prebuilt rules>>, click
+*Load Elastic prebuilt rules* on the *Detection rules* page (*Security* -> 
+*Detections* -> *Manage detection rules*).
 
 If you delete any of the prebuilt rules, a button appears that enables 
 reloading all the deleted prebuilt rules.
 
 [NOTE]
 ==============
-By default, prebuilt rules are not activated. If you want to modify a prebuilt 
-rule, you must first duplicate it and then make your changes to the duplicated 
-rule. <<filter-rule-process>> provides a detailed example of duplicating and modifying a rule.
+Apart from the Elastic Endpoint rule, prebuilt rules are not activated by
+default. If you want to modify a prebuilt  rule, you must first duplicate it
+and then make your changes to the duplicated rule. <<filter-rule-process>>
+provides a detailed example of duplicating and modifying a rule.
 
 All Elastic prebuilt rules are tagged with the word `Elastic`.
 ==============
@@ -58,9 +67,11 @@ All Elastic prebuilt rules are tagged with the word `Elastic`.
 [[select-all-prebuilt-rules]]
 === Select and duplicate all prebuilt rules
 
+In the All rules table:
+
 . Select the *Elastic rules* tab.
 . Scroll to the bottom of the page.
-. Click the `Rows per page` menu, and then select _200 rows_.
+. Click the `Rows per page` menu, and then select _300 rows_.
 . When the page reloads, select all the rules.
 . Click _Bulk actions_ -> _Duplicate selected_.
 . Select the *Custom rules* tab.
@@ -72,7 +83,7 @@ ones.
 [[create-rule-ui]]
 === Create a new rule
 
-You can create two types of rules:
+You can create these types of rules:
 
 * *Custom query*: Query-based rule, which searches the defined indices and creates a signal when a document matches the rule's query.
 * *Machine learning*: {ml-cap} rule, which creates a signal when a {ml} job discovers an anomaly above the defined threshold (see <<machine-learning>>).
@@ -83,13 +94,21 @@ running, the rule will:
 ** Run and create signals if existing anomaly scores above the defined threshold
 are discovered.
 ** Issue an error stating the {ml} job was not running when the rule executed.
+* *Threshold rules*: Searches the defined indices and creates a detections alert
+when the number of times the specified field's value meets the threshold during
+a single execution. When there are multiple values that meet the threshold, an
+alert is generated for each value.
++
+For example, if the threshold `field` is `source.ip` and its `value` is `10`, an
+alert is generated for every source IP address that appears in at least 10 of
+the rule's search results.
 
 IMPORTANT: To create or edit {ml} rules, you must have the
 https://www.elastic.co/subscriptions[appropriate license] or use a
 {ess-trial}[cloud deployment]. Additionally, you must have the
 {ref}/built-in-roles.html[`machine_learning_admin`] user role.
 
-. Go to *SIEM* -> *Detections* -> *Manage signal detection rules*.
+. Go to *Security* -> *Detections* -> *Manage detection rules*.
 . Click *Create new rule*.
 +
 The *Create new rule* page is displayed.
@@ -108,7 +127,7 @@ correctly.
 then:
 .. Define which {es} indices the rule analyzes for signals.
 .. Use the filter and query fields to create the criteria used for detecting 
-signals.
+alerts.
 +
 NOTE: You can use {kib} saved queries (save icon) and queries from saved timelines (`Import query from saved timeline`) as rule conditions.
 +
@@ -125,19 +144,40 @@ the `delete` and `shadow` arguments, which are used to delete a volume's shadow
 copies.
 +
 [role="screenshot"]
-image::rule-query-example.png[]
+image::images/rule-query-example.png[]
 +
 TIP: This example is based on the
 <<volume-shadow-copy-deletion-via-vssadmin, Volume Shadow Copy Deletion via VssAdmin>> prebuilt rule.
 
-. Select the timeline template used when you investigate a signal created by
+* To create a rule based on a source event field threshold, select _Threshold_
+and then:
+.. Define which {es} indices the rule analyzes for alerts.
+.. Use the filter and query fields to create the criteria used for detecting 
+alerts.
+.. Use the _Field_ and _Threshold_ fields to determine which source event field 
+is used as a threshold and the threshold's value.
++
+For example, if the _Field_ is `source.ip` and its _Threshold_ is `10`, an
+alert is generated for every source IP address that appears in at least 10 of
+the rule's search results.
++
+You can also leave the _Field_ undefined. The rule then creates an alert when
+the number of search results is equal to or greater than the _Threshold_ value.
++
+If you want an alert for 10 or more failed login attempts to a specific host
+per rule execution:
+
+** _Custom query_: `host.name : liv-win-19 and event.category : "authentication" and event.outcome : "failure"`
+** _Field_: Leave blank
+** _Threshold_: `10`
+
+. Select the Timeline template used when you investigate an alert created by
 the rule in Timeline (optional).
 +
-TIP: Before you create rules, create and save relevant
-<<timelines-ui,timelines>> so they can be selected here. When signals generated
-by the rule are investigated in Timeline,
-<<signals-to-timelines, some query field values>> are replaced with their
-corresponding signal field values.
+TIP: Before you create rules, create <<timelines-ui, Timeline templates>> so
+they can be selected here. When alerts generated by the rule are investigated
+in Timeline, query field values are replaced with their corresponding alert
+field values.
 
 . Click *Continue*.
 +
@@ -147,19 +187,36 @@ image::images/about-rule-pane.png[]
 . Fill in the following fields:
 .. _Name_: The rule's name.
 .. _Description_: A description of what the rule does.
-.. _Severity_: Select the severity levels of signals created by the rule:
-* `Low`: Signals that are of interest but generally not considered to be 
+.. _Default severity_: Select the severity level of alerts created by the rule:
+* `Low`: Alerts that are of interest but generally not considered to be 
 security incidents. Sometimes, a combination of low severity events can 
 indicate suspicious activity.
-* `Medium`: Signals that require investigation.
-* `High`: Signals that require an immediate investigation.
-* `Critical`: Signals that indicate it is highly likely a security incident has 
- occurred.
-.. _Risk score_: A numerical value between 0 and 100 that correlates with the _Severity_ level. General guidelines are:
+* `Medium`: Alerts that require investigation.
+* `High`: Alerts that require an immediate investigation.
+* `Critical`: Alerts that indicate it is highly likely a security incident has 
+occurred.
+.. _Severity override_ (optional): Select to use source event values to
+override the _Default severity_ in generated alerts. When selected, a UI
+component is displayed where you can map the source event field values to
+severity levels. For example, if you want to map severity levels to `host.name`
+values:
++
+[role="screenshot"]
+image::images/severity-mapping-ui.png[]
+.. _Default risk score_: A numerical value between 0 and 100 that correlates
+with the _Severity_ level. General guidelines are:
 * `0` - `21` represents low severity.
 * `22` - `47` represents medium severity.
 * `48` - `73` represents high severity.
 * `74` - `100` represents critical severity.
+.. _Risk score override_ (optional): Select to use a source event value to
+override the _Default risk score_ in generated alerts. When selected, a UI
+component is displayed where you can select the source field used for the risk
+score. For example, if you wants to use the source event's risk score in
+alerts:
++
+[role="screenshot"]
+image::images/risk-source-field-ui.png[]
 .. For additional options, click *Advanced settings* and fill in any of 
 these fields:
 ... _Reference URLs_ (optional): References to information that is relevant to 
@@ -171,6 +228,27 @@ false-positive signals.
 the rule.
 ... _Investigation guide_ (optional): Information for analysts investigating
 signals created by the rule.
+... _Author_ (optional): The rule's authors.
+... _License_ (optional): The rule's license.
+... _Global endpoint exception list_ (optional): For endpoint rules, use the
+endpoint exception list that defines values for which alerts are not generated
+(BEN see xref).
+... _Building block_ (optional): Select to create a building-block rule. By
+default, alerts generated from a building-block rule are not displayed in the
+UI. Instead, use a building-block rule as a foundation for a rule that does
+generate alerts. For more information and an example, see BEN xref.
+... _Rule name override_ (optional): Select a source event field to use as the
+rule name in the UI (Alerts table). This is useful for exposing, at a glance,
+more information about an alert. For example, if the rule generates alerts from
+Suricata, selecting `event.action` lets you see what action (Suricata category)
+caused the event directly in the Alerts table.
+... _Timestamp override_ (optional): Select a source event timestamp field. When selected, the rule's query uses the selected field, instead of the default `@timestamp` field, to search for alerts. This can help reduce missing alerts due to network or server outages. Specifically, if your ingest pipeline adds a timestamp when events are sent to {es}, this avoids missing alerts due to ingestion delays.
++
+TIP: These Filebeat modules have an `event.ingested` timestamp field that can
+be used instead of the default `@timestamp` field:
+{filebeat-ref}/filebeat-module-microsoft.html[Microsoft] and
+{filebeat-ref}/filebeat-module-gsuite.html[GSuite].
+
 . Click *Continue*.
 +
 [[rule-schedule]]
