@@ -1,87 +1,12 @@
 [[rules-ui-create]]
 [role="xpack"]
-== Managing detection rules
+== Creating detection rules
 
 beta[]
 
 Rules run periodically and search for source events or {ml} job anomaly scores 
 that meet their criteria. When a rule's criteria are met, a detections alert is
 created.
-
-When creating or modifying rules, you can add exceptions that prevent a rule
-from generating an alert even when its criteria are met. This is useful for
-reducing noise, such as preventing alerts from trusted processes and internal
-IP addresses. BEN xref describes how to add exceptions to a rule.
-
-For both prebuilt and custom rules, you can use the
-{kib} {kibana-ref}/alerting-getting-started.html[Alerting and Actions] feature
-to send notifications when signals are created. Notifications can be sent via
-Email, PagerDuty, Slack, and Webhook, and can be configured in the {siem-app}
-when you create or edit a rule.
-
-[IMPORTANT]
-==============
-After you activate a rule, periodically check the rule is running as expected
-in the <<monitor-rule-exe, Monitoring tab>> on the All rules page. If you see
-values in the `Gap` column, you can <<troubleshoot-signals>>.
-
-When a rule fails to run, the {es-sec-app} tries to rerun it at its next 
-scheduled run time.
-==============
-
-On the Rules page, you can:
-
-* <<load-prebuilt-rules>>
-* <<select-all-prebuilt-rules>>
-* <<create-rule-ui, Create your own rules>>
-* <<manage-rules-ui, Clone, edit, delete, activate, and deactivate rules>>
-* <<monitor-rule-exe>>
-* <<import-export-rules-ui>>
-* <<troubleshoot-signals>>
-
-[role="screenshot"]
-image::all-rules.png[]
-
-[float]
-[[load-prebuilt-rules]]
-=== Load prebuilt Elastic rules
-
-To load the {es-sec-app}'s <<prebuilt-rules, prebuilt rules>>, click
-*Load Elastic prebuilt rules* on the *Detection rules* page (*Security* -> 
-*Detections* -> *Manage detection rules*).
-
-If you delete any of the prebuilt rules, a button appears that enables 
-reloading all the deleted prebuilt rules.
-
-[NOTE]
-==============
-Apart from the Elastic Endpoint rule, prebuilt rules are not activated by
-default. If you want to modify a prebuilt  rule, you must first duplicate it
-and then make your changes to the duplicated rule. <<filter-rule-process>>
-provides a detailed example of duplicating and modifying a rule.
-
-All Elastic prebuilt rules are tagged with the word `Elastic`.
-==============
-
-[float]
-[[select-all-prebuilt-rules]]
-=== Select and duplicate all prebuilt rules
-
-In the All rules table:
-
-. Select the *Elastic rules* tab.
-. Scroll to the bottom of the page.
-. Click the `Rows per page` menu, and then select _300 rows_.
-. When the page reloads, select all the rules.
-. Click _Bulk actions_ -> _Duplicate selected_.
-. Select the *Custom rules* tab.
-
-You can then modify the duplicated rules and, if required, delete the prebuilt 
-ones.
-
-[float]
-[[create-rule-ui]]
-=== Create a new rule
 
 You can create these types of rules:
 
@@ -103,10 +28,41 @@ For example, if the threshold `field` is `source.ip` and its `value` is `10`, an
 alert is generated for every source IP address that appears in at least 10 of
 the rule's search results.
 
-IMPORTANT: To create or edit {ml} rules, you must have the
-https://www.elastic.co/subscriptions[appropriate license] or use a
-{ess-trial}[cloud deployment]. Additionally, you must have the
-{ref}/built-in-roles.html[`machine_learning_admin`] user role.
+When creating or modifying rules, you can add exceptions that prevent a rule
+from generating an alert even when its criteria are met. This is useful for
+reducing noise, such as preventing alerts from trusted processes and internal
+IP addresses. BEN xref describes how to add exceptions to a rule.
+
+For both prebuilt and custom rules, you can use the
+{kib} {kibana-ref}/alerting-getting-started.html[Alerting and Actions] feature
+to send notifications when signals are created. Notifications can be sent via
+Email, PagerDuty, Slack, and Webhook, and can be configured in the {siem-app}
+when you create or edit a rule.
+
+Creating a new rule is made up of a number of steps:
+
+* <<create-rule-ui>>
+* <<rule-ui-basic-params>>
+* <<rule-ui-advanced-params>> (optional)
+* <<rule-schedule>>
+* <<rule-notifications>> (optional)
+
+[IMPORTANT]
+==============
+After you activate a rule, periodically check the rule is running as expected
+in the <<monitor-rule-exe, Monitoring tab>> on the All rules page. If you see
+values in the `Gap` column, you can <<troubleshoot-signals>>.
+
+When a rule fails to run, the {es-sec-app} tries to rerun it at its next 
+scheduled run time.
+==============
+
+[role="screenshot"]
+image::all-rules.png[]
+
+[float]
+[[create-rule-ui]]
+=== Select rule type and scope
 
 . Go to *Security* -> *Detections* -> *Manage detection rules*.
 . Click *Create new rule*.
@@ -120,8 +76,14 @@ and then:
 .. The required {ml} job.
 .. The anomaly score threshold above which signals are created.
 +
-IMPORTANT: The selected {ml} job must be running for the rule to function
-correctly.
+[IMPORTANT]
+==============
+To create or edit {ml} rules, you must have the
+https://www.elastic.co/subscriptions[appropriate license] or use a
+{ess-trial}[cloud deployment]. Additionally, you must have the
+{ref}/built-in-roles.html[`machine_learning_admin`] user role, and the selected
+{ml} job must be running for the rule to function correctly.
+==============
 
 * To create a rule based on a KQL or Lucene query, select _Custom query_ and
 then:
@@ -184,6 +146,13 @@ field values.
 The *About rule* pane is displayed.
 [role="screenshot"]
 image::images/about-rule-pane.png[]
+
+. Continue with <<rule-ui-basic-params>>.
+
+[float]
+[[rule-ui-basic-params]]
+=== Configure basic rule settings
+
 . Fill in the following fields:
 .. _Name_: The rule's name.
 .. _Description_: A description of what the rule does.
@@ -217,32 +186,42 @@ alerts:
 +
 [role="screenshot"]
 image::images/risk-source-field-ui.png[]
-.. For additional options, click *Advanced settings* and fill in any of 
-these fields:
-... _Reference URLs_ (optional): References to information that is relevant to 
+
+. Continue with *one* of the following:
+
+* <<rule-ui-advanced-params>>
+* <<rule-schedule>>
+
+[float]
+[[rule-ui-advanced-params]]
+=== Configure advanced rule settings (optional)
+
+
+. Click *Advanced settings* and fill in these fields:
+.. _Reference URLs_ (optional): References to information that is relevant to 
 the rule. For example, links to relevant background information.
-... _False positives_ (optional): List of common scenarios that may produce 
+.. _False positives_ (optional): List of common scenarios that may produce 
 false-positive signals.
-... _MITRE ATT&CK^TM^_ (optional): Relevant MITRE framework tactics and techniques.
-... _Tags_ (optional): Words and phrases used to categorize, filter, and search 
+.. _MITRE ATT&CK^TM^_ (optional): Relevant MITRE framework tactics and techniques.
+.. _Tags_ (optional): Words and phrases used to categorize, filter, and search 
 the rule.
-... _Investigation guide_ (optional): Information for analysts investigating
+.. _Investigation guide_ (optional): Information for analysts investigating
 signals created by the rule.
-... _Author_ (optional): The rule's authors.
-... _License_ (optional): The rule's license.
-... _Global endpoint exception list_ (optional): For endpoint rules, use the
+.. _Author_ (optional): The rule's authors.
+.. _License_ (optional): The rule's license.
+.. _Global endpoint exception list_ (optional): For endpoint rules, use the
 endpoint exception list that defines values for which alerts are not generated
 (BEN see xref).
-... _Building block_ (optional): Select to create a building-block rule. By
+.. _Building block_ (optional): Select to create a building-block rule. By
 default, alerts generated from a building-block rule are not displayed in the
 UI. Instead, use a building-block rule as a foundation for a rule that does
 generate alerts. For more information and an example, see BEN xref.
-... _Rule name override_ (optional): Select a source event field to use as the
+.. _Rule name override_ (optional): Select a source event field to use as the
 rule name in the UI (Alerts table). This is useful for exposing, at a glance,
 more information about an alert. For example, if the rule generates alerts from
 Suricata, selecting `event.action` lets you see what action (Suricata category)
 caused the event directly in the Alerts table.
-... _Timestamp override_ (optional): Select a source event timestamp field. When selected, the rule's query uses the selected field, instead of the default `@timestamp` field, to search for alerts. This can help reduce missing alerts due to network or server outages. Specifically, if your ingest pipeline adds a timestamp when events are sent to {es}, this avoids missing alerts due to ingestion delays.
+.. _Timestamp override_ (optional): Select a source event timestamp field. When selected, the rule's query uses the selected field, instead of the default `@timestamp` field, to search for alerts. This can help reduce missing alerts due to network or server outages. Specifically, if your ingest pipeline adds a timestamp when events are sent to {es}, this avoids missing alerts due to ingestion delays.
 +
 TIP: These Filebeat modules have an `event.ingested` timestamp field that can
 be used instead of the default `@timestamp` field:
@@ -251,10 +230,16 @@ be used instead of the default `@timestamp` field:
 
 . Click *Continue*.
 +
-[[rule-schedule]]
-The *Schedule rule* pane is displayed.
 [role="screenshot"]
 image::images/schedule-rule.png[]
+The *Schedule rule* pane is displayed.
+
+. Continue with <<rule-schedule>>.
+
+[float]
+[[rule-schedule]]
+=== Set the rule's schedule
+
 . Select how often the rule runs.
 . Optionally, add `Additional look-back time` to the rule. When defined, the 
 rule searches indices with the additional time.
@@ -269,7 +254,7 @@ It is recommended to set the `Additional look-back time` to at
 least 1 minute. This ensures there are no missing signals when a rule does not 
 run exactly at its scheduled time.
 
-The {siem-app} performs deduplication. Duplicate signals discovered during the 
+The {siem-app} performs deduplication. Duplicate alerts discovered during the 
 `Additional look-back time` are *not* created.
 ==============
 . Click *Continue*.
@@ -278,48 +263,54 @@ The {siem-app} performs deduplication. Duplicate signals discovered during the
 The *Rule actions* pane is displayed.
 [role="screenshot"]
 image::images/rule-actions.png[]
-. Optionally, use {kib} Actions to set up notifications sent via other systems
-when new signals are detected.
-+
-NOTE: To use {kib} Actions for signal notifications, you need the
+
+. Do *one* of the following:
+
+* Continue with <<rule-notifications>>.
+* Create the rule (with or without activation).
+
+[float]
+[[rule-notifications]]
+=== Set up alert notifications (optional)
+
+Use {kib} Actions to set up notifications sent via other systems when alerts
+are generated.
+
+NOTE: To use {kib} Actions for alert notifications, you need the
 https://www.elastic.co/subscriptions[appropriate license].
 
-.. Set how often notifications are sent:
+. Set how often notifications are sent:
 
-* _On each rule execution_: Sends a notification every time new signals are
-detected.
+* _On each rule execution_: Sends a notification every time new alerts are
+generated.
 * _Hourly_: Sends a notification every hour.
 * _Daily_: Sends a notification every day.
 * _Weekly_: Sends a notification every week.
 +
-NOTE: Notifications are sent only when new signals are detected.
-
+NOTE: Notifications are sent only when new alerts are generated.
 +
 The available action types are displayed.
 [role="screenshot"]
 image::images/available-action-types.png[]
 
-+
-.. Select the required action type, which determines how notifications are sent (Email, PagerDuty, Slack, Webhook).
+. Select the required action type, which determines how notifications are sent (Email, PagerDuty, Slack, Webhook).
 +
 NOTE: Each action type requires a connector. Connectors store the
 information required to send the notification from the external system. You can
 configure connectors while creating the rule or on the {kib} Alerts and Actions
 page (*Management* -> *Alerts and Actions* -> *Connectors*). For more
 information, see {kibana-ref}/action-types.html[Action and connector types].
-
 +
 The selected action type fields are displayed (Slack example).
 [role="screenshot"]
 image::images/selected-action-type.png[]
 
-+
 .. Fill in the fields for the selected action types. For all action types, click
 the icon above the `Message` field to add
-<<rule-action-variables, placeholders>> for rule and signal details to the
+<<rule-action-variables, placeholders>> for rule and alert details to the
 notifications. 
 
-. Save the rule with or without activation.
+. Create the rule with or without activation.
 +
 NOTE: When you activate a rule, it is queued and its schedule is determined by 
 its initial run time. For example, if you activate a rule that runs every 5 
@@ -327,9 +318,9 @@ minutes at 14:03 but it does not run until 14:04, it will run again at 14:09.
 
 [float]
 [[rule-action-variables]]
-==== Notification placeholders
+==== Alert notification placeholders
 
-These placeholders can be added to <<rule-actions, rule action>> fields:
+These placeholders can be added to <<rule-notifications, rule action>> fields:
 
 * `{{state.signals_count}}`: Number of alerts detected
 * `{{{context.results_link}}}`: URL to the alerts in {kib}
@@ -360,67 +351,3 @@ used as an identifier across systems
 * `{{context.rule.timeline_title}}`: Associated timeline name
 * `{{context.rule.type}}`: Rule type
 * `{{context.rule.version}}`: Rule version
-
-[float]
-[[manage-rules-ui]]
-=== Modify existing rules
-
-You can clone, edit, activate, deactivate, and delete rules:
-
-. Go to *SIEM* -> *Detections* -> *Manage signal detection rules*.
-. Do one of the following:
-* Click the actions icon (three dots) and then select the required action.
-* In the *Rule* column, select all the rules you want to modify, and then the 
-required action from the `Bulk actions` menu.
-. To activate or deactivate a rule, click the Activate toggle button.
-
-NOTE: For prebuilt rules, you can only activate, deactivate, delete, and edit
-<<rule-actions, rule actions>>.
-
-[float]
-[[monitor-rule-exe]]
-=== Monitor all rule executions
-
-To view a summary of all rule executions, such as failures and last execution
-times, click the Monitoring tab in the *All rules* table (*SIEM* ->
-*Detections* -> *Manage signal detection rules*).
-
-For detailed information on a rule, its produced signals, and errors, click on
-a rule name in the *All rules* table.
-
-[float]
-[[import-export-rules-ui]]
-=== Import and export rules
-
-. Go to *SIEM* -> *Detections* -> *Manage signal detection rules*.
-. To import rules:
-.. Click *Import rule*.
-.. Drag-and-drop files containing the signal detection rules.
-+
-NOTE: Imported rules must be in an `ndjson` file.
-
-. To export rules:
-.. In the *All rules* table, select the rules you want to export.
-.. Select *Bulk actions* -> *Export selected*.
-+
-NOTE: You cannot export prebuilt rules.
-
-[float]
-[[troubleshoot-signals]]
-=== Troubleshoot missing signals
-
-When a rule fails to run close to its scheduled time, some signals may be 
-missing. There are a number of steps you can perform to try and resolve this 
-issue.
-
-If you see `Gaps` in the All rules table or on the Rule details page
-for a small number of rules, you can increase those rules'
-`Additional look-back time` (*Signal detection rules* page -> the rule's
-actions icon -> *Edit rule settings* -> *Schedule* -> _Additional look-back time_).
-
-If you see gaps for a lot of rules:
-
-* If you restarted {kib} when many rules were activated, try deactivating them 
-and then reactivating them in small batches at staggered intervals. This 
-ensures {kib} does not attempt to run all the rules at the same time.
-* Consider adding another {kib} instance to your environment.
