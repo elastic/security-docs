@@ -5,17 +5,20 @@
 
 beta[]
 
-Use the Detections page to create and manage detection rules, and view the
-alerts these rules create. Detection rules periodically search indices (such as
-`endgame-*` and `filebeat-*`) for suspicious source events, and create
-alerts when a rule's conditions are met. When an alert is created, its status
-is `Open`. To help track investigations, an alert's status can be set as
-`Open`, `In progress`, or `Closed` (see <<detection-alert-status>>).
+Use the Detections feature to create and manage rules, and view the alerts
+these rules create. Rules periodically search indices (such as `endgame-*` and
+`filebeat-*`) for suspicious source events, and create alerts when a rule's
+conditions are met. When an alert is created, its status is `Open`. To help
+track investigations, an alert's status can be set as `Open`, `In progress`, or
+`Closed` (see <<detection-alert-status>>).
 
-In the {es-sec-app}, you can <<rules-ui-create, create your own rules>> and use
-<<prebuilt-rules, prebuilt detection rules>> that search for suspicious
-activity on your network and hosts. For information on how to use the prebuilt
-rules, see <<load-prebuilt-rules>>. Once the prebuilt rules are loaded and
+[role="screenshot"]
+image::images/detections-ui.png[]
+
+In addition to creating <<rules-ui-create, your own rules>>, enable
+<<load-prebuilt-rules, Elastic prebuilt rules>> to immediately start detecting
+suspicious activity. For detailed information on all the prebuilt rule, see the
+<<prebuilt-rules>> section. Once the prebuilt rules are loaded and
 running, <<tuning-detection-signals>> and <<detections-ui-exceptions>> explain
 how to modify the rules to reduce false positives and get a better set of
 actionable alerts. You can also use exceptions and value lists when creating or
@@ -23,14 +26,15 @@ modifying your own rules.
 
 There are two special prebuilt rules you need to know about:
 
-* *Elastic Endpoint*: This rule automatically creates an alert from all
-incoming Elastic Endpoint alerts. To receive Elastic Endpoint alerts, you
-must install the Endpoint agent on your hosts (BEN: see xref).
+* *Elastic Endpoint Security*: Automatically creates an alert from all incoming
+Elastic Endpoint alerts. To receive Elastic Endpoint alerts, you must install
+the Endpoint agent on your hosts (BEN: see xref).
 +
 NOTE: When you load the prebuilt rules, this is the only rule that is enabled
 by default.
 
-* *External Alerts*: This rule automatically creates an alert for all incoming third-party system alerts (for example, Suricata alerts).
+* *External Alerts*: Automatically creates an alert for all incoming
+third-party system alerts (for example, Suricata alerts).
 
 If you want to receive notifications via external systems, such as Slack or
 email, when alerts are created, use the {kib}
@@ -39,11 +43,11 @@ email, when alerts are created, use the {kib}
 NOTE: To use {kib} Alerting for detection alert notifications, you need the
 https://www.elastic.co/subscriptions[appropriate license].
 
-After detection rules are enabled, you can monitor their executions to verify
-they are running correctly, and view, manage, and troubleshoot alerts (see
-<<alerts-ui-manage>> and <<alerts-ui-monitor>>).
+After rules have started running, you can monitor their executions to verify
+they are functioning correctly, as well as view, manage, and troubleshoot
+alerts (see <<alerts-ui-manage>> and <<alerts-ui-monitor>>).
 
-You can create and manage detection rules and alerts via the UI or the
+You can create and manage rules and alerts via the UI or the
 <<rule-api-overview, Detections API>>.
 
 [IMPORTANT]
@@ -52,34 +56,18 @@ To make sure you can access Detections and manage rules, see
 <<detections-permissions>>.
 ==============
 
-[role="screenshot"]
-image::detections-ui.png[]
-
 [float]
 [[det-engine-terminology]]
 == Terminology
 
-Detection rules::
-Perform background tasks to detect suspicious activity. There are a few types of
-rules:
-
-* *Query rules*: Searches the defined indices and creates a detection alert
-when a source event matches the rule's query.
-* *{ml-cap} rules*: Create a detection alert when a {ml} job discovers an
-anomaly score above a rule's defined threshold (see <<machine-learning>>).
-* *Threshold rules*: Searches the defined indices and creates a detection alert
-when the number of times the specified field's value meets the threshold during
-a single execution. When multiple values meet the threshold, an alert is
-generated for each value.
-+
-For example, if the threshold `field` is `source.ip` and its `value` is `10`, an
-alert is generated for every source IP address that appears in at least 10 of
-the rule's search results.
+Actions::
+Sends notifications via other systems when a detection alert is created, such
+as email, Slack, PagerDuty, and Webhook.
 
 Detection alerts::
-Always refer to {es-sec} produced detections. Detection alerts are never
-received from external systems. When a rule's conditions are met, the
-{es-sec-app} writes a detection alert to an Elasticsearch `signals` index.
+{es-sec} produced alerts. Detection alerts are never received from external
+systems. When a rule's conditions are met, {es-sec} writes a detection alert to
+an Elasticsearch `.signals` index.
 +
 [NOTE]
 ==============
@@ -88,13 +76,24 @@ is: `.siem-signals-<space name>`. For the default space, the alerts index is
 named `.siem-signals-default`.
 ==============
 
-External alerts::
-Always refer to alerts the {es-sec-app} receives from external systems, such as 
-Suricata.
+Detection rules::
+Background tasks that run periodically and produce alerts when suspicious
+activity is detected.
 
-Actions::
-Used to send notifications via other systems when a detection alert is
-created, such as email, Slack, PagerDuty, and Webhook.
+Endpoint exceptions::
+<<term-exceptions, Exceptions>> added to both rules and Endpoint agents on
+hosts. Endpoint exceptions can only be added when:
+
+* Endpoint agents are installed on the hosts.
+* The Elastic Endpoint Security rule is activated.
+
+[[term-exceptions]]
+Exceptions::
+Added to rules to prevent specific source event field values from generating
+alerts.
+
+External alerts::
+Alerts {es-sec} receives from external systems, such as Suricata.
 
 [float]
 [[detections-permissions]]
