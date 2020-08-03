@@ -19,27 +19,34 @@ receive.
 
 *Searches indices from*: now-6m ({ref}/common-options.html#date-math[Date Math format], see also <<rule-schedule, `Additional look-back time`>>)
 
-*Maximum signals per execution*: 100
+*Maximum alerts per execution*: 100
 
 *Tags*:
 
 * Elastic
 * Linux
 
-*Version*: 1
+*Version*: 2 (<<attempt-to-disable-iptables-or-firewall-history, version history>>)
 
 *Added ({stack} release)*: 7.8.0
 
+*Last modified ({stack} release)*: 7.9.0
+
+*Rule authors*: Elastic
+
+*Rule license*: Elastic License
 
 ==== Rule query
 
 
 [source,js]
 ----------------------------------
-event.action:(executed or process_started) and (process.name:service
-and process.args:stop or process.name:chkconfig and process.args:off)
-and process.args:(ip6tables or iptables) or process.name:systemctl and
-process.args:(firewalld and (disable or stop or kill))
+event.category:process and event.type:(start or process_started) and
+process.name:ufw and process.args:(allow or disable or reset) or
+(((process.name:service and process.args:stop) or
+(process.name:chkconfig and process.args:off) or
+(process.name:systemctl and process.args:(disable or stop or kill)))
+and process.args:(firewalld or ip6tables or iptables))
 ----------------------------------
 
 ==== Threat mapping
@@ -54,3 +61,18 @@ process.args:(firewalld and (disable or stop or kill))
 ** Name: Disabling Security Tools
 ** ID: T1089
 ** Reference URL: https://attack.mitre.org/techniques/T1089/
+
+[[attempt-to-disable-iptables-or-firewall-history]]
+==== Rule version history
+
+Version 2 (7.9.0 release)::
+Updated query, changed from:
++
+[source, js]
+----------------------------------
+event.action:(executed or process_started) and (process.name:service
+and process.args:stop or process.name:chkconfig and process.args:off)
+and process.args:(ip6tables or iptables) or process.name:systemctl and
+process.args:(firewalld and (disable or stop or kill))
+----------------------------------
+
