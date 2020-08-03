@@ -11,6 +11,7 @@ BadPatch for command and control of Windows systems.
 *Rule indices*:
 
 * filebeat-*
+* packetbeat-*
 
 *Severity*: low
 
@@ -20,7 +21,7 @@ BadPatch for command and control of Windows systems.
 
 *Searches indices from*: now-6m ({ref}/common-options.html#date-math[Date Math format], see also <<rule-schedule, `Additional look-back time`>>)
 
-*Maximum signals per execution*: 100
+*Maximum alerts per execution*: 100
 
 *References*:
 
@@ -32,24 +33,28 @@ BadPatch for command and control of Windows systems.
 * Elastic
 * Network
 
-*Version*: 2 (<<smtp-on-port-26-tcp-history, version history>>)
+*Version*: 3 (<<smtp-on-port-26-tcp-history, version history>>)
 
 *Added ({stack} release)*: 7.6.0
 
-*Last modified ({stack} release)*: 7.6.1
+*Last modified ({stack} release)*: 7.9.0
 
+*Rule authors*: Elastic
+
+*Rule license*: Elastic License
 
 ==== Potential false positives
 
-Servers that process email traffic may cause false positives and should be
-excluded from this rule as this is expected behavior.
+Servers that process email traffic may cause false positives and should be excluded from this rule as this is expected behavior.
 
 ==== Rule query
 
 
 [source,js]
 ----------------------------------
-network.transport:tcp and destination.port:26
+event.category:(network or network_traffic) and network.transport:tcp
+and (destination.port:26 or (event.dataset:zeek.smtp and
+destination.port:26))
 ----------------------------------
 
 ==== Threat mapping
@@ -77,6 +82,14 @@ network.transport:tcp and destination.port:26
 
 [[smtp-on-port-26-tcp-history]]
 ==== Rule version history
+
+Version 3 (7.9.0 release)::
+Updated query, changed from:
++
+[source, js]
+----------------------------------
+network.transport:tcp and destination.port:26
+----------------------------------
 
 Version 2 (7.6.1 release)::
 * Removed auditbeat-\*, packetbeat-*, and winlogbeat-* from the rule indices.
