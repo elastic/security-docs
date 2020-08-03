@@ -13,6 +13,7 @@ malicious communications.
 *Rule indices*:
 
 * filebeat-*
+* packetbeat-*
 
 *Severity*: medium
 
@@ -22,7 +23,7 @@ malicious communications.
 
 *Searches indices from*: now-6m ({ref}/common-options.html#date-math[Date Math format], see also <<rule-schedule, `Additional look-back time`>>)
 
-*Maximum signals per execution*: 100
+*Maximum alerts per execution*: 100
 
 *References*:
 
@@ -34,33 +35,31 @@ malicious communications.
 * Elastic
 * Network
 
-*Version*: 3 (<<dns-activity-to-the-internet-history, version history>>)
+*Version*: 4 (<<dns-activity-to-the-internet-history, version history>>)
 
 *Added ({stack} release)*: 7.6.0
 
-*Last modified ({stack} release)*: 7.7.0
+*Last modified ({stack} release)*: 7.9.0
 
+*Rule authors*: Elastic
+
+*Rule license*: Elastic License
 
 ==== Potential false positives
 
-Exclude DNS servers from this rule as this is expected behavior. Endpoints
-usually query local DNS servers defined in their DHCP scopes, but this may be
-overridden if a user configures their endpoint to use a remote DNS server. This
-is uncommon in managed enterprise networks because it could break intranet name
-resolution when split horizon DNS is utilized. Some consumer VPN services and
-browser plug-ins may send DNS traffic to remote Internet destinations. In that
-case, such devices or networks can be excluded from this rule when this is
-expected behavior.
+Exclude DNS servers from this rule as this is expected behavior. Endpoints usually query local DNS servers defined in their DHCP scopes, but this may be overridden if a user configures their endpoint to use a remote DNS server. This is uncommon in managed enterprise networks because it could break intranet name resolution when split horizon DNS is utilized. Some consumer VPN services and browser plug-ins may send DNS traffic to remote Internet destinations. In that case, such devices or networks can be excluded from this rule when this is expected behavior.
 
 ==== Rule query
 
 
 [source,js]
 ----------------------------------
-destination.port:53 and source.ip:(10.0.0.0/8 or 172.16.0.0/12 or
-192.168.0.0/16) and not destination.ip:(10.0.0.0/8 or 127.0.0.0/8 or
-169.254.169.254/32 or 172.16.0.0/12 or 192.168.0.0/16 or 224.0.0.251
-or 224.0.0.252 or 255.255.255.255 or "::1" or "ff02::fb")
+event.category:(network or network_traffic) and (event.type:connection
+or type:dns) and (destination.port:53 or event.dataset:zeek.dns) and
+source.ip:(10.0.0.0/8 or 172.16.0.0/12 or 192.168.0.0/16) and not
+destination.ip:(10.0.0.0/8 or 127.0.0.0/8 or 169.254.169.254/32 or
+172.16.0.0/12 or 192.168.0.0/16 or 224.0.0.251 or 224.0.0.252 or
+255.255.255.255 or "::1" or "ff02::fb")
 ----------------------------------
 
 ==== Threat mapping
@@ -78,6 +77,17 @@ or 224.0.0.252 or 255.255.255.255 or "::1" or "ff02::fb")
 
 [[dns-activity-to-the-internet-history]]
 ==== Rule version history
+
+Version 4 (7.9.0 release)::
+Updated query, changed from:
++
+[source, js]
+----------------------------------
+destination.port:53 and source.ip:(10.0.0.0/8 or 172.16.0.0/12 or
+192.168.0.0/16) and not destination.ip:(10.0.0.0/8 or 127.0.0.0/8 or
+169.254.169.254/32 or 172.16.0.0/12 or 192.168.0.0/16 or 224.0.0.251
+or 224.0.0.252 or 255.255.255.255 or "::1" or "ff02::fb")
+----------------------------------
 
 Version 3 (7.7.0 release)::
 Updated query, changed from:
