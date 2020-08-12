@@ -1,0 +1,85 @@
+[[lists-api-import-list-items]]
+=== Import list items
+
+Imports a list of items from a `.txt` or `.csv` file.
+
+You can import items to a new or existing
+<<lists-api-create-container, list container>>.
+
+==== Request URL
+
+`POST <kibana host>:<port>/api/lists/items/_import`
+
+The request must include:
+
+* The `Content-Type: multipart/form-data` HTTP header.
+* A link to the file containing the list items.
+
+For example, using cURL:
+
+[source,console]
+--------------------------------------------------
+curl -X POST "<kibana host>:<port>/api/lists/items/_import"
+-u <username>:<password> -H 'kbn-xsrf: true'
+-H 'Content-Type: multipart/form-data'
+--form "file=@<link to file>" <1>
+--------------------------------------------------
+<1> The relative link to the file containing the list items.
+
+===== URL query parameters
+
+[width="100%",options="header"]
+|==============================================
+|Name |Type |Description |Required
+
+|`list_id` |String |ID of the <<lists-api-create-container, list container>>.
+|Required when importing to an existing container.
+|`type` |String |The datatype of excludes the list container holds, which can
+be either `ip` or `keyword`. |Required when importing to a new container.
+|==============================================
+
+===== Example requests
+
+Adds the IP addresses in the `internal-IPs.txt` to the `internal-ip-excludes`
+list container:
+
+[source,console]
+--------------------------------------------------
+curl -X POST "api/lists/items/_import?list_id=internal-ip-excludes"
+-H 'kbn-xsrf: true' -H 'Content-Type: multipart/form-data'
+--form "file=@internal-IPs.txt"
+--------------------------------------------------
+
+Adds the IP addresses in the `internal-IPs.txt` to a new list container:
+
+[source,console]
+--------------------------------------------------
+curl -X POST "api/lists/items/_import?type=ip"
+-H 'kbn-xsrf: true' -H 'Content-Type: multipart/form-data'
+--form "file=@internal-IPs.txt"
+--------------------------------------------------
+
+==== Response code
+
+`200`:: 
+    Indicates a successful call.
+    
+==== Response payload
+
+[source,json]
+--------------------------------------------------
+{
+  "_version": "WzcsMV0=",
+  "id": "internal-ip-excludes",
+  "created_at": "2020-08-11T10:38:51.087Z",
+  "created_by": "elastic",
+  "description": "Contains list items that exclude internal IP addresses from detection rule matches.",
+  "immutable": false,
+  "name": "Trusted internal IP addresses",
+  "tie_breaker_id": "195f54fb-244d-4f9a-9a5b-e728901347e0",
+  "type": "ip",
+  "updated_at": "2020-08-11T10:42:30.205Z",
+  "updated_by": "elastic",
+  "version": 1
+}
+--------------------------------------------------
