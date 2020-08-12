@@ -1,0 +1,90 @@
+[[lists-api-create-list-item]]
+=== Create list item
+
+Creates a list item and associates it with the specified
+<<lists-api-create-container, list container>>.
+
+All list items in the same list container must be the same type. For example,
+each list item in an `ip` list container must define a specific IP address.
+
+NOTE: Before creating list items, you must create a list container.
+
+==== Request URL
+
+`POST <kibana host>:<port>/api/lists/items`
+
+==== Request body
+
+A JSON object with these fields:
+
+[width="100%",options="header"]
+|==============================================
+|Name |Type |Description |Required
+
+|`id` |String |Unique identifier of the list item. |No, automatically created
+when it is not provided.
+|`list_id` |String |ID of the associated <<lists-api-create-container, list container>>. |Yes
+|`meta` |Object |Placeholder for metadata about the list item. |No
+|`value` |String |The value used to evaluate exceptions. For information on how
+list item exceptions are evaluated, see
+<<exceptions-api-create-exception-item>>. |Yes
+
+|==============================================
+
+===== Example requests
+
+Adds an IP address to the `internal-ip-excludes` list container:
+
+[source,console]
+--------------------------------------------------
+POST api/lists/items
+{
+  "id": "internal-ip-1",
+  "list_id": "internal-ip-excludes",
+  "value": "10.0.0.12"
+}
+--------------------------------------------------
+// KIBANA
+
+Adds a host name to the `host.name-container` list container:
+
+[source,console]
+--------------------------------------------------
+POST api/lists
+{
+  "id": "win-prem-19",
+  "list_id": "host.name-container",
+  "value": "liverpool-fc"
+}
+--------------------------------------------------
+// KIBANA
+
+
+
+==== Response code
+
+`200`:: 
+    Indicates a successful call.
+    
+==== Response payload
+
+[source,json]
+--------------------------------------------------
+{
+  "_version": "WzEsMV0=", <1>
+  "id": "internal-ip-1",
+  "type": "ip",
+  "value": "10.0.0.12",
+  "created_at": "2020-08-11T10:54:46.080Z",
+  "created_by": "elastic",
+  "list_id": "internal-ip-excludes",
+  "tie_breaker_id": "ed3f9d84-cd85-4122-b93d-07d1de4fd8bb",
+  "updated_at": "2020-08-11T10:54:46.080Z",
+  "updated_by": "elastic"
+}
+--------------------------------------------------
+
+<1> Base-64 encoded value of `if_seq_no` and `if_primary_term` parameters, used
+for {ref}/optimistic-concurrency-control.html[Optimistic concurrency control].
+To ensure there are no conflicts, use this value when
+<<lists-api-update-item, updating a list item>>. 
