@@ -1,0 +1,86 @@
+[[lists-api-update-item]]
+=== Update list item
+
+Updates an existing list item.
+
+You can use `PUT` or `PATCH` methods to update list items, where:
+
+* `PUT` replaces the original items and deletes fields that are not
+specified.
+* `PATCH` updates the specified fields.
+
+==== Request URL
+
+`PUT <kibana host>:<port>/api/lists/items`
+
+`PATCH <kibana host>:<port>/api/lists/items`
+
+==== Request body
+
+A JSON object with:
+
+* The `id` of the list item you want to update.
+* The fields you want to modify.
+
+IMPORTANT: If you call `PUT` to update a rule, all unspecified fields are
+deleted. You cannot modify the `list_id` and `id` fields.
+
+For `PATCH` calls, any of the fields can be modified, whereas for `PUT` calls,
+some fields are required. 
+
+[width="100%",options="header"]
+|==============================================
+|Name |Type |Description |Required (`PUT` calls)
+
+|`meta` |Object |Placeholder for metadata about the list item. |No
+|`value` |String |The value used to evaluate exceptions. For information on how
+list item exceptions are evaluated, see
+<<exceptions-api-create-exception-item>>. |Yes
+|`_version` |String |Base-64 encoded value of `if_seq_no` and `if_primary_term`
+parameters, used to prevent update conflicts (see
+{ref}/optimistic-concurrency-control.html[Optimistic concurrency control]). |No
+
+|==============================================
+
+
+===== Example request
+
+Updates the `value` field:
+
+[source,console]
+--------------------------------------------------
+PATCH api/lists/items
+{
+  "id": "internal-ip-1",
+  "value": "10.0.0.17",
+  "_version": "WzEsMV0="
+}
+--------------------------------------------------
+// KIBANA
+
+==== Response code
+
+`200`:: 
+    Indicates a successful call.
+    
+==== Response payload
+
+The updated object, including the time it was updated.
+
+Example response:
+
+[source,json]
+--------------------------------------------------
+{
+  "_version": "WzIsMV0=",
+  "created_at": "2020-08-11T10:54:46.080Z",
+  "created_by": "elastic",
+  "id": "internal-ip-1",
+  "list_id": "internal-ip-excludes",
+  "tie_breaker_id": "ed3f9d84-cd85-4122-b93d-07d1de4fd8bb",
+  "type": "ip",
+  "updated_at": "2020-08-11T11:00:12.202Z",
+  "updated_by": "elastic",
+  "value": "10.0.0.17"
+}
+--------------------------------------------------
