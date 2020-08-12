@@ -1,0 +1,140 @@
+[[exceptions-api-update-item]]
+=== Update exception item
+
+Updates an existing exception item.
+
+==== Request URL
+
+`PUT <kibana host>:<port>/api/exception_lists/items`
+
+==== Request body
+
+[width="100%",options="header"]
+|==============================================
+|Name |Type |Description |Required
+
+|`comments` |comments[] a|Array of `comment` fields:
+
+* `comment` (string): Comments about the exception item.
+* `id` (string): Existing comment ID, required for updating existing comments.
+When unspecified, a new comment is created.  
+
+|No, defaults to empty array.
+
+|`description` |String |Describes the exception item. |Yes
+|`entries` |<<entries-object-schema, entries[]>> |Array containing the
+exception queries. Boolean `AND` logic is used to evaluate the relationship
+between array elements. If you want to use `OR` logic, create a separate
+exception item. |Yes.
+|`id` |String |The item's unique identifier. |Yes, when the item's `item_id` field is not used.
+|`item_id` |String |The `item_id` of the item you are updating. |Yes, when
+the item's `id` field is not used.
+|`meta` |Object |Placeholder for metadata about the exception item. |No
+|`name` |String |The exception item's name. |Yes.
+|`namespace_type` |String a|Determines whether the exception item is available
+in all {kib} spaces or just the space in which it is created, where:
+
+* `single`: Only available in the {kib} space in which it is created.
+* `agnostic`: Available in all {kib} spaces.
+
+|No, defaults to `single`.
+|`tags` |String[] |String array containing words and phrases to help categorize
+exception items. |No 
+|`type` |String a|Exception query type, must be `simple`. |Yes
+
+|==============================================
+
+
+===== Example request
+
+Updates the `entries` object:
+
+[source,console]
+--------------------------------------------------
+PUT api/exception_lists/items
+{
+  "description": "Process allowlist",
+  "entries": [
+    {
+      "field": "process.name",
+      "operator": "included",
+      "type": "match",
+      "value": "maintenance"
+    },
+    {
+      "field": "host.name",
+      "operator": "included",
+      "type": "match_any",
+      "value": [
+        "liv-win-anf",
+        "livw-win-mel",
+        "linux-anfield",
+        "new-host"
+      ]
+    }
+  ],
+  "item_id": "allow-process-on-machines",
+  "name": "Host-process exclusions",
+  "namespace_type": "single",
+  "tags": [
+    "hosts",
+    "processes"
+  ],
+  "type": "simple"
+}
+--------------------------------------------------
+// KIBANA
+
+==== Response code
+
+`200`:: 
+    Indicates a successful call.
+    
+==== Response payload
+
+The updated object, including the time it was updated.
+
+Example response:
+
+[source,json]
+--------------------------------------------------
+{
+  "_tags": [],
+  "comments": [],
+  "created_at": "2020-07-15T06:28:32.457Z",
+  "created_by": "LiverpoolFC",
+  "description": "Process allowlist",
+  "entries": [
+    {
+      "field": "process.name",
+      "operator": "included",
+      "type": "match",
+      "value": "maintenance"
+    },
+    {
+      "field": "host.name",
+      "operator": "included",
+      "type": "match_any",
+      "value": [
+        "liv-win-anf",
+        "livw-win-mel",
+        "linux-anfield",
+        "new-host"
+      ]
+    }
+  ],
+  "id": "67a70610-c664-11ea-bab5-9d6ae015701b",
+  "item_id": "allow-process-on-machines",
+  "list_id": "allowed-processes",
+  "name": "Host-process exclusions",
+  "namespace_type": "single",
+  "tags": [
+    "hosts",
+    "processes"
+  ],
+  "tie_breaker_id": "15d7f2eb-7192-4f4b-a803-ad8a4f5efd08",
+  "type": "simple",
+  "updated_at": "2020-07-15T06:28:50.494Z",
+  "updated_by": "LiverpoolFC"
+}
+--------------------------------------------------
