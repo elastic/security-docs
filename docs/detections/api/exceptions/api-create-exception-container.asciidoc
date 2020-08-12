@@ -1,0 +1,113 @@
+[[exceptions-api-create-container]]
+=== Create exception container
+
+Creates an exception container.
+
+An exception container groups <<exceptions-api-create-exception-item, exception items>>
+and can be associated with rules. When an exception item's query evaluates to
+`true`, rules do *not* issue alerts even when the rule's other criteria are met.
+
+You can assign detection rules with multiple exception containers. For more information, see <<rules-api-create>> and <<rules-api-update>>.
+
+IMPORTANT: All exception items added to the same container are evaluated using
+`OR` logic. That is, if any of the items in a container evaluate to `true`, the
+exception prevents the rule from generating an alert. Likewise, `OR` logic is
+used for evaluating exceptions when more than one exception container is
+assigned to a rule. To use the `AND` operator, you can define multiple clauses
+(`entries`) in a single exception item.
+
+==== Request URL
+
+`POST <kibana host>:<port>/api/exception_lists`
+
+==== Request body
+
+A JSON object with these fields:
+
+[width="100%",options="header"]
+|==============================================
+|Name |Type |Description |Required
+
+|`description` |String |Describes the exception container. |Yes
+|`list_id` |String |Unique identifier. |No, automatically created when it is not
+provided.
+|`meta` |Object |Placeholder for metadata about the list container. |No
+|`name` |String |The exception container's name. |Yes
+|`namespace_type` |String a|Determines whether the exception container is available in all {kib} spaces or just the space in which it is created, where:
+
+* `single`: Only available in the {kib} space in which it is created.
+* `agnostic`: Available in all {kib} spaces.
+
+|No, defaults to `single`.
+|`tags` |String[] |String array containing words and phrases to help categorize
+exception containers. |No 
+|`type` |String a|The type of exception, which must be one of these:
+
+* `detection`: Detection rule exception
+* `endpoint`: Endpoint alert exception
+
+|Yes
+
+|==============================================
+
+===== Example requests
+
+Creates an exception container for holding trusted Linux process exception
+items:
+
+[source,console]
+--------------------------------------------------
+POST api/exception_lists
+{
+  "description": "Excludes Linux trusted processes",
+  "name": "Linux process exceptions",
+  "list_id": "trusted-linux-processes",
+  "type": "detection",
+  "namespace_type": "single",
+  "tags": [
+    "linux",
+    "processes"
+  ]
+}
+--------------------------------------------------
+// KIBANA
+
+==== Response code
+
+`200`:: 
+    Indicates a successful call.
+    
+
+==== Response payload
+
+The exception container object with a unique ID.
+
+[source,json]
+--------------------------------------------------
+{
+  "_tags": [],
+  "created_at": "2020-07-13T09:33:46.187Z",
+  "created_by": "LiverpoolFC",
+  "description": "Excludes Linux trusted processes",
+  "id": "f320c070-c4eb-11ea-80bb-11861bae2798", <1>
+  "list_id": "trusted-linux-processes", <2>
+  "name": "Linux process exceptions",
+  "namespace_type": "single", <3>
+  "tags": [
+    "linux",
+    "processes"
+  ],
+  "tie_breaker_id": "2c08d5a5-2ecc-4d5a-acfb-0a367f25b3f3",
+  "type": "detection", <4>
+  "updated_at": "2020-07-13T09:33:46.359Z",
+  "updated_by": "LiverpoolFC"
+}
+--------------------------------------------------
+
+These values are required to associate the exception container with detection
+rules:
+
+<1> `id`
+<2> `list_id`
+<3> `namespace_type`
+<4> `type`
