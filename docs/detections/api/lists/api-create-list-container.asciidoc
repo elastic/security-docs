@@ -1,0 +1,107 @@
+[[lists-api-create-container]]
+=== Create list container
+
+Creates a list container.
+
+A list container groups common <<lists-api-create-list-item, list items>> that
+define exceptions for when detection rule alerts are *not* generated even when
+a rule's other criteria are met.
+
+All list items in the same list container refer to the same type of exception.
+For example, each list item in an `ip` list container excludes an IP address.
+
+TIP: You can retrieve `ip` items in a list container using CIDR notation, and
+`ip_range` items using a single IP value. For examples, see
+<<lists-api-get-item>>.
+
+==== Request URL
+
+`POST <kibana host>:<port>/api/lists`
+
+==== Request body
+
+A JSON object with these fields:
+
+[width="100%",options="header"]
+|==============================================
+|Name |Type |Description |Required
+
+|`description` |String |Describes the list container. |Yes
+|`id` |String |Unique identifier. |No, automatically created when it is not
+provided.
+|`meta` |Object |Placeholder for metadata about the list container. |No
+|`name` |String |The list container's name. |Yes
+|`type` |String a|Specifies the {es} {ref}/mapping-types.html[data type] of
+excludes the list container holds. Some common examples:
+
+* `keyword`: Many ECS fields are {es} {ref}/keyword.html[keywords]
+* `ip`: IP addresses
+* `ip_range`: {ref}/range.html[Range of IP addresses] (supports IPv4, IPv6, and
+CIDR notation)
+
+|Yes
+
+|`version` |Integer |The list container's version number. |No, defaults to `1`.
+|==============================================
+
+===== Example requests
+
+Creates a list container for IP addresses:
+
+[source,console]
+--------------------------------------------------
+POST api/lists
+{
+  "id": "internal-ip-excludes",
+  "name": "Exclude internal IP addresses",
+  "description": "Contains list items that exclude internal IP addresses from detection rules.",
+  "type": "ip"
+}
+--------------------------------------------------
+// KIBANA
+
+Creates a list container for a keyword:
+
+[source,console]
+--------------------------------------------------
+POST api/lists
+{
+  "id": "host.name-container",
+  "name": "Exclude hosts",
+  "description": "Contains list items that exclude host names from detection rules.",
+  "type": "keyword"
+}
+--------------------------------------------------
+// KIBANA
+
+
+==== Response code
+
+`200`:: 
+    Indicates a successful call.
+    
+
+==== Response payload
+
+[source,json]
+--------------------------------------------------
+{
+  "_version": "WzAsMV0=", <1>
+  "id": "internal-ip-excludes",
+  "created_at": "2020-08-11T10:08:05.289Z",
+  "created_by": "elastic",
+  "description": "Contains list items that exclude internal IP addresses from detection rule matches.",
+  "immutable": false,
+  "name": "Exclude internal IP addresses",
+  "tie_breaker_id": "f7951678-ad13-4d65-8d15-a4c706d4893e",
+  "type": "ip",
+  "updated_at": "2020-08-11T10:08:05.289Z",
+  "updated_by": "elastic",
+  "version": 1
+}
+--------------------------------------------------
+
+<1> Base-64 encoded value of `if_seq_no` and `if_primary_term` parameters, used
+for {ref}/optimistic-concurrency-control.html[Optimistic concurrency control].
+To ensure there are no conflicts, use this value when
+<<lists-api-update-container, updating a list container>>. 
