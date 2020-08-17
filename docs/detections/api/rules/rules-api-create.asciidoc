@@ -1,0 +1,765 @@
+[[rules-api-create]]
+=== Create rule
+
+Creates a new detection rule.
+
+You can create these types of rules:
+
+* *Query rules*: Searches the defined indices and creates an alert when
+a document matches the rule's query.
+* *Threshold rules*: Searches the defined indices and creates an alert when the
+number of times the specified field's value meets the threshold during a single
+execution. When there are multiple values that meet the threshold, an alert is
+generated for each value.
++
+For example, if the threshold `field` is `source.ip` and its `value` is `10`, an
+alert is generated for every source IP address that appears in at least 10 of
+the rule's search results. If you're interested, see
+{ref}/search-aggregations-bucket-terms-aggregation.html[Terms Aggregation] for
+more information.
+* *{ml-cap} rules*: Creates an alert when a {ml} job discovers an anomaly above
+the defined threshold (see <<machine-learning>>).
+
+IMPORTANT: To create {ml} rules, you must have the
+https://www.elastic.co/subscriptions[appropriate license] or use a
+{ess-trial}[cloud deployment]. Additionally, for the {ml} rule to function
+correctly, the associated {ml} job must be running.
+
+To retrieve {ml} job IDs, which are required to create {ml} jobs, call the
+{ref}/ml-get-job.html[{es} Get jobs API]. {ml-cap} jobs that contain `siem` in
+the `groups` field can be used to create rules:
+
+[source,json]
+--------------------------------------------------
+...
+"job_id": "linux_anomalous_network_activity_ecs",
+"job_type": "anomaly_detector",
+"job_version": "7.7.0",
+"groups": [
+  "auditbeat",
+  "process",
+  "siem"
+],
+...
+--------------------------------------------------
+
+Additionally, you can set up notifications for when rules create alerts. The
+notifications use the {kib} {kibana-ref}/alerting-getting-started.html[Alerting and Actions framework].
+Each action type requires a connector. Connectors store the information
+required to send notifications via external systems. These action types are
+supported for rule notifications:
+
+* Slack
+* email
+* PagerDuty
+* Webhook
+
+NOTE: For more information on PagerDuty fields, see
+https://developer.pagerduty.com/docs/events-api-v2/trigger-events/[Send a v2 Event].
+
+To retrieve connector IDs, which are required to configure rule notifications,
+call the {kib} {kibana-ref}/saved-objects-api-find.html[Find objects API] with
+`"type": "action"` in the request payload.
+
+For detailed information on {kib} actions and alerting, and additional API
+calls, see:
+
+* https://github.com/elastic/kibana/tree/master/x-pack/plugins/alerts
+* https://github.com/elastic/kibana/tree/master/x-pack/plugins/actions
+
+==== Request URL
+
+`POST <kibana host>:<port>/api/detection_engine/rules`
+
+==== Request body
+
+A JSON object that defines the rule's values.
+
+===== Required fields for all rule types
+
+[width="100%",options="header"]
+|==============================================
+|Name |Type |Description
+
+|description |String |The rule's description.
+
+|name |String |The rule's name.
+
+|risk_score |Integer a|A numerical representation of the alert's severity from
+0 to 100, where:
+
+* `0` - `21` represents low severity
+* `22` - `47` represents medium severity
+* `48` - `73` represents high severity
+* `74` - `100` represents critical severity
+
+|severity |String a|Severity level of alerts produced by the rule, which must
+be one of the following:
+
+* `low`: Alerts that are of interest but generally not considered to be
+security incidents
+* `medium`: Alerts that require investigation
+* `high`: Alerts that require immediate investigation
+* `critical`: Alerts that indicate it is highly likely a security incident has
+occurred
+
+|type |String a|Data type on which the rule is based:
+
+* `query`: query with or without additional filters.
+* `saved_query`: saved search, identified in the `saved_id` field.
+* `machine_learning`: rule based on a {ml} job's anomaly scores.
+* `threshold`: rule based on the number of times a `query` matches the
+specified field.
+
+|==============================================
+
+===== Required field for query and threshold rules
+
+[width="100%",options="header"]
+|==============================================
+|Name |Type |Description
+
+|query |String a|{kibana-ref}/search.html[Query] used by the rule to create
+alerts. Technically, this is not required and defaults to an empty string but
+that's not very useful.
+
+|==============================================
+
+===== Required field for threshold rules
+
+[width="100%",options="header"]
+|==============================================
+|Name |Type |Description
+
+|threshold |Object a|Defines the field and threshold value for when alerts
+are generated, where:
+
+* `field` (string, required): The field on which the threshold is applied. If
+you specify an empty field (`""`), alerts are generated when the query returns
+at least the number of results specified in the `value` field.
+* `value` (integer, required): The threshold value from which an alert is
+generated.
+
+|==============================================
+
+===== Required field for saved-query rules
+
+[width="100%",options="header"]
+|==============================================
+|Name |Type |Description
+
+|saved_id |String |Kibana saved search used by the rule to create alerts.
+
+|==============================================
+
+===== Required fields for machine-learning rules
+
+[width="100%",options="header"]
+|==============================================
+|Name |Type |Description
+
+|anomaly_threshold |Integer |Anomaly score threshold above which the rule
+creates an alert. Valid values are from `0` to `100`.
+
+|machine_learning_job_id |String |{ml-cap} job ID the rule monitors for
+anomaly scores.
+
+|==============================================
+
+===== Optional fields for all rule types
+
+[width="100%",options="header"]
+|==============================================
+|Name |Type |Description
+
+|actions |<<actions-object-schema, actions[]>> |Array defining the automated
+actions (notifications) taken when alerts are generated.
+
+|author |String[] |The rule's author.
+
+|building_block_type |String |Determines if the rule acts as a building block.
+By default, building-block alerts are not displayed in the UI. These rules are
+used as a foundation for other rules that do generate alerts. Its value must be
+`default`. For more information, see <<building-block-rule>>.
+
+|enabled |Boolean |Determines whether the rule is enabled. Defaults to `true`.
+
+|false_positives |String[] |String array used to describe common reasons why
+the rule may issue false-positive alerts. Defaults to an empty array.
+
+[[detection-rules-from]]
+|from |String |Time from which data is analyzed each time the rule executes,
+using a {ref}/common-options.html#date-math[date math range]. For example,
+`now-4200s` means the rule analyzes data from 70 minutes before its start
+time. Defaults to `now-6m` (analyzes data from 6 minutes before the start
+time).
+
+|interval |String |Frequency of rule execution, using a
+{ref}/common-options.html#date-math[date math range]. For example, `"1h"`
+means the rule runs every hour. Defaults to `5m` (5 minutes).
+
+|license |String |The rule's license.
+
+|max_signals |Integer |Maximum number of alerts the rule can create during a
+single execution. Defaults to `100`.
+
+|meta |Object |Placeholder for metadata about the rule.
+
+|note |String |Notes to help investigate alerts produced by the rule.
+
+|output_index |String |Index to which alerts created by the rule are saved.
+If unspecified alerts are saved to `.siem-signals-<space_name>` index,
+where `<space_name>` is the name of the {kib} space in which the rule exists.
+
+|references |String[] |Array containing notes about or references to
+relevant information about the rule. Defaults to an empty array.
+
+|rule_id |String |Unique ID used to identify rules. For example, when a rule
+is converted from a third-party security solution. Automatically created when
+it is not provided.
+
+|tags |String[] |String array containing words and phrases to help categorize,
+filter, and search rules. Defaults to an empty array.
+
+|threat |<<threats-object-create, threat[]>> |Object containing attack
+information about the type of threat the rule monitors, see
+{ecs-ref}/ecs-threat.html[ECS threat fields]. Defaults to an empty array.
+
+|throttle |String a|Determines how often actions are taken:
+
+* `no_actions`: Never
+* `rule`: Every time new alerts are detected
+* `1h`: Every hour
+* `1d`: Every day
+* `7d`: Every week
+
+Required when `actions` are used to send notifications.
+
+|version |Integer |The rule's version number. Defaults to `1`.
+
+|==============================================
+
+===== Optional fields for query and threshold rules
+
+[width="100%",options="header"]
+|==============================================
+|Name |Type |Description
+
+|exceptions_list |Object[] a|Array of
+<<exceptions-api-overview, exception containers>>, which define
+exceptions that prevent the rule from generating alerts even when its other
+criteria are met. The object has these fields:
+
+* `id` (string, required): List ID of the exception container.
+* `list_id` (string, required): List ID of the exception container.
+* `namespace_type` (string required): Determines whether the exceptions are
+valid in only the rule's {kib} space (`single`) or in all {kib} spaces
+(`agnostic`).
+* `type` (string, required): The exception type, which must be either
+a detection rule exception (`detection`) or an endpoint exception (`endpoint`).
+
+|filters |Object[] |The {ref}/query-filter-context.html[query and filter
+context] array used to define the conditions for when alerts are created from
+events. Defaults to an empty array.
+
+|index |String[] |Indices on which the rule functions. Defaults to the
+Security Solution indices defined on the {kib} Advanced Settings page
+(*Kibana* → *Stack Management* → *Advanced Settings* →
+`securitySolution:defaultIndex`).
+
+|language |String |Determines the query language, which must be
+`kuery` or `lucene`. Defaults to `kuery`.
+
+|risk_score_mapping |Object[] a|Overrides generated alerts' `risk_score` with
+a value from the source event:
+
+* `field` (string, required): Source event field used to override the default
+`risk_score`. This field must be an integer.
+* `operator` (string, required): Must be `equals`.
+* `value`(string, required): Must be an empty string (`""`).
+
+|rule_name_override |String |Sets which field in the source event is used to
+populate the alert's `signal.rule.name` value (in the UI, this value is
+displayed in the *Rule* column on the Detections page). When unspecified, the
+rule's `name` value is used. The source field must be a string data type.
+
+|severity_mapping |Object[] a|Overrides generated alerts' `severity` with
+values from the source event:
+
+* `field` (string, required): Source event field used to override the default
+`severity`.
+* `operator` (string, required): Must be `equals`.
+* `severity` (string, required): Mapped severity value, must be `low`,
+`medium`, `high`, or `critical`.
+* `value`(string, required): Field value used to determine the `severity`.
+
+|timestamp_override |String |Sets the time field used to query indices.
+When unspecified, rules query the `@timestamp` field. The source field
+must be an {es} date data type.
+
+|==============================================
+
+[[actions-object-schema]]
+===== `actions` schema
+
+All fields are required:
+
+[width="100%",options="header"]
+|==============================================
+|Name |Type |Description
+
+|action_type_id |String a|The action type used for sending notifications, can
+be:
+
+* `.slack`
+* `.email`
+* `.pagerduty`
+* `.webhook`
+
+|group |String |Optionally groups actions by use cases. Use `default` for alert
+notifications.
+
+|id |String |The connector ID.
+
+|params |Object a|Object containing the allowed connector fields, which varies according to the connector type:
+
+* For Slack:
+** `message` (string, required): The notification message.
+* For email:
+** `to`, `cc`, `bcc` (string): Email addresses to which the notifications are
+sent. At least one field must have a value.
+** `subject` (string, optional): Email subject line.
+** `message` (string, required): Email body text.
+* For Webhook:
+** `body` (string, required): JSON payload.
+* For PagerDuty:
+** `severity` (string, required): Severity of on the alert notification, can
+be: `Critical`, `Error`, `Warning` or `Info`.
+** `eventAction` (string, required):  Event https://v2.developer.pagerduty.com/docs/events-api-v2#event-action[action type], which can be `trigger`,
+`resolve`, or `acknowledge`.
+** `dedupKey` (string, optional): Groups alert notifications with the same
+PagerDuty alert.
+** `timestamp` (DateTime, optional): https://v2.developer.pagerduty.com/v2/docs/types#datetime[ISO-8601 format timestamp].
+** `component` (string, optional): Source machine component responsible for the
+event, for example `security-solution`.
+** `group` (string, optional): Enables logical grouping of service components.
+** `source` (string, optional): The affected system. Defaults to the {kib}
+saved object ID of the action.
+** `summary` (string, options): Summary of the event. Defaults to
+`No summary provided`. Maximum length is 1024 characters.
+** `class` (string, optional): Value indicating the class/type of the event.
+
+|==============================================
+
+All text fields (such as `message` fields) can contain placeholders for rule
+and alert details:
+
+* `{{state.signals_count}}`: Number of alerts detected
+* `{{{context.results_link}}}`: URL to the alerts in {kib}
+* `{{context.rule.anomaly_threshold}}`: Anomaly threshold score above which
+alerts are generated ({ml} rules only)
+* `{{context.rule.description}}`: Rule description
+* `{{context.rule.false_positives}}`: Rule false positives
+* `{{context.rule.filters}}`: Rule filters (query rules only)
+* `{{context.rule.id}}`: Unique rule ID returned after creating the rule
+* `{{context.rule.index}}`: Indices rule runs on (query rules only)
+* `{{context.rule.language}}`: Rule query language (query rules only)
+* `{{context.rule.machine_learning_job_id}}`: ID of associated {ml} job ({ml}
+rules only)
+* `{{context.rule.max_signals}}`: Maximum allowed number of alerts per rule
+execution
+* `{{context.rule.name}}`: Rule name
+* `{{context.rule.output_index}}`: Index to which alerts are written
+* `{{context.rule.query}}`: Rule query (query rules only)
+* `{{context.rule.references}}`: Rule references
+* `{{context.rule.risk_score}}`: Rule risk score
+* `{{context.rule.rule_id}}`: Generated or user-defined rule ID that can be
+used as an identifier across systems
+* `{{context.rule.saved_id}}`: Saved search ID
+* `{{context.rule.severity}}`: Rule severity
+* `{{context.rule.threat}}`: Rule threat framework
+* `{{context.rule.threshold}}`: Rule threshold values (threshold rules only)
+* `{{context.rule.timeline_id}}`: Associated timeline ID
+* `{{context.rule.timeline_title}}`: Associated timeline name
+* `{{context.rule.type}}`: Rule type
+* `{{context.rule.version}}`: Rule version
+
+[[threats-object-create]]
+===== `threat` schema
+
+All fields are required:
+
+[width="100%",options="header"]
+|==============================================
+|Name |Type |Description
+
+|framework |String |Relevant attack framework.
+
+|tactic |Object a|Object containing information on the attack type:
+
+* `id` - string, required
+* `name` - string, required
+* `reference` - string, required
+
+|technique |Object a|Object containing information on the attack
+technique:
+
+* `id` - string, required
+* `name` - string, required
+* `reference` - string, required
+
+|==============================================
+
+NOTE: Only threats described using the MITRE ATT&CK^TM^ framework are displayed
+in the UI (*Security* -> *Detections* -> *Manage detection rules* -> <rule
+name>).
+
+===== Example requests
+
+*Example 1*
+
+Query rule that searches for processes started by MS Office:
+
+[source,console]
+--------------------------------------------------
+POST api/detection_engine/rules
+{
+  "rule_id": "process_started_by_ms_office_program",
+  "risk_score": 50,
+  "description": "Process started by MS Office program - possible payload",
+  "interval": "1h", <1>
+  "name": "MS Office child process",
+  "severity": "low",
+  "tags": [
+   "child process",
+   "ms office"
+   ],
+  "type": "query",
+  "from": "now-70m", <2>
+  "query": "process.parent.name:EXCEL.EXE or process.parent.name:MSPUB.EXE or process.parent.name:OUTLOOK.EXE or process.parent.name:POWERPNT.EXE or process.parent.name:VISIO.EXE or process.parent.name:WINWORD.EXE",
+  "language": "kuery",
+  "filters": [
+     {
+      "query": {
+         "match": {
+            "event.action": {
+               "query": "Process Create (rule: ProcessCreate)",
+               "type": "phrase"
+            }
+         }
+      }
+     }
+  ],
+  "enabled": false
+}
+--------------------------------------------------
+// KIBANA
+
+<1> The rule runs every hour.
+<2> When the rule runs it analyzes data from 70 minutes before its start time.
+
+If the rule starts to run at 15:00, it analyzes data from 13:50 until 15:00.
+When it runs next, at 16:00, it will analyze data from 14:50 until 16:00.
+
+*Example 2*
+
+Threshold rule that detects multiple failed login attempts to a Windows host
+from the same external source IP address, and maps the `severity` value to
+custom source event fields:
+
+[source,console]
+--------------------------------------------------
+POST api/detection_engine/rules
+{
+  "description": "Detects when there are 20 or more failed login attempts from the same IP address with a 2 minute time frame.",
+  "enabled": true,
+  "exceptions_list": [ <1>
+    {
+      "id": "int-ips",
+      "namespace_type": "single",
+      "type": "detection"
+    }
+  ],
+  "from": "now-180s",
+  "index": [
+    "winlogbeat-*"
+  ],
+  "interval": "2m",
+  "name": "Liverpool Windows server prml-19",
+  "query": "host.name:prml-19 and event.category:authentication and event.outcome:failure",
+  "risk_score": 30,
+  "rule_id": "liv-win-ser-logins",
+  "severity": "low",
+  "severity_mapping": [ <2>
+    {
+      "field": "source.geo.city_name",
+      "operator": "equals",
+      "severity": "low",
+      "value": "Manchester"
+    },
+    {
+      "field": "source.geo.city_name",
+      "operator": "equals",
+      "severity": "medium",
+      "value": "London"
+    },
+    {
+      "field": "source.geo.city_name",
+      "operator": "equals",
+      "severity": "high",
+      "value": "Birmingham"
+    },
+    {
+      "field": "source.geo.city_name",
+      "operator": "equals",
+      "severity": "critical",
+      "value": "Wallingford"
+    }
+  ],
+  "tags": [
+    "Brute force"
+  ],
+  "threshold": { <3>
+    "field": "source.ip",
+    "value": 20
+  },
+  "type": "threshold"
+}
+--------------------------------------------------
+// KIBANA
+
+<1> Exception list container used to exclude internal IP addresses.
+<2> Alert severity levels are mapped according to the defined field values.
+<3> Alerts are generated when the same source IP address is discovered in at
+least 20 results.
+
+*Example 3*
+
+{ml-cap} rule that creates alerts, and sends Slack notifications, when the
+`linux_anomalous_network_activity_ecs` {ml} job discovers anomalies with a
+threshold of 70 or above:
+
+[source,console]
+--------------------------------------------------
+POST api/detection_engine/rules
+{
+  "anomaly_threshold": 70,
+  "rule_id": "ml_linux_network_high_threshold",
+  "risk_score": 70,
+  "machine_learning_job_id": "linux_anomalous_network_activity_ecs",
+  "description": "Generates alerts when the job discovers anomalies over 70",
+  "interval": "5m",
+  "name": "Anomalous Linux network activity",
+  "note": "Shut down the internet.",
+  "severity": "high",
+  "tags": [
+   "machine learning",
+   "Linux"
+   ],
+  "type": "machine_learning",
+  "from": "now-6m",
+  "enabled": true,
+  "throttle": "rule",
+  "actions": [
+    {
+      "action_type_id": ".slack",
+      "group": "default",
+      "id": "5ad22cd5-5e6e-4c6c-a81a-54b626a4cec5",
+      "params": {
+        "message": "Urgent: {{context.rule.description}}"
+      }
+    }
+  ]
+}
+--------------------------------------------------
+// KIBANA
+
+==== Response code
+
+`200`::
+    Indicates a successful call.
+
+==== Response payload
+
+A JSON object that includes a unique ID, the time the rule was created, and its
+version number. If the request payload did not include a `rule_id` field, a
+unique rule ID is also generated.
+
+Example response for a query rule:
+
+[source,json]
+--------------------------------------------------
+{
+  "created_at": "2020-04-07T14:51:09.755Z",
+  "updated_at": "2020-04-07T14:51:09.970Z",
+  "created_by": "LiverpoolFC",
+  "description": "Process started by MS Office program - possible payload",
+  "enabled": false,
+  "false_positives": [],
+  "from": "now-70m",
+  "id": "6541b99a-dee9-4f6d-a86d-dbd1869d73b1",
+  "immutable": false,
+  "interval": "1h",
+  "rule_id": "process_started_by_ms_office_program",
+  "output_index": ".siem-signals-default",
+  "max_signals": 100,
+  "risk_score": 50,
+  "name": "MS Office child process",
+  "references": [],
+  "severity": "low",
+  "updated_by": "LiverpoolFC",
+  "tags": [
+    "child process",
+    "ms office"
+  ],
+  "to": "now",
+  "type": "query",
+  "threat": [],
+  "version": 1,
+  "actions": [],
+  "filters": [
+    {
+      "query": {
+        "match": {
+          "event.action": {
+            "query": "Process Create (rule: ProcessCreate)",
+            "type": "phrase"
+          }
+        }
+      }
+    }
+  ],
+  "throttle": "no_actions",
+  "query": "process.parent.name:EXCEL.EXE or process.parent.name:MSPUB.EXE or process.parent.name:OUTLOOK.EXE or process.parent.name:POWERPNT.EXE or process.parent.name:VISIO.EXE or process.parent.name:WINWORD.EXE",
+  "language": "kuery"
+}
+--------------------------------------------------
+
+Example response for a {ml} job rule:
+
+[source,json]
+--------------------------------------------------
+{
+  "created_at": "2020-04-07T14:45:15.679Z",
+  "updated_at": "2020-04-07T14:45:15.892Z",
+  "created_by": "LiverpoolFC",
+  "description": "Generates alerts when the job discovers anomalies over 70",
+  "enabled": true,
+  "false_positives": [],
+  "from": "now-6m",
+  "id": "83876f66-3a57-4a99-bf37-416494c80f3b",
+  "immutable": false,
+  "interval": "5m",
+  "rule_id": "ml_linux_network_high_threshold",
+  "output_index": ".siem-signals-default",
+  "max_signals": 100,
+  "risk_score": 70,
+  "name": "Anomalous Linux network activity",
+  "references": [],
+  "severity": "high",
+  "updated_by": "LiverpoolFC",
+  "tags": [
+    "machine learning",
+    "Linux"
+  ],
+  "to": "now",
+  "type": "machine_learning",
+  "threat": [],
+  "version": 1,
+  "actions": [
+    {
+      "action_type_id": ".slack",
+      "group": "default",
+      "id": "5ad22cd5-5e6e-4c6c-a81a-54b626a4cec5",
+      "params": {
+        "message": "Urgent: {{context.rule.description}}"
+      }
+    }
+  ],
+  "throttle": "rule",
+  "note": "Shut down the internet.",
+  "status": "going to run",
+  "status_date": "2020-04-07T14:45:21.685Z",
+  "anomaly_threshold": 70,
+  "machine_learning_job_id": "linux_anomalous_network_activity_ecs"
+}
+--------------------------------------------------
+
+Example response for a threshold rule:
+
+[source,json]
+--------------------------------------------------
+{
+  "author": [],
+  "created_at": "2020-07-22T10:27:23.486Z",
+  "updated_at": "2020-07-22T10:27:23.673Z",
+  "created_by": "LiverpoolFC",
+  "description": "Detects when there are 20 or more failed login attempts from the same IP address with a 2 minute time frame.",
+  "enabled": true,
+  "false_positives": [],
+  "from": "now-180s",
+  "id": "15dbde26-b627-4d74-bb1f-a5e0ed9e4993",
+  "immutable": false,
+  "interval": "2m",
+  "rule_id": "liv-win-ser-logins",
+  "output_index": ".siem-signals-default",
+  "max_signals": 100,
+  "risk_score": 30,
+  "risk_score_mapping": [],
+  "name": "Liverpool Windows server prml-19",
+  "references": [],
+  "severity": "low",
+  "severity_mapping": [
+    {
+      "field": "source.geo.city_name",
+      "operator": "equals",
+      "severity": "low",
+      "value": "Manchester"
+    },
+    {
+      "field": "source.geo.city_name",
+      "operator": "equals",
+      "severity": "medium",
+      "value": "London"
+    },
+    {
+      "field": "source.geo.city_name",
+      "operator": "equals",
+      "severity": "high",
+      "value": "Birmingham"
+    },
+    {
+      "field": "source.geo.city_name",
+      "operator": "equals",
+      "severity": "critical",
+      "value": "Wallingford"
+    }
+  ],
+  "updated_by": "LiverpoolFC",
+  "tags": [
+    "Brute force"
+  ],
+  "to": "now",
+  "type": "threshold",
+  "threat": [],
+  "version": 1,
+  "exceptions_list": [
+    {
+      "id": "int-ips",
+      "namespace_type": "single",
+      "type": "detection"
+    }
+  ],
+  "actions": [],
+  "index": [
+    "winlogbeat-*"
+  ],
+  "throttle": "no_actions",
+  "query": "host.name:prml-19 and event.category:authentication and event.outcome:failure",
+  "language": "kuery",
+  "threshold": {
+    "field": "source.ip",
+    "value": 20
+  }
+}
+--------------------------------------------------

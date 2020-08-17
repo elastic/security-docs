@@ -1,0 +1,387 @@
+[[exceptions-api-create-exception-item]]
+=== Create exception item
+
+Creates an exception item and associates it with the specified
+<<exceptions-api-create-container, exception container>>.
+
+See <<lists-api-overview>> for information about creating exception items from
+lists, such as a list of IP addresses or host names.
+
+NOTE: Before creating exception items, you must create an exception container.
+
+[IMPORTANT]
+==============
+Endpoint rule exception items cannot use
+<<lists-api-overview, lists>> (the `list` in the `entries` array), and the
+following fields cannot be used in exception queries (as `field` values in the
+`entries` object):
+
+* `file.Ext.quarantine_path`
+* `file.Ext.quarantine_result`
+* `process.entity_id`
+* `process.parent.entity_id`
+* `process.ancestry`
+==============
+
+==== Request URL
+
+`POST <kibana host>:<port>/api/exception_lists/items`
+
+==== Request body
+
+A JSON object with these fields:
+
+[width="100%",options="header"]
+|==============================================
+|Name |Type |Description |Required
+
+|`comments` |comments[] a|Array of `comment` fields:
+
+* `comment` (string): Comments about the exception item.
+
+|No, defaults to empty array.
+
+|`description` |String |Describes the exception item. |Yes
+|`entries` |<<entries-object-schema, entries[]>> |Array containing the
+exception queries. Boolean `AND` logic is used to evaluate the relationship
+between array elements. If you want to use `OR` logic, create a separate
+exception item. |Yes
+|`list_id` |String |ID of the associated <<exceptions-api-create-container, exception container>>. |Yes
+|`item_id` |String |Unique identifier of the exception item. |No, automatically
+created when it is not provided.
+|`meta` |Object |Placeholder for metadata about the exception item. |No
+|`name` |String |The exception item's name. |Yes.
+|`namespace_type` |String a|Determines whether the exception item is available
+in all {kib} spaces or just the space in which it is created, where:
+
+* `single`: Only available in the {kib} space in which it is created.
+* `agnostic`: Available in all {kib} spaces.
+
+|No, defaults to `single`.
+|`tags` |String[] |String array containing words and phrases to help categorize
+exception items. |No 
+|`type` |String a|Exception query type, must be `simple`. |Yes
+|`_tags` |String[] a|For endpoint rules only, defines the OS on which the
+exception is implemented. Valid values are:
+
+* `os:windows`: Windows OS
+* `os:linux`: Linux OS
+* `os:macos`: Mac OS
+
+The array must also include an `endpoint` element (to implement the exception on Linux hosts, use: `["endpoint", "os:linux"]`).
+
+|For endpoint exceptions, yes. For detection exceptions, no.
+
+|==============================================
+
+[[entries-object-schema]]
+===== `entries` schema
+
+[width="100%",options="header"]
+|==============================================
+|Name |Type |Description |Required
+
+|`field` |String |The source event field used to define the exception. Cannot
+be an empty string. |Yes
+|`list` |list |Object containing the
+<<lists-api-create-container, list container's>> `id` and `type`. Only valid for
+detection exception items.|No, except when using a list to define detection
+exceptions.
+|`operator` |String a|The operator used to determine when the exception is used.
+Can be:
+
+* `included`: The `field` has the specified value or values.
+* `excluded`: The `field` does not have specified value or values.
+
+|Yes
+
+|`type` |String a|The `type` of query:
+
+* `match`: Must be an exact match of the defined value.
+* `match_any`: Matches any of the defined values.
+* `exists`: The `field` exists.
+* `list`: The field matches values in a list container.
+* `nested`: Array of `entries` objects. Nested conditions are required for
+excluding some Endpoint fields (<<nested-field-ex-api, see example below>>).
+<<ex-nested-conditions>> lists all Endpoint fields that require the `nested`
+type. 
+
+|Yes
+
+|`value`
+a|String
+
+String[]
+
+a|Field value or values:
+
+* String: When the `type` is `match`.
+* String[]: When the `type` is `match_any`.
+
+|Yes, except when `type` is `exists` or `list`.
+
+|==============================================
+
+[IMPORTANT]
+==============
+When you use <<lists-api-create-container, list containers>>
+(`"type": "list"`), you cannot use other types in the `entries` array (`match`,
+`match_any`, `exists`, or `nested`).
+
+For endpoint exceptions, you cannot create exception items based on excluded
+values (`"operator": "excluded"`). 
+==============
+
+
+===== Example requests
+
+*Example 1*
+
+Adds the `maintenance-job` process to the `trusted-linux-processes` exception
+container:
+
+[source,console]
+--------------------------------------------------
+POST api/lists/exception_lists/items
+{
+  "description": "Excludes the weekly maintenance job",
+  "entries": [
+    {
+      "field": "process.name",
+      "operator": "included",
+      "type": "match",
+      "value": "maintenance-job"
+    }
+  ],
+  "list_id": "trusted-linux-processes",
+  "name": "Linux maintenance job",
+  "namespace_type": "single",
+  "tags": [
+    "in-house processes",
+    "linux"
+  ],
+  "type": "simple"
+}
+--------------------------------------------------
+// KIBANA
+
+*Example 2*
+
+Adds hosts on which the `maintenance` process is allowed to run to the
+`allowed-processes` exception container:
+
+[source,console]
+--------------------------------------------------
+POST api/lists/exception_lists/items
+{
+  "comments": [
+    {"comment": "Allows maintenance process to run on the specified machines"}
+  ],
+  "description": "Process allowlist",
+  "entries": [
+    {
+      "field": "process.name",
+      "operator": "included",
+      "type": "match",
+      "value": "maintenance"
+    },
+    { <1>
+      "field": "host.name",
+      "operator": "included",
+      "type": "match_any",
+      "value": [
+        "liv-win-anf",
+        "livw-win-mel",
+        "linux-anfield"
+      ]
+    }
+  ],
+  "list_id": "allowed-processes",
+  "item_id": "allow-process-on-machines",
+  "name": "Host-process exclusions",
+  "namespace_type": "single",
+  "tags": [
+    "hosts",
+    "processes"
+  ],
+  "type": "simple"
+}
+--------------------------------------------------
+// KIBANA
+
+<1> Multiple array elements are evaluated using `AND` operators.
+
+*Example 3*
+
+[[endpoint-item-example]]
+Creates an endpoint exception item for files with the specified SHA-1 hash
+value on Windows OS:
+
+[source,console]
+--------------------------------------------------
+POST api/lists/exception_lists/items
+{
+  "_tags": [
+    "endpoint", <1>
+    "os:windows" <2>
+  ],
+  "comments": [
+  ]
+  "description": "File exception for Windows",
+  "entries": [
+    {
+      "field": "file.hash.sha1",
+      "operator": "included",
+      "type": "match",
+      "value": "27fb21cf5db95ffca43b234affa99becc4023b9d"
+    }
+  ],
+  "item_id": "trusted-windows-file",
+  "list_id": "endpoint-exception-container",
+  "name": "Trusted Windows file",
+  "namespace_type": "agnostic", <3>
+  "tags": [
+  ]
+  "type": "simple"
+}
+--------------------------------------------------
+
+<1> Indicates this item is for endpoint rules.
+<2> Relevant OS.
+<3> Item accessible from all {kib} spaces.
+
+*Example 4*
+
+[[list-item-example]]
+Associates the `external-ip-excludes` <<lists-api-create-container, list container>>
+as an exception item to the `trusted-IPs` exception container:
+
+[source,console]
+--------------------------------------------------
+POST api/lists/exception_lists/items
+{
+  "description": "Uses the external-ip-container list to exclude trusted external IPs.",
+  "entries": [
+    {
+      "field": "destination.ip",
+      "list": {
+        "id": "external-ip-excludes", <1>
+        "type": "ip"
+      },
+      "operator": "included",
+      "type": "list"
+    }
+  ],
+  "list_id": "trusted-IPs", <2>
+  "item_id": "external-IPs",
+  "name": "Trusted external IPs",
+  "namespace_type": "single",
+  "tags": [
+    "network",
+    "trusted IPs"
+  ],
+  "type": "simple"
+}
+--------------------------------------------------
+// KIBANA
+
+<1> The list container that holds IP address
+<<lists-api-create-list-item, list items>>.
+<2> The exception container's ID.
+
+[[nested-field-ex-api]]
+*Example 5*
+
+Adds an exception for nested Endpoint fields:
+
+[source,console]
+--------------------------------------------------
+POST api/lists/exception_lists/items
+{
+  "description": "Excludes all processes signed by Liverpool FC",
+  "entries": [
+    {
+      "field": "process.Ext.code_signature",
+      "type": "nested",
+      "entries": [
+        {
+          "field": "trusted",
+          "type": "match",
+          "operator": "included",
+          "value": "true"
+        },
+        {
+          "field": "subject_name",
+          "type": "match",
+          "operator": "included",
+          "value": "Liverpool FC"
+        }
+      ]
+    }
+  ],
+  "list_id": "trusted-self-signed-processes",
+  "name": "In-house processes",
+  "namespace_type": "single",
+  "tags": [
+    "in-house processes",
+    "linux"
+  ],
+  "type": "simple"
+}
+--------------------------------------------------
+
+==== Response code
+
+`200`:: 
+    Indicates a successful call.
+    
+==== Response payload
+
+[source,json]
+--------------------------------------------------
+{
+  "_tags": [],
+  "comments": [
+    {
+      "comment": "Allows maintenance process to run on the specified machines",
+      "created_at": "2020-07-14T08:36:33.172Z",
+      "created_by": "LiverpoolFC",
+      "id": "f6c61b4d-31dd-4a5d-8c73-f64787d03b4d"
+    }
+  ],
+  "created_at": "2020-07-14T08:36:33.172Z",
+  "created_by": "LiverpoolFC",
+  "description": "Process allowlist",
+  "entries": [
+    {
+      "field": "process.name",
+      "operator": "included",
+      "type": "match",
+      "value": "maintenance"
+    },
+    {
+      "field": "host.name",
+      "operator": "included",
+      "type": "match_any",
+      "value": [
+        "liv-win-anf",
+        "livw-win-mel",
+        "linux-anfield"
+      ]
+    }
+  ],
+  "id": "1f4d38b0-c5ad-11ea-a3d8-a5b753aeeb9e",
+  "item_id": "allow-process-on-machines",
+  "list_id": "allowed-processes",
+  "name": "Host-process exclusions",
+  "namespace_type": "single",
+  "tags": [
+    "hosts",
+    "processes"
+  ],
+  "tie_breaker_id": "bb04f1c7-2537-47c1-aaca-40a7c8f771d3",
+  "type": "simple",
+  "updated_at": "2020-07-14T08:36:33.339Z",
+  "updated_by": "LiverpoolFC"
+}
+--------------------------------------------------

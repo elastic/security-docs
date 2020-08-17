@@ -1,0 +1,207 @@
+[[network-page-overview]]
+= Network page overview
+
+The Network view provides key network activity metrics via an interactive map and provides network event tables that enable interaction with the Timeline. You can drag and drop items of interest from the Network view to Timeline for further investigation.
+
+[role="screenshot"]
+image::images/network-ui.png[]
+
+Interactive widgets let you drill down for deeper insights:
+
+* Network events
+* DNS queries
+* Unique flow IDs
+* TLS handshakes
+* Unique private IPs
+
+There are also tabs for viewing and investigating specific types of data:
+
+* Flows: source and destination IP addresses and countries
+* DNS: DNS network queries
+* HTTP: received HTTP requests (HTTP requests for applications using
+{apm-app-ref}/apm-getting-started.html[Elastic APM] are monitored by default)
+* TLS: handshake details
+* Anomalies: anomalies discovered by <<machine-learning, machine learning jobs>>
+* <<det-engine-terminology, External alerts>>: alerts received from
+external monitoring tools, such as Suricata
+
+*IP detail* pages show information for the selected IP address, including links to external sites for verifying the IP address's reputation. By default,
+the external sites are https://talosintelligence.com/[TALOS] and https://www.virustotal.com/[VIRUSTOTAL]. You can change the displayed
+reputation links in *{kib}* -> *Management* -> *Advanced Settings* ->
+*`siem:ipReputationLinks`*. The `siem:ipReputationLinks` setting contains a
+JSON array with these fields:
+
+* `name`: UI display name.
+* `url_template`: URL of the link. It can include `{{ip}}`, which is placeholder for the IP address you are viewing on the details page.
+
+For example:
+
+[source,json]
+--------------------------------------------------
+[
+  { "name": "virustotal.com", "url_template": "https://www.virustotal.com/gui/search/{{ip}}" },
+  { "name": "dnschecker.org", "url_template": "https://www.dnschecker.org/ip-location.php?ip={{ip}}" },
+  { "name": "talosIntelligence.com", "url_template": "https://talosintelligence.com/reputation_center/lookup?search={{ip}}" }
+]
+--------------------------------------------------
+
+[discrete]
+[[map-ui]]
+== Map
+The map provides a visual overview of your network traffic. It is interactive, so you can start exploring data directly from the map. Hover over source and destination points to see more information, such as hostnames and IP addresses.
+To drill down, click a point and use the filter icon to add a field to the filter bar or drag a field to the Timeline. You can also click a hostname to jump to the Hosts page, or an IP address to open the relevant network details.
+
+Just as you can start an investigation using the map, the map refreshes to show relevant data when you run a query or update the time frame.
+
+TIP: To add and remove layers, click on the more options icon in the top right
+corner of the map.
+
+Continue reading to see how to add map data and set up interactions.
+
+[discrete]
+[[conf-map-ui]]
+=== Configuring map data
+
+Depending on your {kib} setup, to display and interact with data on the map you
+might need to:
+
+* <<kibana-index-pattern>>
+* <<geoip-data, Add geographical IP data to events>>
+* <<private-network>>
+
+NOTE: To see source and destination connections lines on the map, you must
+configure `source.geo` and `destination.geo` ECS fields for your indices.
+
+[float]
+[[kibana-index-pattern]]
+=== Create {kib} index patterns
+
+To display map data, you must define {kib}
+{kibana-ref}/tutorial-define-index.html[index patterns] (*Management* ->
+*Index Patterns*) that match the names or glob patterns used to define
+Elastic Security {es} indices.
+
+NOTE: The Elastic Security {es} indices are defined in the `securitysolution:defaultIndex` field
+(*{kib}* -> *Management* -> *Advanced Settings* -> *`:defaultIndex`*).
+
+For example, if you define an Elastic Security {es} `servers-europe-*` glob pattern,
+to display map data for the matching indices you must also define a {kib} index
+pattern that matches `servers-europe-*`, such as `servers-*`.
+
+[float]
+[[geoip-data]]
+=== Add geoIP data
+
+When the ECS {ecs-ref}/ecs-geo.html[source.geo.location and
+destination.geo.location] fields are mapped, network data is displayed on
+the map.
+
+If you use Beats, configure a geoIP processor to add data to the relevant
+fields:
+
+[[geo-pipeleine]]
+. Define an ingest node pipeline that uses one or more `geoIP` processors to add
+location information to events. For example, use the Console in {kib} to create
+the following pipeline:
++
+--
+[source,json]
+----
+PUT _ingest/pipeline/geoip-info
+{
+  "description": "Add geoip info",
+  "processors": [
+    {
+      "geoip": {
+        "field": "client.ip",
+        "target_field": "client.geo",
+        "ignore_missing": true
+      }
+    },
+    {
+      "geoip": {
+        "field": "source.ip",
+        "target_field": "source.geo",
+        "ignore_missing": true
+      }
+    },
+    {
+      "geoip": {
+        "field": "destination.ip",
+        "target_field": "destination.geo",
+        "ignore_missing": true
+      }
+    },
+    {
+      "geoip": {
+        "field": "server.ip",
+        "target_field": "server.geo",
+        "ignore_missing": true
+      }
+    },
+    {
+      "geoip": {
+        "field": "host.ip",
+        "target_field": "host.geo",
+        "ignore_missing": true
+      }
+    }
+  ]
+}
+----
+//CONSOLE
+--
++
+In this example, the pipeline ID is `geoip-info`. `field` specifies the field
+that contains the IP address to use for the geographical lookup, and
+`target_field` is the field that will hold the geographical information.
+`"ignore_missing": true` configures the pipeline to continue processing when
+it encounters an event that doesn't have the specified field.
++
+TIP: An example ingest pipeline that uses the GeoLite2-ASN.mmdb database to add
+autonomous system number (ASN) fields can be found https://github.com/elastic/examples/blob/master/Security%20Analytics/SIEM-examples/Packetbeat/geoip-info.json[here].
+
+. In your Beats configuration files, add the pipeline to the
+`output.elasticsearch`tag:
++
+[source,yml]
+----------------------------------
+  output.elasticsearch:
+    hosts: ["localhost:9200"]
+    pipeline: geoip-info <1>
+----------------------------------
+<1> The value of this field must be the same as the ingest pipeline name in
+<<geo-pipeleine, step 1>> (`geoip-info` in this example).
+
+[float]
+[[private-network]]
+=== Map your internal network
+
+If you want to add your network’s internal IP addresses to the map, define geo
+location fields under the `processors` tag in the Beats configuration files
+on your hosts:
+
+[source,yml]
+----------------------------------
+  processors:
+   - add_host_metadata:
+   - add_cloud_metadata: ~
+   - add_fields:
+       when.network.source.ip: <private/IP address> <1>
+       fields:
+         source.geo.location:
+           lat: <latitude coordinate>
+           lon: <longitude coordinate>
+       target: ''
+   - add_fields:
+       when.network.destination.ip: <private/IP address>
+       fields:
+         destination.geo.location:
+           lat: <latitude coordinate>
+           lon: <longitude coordinate>
+       target: ''
+----------------------------------
+<1> For the IP address, you can use either `private` or CIDR notation.
+
+TIP: You can also enrich your data with other
+{packetbeat-ref}/add-host-metadata.html[host fields].
