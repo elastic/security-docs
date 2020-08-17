@@ -1,0 +1,697 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="UTF-8">
+<title>Creating detection rules | Elastic Security Solution | Elastic</title>
+<link rel="home" href="index.html" title="Elastic Security Solution"/>
+<link rel="up" href="detection-engine-overview.html" title="Detections and Alerts (beta)"/>
+<link rel="prev" href="detection-engine-overview.html" title="Detections and Alerts (beta)"/>
+<link rel="next" href="rules-ui-management.html" title="Managing detection rules"/>
+<meta name="DC.type" content="Learn/Docs/"/>
+<meta name="DC.subject" content=""/>
+<meta name="DC.identifier" content=""/>
+</head>
+<body>
+<div id="content">
+<div class="breadcrumbs">
+<span class="breadcrumb-link"><a href="index.html">Elastic Security Solution</a></span>
+»
+<span class="breadcrumb-link"><a href="detection-engine-overview.html">Detections and Alerts (beta)</a></span>
+»
+<span class="breadcrumb-node">Creating detection rules</span>
+</div>
+<div class="navheader">
+<span class="prev">
+<a href="detection-engine-overview.html">« Detections and Alerts (beta)</a>
+</span>
+<span class="next">
+<a href="rules-ui-management.html">Managing detection rules »</a>
+</span>
+</div>
+<div class="chapter xpack">
+<div class="titlepage"><div><div>
+<h2 class="title"><a id="rules-ui-create"></a>Creating detection rules<a class="edit_me" rel="nofollow" title="Edit this page on GitHub" href="https://github.com/elastic/security-docs/edit/7.9/docs/detections/rules-ui-create.asciidoc">edit</a><a class="xpack_tag" href="/subscriptions"></a></h2>
+</div></div></div>
+<div class="warning admon">
+<div class="icon"></div>
+<div class="admon_content">
+<p>This functionality is in beta and is subject to change. The design and code is less mature than official GA features and is being provided as-is with no warranties. Beta features are not subject to the support SLA of official GA features.</p>
+</div>
+</div>
+<p>Rules run periodically and search for source events or machine learning job anomaly scores
+that meet their criteria. When a rule&#8217;s criteria are met, a detections alert is
+created.</p>
+<p>You can create these types of rules:</p>
+<div class="ulist itemizedlist">
+<ul class="itemizedlist">
+<li class="listitem">
+<span class="strong strong"><strong>Custom query</strong></span>: Query-based rule, which searches the defined indices and
+creates an alert when a document matches the rule&#8217;s query.
+</li>
+<li class="listitem">
+<p><span class="strong strong"><strong>Machine learning</strong></span>: Machine learning rule, which creates an alert when a machine learning job
+discovers an anomaly above the defined threshold (see <a class="xref" href="machine-learning.html" title="Anomaly Detection with Machine Learning">Anomaly Detection with Machine Learning</a>).</p>
+<p>For machine learning rules, the associated machine learning job must be running. If the machine learning job is not
+running, the rule will:</p>
+<div class="ulist itemizedlist">
+<ul class="itemizedlist">
+<li class="listitem">
+Run and create alerts if existing anomaly scores above the defined threshold
+are discovered.
+</li>
+<li class="listitem">
+Issue an error stating the machine learning job was not running when the rule executed.
+</li>
+</ul>
+</div>
+</li>
+<li class="listitem">
+<p><span class="strong strong"><strong>Threshold rules</strong></span>: Searches the defined indices and creates a detections alert
+when the number of times the specified field&#8217;s value meets the threshold during
+a single execution. When multiple values meet the threshold, an alert is
+generated for each value.</p>
+<p>For example, if the threshold <code class="literal">field</code> is <code class="literal">source.ip</code> and its <code class="literal">value</code> is <code class="literal">10</code>, an
+alert is generated for every source IP address that appears in at least 10 of
+the rule&#8217;s search results.</p>
+</li>
+</ul>
+</div>
+<p>When creating or modifying rules, you can add exceptions that prevent a rule
+from generating an alert even when its criteria are met. This is useful for
+reducing noise, such as preventing alerts from trusted processes and internal
+IP addresses. <a class="xref" href="detections-ui-exceptions.html" title="Rule exceptions and value lists"><em>Rule exceptions and value lists</em></a> describes how to add exceptions to a
+rule.</p>
+<p>For both prebuilt and custom rules, you can use the
+Kibana <a href="https://www.elastic.co/guide/en/kibana/7.9/alerting-getting-started.html" class="ulink" target="_top">Alerting and Actions</a> feature
+to send notifications when alerts are created. Notifications can be sent via
+Email, PagerDuty, Slack, and Webhook, and can be configured when you create or
+edit a rule.</p>
+<p>Creating a new rule is made up of a number of steps:</p>
+<div class="olist orderedlist">
+<ol class="orderedlist">
+<li class="listitem">
+<a class="xref" href="rules-ui-create.html#create-rule-ui" title="Select rule type and scope">Select rule type and scope</a>
+</li>
+<li class="listitem">
+<a class="xref" href="rules-ui-create.html#rule-ui-basic-params" title="Configure basic rule settings">Configure basic rule settings</a>
+</li>
+<li class="listitem">
+<a class="xref" href="rules-ui-create.html#rule-ui-advanced-params" title="Configure advanced rule settings (optional)">Configure advanced rule settings (optional)</a>
+</li>
+<li class="listitem">
+<a class="xref" href="rules-ui-create.html#rule-schedule" title="Set the rule&#8217;s schedule">Set the rule&#8217;s schedule</a>
+</li>
+<li class="listitem">
+<a class="xref" href="rules-ui-create.html#rule-notifications" title="Set up alert notifications (optional)">Set up alert notifications (optional)</a>
+</li>
+</ol>
+</div>
+<div class="important admon">
+<div class="icon"></div>
+<div class="admon_content">
+<p>After you activate a rule, periodically check the rule is running as expected
+in the <a class="xref" href="alerts-ui-monitor.html" title="Monitoring and troubleshooting rule executions">Monitoring tab</a> on the All rules page. If you see
+values in the <code class="literal">Gap</code> column, you can <a class="xref" href="alerts-ui-monitor.html#troubleshoot-signals" title="Troubleshoot missing alerts">Troubleshoot missing alerts</a>.</p>
+<p>When a rule fails to run, the Elastic Security app tries to rerun it at its next
+scheduled run time.</p>
+</div>
+</div>
+<div class="imageblock screenshot">
+<div class="content">
+<img src="images/all-rules.png" alt="all rules">
+</div>
+</div>
+<h3><a id="create-rule-ui"></a>Select rule type and scope<a class="edit_me" rel="nofollow" title="Edit this page on GitHub" href="https://github.com/elastic/security-docs/edit/7.9/docs/detections/rules-ui-create.asciidoc">edit</a></h3>
+<div class="olist orderedlist">
+<ol class="orderedlist">
+<li class="listitem">
+Go to <span class="strong strong"><strong>Security</strong></span> &#8594; <span class="strong strong"><strong>Detections</strong></span> &#8594; <span class="strong strong"><strong>Manage detection rules</strong></span>.
+</li>
+<li class="listitem">
+<p>Click <span class="strong strong"><strong>Create new rule</strong></span>.</p>
+<p>The <span class="strong strong"><strong>Create new rule</strong></span> page is displayed.</p>
+<div class="imageblock screenshot">
+<div class="content">
+<img src="images/create-new-rule.png" alt="create new rule">
+</div>
+</div>
+</li>
+<li class="listitem">
+<p>Do <span class="strong strong"><strong>one</strong></span> of the following:</p>
+<div class="ulist itemizedlist">
+<ul class="itemizedlist">
+<li class="listitem">
+<p>To create a rule based on a machine learning anomaly threshold, select <em>Machine Learning</em>
+and then:</p>
+<div class="olist orderedlist">
+<ol class="orderedlist">
+<li class="listitem">
+The required machine learning job.
+</li>
+<li class="listitem">
+<p>The anomaly score threshold above which alerts are created.</p>
+<div class="important admon">
+<div class="icon"></div>
+<div class="admon_content">
+<p>To create or edit machine learning rules, you must have the
+<a href="https://www.elastic.co/subscriptions" class="ulink" target="_top">appropriate license</a> or use a
+<a href="https://www.elastic.co/cloud/elasticsearch-service/signup?baymax=docs-body&amp;elektra=docs" class="ulink" target="_top">cloud deployment</a>. Additionally, you must have the
+<a href="https://www.elastic.co/guide/en/elasticsearch/reference/7.9/built-in-roles.html" class="ulink" target="_top"><code class="literal">machine_learning_admin</code></a> user role, and the selected
+machine learning job must be running for the rule to function correctly.</p>
+</div>
+</div>
+</li>
+</ol>
+</div>
+</li>
+<li class="listitem">
+<p>To create a rule based on a KQL or Lucene query, select <em>Custom query</em> and
+then:</p>
+<div class="olist orderedlist">
+<ol class="orderedlist">
+<li class="listitem">
+Define which Elasticsearch indices the rule searches for alerts.
+</li>
+<li class="listitem">
+<p>Use the filter and query fields to create the criteria used for detecting
+alerts.</p>
+<div class="note admon">
+<div class="icon"></div>
+<div class="admon_content">
+<p>You can use Kibana saved queries (save icon) and queries from saved timelines (<code class="literal">Import query from saved timeline</code>) as rule conditions.</p>
+</div>
+</div>
+<p>For example, the following rule detects when the <code class="literal">vssadmin delete shadows</code>
+Windows command is executed:</p>
+<div class="ulist itemizedlist">
+<ul class="itemizedlist">
+<li class="listitem">
+<p><em>Index patterns</em>: <code class="literal">winlogbeat-*</code></p>
+<p>Winlogbeat ships Windows event logs to Elastic Security.</p>
+</li>
+<li class="listitem">
+<p><em>Custom query</em>: <code class="literal">event.action:"Process Create (rule: ProcessCreate)" and process.name:"vssadmin.exe" and process.args:("delete" and "shadows")</code></p>
+<p>Searches the <code class="literal">winlogbeat-*</code> indices for <code class="literal">vssadmin.exe</code> executions with
+the <code class="literal">delete</code> and <code class="literal">shadow</code> arguments, which are used to delete a volume&#8217;s shadow
+copies.</p>
+<div class="imageblock screenshot">
+<div class="content">
+<img src="images/rule-query-example.png" alt="rule query example">
+</div>
+</div>
+<div class="tip admon">
+<div class="icon"></div>
+<div class="admon_content">
+<p>This example is based on the
+<a class="xref" href="volume-shadow-copy-deletion-via-vssadmin.html" title="Volume Shadow Copy Deletion via VssAdmin">Volume Shadow Copy Deletion via VssAdmin</a> prebuilt rule.</p>
+</div>
+</div>
+</li>
+</ul>
+</div>
+</li>
+</ol>
+</div>
+</li>
+<li class="listitem">
+<p>To create a rule based on a source event field threshold, select <em>Threshold</em>
+and then:</p>
+<div class="olist orderedlist">
+<ol class="orderedlist">
+<li class="listitem">
+Define which Elasticsearch indices the rule analyzes for alerts.
+</li>
+<li class="listitem">
+Use the filter and query fields to create the criteria used for detecting
+alerts.
+</li>
+<li class="listitem">
+<p>Use the <em>Field</em> and <em>Threshold</em> fields to determine which source event field
+is used as a threshold and the threshold&#8217;s value.</p>
+<p>For example, if the <em>Field</em> is <code class="literal">source.ip</code> and its <em>Threshold</em> is <code class="literal">10</code>, an
+alert is generated for every source IP address that appears in at least 10 of
+the rule&#8217;s search results.</p>
+<p>You can also leave the <em>Field</em> undefined. The rule then creates an alert when
+the number of search results is equal to or greater than the <em>Threshold</em> value.</p>
+<p>If you want an alert for 10 or more failed login attempts to a specific host
+per rule execution:</p>
+<div class="ulist itemizedlist">
+<ul class="itemizedlist">
+<li class="listitem">
+<em>Custom query</em>: <code class="literal">host.name : liv-win-19 and event.category : "authentication" and event.outcome : "failure"</code>
+</li>
+<li class="listitem">
+<em>Field</em>: Leave blank
+</li>
+<li class="listitem">
+<em>Threshold</em>: <code class="literal">10</code>
+</li>
+</ul>
+</div>
+</li>
+</ol>
+</div>
+</li>
+</ul>
+</div>
+</li>
+<li class="listitem">
+<p>Select the Timeline template used when you investigate an alert created by
+the rule in Timeline (optional).</p>
+<div class="tip admon">
+<div class="icon"></div>
+<div class="admon_content">
+<p>Before you create rules, create <a class="xref" href="timelines-ui.html" title="Investigating events in Timeline">Timeline templates</a> so
+they can be selected here. When alerts generated by the rule are investigated
+in Timeline, Timeline query values are replaced with their corresponding alert
+field values.</p>
+</div>
+</div>
+</li>
+<li class="listitem">
+<p>Click <span class="strong strong"><strong>Continue</strong></span>.</p>
+<p>The <span class="strong strong"><strong>About rule</strong></span> pane is displayed.</p>
+<div class="imageblock screenshot">
+<div class="content">
+<img src="images/about-rule-pane.png" alt="about rule pane">
+</div>
+</div>
+</li>
+<li class="listitem">
+Continue with <a class="xref" href="rules-ui-create.html#rule-ui-basic-params" title="Configure basic rule settings">Configure basic rule settings</a>.
+</li>
+</ol>
+</div>
+<h3><a id="rule-ui-basic-params"></a>Configure basic rule settings<a class="edit_me" rel="nofollow" title="Edit this page on GitHub" href="https://github.com/elastic/security-docs/edit/7.9/docs/detections/rules-ui-create.asciidoc">edit</a></h3>
+<div class="olist orderedlist">
+<ol class="orderedlist">
+<li class="listitem">
+<p>Fill in the following fields:</p>
+<div class="olist orderedlist">
+<ol class="orderedlist">
+<li class="listitem">
+<em>Name</em>: The rule&#8217;s name.
+</li>
+<li class="listitem">
+<em>Description</em>: A description of what the rule does.
+</li>
+<li class="listitem">
+<p><em>Default severity</em>: Select the severity level of alerts created by the rule:</p>
+<div class="ulist itemizedlist">
+<ul class="itemizedlist">
+<li class="listitem">
+<code class="literal">Low</code>: Alerts that are of interest but generally not considered to be
+security incidents. Sometimes, a combination of low severity events can
+indicate suspicious activity.
+</li>
+<li class="listitem">
+<code class="literal">Medium</code>: Alerts that require investigation.
+</li>
+<li class="listitem">
+<code class="literal">High</code>: Alerts that require an immediate investigation.
+</li>
+<li class="listitem">
+<code class="literal">Critical</code>: Alerts that indicate it is highly likely a security incident has
+occurred.
+</li>
+</ul>
+</div>
+</li>
+<li class="listitem">
+<p><em>Severity override</em> (optional): Select to use source event values to
+override the <em>Default severity</em> in generated alerts. When selected, a UI
+component is displayed where you can map the source event field values to
+severity levels. For example, if you want to map severity levels to <code class="literal">host.name</code>
+values:</p>
+<div class="imageblock screenshot">
+<div class="content">
+<img src="images/severity-mapping-ui.png" alt="severity mapping ui">
+</div>
+</div>
+</li>
+<li class="listitem">
+<p><em>Default risk score</em>: A numerical value between 0 and 100 that correlates
+with the <em>Severity</em> level. General guidelines are:</p>
+<div class="ulist itemizedlist">
+<ul class="itemizedlist">
+<li class="listitem">
+<code class="literal">0</code> - <code class="literal">21</code> represents low severity.
+</li>
+<li class="listitem">
+<code class="literal">22</code> - <code class="literal">47</code> represents medium severity.
+</li>
+<li class="listitem">
+<code class="literal">48</code> - <code class="literal">73</code> represents high severity.
+</li>
+<li class="listitem">
+<code class="literal">74</code> - <code class="literal">100</code> represents critical severity.
+</li>
+</ul>
+</div>
+</li>
+<li class="listitem">
+<p><em>Risk score override</em> (optional): Select to use a source event value to
+override the <em>Default risk score</em> in generated alerts. When selected, a UI
+component is displayed where you can select the source field used for the risk
+score. For example, if you want to use the source event&#8217;s risk score in
+alerts:</p>
+<div class="imageblock screenshot">
+<div class="content">
+<img src="images/risk-source-field-ui.png" alt="risk source field ui">
+</div>
+</div>
+</li>
+</ol>
+</div>
+</li>
+<li class="listitem">
+<p>Continue with <span class="strong strong"><strong>one</strong></span> of the following:</p>
+<div class="ulist itemizedlist">
+<ul class="itemizedlist">
+<li class="listitem">
+<a class="xref" href="rules-ui-create.html#rule-ui-advanced-params" title="Configure advanced rule settings (optional)">Configure advanced rule settings (optional)</a>
+</li>
+<li class="listitem">
+<a class="xref" href="rules-ui-create.html#rule-schedule" title="Set the rule&#8217;s schedule">Set the rule&#8217;s schedule</a>
+</li>
+</ul>
+</div>
+</li>
+</ol>
+</div>
+<h3><a id="rule-ui-advanced-params"></a>Configure advanced rule settings (optional)<a class="edit_me" rel="nofollow" title="Edit this page on GitHub" href="https://github.com/elastic/security-docs/edit/7.9/docs/detections/rules-ui-create.asciidoc">edit</a></h3>
+<div class="olist orderedlist">
+<ol class="orderedlist">
+<li class="listitem">
+<p>Click <span class="strong strong"><strong>Advanced settings</strong></span> and fill in these fields:</p>
+<div class="olist orderedlist">
+<ol class="orderedlist">
+<li class="listitem">
+<em>Reference URLs</em> (optional): References to information that is relevant to
+the rule. For example, links to background information.
+</li>
+<li class="listitem">
+<em>False positives</em> (optional): List of common scenarios that may produce
+false-positive alerts.
+</li>
+<li class="listitem">
+<em>MITRE ATT&amp;CK<sup>TM</sup></em> (optional): Relevant MITRE framework tactics and techniques.
+</li>
+<li class="listitem">
+<em>Tags</em> (optional): Words and phrases used to categorize, filter, and search
+the rule.
+</li>
+<li class="listitem">
+<em>Investigation guide</em> (optional): Information for analysts investigating
+alerts created by the rule.
+</li>
+<li class="listitem">
+<em>Author</em> (optional): The rule&#8217;s authors.
+</li>
+<li class="listitem">
+<em>License</em> (optional): The rule&#8217;s license.
+</li>
+<li class="listitem">
+<p><em>Elastic endpoint exceptions</em> (optional): Adds all Elastic Endpoint Security
+rule exceptions to this rule (see <a class="xref" href="detections-ui-exceptions.html" title="Rule exceptions and value lists"><em>Rule exceptions and value lists</em></a>).</p>
+<div class="note admon">
+<div class="icon"></div>
+<div class="admon_content">
+<p>If you select this option, you can add
+<a class="xref" href="detections-ui-exceptions.html#endpoint-rule-exceptions" title="Add Elastic Endpoint Security exceptions">Endpoint exceptions</a> on the Rule details page.
+Additionally, all future exceptions added to the Elastic Endpoint Security rule
+also affect this rule.</p>
+</div>
+</div>
+</li>
+<li class="listitem">
+<em>Building block</em> (optional): Select to create a building-block rule. By
+default, alerts generated from a building-block rule are not displayed in the
+UI. See <a class="xref" href="building-block-rule.html" title="About building-block rules"><em>About building-block rules</em></a> for more information.
+</li>
+<li class="listitem">
+<em>Rule name override</em> (optional): Select a source event field to use as the
+rule name in the UI (Alerts table). This is useful for exposing, at a glance,
+more information about an alert. For example, if the rule generates alerts from
+Suricata, selecting <code class="literal">event.action</code> lets you see what action (Suricata category)
+caused the event directly in the Alerts table.
+</li>
+<li class="listitem">
+<p><em>Timestamp override</em> (optional): Select a source event timestamp field. When selected, the rule&#8217;s query uses the selected field, instead of the default <code class="literal">@timestamp</code> field, to search for alerts. This can help reduce missing alerts due to network or server outages. Specifically, if your ingest pipeline adds a timestamp when events are sent to Elasticsearch, this avoids missing alerts due to ingestion delays.</p>
+<div class="tip admon">
+<div class="icon"></div>
+<div class="admon_content">
+<p>These Filebeat modules have an <code class="literal">event.ingested</code> timestamp field that can
+be used instead of the default <code class="literal">@timestamp</code> field:
+<a href="https://www.elastic.co/guide/en/beats/filebeat/7.9/filebeat-module-microsoft.html" class="ulink" target="_top">Microsoft</a> and
+<a href="https://www.elastic.co/guide/en/beats/filebeat/7.9/filebeat-module-gsuite.html" class="ulink" target="_top">GSuite</a>.</p>
+</div>
+</div>
+</li>
+</ol>
+</div>
+</li>
+<li class="listitem">
+<p>Click <span class="strong strong"><strong>Continue</strong></span>.</p>
+<div class="imageblock screenshot">
+<div class="content">
+<img src="images/schedule-rule.png" alt="schedule rule">
+</div>
+</div>
+<p>The <span class="strong strong"><strong>Schedule rule</strong></span> pane is displayed.</p>
+</li>
+<li class="listitem">
+Continue with <a class="xref" href="rules-ui-create.html#rule-schedule" title="Set the rule&#8217;s schedule">Set the rule&#8217;s schedule</a>.
+</li>
+</ol>
+</div>
+<h3><a id="rule-schedule"></a>Set the rule&#8217;s schedule<a class="edit_me" rel="nofollow" title="Edit this page on GitHub" href="https://github.com/elastic/security-docs/edit/7.9/docs/detections/rules-ui-create.asciidoc">edit</a></h3>
+<div class="olist orderedlist">
+<ol class="orderedlist">
+<li class="listitem">
+Select how often the rule runs.
+</li>
+<li class="listitem">
+<p>Optionally, add <code class="literal">Additional look-back time</code> to the rule. When defined, the
+rule searches indices with the additional time.</p>
+<p>For example, if you set a rule to run every 5 minutes with an additional
+look-back time of 1 minute, the rule runs every 5 minutes but analyses the
+documents added to indices during the last 6 minutes.</p>
+<div class="important admon">
+<div class="icon"></div>
+<div class="admon_content">
+<p>It is recommended to set the <code class="literal">Additional look-back time</code> to at
+least 1 minute. This ensures there are no missing alerts when a rule does not
+run exactly at its scheduled time.</p>
+<p>The Elastic Security app performs deduplication. Duplicate alerts discovered during the
+<code class="literal">Additional look-back time</code> are <span class="strong strong"><strong>not</strong></span> created.</p>
+</div>
+</div>
+</li>
+<li class="listitem">
+<p>Click <span class="strong strong"><strong>Continue</strong></span>.</p>
+<p><a id="rule-actions"></a>The <span class="strong strong"><strong>Rule actions</strong></span> pane is displayed.</p>
+<div class="imageblock screenshot">
+<div class="content">
+<img src="images/rule-actions.png" alt="rule actions">
+</div>
+</div>
+</li>
+<li class="listitem">
+<p>Do <span class="strong strong"><strong>one</strong></span> of the following:</p>
+<div class="ulist itemizedlist">
+<ul class="itemizedlist">
+<li class="listitem">
+Continue with <a class="xref" href="rules-ui-create.html#rule-notifications" title="Set up alert notifications (optional)">Set up alert notifications (optional)</a>.
+</li>
+<li class="listitem">
+Create the rule (with or without activation).
+</li>
+</ul>
+</div>
+</li>
+</ol>
+</div>
+<h3><a id="rule-notifications"></a>Set up alert notifications (optional)<a class="edit_me" rel="nofollow" title="Edit this page on GitHub" href="https://github.com/elastic/security-docs/edit/7.9/docs/detections/rules-ui-create.asciidoc">edit</a></h3>
+<p>Use Kibana Actions to set up notifications sent via other systems when alerts
+are generated.</p>
+<div class="note admon">
+<div class="icon"></div>
+<div class="admon_content">
+<p>To use Kibana Actions for alert notifications, you need the
+<a href="https://www.elastic.co/subscriptions" class="ulink" target="_top">appropriate license</a>.</p>
+</div>
+</div>
+<div class="olist orderedlist">
+<ol class="orderedlist">
+<li class="listitem">
+<p>Set when to send notifications:</p>
+<div class="ulist itemizedlist">
+<ul class="itemizedlist">
+<li class="listitem">
+<em>On each rule execution</em>: Sends a notification every time new alerts are
+generated.
+</li>
+<li class="listitem">
+<em>Hourly</em>: Sends a notification every hour.
+</li>
+<li class="listitem">
+<em>Daily</em>: Sends a notification every day.
+</li>
+<li class="listitem">
+<p><em>Weekly</em>: Sends a notification every week.</p>
+<div class="note admon">
+<div class="icon"></div>
+<div class="admon_content">
+<p>Notifications are sent only when new alerts are generated.</p>
+</div>
+</div>
+<p>The available action types are displayed.</p>
+<div class="imageblock screenshot">
+<div class="content">
+<img src="images/available-action-types.png" alt="available action types">
+</div>
+</div>
+</li>
+</ul>
+</div>
+</li>
+<li class="listitem">
+<p>Select the required action type, which determines how notifications are sent (Email, PagerDuty, Slack, Webhook).</p>
+<div class="note admon">
+<div class="icon"></div>
+<div class="admon_content">
+<p>Each action type requires a connector. Connectors store the
+information required to send the notification from the external system. You can
+configure connectors while creating the rule or on the Kibana Alerts and Actions
+page (<span class="strong strong"><strong>Management</strong></span> &#8594; <span class="strong strong"><strong>Alerts and Actions</strong></span> &#8594; <span class="strong strong"><strong>Connectors</strong></span>). For more
+information, see <a href="https://www.elastic.co/guide/en/kibana/7.9/action-types.html" class="ulink" target="_top">Action and connector types</a>.</p>
+</div>
+</div>
+<p>The selected action type fields are displayed (Slack example).</p>
+<div class="imageblock screenshot">
+<div class="content">
+<img src="images/selected-action-type.png" alt="selected action type">
+</div>
+</div>
+<div class="olist orderedlist">
+<ol class="orderedlist">
+<li class="listitem">
+Fill in the fields for the selected action types. For all action types, click
+the icon above the <code class="literal">Message</code> field to add
+<a class="xref" href="rules-ui-create.html#rule-action-variables" title="Alert notification placeholders">placeholders</a> for rule and alert details to the
+notifications.
+</li>
+</ol>
+</div>
+</li>
+<li class="listitem">
+<p>Create the rule with or without activation.</p>
+<div class="note admon">
+<div class="icon"></div>
+<div class="admon_content">
+<p>When you activate a rule, it is queued and its schedule is determined by
+its initial run time. For example, if you activate a rule that runs every 5
+minutes at 14:03 but it does not run until 14:04, it will run again at 14:09.</p>
+</div>
+</div>
+</li>
+</ol>
+</div>
+<h4><a id="rule-action-variables"></a>Alert notification placeholders<a class="edit_me" rel="nofollow" title="Edit this page on GitHub" href="https://github.com/elastic/security-docs/edit/7.9/docs/detections/rules-ui-create.asciidoc">edit</a></h4>
+<p>These placeholders can be added to <a class="xref" href="rules-ui-create.html#rule-notifications" title="Set up alert notifications (optional)">rule action</a> fields:</p>
+<div class="ulist itemizedlist">
+<ul class="itemizedlist">
+<li class="listitem">
+<code class="literal">{{state.signals_count}}</code>: Number of alerts detected
+</li>
+<li class="listitem">
+<code class="literal">{{{context.results_link}}}</code>: URL to the alerts in Kibana
+</li>
+<li class="listitem">
+<code class="literal">{{context.rule.anomaly_threshold}}</code>: Anomaly threshold score above which
+alerts are generated (machine learning rules only)
+</li>
+<li class="listitem">
+<code class="literal">{{context.rule.description}}</code>: Rule description
+</li>
+<li class="listitem">
+<code class="literal">{{context.rule.false_positives}}</code>: Rule false positives
+</li>
+<li class="listitem">
+<code class="literal">{{context.rule.filters}}</code>: Rule filters (query rules only)
+</li>
+<li class="listitem">
+<code class="literal">{{context.rule.id}}</code>: Unique rule ID returned after creating the rule
+</li>
+<li class="listitem">
+<code class="literal">{{context.rule.index}}</code>: Indices rule runs on (query rules only)
+</li>
+<li class="listitem">
+<code class="literal">{{context.rule.language}}</code>: Rule query language (query rules only)
+</li>
+<li class="listitem">
+<code class="literal">{{context.rule.machine_learning_job_id}}</code>: ID of associated machine learning job (machine learning
+rules only)
+</li>
+<li class="listitem">
+<code class="literal">{{context.rule.max_signals}}</code>: Maximum allowed number of alerts per rule
+execution
+</li>
+<li class="listitem">
+<code class="literal">{{context.rule.name}}</code>: Rule name
+</li>
+<li class="listitem">
+<code class="literal">{{context.rule.output_index}}</code>: Index to which alerts are written
+</li>
+<li class="listitem">
+<code class="literal">{{context.rule.query}}</code>: Rule query (query rules only)
+</li>
+<li class="listitem">
+<code class="literal">{{context.rule.references}}</code>: Rule references
+</li>
+<li class="listitem">
+<code class="literal">{{context.rule.risk_score}}</code>: Rule risk score
+</li>
+<li class="listitem">
+<code class="literal">{{context.rule.rule_id}}</code>: Generated or user-defined rule ID that can be
+used as an identifier across systems
+</li>
+<li class="listitem">
+<code class="literal">{{context.rule.saved_id}}</code>: Saved search ID
+</li>
+<li class="listitem">
+<code class="literal">{{context.rule.severity}}</code>: Rule severity
+</li>
+<li class="listitem">
+<code class="literal">{{context.rule.threat}}</code>: Rule threat framework
+</li>
+<li class="listitem">
+<code class="literal">{{context.rule.threshold}}</code>: Rule threshold values (threshold rules only)
+</li>
+<li class="listitem">
+<code class="literal">{{context.rule.timeline_id}}</code>: Associated timeline ID
+</li>
+<li class="listitem">
+<code class="literal">{{context.rule.timeline_title}}</code>: Associated timeline name
+</li>
+<li class="listitem">
+<code class="literal">{{context.rule.type}}</code>: Rule type
+</li>
+<li class="listitem">
+<code class="literal">{{context.rule.version}}</code>: Rule version
+</li>
+</ul>
+</div>
+</div>
+<div class="navfooter">
+<span class="prev">
+<a href="detection-engine-overview.html">« Detections and Alerts (beta)</a>
+</span>
+<span class="next">
+<a href="rules-ui-management.html">Managing detection rules »</a>
+</span>
+</div>
+</div>
+</body>
+</html>

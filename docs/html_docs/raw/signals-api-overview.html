@@ -1,0 +1,367 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="UTF-8">
+<title>Signals endpoint | Elastic Security Solution | Elastic</title>
+<link rel="home" href="index.html" title="Elastic Security Solution"/>
+<link rel="up" href="rule-api-overview.html" title="Detections API"/>
+<link rel="prev" href="privileges-api-overview.html" title="Privileges endpoint"/>
+<link rel="next" href="prebuilt-rules-api.html" title="Prebuilt rules"/>
+<meta name="DC.type" content="Learn/Docs/"/>
+<meta name="DC.subject" content=""/>
+<meta name="DC.identifier" content=""/>
+</head>
+<body>
+<div id="content">
+<div class="breadcrumbs">
+<span class="breadcrumb-link"><a href="index.html">Elastic Security Solution</a></span>
+»
+<span class="breadcrumb-link"><a href="security-apis.html">Elastic Security APIs</a></span>
+»
+<span class="breadcrumb-link"><a href="rule-api-overview.html">Detections API</a></span>
+»
+<span class="breadcrumb-node">Signals endpoint</span>
+</div>
+<div class="navheader">
+<span class="prev">
+<a href="privileges-api-overview.html">« Privileges endpoint</a>
+</span>
+<span class="next">
+<a href="prebuilt-rules-api.html">Prebuilt rules »</a>
+</span>
+</div>
+<div class="section xpack">
+<div class="titlepage"><div><div>
+<h2 class="title"><a id="signals-api-overview"></a>Signals endpoint<a class="edit_me" rel="nofollow" title="Edit this page on GitHub" href="https://github.com/elastic/security-docs/edit/7.9/docs/detections/api/rules/signals-api-overview.asciidoc">edit</a><a class="xpack_tag" href="/subscriptions"></a></h2>
+</div></div></div>
+<p>The signals endpoint is for retrieving, aggregating, and updating detection
+alerts. For detailed information on how to retrieve and aggregate results from
+the indices, see:</p>
+<div class="ulist itemizedlist">
+<ul class="itemizedlist">
+<li class="listitem">
+<a href="https://www.elastic.co/guide/en/elasticsearch/reference/7.9/getting-started-search.html" class="ulink" target="_top">Start searching indices</a>
+</li>
+<li class="listitem">
+<a href="https://www.elastic.co/guide/en/elasticsearch/reference/7.9/search-aggregations.html" class="ulink" target="_top">Aggregations</a>
+</li>
+<li class="listitem">
+<a href="https://www.elastic.co/guide/en/elasticsearch/reference/7.9/query-dsl.html" class="ulink" target="_top">Query DSL</a>
+</li>
+</ul>
+</div>
+<div class="section">
+<div class="titlepage"><div><div>
+<h3 class="title"><a id="_get_alerts"></a>Get alerts<a class="edit_me" rel="nofollow" title="Edit this page on GitHub" href="https://github.com/elastic/security-docs/edit/7.9/docs/detections/api/rules/signals-api-overview.asciidoc">edit</a></h3>
+</div></div></div>
+<p>Aggregates and returns alerts.</p>
+<div class="section">
+<div class="titlepage"><div><div>
+<h4 class="title"><a id="_request_url_16"></a>Request URL<a class="edit_me" rel="nofollow" title="Edit this page on GitHub" href="https://github.com/elastic/security-docs/edit/7.9/docs/detections/api/rules/signals-api-overview.asciidoc">edit</a></h4>
+</div></div></div>
+<p><code class="literal">POST &lt;kibana host&gt;:&lt;port&gt;/api/detection_engine/signals/search</code></p>
+</div>
+
+<div class="section">
+<div class="titlepage"><div><div>
+<h4 class="title"><a id="_request_body_7"></a>Request body<a class="edit_me" rel="nofollow" title="Edit this page on GitHub" href="https://github.com/elastic/security-docs/edit/7.9/docs/detections/api/rules/signals-api-overview.asciidoc">edit</a></h4>
+</div></div></div>
+<p>A query DSL that determines which results are returned.</p>
+<div class="section">
+<div class="titlepage"><div><div>
+<h5 class="title"><a id="_example_request_14"></a>Example request<a class="edit_me" rel="nofollow" title="Edit this page on GitHub" href="https://github.com/elastic/security-docs/edit/7.9/docs/detections/api/rules/signals-api-overview.asciidoc">edit</a></h5>
+</div></div></div>
+<p>Gets aggregated results of all open alerts with a risk score equal to or
+greater than 70. It also returns the timestamps of the oldest and
+newest alerts that meet the query&#8217;s criteria.</p>
+<div class="pre_wrapper lang-console">
+<pre class="programlisting prettyprint lang-console">POST api/detection_engine/signals/search
+{
+  "aggs": {
+    "latest": {
+      "max": {
+        "field": "@timestamp"
+      }
+    },
+    "oldest": {
+      "min": {
+        "field": "@timestamp"
+      }
+    }
+  },
+  "query": {
+    "bool": {
+      "filter": [
+        {
+          "match": {
+            "signal.status": "open"
+          }
+        },
+        {
+          "range": {
+            "signal.rule.risk_score": {
+              "gte": 70
+            }
+          }
+        }
+      ]
+    }
+  }
+}</pre>
+</div>
+<div class="console_widget" data-snippet="snippets/21.console"></div>
+<p>Gets all in-progress alerts with a risk score equal to or
+greater than 70.</p>
+<div class="pre_wrapper lang-kibana">
+<pre class="programlisting prettyprint lang-kibana">POST api/detection_engine/signals/search
+{
+  "query": {
+    "bool": {
+      "filter": [
+        {
+          "match": {
+            "signal.status": "in-progress"
+          }
+        },
+        {
+          "range": {
+            "signal.rule.risk_score": {
+              "gte": 70
+            }
+          }
+        }
+      ]
+    }
+  }
+}</pre>
+</div>
+<div class="kibana_widget" data-snippet="snippets/22.kibana"></div>
+</div>
+
+</div>
+
+<div class="section">
+<div class="titlepage"><div><div>
+<h4 class="title"><a id="_response_code_16"></a>Response code<a class="edit_me" rel="nofollow" title="Edit this page on GitHub" href="https://github.com/elastic/security-docs/edit/7.9/docs/detections/api/rules/signals-api-overview.asciidoc">edit</a></h4>
+</div></div></div>
+<div class="variablelist">
+<dl class="variablelist">
+<dt>
+<span class="term">
+<code class="literal">200</code>
+</span>
+</dt>
+<dd>
+Indicates a successful call.
+</dd>
+</dl>
+</div>
+<div class="section">
+<div class="titlepage"><div><div>
+<h5 class="title"><a id="_response_payload_8"></a>Response payload<a class="edit_me" rel="nofollow" title="Edit this page on GitHub" href="https://github.com/elastic/security-docs/edit/7.9/docs/detections/api/rules/signals-api-overview.asciidoc">edit</a></h5>
+</div></div></div>
+<p>A JSON object with the aggregated values and requested alerts.</p>
+<p>Example response:</p>
+<div class="pre_wrapper lang-json">
+<pre class="programlisting prettyprint lang-json">{
+  "took": 3,
+  "timed_out": false,
+  "_shards": {
+    "total": 1,
+    "successful": 1,
+    "skipped": 0,
+    "failed": 0
+  },
+  "hits": {
+    "total": {
+      "value": 8794,
+      "relation": "eq"
+    },
+    "max_score": null,
+    "hits": []
+  },
+  "aggregations": {
+    "oldest": {
+      "value": 1576601119930,
+      "value_as_string": "2019-12-17T16:45:19.930Z"
+    },
+    "latest": {
+      "value": 1576634706400,
+      "value_as_string": "2019-12-18T02:05:06.400Z"
+    }
+  }
+}</pre>
+</div>
+</div>
+
+</div>
+
+</div>
+
+<div class="section">
+<div class="titlepage"><div><div>
+<h3 class="title"><a id="_set_alert_status"></a>Set alert status<a class="edit_me" rel="nofollow" title="Edit this page on GitHub" href="https://github.com/elastic/security-docs/edit/7.9/docs/detections/api/rules/signals-api-overview.asciidoc">edit</a></h3>
+</div></div></div>
+<p>Sets the status of one or more alert.</p>
+<div class="section">
+<div class="titlepage"><div><div>
+<h4 class="title"><a id="_request_url_17"></a>Request URL<a class="edit_me" rel="nofollow" title="Edit this page on GitHub" href="https://github.com/elastic/security-docs/edit/7.9/docs/detections/api/rules/signals-api-overview.asciidoc">edit</a></h4>
+</div></div></div>
+<p><code class="literal">POST &lt;kibana host&gt;:&lt;port&gt;/api/detection_engine/signals/status</code></p>
+</div>
+
+<div class="section">
+<div class="titlepage"><div><div>
+<h4 class="title"><a id="_request_body_8"></a>Request body<a class="edit_me" rel="nofollow" title="Edit this page on GitHub" href="https://github.com/elastic/security-docs/edit/7.9/docs/detections/api/rules/signals-api-overview.asciidoc">edit</a></h4>
+</div></div></div>
+<p>A JSON object with either a <code class="literal">query</code> or <code class="literal">signals_id</code> field:</p>
+<div class="informaltable">
+<table border="1" cellpadding="4px" width="100%">
+<colgroup>
+<col class="col_1"/>
+<col class="col_2"/>
+<col class="col_3"/>
+<col class="col_4"/>
+</colgroup>
+<thead>
+<tr>
+<th align="left" valign="top">Name</th>
+<th align="left" valign="top">Type</th>
+<th align="left" valign="top">Description</th>
+<th align="left" valign="top">Required</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td align="left" valign="top"><p><code class="literal">signal_ids</code></p></td>
+<td align="left" valign="top"><p>String[]</p></td>
+<td align="left" valign="top"><p>Array of alert IDs.</p></td>
+<td align="left" valign="top"><p>Yes, when the <code class="literal">query</code> field is
+not used.</p></td>
+</tr>
+<tr>
+<td align="left" valign="top"><p><code class="literal">query</code></p></td>
+<td align="left" valign="top"><p>Query DSL</p></td>
+<td align="left" valign="top"><p>Query that determines which alerts are updated.</p></td>
+<td align="left" valign="top"><p>Yes, when
+the <code class="literal">signal_ids</code> field is not used.</p></td>
+</tr>
+<tr>
+<td align="left" valign="top"><p><code class="literal">status</code></p></td>
+<td align="left" valign="top"><p>String</p></td>
+<td align="left" valign="top"><p>The new status, which can be <code class="literal">open</code>, <code class="literal">in-progress</code> or
+<code class="literal">closed</code>.</p></td>
+<td align="left" valign="top"><p>Yes.</p></td>
+</tr>
+</tbody>
+</table>
+</div>
+<div class="section">
+<div class="titlepage"><div><div>
+<h5 class="title"><a id="_example_requests_3"></a>Example requests<a class="edit_me" rel="nofollow" title="Edit this page on GitHub" href="https://github.com/elastic/security-docs/edit/7.9/docs/detections/api/rules/signals-api-overview.asciidoc">edit</a></h5>
+</div></div></div>
+<p>Closes alerts with <code class="literal">signal_ids</code>:</p>
+<div class="pre_wrapper lang-kibana">
+<pre class="programlisting prettyprint lang-kibana">POST api/detection_engine/signals/status
+{
+  "signal_ids": [
+    "694156bbe6a487e06d049bd6019bd49fec4172cfb33f5d81c3b4a977f0026fba",
+    "f4d1c62c4e8946c835cb497329127803c09b955de49a8fa186be3899522667b0"
+  ],
+  "status": "closed"
+}</pre>
+</div>
+<div class="kibana_widget" data-snippet="snippets/23.kibana"></div>
+<p>Closes alerts that are over a month old and have a risk score less than or
+equal to 20:</p>
+<div class="pre_wrapper lang-kibana">
+<pre class="programlisting prettyprint lang-kibana">POST api/detection_engine/signals/status
+{
+  "query": {
+    "bool": {
+      "filter": [
+        {
+          "range": {
+            "signal.rule.risk_score": {
+              "lte": 20
+            }
+          }
+        },
+        {
+          "range": {
+            "@timestamp": {
+              "lte": "now-M"
+            }
+          }
+        }
+      ]
+    }
+  },
+  "status": "closed"
+}</pre>
+</div>
+<div class="kibana_widget" data-snippet="snippets/24.kibana"></div>
+</div>
+
+</div>
+
+<div class="section">
+<div class="titlepage"><div><div>
+<h4 class="title"><a id="_response_code_17"></a>Response code<a class="edit_me" rel="nofollow" title="Edit this page on GitHub" href="https://github.com/elastic/security-docs/edit/7.9/docs/detections/api/rules/signals-api-overview.asciidoc">edit</a></h4>
+</div></div></div>
+<div class="variablelist">
+<dl class="variablelist">
+<dt>
+<span class="term">
+<code class="literal">200</code>
+</span>
+</dt>
+<dd>
+Indicates a successful call.
+</dd>
+</dl>
+</div>
+<div class="section">
+<div class="titlepage"><div><div>
+<h5 class="title"><a id="_response_payload_9"></a>Response payload<a class="edit_me" rel="nofollow" title="Edit this page on GitHub" href="https://github.com/elastic/security-docs/edit/7.9/docs/detections/api/rules/signals-api-overview.asciidoc">edit</a></h5>
+</div></div></div>
+<p>A JSON object containing the number of updated alerts.</p>
+<p>Example response:</p>
+<div class="pre_wrapper lang-json">
+<pre class="programlisting prettyprint lang-json">{
+  "took": 9594,
+  "timed_out": false,
+  "total": 8794,
+  "updated": 8794,
+  "deleted": 0,
+  "batches": 9,
+  "version_conflicts": 0,
+  "noops": 0,
+  "retries": {
+    "bulk": 0,
+    "search": 0
+  },
+  "throttled_millis": 0,
+  "requests_per_second": -1,
+  "throttled_until_millis": 0,
+  "failures": []
+}</pre>
+</div>
+</div>
+
+</div>
+
+</div>
+
+</div>
+<div class="navfooter">
+<span class="prev">
+<a href="privileges-api-overview.html">« Privileges endpoint</a>
+</span>
+<span class="next">
+<a href="prebuilt-rules-api.html">Prebuilt rules »</a>
+</span>
+</div>
+</div>
+</body>
+</html>

@@ -1,0 +1,416 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="UTF-8">
+<title>Tuning prebuilt detection rules | Elastic Security Solution | Elastic</title>
+<link rel="home" href="index.html" title="Elastic Security Solution"/>
+<link rel="up" href="detection-engine-overview.html" title="Detections and Alerts (beta)"/>
+<link rel="prev" href="alerts-ui-manage.html" title="Managing detection alerts"/>
+<link rel="next" href="prebuilt-rules-changelog.html" title="Prebuilt rule changes per release"/>
+<meta name="DC.type" content="Learn/Docs/"/>
+<meta name="DC.subject" content=""/>
+<meta name="DC.identifier" content=""/>
+</head>
+<body>
+<div id="content">
+<div class="breadcrumbs">
+<span class="breadcrumb-link"><a href="index.html">Elastic Security Solution</a></span>
+»
+<span class="breadcrumb-link"><a href="detection-engine-overview.html">Detections and Alerts (beta)</a></span>
+»
+<span class="breadcrumb-node">Tuning prebuilt detection rules</span>
+</div>
+<div class="navheader">
+<span class="prev">
+<a href="alerts-ui-manage.html">« Managing detection alerts</a>
+</span>
+<span class="next">
+<a href="prebuilt-rules-changelog.html">Prebuilt rule changes per release »</a>
+</span>
+</div>
+<div class="chapter">
+<div class="titlepage"><div><div>
+<h2 class="title"><a id="tuning-detection-signals"></a>Tuning prebuilt detection rules<a class="edit_me" rel="nofollow" title="Edit this page on GitHub" href="https://github.com/elastic/security-docs/edit/7.9/docs/detections/prebuilt-rules/tune-rule-signals.asciidoc">edit</a></h2>
+</div></div></div>
+<p>In the Elastic Security app, prebuilt detection rules can be tuned to produce the best
+possible set of actionable alerts. To reduce the noise level, you can:</p>
+<div class="ulist itemizedlist">
+<ul class="itemizedlist">
+<li class="listitem">
+Disable detection rules that rarely produce actionable alerts because they
+match expected local behavior, workflows, or policy exceptions.
+</li>
+<li class="listitem">
+<a class="xref" href="rules-ui-management.html#manage-rules-ui" title="Modify existing rules">Clone and modify</a> detection rule queries so they are
+aligned with local policy exceptions. This reduces noise while retaining
+actionable alerts.
+</li>
+<li class="listitem">
+Clone and modify detection rule risk scores, and use branching logic to map
+higher risk scores to higher priority workflows.
+</li>
+</ul>
+</div>
+<p>For details about tuning prebuilt rules for specific categories, see:</p>
+<div class="ulist itemizedlist">
+<ul class="itemizedlist">
+<li class="listitem">
+<a class="xref" href="tuning-detection-signals.html#tune-authorized-processes" title="Tune rules detecting authorized processes">Tune rules detecting authorized processes</a>
+</li>
+<li class="listitem">
+<a class="xref" href="tuning-detection-signals.html#tune-windows-rules" title="Tune Windows child process and PowerShell rules">Tune Windows child process and PowerShell rules</a>
+</li>
+<li class="listitem">
+<a class="xref" href="tuning-detection-signals.html#tune-network-rules" title="Tune network rules">Tune network rules</a>
+</li>
+</ul>
+</div>
+<h3><a id="filter-rule-process"></a>Filter out uncommon application alerts<a class="edit_me" rel="nofollow" title="Edit this page on GitHub" href="https://github.com/elastic/security-docs/edit/7.9/docs/detections/prebuilt-rules/tune-rule-signals.asciidoc">edit</a></h3>
+<p>Organizations frequently use uncommon and in-house applications. Occasionally,
+these can trigger unwanted alerts. To stop a rule matching on an application,
+you need to modify the rule&#8217;s logic so it ignores the application&#8217;s name.</p>
+<p>For example, to prevent the <a class="xref" href="unusual-process-execution-temp.html" title="Unusual Process Execution - Temp">Unusual Process Execution - Temp</a> rule from
+producing alerts for an in-house application named <code class="literal">myautomatedbuild</code>:</p>
+<div class="olist orderedlist">
+<ol class="orderedlist">
+<li class="listitem">
+Go to <span class="strong strong"><strong>Security</strong></span> &#8594; <span class="strong strong"><strong>Detections</strong></span> &#8594; <span class="strong strong"><strong>Manage detection rules</strong></span>.
+</li>
+<li class="listitem">
+<p>Search for the <code class="literal">Unusual Process Execution - Temp</code> rule, and then:</p>
+<div class="olist orderedlist">
+<ol class="orderedlist">
+<li class="listitem">
+Click the actions icon on the rule&#8217;s row (three dots).
+</li>
+<li class="listitem">
+<p>Select <em>Duplicate rule</em></p>
+<p>A duplicate rule is created, named <code class="literal">Unusual Process Execution - Temp [Duplicate]</code>.</p>
+</li>
+</ol>
+</div>
+</li>
+<li class="listitem">
+<p>Search for the new rule, and then:</p>
+<div class="olist orderedlist">
+<ol class="orderedlist">
+<li class="listitem">
+Click the actions icon on the rule&#8217;s row (three dots).
+</li>
+<li class="listitem">
+<p>Select <em>Edit rule settings</em></p>
+<div class="tip admon">
+<div class="icon"></div>
+<div class="admon_content">
+<p>At the top of the <span class="strong strong"><strong>All rules</strong></span> table, click <code class="literal">Custom rules</code> to display only
+your rules.</p>
+</div>
+</div>
+<p>The <span class="strong strong"><strong>Edit rule settings</strong></span> page is displayed.</p>
+<div class="imageblock screenshot">
+<div class="content">
+<img src="images/edit-dect-rule.png" alt="edit dect rule">
+</div>
+</div>
+</li>
+</ol>
+</div>
+</li>
+<li class="listitem">
+<p>Do <span class="strong strong"><strong>one</strong></span> of these:</p>
+<div class="ulist itemizedlist">
+<ul class="itemizedlist">
+<li class="listitem">
+<p>In the <em>Custom query</em> field, add this condition:</p>
+<p><code class="literal">and not process.name: "myautomatedbuild"</code></p>
+<div class="imageblock screenshot">
+<div class="content">
+<img src="images/edit-dect-rule-query.png" alt="edit dect rule query">
+</div>
+</div>
+</li>
+<li class="listitem">
+<p>Click <em>Add filter</em>, and then define a <code class="literal">process.name is not myautomatedbuild</code>
+condition.</p>
+<div class="imageblock screenshot">
+<div class="content">
+<img src="images/edit-dect-rule-filter.png" alt="edit dect rule filter">
+</div>
+</div>
+</li>
+</ul>
+</div>
+</li>
+<li class="listitem">
+Save the new rule and disable the original rule. If you want, you can delete
+the original rule.
+</li>
+</ol>
+</div>
+<h3><a id="tune-authorized-processes"></a>Tune rules detecting authorized processes<a class="edit_me" rel="nofollow" title="Edit this page on GitHub" href="https://github.com/elastic/security-docs/edit/7.9/docs/detections/prebuilt-rules/tune-rule-signals.asciidoc">edit</a></h3>
+<p>Authorized security testing, system tools, management frameworks, and
+administrative activity may trigger detection rules. These legitimate
+activities include:</p>
+<div class="ulist itemizedlist">
+<ul class="itemizedlist">
+<li class="listitem">
+Authorized security research.
+</li>
+<li class="listitem">
+System and software management processes running scripts, including scripts
+that start child processes.
+</li>
+<li class="listitem">
+Administrative and management frameworks that create users, schedule tasks,
+make <code class="literal">psexec</code> connections, and run WMI commands.
+</li>
+<li class="listitem">
+Legitimate scripts using the <code class="literal">whoami</code> command.
+</li>
+<li class="listitem">
+Applications that work with file shares, such as backup programs, and use the
+server message block (SMB) protocol.
+</li>
+</ul>
+</div>
+<p>To reduce noise for authorized activity, you can do any of these:</p>
+<div class="ulist itemizedlist">
+<ul class="itemizedlist">
+<li class="listitem">
+Add a statement or filter to the rules that exclude specific servers, such as
+the relevant host names, agent names, or other common identifiers.
+For example, <code class="literal">and not host.name : "server-name"</code>.
+</li>
+<li class="listitem">
+Add a statement or filter to the rules that <a class="xref" href="tuning-detection-signals.html#filter-rule-process" title="Filter out uncommon application alerts">exclude specific processes</a>. For example, <code class="literal">and not process.name : "process-name"</code>.
+</li>
+<li class="listitem">
+Add a statement or filter to the rules that exclude a common user.
+For example, <code class="literal">and not user.name : "security-tester"</code>.
+</li>
+</ul>
+</div>
+<p>Another useful technique is to assign lower risk scores to rules triggered by
+authorized activity. This enables detection while keeping the resulting alerts
+out of high-priority workflows. Use these steps:</p>
+<div class="olist orderedlist">
+<ol class="orderedlist">
+<li class="listitem">
+Duplicate the same rule twice.
+</li>
+<li class="listitem">
+In the first duplication of the rule, exclude the relevant user or process
+names (<code class="literal">and not user.name : "user-name"</code> or <code class="literal">and not process.name : "process-name"</code>).
+</li>
+<li class="listitem">
+<p>In the second duplication of the rule:</p>
+<div class="ulist itemizedlist">
+<ul class="itemizedlist">
+<li class="listitem">
+Lower the <code class="literal">Risk score</code> (<span class="strong strong"><strong>Edit rule settings</strong></span> &#8594; <span class="strong strong"><strong>About</strong></span> tab).
+</li>
+<li class="listitem">
+Change the rule&#8217;s query or filter so it only matches the user or process
+names excluded in the first duplication
+(<code class="literal">and user.name : "user-name"</code> or <code class="literal">and process.name : "process-name"</code>).
+</li>
+</ul>
+</div>
+</li>
+<li class="listitem">
+Disable the original rule.
+</li>
+</ol>
+</div>
+<h3><a id="tune-windows-rules"></a>Tune Windows child process and PowerShell rules<a class="edit_me" rel="nofollow" title="Edit this page on GitHub" href="https://github.com/elastic/security-docs/edit/7.9/docs/detections/prebuilt-rules/tune-rule-signals.asciidoc">edit</a></h3>
+<p>Normal user activity may sometimes trigger one or more of these rules:</p>
+<div class="ulist itemizedlist">
+<ul class="itemizedlist">
+<li class="listitem">
+<a class="xref" href="powershell-spawning-cmd.html" title="PowerShell spawning Cmd">PowerShell spawning Cmd</a>
+</li>
+<li class="listitem">
+<a class="xref" href="suspicious-ms-office-child-process.html" title="Suspicious MS Office Child Process">Suspicious MS Office Child Process</a>
+</li>
+<li class="listitem">
+<a class="xref" href="suspicious-ms-outlook-child-process.html" title="Suspicious MS Outlook Child Process">Suspicious MS Outlook Child Process</a>
+</li>
+<li class="listitem">
+<a class="xref" href="system-shells-via-services.html" title="System Shells via Services">System Shells via Services</a>
+</li>
+<li class="listitem">
+<a class="xref" href="unusual-parent-child-relationship.html" title="Unusual Parent-Child Relationship">Unusual Parent-Child Relationship</a>
+</li>
+<li class="listitem">
+<a class="xref" href="windows-script-executing-powershell.html" title="Windows Script Executing PowerShell">Windows Script Executing PowerShell</a>
+</li>
+</ul>
+</div>
+<p>While all rules can be adjusted as needed, use care when adding exceptions to
+these rules. Exceptions could result in an undetected client-side execution, or
+a persistence or malware threat going unnoticed.</p>
+<p>Examples of when these rules may create noise include:</p>
+<div class="ulist itemizedlist">
+<ul class="itemizedlist">
+<li class="listitem">
+Receiving and opening email-attached Microsoft Office files, which
+include active content such as macros or scripts, from a trusted third-party
+source.
+</li>
+<li class="listitem">
+Authorized technical support personnel who provide remote workers with
+scripts to gather troubleshooting information.
+</li>
+</ul>
+</div>
+<p>In these cases, exceptions can be added to the rules using the relevant
+<code class="literal">process.name</code>, <code class="literal">user.name</code>, and <code class="literal">host.name</code> conditions. Additionally,
+you can create duplicate rules with lower risk scores.</p>
+<h3><a id="tune-network-rules"></a>Tune network rules<a class="edit_me" rel="nofollow" title="Edit this page on GitHub" href="https://github.com/elastic/security-docs/edit/7.9/docs/detections/prebuilt-rules/tune-rule-signals.asciidoc">edit</a></h3>
+<p>The definition of normal network behavior varies widely across different
+organizations. Different networks conform to different security policies,
+standards, and regulations. When normal network activity triggers alerts,
+network rules can be disabled or modified. For example:</p>
+<div class="ulist itemizedlist">
+<ul class="itemizedlist">
+<li class="listitem">
+To exclude a specific source, add a <code class="literal">not source.ip</code> statement with the
+relevant IP address, and a <code class="literal">destination.port</code> statement with the relevant port
+number (<code class="literal">not source.ip : 196.1.0.12 and destination.port : 445</code>).
+</li>
+<li class="listitem">
+To exclude source network traffic for an entire subnet, add a <code class="literal">not source.ip</code>
+statement with the relevant CIDR notation (<code class="literal">not source.ip : 192.168.0.0/16</code>).
+</li>
+<li class="listitem">
+To exclude a destination IP for a specific destination port, add a
+<code class="literal">not destination.ip</code> statement with the IP address, and a <code class="literal">destination.port</code>
+statement with the port number
+(<code class="literal">not destination.ip : 38.160.150.31 and destination.port : 445</code>)
+</li>
+<li class="listitem">
+To exclude a destination subnet for a specific destination port, add a
+<code class="literal">not destination.ip</code> statement using CIDR notation, and a ‘destination.port’
+statement with the port number
+(<code class="literal">not destination.ip : 172.16.0.0/12 and destination.port : 445</code>).
+</li>
+</ul>
+</div>
+<h4><a id="_noise_from_common_network_traffic"></a>Noise from common network traffic<a class="edit_me" rel="nofollow" title="Edit this page on GitHub" href="https://github.com/elastic/security-docs/edit/7.9/docs/detections/prebuilt-rules/tune-rule-signals.asciidoc">edit</a></h4>
+<p>These network rules may need tuning to reduce noise from legitimate network
+activity:</p>
+<div class="informaltable">
+<table border="0" cellpadding="4px">
+<colgroup>
+<col/>
+<col/>
+</colgroup>
+<tbody valign="top">
+<tr>
+<td valign="top">
+<p>
+<a class="xref" href="dns-activity-to-the-internet.html" title="DNS Activity to the Internet">DNS Activity to the Internet</a>
+</p>
+</td>
+<td valign="top">
+<p>
+Personal devices, brought to work or used
+while working remotely, can query arbitrary DNS servers.
+</p>
+</td>
+</tr>
+<tr>
+<td valign="top">
+<p>
+<a class="xref" href="ftp-file-transfer-protocol-activity-to-the-internet.html" title="FTP (File Transfer Protocol) Activity to the Internet">FTP (File Transfer Protocol) Activity to the Internet</a>
+</p>
+</td>
+<td valign="top">
+<p>
+FTP is sometimes used
+with external sources.
+</p>
+</td>
+</tr>
+<tr>
+<td valign="top">
+<p>
+<a class="xref" href="smtp-to-the-internet.html" title="SMTP to the Internet">SMTP to the Internet</a>
+</p>
+</td>
+<td valign="top">
+<p>
+Marketing and business workflows often
+use SMTP email traffic. Additionally, personal devices, brought to work or used
+while working remotely, may use consumer email services.
+</p>
+</td>
+</tr>
+<tr>
+<td valign="top">
+<p>
+<a class="xref" href="sql-traffic-to-the-internet.html" title="SQL Traffic to the Internet">SQL Traffic to the Internet</a>
+</p>
+</td>
+<td valign="top">
+<p>
+Although uncommon, accessing databases over
+the internet may be part of development workflows.
+</p>
+</td>
+</tr>
+<tr>
+<td valign="top">
+<p>
+<a class="xref" href="tcp-port-8000-activity-to-the-internet.html" title="TCP Port 8000 Activity to the Internet">TCP Port 8000 Activity to the Internet</a>
+</p>
+</td>
+<td valign="top">
+<p>
+Frequently used port while
+developing and testing web services.
+</p>
+</td>
+</tr>
+</tbody>
+</table>
+</div>
+<h4><a id="_noise_from_common_cloud_based_network_traffic"></a>Noise from common cloud-based network traffic<a class="edit_me" rel="nofollow" title="Edit this page on GitHub" href="https://github.com/elastic/security-docs/edit/7.9/docs/detections/prebuilt-rules/tune-rule-signals.asciidoc">edit</a></h4>
+<p>In cloud-based organizations, remote workers sometimes access services over the
+internet. The security policies of home networks probably differ from the
+security policies of managed corporate networks, and these rules might need
+tuning to reduce noise from legitimate administrative activities:</p>
+<div class="ulist itemizedlist">
+<ul class="itemizedlist">
+<li class="listitem">
+<a class="xref" href="rdp-remote-desktop-protocol-from-the-internet.html" title="RDP (Remote Desktop Protocol) from the Internet">RDP (Remote Desktop Protocol) from the Internet</a>
+</li>
+<li class="listitem">
+<a class="xref" href="ssh-secure-shell-from-the-internet.html" title="SSH (Secure Shell) from the Internet">SSH (Secure Shell) from the Internet</a>
+</li>
+<li class="listitem">
+<a class="xref" href="ssh-secure-shell-to-the-internet.html" title="SSH (Secure Shell) to the Internet">SSH (Secure Shell) to the Internet</a>
+</li>
+</ul>
+</div>
+<div class="tip admon">
+<div class="icon"></div>
+<div class="admon_content">
+<p>If your organization is widely distributed and the workforce travels a
+lot, use the <code class="literal">windows_anomalous_user_name_ecs</code>,
+<code class="literal">linux_anomalous_user_name_ecs</code>, and <code class="literal">suspicious_login_activity_ecs</code>
+<a class="xref" href="machine-learning.html" title="Anomaly Detection with Machine Learning">machine learning</a> jobs to detect suspicious authentication activity.</p>
+</div>
+</div>
+</div>
+<div class="navfooter">
+<span class="prev">
+<a href="alerts-ui-manage.html">« Managing detection alerts</a>
+</span>
+<span class="next">
+<a href="prebuilt-rules-changelog.html">Prebuilt rule changes per release »</a>
+</span>
+</div>
+</div>
+</body>
+</html>

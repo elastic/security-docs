@@ -1,0 +1,240 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="UTF-8">
+<title>FTP (File Transfer Protocol) Activity to the Internet | Elastic Security Solution | Elastic</title>
+<link rel="home" href="index.html" title="Elastic Security Solution"/>
+<link rel="up" href="prebuilt-rules.html" title="Prebuilt rule reference"/>
+<link rel="prev" href="external-alerts.html" title="External Alerts"/>
+<link rel="next" href="file-deletion-via-shred.html" title="File Deletion via Shred"/>
+<meta name="DC.type" content="Learn/Docs/"/>
+<meta name="DC.subject" content=""/>
+<meta name="DC.identifier" content=""/>
+</head>
+<body>
+<div id="content">
+<div class="breadcrumbs">
+<span class="breadcrumb-link"><a href="index.html">Elastic Security Solution</a></span>
+»
+<span class="breadcrumb-link"><a href="detection-engine-overview.html">Detections and Alerts (beta)</a></span>
+»
+<span class="breadcrumb-link"><a href="prebuilt-rules.html">Prebuilt rule reference</a></span>
+»
+<span class="breadcrumb-node">FTP (File Transfer Protocol) Activity to the Internet</span>
+</div>
+<div class="navheader">
+<span class="prev">
+<a href="external-alerts.html">« External Alerts</a>
+</span>
+<span class="next">
+<a href="file-deletion-via-shred.html">File Deletion via Shred »</a>
+</span>
+</div>
+<div class="section">
+<div class="titlepage"><div><div>
+<h2 class="title"><a id="ftp-file-transfer-protocol-activity-to-the-internet"></a>FTP (File Transfer Protocol) Activity to the Internet<a class="edit_me" rel="nofollow" title="Edit this page on GitHub" href="https://github.com/elastic/security-docs/edit/7.9/docs/detections/prebuilt-rules/rule-details/ftp-file-transfer-protocol-activity-to-the-internet.asciidoc">edit</a></h2>
+</div></div></div>
+<p>Detects events that may indicate the use of FTP network connections to the
+Internet. The File Transfer Protocol (FTP) has been around in its current form
+since the 1980s. It can be a common and efficient procedure on your network to
+send and receive files. Because of this, adversaries will also often use this
+protocol to exfiltrate data from your network or download new tools.
+Additionally, FTP is a plain-text protocol which, if intercepted, may expose
+usernames and passwords. FTP activity involving servers subject to regulations
+or compliance standards may be unauthorized.</p>
+<p><span class="strong strong"><strong>Rule type</strong></span>: query</p>
+<p><span class="strong strong"><strong>Rule indices</strong></span>:</p>
+<div class="ulist itemizedlist">
+<ul class="itemizedlist">
+<li class="listitem">
+filebeat-*
+</li>
+<li class="listitem">
+packetbeat-*
+</li>
+</ul>
+</div>
+<p><span class="strong strong"><strong>Severity</strong></span>: low</p>
+<p><span class="strong strong"><strong>Risk score</strong></span>: 21</p>
+<p><span class="strong strong"><strong>Runs every</strong></span>: 5 minutes</p>
+<p><span class="strong strong"><strong>Searches indices from</strong></span>: now-6m (<a href="https://www.elastic.co/guide/en/elasticsearch/reference/7.9/common-options.html#date-math" class="ulink" target="_top">Date Math format</a>, see also <a class="xref" href="rules-ui-create.html#rule-schedule" title="Set the rule&#8217;s schedule"><code class="literal">Additional look-back time</code></a>)</p>
+<p><span class="strong strong"><strong>Maximum alerts per execution</strong></span>: 100</p>
+<p><span class="strong strong"><strong>Tags</strong></span>:</p>
+<div class="ulist itemizedlist">
+<ul class="itemizedlist">
+<li class="listitem">
+Elastic
+</li>
+<li class="listitem">
+Network
+</li>
+</ul>
+</div>
+<p><span class="strong strong"><strong>Version</strong></span>: 4 (<a class="xref" href="ftp-file-transfer-protocol-activity-to-the-internet.html#ftp-file-transfer-protocol-activity-to-the-internet-history" title="Rule version history">version history</a>)</p>
+<p><span class="strong strong"><strong>Added (Elastic Stack release)</strong></span>: 7.6.0</p>
+<p><span class="strong strong"><strong>Last modified (Elastic Stack release)</strong></span>: 7.9.0</p>
+<p><span class="strong strong"><strong>Rule authors</strong></span>: Elastic</p>
+<p><span class="strong strong"><strong>Rule license</strong></span>: Elastic License</p>
+<div class="section">
+<div class="titlepage"><div><div>
+<h3 class="title"><a id="_potential_false_positives_55"></a>Potential false positives<a class="edit_me" rel="nofollow" title="Edit this page on GitHub" href="https://github.com/elastic/security-docs/edit/7.9/docs/detections/prebuilt-rules/rule-details/ftp-file-transfer-protocol-activity-to-the-internet.asciidoc">edit</a></h3>
+</div></div></div>
+<p>FTP servers should be excluded from this rule as this is expected behavior. Some business workflows may use FTP for data exchange. These workflows often have expected characteristics such as users, sources, and destinations. FTP activity involving an unusual source or destination may be more suspicious. FTP activity involving a production server that has no known associated FTP workflow or business requirement is often suspicious.</p>
+</div>
+
+<div class="section">
+<div class="titlepage"><div><div>
+<h3 class="title"><a id="_rule_query_74"></a>Rule query<a class="edit_me" rel="nofollow" title="Edit this page on GitHub" href="https://github.com/elastic/security-docs/edit/7.9/docs/detections/prebuilt-rules/rule-details/ftp-file-transfer-protocol-activity-to-the-internet.asciidoc">edit</a></h3>
+</div></div></div>
+<div class="pre_wrapper lang-js">
+<pre class="programlisting prettyprint lang-js">event.category:(network or network_traffic) and network.transport:tcp
+and (destination.port:(20 or 21) or event.dataset:zeek.ftp) and
+source.ip:(10.0.0.0/8 or 172.16.0.0/12 or 192.168.0.0/16) and not
+destination.ip:(10.0.0.0/8 or 127.0.0.0/8 or 172.16.0.0/12 or
+192.168.0.0/16 or "::1")</pre>
+</div>
+</div>
+
+<div class="section">
+<div class="titlepage"><div><div>
+<h3 class="title"><a id="_threat_mapping_60"></a>Threat mapping<a class="edit_me" rel="nofollow" title="Edit this page on GitHub" href="https://github.com/elastic/security-docs/edit/7.9/docs/detections/prebuilt-rules/rule-details/ftp-file-transfer-protocol-activity-to-the-internet.asciidoc">edit</a></h3>
+</div></div></div>
+<p><span class="strong strong"><strong>Framework</strong></span>: MITRE ATT&amp;CK<sup>TM</sup></p>
+<div class="ulist itemizedlist">
+<ul class="itemizedlist">
+<li class="listitem">
+<p>Tactic:</p>
+<div class="ulist itemizedlist">
+<ul class="itemizedlist">
+<li class="listitem">
+Name: Command and Control
+</li>
+<li class="listitem">
+ID: TA0011
+</li>
+<li class="listitem">
+Reference URL: <a href="https://attack.mitre.org/tactics/TA0011/" class="ulink" target="_top">https://attack.mitre.org/tactics/TA0011/</a>
+</li>
+</ul>
+</div>
+</li>
+<li class="listitem">
+<p>Technique:</p>
+<div class="ulist itemizedlist">
+<ul class="itemizedlist">
+<li class="listitem">
+Name: Commonly Used Port
+</li>
+<li class="listitem">
+ID: T1043
+</li>
+<li class="listitem">
+Reference URL: <a href="https://attack.mitre.org/techniques/T1043/" class="ulink" target="_top">https://attack.mitre.org/techniques/T1043/</a>
+</li>
+</ul>
+</div>
+</li>
+<li class="listitem">
+<p>Tactic:</p>
+<div class="ulist itemizedlist">
+<ul class="itemizedlist">
+<li class="listitem">
+Name: Exfiltration
+</li>
+<li class="listitem">
+ID: TA0010
+</li>
+<li class="listitem">
+Reference URL: <a href="https://attack.mitre.org/tactics/TA0010/" class="ulink" target="_top">https://attack.mitre.org/tactics/TA0010/</a>
+</li>
+</ul>
+</div>
+</li>
+<li class="listitem">
+<p>Technique:</p>
+<div class="ulist itemizedlist">
+<ul class="itemizedlist">
+<li class="listitem">
+Name: Exfiltration Over Alternative Protocol
+</li>
+<li class="listitem">
+ID: T1048
+</li>
+<li class="listitem">
+Reference URL: <a href="https://attack.mitre.org/techniques/T1048/" class="ulink" target="_top">https://attack.mitre.org/techniques/T1048/</a>
+</li>
+</ul>
+</div>
+</li>
+</ul>
+</div>
+</div>
+
+<div class="section">
+<div class="titlepage"><div><div>
+<h3 class="title"><a id="ftp-file-transfer-protocol-activity-to-the-internet-history"></a>Rule version history<a class="edit_me" rel="nofollow" title="Edit this page on GitHub" href="https://github.com/elastic/security-docs/edit/7.9/docs/detections/prebuilt-rules/rule-details/ftp-file-transfer-protocol-activity-to-the-internet.asciidoc">edit</a></h3>
+</div></div></div>
+<div class="variablelist">
+<dl class="variablelist">
+<dt>
+<span class="term">
+Version 4 (7.9.0 release)
+</span>
+</dt>
+<dd>
+<p>
+Updated query, changed from:
+</p>
+<div class="pre_wrapper lang-js">
+<pre class="programlisting prettyprint lang-js">network.transport:tcp and destination.port:(20 or 21) and
+source.ip:(10.0.0.0/8 or 172.16.0.0/12 or 192.168.0.0/16) and not
+destination.ip:(10.0.0.0/8 or 127.0.0.0/8 or 172.16.0.0/12 or
+192.168.0.0/16 or "::1")</pre>
+</div>
+</dd>
+<dt>
+<span class="term">
+Version 3 (7.7.0 release)
+</span>
+</dt>
+<dd>
+<p>
+Updated query, changed from:
+</p>
+<div class="pre_wrapper lang-js">
+<pre class="programlisting prettyprint lang-js">network.transport: tcp and destination.port: (20 or 21) and (
+network.direction: outbound or ( source.ip: (10.0.0.0/8 or
+172.16.0.0/12 or 192.168.0.0/16) and not destination.ip: (10.0.0.0/8
+or 172.16.0.0/12 or 192.168.0.0/16) ) )</pre>
+</div>
+</dd>
+<dt>
+<span class="term">
+Version 2 (7.6.1 release)
+</span>
+</dt>
+<dd>
+<div class="ulist itemizedlist">
+<ul class="itemizedlist">
+<li class="listitem">
+Removed auditbeat-*, packetbeat-*, and winlogbeat-* from the rule indices.
+</li>
+</ul>
+</div>
+</dd>
+</dl>
+</div>
+</div>
+
+</div>
+<div class="navfooter">
+<span class="prev">
+<a href="external-alerts.html">« External Alerts</a>
+</span>
+<span class="next">
+<a href="file-deletion-via-shred.html">File Deletion via Shred »</a>
+</span>
+</div>
+</div>
+</body>
+</html>

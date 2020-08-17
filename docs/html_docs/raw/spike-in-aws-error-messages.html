@@ -1,0 +1,139 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="UTF-8">
+<title>Spike in AWS Error Messages | Elastic Security Solution | Elastic</title>
+<link rel="home" href="index.html" title="Elastic Security Solution"/>
+<link rel="up" href="prebuilt-rules.html" title="Prebuilt rule reference"/>
+<link rel="prev" href="socat-process-activity.html" title="Socat Process Activity"/>
+<link rel="next" href="strace-process-activity.html" title="Strace Process Activity"/>
+<meta name="DC.type" content="Learn/Docs/"/>
+<meta name="DC.subject" content=""/>
+<meta name="DC.identifier" content=""/>
+</head>
+<body>
+<div id="content">
+<div class="breadcrumbs">
+<span class="breadcrumb-link"><a href="index.html">Elastic Security Solution</a></span>
+»
+<span class="breadcrumb-link"><a href="detection-engine-overview.html">Detections and Alerts (beta)</a></span>
+»
+<span class="breadcrumb-link"><a href="prebuilt-rules.html">Prebuilt rule reference</a></span>
+»
+<span class="breadcrumb-node">Spike in AWS Error Messages</span>
+</div>
+<div class="navheader">
+<span class="prev">
+<a href="socat-process-activity.html">« Socat Process Activity</a>
+</span>
+<span class="next">
+<a href="strace-process-activity.html">Strace Process Activity »</a>
+</span>
+</div>
+<div class="section">
+<div class="titlepage"><div><div>
+<h2 class="title"><a id="spike-in-aws-error-messages"></a>Spike in AWS Error Messages<a class="edit_me" rel="nofollow" title="Edit this page on GitHub" href="https://github.com/elastic/security-docs/edit/7.9/docs/detections/prebuilt-rules/rule-details/spike-in-aws-error-messages.asciidoc">edit</a></h2>
+</div></div></div>
+<p>A machine learning job detected a significant spike in the rate of a particular
+error in the CloudTrail messages. Spikes in error messages may accompany
+attempts at privilege escalation, lateral movement, or discovery.</p>
+<p><span class="strong strong"><strong>Rule type</strong></span>: machine_learning</p>
+<p><span class="strong strong"><strong>Machine learning job</strong></span>: high_distinct_count_error_message</p>
+<p><span class="strong strong"><strong>Machine learning anomaly threshold</strong></span>: 50</p>
+<p><span class="strong strong"><strong>Severity</strong></span>: low</p>
+<p><span class="strong strong"><strong>Risk score</strong></span>: 21</p>
+<p><span class="strong strong"><strong>Runs every</strong></span>: 15 minutes</p>
+<p><span class="strong strong"><strong>Searches indices from</strong></span>: now-60m (<a href="https://www.elastic.co/guide/en/elasticsearch/reference/7.9/common-options.html#date-math" class="ulink" target="_top">Date Math format</a>, see also <a class="xref" href="rules-ui-create.html#rule-schedule" title="Set the rule&#8217;s schedule"><code class="literal">Additional look-back time</code></a>)</p>
+<p><span class="strong strong"><strong>Maximum alerts per execution</strong></span>: 100</p>
+<p><span class="strong strong"><strong>References</strong></span>:</p>
+<div class="ulist itemizedlist">
+<ul class="itemizedlist">
+<li class="listitem">
+<a href="https://www.elastic.co/guide/en/security/master/prebuilt-ml-jobs.html" class="ulink" target="_top">https://www.elastic.co/guide/en/security/master/prebuilt-ml-jobs.html</a>
+</li>
+</ul>
+</div>
+<p><span class="strong strong"><strong>Tags</strong></span>:</p>
+<div class="ulist itemizedlist">
+<ul class="itemizedlist">
+<li class="listitem">
+AWS
+</li>
+<li class="listitem">
+Elastic
+</li>
+<li class="listitem">
+ML
+</li>
+</ul>
+</div>
+<p><span class="strong strong"><strong>Version</strong></span>: 1</p>
+<p><span class="strong strong"><strong>Added (Elastic Stack release)</strong></span>: 7.9.0</p>
+<p><span class="strong strong"><strong>Rule authors</strong></span>: Elastic</p>
+<p><span class="strong strong"><strong>Rule license</strong></span>: Elastic License</p>
+<div class="section">
+<div class="titlepage"><div><div>
+<h3 class="title"><a id="_potential_false_positives_94"></a>Potential false positives<a class="edit_me" rel="nofollow" title="Edit this page on GitHub" href="https://github.com/elastic/security-docs/edit/7.9/docs/detections/prebuilt-rules/rule-details/spike-in-aws-error-messages.asciidoc">edit</a></h3>
+</div></div></div>
+<p>Spikes in error message activity can also be due to bugs in cloud automation
+scripts or workflows, changes to cloud automation scripts or workflows,
+adoption of new services, changes in the way services are used, or changes to
+IAM privileges.</p>
+</div>
+
+<div class="section">
+<div class="titlepage"><div><div>
+<h3 class="title"><a id="_investigation_guide_4"></a>Investigation guide<a class="edit_me" rel="nofollow" title="Edit this page on GitHub" href="https://github.com/elastic/security-docs/edit/7.9/docs/detections/prebuilt-rules/rule-details/spike-in-aws-error-messages.asciidoc">edit</a></h3>
+</div></div></div>
+<p>Alerts from this rule indicate a large spike in the number of CloudTrail log
+messages that contain a particular error message. The error message in question
+is associated with the response to an AWS API command or method call. Here are
+some possible avenues of investigation:</p>
+<div class="ulist itemizedlist">
+<ul class="itemizedlist">
+<li class="listitem">
+Examine the history of the error. Has it manifested before? If the error,
+which is visible in the <code class="literal">aws.cloudtrail.error_message</code> field, manifested only
+very recently, it might be related to recent changes in an automation module or
+script.
+</li>
+<li class="listitem">
+Examine the request parameters. These may provide indications as to the
+nature of the task being performed when the error occurred. Is the error
+related to unsuccessful attempts to enumerate or access objects, data or
+secrets? If so, this can sometimes be a byproduct of discovery, privilege
+escalation or lateral movement attempts.
+</li>
+<li class="listitem">
+Consider the user as identified by the <code class="literal">user.name</code> field. Is this activity
+part of an expected workflow for the user context? Examine the user identity in
+the <code class="literal">aws.cloudtrail.user_identity.arn</code> field and the access key id in the
+<code class="literal">aws.cloudtrail.user_identity.access_key_id</code> field which can help identify the
+precise user context. The user agent details in the <code class="literal">user_agent.original</code> field
+may also indicate what type of client made the request.
+</li>
+<li class="listitem">
+Consider the source IP address and geolocation for the calling user who
+issued the command. Do they look normal for the calling user? If the source is
+an EC2 IP address, is it associated with an EC2 instance in one of your
+accounts or could it be sourcing from an EC2 instance not under your control?
+If it is an authorized EC2 instance, is the activity associated with normal
+behavior for the instance role or roles? Are there any other alerts or signs of
+suspicious activity involving this instance?
+</li>
+</ul>
+</div>
+</div>
+
+</div>
+<div class="navfooter">
+<span class="prev">
+<a href="socat-process-activity.html">« Socat Process Activity</a>
+</span>
+<span class="next">
+<a href="strace-process-activity.html">Strace Process Activity »</a>
+</span>
+</div>
+</div>
+</body>
+</html>
