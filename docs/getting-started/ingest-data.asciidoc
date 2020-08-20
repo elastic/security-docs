@@ -8,25 +8,37 @@ your hosts and sends logs, metrics, and endpoint security data to {es-sec}
 (see <<install-endpoint>>).
 * *{beats}* shippers installed for each system you want to monitor.
 * Third-party collectors configured to ship ECS-compliant data.
-<<siem-field-reference>> provides a list of all fields used in {es-sec}.
+<<siem-field-reference>> provides a list of ECS fields used in {es-sec}.
 
 [IMPORTANT]
 ==============
-If you use a third-party collector to ship data to the {siem-app}, you must
+If you use a third-party collector to ship data to {es-sec}, you must
 map its fields to the {ecs-ref}[Elastic Common Schema (ECS)]. Additionally,
 you must add its index to the {es-sec} indices (*{kib}* ->
 *Stack Management* -> *Advanced Settings* -> *`securitySolution:defaultIndex`*).
 
-{siem-soln} uses the {ecs-ref}/ecs-host.html[`host.name`] ECS field as the
+{es-sec} uses the {ecs-ref}/ecs-host.html[`host.name`] ECS field as the
 primary key for identifying hosts.
 ==============
+
+The Elastic Agent with the
+https://www.elastic.co/products/endpoint-security[Endpoint Security Integration]
+ships these data sources:
+
+* Process - Linux, macOS, Windows
+* Network - Linux, macOS, Windows
+* File - Linux, macOS, Windows
+* DNS - Window
+* Registry - Windows
+* DLL and Driver Load - Windows
+* Security - Windows
 
 [discrete]
 [[install-beats]]
 == Install {beats} shippers
 
 To populate {es-sec} with hosts and network security events, you need to install and
-configure Beats on the systems from which you want to ingest security events:
+configure Beats on the hosts from which you want to ingest security events:
 
 * https://www.elastic.co/products/beats/filebeat[{filebeat}] for forwarding and
 centralizing logs and files
@@ -50,22 +62,18 @@ image::images/add-data.png[]
 [float]
 === Download and install {beats} from the command line
 
-To install {beats}:
+To install {beats}, see these installation guides:
 
-* *{filebeat} and {filebeat} modules.* See the
-{filebeat-ref}/filebeat-installation-configuration.html[{filebeat} quick start]
-and enable modules for the events you want to collect. If there is no module
-for the events you want to collect, see the
-{filebeat-ref}/configuration-filebeat-options.html[Conifgure inputs].
+* {filebeat-ref}/filebeat-installation-configuration.html[{filebeat} quick start]
 
-* *Auditbeat.* See {auditbeat-ref}/auditbeat-installation-configuration.html[{auditbeat} quick start].
+* {auditbeat-ref}/auditbeat-installation-configuration.html[{auditbeat} quick start]
 
-* *Winlogbeat.* See {winlogbeat-ref}/winlogbeat-installation-configuration.html[{winlogbeat} quick start].
+* {winlogbeat-ref}/winlogbeat-installation-configuration.html[{winlogbeat} quick start]
 
-* *Packetbeat.* See {packetbeat-ref}/packetbeat-installation-configuration.html[{packetbeat} quick start].
+* {packetbeat-ref}/packetbeat-installation-configuration.html[{packetbeat} quick start]
 
 [discrete]
-<<enable-beat-modules>>
+[[enable-beat-modules]]
 === Enable modules and configuration options
 
 No matter how you installed {beats}, you need to enable modules in {auditbeat}
@@ -74,28 +82,38 @@ and {filebeat} to populate {es-sec} with data.
 TIP: For a full list of security-related beat modules,
 https://www.elastic.co/integrations?solution=security[click here].
 
-To populate *Hosts* data, enable these {auditbeat} modules:
+To populate *Hosts* data, enable these modules:
 
-* {auditbeat-ref}/auditbeat-module-system.html[System module  - Linux, macOS, Win]
-* {auditbeat-ref}/auditbeat-module-auditd.html[Auditd module (Linux Kernel Audit info)]
-* {auditbeat-ref}/auditbeat-module-file_integrity.html[File integrity module (FIM) - Linux, macOS, Win]
+* {auditbeat-ref}/auditbeat-module-system.html[Auditbeat system module  - Linux, macOS,
+Windows]:
+** packages
+** processes
+** logins
+** sockets
+** users and groups
+* {auditbeat-ref}/auditbeat-module-auditd.html[Auditbeat auditd module - Linux kernel audit events]
+* {auditbeat-ref}/auditbeat-module-file_integrity.html[Auditbeat file integrity
+module - Linux, macOS, Windows]
+* {filebeat-ref}/filebeat-module-system.html[Filebeat system module - Linux
+system logs]
+* {filebeat-ref}/filebeat-module-santa.html[Filebeat Santa module  - macOS
+security sytem]
+* {winlogbeat-ref}/_winlogbeat_overview.html[Winlogbeat - Windows event logs]
 
+To populate *Network* data, enable Packetbeat protocols and Filebeat modules:
 
-To populate *Network* data, enable the relevant {packetbeat} protocols
-and {filebeat} modules:
-
-* https://www.elastic.co/products/beats/packetbeat[{packetbeat}]:
+* {packetbeat-ref}/packetbeat-overview.html[{packetbeat}]
 ** {packetbeat-ref}/packetbeat-dns-options.html[DNS]
 ** {packetbeat-ref}/configuration-tls.html[TLS]
 ** {packetbeat-ref}/configuration-protocols.html[Other supported protocols]
-* https://www.elastic.co/products/beats/filebeat[{filebeat}]:
+* {filebeat-ref}//filebeat-overview.html[{filebeat}]
 ** {filebeat-ref}/filebeat-module-zeek.html[Zeek NMS module]
 ** {filebeat-ref}/filebeat-module-suricata.html[Suricata IDS module]
 ** {filebeat-ref}/filebeat-module-iptables.html[Iptables/Ubiquiti module]
 ** {filebeat-ref}/filebeat-module-coredns.html[CoreDNS module]
 ** {filebeat-ref}/filebeat-module-envoyproxy.html[Envoy proxy module (Kubernetes)]
 ** {filebeat-ref}/filebeat-module-panw.html[Palo Alto Networks firewall module]
-** {filebeat-ref}/filebeat-module-cisco.html[Cisco ASA firewall module]
+** {filebeat-ref}//filebeat-module-cisco.html[Cisco ASA firewall module]
 ** {filebeat-ref}/filebeat-module-aws.html[AWS module]
 ** {filebeat-ref}/filebeat-module-cef.html[CEF module]
 ** {filebeat-ref}/filebeat-module-googlecloud.html[Google Cloud module]
