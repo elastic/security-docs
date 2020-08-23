@@ -1,0 +1,131 @@
+[[advanced-settings]]
+= Configuring advanced settings
+
+The advanced settings determine:
+
+* Which indices {es-sec} uses to retrieve data
+* Whether the news feed is displayed on the <<overview-ui>>
+* The default time interval used to filter {es-sec} pages
+* The default {es-sec} pages refresh time
+* {ml-cap} anomaly score display threshold
+* IP reputation link on <<network-page-overview, IP details>> pages
+
+You need `All` privileges for the *Advanced Settings* feature to change these
+settings (see {kibana-ref}/kibana-privileges.html[Kibana privileges]).
+
+
+WARNING: Modifying advanced settings can affect Kibana performance and cause
+problems that are difficult to diagnose. Setting a property value to a blank
+field reverts to the default behavior, which might not be compatible with other
+configuration settings. Deleting a custom setting removes it from Kibana
+permanently.
+
+[discrete]
+== Access advanced settings
+
+To access advanced settings:
+
+. Go to *Stack Management* > *Advanced Settings*.
+. Scroll down to *Security Solution* settings.
++
+[role="screenshot"]
+image::images/adv-settings.png[]
+
+[discrete]
+== Update default Elastic Security indices
+
+The `securitySolution:defaultIndex` field defines which {es} indices the
+{es-sec-app} uses to collects data. By default, these index patterns are used to
+match {es} indices:
+
+* `apm-*-transaction*`
+* `auditbeat-*`
+* `endgame-*`
+* `filebeat-*`
+* `logs-*`
+* `packetbeat-*`
+* `winlogbeat-*`
+
+NOTE: Index patterns use wildcards to specify a set of indices. For example, the
+`filebeat-*` index pattern means all indices starting with `filebeat-` are
+available in the {es-sec-app}.
+
+All of the default index patterns match {beats-ref}/beats-reference.html[{beats}] and 
+{ingest-guide}/ingest-management-overview.html[{agent}] indices. This means all
+data shipped via {beats} and the {agent} is automatically added to the
+{es-sec-app}.
+
+You can add or remove any indices and index patterns as required. For some
+background information on {es} indices, see
+{ref}/documents-indices.html[Data in: documents and indices]. 
+
+
+IMPORTANT: {es-sec} requires {ecs-ref}[ECS-compliant data]. If you use third-party data
+collectors to ship data to {es}, the data must be mapped to ECS.
+<<siem-field-reference>> lists ECS fields used in {es-sec}.
+
+[discrete]
+== Modify news feed settings
+
+You can change these settings, which affect the news feed displayed on the
+{es-sec} *Overview* page:
+
+* `securitySolution:enableNewsFeed`: Enables the security news feed on the
+Security *Overview* page.
+* `securitySolution:newsFeedUrl`: The URL from which the security news feed content is
+retrieved.
+
+[discrete]
+== Change the default search interval and data refresh time
+
+To change the default interval {es-sec} uses to retrieve data when you open the
+UI, update this settings:
+
+`securitySolution:timeDefaults`
+
+To configure how often the displayed {es-sec} data is refreshed by default, modify:
+
+`securitySolution:refreshIntervalDefaults`
+
+NOTE: See {ref}/common-options.html[Date Math] for information about the
+required field syntax.
+
+The UI {kibana-ref}/set-time-filter.html[time filter] overrides the default values. 
+
+[discrete]
+== Set machine learning score threshold
+
+When security <<machine-learning, {ml} jobs>> are enabled, this setting
+determines the threshold above which anomaly scores are displayed in {es-sec}: 
+
+`securitySolution:defaultAnomalyScore`
+
+[discrete]
+[[ip-reputation-links]]
+== Display reputation links on IP detail pages
+
+On IP details pages (*Security* -> *Network* -> IP address), links to
+external sites for verifying the IP address's reputation are displayed. By
+default, links to these sites are listed: https://talosintelligence.com/[TALOS]
+and https://www.virustotal.com/[VIRUSTOTAL].
+
+The `securitySolution:ipReputationLinks` field determines which IP reputation
+sites are listed. To modify the listed sites, edit the field's JSON array. These
+fields must be defined in each array element:
+
+* `name`: The link's UI display name.
+* `url_template`: The link's URL. It can include `{{ip}}`, which is placeholder
+for the IP address you are viewing on the *IP detail* page.
+
+*Example*
+
+Adds a link to \https://www.dnschecker.org on *IP detail* pages:
+
+[source,json]
+--------------------------------------------------
+[
+  { "name": "virustotal.com", "url_template": "https://www.virustotal.com/gui/search/{{ip}}" },
+  { "name": "dnschecker.org", "url_template": "https://www.dnschecker.org/ip-location.php?ip={{ip}}" },
+  { "name": "talosIntelligence.com", "url_template": "https://talosintelligence.com/reputation_center/lookup?search={{ip}}" }
+]
+--------------------------------------------------
