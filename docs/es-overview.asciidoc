@@ -2,150 +2,122 @@
 [chapter, role="xpack"]
 = Elastic Security overview
 
-Elastic Security combines the threat detection of SIEM and the prevention, detection, and response of Endpoint Security via an autonomous agent into a unified software solution. These analytical and protection capabilities, leveraged by the speed and extensibility of Elasticsearch, enable analysts to defend their organization from threats before damage and loss occur.
+Elastic Security combines SIEM threat detection features with endpoint
+prevention and response capabilities in one solution. These analytical and
+protection capabilities, leveraged by the speed and extensibility of
+Elasticsearch, enable analysts to defend their organization from threats before
+damage and loss occur.
 
 Elastic Security provides the following security benefits and capabilities:
 
-* A powerful detection engine to identify attacks and system misconfiguration
-* Interactive visualizations to investigate attacks
-* Accelerated response with embedded case management and automated actions
-* Detection of signatureless attacks with prebuilt anomaly detection jobs and detection rules
+* A detection engine to identify attacks and system misconfigurations
+* A workspace for event triage and investigations
+* Interactive visualizations to investigate process relationships
+* Inbuilt case management with automated actions
+* Detection of signatureless attacks with prebuilt machine learning anomaly jobs
+and detection rules
+
+[discrete]
+== Elastic Security components and workflow
 
 The following diagram provides a comprehensive illustration of the Elastic Security workflow.
 
 [role="screenshot"]
-.Elastic Security workflow
 image::images/workflow.png[Elastic Security workflow]
 
-[discrete]
-== Elastic Security components
+Here's an overview of the flow and its components:
 
-The {security-app} in {kib} provides an interactive workspace for security teams to
-triage events and perform initial investigations. Additionally,
-<<machine-learning, {ml} {anomaly-jobs}>> and
-<<detection-engine-overview, detection engine rules>> provide ways to
-automatically detect suspicious activity across your entire fleet of servers
-and workstations.
+* Data is shipped from your hosts to {es} via beat modules and the Elastic
+Endpoint Security agent integration:
+** <<install-endpoint, {es-sec-endpoint}>> - Elastic agent integration that
+protects your hosts against malware and ships these data sets:
+***  *Windows*: Process, network, file, DNS, registry, DLL and driver loads,
+malware security detections 
+*** *Linux/macOS*: Process, network, file
+** https://www.elastic.co/integrations?solution=security[Beat modules]: {beats}
+are lightweight data shippers. Beat modules provide a way of collecting and
+parsing specific data sets from common sources, such as cloud and OS events,
+logs, and metrics. Common security-related modules are listed
+<<enable-beat-modules, here>>. 
+* The {security-app} in {kib} is used to manage the *Detection engine*,
+*Cases*, and *Timeline*, as well as administer hosts running Endpoint Security:
+** Detection engine - Automatically searches for suspicious host and network
+activity via:
+*** <<detection-engine-overview, Detection rules>>: Periodically search the data
+({es} indices) sent from your hosts for suspicious events. When a suspicious
+event is discovered, a detection alert is generated. External systems, such as
+Slack and email, can be used to send notifications when alerts are generated.
+You can create your own rules and make use of our <<prebuilt-rules, prebuilt ones>>.
+*** <<detections-ui-exceptions, Exceptions>>: Reduce noise and the number of
+false positives. Exceptions are associated with rules and prevent alerts when
+an exception's conditions are met. *Value lists* contain source event
+values that can be used as part of an exception's conditions. When
+{es-sec-endpoint} is installed on your hosts, you can add malware exceptions
+directly to the endpoint from the Security app.
+*** <<included-jobs, {ml-cap} jobs>>: Automatic anomaly detection of host and
+network events. Anomaly scores are provided per host, and can be used with
+detection rules.
+** <<timelines-ui, Timeline>>: Workspace for investigating alerts and events.
+Timelines use queries and filters to drill down into events related to
+a specific incident. Timeline templates are attached to rules and use predefined
+queries when alerts are investigated. Timelines can be saved and shared with
+others, as well as attached to Cases.
+** <<cases-overview, Cases>>: Internal system for opening, tracking, and sharing
+security issues directly in the Security app. Cases can be integrated with
+external ticketing systems.
+** <<admin-page-ov, Administration>>: View and manage hosts running {es-sec-endpoint}.
 
-Elastic Security requires the following {stack} components:
-
-*https://www.elastic.co/products/endpoint-security[Elastic Endpoint Security]*
-is an endpoint security platform and agent that provides prevention, detection,
-and response capabilities. It ships events and security alerts directly to {es}.
-
-*https://www.elastic.co/products/beats[{beats}]* are open source data shippers
-that you install as agents on your systems. {beats} send security events and other
+<<ingest-data>> and <<install-endpoint>> describe how to ship security-related
 data to {es}.
 
-*https://www.elastic.co/products/elasticsearch[{es}]* is a real-time,
+
+For more background information, see:
+
+* https://www.elastic.co/products/elasticsearch[{es}]: A real-time,
 distributed storage, search, and analytics engine. {es} excels at indexing
 streams of semi-structured data, such as logs or metrics.
-
-*https://www.elastic.co/products/kibana[{kib}]* is an open source analytics and
+* https://www.elastic.co/products/kibana[{kib}]: An open source analytics and
 visualization platform designed to work with {es}. You use {kib} to search,
 view, and interact with data stored in {es} indices. You can easily perform
 advanced data analysis and visualize your data in a variety of charts, tables,
 and maps.
 
 [discrete]
-[[siem-integration]]
-== Additional Elastic components
+=== Additional Elastic Endpoint Security information
 
-You can use {siem-soln} with other Elastic products and features to help you
+The Elastic https://www.elastic.co/endpoint-security/[Endpoint Security agent integration]
+provides capabilities such as collecting events, detecting and preventing
+malicious activity, exceptions, and artifact delivery. The 
+{ingest-guide}/ingest-management-overview.html[Ingest Manager] is used to
+install and manage Elastic agents and integrations on your hosts.
+
+[discrete]
+[[siem-integration]]
+=== Integration with other Elastic products
+
+You can use {es-sec} with other Elastic products and features to help you
 identify and investigate suspicious activity:
 
 * https://www.elastic.co/products/stack/machine-learning[{ml-cap}]
 * https://www.elastic.co/products/stack/alerting[Alerting]
 * https://www.elastic.co/products/stack/canvas[Canvas]
 
-[float]
+
+
+[discrete]
 [[data-sources]]
-== Data sources
+=== APM transaction data sources
 
-Elastic Security can ingest and analyze data from a variety of sources, including Elastic
-Endpoint Security, Beats and Beats modules,
-{apm-app-ref}/transactions.html[APM transactions], and third-party
-collectors mapped to the {ecs-ref}[Elastic Common Schema (ECS)].
-
-[discrete]
-[[hosts-data-sources]]
-=== Hosts data sources
-
-* https://www.elastic.co/products/beats/auditbeat[{auditbeat}]
-** {auditbeat-ref}/auditbeat-module-system.html[System module  - Linux, macOS, Windows]
-*** packages
-*** processes
-*** logins
-*** sockets
-*** users and groups
-** {auditbeat-ref}/auditbeat-module-auditd.html[Auditd module (Linux Kernel Audit info)]
-** {auditbeat-ref}/auditbeat-module-file_integrity.html[File integrity module (FIM) - Linux, macOS, Windows]
-* https://www.elastic.co/products/beats/filebeat[{filebeat}]
-** system logs (auth logs) - Linux
-** Santa - macOS
-* https://www.elastic.co/products/beats/winlogbeat[{winlogbeat}]
-** Windows event logs - Windows
-* https://www.elastic.co/products/endpoint-security[Elastic Endpoint Security]
-** Process - Linux, macOS, Windows
-** Network - Linux, macOS, Windows
-** File - Linux, macOS, Windows
-** DNS - Windows
-** Registry - Windows
-** DLL and Driver Load - Windows
-** Security - Windows
-
-[discrete]
-[[network-data-sources]]
-=== Network data sources
-
-* https://www.elastic.co/products/beats/packetbeat[{packetbeat}]
-** Flows
-** DNS
-** other protocols
-* https://www.elastic.co/products/beats/filebeat[{filebeat}]
-** {filebeat-ref}/filebeat-module-zeek.html[Zeek NMS module]
-** {filebeat-ref}/filebeat-module-suricata.html[Suricata IDS module]
-** {filebeat-ref}/filebeat-module-iptables.html[Iptables/Ubiquiti module]
-** {filebeat-ref}/filebeat-module-coredns.html[CoreDNS module]
-** {filebeat-ref}/filebeat-module-envoyproxy.html[Envoy proxy module (Kubernetes)]
-** {filebeat-ref}/filebeat-module-panw.html[Palo Alto Networks firewall module]
-** {filebeat-ref}//filebeat-module-cisco.html[Cisco ASA firewall module]
-** {filebeat-ref}/filebeat-module-aws.html[AWS module]
-** {filebeat-ref}/filebeat-module-cef.html[CEF module]
-** {filebeat-ref}/filebeat-module-googlecloud.html[Google Cloud module]
-** {filebeat-ref}/filebeat-module-netflow.html[NetFlow module]
-
-[discrete]
-[[endpoint-security-platform]]
-=== Elastic Endpoint and Ingest Manager
-
-The Elastic Endpoint provides capabilities such as collecting events, detecting
-and preventing malicious activity, allowlisting and artifact delivery. A single
-unified agent is used to install the endpoint on hosts. Agents and integrations
-are managed by the Ingest Manager.
-
-[discrete]
-[[apm-transactions-data]]
-=== APM transactions
-
-By default, the {security-app} monitors {apm-app-ref}/apm-getting-started.html[APM]
+By default, {es-sec} monitors {apm-app-ref}/apm-getting-started.html[APM]
 `apm-*-transaction*` indices. To add additional APM indices, update the
 index patterns in the `securitySolution:defaultIndex` setting ({kib} -> Stack Management -> Advanced Settings -> `securitySolution:defaultIndex`).
 
-[float]
-[[ecs]]
-== Elastic Common Schema (ECS) for normalizing data
+[discrete]
+=== Third-party collectors mapped to ECS
 
 The {ecs-ref}[Elastic Common Schema (ECS)] defines a common set of fields to be used for
 storing event data in Elasticsearch. ECS helps users normalize their event data
 to better analyze, visualize, and correlate the data represented in their
 events.
 
-Elastic Security can ingest and normalize events from ECS-compatible data sources.
-
-[discrete]
-[[host_id]]
-=== Host identification
-All Beats use the `add_host_metadata` processor to add the `host.name` field to
-events. The default value is `host.name`, but you can change it in Beats
-processor settings.
+Elastic Security can ingest and normalize events from any ECS-compliant data source.
