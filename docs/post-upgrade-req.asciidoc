@@ -13,13 +13,12 @@ required to enable the UI.
 [[update-signal-index-mapping]]
 == Update `.siem-signals*` index mappings
 
-After upgrading, you must update the `.siem-signals*` index, which contain
+After upgrading, you must update the `.siem-signals*` index, which contains
 detection alerts. To do this:
 
 . Create a new {ref}/index-templates.html[index template] for storing existing
 detections alerts.
-. Copy existing `.siem-signals*` detection alerts to the new index created in
-step 1.
+. Copy existing `.siem-signals*` detection alerts to a new index.
 . Deactivate all detection rules.
 . Delete the original `.siem-signals*` index, as well the original lifecycle
 management and template indices.
@@ -38,14 +37,32 @@ are then restored in step .
 
 . In {kib}, go to *Management* -> *Dev Tools*.
 . Do *one* of the following:
-* Copy and paste <<signals-index-template, this code>> into the console, and
-then send the request (play icon).
+* Copy and paste <<signals-index-template, this code>> into the console.
 * Follow these steps:
-.. Run the following: `GET _template/.siem-signals-<space>`, where `<space>` is
-the name of the {kib} space in which the detection alerts reside.
+.. Run the following command in the console:
 +
-The existing template is displayed in the console output pane.
-.. Copy the output code to a text editor and edit as follows:
+[source,console]
+--------------------------------------------------
+GET _template/.siem-signals-<space> <1>
+--------------------------------------------------
+<1> `<space>` is the name of the {kib} space in which the detection alerts
+reside (for example, `GET _template/.siem-signals-default`).
++
+The existing `.siem-signals` template is displayed in the console's output pane.
+.. Copy the code in the output pane and paste it into the console's input pane.
+.. Edit the code in the input pane as follows:
+** Add this line immediately above the code:
++
+[source,txt]
+--------------------------------------------------
+PUT _template/temp-signals
+--------------------------------------------------
+** Delete this line:
++
+[source,txt]
+--------------------------------------------------
+".siem-signals-default" : {
+--------------------------------------------------
 ** Delete the `lifecycle` object:
 +
 [source,js]
@@ -62,4 +79,83 @@ The existing template is displayed in the console output pane.
 "index_patterns" : [
     "temp-signals"
 ],
+--------------------------------------------------
+.. Check the first few lines of the code are identical to this:
++
+[source,txt]
+--------------------------------------------------
+PUT _template/temp-signals
+{
+    "order" : 0,
+    "version" : 1,
+    "index_patterns" : [
+      "temp-signals"
+    ],
+    "settings" : {
+      "index" : {
+        "mapping" : {
+          "total_fields" : {
+            "limit" : "10000"
+          }
+        }
+      }
+    },
+--------------------------------------------------
+. Run the code (click on the run icon).
++
+The index template for holding existing detection alerts is created, and the
+console output pane returns this message:
++
+[source,console-result]
+--------------------------------------------------
+{
+  "acknowledged" : true
+}
+--------------------------------------------------
+
+[discrete]
+=== Copy existing detection alerts to a new index
+
+. Go to *Management* -> *Dev Tools*.
+. Run this code in the console:
++
+[source,console]
+--------------------------------------------------
+POST _reindex
+{
+  "source": {
+    "index": ".siem-signals-<space>-*" <1>
+  },
+  "dest": {
+    "index": "temp-signals"
+  }
+}
+--------------------------------------------------
+<1> `<space>` is the name of the {kib} space in which the detection alerts
+reside (for example, `GET _template/.siem-signals-default-*`).
++
+The existing detection alerts are copied to the `temp-signals` index, and the
+console output pane displays something similar to this:
++
+[source,console-result]
+--------------------------------------------------
+{
+  "took" : 603,
+  "timed_out" : false,
+  "total" : 15,
+  "updated" : 0,
+  "created" : 15,
+  "deleted" : 0,
+  "batches" : 1,
+  "version_conflicts" : 0,
+  "noops" : 0,
+  "retries" : {
+    "bulk" : 0,
+    "search" : 0
+  },
+  "throttled_millis" : 0,
+  "requests_per_second" : -1.0,
+  "throttled_until_millis" : 0,
+  "failures" : [ ]
+}
 --------------------------------------------------
