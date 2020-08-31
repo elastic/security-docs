@@ -114,7 +114,12 @@ console output pane returns this message:
 --------------------------------------------------
 
 [discrete]
+[[copy-alerts]]
 === Copy existing detection alerts to a new index
+
+To ensure existing detection alerts can be restored after creating a new
+`.siem-signals*` index mapping, save (reindex) existing alerts in the
+`temp-signals` index:
 
 . Go to *Management* -> *Dev Tools*.
 . Run this code in the console:
@@ -132,7 +137,7 @@ POST _reindex
 }
 --------------------------------------------------
 <1> `<space>` is the name of the {kib} space in which the detection alerts
-reside (for example, `GET _template/.siem-signals-default-*`).
+reside (for example, `"index": ".siem-signals-default-*"`).
 +
 The existing detection alerts are copied to the `temp-signals` index, and the
 console output pane displays something similar to this:
@@ -157,5 +162,204 @@ console output pane displays something similar to this:
   "requests_per_second" : -1.0,
   "throttled_until_millis" : 0,
   "failures" : [ ]
+}
+--------------------------------------------------
+
+[discrete]
+=== Disable all detection rules
+
+Before deleting the existing `.siem-signals*` indices, you must disable all
+detections rules:
+
+. Go to *Security* -> *Detections* -> *Manage detection rules*.
+. Scroll to the bottom of the page.
+. Click the `Rows per page` menu, and then select _300 rows_.
+. When the page reloads, select all the rules.
+. Click _Bulk actions_ -> _Deactivate selected_.
++
+All detection rules are disabled.
+
+[discrete]
+=== Delete existing `.siem-signals*` indices and templates
+
+The existing `.siem-signals*` system indices, templates, and ILM policy must be
+deleted before the new index templates are created:
+
+. Go to *Management* -> *Dev Tools*.
+. Run these commands in the console:
++
+[source,console]
+--------------------------------------------------
+DELETE .siem-signals-<space>-* <1>
+DELETE _template/.siem-signals-<space>
+DELETE _ilm/policy/.siem-signals-<space>
+--------------------------------------------------
+<1> `<space>` is the name of the {kib} space (for example,
+`DELETE .siem-signals-default-*`).
++
+NOTE: You must run each command individually.
++
+The existing indices and templates are deleted, and the console output pane
+returns this message for each command:
++
+[source,console-result]
+--------------------------------------------------
+{
+  "acknowledged" : true
+}
+--------------------------------------------------
+
+[discrete]
+=== Enable detection rules
+
+Enabling detection rules, which automatically creates the new index template and
+ILM policy:
+
+. Go to *Security* -> *Detections* -> *Manage detection rules*.
+. Select the rules you want to activate.
+. Click _Bulk actions_ -> _Activate selected_.
++
+The selected rules are activated and the new index, index template, and ILM
+policy are created.
+. To verify the new index has been created:
+.. Go to *Management* -> *Dev Tools*.
+.. Run the following command:
+[source,console]
+--------------------------------------------------
+GET .siem-signals-<space>-*/_mapping/field/process.entity_id <1>
+--------------------------------------------------
+<1> `<space>` is the name of the {kib} space (for example,
+`GET .siem-signals-default-*/_mapping/field/process.entity_id`).
++
+The following should be displayed in the console output pane:
++
+[source,console-result]
+--------------------------------------------------
+{
+  ".siem-signals-default-000001" : {
+    "mappings" : {
+      "process.entity_id" : {
+        "full_name" : "process.entity_id",
+        "mapping" : {
+          "entity_id" : {
+            "type" : "keyword",
+            "ignore_above" : 1024
+          }
+        }
+      }
+    }
+  }
+}
+--------------------------------------------------
+
+[discrete]
+[[restore-index]]
+=== Restore previously existing detections alerts
+
+To restore detection alerts:
+
+. Go to *Management* -> *Dev Tools*.
+. Run the following command:
+[source,console]
+--------------------------------------------------
+POST _reindex
+{
+  "source": {
+    "index": "temp-signals" <1>
+  },
+  "dest": {
+    "index": ".siem-signals-<space>-mappingfix" <2>
+  }
+}
+--------------------------------------------------
+<1> The name of the index in which existing alerts were stored when you
+performed <<copy-alerts>>.
+<2> Name of the new index with the correct mappings to which previously existing
+alerts are restored. `<space>` in the name of the {kib} space (for example,
+`"index": ".siem-signals-default-mappingfix"`).
++
+The alerts are reindexed, and the following is displayed in the console output
+pane:
++
+[source,console-result]
+--------------------------------------------------
+#! Deprecation: index name [.siem-signals-default-mappingfix] starts with a dot '.', in the next major version, index names starting with a dot are reserved for hidden indices and system indices
+{
+  "took" : 170,
+  "timed_out" : false,
+  "total" : 15,
+  "updated" : 0,
+  "created" : 15,
+  "deleted" : 0,
+  "batches" : 1,
+  "version_conflicts" : 0,
+  "noops" : 0,
+  "retries" : {
+    "bulk" : 0,
+    "search" : 0
+  },
+  "throttled_millis" : 0,
+  "requests_per_second" : -1.0,
+  "throttled_until_millis" : 0,
+  "failures" : [ ]
+}
+--------------------------------------------------
+
+NOTE: You can ignore the deprecation warning.
+
+[discrete]
+=== Set up index alias
+
+To ensure the reindexed alerts are displayed in the {es-sec-app}, create an
+index alias:
+
+. Go to *Management* -> *Dev Tools*.
+. Run the following command:
++
+[source,console]
+--------------------------------------------------
+POST /_aliases
+{
+    "actions" : [
+        { "add" : { "index" : ".siem-signals-<space>-mappingfix", "alias" :
+        ".siem-signals-<space>" } } <1>
+    ]
+}
+--------------------------------------------------
+<1> The name of the index created when you performed <<restore-index>>.
+`<space>` is the {kib} space name (for example:
+`.siem-signals-default-mappingfix`).
++
+An alias is added to the index, and the console output pane displays:
+[source,console-result]
+--------------------------------------------------
+{
+  "acknowledged" : true
+}
+--------------------------------------------------
+. To confirm the alias exists, run this command:
++
+[source,console]
+--------------------------------------------------
+GET .siem-signals-<space>/_alias
+--------------------------------------------------
++
+The console output pane should display:
++
+[source,console-result]
+--------------------------------------------------
+{
+  ".siem-signals-default-000001" : {
+    "aliases" : {
+      ".siem-signals-default" : {
+        "is_write_index" : true
+      }
+    }
+  },
+  ".siem-signals-default-mappingfix" : {
+    "aliases" : {
+      ".siem-signals-default" : { }
+    }
+  }
 }
 --------------------------------------------------
