@@ -1,0 +1,65 @@
+[[post-upgrade-req]]
+[role="xpack"]
+= Post upgrade requirements
+
+After upgrading to the {stack} to version 7.9.x, you need to:
+
+* <<update-signal-index-mapping, Update `.siem-signals*` system index mappings>>.
+* <<enable-detections-ui, Enable access to the Detections page>>. Previously
+activated detection rules continue to run after upgrading, and this is only
+required to enable the UI.
+
+[discrete]
+[[update-signal-index-mapping]]
+== Update `.siem-signals*` index mappings
+
+After upgrading, you must update the `.siem-signals*` index, which contain
+detection alerts. To do this:
+
+. Create a new {ref}/index-templates.html[index template] for storing existing
+detections alerts.
+. Copy existing `.siem-signals*` detection alerts to the new index created in
+step 1.
+. Deactivate all detection rules.
+. Delete the original `.siem-signals*` index, as well the original lifecycle
+management and template indices.
+. Enable the required detection rules, which creates the new `.siem-signals*`,
+ILM, and template indices.
+. Restore existing detection alerts to the new `.siem-signals*` index.
+. Add an alias to the `.siem-signals*` index for the restored detection alerts.
+
+The following sections provide detailed instructions for each step.
+
+[discrete]
+=== Create index template
+
+You need to create an index template to store existing detection alerts, which
+are then restored in step .
+
+. In {kib}, go to *Management* -> *Dev Tools*.
+. Do *one* of the following:
+* Copy and paste <<signals-index-template, this code>> into the console, and
+then send the request (play icon).
+* Follow these steps:
+.. Run the following: `GET _template/.siem-signals-<space>`, where `<space>` is
+the name of the {kib} space in which the detection alerts reside.
++
+The existing template is displayed in the console output pane.
+.. Copy the output code to a text editor and edit as follows:
+** Delete the `lifecycle` object:
++
+[source,js]
+--------------------------------------------------
+"lifecycle" : {
+    "name" : ".siem-signals-default",
+    "rollover_alias" : ".siem-signals-default"
+},
+--------------------------------------------------
+** Change the value of the `index_pattern` object to `temp-signals`:
++
+[source,js]
+--------------------------------------------------
+"index_patterns" : [
+    "temp-signals"
+],
+--------------------------------------------------
