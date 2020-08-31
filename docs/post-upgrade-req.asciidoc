@@ -2,12 +2,14 @@
 [role="xpack"]
 = Post upgrade requirements
 
-After upgrading to the {stack} to version 7.9.x, you need to:
+After upgrading to {stack} to version 7.9.x from a previous minor release
+(7.8.x, 7.7.x, and so on), you need to:
 
 * <<update-signal-index-mapping, Update `.siem-signals*` system index mappings>>.
-* <<enable-detections-ui, Enable access to the Detections page>>. Previously
-activated detection rules continue to run after upgrading, and this is only
-required to enable the UI.
+* <<enable-detections-ui, Enable access to the Detections page>>.
++
+Previously activated detection rules continue to run after upgrading, and this
+is only required to enable the UI.
 
 [discrete]
 [[update-signal-index-mapping]]
@@ -17,27 +19,30 @@ After upgrading, you must update the `.siem-signals*` index, which contains
 detection alerts. To do this:
 
 . Create a new {ref}/index-templates.html[index template] for storing existing
-detections alerts.
-. Copy existing `.siem-signals*` detection alerts to a new index.
-. Deactivate all detection rules.
-. Delete the original `.siem-signals*` index, as well the original lifecycle
-management and template indices.
-. Enable the required detection rules, which creates the new `.siem-signals*`,
-ILM, and template indices.
-. Restore existing detection alerts to the new `.siem-signals*` index.
-. Add an alias to the `.siem-signals*` index for the restored detection alerts.
-
-The following sections provide detailed instructions for each step.
+detections alerts (see <<create-template>>).
+. Copy existing `.siem-signals*` detection alerts to a new index (see
+<<copy-alerts>>).
+. Deactivate all detection rules (see <<disable-all-rules>>).
+. Delete the original `.siem-signals*` index, as well as the original
+{ref}/index-lifecycle-management.html[index lifecycle management (ILM)
+policy] and template indices (see <<delete-existing-indices>>). 
+. Enable the required detection rules, which creates the new `.siem-signals*`
+system indices, ILM policies, and templates.
+ILM policy, and template indices (see <<enable-req-rules>>).
+. Restore existing detection alerts to the new `.siem-signals*` index (see
+<<restore-index>>).
+. Add an alias to the `.siem-signals*` index for the restored detection alerts
+(see <<index-alias>>).
 
 [discrete]
+[[create-template]]
 === Create index template
-
-You need to create an index template to store existing detection alerts, which
-are then restored in step .
 
 . In {kib}, go to *Management* -> *Dev Tools*.
 . Do *one* of the following:
 * Copy and paste <<signals-index-template, this code>> into the console.
++
+*OR*
 * Follow these steps:
 .. Run the following command in the console:
 +
@@ -49,7 +54,8 @@ GET _template/.siem-signals-<space> <1>
 reside (for example, `GET _template/.siem-signals-default`).
 +
 The existing `.siem-signals` template is displayed in the console's output pane.
-.. Copy the code in the output pane and paste it into the console's input pane.
+.. Copy the code in the console output pane and paste it into the console input
+pane.
 .. Edit the code in the input pane as follows:
 ** Add this line immediately above the code:
 +
@@ -72,7 +78,7 @@ PUT _template/temp-signals
     "rollover_alias" : ".siem-signals-default"
 },
 --------------------------------------------------
-** Change the value of the `index_pattern` object to `temp-signals`:
+** Change the value of the `index_pattern` element to `temp-signals`:
 +
 [source,js]
 --------------------------------------------------
@@ -80,7 +86,7 @@ PUT _template/temp-signals
     "temp-signals"
 ],
 --------------------------------------------------
-.. Check the first few lines of the code are identical to this:
+.. Make sure the first few lines of the code are identical to this:
 +
 [source,txt]
 --------------------------------------------------
@@ -103,8 +109,7 @@ PUT _template/temp-signals
 --------------------------------------------------
 . Run the code (click on the run icon).
 +
-The index template for holding existing detection alerts is created, and the
-console output pane returns this message:
+The console output pane displays this text:
 +
 [source,console-result]
 --------------------------------------------------
@@ -115,11 +120,10 @@ console output pane returns this message:
 
 [discrete]
 [[copy-alerts]]
-=== Copy existing detection alerts to a new index
+=== Add existing detection alerts to a new index
 
-To ensure existing detection alerts can be restored after creating a new
-`.siem-signals*` index mapping, save (reindex) existing alerts in the
-`temp-signals` index:
+To enable restoring existing detection alerts, add (reindex) existing alerts to
+the `temp-signals` index:
 
 . Go to *Management* -> *Dev Tools*.
 . Run this code in the console:
@@ -139,8 +143,7 @@ POST _reindex
 <1> `<space>` is the name of the {kib} space in which the detection alerts
 reside (for example, `"index": ".siem-signals-default-*"`).
 +
-The existing detection alerts are copied to the `temp-signals` index, and the
-console output pane displays something similar to this:
+The console output pane displays text similar to this:
 +
 [source,console-result]
 --------------------------------------------------
@@ -166,10 +169,10 @@ console output pane displays something similar to this:
 --------------------------------------------------
 
 [discrete]
+[[disable-all-rules]]
 === Disable all detection rules
 
-Before deleting the existing `.siem-signals*` indices, you must disable all
-detections rules:
+To disable all detection rules:
 
 . Go to *Security* -> *Detections* -> *Manage detection rules*.
 . Scroll to the bottom of the page.
@@ -180,10 +183,11 @@ detections rules:
 All detection rules are disabled.
 
 [discrete]
-=== Delete existing `.siem-signals*` indices and templates
+[[delete-existing-indices]]
+=== Delete existing `.siem-signals-*` indices and templates
 
-The existing `.siem-signals*` system indices, templates, and ILM policy must be
-deleted before the new index templates are created:
+The existing `.siem-signals-*` system indices, templates, and ILM policy must be
+deleted before the new indices are created:
 
 . Go to *Management* -> *Dev Tools*.
 . Run these commands in the console:
@@ -199,8 +203,7 @@ DELETE _ilm/policy/.siem-signals-<space>
 +
 NOTE: You must run each command individually.
 +
-The existing indices and templates are deleted, and the console output pane
-returns this message for each command:
+Foe each command, the console output pane displays this text:
 +
 [source,console-result]
 --------------------------------------------------
@@ -210,10 +213,10 @@ returns this message for each command:
 --------------------------------------------------
 
 [discrete]
+[[enable-req-rules]]
 === Enable detection rules
 
-Enabling detection rules, which automatically creates the new index template and
-ILM policy:
+Enabling detections rules automatically creates the new indices:
 
 . Go to *Security* -> *Detections* -> *Manage detection rules*.
 . Select the rules you want to activate.
@@ -224,6 +227,7 @@ policy are created.
 . To verify the new index has been created:
 .. Go to *Management* -> *Dev Tools*.
 .. Run the following command:
++
 [source,console]
 --------------------------------------------------
 GET .siem-signals-<space>-*/_mapping/field/process.entity_id <1>
@@ -231,7 +235,7 @@ GET .siem-signals-<space>-*/_mapping/field/process.entity_id <1>
 <1> `<space>` is the name of the {kib} space (for example,
 `GET .siem-signals-default-*/_mapping/field/process.entity_id`).
 +
-The following should be displayed in the console output pane:
+The console output pane displays text similar to this:
 +
 [source,console-result]
 --------------------------------------------------
@@ -260,6 +264,7 @@ To restore detection alerts:
 
 . Go to *Management* -> *Dev Tools*.
 . Run the following command:
++
 [source,console]
 --------------------------------------------------
 POST _reindex
@@ -278,12 +283,13 @@ performed <<copy-alerts>>.
 alerts are restored. `<space>` in the name of the {kib} space (for example,
 `"index": ".siem-signals-default-mappingfix"`).
 +
-The alerts are reindexed, and the following is displayed in the console output
-pane:
+The console output pane displays text similar to this:
 +
 [source,console-result]
 --------------------------------------------------
-#! Deprecation: index name [.siem-signals-default-mappingfix] starts with a dot '.', in the next major version, index names starting with a dot are reserved for hidden indices and system indices
+#! Deprecation: index name [.siem-signals-default-mappingfix] starts with a dot
+'.', in the next major version, index names starting with a dot are reserved for
+hidden indices and system indices
 {
   "took" : 170,
   "timed_out" : false,
@@ -308,10 +314,10 @@ pane:
 NOTE: You can ignore the deprecation warning.
 
 [discrete]
+[[index-alias]]
 === Set up index alias
 
-To ensure the reindexed alerts are displayed in the {es-sec-app}, create an
-index alias:
+To display reindexed alerts in the {es-sec-app}, create an index alias:
 
 . Go to *Management* -> *Dev Tools*.
 . Run the following command:
@@ -321,8 +327,8 @@ index alias:
 POST /_aliases
 {
     "actions" : [
-        { "add" : { "index" : ".siem-signals-<space>-mappingfix", "alias" :
-        ".siem-signals-<space>" } } <1>
+        { "add" : { "index" : ".siem-signals-<space>-mappingfix",
+        "alias" : ".siem-signals-<space>" } } <1>
     ]
 }
 --------------------------------------------------
@@ -330,7 +336,8 @@ POST /_aliases
 `<space>` is the {kib} space name (for example:
 `.siem-signals-default-mappingfix`).
 +
-An alias is added to the index, and the console output pane displays:
+The console output pane displays this text:
++
 [source,console-result]
 --------------------------------------------------
 {
@@ -344,7 +351,7 @@ An alias is added to the index, and the console output pane displays:
 GET .siem-signals-<space>/_alias
 --------------------------------------------------
 +
-The console output pane should display:
+The console output pane should display text similar to this:
 +
 [source,console-result]
 --------------------------------------------------
