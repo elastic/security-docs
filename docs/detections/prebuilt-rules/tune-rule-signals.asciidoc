@@ -4,6 +4,10 @@
 In the {es-sec-app}, prebuilt detection rules can be tuned to produce the best
 possible set of actionable alerts. To reduce the noise level, you can:
 
+* Add <<detections-ui-exceptions, exceptions>> to detection rules.
++
+TIP: Using exceptions is recommended as this ensure excluded source event values
+persist even after prebuilt rules are updated.
 * Disable detection rules that rarely produce actionable alerts because they
 match expected local behavior, workflows, or policy exceptions.
 * <<manage-rules-ui, Clone and modify>> detection rule queries so they are
@@ -24,42 +28,26 @@ For details about tuning prebuilt rules for specific categories, see:
 
 Organizations frequently use uncommon and in-house applications. Occasionally,
 these can trigger unwanted alerts. To stop a rule matching on an application,
-you need to modify the rule's logic so it ignores the application's name.
+add an exception for the required application.
 
 For example, to prevent the <<unusual-process-execution-temp>> rule from
 producing alerts for an in-house application named `myautomatedbuild`:
 
 . Go to *Security* -> *Detections* -> *Manage detection rules*.
-. Search for the `Unusual Process Execution - Temp` rule, and then:
-.. Click the actions icon on the rule's row (three dots).
-.. Select _Duplicate rule_
+. Search for and then click on the `Unusual Process Execution - Temp` rule.
 +
-A duplicate rule is created, named `Unusual Process Execution - Temp [Duplicate]`.
-. Search for the new rule, and then:
-.. Click the actions icon on the rule's row (three dots).
-.. Select _Edit rule settings_
-+
-TIP: At the top of the *All rules* table, click `Custom rules` to display only
-your rules.
-+
-The *Edit rule settings* page is displayed.
+The *Unusual Process Execution - Temp* rule details page is displayed.
 [role="screenshot"]
-image::images/edit-dect-rule.png[]
-
-. Do *one* of these:
-* In the _Custom query_ field, add this condition:
-+
-`and not process.name: "myautomatedbuild"`
+image::images/rule-details-page.png[]
+. Select the _Exceptions_ tab, and then click *Add new exception*.
+. Fill in these options:
+* _Field_: `process.name`
+* _Operator_: `is`
+* _Value_: `myautomatedbuild`
 +
 [role="screenshot"]
-image::images/edit-dect-rule-query.png[]
-* Click _Add filter_, and then define a `process.name is not myautomatedbuild`
-condition.
-+
-[role="screenshot"]
-image::images/edit-dect-rule-filter.png[]
-. Save the new rule and disable the original rule. If you want, you can delete
-the original rule.
+image::images/process-exception.png[]
+. Click *Add exception*.
 
 [float]
 [[tune-authorized-processes]]
@@ -80,15 +68,15 @@ server message block (SMB) protocol.
 
 To reduce noise for authorized activity, you can do any of these:
 
-* Add a statement or filter to the rules that exclude specific servers, such as
+* Add an exception to the rules that exclude specific servers, such as
 the relevant host names, agent names, or other common identifiers.
-For example, `and not host.name : "server-name"`.
-* Add a statement or filter to the rules that <<filter-rule-process, exclude specific processes>>. For example, `and not process.name : "process-name"`.
-* Add a statement or filter to the rules that exclude a common user.
-For example, `and not user.name : "security-tester"`.
+For example, `host.name is <server-name>`.
+* Add an exception to the rules that <<filter-rule-process, exclude specific processes>>. For example, `process.name is <process-name>`.
+* Add an exception to the rules that exclude a common user.
+For example, `user.name is <security-tester>`.
 
 Another useful technique is to assign lower risk scores to rules triggered by
-authorized activity. This enables detection while keeping the resulting alerts
+authorized activity. This enables detections while keeping the resulting alerts
 out of high-priority workflows. Use these steps:
 
 . Duplicate the same rule twice.
@@ -139,19 +127,19 @@ organizations. Different networks conform to different security policies,
 standards, and regulations. When normal network activity triggers alerts,
 network rules can be disabled or modified. For example:
 
-* To exclude a specific source, add a `not source.ip` statement with the
-relevant IP address, and a `destination.port` statement with the relevant port
-number (`not source.ip : 196.1.0.12 and destination.port : 445`).
-* To exclude source network traffic for an entire subnet, add a `not source.ip`
-statement with the relevant CIDR notation (`not source.ip : 192.168.0.0/16`).
+* To exclude a specific source, add a `source.ip` exception with the
+relevant IP address, and a `destination.port` exception with the relevant port
+number (`source.ip is 196.1.0.12` and `destination.port is 445`).
+* To exclude source network traffic for an entire subnet, add a `source.ip`
+exception with the relevant CIDR notation (`source.ip is 192.168.0.0/16`).
 * To exclude a destination IP for a specific destination port, add a
-`not destination.ip` statement with the IP address, and a `destination.port`
-statement with the port number
-(`not destination.ip : 38.160.150.31 and destination.port : 445`)
+`destination.ip` exception with the IP address, and a `destination.port`
+exception with the port number
+(`destination.ip is 38.160.150.31` and `destination.port is 445`)
 * To exclude a destination subnet for a specific destination port, add a
-`not destination.ip` statement using CIDR notation, and a ‘destination.port’
-statement with the port number
-(`not destination.ip : 172.16.0.0/12 and destination.port : 445`).
+`destination.ip` exception using CIDR notation, and a ‘destination.port’
+exception with the port number
+(`destination.ip is 172.16.0.0/12` and `destination.port is 445`).
 
 [float]
 ==== Noise from common network traffic
