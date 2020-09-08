@@ -20,17 +20,16 @@ TIP: You can retrieve `ip` items in a list container using CIDR notation, and
 
 ==== Request body
 
-A JSON object with these fields:
+A JSON object that defines the list container's properties.
+
+===== Required fields
 
 [width="100%",options="header"]
 |==============================================
-|Name |Type |Description |Required
+|Name |Type |Description
 
-|`description` |String |Describes the list container. |Yes
-|`id` |String |Unique identifier. |No, automatically created when it is not
-provided.
-|`meta` |Object |Placeholder for metadata about the list container. |No
-|`name` |String |The list container's name. |Yes
+|`description` |String |Describes the list container.
+|`name` |String |The list container's name.
 |`type` |String a|Specifies the {es} {ref}/mapping-types.html[data type] of
 excludes the list container holds. Some common examples:
 
@@ -38,10 +37,43 @@ excludes the list container holds. Some common examples:
 * `ip`: IP addresses
 * `ip_range`: {ref}/range.html[Range of IP addresses] (supports IPv4, IPv6, and
 CIDR notation)
+|==============================================
 
-|Yes
+===== Optional fields
 
-|`version` |Integer |The list container's version number. |No, defaults to `1`.
+[width="100%",options="header"]
+|==============================================
+|Name |Type |Description
+
+|`deserializer` |String a|Determines how retrieved list item values are presented.
+By default list items are presented using these
+https://handlebarsjs.com/guide/expressions.html[Handelbar] expressions:
+
+* `{{{value}}}` - Single value item types, such as `ip`, `long`, `date`, `keyword`,
+and `text`.
+* `{{{gte}}}-{{{lte}}}` - Range value item types, such as `ip_range`,
+`double_range`, `float_range`, `integer_range`, and `long_range`.
+* `{{{gte}}},{{{lte}}}` - Date range values.
+
+For information on parsing item values when they are uploaded, see
+<<serializer, `serializer`>>. 
+
+|`id` |String |Unique identifier. Automatically created when it is not
+provided.
+|`meta` |Object |Placeholder for metadata about the list container.
+
+|[[serializer]] `serializer` |String a|Determines how uploaded list item values
+are parsed. By default, list items are parsed using these
+https://developer.mozilla.org/en-US/docs/Web/JavaScript/Guide/Regular_Expressions/Groups_and_Ranges[named regex groups]:
+
+* `(?<value>.+)` - Single value item types, such as `ip`, `long`, `date`, `keyword`,
+and `text`.
+* `(?<gte>.+)-(?<lte>.+)\|(?<value>.+)` - Range value item types, such as
+`date_range`, `ip_range`, `double_range`, `float_range`, `integer_range`, and
+`long_range`.
+
+|`version` |Integer |The list container's version number. Defaults to `1`.
+
 |==============================================
 
 ===== Example requests
@@ -74,6 +106,27 @@ POST api/lists
 --------------------------------------------------
 // KIBANA
 
+Creates a list container for `ip_range` items with custom parsing:
+
+[source,console]
+--------------------------------------------------
+POST api/lists
+{
+  "id": "internal-ip-range-excludes",
+  "name": "Exclude IP ranges",
+  "description": "Contains excluded IP ranges.",
+  "serializer": "(?<gte>.+)/(?<lte>.+)", <1>
+  "deserializer": "{{{gte}}}--{{{lte}}}", <2>
+  "type": "ip_range"
+}
+--------------------------------------------------
+// KIBANA
+
+<1> Uploads IP ranges using `/` characters instead of `-` characters. The list
+item or source file from which the IP ranges are uploaded must use the `/`
+character to define the range. For example, `192.168.0.1/192.168.0.27`.
+<2> Presents the container's retrieved IP range list items using `--`
+characters. For example, `192.168.0.1--192.168.0.27`. 
 
 ==== Response code
 
