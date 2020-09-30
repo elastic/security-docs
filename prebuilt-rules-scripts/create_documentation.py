@@ -57,7 +57,7 @@ def formatText(text):
 
 # Path to the generated JSON file
 
-with open('diff-files/final-files/final-rule-file-7.9.0-new.json', 'r') as source:
+with open('diff-files/final-files/final-rule-file-7.9.0.json', 'r') as source:
      rules_dict = json.load(source)
 
 
