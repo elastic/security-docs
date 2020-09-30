@@ -22,7 +22,7 @@ with open('diff-files/gen-files/updated-text-json-file-7.9.0.json', 'r') as sour
 
 # Path to the final JSON rule file generated for the previous release
     
-with open('diff-files/final-files/final-rule-file-7.9.0.json', 'r') as source:
+with open('diff-files/final-files/final-rule-file-7.8.0.json', 'r') as source:
     previous_rules_dict = json.load(source)
     
 diff_dict = []
@@ -84,5 +84,5 @@ print (oldRuleNames)
 # Outputs the final JSON file from which the documentation is generated. Note
 # that this file is needed for the next release to compare future changes.
 
-with open("diff-files/final-files/final-rule-file-7.9.0-new.json", "w") as fp:
+with open("diff-files/final-files/final-rule-file-7.9.0.json", "w") as fp:
     json.dump(diff_dict, fp, indent=2)
