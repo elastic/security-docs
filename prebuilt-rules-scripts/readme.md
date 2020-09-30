@@ -14,14 +14,14 @@ the `orig-rules-json-files` folder as: `<version>-prebuilt-rule.json`.
 2. Run the `create-json-from-docs.py` script to generate a JSON file with the
 all prebuilt rule names, descriptions, false positives and notes in the current
 build.  
-The generated JSON file is `diff-files/rule-version-diff/gen-json-from-docs-<release>.json`.
+The generated JSON file is `diff-files/gen-files/json-from-docs-<release>.json`.
  
 3. Run `update_current_text.py` to update the text of the original prebuilt
 JSON file (downloaded via the UI or created from the files in this folder:
 `kibana/x-pack/plugins/siem/server/lib/detection_engine/rules/prepackaged_rules`).
 
 4. Run `get-rule-diff.py` to create a `gen-rule-file-<version>.json` file
-(previous `final-rule-file-<version>.json` and `gen-rule-file-<version>-asciidoc-new.json`).
+(previous `final-rule-file-<version>.json` and `updated-text-json-file-<version>.json`).
 
 5. Run `create_documentation.py` to create the prebuilt rules documentation.
 
