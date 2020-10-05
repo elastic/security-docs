@@ -6,7 +6,9 @@ Creates a new detection rule.
 You can create these types of rules:
 
 * *Query rules*: Searches the defined indices and creates an alert when
-a document matches the rule's query.
+a document matches the rule's KQL query.
+* *EQL*: Searches the defined indices and creates an alert when results match an
+{ref}/eql.html[Event Query Language (EQL)] query. 
 * *Threshold rules*: Searches the defined indices and creates an alert when the
 number of times the specified field's value meets the threshold during a single
 execution. When there are multiple values that meet the threshold, an alert is
@@ -73,8 +75,20 @@ calls, see:
 
 ==== Request body
 
-A JSON object that defines the rule's values.
+A JSON object that defines the rule's values:
 
+* <<ref-fields-all>>
+* <<req-fields-query-threshold>>
+* <<req-fields-threshold>>
+* <<req-fields-saved-query>>
+* <<req-fields-eql>>
+* <<req-fields-ml>>
+* <<opt-fields-all>>
+* <<opt-fields-query-eql>>
+* <<opt-fields-query-threshold>>
+* <<opt-fields-eql-query-threshold>>
+
+[[ref-fields-all]]
 ===== Required fields for all rule types
 
 [width="100%",options="header"]
@@ -105,6 +119,7 @@ occurred
 
 |type |String a|Data type on which the rule is based:
 
+* `eql`: EQL query (see {ref}/eql.html[Event Query Language)
 * `query`: query with or without additional filters.
 * `saved_query`: saved search, identified in the `saved_id` field.
 * `machine_learning`: rule based on a {ml} job's anomaly scores.
@@ -113,6 +128,7 @@ specified field.
 
 |==============================================
 
+[[req-fields-query-threshold]]
 ===== Required field for query and threshold rules
 
 [width="100%",options="header"]
@@ -125,6 +141,7 @@ that's not very useful.
 
 |==============================================
 
+[[req-fields-threshold]]
 ===== Required field for threshold rules
 
 [width="100%",options="header"]
@@ -142,6 +159,7 @@ generated.
 
 |==============================================
 
+[[req-fields-saved-query]]
 ===== Required field for saved-query rules
 
 [width="100%",options="header"]
@@ -152,6 +170,18 @@ generated.
 
 |==============================================
 
+[[req-fields-eql]]
+===== Required field for EQL rules
+
+[width="100%",options="header"]
+|==============================================
+|Name |Type |Description
+
+|language |String |Must be `eql`.
+
+|==============================================
+
+[[req-fields-ml]]
 ===== Required fields for machine-learning rules
 
 [width="100%",options="header"]
@@ -166,6 +196,7 @@ anomaly scores.
 
 |==============================================
 
+[[opt-fields-all]]
 ===== Optional fields for all rule types
 
 [width="100%",options="header"]
@@ -239,7 +270,8 @@ Required when `actions` are used to send notifications.
 
 |==============================================
 
-===== Optional fields for query and threshold rules
+[[opt-fields-query-eql]]
+===== Optional fields for query and EQL rules
 
 [width="100%",options="header"]
 |==============================================
@@ -257,6 +289,25 @@ valid in only the rule's {kib} space (`single`) or in all {kib} spaces
 (`agnostic`).
 * `type` (string, required): The exception type, which must be either
 a detection rule exception (`detection`) or an endpoint exception (`endpoint`).
+|==============================================
+
+[[opt-fields-query-threshold]]
+===== Optional fields for query and threshold rules
+
+[width="100%",options="header"]
+|==============================================
+|Name |Type |Description
+
+|language |String |Determines the query language, which must be
+`kuery` or `lucene`. Defaults to `kuery`.
+|==============================================
+
+[[opt-fields-eql-query-threshold]]
+===== Optional fields for EQL, query and threshold rules
+
+[width="100%",options="header"]
+|==============================================
+|Name |Type |Description
 
 |filters |Object[] |The {ref}/query-filter-context.html[query and filter
 context] array used to define the conditions for when alerts are created from
@@ -266,9 +317,6 @@ events. Defaults to an empty array.
 Security Solution indices defined on the {kib} Advanced Settings page
 (*Kibana* → *Stack Management* → *Advanced Settings* →
 `securitySolution:defaultIndex`).
-
-|language |String |Determines the query language, which must be
-`kuery` or `lucene`. Defaults to `kuery`.
 
 |risk_score_mapping |Object[] a|Overrides generated alerts' `risk_score` with
 a value from the source event:
@@ -574,6 +622,32 @@ POST api/detection_engine/rules
 --------------------------------------------------
 // KIBANA
 
+*Example 4*
+
+EQL rule that creates alerts when the Windows `rundll32.exe` process makes
+unusual network connections:
+
+[source,console]
+--------------------------------------------------
+POST api/detection_engine/rules
+{
+  "rule_id": "eql-outbound-rundll32-connections",
+  "risk_score": 21,
+  "description": "Unusual rundll32.exe network connection",
+  "name": "rundll32.exe network connection",
+  "severity": "low",
+  "tags": [
+   "EQL",
+   "Windows",
+   "rundll32.exe"
+   ],
+  "type": "eql",
+  "language": "eql",
+  "query": "sequence by process.entity_id with maxspan=2h [process where event.type in (\"start\", \"process_started\") and (process.name == \"rundll32.exe\" or process.pe.original_file_name == \"rundll32.exe\") and ((process.args == \"rundll32.exe\" and process.args_count == 1) or (process.args != \"rundll32.exe\" and process.args_count == 0))] [network where event.type == \"connection\" and (process.name == \"rundll32.exe\" or process.pe.original_file_name == \"rundll32exe\")]"
+} ' | jq
+--------------------------------------------------
+// KIBANA
+
 ==== Response code
 
 `200`::
@@ -761,5 +835,48 @@ Example response for a threshold rule:
     "field": "source.ip",
     "value": 20
   }
+}
+--------------------------------------------------
+
+Example response for an EQL rule:
+
+[source,json]
+--------------------------------------------------
+{
+  "author": [],
+  "created_at": "2020-10-05T09:06:16.392Z",
+  "updated_at": "2020-10-05T09:06:16.403Z",
+  "created_by": "Liverpool",
+  "description": "Unusual rundll32.exe network connection",
+  "enabled": true,
+  "false_positives": [],
+  "from": "now-6m",
+  "id": "93808cae-b05b-4dc9-8479-73574b50f8b1",
+  "immutable": false,
+  "interval": "5m",
+  "rule_id": "eql-outbound-rundll32-connections",
+  "output_index": ".siem-signals-default",
+  "max_signals": 100,
+  "risk_score": 21,
+  "risk_score_mapping": [],
+  "name": "rundll32.exe network connection",
+  "references": [],
+  "severity": "low",
+  "severity_mapping": [],
+  "updated_by": "Liverpool",
+  "tags": [
+    "EQL",
+    "Windows",
+    "rundll32.exe"
+  ],
+  "to": "now",
+  "type": "eql",
+  "threat": [],
+  "version": 1,
+  "exceptions_list": [],
+  "actions": [],
+  "throttle": "no_actions",
+  "query": "sequence by process.entity_id with maxspan=2h [process where event.type in (\"start\", \"process_started\") and (process.name == \"rundll32.exe\" or process.pe.original_file_name == \"rundll32.exe\") and ((process.args == \"rundll32.exe\" and process.args_count == 1) or (process.args != \"rundll32.exe\" and process.args_count == 0))] [network where event.type == \"connection\" and (process.name == \"rundll32.exe\" or process.pe.original_file_name == \"rundll32exe\")]",
+  "language": "eql"
 }
 --------------------------------------------------
