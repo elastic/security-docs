@@ -8,7 +8,7 @@ You can create these types of rules:
 * *Query rules*: Searches the defined indices and creates an alert when
 a document matches the rule's KQL query.
 * *EQL*: Searches the defined indices and creates an alert when results match an
-{ref}/eql.html[Event Query Language (EQL)] query. EQL 
+{ref}/eql.html[Event Query Language (EQL)] query.
 * *Threshold rules*: Searches the defined indices and creates an alert when the
 number of times the specified field's value meets the threshold during a single
 execution. When there are multiple values that meet the threshold, an alert is
@@ -22,10 +22,10 @@ more information.
 * *{ml-cap} rules*: Creates an alert when a {ml} job discovers an anomaly above
 the defined threshold (see <<machine-learning>>).
 * *Threat match*: Creates an alert when fields match values defined in the
-specified {ref}/indices-create-index.html[{es} indices]. The indices field
-mapping must be {ecs-ref}[ECS-compliant]. For example, you can create an index
-for IP addresses and use this index to create an alert whenever an
-event's `destination.ip` equals a value in the index.
+specified {ref}/indices-create-index.html[{es} index]. For example, you can
+create an index for IP addresses and use this index to create an alert whenever
+an event's `destination.ip` equals a value in the index. The index's field
+mappings should be {ecs-ref}[ECS-compliant].
 
 IMPORTANT: To create {ml} rules, you must have the
 https://www.elastic.co/subscriptions[appropriate license] or use a
@@ -88,8 +88,10 @@ A JSON object that defines the rule's values:
 * <<req-fields-saved-query>>
 * <<req-fields-eql>>
 * <<req-fields-ml>>
+* <<req-fields-threat-match>>
 * <<opt-fields-all>>
 * <<opt-fields-query-eql>>
+* <<opt-fields-threat-match>>
 * <<opt-fields-query-threshold>>
 * <<opt-fields-eql-query-threshold>>
 
@@ -124,27 +126,27 @@ occurred
 
 |type |String a|Data type on which the rule is based:
 
-* `eql`: EQL query (see {ref}/eql.html[Event Query Language)
+* `eql`: EQL query (see {ref}/eql.html[Event Query Language]).
 * `query`: query with or without additional filters.
 * `saved_query`: saved search, identified in the `saved_id` field.
 * `machine_learning`: rule based on a {ml} job's anomaly scores.
-* `threat_match`: rule that matches event values with the specified {es}
-indices.
+* `threat_match`: rule that matches event values with values the specified {es}
+index.
 * `threshold`: rule based on the number of times a `query` matches the
 specified field.
 
 |==============================================
 
 [[req-fields-query-threshold]]
-===== Required field for query and threshold rules
+===== Required field for query, threat-match and threshold rules
 
 [width="100%",options="header"]
 |==============================================
 |Name |Type |Description
 
 |query |String a|{kibana-ref}/search.html[Query] used by the rule to create
-alerts. Technically, this is not required and defaults to an empty string but
-that's not very useful.
+alerts. For threat-match rules, only the query's results are used to determine
+whether an alert is generated.
 
 |==============================================
 
@@ -200,6 +202,35 @@ creates an alert. Valid values are from `0` to `100`.
 
 |machine_learning_job_id |String |{ml-cap} job ID the rule monitors for
 anomaly scores.
+
+|==============================================
+
+[[req-fields-threat-match]]
+===== Required fields for threat-match rules
+
+[width="100%",options="header"]
+|==============================================
+|Name |Type |Description
+
+|threat_index |String[] |{es} indices used to check which field values generate
+alerts.
+
+|threat_query |String |Query used to determine which fields in the {es} index
+are used for generating alerts.
+
+|threat_mapping |Object[] a|Array of `entries` objects that define mappings
+between the source event fields and the values in the {es} threat index. Each
+`entries` object must contain these fields:
+
+* `field`: field from the event indices on which the rule runs
+* `type`: must be `mapping`
+* `value`: field from the {es} threat index
+
+You can use Boolean `and` and `or` logic to define the conditions for when
+matching fields and values generate alerts. Sibling `entries` objects
+are evaluated using `or` logic, whereas multiple entries in a single `entries`
+object use `and` logic. See <<threat-match-example, below>> for an example that
+uses both `and` and `or` logic.
 
 |==============================================
 
@@ -278,7 +309,7 @@ Required when `actions` are used to send notifications.
 |==============================================
 
 [[opt-fields-query-eql]]
-===== Optional fields for query and EQL rules
+===== Optional fields for query, threat-match and EQL rules
 
 [width="100%",options="header"]
 |==============================================
@@ -298,8 +329,20 @@ valid in only the rule's {kib} space (`single`) or in all {kib} spaces
 a detection rule exception (`detection`) or an endpoint exception (`endpoint`).
 |==============================================
 
+[[opt-fields-threat-match]]
+===== Optional fields for threat-match rules
+
+[width="100%",options="header"]
+|==============================================
+|Name |Type |Description
+
+|threat_filter |Object[]
+|{ref}/query-filter-context.html[Query and filter context] array used to filter
+documents from the {es} index containing the threat values.
+|==============================================
+
 [[opt-fields-query-threshold]]
-===== Optional fields for query and threshold rules
+===== Optional fields for query, threat-match and threshold rules
 
 [width="100%",options="header"]
 |==============================================
@@ -651,9 +694,76 @@ POST api/detection_engine/rules
   "type": "eql",
   "language": "eql",
   "query": "sequence by process.entity_id with maxspan=2h [process where event.type in (\"start\", \"process_started\") and (process.name == \"rundll32.exe\" or process.pe.original_file_name == \"rundll32.exe\") and ((process.args == \"rundll32.exe\" and process.args_count == 1) or (process.args != \"rundll32.exe\" and process.args_count == 0))] [network where event.type == \"connection\" and (process.name == \"rundll32.exe\" or process.pe.original_file_name == \"rundll32exe\")]"
-} ' | jq
+}
 --------------------------------------------------
 // KIBANA
+
+[[threat-match-example]]
+*Example 5*
+
+Threat-match rule that creates an alert when one of the following is true:
+
+* The event's destination IP address *and* port number matches destination IP
+*and* port values in the `threat_index` index.
+* The event's source IP address matches a host IP address value in the
+`threat_index` index.
+
+[source,console]
+--------------------------------------------------
+POST api/detection_engine/rules
+{
+    "type": "threat_match",
+    "index": [
+        "packetbeat-*"
+    ],
+    "query": "destination.ip:* or host.ip:*",
+    "threat_index": [
+        "ip-threat-list" <1>
+    ],
+    "threat_query": "*:*", <2>
+    "threat_mapping": [
+        {
+            "entries": [ <3>
+                {
+                    "field": "destination.ip",
+                    "type": "mapping",
+                    "value": "destination.ip"
+                },
+                {
+                    "field": "destination.port",
+                    "type": "mapping",
+                    "value": "destination.port"
+                }
+            ]
+        },
+        {
+            "entries": [ <4>
+                {
+                    "field": "source.ip",
+                    "type": "mapping",
+                    "value": "host.ip"
+                }
+            ]
+        }
+    ],
+    "risk_score": 50,
+    "severity": "medium",
+    "name": "Bad IP threat match",
+    "description": "Checks the ip-threat-list index for bad IP addresses"
+}
+--------------------------------------------------
+// KIBANA
+
+<1> The {es} index used for matching threat values.
+<2> Query defining which threat index fields are used for matching values. In
+this example, all values from the `ip-threat-list` index are used.
+<3> Multiple objects in a single `entries` element are evaluated using `and`
+logic. In this example, both the event's `destination.ip` and
+`destination.port` values must match the corresponding field values in the
+`ip-threat-list`.
+<4> Sibling `entries` are evaluated using `or` logic. In this example,
+an alert is generated when at least one `entries` object evaluates to
+`true`.
 
 ==== Response code
 
