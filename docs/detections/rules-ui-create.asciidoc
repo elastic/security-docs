@@ -29,12 +29,26 @@ generated for each value.
 For example, if the threshold `field` is `source.ip` and its `value` is `10`, an
 alert is generated for every source IP address that appears in at least 10 of
 the rule's search results.
+* *EQL*: Searches the defined indices and creates an alert when results match an
+{ref}/eql.html[Event Query Language (EQL)] query.
+* *Threat match*: Creates an alert when {es-sec} index field values match
+field values defined in the specified threat indices. For example, you
+can create a threat index for IP addresses and use this index to create an alert
+whenever an event's `destination.ip` equals a value in the index. Threat index
+field mappings should be {ecs-ref}[ECS-compliant]. For information on creating
+{es} indices and field types, see
+{ref}/getting-started-index.html[Index some documents],
+{ref}/indices-create-index.html[Create index API] and
+{ref}/mapping-types.html[Field data types].
 
 When creating or modifying rules, you can add exceptions that prevent a rule
 from generating an alert even when its criteria are met. This is useful for
 reducing noise, such as preventing alerts from trusted processes and internal
 IP addresses. <<detections-ui-exceptions>> describes how to add exceptions to a
 rule.
+
+NOTE: You can add exceptions to custom query, EQL, and threat-matching rule
+types.
 
 For both prebuilt and custom rules, you can use the
 {kib} {kibana-ref}/alerting-getting-started.html[Alerting and Actions] feature
@@ -135,6 +149,55 @@ per rule execution:
 ** _Custom query_: `host.name : liv-win-19 and event.category : "authentication" and event.outcome : "failure"`
 ** _Field_: Leave blank
 ** _Threshold_: `10`
+
+* To create a new EQL rule, select _Event Correlation_ and then:
+.. Define which {es} indices the rule searches for alerts.
+.. Add an {ref}/eql-syntax.html[EQL statement] used to detect alerts.
++
+For example the following rule detects when `msxsl.exe` makes an outbound
+network connection:
+
+** _Index patterns_: `winlogbeat-*`
++
+Winlogbeat ship Windows events to {es-sec}.
+** _EQL query_: `sequence by process.entity_id [process where event.type in ("start", "process_started") and process.name == "msxsl.exe"] [network where event.type == "connection" and process.name == "msxsl.exe" and network.direction == "outgoing"]`
++
+Searches the `winlogbeat-*` indices for sequences of a `msxsl.exe` process start
+event followed by an outbound network connection event that was started by the
+`msxsl.exe` process.
++
+[role="screenshot"]
+image::images/eql-rule-query-example.png[]
+
+* To create a threat-match rule that searches the specified threat indices for
+field values, select _Threat Match_ and then fill in these fields:
+.. _Index patterns_: The {es-sec} event indices on which the rules runs.
+.. _Custom query_: The query and filters used to retrieve the required results from
+the {es-sec} event indices. For example, if you only need to check
+`destination.ip` event values, add `destination.ip : *`.
++
+TIP: If you want the rule to check every field in the indices, use this
+wildcard expression: `*:*`.
+.. _Threat index patterns_: The threat indices containing field values for which
+you want to generate alerts.
+.. _Threat index query_: The query and filters used to filter the fields from
+the threat indices.
+.. _Threat Mapping_: Compares the values of the specified event and threat field
+values. When the field values are identical, an alert is generated. To define
+which field values are compared from the indices:
+** _Field_: The field used for comparing values in the {es-sec} event
+indices.
+** _Threat index field_: The field used for comparing values in the threat
+indices.
+.. You can add `AND` and `OR` clauses to define when alerts are generated.
++
+For example, to create a rule that generates alerts when `host.name` *and*
+`destination.ip` field values in the `logs-*` or `packetbeat-*` {es-sec} indices
+are identical to the corresponding field values in the `ip-threat-list` threat
+index:
++
+[role="screenshot"]
+image::images/threat-math-rule-query-example.png[]
 
 . Select the Timeline template used when you investigate an alert created by
 the rule in Timeline (optional).
