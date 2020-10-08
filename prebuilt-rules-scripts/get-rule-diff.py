@@ -55,10 +55,8 @@ for new_rule in lasted_rules_dict:
                         new_rule['changelog']['changes'].append({"version": new_rule['version'], "updated": new_rule['last_update'], "pre_query": old_rule['query'], "doc_text": "Updated query."})
                     if old_rule['query'] == new_rule['query']:
                         new_rule['changelog']['changes'].append({"version": new_rule['version'], "updated": new_rule['last_update'], "pre_query": old_rule['query'], "doc_text": "Formatting only."})
-                        print(old_rule['name'])
                 if 'query' not in new_rule:
                     new_rule['changelog']['changes'].append({"version": new_rule['version'], "updated": new_rule['last_update'], "pre_query": "N/A", "doc_text": "Formatting only."})
-                    print(old_rule['name'])
             else:
                 new_rule['last_update'] = old_rule['last_update']
             diff_dict.append(new_rule)
@@ -70,16 +68,6 @@ for new_rule in lasted_rules_dict:
         diff_dict.append(new_rule)
         counter = counter + 1
     ruleFound = False
-print("Count: " + str(counter))
-
-unFoundRules = []
-
-for nrl in newRuleNames:
-    for olr in oldRuleNames:
-        if olr == nrl:
-            oldRuleNames.remove(olr)
-           
-print (oldRuleNames)
 
 # Outputs the final JSON file from which the documentation is generated. Note
 # that this file is needed for the next release to compare future changes.
