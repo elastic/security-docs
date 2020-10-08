@@ -215,7 +215,7 @@ for rule in sorted_rules:
                 fileText = fileText + "----------------------------------" + "\n\n"
             else:
                 fileText = fileText + "* " + i['doc_text'] + "\n"
-    asciidocFile = "generated-ascii-files/asciidoc-rule-detail-files/" + rule_link + ".asciidoc"
+    asciidocFile = "generated-ascii-files/rule-details/" + rule_link + ".asciidoc"
     with open(asciidocFile, "w") as asciiWrite:
         asciiWrite.write(fileText)
     rules_index_file.append("include::rule-details/" + rule_link + ".asciidoc[]")
