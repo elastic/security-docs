@@ -207,6 +207,9 @@ for rule in sorted_rules:
         fileText = fileText + "==== Rule version history" + "\n\n"
         for i in reversed(rule['changelog']['changes']):
             fileText = fileText + "Version " + str(i['version']) + " (" + i['updated'] + " release)" + "::\n"
+            if 'pre_name' in i:
+                if i['pre_name'] != None:
+                    fileText = fileText + "* Rule name changed from: " + i['pre_name'] + "\n+\n"
             if i['doc_text'] == "Updated query.":
                 fileText = fileText + "Updated query, changed from:\n+\n"
                 fileText = fileText + "[source, js]\n"
@@ -214,7 +217,7 @@ for rule in sorted_rules:
                 fileText = fileText + re.sub(' +', ' ', textwrap.fill(i['pre_query'], width=70)) + "\n"
                 fileText = fileText + "----------------------------------" + "\n\n"
             else:
-                fileText = fileText + "* " + i['doc_text'] + "\n"
+                fileText = fileText + "* " + i['doc_text'] + "\n\n"
     asciidocFile = "generated-ascii-files/rule-details/" + rule_link + ".asciidoc"
     with open(asciidocFile, "w") as asciiWrite:
         asciiWrite.write(fileText)
