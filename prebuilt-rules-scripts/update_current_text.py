@@ -6,6 +6,8 @@ import glob
 from pathlib import Path
 import re
 
+releaseVersion = "7.10.0" #Security app release version - update as required
+
 def sort_by_name(rule):
     '''
     Helper to sort rule by name'''
@@ -13,12 +15,12 @@ def sort_by_name(rule):
     
 # Path to latest prebuilt rules JSON file
 
-with open("orig-rules-json-files/7.9.0-prebuilt-rule-new.json", "r") as source:
+with open("orig-rules-json-files/" + releaseVersion + "-prebuilt-rule.json", "r") as source:
     currentText = json.load(source)
 
 # Path to JSON file generated from existing documentation
     
-with open("diff-files/gen-files/json-from-docs-7.9.0.json", "r") as source:
+with open("diff-files/gen-files/json-from-docs-" + releaseVersion + ".json", "r") as source:
     updatedText = json.load(source)
 
 for rule in currentText:
@@ -34,6 +36,6 @@ for rule in currentText:
 # Output file with updated text from the documentation for previously existing
 # prebuilt rules. New rules are unchanged.
 
-with open("diff-files/gen-files/updated-text-json-file-7.9.0.json", "w") as fp:
+with open("diff-files/gen-files/updated-text-json-file-" + releaseVersion + ".json", "w") as fp:
     json.dump(currentText, fp, indent=2)
             

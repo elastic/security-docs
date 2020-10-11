@@ -9,6 +9,8 @@ import re
 # Creates a JSON file from the existing prebuilt rules documentation and saves
 # it in the diff-files folder.
 
+releaseVersion = "7.10.0" #Security app release version - update as required
+
 def sort_by_name(rule):
     '''
     Helper to sort rule by name'''
@@ -92,5 +94,5 @@ for file in files:
 # Update the file name below to indicate this JSON file is the currently
 # existing docs
 
-with open("diff-files/gen-files/json-from-docs-7.9.0.json", "w") as fp:
+with open("diff-files/gen-files/json-from-docs-" + releaseVersion + ".json", "w") as fp:
     json.dump(rule_dict, fp, indent=2)
