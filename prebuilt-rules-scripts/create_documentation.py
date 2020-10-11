@@ -10,6 +10,8 @@ import re
 # are generated, even those that have not been changed, so you can just copy and
 # paste the updated files to the documentation folders.
 
+releaseVersion = "7.10.0" # Security app release version - update as required
+
 def sort_by_name(rule):
     '''
     Helper to sort rule by name'''
@@ -57,7 +59,7 @@ def formatText(text):
 
 # Path to the generated JSON file
 
-with open('diff-files/final-files/final-rule-file-7.9.0.json', 'r') as source:
+with open('diff-files/final-files/final-rule-file-' + releaseVersion + '.json', 'r') as source:
      rules_dict = json.load(source)
 
 
@@ -252,10 +254,26 @@ information about a rule's changes, see the rule's description page.
 
 """
 
+# Rules that have been deleted so there is no need to add them manually after
+# generating the docs
+
+deletedRules = """
+These prebuilt rules have been removed:
+
+* Execution via Signed Binary
+* Suspicious Process spawning from Script Interpreter
+* Suspicious Script Object Execution
+
+These prebuilt rules have been updated:
+
+"""
+
 def addVersionUpdates(updated):
     global versionHistoryPage
     versionHistoryPage = versionHistoryPage + "[float]\n"
     versionHistoryPage = versionHistoryPage + "=== " + updated + "\n\n"
+    if updated == "7.7.0":
+                        versionHistoryPage = versionHistoryPage + deletedRules
     for rule in sorted_rules:
         if 'changelog' in rule:
             for i in (rule['changelog']['changes']):
@@ -266,13 +284,12 @@ def addVersionUpdates(updated):
                     linkString = re.sub('/', '-', linkString)
                     versionHistoryPage = versionHistoryPage + "<<" + linkString + ">>\n\n"
 
+addVersionUpdates("7.10.0")
 addVersionUpdates("7.9.0")
 addVersionUpdates("7.8.0")
 addVersionUpdates("7.7.0")
 addVersionUpdates("7.6.2")
-addVersionUpdates("7.6.1")                    
-
-
+addVersionUpdates("7.6.1")       
 
 fileWrite = "generated-ascii-files" + "/" + "prebuilt-rules-changelog.asciidoc"
 with open(fileWrite, "w") as writeFile:
