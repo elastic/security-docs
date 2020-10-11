@@ -1,21 +1,42 @@
 # Create prebuilt rule documentation
 
-Scripts are use to create the prebuilt rules documentation. Currently, four
+Scripts are use to create the prebuilt rules documentation. Currently, five
 scrips are used and they must be run in this order:
 
-1. [`create-json-from-docs.py`](#create-json-from-docspy)
-2. [`update_current_text.py`](#update_current_textpy)
-3. [`get-rule-diff.py`](#get-rule-diffpy)
-4. [`create_documentation.py`](#create_documentationpy)
-
-Before running the scripts, you must download the JSON file containing all
-prebuilt rules for the new release. For each release, these JSON files are saved
-in the `orig-rules-json-files` folder.
+1. [`get-release-rules.py`](#get-release-rulespy)
+2. [`create-json-from-docs.py`](#create-json-from-docspy)
+3. [`update_current_text.py`](#update_current_textpy)
+4. [`get-rule-diff.py`](#get-rule-diffpy)
+5. [`create_documentation.py`](#create_documentationpy)
 
 After creating the documentation, you need to copy and paste the files in the
 `generated-ascii-files` folder to their relevant location in the `docs` folder,
 and then manually edit the text of new rules added for the latest release. This
 includes converting Markdown to AsciiDoc and editing the English.
+
+### `get-release-rules.py`
+
+Creates a JSON file containing all the prebuilt rules for the current release.
+For this script to work:
+
+* The `security-docs` and `kibana` local repo folders must reside in the same
+  parent folder (sibling folders).
+* You must checkout the relevant Kibana branch. For example, if you are
+  creating documentation for 7.10, make sure you have checked out the Kibana
+  7.10 branch before running the script.
+* Update the `releaseVersion` (line 10) variable as required. For example, if
+  you are creating docs for 7.10, the variable should be:
+
+   `releaseVersion = "7.10.0"`
+
+The generated JSON file's path name is:
+
+`orig-rules-json-files/<releaseVersion>-prebuilt-rule.json`
+
+Where `<releaseVersion>` is the release number defined in the `releaseVersion`
+variable. Once this file is created, do not modify or delete it as it can be
+used as a record of prebuilt rules from all releases (with all the other files
+in the `orig-rules-json-files` folder).
 
 ### `create-json-from-docs.py`
 
@@ -79,7 +100,7 @@ Before running the script, these must be updated:
 
 * `releaseVersion` variable (line 13): The version for which the docs are being
   generated.
-* Call to the `addVersionUpdates` function (lines 269-273): add a call for the
+* Call to the `addVersionUpdates` function (lines 299-303): Add a call for the
   new release immediately above the existing ones. For example, if you are
   generating documentation for 7.10.0:
 
@@ -91,3 +112,6 @@ Before running the script, these must be updated:
   addVersionUpdates("7.6.2")
   addVersionUpdates("7.6.1")
   ```
+
+  **NOTE**: Only update these lines in the script when at least one rule query
+  has been updated.
