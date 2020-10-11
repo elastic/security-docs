@@ -10,7 +10,7 @@ import re
 # are generated, even those that have not been changed, so you can just copy and
 # paste the updated files to the documentation folders.
 
-releaseVersion = "7.10.0" # Security app release version - update as required
+releaseVersion = "7.9.1" # Security app release version - update as required
 
 def sort_by_name(rule):
     '''
@@ -139,15 +139,25 @@ for rule in sorted_rules:
             fileText = fileText + "*Rule index*: " + rule['index'] + "\n\n"
     fileText = fileText + "\n*Severity*: " + rule['severity'] + "\n\n"
     fileText = fileText + "*Risk score*: " + str(rule['risk_score']) + "\n\n"
-    fileText = fileText + "*Runs every*: " + translate_interval_period(rule['interval']) + "\n\n"
-    fileText = fileText + "*Searches indices from*: " + rule['from'] + " ({ref}/common-options.html#date-math[Date Math format], see also <<rule-schedule, `Additional look-back time`>>)" + "\n\n"
-    fileText = fileText + "*Maximum alerts per execution*: " + str(rule['max_signals']) + "\n\n"
-    if len(rule['references']) != 0:
-        fileText = fileText + "*References*:\n\n"
-        for i in rule['references']:
-            fileText = fileText + "* " + i + "\n"
-    if len(rule['references']) != 0:
-        fileText = fileText + "\n"
+    if 'interval' in rule:
+        fileText = fileText + "*Runs every*: " + translate_interval_period(rule['interval']) + "\n\n"
+    if 'interval' not in rule:
+        fileText = fileText + "*Runs every*: 5 minutes" + "\n\n"
+    if 'from' in rule:
+        fileText = fileText + "*Searches indices from*: " + rule['from'] + " ({ref}/common-options.html#date-math[Date Math format], see also <<rule-schedule, `Additional look-back time`>>)" + "\n\n"
+    if 'from' not in rule:
+        fileText = fileText + "*Searches indices from*: now-6m" + " ({ref}/common-options.html#date-math[Date Math format], see also <<rule-schedule, `Additional look-back time`>>)" + "\n\n"
+    if 'max_signals' in rule:
+        fileText = fileText + "*Maximum alerts per execution*: " + str(rule['max_signals']) + "\n\n"
+    if 'max_signals' not in rule:
+        fileText = fileText + "*Maximum alerts per execution*: 100" + "\n\n"
+    if 'references' in rule:
+        if len(rule['references']) != 0:
+            fileText = fileText + "*References*:\n\n"
+            for i in rule['references']:
+                fileText = fileText + "* " + i + "\n"
+        if len(rule['references']) != 0:
+            fileText = fileText + "\n"
     fileText = fileText + "*Tags*:\n\n"
     for i in rule['tags']:
         fileText = fileText + "* " + i + "\n"
@@ -165,10 +175,11 @@ for rule in sorted_rules:
         fileText = fileText + i
     fileText = fileText + "\n\n"
     fileText = fileText + "*Rule license*: " + rule['license'] + "\n"
-    if len(rule['false_positives']) != 0:
-        fileText = fileText + "\n==== Potential false positives" + "\n\n"
-        for i in rule['false_positives']:
-            fileText = fileText + formatText(i) + "\n"
+    if 'false_positives' in rule:
+        if len(rule['false_positives']) != 0:
+            fileText = fileText + "\n==== Potential false positives" + "\n\n"
+            for i in rule['false_positives']:
+                fileText = fileText + formatText(i) + "\n"
     if 'note' in rule:
         fileText = fileText + "\n==== Investigation guide" + "\n\n"
         fileText = fileText + formatText(rule['note']) + "\n"
@@ -186,23 +197,24 @@ for rule in sorted_rules:
             for i in rule['filters']:
                 fileText = fileText + json.dumps(i, sort_keys=True, indent=4) + "\n"
             fileText = fileText + "----------------------------------" + "\n\n"
-    if len(rule['threat']) != 0:
-        fileText = fileText + "==== Threat mapping" + "\n\n"
-        isFirstLoop = True
-        for i in rule['threat']:
-            if isFirstLoop:
-                fileText = fileText + "*Framework*: " + i['framework']
-                isFirstLoop = False
-                if i['framework'] == "MITRE ATT&CK":
-                    fileText = fileText + "^TM^"
-            fileText = fileText + "\n\n* Tactic:\n"
-            fileText = fileText + "** Name: " + i['tactic']['name'] + "\n"
-            fileText = fileText + "** ID: " + i['tactic']['id'] + "\n"
-            fileText = fileText + "** Reference URL: " + i['tactic']['reference'] + "\n"
-            fileText = fileText + "* Technique:\n"
-            fileText = fileText + "** Name: " + i['technique'][0]['name'] + "\n"
-            fileText = fileText + "** ID: " + i['technique'][0]['id'] + "\n"
-            fileText = fileText + "** Reference URL: " + i['technique'][0]['reference'] + "\n"
+    if 'threat' in rule:
+        if len(rule['threat']) != 0:
+            fileText = fileText + "==== Threat mapping" + "\n\n"
+            isFirstLoop = True
+            for i in rule['threat']:
+                if isFirstLoop:
+                    fileText = fileText + "*Framework*: " + i['framework']
+                    isFirstLoop = False
+                    if i['framework'] == "MITRE ATT&CK":
+                        fileText = fileText + "^TM^"
+                fileText = fileText + "\n\n* Tactic:\n"
+                fileText = fileText + "** Name: " + i['tactic']['name'] + "\n"
+                fileText = fileText + "** ID: " + i['tactic']['id'] + "\n"
+                fileText = fileText + "** Reference URL: " + i['tactic']['reference'] + "\n"
+                fileText = fileText + "* Technique:\n"
+                fileText = fileText + "** Name: " + i['technique'][0]['name'] + "\n"
+                fileText = fileText + "** ID: " + i['technique'][0]['id'] + "\n"
+                fileText = fileText + "** Reference URL: " + i['technique'][0]['reference'] + "\n"
     if 'changelog' in rule:
         identifier = rule_link + "-history"
         fileText = fileText + "\n[[" + identifier + "]]\n"
@@ -284,7 +296,6 @@ def addVersionUpdates(updated):
                     linkString = re.sub('/', '-', linkString)
                     versionHistoryPage = versionHistoryPage + "<<" + linkString + ">>\n\n"
 
-addVersionUpdates("7.10.0")
 addVersionUpdates("7.9.0")
 addVersionUpdates("7.8.0")
 addVersionUpdates("7.7.0")
