@@ -10,6 +10,9 @@ import re
 # generated for the previous release. It checks if rule queries have been
 # changed and updates the version history as required (changelog object).
 
+releaseVersion = "7.10.0" # Security app release version - update as required
+previousReleaseVersion = "7.9.0" # Release pf the previous release for which docs were generated 
+
 def sort_by_name(rule):
     '''
     Helper to sort rule by name'''
@@ -17,12 +20,12 @@ def sort_by_name(rule):
 
 # Path to the JSON rule file generated for this release
 
-with open('diff-files/gen-files/updated-text-json-file-7.9.0.json', 'r') as source:
+with open('diff-files/gen-files/updated-text-json-file-' + releaseVersion + '.json', 'r') as source:
     lasted_rules_dict = json.load(source)
 
 # Path to the final JSON rule file generated for the previous release
     
-with open('diff-files/final-files/final-rule-file-7.8.0.json', 'r') as source:
+with open('diff-files/final-files/final-rule-file-' + previousReleaseVersion + '.json', 'r') as source:
     previous_rules_dict = json.load(source)
     
 diff_dict = []
@@ -49,7 +52,7 @@ for new_rule in lasted_rules_dict:
             if 'changelog' in old_rule:
                 new_rule['changelog'] = old_rule['changelog']
             if old_rule['version'] != new_rule['version']:
-                new_rule['last_update'] = "7.10.0"
+                new_rule['last_update'] = releaseVersion
                 if 'changelog' not in new_rule:
                     new_rule['changelog'] = {}
                     new_rule['changelog']['changes'] = []
@@ -67,8 +70,8 @@ for new_rule in lasted_rules_dict:
             oldName = None
             ruleFound = True
     if ruleFound == False:
-        new_rule['last_update'] = "7.10.0"
-        new_rule['added'] = "7.10.0"
+        new_rule['last_update'] = releaseVersion
+        new_rule['added'] = releaseVersion
         diff_dict.append(new_rule)
         counter = counter + 1
     ruleFound = False
@@ -76,5 +79,5 @@ for new_rule in lasted_rules_dict:
 # Outputs the final JSON file from which the documentation is generated. Note
 # that this file is needed for the next release to compare future changes.
 
-with open("diff-files/final-files/final-rule-file-7.9.0.json", "w") as fp:
+with open("diff-files/final-files/final-rule-file-" + releaseVersion +  ".json", "w") as fp:
     json.dump(diff_dict, fp, indent=2)
