@@ -28,7 +28,6 @@ for rule in currentText:
         if rule['name'] == newText['name']:
             rule['description'] = newText['description']
             if 'false_positives' in newText and 'false_positives' in rule:
-                print(rule['name'])
                 rule['false_positives'][0] = newText['false_positives'][0]
             if 'note' in newText:
                 rule['note'] = newText['note']
