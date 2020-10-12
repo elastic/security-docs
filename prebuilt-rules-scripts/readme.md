@@ -56,7 +56,7 @@ variable should be:
 This script creates a JSON file using the text from previously documented rules
 (created with the `create-json-from-docs.py` script) and the (unedited) text for
 the new rules added for the coming release. The generated file has an entry for
-every prebuilt rule (preexisting and new ones).
+every prebuilt rule (pre-existing and new ones).
 
 Before running the script, update the `releaseVersion` variable (line 9) to the
 release number for which you are generating docs. If you are generating a JSON
@@ -108,7 +108,7 @@ Before running the script, these must be updated:
 
 * `releaseVersion` variable (line 13): The version for which the docs are being
   generated.
-* Call to the `addVersionUpdates` function (lines 311): Add a call for the
+* Call to the `addVersionUpdates` function (lines 314): Add a call for the
   new release immediately above the existing ones. For example, if you are
   generating documentation for 7.10.0:
 
