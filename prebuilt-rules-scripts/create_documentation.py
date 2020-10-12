@@ -118,6 +118,7 @@ with open(fileWrite, "w") as writeFile:
 
 fileText = ""
 rules_index_file = []
+ruleNameChanged = False
 
 for rule in sorted_rules:
     rule_link = re.sub(' ', '-', rule['name'].lower())
@@ -224,20 +225,20 @@ for rule in sorted_rules:
             if 'pre_name' in i:
                 if i['pre_name'] != None:
                     fileText = fileText + "* Rule name changed from: " + i['pre_name'] + "\n+\n"
+                    ruleNameChanged = True
             if i['doc_text'] == "Updated query.":
                 fileText = fileText + "Updated query, changed from:\n+\n"
                 fileText = fileText + "[source, js]\n"
                 fileText = fileText + "----------------------------------" + "\n"
                 fileText = fileText + re.sub(' +', ' ', textwrap.fill(i['pre_query'], width=70)) + "\n"
                 fileText = fileText + "----------------------------------" + "\n\n"
-            else:
+            if i['doc_text'] != "Updated query." and ruleNameChanged == False:
                 fileText = fileText + "* " + i['doc_text'] + "\n\n"
+            ruleNameChanged = False
     asciidocFile = "generated-ascii-files/rule-details/" + rule_link + ".asciidoc"
     with open(asciidocFile, "w") as asciiWrite:
         asciiWrite.write(fileText)
     rules_index_file.append("include::rule-details/" + rule_link + ".asciidoc[]")
-    print("include::rule-details/" + rule_link + ".asciidoc[]")
-    print()
 
 # Create index file
 
@@ -289,7 +290,7 @@ def addVersionUpdates(updated):
     for rule in sorted_rules:
         if 'changelog' in rule:
             for i in (rule['changelog']['changes']):
-                if i['updated'] == updated and i['doc_text'] != "Formatting only.":
+                if i['updated'] == updated and i['doc_text'] != "Formatting only":
                     linkString = re.sub(' ', '-', rule['name'].lower())
                     linkString = re.sub('[():]', '', linkString)
                     linkString = re.sub('-+', '-', linkString)
