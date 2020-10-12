@@ -60,9 +60,9 @@ for new_rule in lasted_rules_dict:
                     if old_rule['query'] != new_rule['query']:
                         new_rule['changelog']['changes'].append({"version": new_rule['version'], "updated": new_rule['last_update'], "pre_query": old_rule['query'], "doc_text": "Updated query.", "pre_name": oldName})
                     if old_rule['query'] == new_rule['query']:
-                        new_rule['changelog']['changes'].append({"version": new_rule['version'], "updated": new_rule['last_update'], "pre_query": old_rule['query'], "doc_text": "Formatting only.", "pre_name": oldName})
+                        new_rule['changelog']['changes'].append({"version": new_rule['version'], "updated": new_rule['last_update'], "pre_query": old_rule['query'], "doc_text": "Formatting only", "pre_name": oldName})
                 if 'query' not in new_rule:
-                    new_rule['changelog']['changes'].append({"version": new_rule['version'], "updated": new_rule['last_update'], "pre_query": "N/A", "doc_text": "Formatting only.", "pre_name": oldName})
+                    new_rule['changelog']['changes'].append({"version": new_rule['version'], "updated": new_rule['last_update'], "pre_query": "N/A", "doc_text": "Formatting only", "pre_name": oldName})
             else:
                 new_rule['last_update'] = old_rule['last_update']
             diff_dict.append(new_rule)
