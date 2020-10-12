@@ -225,11 +225,14 @@ for rule in sorted_rules:
             fileText = fileText + "Version " + str(i['version']) + " (" + i['updated'] + " release)" + "::\n"
             if 'pre_name' in i:
                 if i['pre_name'] != None:
-                    fileText = fileText + "* Rule name changed from: " + i['pre_name'] + "\n+\n"
+                    fileText = fileText + "* Rule name changed from: " + i['pre_name'] + "\n"
                     ruleNameChanged = True
                     if i['updated'] == releaseVersion:
                         filesWithUpdatedRuleName.add(rule_link + ".asciidoc")
             if i['doc_text'] == "Updated query.":
+                if 'pre_name' in i:
+                    if i['pre_name'] != None:
+                        fileText = fileText + "+\n"
                 fileText = fileText + "* Updated query, changed from:\n+\n"
                 fileText = fileText + "[source, js]\n"
                 fileText = fileText + "----------------------------------" + "\n"
