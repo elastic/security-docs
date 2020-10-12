@@ -81,7 +81,9 @@ Before running the script, these variables must be updated:
 
 * `releaseVersion` (line 13): The version for which the docs are being generated.
 * `previousReleaseVersion` (line 14): The previous version for which docs were
-  generated.
+  generated. The variable points the script to the _final_ JSON file used to
+  generate the previous release's documentation (in the `diff-files/final-files`
+  folder).
 
 For example, if you are generating documentation for 7.10.0:
 
@@ -100,7 +102,7 @@ Before running the script, these must be updated:
 
 * `releaseVersion` variable (line 13): The version for which the docs are being
   generated.
-* Call to the `addVersionUpdates` function (lines 299-303): Add a call for the
+* Call to the `addVersionUpdates` function (lines 300): Add a call for the
   new release immediately above the existing ones. For example, if you are
   generating documentation for 7.10.0:
 
