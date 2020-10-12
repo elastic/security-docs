@@ -98,11 +98,17 @@ overview (table) file. All files are saved in the `generated-ascii-files`
 folder. Once the files are generated, you should be able to just copy and paste
 them into the `detections/prebuilt-rules` documentation folder.
 
+Additionally, when the script detects a rule name has been changed, it prints a
+list of the relevant _rule-details_ files to the terminal. The text of these
+`.asciidoc` files should be reviewed, as the `update_current_text.py` script
+does not update the text with the existing documentation when a rule's name has
+been changed.
+
 Before running the script, these must be updated:
 
 * `releaseVersion` variable (line 13): The version for which the docs are being
   generated.
-* Call to the `addVersionUpdates` function (lines 300): Add a call for the
+* Call to the `addVersionUpdates` function (lines 311): Add a call for the
   new release immediately above the existing ones. For example, if you are
   generating documentation for 7.10.0:
 

@@ -119,6 +119,7 @@ with open(fileWrite, "w") as writeFile:
 fileText = ""
 rules_index_file = []
 ruleNameChanged = False
+filesWithUpdatedRuleName = set()
 
 for rule in sorted_rules:
     rule_link = re.sub(' ', '-', rule['name'].lower())
@@ -226,8 +227,10 @@ for rule in sorted_rules:
                 if i['pre_name'] != None:
                     fileText = fileText + "* Rule name changed from: " + i['pre_name'] + "\n+\n"
                     ruleNameChanged = True
+                    if i['updated'] == releaseVersion:
+                        filesWithUpdatedRuleName.add(rule_link + ".asciidoc")
             if i['doc_text'] == "Updated query.":
-                fileText = fileText + "Updated query, changed from:\n+\n"
+                fileText = fileText + "* Updated query, changed from:\n+\n"
                 fileText = fileText + "[source, js]\n"
                 fileText = fileText + "----------------------------------" + "\n"
                 fileText = fileText + re.sub(' +', ' ', textwrap.fill(i['pre_query'], width=70)) + "\n"
@@ -250,6 +253,14 @@ for index_link in rules_index_file:
 indexFileWrite = "generated-ascii-files" + "/" + "rule-desc-index.asciidoc"
 with open(indexFileWrite, "w") as indexFileWrite:
         indexFileWrite.write(index_file_text)
+
+# Print files of rules with changed names to terminal
+
+filesWithUpdatedRuleName = sorted(filesWithUpdatedRuleName)
+print("Rule names in these files have been changed:\n")
+for cn in filesWithUpdatedRuleName:
+    print(cn)
+print("\n")
 
 # END: Create files for each rule
 
