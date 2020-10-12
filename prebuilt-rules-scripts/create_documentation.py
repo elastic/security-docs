@@ -10,7 +10,7 @@ import re
 # are generated, even those that have not been changed, so you can just copy and
 # paste the updated files to the documentation folders.
 
-releaseVersion = "7.9.1" # Security app release version - update as required
+releaseVersion = "7.10.0" # Security app release version - update as required
 
 def sort_by_name(rule):
     '''
@@ -311,6 +311,7 @@ def addVersionUpdates(updated):
                     linkString = re.sub('/', '-', linkString)
                     versionHistoryPage = versionHistoryPage + "<<" + linkString + ">>\n\n"
 
+addVersionUpdates("7.10.0")
 addVersionUpdates("7.9.0")
 addVersionUpdates("7.8.0")
 addVersionUpdates("7.7.0")

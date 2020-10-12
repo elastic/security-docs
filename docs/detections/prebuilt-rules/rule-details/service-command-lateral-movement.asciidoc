@@ -1,0 +1,62 @@
+[[service-command-lateral-movement]]
+=== Service Command Lateral Movement
+
+Identifies use of sc.exe to create, modify, or start services on remote hosts. This could be indicative of adversary lateral movement but will be noisy if commonly done by admins.
+
+*Rule type*: eql
+
+*Rule indices*:
+
+* logs-endpoint.events.*
+* winlogbeat-*
+
+*Severity*: low
+
+*Risk score*: 21
+
+*Runs every*: 5 minutes
+
+*Searches indices from*: now-9m ({ref}/common-options.html#date-math[Date Math format], see also <<rule-schedule, `Additional look-back time`>>)
+
+*Maximum alerts per execution*: 100
+
+*Tags*:
+
+* Elastic
+* Windows
+
+*Version*: 1
+
+*Added ({stack} release)*: 7.10.0
+
+*Rule authors*: Elastic
+
+*Rule license*: Elastic License
+
+==== Rule query
+
+
+[source,js]
+----------------------------------
+/* dependent on a wildcard for remote path */ sequence by
+process.entity_id with maxspan=1m [process where event.type in
+("start", "process_started") and (process.name == "sc.exe" or
+process.pe.original_file_name == "sc.exe") and
+wildcard(process.args, "\\\\*") and wildcard(process.args, "binPath*",
+"binpath*") and process.args in ("create", "config", "failure",
+"start")] [network where event.type == "connection" and process.name
+== "sc.exe" and destination.address != "127.0.0.1"]
+----------------------------------
+
+==== Threat mapping
+
+*Framework*: MITRE ATT&CK^TM^
+
+* Tactic:
+** Name: Lateral Movement
+** ID: TA0008
+** Reference URL: https://attack.mitre.org/tactics/TA0008/
+* Technique:
+** Name: Remote Services
+** ID: T1021
+** Reference URL: https://attack.mitre.org/techniques/T1021/

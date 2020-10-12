@@ -1,0 +1,64 @@
+[[unusual-child-processes-of-rundll32]]
+=== Unusual Child Processes of RunDLL32
+
+Identifies child processes of unusual instances of RunDLL32 where the command line parameters were suspicious. Misuse of RunDLL32 could indicate malicious activity.
+
+*Rule type*: eql
+
+*Rule indices*:
+
+* logs-endpoint.events.*
+* winlogbeat-*
+
+*Severity*: high
+
+*Risk score*: 21
+
+*Runs every*: 5 minutes
+
+*Searches indices from*: now-9m ({ref}/common-options.html#date-math[Date Math format], see also <<rule-schedule, `Additional look-back time`>>)
+
+*Maximum alerts per execution*: 100
+
+*Tags*:
+
+* Elastic
+* Windows
+
+*Version*: 1
+
+*Added ({stack} release)*: 7.10.0
+
+*Rule authors*: Elastic
+
+*Rule license*: Elastic License
+
+==== Rule query
+
+
+[source,js]
+----------------------------------
+sequence with maxspan=1h [process where event.type in ("start",
+"process_started") and (process.name == "rundll32.exe" or
+process.pe.original_file_name == "rundll32.exe") and /* zero
+arguments excluding the binary itself (and accounting for when the
+binary may not be logged in args) */ ((process.args ==
+"rundll32.exe" and process.args_count == 1) or (process.args !=
+"rundll32.exe" and process.args_count == 0)) ] by process.entity_id
+[process where event.type in ("start", "process_started") and
+(process.name == "rundll32.exe" or process.pe.original_file_name ==
+"rundll32.exe") ] by process.parent.entity_id
+----------------------------------
+
+==== Threat mapping
+
+*Framework*: MITRE ATT&CK^TM^
+
+* Tactic:
+** Name: Defense Evasion
+** ID: TA0005
+** Reference URL: https://attack.mitre.org/tactics/TA0005/
+* Technique:
+** Name: Rundll32
+** ID: T1085
+** Reference URL: https://attack.mitre.org/techniques/T1085/

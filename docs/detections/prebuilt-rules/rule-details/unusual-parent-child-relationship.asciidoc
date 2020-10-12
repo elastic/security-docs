@@ -26,11 +26,11 @@ indicate masquerading or other strange activity on a system.
 * Elastic
 * Windows
 
-*Version*: 4 (<<unusual-parent-child-relationship-history, version history>>)
+*Version*: 5 (<<unusual-parent-child-relationship-history, version history>>)
 
 *Added ({stack} release)*: 7.6.0
 
-*Last modified ({stack} release)*: 7.9.1
+*Last modified ({stack} release)*: 7.10.0
 
 *Rule authors*: Elastic
 
@@ -40,6 +40,61 @@ indicate masquerading or other strange activity on a system.
 
 
 [source,js]
+----------------------------------
+event.category:process and event.type:(start or process_started) and
+process.parent.executable:* and (process.parent.name:autochk.exe and
+not process.name:(chkdsk.exe or doskey.exe or WerFault.exe) or
+process.parent.name:smss.exe and not process.name:(autochk.exe or
+smss.exe or csrss.exe or wininit.exe or winlogon.exe or WerFault.exe)
+or process.name:autochk.exe and not process.parent.name:smss.exe or
+process.name:(fontdrvhost.exe or dwm.exe) and not
+process.parent.name:(wininit.exe or winlogon.exe) or
+process.name:(consent.exe or RuntimeBroker.exe or TiWorker.exe) and
+not process.parent.name:svchost.exe or process.name:wermgr.exe and not
+process.parent.name:(svchost.exe or TiWorker.exe) or
+process.name:SearchIndexer.exe and not
+process.parent.name:services.exe or
+process.name:SearchProtocolHost.exe and not
+process.parent.name:(SearchIndexer.exe or dllhost.exe) or
+process.name:dllhost.exe and not process.parent.name:(services.exe or
+svchost.exe) or process.name:smss.exe and not
+process.parent.name:(System or smss.exe) or process.name:csrss.exe and
+not process.parent.name:(smss.exe or svchost.exe) or
+process.name:wininit.exe and not process.parent.name:smss.exe or
+process.name:winlogon.exe and not process.parent.name:smss.exe or
+process.name:(lsass.exe or LsaIso.exe) and not
+process.parent.name:wininit.exe or process.name:LogonUI.exe and not
+process.parent.name:(wininit.exe or winlogon.exe) or
+process.name:services.exe and not process.parent.name:wininit.exe or
+process.name:svchost.exe and not process.parent.name:(MsMpEng.exe or
+services.exe) or process.name:spoolsv.exe and not
+process.parent.name:services.exe or process.name:taskhost.exe and not
+process.parent.name:(services.exe or svchost.exe) or
+process.name:taskhostw.exe and not process.parent.name:(services.exe
+or svchost.exe) or process.name:userinit.exe and not
+process.parent.name:(dwm.exe or winlogon.exe))
+----------------------------------
+
+==== Threat mapping
+
+*Framework*: MITRE ATT&CK^TM^
+
+* Tactic:
+** Name: Privilege Escalation
+** ID: TA0004
+** Reference URL: https://attack.mitre.org/tactics/TA0004/
+* Technique:
+** Name: Process Hollowing
+** ID: T1093
+** Reference URL: https://attack.mitre.org/techniques/T1093/
+
+[[unusual-parent-child-relationship-history]]
+==== Rule version history
+
+Version 5 (7.10.0 release)::
+* Updated query, changed from:
++
+[source, js]
 ----------------------------------
 event.category:process and event.type:(start or process_started) and
 process.parent.executable:* and (process.name:smss.exe and not
@@ -59,22 +114,6 @@ process.parent.name:(services.exe or svchost.exe) or
 process.name:userinit.exe and not process.parent.name:(dwm.exe or
 winlogon.exe))
 ----------------------------------
-
-==== Threat mapping
-
-*Framework*: MITRE ATT&CK^TM^
-
-* Tactic:
-** Name: Privilege Escalation
-** ID: TA0004
-** Reference URL: https://attack.mitre.org/tactics/TA0004/
-* Technique:
-** Name: Process Hollowing
-** ID: T1093
-** Reference URL: https://attack.mitre.org/techniques/T1093/
-
-[[unusual-parent-child-relationship-history]]
-==== Rule version history
 
 Version 4 (7.9.1 release)::
 * Formatting only
