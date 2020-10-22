@@ -29,7 +29,7 @@ generated for each value.
 For example, if the threshold `field` is `source.ip` and its `value` is `10`, an
 alert is generated for every source IP address that appears in at least 10 of
 the rule's search results.
-* *EQL*: Searches the defined indices and creates an alert when results match an
+* *Event correlation*: Searches the defined indices and creates an alert when results match an
 {ref}/eql.html[Event Query Language (EQL)] query.
 * *Threat match*: Creates an alert when {es-sec} index field values match
 field values defined in the specified threat indices. For example, you
@@ -45,7 +45,7 @@ When creating or modifying rules, you can add exceptions that prevent a rule fro
 
 NOTE: You can add exceptions to custom query, EQL, and threat-matching rule types.
 
-If you are creating a custom query, threshold, or EQL rule, you can preview the rule beforehand to see what kind of results you can expect. See <<preview-rules, Preview your rule>> in this topic for more information. 
+If you are creating a custom query, threshold, or EQL rule, you can preview the rule beforehand to see what kind of results you can expect. See <<preview-rules, Preview your rule>> in this topic for more information.
 
 For both prebuilt and custom rules, you can use the
 {kib} {kibana-ref}/alerting-getting-started.html[Alerting and Actions] feature
@@ -99,7 +99,7 @@ https://www.elastic.co/subscriptions[appropriate license] or use a
 {ml} job must be running for the rule to function correctly.
 ==============
 
-* To create a rule based on a KQL or Lucene query, select _Custom query_ and
+* To create a rule based on a KQL or Lucene query, select *Custom query* and
 then:
 .. Define which {es} indices the rule searches for alerts.
 .. Use the filter and query fields to create the criteria used for detecting
@@ -110,12 +110,12 @@ NOTE: You can use {kib} saved queries (save icon) and queries from saved timelin
 For example, the following rule detects when the `vssadmin delete shadows`
 Windows command is executed:
 
-** _Index patterns_: `winlogbeat-*`
+** *Index patterns*: `winlogbeat-*`
 +
-Winlogbeat ships Windows event logs to {es-sec}.
-** _Custom query_: `event.action:"Process Create (rule: ProcessCreate)" and process.name:"vssadmin.exe" and process.args:("delete" and "shadows")`
+*Definition*: Winlogbeat ships Windows event logs to {es-sec}.
+** *Custom query*: `event.action:"Process Create (rule: ProcessCreate)" and process.name:"vssadmin.exe" and process.args:("delete" and "shadows")`
 +
-Searches the `winlogbeat-*` indices for `vssadmin.exe` executions with
+*Definition*: Searches the `winlogbeat-*` indices for `vssadmin.exe` executions with
 the `delete` and `shadow` arguments, which are used to delete a volume's shadow
 copies.
 +
@@ -125,73 +125,85 @@ image::images/rule-query-example.png[]
 TIP: This example is based on the
 <<volume-shadow-copy-deletion-via-vssadmin, Volume Shadow Copy Deletion via VssAdmin>> prebuilt rule.
 
-* To create a rule based on a source event field threshold, select _Threshold_
+* To create a rule based on a source event field threshold, select *Threshold*
 and then:
 .. Define which {es} indices the rule analyzes for alerts.
 .. Use the filter and query fields to create the criteria used for detecting
 alerts.
-.. Use the _Field_ and _Threshold_ fields to determine which source event field
+.. Use the `Field` and `Threshold` fields to determine which source event field
 is used as a threshold and the threshold's value.
 +
-For example, if the _Field_ is `source.ip` and its _Threshold_ is `10`, an
+For example, if the `Field` is `source.ip` and its `Threshold` is `10`, an
 alert is generated for every source IP address that appears in at least 10 of
 the rule's search results.
 +
-You can also leave the _Field_ undefined. The rule then creates an alert when
-the number of search results is equal to or greater than the _Threshold_ value.
+You can also leave the `Field` undefined. The rule then creates an alert when
+the number of search results is equal to or greater than the `Threshold` value.
 +
 If you want an alert for 10 or more failed login attempts to a specific host
-per rule execution:
+per rule execution, enter the following rule parameters:
 
-** _Custom query_: `host.name : liv-win-19 and event.category : "authentication" and event.outcome : "failure"`
-** _Field_: Leave blank
-** _Threshold_: `10`
+** *Custom query*: `host.name : liv-win-19 and event.category : "authentication" and event.outcome : "failure"`
+** *Field*: Leave blank
+** *Threshold*: `10`
 
-* To create a new EQL rule, select _Event Correlation_ and then:
+* To create an event correlation rule using Event Query Language, select *Event Correlation* and then:
 .. Define which {es} indices the rule searches for alerts.
 .. Add an {ref}/eql-syntax.html[EQL statement] used to detect alerts.
-+
-For example the following rule detects when `msxsl.exe` makes an outbound
+
+For example, the following rule detects when `msxsl.exe` makes an outbound
 network connection:
 
-** _Index patterns_: `winlogbeat-*`
+** *Index patterns*: `winlogbeat-*`
 +
-Winlogbeat ship Windows events to {es-sec}.
-** _EQL query_: `sequence by process.entity_id [process where event.type in ("start", "process_started") and process.name == "msxsl.exe"] [network where event.type == "connection" and process.name == "msxsl.exe" and network.direction == "outgoing"]`
-+
-Searches the `winlogbeat-*` indices for sequences of a `msxsl.exe` process start
+*Defintion*: Winlogbeat ships Windows events to {es-sec}.
+** *EQL query*:
+
+[source,eql]
+----
+sequence by process.entity_id
+  [process
+    where event.type in ("start", "process_started")
+    and process.name == "msxsl.exe"]
+  [network
+    where event.type == "connection"
+    and process.name == "msxsl.exe"
+    and network.direction == "outgoing"`
+----
+
+*Definition*: Searches the `winlogbeat-*` indices for sequences of a `msxsl.exe` process start
 event followed by an outbound network connection event that was started by the
 `msxsl.exe` process.
-+
+
 [role="screenshot"]
 image::images/eql-rule-query-example.png[]
 
-* To create a threat-match rule that searches the specified threat indices for
-field values, select _Threat Match_ and then fill in these fields:
-.. _Index patterns_: The {es-sec} event indices on which the rules runs.
-.. _Custom query_: The query and filters used to retrieve the required results from
+* To create a threat match rule that searches the specified threat indices for
+field values, select *Threat Match* and then fill in these fields:
+.. *Index patterns*: The {es-sec} event indices on which the rules runs.
+.. *Custom query*: The query and filters used to retrieve the required results from
 the {es-sec} event indices. For example, if you only need to check
 `destination.ip` event values, add `destination.ip : *`.
 +
 TIP: If you want the rule to check every field in the indices, use this
 wildcard expression: `*:*`.
-.. _Threat index patterns_: The threat indices containing field values for which
+.. *Threat index patterns*: The threat indices containing field values for which
 you want to generate alerts.
-.. _Threat index query_: The query and filters used to filter the fields from
+.. *Threat index query*: The query and filters used to filter the fields from
 the threat indices.
-.. _Threat Mapping_: Compares the values of the specified event and threat field
+.. *Threat Mapping*: Compares the values of the specified event and threat field
 values. When the field values are identical, an alert is generated. To define
 which field values are compared from the indices:
-** _Field_: The field used for comparing values in the {es-sec} event
+** *Field*: The field used for comparing values in the {es-sec} event
 indices.
-** _Threat index field_: The field used for comparing values in the threat
+** *Threat index field*: The field used for comparing values in the threat
 indices.
 .. You can add `AND` and `OR` clauses to define when alerts are generated.
 +
 For example, to create a rule that generates alerts when `host.name` *and*
 `destination.ip` field values in the `logs-*` or `packetbeat-*` {es-sec} indices
 are identical to the corresponding field values in the `ip-threat-list` threat
-index:
+index, enter the rule parameters seen in the following image:
 +
 [role="screenshot"]
 image::images/threat-math-rule-query-example.png[]
@@ -204,12 +216,11 @@ they can be selected here. When alerts generated by the rule are investigated
 in Timeline, Timeline query values are replaced with their corresponding alert
 field values.
 
-. Click *Continue*.
+. Click *Continue*. The *About rule* pane is displayed.
 +
-The *About rule* pane is displayed.
 [role="screenshot"]
 image::images/about-rule-pane.png[]
-
++
 . Continue with <<rule-ui-basic-params>>.
 
 [float]
@@ -217,9 +228,9 @@ image::images/about-rule-pane.png[]
 === Configure basic rule settings
 
 . Fill in the following fields:
-.. _Name_: The rule's name.
-.. _Description_: A description of what the rule does.
-.. _Default severity_: Select the severity level of alerts created by the rule:
+.. *Name*: The rule's name.
+.. *Description*: A description of what the rule does.
+.. *Default severity*: Select the severity level of alerts created by the rule:
 * `Low`: Alerts that are of interest but generally not considered to be
 security incidents. Sometimes, a combination of low severity events can
 indicate suspicious activity.
@@ -227,22 +238,22 @@ indicate suspicious activity.
 * `High`: Alerts that require an immediate investigation.
 * `Critical`: Alerts that indicate it is highly likely a security incident has
 occurred.
-.. _Severity override_ (optional): Select to use source event values to
-override the _Default severity_ in generated alerts. When selected, a UI
+.. *Severity override* (optional): Select to use source event values to
+override the *Default severity* in generated alerts. When selected, a UI
 component is displayed where you can map the source event field values to
-severity levels. For example, if you want to map severity levels to `host.name`
+severity levels. The following example shows how to map severity levels to `host.name`
 values:
 +
 [role="screenshot"]
 image::images/severity-mapping-ui.png[]
-.. _Default risk score_: A numerical value between 0 and 100 that correlates
-with the _Severity_ level. General guidelines are:
+.. *Default risk score*: A numerical value between 0 and 100 that correlates
+with the *Severity* level. General guidelines are:
 * `0` - `21` represents low severity.
 * `22` - `47` represents medium severity.
 * `48` - `73` represents high severity.
 * `74` - `100` represents critical severity.
-.. _Risk score override_ (optional): Select to use a source event value to
-override the _Default risk score_ in generated alerts. When selected, a UI
+.. *Risk score override* (optional): Select to use a source event value to
+override the *Default risk score* in generated alerts. When selected, a UI
 component is displayed where you can select the source field used for the risk
 score. For example, if you want to use the source event's risk score in
 alerts:
@@ -261,18 +272,18 @@ image::images/risk-source-field-ui.png[]
 
 
 . Click *Advanced settings* and fill in these fields:
-.. _Reference URLs_ (optional): References to information that is relevant to
+.. *Reference URLs* (optional): References to information that is relevant to
 the rule. For example, links to background information.
-.. _False positives_ (optional): List of common scenarios that may produce
+.. *False positives* (optional): List of common scenarios that may produce
 false-positive alerts.
-.. _MITRE ATT&CK^TM^_ (optional): Relevant MITRE framework tactics and techniques.
-.. _Tags_ (optional): Words and phrases used to categorize, filter, and search
+.. *MITRE ATT&CK^TM^* (optional): Relevant MITRE framework tactics and techniques.
+.. *Tags* (optional): Words and phrases used to categorize, filter, and search
 the rule.
-.. _Investigation guide_ (optional): Information for analysts investigating
+.. *Investigation guide* (optional): Information for analysts investigating
 alerts created by the rule.
-.. _Author_ (optional): The rule's authors.
-.. _License_ (optional): The rule's license.
-.. _Elastic endpoint exceptions_ (optional): Adds all Elastic Endpoint Security
+.. *Author* (optional): The rule's authors.
+.. *License* (optional): The rule's license.
+.. *Elastic endpoint exceptions* (optional): Adds all Elastic Endpoint Security
 rule exceptions to this rule (see <<detections-ui-exceptions>>).
 +
 NOTE: If you select this option, you can add
@@ -280,15 +291,15 @@ NOTE: If you select this option, you can add
 Additionally, all future exceptions added to the Elastic Endpoint Security rule
 also affect this rule.
 
-.. _Building block_ (optional): Select to create a building-block rule. By
+.. *Building block* (optional): Select to create a building-block rule. By
 default, alerts generated from a building-block rule are not displayed in the
 UI. See <<building-block-rule>> for more information.
-.. _Rule name override_ (optional): Select a source event field to use as the
+.. *Rule name override* (optional): Select a source event field to use as the
 rule name in the UI (Alerts table). This is useful for exposing, at a glance,
 more information about an alert. For example, if the rule generates alerts from
 Suricata, selecting `event.action` lets you see what action (Suricata category)
 caused the event directly in the Alerts table.
-.. _Timestamp override_ (optional): Select a source event timestamp field. When selected, the rule's query uses the selected field, instead of the default `@timestamp` field, to search for alerts. This can help reduce missing alerts due to network or server outages. Specifically, if your ingest pipeline adds a timestamp when events are sent to {es}, this avoids missing alerts due to ingestion delays.
+.. *Timestamp override* (optional): Select a source event timestamp field. When selected, the rule's query uses the selected field, instead of the default `@timestamp` field, to search for alerts. This can help reduce missing alerts due to network or server outages. Specifically, if your ingest pipeline adds a timestamp when events are sent to {es}, this avoids missing alerts due to ingestion delays.
 +
 TIP: These Filebeat modules have an `event.ingested` timestamp field that can
 be used instead of the default `@timestamp` field:
@@ -340,7 +351,7 @@ image::images/rule-actions.png[]
 [[preview-rules]]
 === Preview your rule (optional)
 
-You can preview a Custom query, Threshold, or EQL (Event Correlation) rule to get feedback on how noisy the rule will be before submitting it. This allows you to fine-tune the query, if needed, to reduce the amount of alerts that may come in.
+You can preview a custom query, threshold, or EQL (Event Correlation) rule to get feedback on how noisy the rule will be before submitting it. This allows you to fine-tune the query, if needed, to reduce the amount of alerts that may come in.
 
 To preview a rule:
 
@@ -369,11 +380,11 @@ https://www.elastic.co/subscriptions[appropriate license].
 
 . Set when to send notifications:
 
-* _On each rule execution_: Sends a notification every time new alerts are
+* *On each rule execution*: Sends a notification every time new alerts are
 generated.
-* _Hourly_: Sends a notification every hour.
-* _Daily_: Sends a notification every day.
-* _Weekly_: Sends a notification every week.
+* `Hourly`: Sends a notification every hour.
+* `Daily`: Sends a notification every day.
+* `Weekly`: Sends a notification every week.
 +
 NOTE: Notifications are sent only when new alerts are generated.
 +
@@ -441,5 +452,5 @@ used as an identifier across systems
 * `{{context.rule.version}}`: Rule version
 
 NOTE: The `{{context.rule.severity}}` and `{{context.rule.risk_score}}`
-placeholders contain the rule's default values even when the _Severity override_
-and _Risk score override_ options are used.
+placeholders contain the rule's default values even when the *Severity override*
+and *Risk score override* options are used.
