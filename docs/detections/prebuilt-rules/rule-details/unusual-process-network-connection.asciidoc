@@ -5,7 +5,7 @@ Identifies network activity from unexpected system applications. This may
 indicate adversarial activity as these applications are often leveraged by
 adversaries to execute code and evade detection.
 
-*Rule type*: query
+*Rule type*: eql
 
 *Rule indices*:
 
@@ -25,7 +25,10 @@ adversaries to execute code and evade detection.
 *Tags*:
 
 * Elastic
+* Host
 * Windows
+* Threat Detection
+* Execution
 
 *Version*: 5 (<<unusual-process-network-connection-history, version history>>)
 
@@ -42,10 +45,24 @@ adversaries to execute code and evade detection.
 
 [source,js]
 ----------------------------------
-event.category:network and event.type:connection and
-process.name:(Microsoft.Workflow.Compiler.exe or bginfo.exe or cdb.exe
-or cmstp.exe or csi.exe or dnx.exe or fsi.exe or ieexec.exe or
-iexpress.exe or odbcconf.exe or rcsi.exe or xwizard.exe)
+sequence by process.entity_id [process where (process.name :
+"Microsoft.Workflow.Compiler.exe" or process.name :
+"bginfo.exe" or process.name : "cdb.exe" or
+process.name : "cmstp.exe" or process.name :
+"csi.exe" or process.name : "dnx.exe" or
+process.name : "fsi.exe" or process.name :
+"ieexec.exe" or process.name : "iexpress.exe" or
+process.name : "odbcconf.exe" or process.name :
+"rcsi.exe" or process.name : "xwizard.exe") and
+event.type == "start"] [network where (process.name :
+"Microsoft.Workflow.Compiler.exe" or process.name :
+"bginfo.exe" or process.name : "cdb.exe" or
+process.name : "cmstp.exe" or process.name :
+"csi.exe" or process.name : "dnx.exe" or
+process.name : "fsi.exe" or process.name :
+"ieexec.exe" or process.name : "iexpress.exe" or
+process.name : "odbcconf.exe" or process.name :
+"rcsi.exe" or process.name : "xwizard.exe")]
 ----------------------------------
 
 ==== Threat mapping
@@ -65,7 +82,15 @@ iexpress.exe or odbcconf.exe or rcsi.exe or xwizard.exe)
 ==== Rule version history
 
 Version 5 (7.10.0 release)::
-* Formatting only
+* Updated query, changed from:
++
+[source, js]
+----------------------------------
+event.category:network and event.type:connection and
+process.name:(Microsoft.Workflow.Compiler.exe or bginfo.exe or cdb.exe
+or cmstp.exe or csi.exe or dnx.exe or fsi.exe or ieexec.exe or
+iexpress.exe or odbcconf.exe or rcsi.exe or xwizard.exe)
+----------------------------------
 
 Version 4 (7.9.1 release)::
 * Formatting only

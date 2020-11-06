@@ -108,7 +108,7 @@ for rule in sorted_rules:
 newText = newText + "|=============================================="
 
 fileWrite = "generated-ascii-files" + "/" + "prebuilt-rules-reference.asciidoc"
-with open(fileWrite, "w") as writeFile:
+with open(fileWrite, "w+") as writeFile:
         writeFile.write(newText)
     
         
@@ -242,7 +242,7 @@ for rule in sorted_rules:
                 fileText = fileText + "* " + i['doc_text'] + "\n\n"
             ruleNameChanged = False
     asciidocFile = "generated-ascii-files/rule-details/" + rule_link + ".asciidoc"
-    with open(asciidocFile, "w") as asciiWrite:
+    with open(asciidocFile, "w+") as asciiWrite:
         asciiWrite.write(fileText)
     rules_index_file.append("include::rule-details/" + rule_link + ".asciidoc[]")
 
@@ -254,7 +254,7 @@ for index_link in rules_index_file:
     index_file_text += index_link + "\n"
 
 indexFileWrite = "generated-ascii-files" + "/" + "rule-desc-index.asciidoc"
-with open(indexFileWrite, "w") as indexFileWrite:
+with open(indexFileWrite, "w+") as indexFileWrite:
         indexFileWrite.write(index_file_text)
 
 # Print files of rules with changed names to terminal
@@ -319,5 +319,5 @@ addVersionUpdates("7.6.2")
 addVersionUpdates("7.6.1")       
 
 fileWrite = "generated-ascii-files" + "/" + "prebuilt-rules-changelog.asciidoc"
-with open(fileWrite, "w") as writeFile:
+with open(fileWrite, "w+") as writeFile:
         writeFile.write(versionHistoryPage)

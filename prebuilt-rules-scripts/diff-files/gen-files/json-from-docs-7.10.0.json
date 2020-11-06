@@ -189,6 +189,14 @@
     "note": "The AWS Filebeat module must be enabled to use this rule."
   },
   {
+    "name": "AWS Management Console Brute Force of Root User Identity",
+    "description": "Identifies a high number of failed authentication attempts to the AWS management console for the Root user identity. An adversary may attempt to brute force the password for the Root user identity, as it has complete access to all services and resources for the AWS account.",
+    "false_positives": [
+      "Automated processes that attempt to authenticate using expired credentials and unbounded retries may lead to false positives."
+    ],
+    "note": "The AWS Filebeat module must be enabled to use this rule."
+  },
+  {
     "name": "AWS Management Console Root Login",
     "description": "Identifies a successful login to the AWS Management Console by the Root user.",
     "false_positives": [
@@ -253,6 +261,14 @@
     "note": "The AWS Filebeat module must be enabled to use this rule."
   },
   {
+    "name": "Abnormally Large DNS Response",
+    "description": "Specially crafted DNS requests can manipulate a known overflow vulnerability in some Windows DNS servers which result in Remote Code Execution (RCE) or a Denial of Service (DoS) from crashing the service.",
+    "false_positives": [
+      "Environments that leverage DNS responses over 60k bytes will result in false positives - if this traffic is predictable and expected, it should be filtered out. Additionally, this detection rule could be triggered by an authorized vulnerability scan or compromise assessment."
+    ],
+    "note": "Detection alerts from this rule indicate an attempt was made to exploit\nCVE-2020-1350 (SigRed) through the use of large DNS responses on a Windows DNS\nserver. Here are some possible avenues of investigation:\n\n* Investigate any corresponding Intrusion Detection Signatures (IDS) alerts that can validate this detection alert.\n* Examine the `dns.question_type` network fieldset with a protocol analyzer, such as Zeek, Packetbeat, or Suricata, for `SIG` or `RRSIG` data.\n* Validate the patch level and OS of the targeted DNS server to validate the observed activity was not large-scale Internet vulnerability scanning.\n* Validate that the source of the network activity was not from an authorized vulnerability scan or compromise assessment."
+  },
+  {
     "name": "Adding Hidden File Attribute via Attrib",
     "description": "Adversaries can add the `hidden` attribute to files to hide them from the user\nin an attempt to evade detection."
   },
@@ -269,8 +285,22 @@
     "description": "Detects the creation of an executable file or files that will be automatically\nrun by Acrobat Reader when it starts."
   },
   {
-    "name": "Adversary Behavior - Detected - Elastic Endpoint Security",
-    "description": "Elastic Endpoint Security detected an Adversary Behavior. Click the Elastic Endpoint Security icon in the event.module column or the link in the rule.reference column for additional information."
+    "name": "Adversary Behavior - Detected - Endpoint Security",
+    "description": "Endpoint Security detected an Adversary Behavior. Click the Endpoint Security icon in the event.module column or the link in the rule.reference column for additional information."
+  },
+  {
+    "name": "Anomalous Kernel Module Activity",
+    "description": "Looks for unusual kernel module activity. Kernel modules are sometimes used by malware and persistence mechanisms for stealth.",
+    "false_positives": [
+      "A Linux host running unusual device drivers or other kinds of kernel modules could trigger this detection. Troubleshooting or debugging activity using unusual arguments could also trigger this detection.\n==== Threat mapping\n\n*Framework*: MITRE ATT&CK^TM^\n\n* Tactic:\n** Name: Persistence\n** ID: TA0003\n** Reference URL: https://attack.mitre.org/tactics/TA0003/\n* Technique:\n** Name: Kernel Modules and Extensions\n** ID: T1215\n** Reference URL: https://attack.mitre.org/techniques/T1215/"
+    ]
+  },
+  {
+    "name": "Anomalous Linux Compiler Activity",
+    "description": "Looks for compiler activity by a user context which does not normally run compilers. This can be the result of ad-hoc software changes or unauthorized software deployment. This can also be due to local privilege elevation via locally run exploits or malware activity.",
+    "false_positives": [
+      "Uncommon compiler activity can be due to an engineer running a local build on a prod or staging instance in the course of troubleshooting or fixing a software issue."
+    ]
   },
   {
     "name": "Anomalous Process For a Linux Population",
@@ -389,6 +419,137 @@
     "note": "The Okta Filebeat module must be enabled to use this rule."
   },
   {
+    "name": "Attempts to Brute Force an Okta User Account",
+    "description": "Identifies when an Okta user account is locked out 3 times within a 3 hour window. An adversary may attempt a brute force or password spraying attack to obtain unauthorized access to user accounts. The default Okta authentication policy ensures that a user account is locked out after 10 failed authentication attempts.",
+    "note": "The Okta Filebeat module must be enabled to use this rule."
+  },
+  {
+    "name": "Azure Automation Account Created",
+    "description": "Identifies when an Azure Automation account is created. Azure Automation accounts can be used to automate management tasks and orchestrate actions across systems. An adversary may create an Automation account in order to maintain persistence in their target's environment.",
+    "note": "The Azure Filebeat module must be enabled to use this rule."
+  },
+  {
+    "name": "Azure Automation Runbook Created or Modified",
+    "description": "Identifies when an Azure Automation runbook is created or modified. An adversary may create or modify an Azure Automation runbook to execute malicious code and maintain persistence in their target's environment.",
+    "note": "The Azure Filebeat module must be enabled to use this rule."
+  },
+  {
+    "name": "Azure Automation Runbook Deleted",
+    "description": "Identifies when an Azure Automation runbook is deleted. An adversary may delete an Azure Automation runbook in order to disrupt their target's automated business operations or to remove a malicious runbook that was used for persistence.",
+    "note": "The Azure Filebeat module must be enabled to use this rule."
+  },
+  {
+    "name": "Azure Automation Webhook Created",
+    "description": "Identifies when an Azure Automation webhook is created. Azure Automation runbooks can be configured to execute via a webhook. A webhook uses a custom URL passed to Azure Automation along with a data payload specific to the runbook. An adversary may create a webhook in order to trigger a runbook that contains malicious code.",
+    "note": "The Azure Filebeat module must be enabled to use this rule."
+  },
+  {
+    "name": "Azure Blob Container Access Level Modification",
+    "description": "Identifies changes to container access levels in Azure. Anonymous public read access to containers and blobs in Azure is a way to share data broadly, but can present a security risk if access to sensitive data is not managed judiciously.",
+    "false_positives": [
+      "Access level modifications may be done by a system or network administrator. Verify whether the username, hostname, and/or resource name should be making changes in your environment. Access level modifications from unfamiliar users or hosts should be investigated. If known behavior is causing false positives, it can be exempted from the rule."
+    ],
+    "note": "The Azure Filebeat module must be enabled to use this rule."
+  },
+  {
+    "name": "Azure Command Execution on Virtual Machine",
+    "description": "Identifies command execution on a virtual machine (VM) in Azure. A Virtual Machine Contributor role lets you manage virtual machines, but not access them, nor access the virtual network or storage account they\u2019re connected to. However, commands can be run via PowerShell on the VM, which execute as System. Other roles, such as certain Administrator roles may be able to execute commands on a VM as well.",
+    "false_positives": [
+      "Command execution on a virtual machine may be done by a system or network administrator. Verify whether the username, hostname, and/or resource name should be making changes in your environment. Command execution from unfamiliar users or hosts should be investigated. If known behavior is causing false positives, it can be exempted from the rule."
+    ],
+    "note": "The Azure Filebeat module must be enabled to use this rule."
+  },
+  {
+    "name": "Azure Conditional Access Policy Modified",
+    "description": "Identifies when an Azure Conditional Access policy is modified. Azure Conditional Access policies control access to resources via if-then statements. For example, if a user wants to access a resource, then they must complete an action such as using multi-factor authentication to access it. An adversary may modify a Conditional Access policy in order to weaken their target's security controls.",
+    "note": "The Azure Filebeat module must be enabled to use this rule."
+  },
+  {
+    "name": "Azure Diagnostic Settings Deletion",
+    "description": "Identifies the deletion of diagnostic settings in Azure, which send platform logs and metrics to different destinations. An adversary may delete diagnostic settings in an attempt to evade defenses.",
+    "false_positives": [
+      "Deletion of diagnostic settings may be done by a system or network administrator. Verify whether the username, hostname, and/or resource name should be making changes in your environment. Diagnostic settings deletion from unfamiliar users or hosts should be investigated. If known behavior is causing false positives, it can be exempted from the rule."
+    ],
+    "note": "The Azure Filebeat module must be enabled to use this rule."
+  },
+  {
+    "name": "Azure Event Hub Authorization Rule Created or Updated",
+    "description": "Identifies when an Event Hub Authorization Rule is created or updated in Azure. An authorization rule is associated with specific rights, and carries a pair of cryptographic keys. When you create an Event Hubs namespace, a policy rule named RootManageSharedAccessKey is created for the namespace. This has manage permissions for the entire namespace and it's recommended that you treat this rule like an administrative root account and don't use it in your application.",
+    "false_positives": [
+      "Authorization rule additions or modifications may be done by a system or network administrator. Verify whether the username, hostname, and/or resource name should be making changes in your environment. Authorization rule additions or modifications from unfamiliar users or hosts should be investigated. If known behavior is causing false positives, it can be exempted from the rule."
+    ],
+    "note": "The Azure Filebeat module must be enabled to use this rule."
+  },
+  {
+    "name": "Azure Event Hub Deletion",
+    "description": "Identifies an Event Hub deletion in Azure. An Event Hub is an event processing service that ingests and processes large volumes of events and data. An adversary may delete an Event Hub in an attempt to evade detection.",
+    "false_positives": [
+      "Event Hub deletions may be done by a system or network administrator. Verify whether the username, hostname, and/or resource name should be making changes in your environment. Event Hub deletions from unfamiliar users or hosts should be investigated. If known behavior is causing false positives, it can be exempted from the rule."
+    ],
+    "note": "The Azure Filebeat module must be enabled to use this rule."
+  },
+  {
+    "name": "Azure External Guest User Invitation",
+    "description": "Identifies an invitation to an external user in Azure Active Directory (AD). Azure AD is extended to include collaboration, allowing you to invite people from outside your organization to be guest users in your cloud account. Unless there is a business need to provision guest access, it is best practice avoid creating guest users. Guest users could potentially be overlooked indefinitely leading to a potential vulnerability.",
+    "false_positives": [
+      "Guest user invitations may be sent out by a system or network administrator. Verify whether the username, hostname, and/or resource name should be making changes in your environment. Guest user invitations from unfamiliar users or hosts should be investigated. If known behavior is causing false positives, it can be exempted from the rule."
+    ],
+    "note": "The Azure Filebeat module must be enabled to use this rule."
+  },
+  {
+    "name": "Azure Firewall Policy Deletion",
+    "description": "Identifies the deletion of a firewall policy in Azure. An adversary may delete a firewall policy in an attempt to evade defenses and/or to eliminate barriers in carrying out their initiative.",
+    "false_positives": [
+      "Firewall policy deletions may be done by a system or network administrator. Verify whether the username, hostname, and/or resource name should be making changes in your environment. Firewall policy deletions from unfamiliar users or hosts should be investigated. If known behavior is causing false positives, it can be exempted from the rule."
+    ],
+    "note": "The Azure Filebeat module must be enabled to use this rule."
+  },
+  {
+    "name": "Azure Global Administrator Role Addition to PIM User",
+    "description": "Identifies an Azure Active Directory (AD) Global Administrator role addition to a Privileged Identity Management (PIM) user account. PIM is a service that enables you to manage, control, and monitor access to important resources in an organization. Users who are assigned to the Global administrator role can read and modify any administrative setting in your Azure AD organization.",
+    "false_positives": [
+      "Global administrator additions may be done by a system or network administrator. Verify whether the username, hostname, and/or resource name should be making changes in your environment. Global administrator additions from unfamiliar users or hosts should be investigated. If known behavior is causing false positives, it can be exempted from the rule."
+    ],
+    "note": "The Azure Filebeat module must be enabled to use this rule."
+  },
+  {
+    "name": "Azure Key Vault Modified",
+    "description": "Identifies modifications to a Key Vault in Azure. The Key Vault is a service that safeguards encryption keys and secrets like certificates, connection strings, and passwords. Because this data is sensitive and business critical, access to key vaults should be secured to allow only authorized applications and users.",
+    "false_positives": [
+      "Key vault modifications may be done by a system or network administrator. Verify whether the username, hostname, and/or resource name should be making changes in your environment. Key vault modifications from unfamiliar users or hosts should be investigated. If known behavior is causing false positives, it can be exempted from the rule."
+    ],
+    "note": "The Azure Filebeat module must be enabled to use this rule."
+  },
+  {
+    "name": "Azure Network Watcher Deletion",
+    "description": "Identifies the deletion of a Network Watcher in Azure. Network Watchers are used to monitor, diagnose, view metrics, and enable or disable logs for resources in an Azure virtual network. An adversary may delete a Network Watcher in an attempt to evade defenses.",
+    "false_positives": [
+      "Network Watcher deletions may be done by a system or network administrator. Verify whether the username, hostname, and/or resource name should be making changes in your environment. Network Watcher deletions from unfamiliar users or hosts should be investigated. If known behavior is causing false positives, it can be exempted from the rule."
+    ],
+    "note": "The Azure Filebeat module must be enabled to use this rule."
+  },
+  {
+    "name": "Azure Privilege Identity Management Role Modified",
+    "description": "Azure Active Directory (AD) Privileged Identity Management (PIM) is a service that enables you to manage, control, and monitor access to important resources in an organization. PIM can be used to manage the built-in Azure resource roles such as Global Administrator and Application Administrator. An adversary may add a user to a PIM role in order to maintain persistence in their target's environment or modify a PIM role to weaken their target's security controls.",
+    "note": "The Azure Filebeat module must be enabled to use this rule."
+  },
+  {
+    "name": "Azure Resource Group Deletion",
+    "description": "Identifies the deletion of a resource group in Azure, which includes all resources within the group. Deletion is permanent and irreversible. An adversary may delete a resource group in an attempt to evade defenses or intentionally destroy data.",
+    "false_positives": [
+      "Deletion of a resource group may be done by a system or network administrator. Verify whether the username, hostname, and/or resource name should be making changes in your environment. Resource group deletions from unfamiliar users or hosts should be investigated. If known behavior is causing false positives, it can be exempted from the rule."
+    ],
+    "note": "The Azure Filebeat module must be enabled to use this rule."
+  },
+  {
+    "name": "Azure Storage Account Key Regenerated",
+    "description": "Identifies a rotation to storage account access keys in Azure. Regenerating access keys can affect any applications or Azure services that are dependent on the storage account key. Adversaries may regenerate a key as a means of acquiring credentials to access systems and resources.",
+    "false_positives": [
+      "It's recommended that you rotate your access keys periodically to help keep your storage account secure. Normal key rotation can be exempted from the rule. An abnormal time frame and/or a key rotation from unfamiliar users, hosts, or locations should be investigated."
+    ],
+    "note": "The Azure Filebeat module must be enabled to use this rule."
+  },
+  {
     "name": "Base16 or Base32 Encoding/Decoding Activity",
     "description": "Identifies attempts to encode and decode data, a technique adversaries can\nuse to evade detection by host- or network-based security controls.",
     "false_positives": [
@@ -407,8 +568,20 @@
     "description": "Identifies User Account Control (UAC) bypass via `eventvwr.exe.` Attackers\nbypass UAC to stealthily execute code with elevated permissions."
   },
   {
+    "name": "Bypass UAC via Sdclt",
+    "description": "Identifies User Account Control (UAC) bypass via sdclt.exe. Attackers bypass UAC to stealthily execute code with elevated permissions."
+  },
+  {
     "name": "Clearing Windows Event Logs",
     "description": "Identifies attempts to clear Windows event log stores. This is often done by\nattackers in an attempt to evade detection or destroy forensic evidence on a\nsystem."
+  },
+  {
+    "name": "Cobalt Strike Command and Control Beacon",
+    "description": "Cobalt Strike is a threat emulation platform commonly modified and used by adversaries to conduct network attack and exploitation campaigns. This rule detects a network activity algorithm leveraged by Cobalt Strike implant beacons for command and control.",
+    "false_positives": [
+      "This rule should be tailored to either exclude systems, as sources or destinations, in which this behavior is expected."
+    ],
+    "note": "This activity has been observed in FIN7 campaigns."
   },
   {
     "name": "Command Prompt Network Connection",
@@ -416,6 +589,14 @@
     "false_positives": [
       "Administrators may use the command prompt for regular administrative tasks. It's important to baseline your environment for network connections being made from the command prompt to determine any abnormal use of this tool."
     ]
+  },
+  {
+    "name": "Compression of Keychain Credentials Directories",
+    "description": "Adversaries may collect the keychain storage data from a system to acquire credentials. Keychains are the built-in way for macOS to keep track of users' passwords and credentials for many services and features such as WiFi passwords, websites, secure notes, certificates, and Kerberos."
+  },
+  {
+    "name": "Conhost Spawned By Suspicious Parent Process",
+    "description": "Detects when the Console Window Host (conhost.exe) process is spawned by a suspicious parent process, which could be indicative of code injection."
   },
   {
     "name": "Connection to External Network via Telnet",
@@ -439,20 +620,29 @@
     ]
   },
   {
-    "name": "Credential Dumping - Detected - Elastic Endpoint Security",
-    "description": "Elastic Endpoint Security detected Credential Dumping. Click the Elastic Endpoint Security icon in the event.module column or the link in the rule.reference column for additional information."
+    "name": "Creation or Modification of Domain Backup DPAPI private key",
+    "description": "Identifies the creation or modification of Domain Backup private keys. Adversaries may extract the Data Protection API (DPAPI) domain backup key from a Domain Controller (DC) to be able to decrypt any domain user master key file.",
+    "note": "Domain DPAPI Backup keys are stored on domain controllers and can be dumped remotely with tools such as Mimikatz. The resulting .pvk private key can be used to decrypt ANY domain user masterkeys, which then can be used to decrypt any secrets protected by those keys."
   },
   {
-    "name": "Credential Dumping - Prevented - Elastic Endpoint Security",
-    "description": "Elastic Endpoint Security prevented Credential Dumping. Click the Elastic Endpoint Security icon in the event.module column or the link in the rule.reference column for additional information."
+    "name": "Creation or Modification of a new GPO Scheduled Task or Service",
+    "description": "Detects the creation or modification of a new Group Policy based scheduled task or service. These methods are used for legitimate system administration, but can also be abused by an attacker with domain admin permissions to execute a malicious payload remotely on all or a subset of the domain joined machines."
   },
   {
-    "name": "Credential Manipulation - Detected - Elastic Endpoint Security",
-    "description": "Elastic Endpoint Security detected Credential Manipulation. Click the Elastic Endpoint Security icon in the event.module column or the link in the rule.reference column for additional information."
+    "name": "Credential Dumping - Detected - Endpoint Security",
+    "description": "Endpoint Security detected Credential Dumping. Click the Endpoint Security icon in the event.module column or the link in the rule.reference column for additional information."
   },
   {
-    "name": "Credential Manipulation - Prevented - Elastic Endpoint Security",
-    "description": "Elastic Endpoint Security prevented Credential Manipulation. Click the Elastic Endpoint Security icon in the event.module column or the link in the rule.reference column for additional information."
+    "name": "Credential Dumping - Prevented - Endpoint Security",
+    "description": "Endpoint Security prevented Credential Dumping. Click the Endpoint Security icon in the event.module column or the link in the rule.reference column for additional information."
+  },
+  {
+    "name": "Credential Manipulation - Detected - Endpoint Security",
+    "description": "Endpoint Security detected Credential Manipulation. Click the Endpoint Security icon in the event.module column or the link in the rule.reference column for additional information."
+  },
+  {
+    "name": "Credential Manipulation - Prevented - Endpoint Security",
+    "description": "Endpoint Security prevented Credential Manipulation. Click the Endpoint Security icon in the event.module column or the link in the rule.reference column for additional information."
   },
   {
     "name": "DNS Activity to the Internet",
@@ -489,12 +679,12 @@
     "description": "Identifies use of the `netsh.exe` to disable or weaken the local firewall.\nAttackers will use this command line tool to disable the firewall during\ntroubleshooting or to enable network mobility."
   },
   {
-    "name": "Elastic Endpoint Security",
-    "description": "Generates a detection alert each time an Elastic Endpoint alert is received.\nEnabling this rule allows you to immediately begin investigating your Elastic\nEndpoint alerts."
-  },
-  {
     "name": "Encoding or Decoding Files via CertUtil",
     "description": "Identifies the use of `certutil.exe` to encode or decode data. CertUtil is a\nnative Windows component which is part of Certificate Services. CertUtil is\noften abused by attackers to encode or decode base64 data for stealthier command\nand control or exfiltration."
+  },
+  {
+    "name": "Endpoint Security",
+    "description": "Generates a detection alert each time an Endpoint Security alert is received. Enabling this rule allows you to immediately begin investigating your Endpoint alerts."
   },
   {
     "name": "Enumeration of Kernel Modules",
@@ -504,16 +694,28 @@
     ]
   },
   {
+    "name": "Execution of File Written or Modified by Microsoft Office",
+    "description": "Identifies an executable created by a Microsoft Office application and subsequently executed. These processes are often launched via scripts inside documents or during exploitation of MS Office applications."
+  },
+  {
+    "name": "Execution of File Written or Modified by PDF Reader",
+    "description": "Identifies a suspicious file that was written by a PDF reader application and subsequently executed. These processes are often launched via exploitation of PDF applications."
+  },
+  {
+    "name": "Execution via MSSQL xp_cmdshell Stored Procedure",
+    "description": "Identifies execution via MSSQL xp_cmdshell stored procedure. Malicious users may attempt to elevate their privileges by using xp_cmdshell, which is disabled by default, thus, it's important to review the context of it's use."
+  },
+  {
     "name": "Execution via Regsvcs/Regasm",
     "description": "`RegSvcs.exe` and `RegAsm.exe` are Windows command line utilities that are used\nto register .NET Component Object Model (COM) assemblies. Adversaries can use\n`RegSvcs.exe` and `RegAsm.exe` to proxy execution of code through a trusted\nWindows utility."
   },
   {
-    "name": "Exploit - Detected - Elastic Endpoint Security",
-    "description": "Elastic Endpoint Security detected an Exploit. Click the Elastic Endpoint Security icon in the event.module column or the link in the rule.reference column for additional information."
+    "name": "Exploit - Detected - Endpoint Security",
+    "description": "Endpoint Security detected an Exploit. Click the Endpoint Security icon in the event.module column or the link in the rule.reference column for additional information."
   },
   {
-    "name": "Exploit - Prevented - Elastic Endpoint Security",
-    "description": "Elastic Endpoint Security prevented an Exploit. Click the Elastic Endpoint Security icon in the event.module column or the link in the rule.reference column for additional information."
+    "name": "Exploit - Prevented - Endpoint Security",
+    "description": "Endpoint Security prevented an Exploit. Click the Endpoint Security icon in the event.module column or the link in the rule.reference column for additional information."
   },
   {
     "name": "External Alerts",
@@ -538,6 +740,198 @@
     ]
   },
   {
+    "name": "GCP Firewall Rule Creation",
+    "description": "Identifies when a firewall rule is created in Google Cloud Platform (GCP). Virtual Private Cloud (VPC) firewall rules can be configured to allow or deny connections to or from virtual machine (VM) instances. An adversary may create a new firewall rule in order to weaken their target's security controls and allow more permissive ingress or egress traffic flows for their benefit.",
+    "false_positives": [
+      "Firewall rules may be created by system administrators. Verify that the firewall configuration change was expected. Exceptions can be added to this rule to filter expected behavior."
+    ],
+    "note": "The GCP Filebeat module must be enabled to use this rule."
+  },
+  {
+    "name": "GCP Firewall Rule Deletion",
+    "description": "Identifies when a firewall rule is deleted in Google Cloud Platform (GCP). Virtual Private Cloud (VPC) firewall rules can be configured to allow or deny connections to or from virtual machine (VM) instances. An adversary may delete a firewall rule in order to weaken their target's security controls.",
+    "false_positives": [
+      "Firewall rules may be deleted by system administrators. Verify that the firewall configuration change was expected. Exceptions can be added to this rule to filter expected behavior."
+    ],
+    "note": "The GCP Filebeat module must be enabled to use this rule."
+  },
+  {
+    "name": "GCP Firewall Rule Modification",
+    "description": "Identifies when a firewall rule is modified in Google Cloud Platform (GCP). Virtual Private Cloud (VPC) firewall rules can be configured to allow or deny connections to or from virtual machine (VM) instances. An adversary may modify a firewall rule in order to weaken their target's security controls.",
+    "false_positives": [
+      "Firewall rules may be modified by system administrators. Verify that the firewall configuration change was expected. Exceptions can be added to this rule to filter expected behavior."
+    ],
+    "note": "The GCP Filebeat module must be enabled to use this rule."
+  },
+  {
+    "name": "GCP IAM Custom Role Creation",
+    "description": "Identifies an Identity and Access Management (IAM) custom role creation in Google Cloud Platform (GCP). Custom roles are user-defined, and allow for the bundling of one or more supported permissions to meet specific needs. Custom roles will not be updated automatically and could lead to privilege creep if not carefully scrutinized.",
+    "false_positives": [
+      "Custom role creations may be done by a system or network administrator. Verify whether the user email, resource name, and/or hostname should be making changes in your environment. Role creations from unfamiliar users or hosts should be investigated. If known behavior is causing false positives, it can be exempted from the rule."
+    ],
+    "note": "The GCP Filebeat module must be enabled to use this rule."
+  },
+  {
+    "name": "GCP IAM Role Deletion",
+    "description": "Identifies an Identity and Access Management (IAM) role deletion in Google Cloud Platform (GCP). A role contains a set of permissions that allows you to perform specific actions on Google Cloud resources. An adversary may delete an IAM role to inhibit access to accounts utilized by legitimate users.",
+    "false_positives": [
+      "Role deletions may be done by a system or network administrator. Verify whether the user email, resource name, and/or hostname should be making changes in your environment. Role deletions from unfamiliar users or hosts should be investigated. If known behavior is causing false positives, it can be exempted from the rule."
+    ],
+    "note": "The GCP Filebeat module must be enabled to use this rule."
+  },
+  {
+    "name": "GCP IAM Service Account Key Deletion",
+    "description": "Identifies the deletion of an Identity and Access Management (IAM) service account key in Google Cloud Platform (GCP). Each service account is associated with two sets of public/private RSA key pairs that are used to authenticate. If a key is deleted, the application will no longer be able to access Google Cloud resources using that key. A security best practice is to rotate your service account keys regularly.",
+    "false_positives": [
+      "Service account key deletions may be done by a system or network administrator. Verify whether the user email, resource name, and/or hostname should be making changes in your environment. Key deletions from unfamiliar users or hosts should be investigated. If known behavior is causing false positives, it can be exempted from the rule."
+    ],
+    "note": "The GCP Filebeat module must be enabled to use this rule."
+  },
+  {
+    "name": "GCP Logging Bucket Deletion",
+    "description": "Identifies a Logging bucket deletion in Google Cloud Platform (GCP). Log buckets are containers that store and organize log data. A deleted bucket stays in a pending state for 7 days, and Logging continues to route logs to the bucket during that time. To stop routing logs to a deleted bucket, the log sinks can be deleted that have the bucket as a destination, or the filter for the sinks can be modified to stop routing logs to the deleted bucket. An adversary may delete a log bucket to evade detection.",
+    "false_positives": [
+      "Logging bucket deletions may be done by a system or network administrator. Verify whether the user email, resource name, and/or hostname should be making changes in your environment. Logging bucket deletions from unfamiliar users or hosts should be investigated. If known behavior is causing false positives, it can be exempted from the rule."
+    ],
+    "note": "The GCP Filebeat module must be enabled to use this rule."
+  },
+  {
+    "name": "GCP Logging Sink Deletion",
+    "description": "Identifies a Logging sink deletion in Google Cloud Platform (GCP). Every time a log entry arrives, Logging compares the log entry to the sinks in that resource. Each sink whose filter matches the log entry writes a copy of the log entry to the sink's export destination. An adversary may delete a Logging sink to evade detection.",
+    "false_positives": [
+      "Logging sink deletions may be done by a system or network administrator. Verify whether the user email, resource name, and/or hostname should be making changes in your environment. Logging sink deletions from unfamiliar users or hosts should be investigated. If known behavior is causing false positives, it can be exempted from the rule."
+    ],
+    "note": "The GCP Filebeat module must be enabled to use this rule."
+  },
+  {
+    "name": "GCP Logging Sink Modification",
+    "description": "Identifies a modification to a Logging sink in Google Cloud Platform (GCP). Logging compares the log entry to the sinks in that resource. Each sink whose filter matches the log entry writes a copy of the log entry to the sink's export destination. An adversary may update a Logging sink to exfiltrate logs to a different export destination.",
+    "false_positives": [
+      "Logging sink modifications may be done by a system or network administrator. Verify whether the user email, resource name, and/or hostname should be making changes in your environment. Sink modifications from unfamiliar users or hosts should be investigated. If known behavior is causing false positives, it can be exempted from the rule."
+    ],
+    "note": "The GCP Filebeat module must be enabled to use this rule."
+  },
+  {
+    "name": "GCP Pub/Sub Subscription Creation",
+    "description": "Identifies the creation of a subscription in Google Cloud Platform (GCP). In GCP, the publisher-subscriber relationship (Pub/Sub) is an asynchronous messaging service that decouples event-producing and event-processing services. A subscription is a named resource representing the stream of messages to be delivered to the subscribing application.",
+    "false_positives": [
+      "Subscription creations may be done by a system or network administrator. Verify whether the user email, resource name, and/or hostname should be making changes in your environment. Subscription creations from unfamiliar users or hosts should be investigated. If known behavior is causing false positives, it can be exempted from the rule."
+    ],
+    "note": "The GCP Filebeat module must be enabled to use this rule."
+  },
+  {
+    "name": "GCP Pub/Sub Subscription Deletion",
+    "description": "Identifies the deletion of a subscription in Google Cloud Platform (GCP). In GCP, the publisher-subscriber relationship (Pub/Sub) is an asynchronous messaging service that decouples event-producing and event-processing services. A subscription is a named resource representing the stream of messages to be delivered to the subscribing application.",
+    "false_positives": [
+      "Subscription deletions may be done by a system or network administrator. Verify whether the user email, resource name, and/or hostname should be making changes in your environment. Subscription deletions from unfamiliar users or hosts should be investigated. If known behavior is causing false positives, it can be exempted from the rule."
+    ],
+    "note": "The GCP Filebeat module must be enabled to use this rule."
+  },
+  {
+    "name": "GCP Pub/Sub Topic Creation",
+    "description": "Identifies the creation of a topic in Google Cloud Platform (GCP). In GCP, the publisher-subscriber relationship (Pub/Sub) is an asynchronous messaging service that decouples event-producing and event-processing services. A topic is used to forward messages from publishers to subscribers.",
+    "false_positives": [
+      "Topic creations may be done by a system or network administrator. Verify whether the user email, resource name, and/or hostname should be making changes in your environment. Topic creations from unfamiliar users or hosts should be investigated. If known behavior is causing false positives, it can be exempted from the rule."
+    ],
+    "note": "The GCP Filebeat module must be enabled to use this rule."
+  },
+  {
+    "name": "GCP Pub/Sub Topic Deletion",
+    "description": "Identifies the deletion of a topic in Google Cloud Platform (GCP). In GCP, the publisher-subscriber relationship (Pub/Sub) is an asynchronous messaging service that decouples event-producing and event-processing services. A publisher application creates and sends messages to a topic. Deleting a topic can interrupt message flow in the Pub/Sub pipeline.",
+    "false_positives": [
+      "Topic deletions may be done by a system or network administrator. Verify whether the user email, resource name, and/or hostname should be making changes in your environment. Topic deletions from unfamiliar users or hosts should be investigated. If known behavior is causing false positives, it can be exempted from the rule."
+    ],
+    "note": "The GCP Filebeat module must be enabled to use this rule."
+  },
+  {
+    "name": "GCP Service Account Creation",
+    "description": "Identifies when a new service account is created in Google Cloud Platform (GCP). A service account is a special type of account used by an application or a virtual machine (VM) instance, not a person. Applications use service accounts to make authorized API calls, authorized as either the service account itself, or as G Suite or Cloud Identity users through domain-wide delegation. If service accounts are not tracked and managed properly, they can present a security risk. An adversary may create a new service account to use during their operations in order to avoid using a standard user account and attempt to evade detection.",
+    "false_positives": [
+      "Service accounts can be created by system administrators. Verify that the behavior was expected. Exceptions can be added to this rule to filter expected behavior."
+    ],
+    "note": "The GCP Filebeat module must be enabled to use this rule."
+  },
+  {
+    "name": "GCP Service Account Deletion",
+    "description": "Identifies when a service account is deleted in Google Cloud Platform (GCP). A service account is a special type of account used by an application or a virtual machine (VM) instance, not a person. Applications use service accounts to make authorized API calls, authorized as either the service account itself, or as G Suite or Cloud Identity users through domain-wide delegation. An adversary may delete a service account in order to disrupt their target's business operations.",
+    "false_positives": [
+      "Service accounts may be deleted by system administrators. Verify that the behavior was expected. Exceptions can be added to this rule to filter expected behavior."
+    ],
+    "note": "The GCP Filebeat module must be enabled to use this rule."
+  },
+  {
+    "name": "GCP Service Account Disabled",
+    "description": "Identifies when a service account is disabled in Google Cloud Platform (GCP). A service account is a special type of account used by an application or a virtual machine (VM) instance, not a person. Applications use service accounts to make authorized API calls, authorized as either the service account itself, or as G Suite or Cloud Identity users through domain-wide delegation. An adversary may disable a service account in order to disrupt to disrupt their target's business operations.",
+    "false_positives": [
+      "Service accounts may be disabled by system administrators. Verify that the behavior was expected. Exceptions can be added to this rule to filter expected behavior."
+    ],
+    "note": "The GCP Filebeat module must be enabled to use this rule."
+  },
+  {
+    "name": "GCP Service Account Key Creation",
+    "description": "Identifies when a new key is created for a service account in Google Cloud Platform (GCP). A service account is a special type of account used by an application or a virtual machine (VM) instance, not a person. Applications use service accounts to make authorized API calls, authorized as either the service account itself, or as G Suite or Cloud Identity users through domain-wide delegation. If private keys are not tracked and managed properly, they can present a security risk. An adversary may create a new key for a service account in order to attempt to abuse the permissions assigned to that account and evade detection.",
+    "false_positives": [
+      "Service account keys may be created by system administrators. Verify that the configuration change was expected. Exceptions can be added to this rule to filter expected behavior."
+    ],
+    "note": "The GCP Filebeat module must be enabled to use this rule."
+  },
+  {
+    "name": "GCP Storage Bucket Configuration Modification",
+    "description": "Identifies when the configuration is modified for a storage bucket in Google Cloud Platform (GCP). An adversary may modify the configuration of a storage bucket in order to weaken the security controls of their target's environment.",
+    "false_positives": [
+      "Storage bucket configuration may be modified by system administrators. Verify that the configuration change was expected. Exceptions can be added to this rule to filter expected behavior."
+    ],
+    "note": "The GCP Filebeat module must be enabled to use this rule."
+  },
+  {
+    "name": "GCP Storage Bucket Deletion",
+    "description": "Identifies when a Google Cloud Platform (GCP) storage bucket is deleted. An adversary may delete a storage bucket in order to disrupt their target's business operations.",
+    "false_positives": [
+      "Storage buckets may be deleted by a system or network administrator. Verify whether the user email, resource name, and/or hostname should be making changes in your environment. Bucket deletions from unfamiliar users or hosts should be investigated. If known behavior is causing false positives, it can be exempted from the rule."
+    ],
+    "note": "The GCP Filebeat module must be enabled to use this rule."
+  },
+  {
+    "name": "GCP Storage Bucket Permissions Modification",
+    "description": "Identifies when the Identity and Access Management (IAM) permissions are modified for a Google Cloud Platform (GCP) storage bucket. An adversary may modify the permissions on a storage bucket to weaken their target's security controls or an administrator may inadvertently modify the permissions, which could lead to data exposure or loss.",
+    "false_positives": [
+      "Storage bucket permissions may be modified by system administrators. Verify that the configuration change was expected. Exceptions can be added to this rule to filter expected behavior."
+    ],
+    "note": "The GCP Filebeat module must be enabled to use this rule."
+  },
+  {
+    "name": "GCP Virtual Private Cloud Network Deletion",
+    "description": "Identifies when a Virtual Private Cloud (VPC) network is deleted in Google Cloud Platform (GCP). A VPC network is a virtual version of a physical network within a GCP project. Each VPC network has its own subnets, routes, and firewall, as well as other elements. An adversary may delete a VPC network in order to disrupt their target's network and business operations.",
+    "false_positives": [
+      "Virtual Private Cloud networks may be deleted by system administrators. Verify that the configuration change was expected. Exceptions can be added to this rule to filter expected behavior."
+    ],
+    "note": "The GCP Filebeat module must be enabled to use this rule."
+  },
+  {
+    "name": "GCP Virtual Private Cloud Route Creation",
+    "description": "Identifies when a Virtual Private Cloud (VPC) route is created in Google Cloud Platform (GCP). Google Cloud routes define the paths that network traffic takes from a virtual machine (VM) instance to other destinations. These destinations can be inside a Google VPC network or outside it. An adversary may create a route in order to impact the flow of network traffic in their target's cloud environment.",
+    "false_positives": [
+      "Virtual Private Cloud routes may be created by system administrators. Verify that the configuration change was expected. Exceptions can be added to this rule to filter expected behavior."
+    ],
+    "note": "The GCP Filebeat module must be enabled to use this rule."
+  },
+  {
+    "name": "GCP Virtual Private Cloud Route Deletion",
+    "description": "Identifies when a Virtual Private Cloud (VPC) route is deleted in Google Cloud Platform (GCP). Google Cloud routes define the paths that network traffic takes from a virtual machine (VM) instance to other destinations. These destinations can be inside a Google VPC network or outside it. An adversary may delete a route in order to impact the flow of network traffic in their target's cloud environment.",
+    "false_positives": [
+      "Virtual Private Cloud routes may be deleted by system administrators. Verify that the configuration change was expected. Exceptions can be added to this rule to filter expected behavior."
+    ],
+    "note": "The GCP Filebeat module must be enabled to use this rule."
+  },
+  {
+    "name": "Halfbaked Command and Control Beacon",
+    "description": "Halfbaked is a malware family used to establish persistence in a contested network. This rule detects a network activity algorithm leveraged by Halfbaked implant beacons for command and control.",
+    "false_positives": [
+      "This rule should be tailored to exclude systems, either as sources or destinations, in which this behavior is expected."
+    ],
+    "note": "This activity has been observed in FIN7 campaigns."
+  },
+  {
     "name": "Hex Encoding/Decoding Activity",
     "description": "Identifies attempts to encode and decode data, a technique adversaries can\nuse to evade detection by host- or network-based security controls.",
     "false_positives": [
@@ -545,11 +939,28 @@
     ]
   },
   {
+    "name": "High Number of Okta User Password Reset or Unlock Attempts",
+    "description": "Identifies a high number of Okta user password reset or account unlock attempts. An adversary may attempt to obtain unauthorized access to an Okta user account using these methods and attempt to blend in with normal activity in their target's environment and evade detection.",
+    "false_positives": [
+      "The number of Okta user password reset or account unlock attempts will likely vary between organizations. To fit this rule to their organization, users can duplicate this rule and edit the schedule and threshold values in the new rule."
+    ],
+    "note": "The Okta Filebeat module must be enabled to use this rule."
+  },
+  {
+    "name": "Hosts File Modified",
+    "description": "The hosts file on endpoints is used to control manual IP address to hostname resolutions. The hosts file is the first point of lookup for DNS hostname resolution so if adversaries can modify the endpoint hosts file, they can route traffic to malicious infrastructure. This rule detects modifications to the hosts file on Microsoft Windows, Linux (Ubuntu or RHEL) and macOS systems.",
+    "note": "For Windows systems using Auditbeat, this rule requires adding 'C:/Windows/System32/drivers/etc' as an additional path in the 'file_integrity' module of auditbeat.yml."
+  },
+  {
     "name": "Hping Process Activity",
     "description": "Hping ran on a Linux host. Hping is a FOSS command-line packet analyzer and has\nthe ability to construct network packets for a wide variety of network security\ntesting applications, including scanning and firewall auditing.",
     "false_positives": [
       "Normal use of hping is uncommon apart from security testing and research. Use by non-security engineers is very uncommon."
     ]
+  },
+  {
+    "name": "IIS HTTP Logging Disabled",
+    "description": "Identifies when Internet Information Services (IIS) HTTP Logging is disabled on a server. An attacker with IIS server access via a webshell or other mechanism can disable HTTP Logging as an effective anti-forensics measure."
   },
   {
     "name": "IPSEC NAT Traversal Port Activity",
@@ -566,12 +977,32 @@
     ]
   },
   {
+    "name": "Inbound Connection to an Unsecure Elasticsearch Node",
+    "description": "Identifies Elasticsearch nodes that do not have Transport Layer Security (TLS), and/or lack authentication, and are accepting inbound network connections over the default Elasticsearch port.",
+    "false_positives": [
+      "If you have front-facing proxies that provide authentication and TLS, this rule would need to be tuned to eliminate the source IP address of your reverse-proxy."
+    ],
+    "note": "This rule requires the addition of port `9200` and `send_all_headers` to the `HTTP` protocol configuration in `packetbeat.yml`. See the References section for additional configuration documentation."
+  },
+  {
+    "name": "InstallUtil Process Making Network Connections",
+    "description": "Identifies InstallUtil.exe making outbound network connections. This may indicate adversarial activity as InstallUtil is often leveraged by adversaries to execute code and evade detection."
+  },
+  {
+    "name": "Installation of Custom Shim Databases",
+    "description": "Identifies the installation of custom Application Compatibility Shim databases. This Windows functionality has been abused by attackers to stealthily gain persistence and arbitrary code execution in legitimate Windows processes."
+  },
+  {
     "name": "Interactive Terminal Spawned via Perl",
     "description": "Identifies when a terminal (`tty`) is spawned via Perl. Attackers may upgrade a\nsimple reverse shell to a fully interactive `tty` after obtaining initial\naccess to a host."
   },
   {
     "name": "Interactive Terminal Spawned via Python",
     "description": "Identifies when a terminal (`tty`) is spawned via Python. Attackers may upgrade\na simple reverse shell to a fully interactive `tty` after obtaining initial\naccess to a host."
+  },
+  {
+    "name": "Kerberos Cached Credentials Dumping",
+    "description": "Identifies the use of the Kerberos credential cache (kcc) utility to dump locally cached Kerberos tickets."
   },
   {
     "name": "Kernel Module Removal",
@@ -592,12 +1023,12 @@
     "description": "Identifies use of `sc.exe` to create, modify, or start services on remote hosts.\nThis could be indicative of adversary lateral movement but will be noisy if\ncommonly done by admins."
   },
   {
-    "name": "Malware - Detected - Elastic Endpoint Security",
-    "description": "Elastic Endpoint Security detected Malware. Click the Elastic Endpoint Security icon in the event.module column or the link in the rule.reference column for additional information."
+    "name": "Malware - Detected - Endpoint Security",
+    "description": "Endpoint Security detected Malware. Click the Endpoint Security icon in the event.module column or the link in the rule.reference column for additional information."
   },
   {
-    "name": "Malware - Prevented - Elastic Endpoint Security",
-    "description": "Elastic Endpoint Security prevented Malware. Click the Elastic Endpoint Security icon in the event.module column or the link in the rule.reference column for additional information."
+    "name": "Malware - Prevented - Endpoint Security",
+    "description": "Endpoint Security prevented Malware. Click the Endpoint Security icon in the event.module column or the link in the rule.reference column for additional information."
   },
   {
     "name": "Microsoft Build Engine Loading Windows Credential Libraries",
@@ -642,6 +1073,18 @@
     ]
   },
   {
+    "name": "Microsoft IIS Connection Strings Decryption",
+    "description": "Identifies use of aspnet_regiis to decrypt Microsoft IIS connection strings. An attacker with Microsoft IIS web server access via a webshell or alike can decrypt and dump any hardcoded connection strings, such as the MSSQL service account password using aspnet_regiis command."
+  },
+  {
+    "name": "Microsoft IIS Service Account Password Dumped",
+    "description": "Identifies the Internet Information Services (IIS) command-line tool, AppCmd, being used to list passwords. An attacker with IIS web server access via a web shell can decrypt and dump the IIS AppPool service account password using AppCmd."
+  },
+  {
+    "name": "Mimikatz Memssp Log File Detected",
+    "description": "Identifies the password log file from the default Mimikatz memssp module."
+  },
+  {
     "name": "Mknod Process Activity",
     "description": "The Linux `mknod` program is sometimes used in the command payload of a remote\ncommand injection (RCI) and other exploits. It is used to export a command shell\nwhen the traditional version of `netcat` is not available to the payload.",
     "false_positives": [
@@ -663,6 +1106,23 @@
   {
     "name": "MsBuild Making Network Connections",
     "description": "Identifies `MsBuild.exe` making outbound network connections. This may indicate\nadversarial activity as MsBuild is often leveraged by adversaries to execute\ncode and evade detection."
+  },
+  {
+    "name": "MsBuild Network Connection Sequence",
+    "description": "Identifies MsBuild.exe making outbound network connections. This may indicate adversarial activity as MsBuild is often leveraged by adversaries to execute code and evade detection."
+  },
+  {
+    "name": "MsXsl Making Network Connections",
+    "description": "Identifies MsXsl.exe making outbound network connections. This may indicate adversarial activity as MsXsl is often leveraged by adversaries to execute malicious scripts and evade detection."
+  },
+  {
+    "name": "Mshta Making Network Connections",
+    "description": "Identifies Mshta.exe making outbound network connections. This may indicate adversarial activity as Mshta is often leveraged by adversaries to execute malicious scripts and evade detection."
+  },
+  {
+    "name": "Multi-Factor Authentication Disabled for an Azure User",
+    "description": "Identifies when multi-factor authentication (MFA) is disabled for an Azure user account. An adversary may disable MFA for a user account in order to weaken the authentication requirements for the account.",
+    "note": "The Azure Filebeat module must be enabled to use this rule."
   },
   {
     "name": "Net command via SYSTEM account",
@@ -692,8 +1152,8 @@
     "description": "Identifies `mshta.exe` making a network connection. This may indicate\nadversarial activity as `mshta.exe` is often leveraged by adversaries to execute\nmalicious scripts and evade detection."
   },
   {
-    "name": "Network Connection via Regsvr",
-    "description": "Identifies the native Windows tools `regsvr32.exe` and `regsvr64.exe` making a\nnetwork connection. This may be indicative of an attacker bypassing allowlists\nor running arbitrary scripts via a signed Microsoft binary.",
+    "name": "Network Connection via Registration Utility",
+    "description": "Identifies the native Windows tools regsvr32.exe, regsvr64.exe, RegSvcs.exe, or RegAsm.exe making a network connection. This may be indicative of an attacker bypassing allowlists or running arbitrary scripts via a signed Microsoft binary.",
     "false_positives": [
       "Security testing may produce events like this. Activity of this kind performed by non-engineers and ordinary users is unusual."
     ]
@@ -739,12 +1199,12 @@
     ]
   },
   {
-    "name": "Permission Theft - Detected - Elastic Endpoint Security",
-    "description": "Elastic Endpoint Security detected Permission Theft. Click the Elastic Endpoint Security icon in the event.module column or the link in the rule.reference column for additional information."
+    "name": "Permission Theft - Detected - Endpoint Security",
+    "description": "Endpoint Security detected Permission Theft. Click the Endpoint Security icon in the event.module column or the link in the rule.reference column for additional information."
   },
   {
-    "name": "Permission Theft - Prevented - Elastic Endpoint Security",
-    "description": "Elastic Endpoint Security prevented Permission Theft. Click the Elastic Endpoint Security icon in the event.module column or the link in the rule.reference column for additional information."
+    "name": "Permission Theft - Prevented - Endpoint Security",
+    "description": "Endpoint Security prevented Permission Theft. Click the Endpoint Security icon in the event.module column or the link in the rule.reference column for additional information."
   },
   {
     "name": "Persistence via Kernel Module Modification",
@@ -754,6 +1214,27 @@
     ]
   },
   {
+    "name": "Persistence via TelemetryController Scheduled Task Hijack",
+    "description": "Detects the successful hijack of Microsoft Compatibility Appraiser scheduled task to establish persistence with an integrity level of system."
+  },
+  {
+    "name": "Persistence via Update Orchestrator Service Hijack",
+    "description": "Identifies potential hijacking of the Microsoft Update Orchestrator Service to establish persistence with an integrity level of SYSTEM."
+  },
+  {
+    "name": "Possible Consent Grant Attack via Azure-Registered Application",
+    "description": "Identifies when a user grants permissions to an Azure-registered application or when an administrator grants tenant-wide permissions to an application. An adversary may create an Azure-registered application that requests access to data such as contact information, email, or documents.",
+    "note": "- The Azure Filebeat module must be enabled to use this rule.\n- In a consent grant attack, an attacker tricks an end user into granting a malicious application consent to access their data, usually via a phishing attack. After the malicious application has been granted consent, it has account-level access to data without the need for an organizational account.\n- Normal remediation steps, like resetting passwords for breached accounts or requiring Multi-Factor Authentication (MFA) on accounts, are not effective against this type of attack, since these are third-party applications and are external to the organization.\n- Security analysts should review the list of trusted applications for any suspicious items."
+  },
+  {
+    "name": "Possible FIN7 DGA Command and Control Behavior",
+    "description": "This rule detects a known command and control pattern in network events. The FIN7 threat group is known to use this command and control technique, while maintaining persistence in their target's network.",
+    "false_positives": [
+      "This rule could identify benign domains that are formatted similarly to FIN7's command and control algorithm. Alerts should be investigated by an analyst to assess the validity of the individual observations."
+    ],
+    "note": "In the event this rule identifies benign domains in your environment, the `destination.domain` field in the rule can be modified to include those domains. Example: `...AND NOT destination.domain:(zoom.us OR benign.domain1 OR benign.domain2)`."
+  },
+  {
     "name": "Possible Okta DoS Attack",
     "description": "An adversary may attempt to disrupt an organization's business operations by\nperforming a denial of service (DoS) attack against its Okta infrastructure.",
     "note": "The Okta Filebeat module must be enabled to use this rule."
@@ -761,6 +1242,10 @@
   {
     "name": "Potential Application Shimming via Sdbinst",
     "description": "The Application Shim was created to allow for backward compatibility of software\nas the operating system codebase changes over time. This Windows functionality\nhas been abused by attackers to stealthily gain persistence and arbitrary code\nexecution in legitimate Windows processes."
+  },
+  {
+    "name": "Potential DLL SideLoading via Trusted Microsoft Programs",
+    "description": "Identifies an instance of a Windows trusted program that is known to be vulnerable to DLL Search Order Hijacking starting after being renamed or from a non-standard path. This is uncommon behavior and may indicate an attempt to evade defenses via side loading a malicious DLL within the memory space of one of those processes."
   },
   {
     "name": "Potential DNS Tunneling via Iodine",
@@ -780,6 +1265,11 @@
   {
     "name": "Potential Modification of Accessibility Binaries",
     "description": "Windows contains accessibility features that may be launched with a key\ncombination before a user has logged in. An adversary can modify the way these\nprograms are launched to get a command prompt or backdoor without logging in to\nthe system."
+  },
+  {
+    "name": "Potential Secure File Deletion via SDelete Utility",
+    "description": "Detects file name patterns generated by the use of Sysinternals SDelete utility to securely delete a file via multiple file overwrite and rename operations.",
+    "note": "Verify process details such as command line and hash to confirm this activity legitimacy."
   },
   {
     "name": "Potential Shell via Web Server",
@@ -807,18 +1297,25 @@
     ]
   },
   {
-    "name": "Process Injection - Detected - Elastic Endpoint Security",
-    "description": "Elastic Endpoint Security detected Process Injection. Click the Elastic Endpoint Security icon in the event.module column or the link in the rule.reference column for additional information."
+    "name": "Process Injection - Detected - Endpoint Security",
+    "description": "Endpoint Security detected Process Injection. Click the Endpoint Security icon in the event.module column or the link in the rule.reference column for additional information."
   },
   {
-    "name": "Process Injection - Prevented - Elastic Endpoint Security",
-    "description": "Elastic Endpoint Security prevented Process Injection. Click the Elastic Endpoint Security icon in the event.module column or the link in the rule.reference column for additional information."
+    "name": "Process Injection - Prevented - Endpoint Security",
+    "description": "Endpoint Security prevented Process Injection. Click the Endpoint Security icon in the event.module column or the link in the rule.reference column for additional information."
   },
   {
     "name": "Process Injection by the Microsoft Build Engine",
     "description": "An instance of MSBuild, the Microsoft Build Engine, created a thread in another\nprocess. This technique is sometimes used to evade detection or elevate\nprivileges.",
     "false_positives": [
       "The Build Engine is commonly used by Windows developers but use by non-engineers is unusual."
+    ]
+  },
+  {
+    "name": "Process Potentially Masquerading as WerFault",
+    "description": "Identifies a suspicious WerFault command line parameter, which may indicate an attempt to run unnoticed.",
+    "false_positives": [
+      "Legit Application Crash with rare Werfault commandline value"
     ]
   },
   {
@@ -834,6 +1331,14 @@
     "false_positives": [
       "PsExec is a dual-use tool that can be used for benign or malicious activity. It's important to baseline your environment to determine the amount of noise to expect from this tool."
     ]
+  },
+  {
+    "name": "Public IP Reconnaissance Activity",
+    "description": "Identifies domains commonly used by adversaries for post-exploitation IP reconnaissance. It is common for adversaries to test for Internet access and acquire their public IP address after they have gained access to a system. Among others, this has been observed in campaigns leveraging the information stealer, Trickbot.",
+    "false_positives": [
+      "If the domains listed in this rule are used as part of an authorized workflow, this rule will be triggered by those events. Validate that this is expected activity and tune the rule to fit your environment variables."
+    ],
+    "note": "This rule takes HTTP redirects and HTTP referrer's into account, however neither HTTP redirect status codes nor HTTP referrer's are visible with TLS traffic which can lead to multiple events per alert."
   },
   {
     "name": "RDP (Remote Desktop Protocol) from the Internet",
@@ -858,12 +1363,12 @@
     "description": "Detects network events that may indicate the use of RPC traffic to the Internet.\nRPC is commonly used by system administrators to remotely control a system for\nmaintenance or to use shared resources. It should almost never be directly\nexposed to the Internet, as it is frequently targeted and exploited by threat\nactors as an initial access or back-door vector."
   },
   {
-    "name": "Ransomware - Detected - Elastic Endpoint Security",
-    "description": "Elastic Endpoint Security detected Ransomware. Click the Elastic Endpoint Security icon in the event.module column or the link in the rule.reference column for additional information."
+    "name": "Ransomware - Detected - Endpoint Security",
+    "description": "Endpoint Security detected Ransomware. Click the Endpoint Security icon in the event.module column or the link in the rule.reference column for additional information."
   },
   {
-    "name": "Ransomware - Prevented - Elastic Endpoint Security",
-    "description": "Elastic Endpoint Security prevented Ransomware. Click the Elastic Endpoint Security icon in the event.module column or the link in the rule.reference column for additional information."
+    "name": "Ransomware - Prevented - Endpoint Security",
+    "description": "Endpoint Security prevented Ransomware. Click the Endpoint Security icon in the event.module column or the link in the rule.reference column for additional information."
   },
   {
     "name": "Rare AWS Error Code",
@@ -872,6 +1377,39 @@
       "Rare and unusual errors may indicate an impending service failure state. Rare\nand unusual user error activity can also be due to manual troubleshooting or\nreconfiguration attempts by insufficiently privileged users, bugs in cloud\nautomation scripts or workflows, or changes to IAM privileges."
     ],
     "note": "Alerts from this rule indicate a rare and unusual error code that is\nassociated with the response to an AWS API command or method call. Here are\nsome possible avenues of investigation:\n\n* Examine the history of the error. Has it manifested before? If the error,\nwhich is visible in the `aws.cloudtrail.error_code field`, manifested only very\nrecently, it might be related to recent changes in an automation module or\nscript.\n* Examine the request parameters. These may provide indications as to the\nnature of the task being performed when the error occurred. Is the error\nrelated to unsuccessful attempts to enumerate or access objects, data, or\nsecrets? If so, this can sometimes be a byproduct of discovery, privilege\nescalation, or lateral movement attempts.\n* Consider the user as identified in the `user.name` field. Is this activity\npart of an expected workflow for the user context? Examine the user identity in\nthe `aws.cloudtrail.user_identity.arn` field and the access key id in the\n`aws.cloudtrail.user_identity.access_key_id` field, which can help identify the\nprecise user context. The user agent details in the `user_agent.original` field\nmay also indicate what type of client made the request.\n* Consider the source IP address and geolocation for the calling user who\nissued the command. Do they look normal for the calling user? If the source is\nan EC2 IP address, is it associated with an EC2 instance in one of your\naccounts or could it be sourcing from an EC2 instance not under your control?\nIf it is an authorized EC2 instance, is the activity associated with normal\nbehavior for the instance role or roles? Are there any other alerts or signs of\nsuspicious activity involving this instance?"
+  },
+  {
+    "name": "Registration Tool Making Network Connections",
+    "description": "Identifies registration utilities making outbound network connections. This includes regsvcs, regasm, and regsvr32. This may indicate adversarial activity as these tools are often leveraged by adversaries to execute code and evade detection."
+  },
+  {
+    "name": "Remote File Copy via TeamViewer",
+    "description": "Identifies an executable or script file remotely downloaded via a TeamViewer transfer session."
+  },
+  {
+    "name": "Remote File Download via Desktopimgdownldr Utility",
+    "description": "Identifies the desktopimgdownldr utility being used to download a remote file. An adversary may use desktopimgdownldr to download arbitrary files as an alternative to certutil."
+  },
+  {
+    "name": "Remote File Download via MpCmdRun",
+    "description": "Identifies the Windows Defender configuration utility (MpCmdRun.exe) being used to download a remote file.",
+    "note": "Verify details such as the parent process, URL reputation, and downloaded file details. Additionally, `MpCmdRun` logs this information in the Appdata Temp folder in `MpCmdRun.log`."
+  },
+  {
+    "name": "Remote SSH Login Enabled via systemsetup Command",
+    "description": "Detects use of the systemsetup command to enable remote SSH Login."
+  },
+  {
+    "name": "Renamed AutoIt Scripts Interpreter",
+    "description": "Identifies a suspicious AutoIt process execution. Malware written as AutoIt scripts tend to rename the AutoIt executable to avoid detection."
+  },
+  {
+    "name": "Roshal Archive (RAR) or PowerShell File Downloaded from the Internet",
+    "description": "Detects a Roshal Archive (RAR) file or PowerShell script downloaded from the internet by an internal host. Gaining initial access to a system and then downloading encoded or encrypted tools to move laterally is a common practice for adversaries as a way to protect their more valuable tools and TTPs. This may be atypical behavior for a managed network and can be indicative of malware, exfiltration, or command and control.",
+    "false_positives": [
+      "Downloading RAR or PowerShell files from the Internet may be expected for certain systems. This rule should be tailored to either exclude systems as sources or destinations in which this behavior is expected."
+    ],
+    "note": "This activity has been observed in FIN7 campaigns."
   },
   {
     "name": "SMB (Windows File Sharing) Activity to the Internet",
@@ -913,6 +1451,10 @@
     ]
   },
   {
+    "name": "Service Command Lateral Movement",
+    "description": "Identifies use of sc.exe to create, modify, or start services on remote hosts. This could be indicative of adversary lateral movement but will be noisy if commonly done by admins."
+  },
+  {
     "name": "Setgid Bit Set via chmod",
     "description": "An adversary may add the setgid bit to a file or directory in order to run a file with the privileges of the owning group. An adversary can take advantage of this to either do a shell escape or exploit a vulnerability in an application with the setgid bit to get code running in a different user\u2019s context. Additionally, adversaries can use this mechanism on their own malware to make sure they're able to execute in elevated contexts in the future."
   },
@@ -947,12 +1489,20 @@
     "description": "A sudoers file specifies the commands that users or groups can run and from which terminals. Adversaries can take advantage of these configurations to execute commands as other users or spawn processes with higher privileges."
   },
   {
+    "name": "Suspicious .NET Code Compilation",
+    "description": "Identifies suspicious .NET code execution. connections."
+  },
+  {
     "name": "Suspicious Activity Reported by Okta User",
     "description": "This rule detects when a user reports suspicious activity for their Okta\naccount. These events should be investigated, as they can help security teams\nidentify when an adversary is attempting to gain access to their network.",
     "false_positives": [
       "A user may report suspicious activity on their Okta account in error."
     ],
     "note": "The Okta Filebeat module must be enabled to use this rule."
+  },
+  {
+    "name": "Suspicious Endpoint Security Parent Process",
+    "description": "A suspicious Endpoint Security parent process was detected. This may indicate a process hollowing or other form of code injection."
   },
   {
     "name": "Suspicious MS Office Child Process",
@@ -963,6 +1513,10 @@
     "description": "Identifies suspicious child processes of Microsoft Outlook. These child\nprocesses are often associated with spear phishing activity."
   },
   {
+    "name": "Suspicious Managed Code Hosting Process",
+    "description": "Identifies a suspicious managed code hosting process which could indicate code injection or other form of suspicious code execution."
+  },
+  {
     "name": "Suspicious PDF Reader Child Process",
     "description": "Identifies suspicious child processes of PDF reader applications. These child\nprocesses are often launched via exploitation of PDF applications or social\nengineering."
   },
@@ -971,6 +1525,41 @@
     "description": "A machine learning job detected a PowerShell script with unusual data\ncharacteristics, such as obfuscation, that may be a characteristic of malicious\nPowerShell script text blocks.",
     "false_positives": [
       "Certain kinds of security testing may trigger this alert. PowerShell scripts that use high levels of obfuscation or have unusual script block payloads may trigger this alert."
+    ]
+  },
+  {
+    "name": "Suspicious PrintSpooler SPL File Created",
+    "description": "Detects attempts to exploit privilege escalation vulnerabilities related to the Print Spooler service including CVE-2020-1048 and CVE-2020-1337. .",
+    "note": "Refer to CVEs, CVE-2020-1048 and CVE-2020-1337 for further information on the vulnerability and exploit. Verify that the relevant system is patched."
+  },
+  {
+    "name": "Suspicious PrintSpooler Service Executable File Creation",
+    "description": "Detects attempts to exploit privilege escalation vulnerabilities related to the Print Spooler service. For more information refer to the following CVE's - CVE-2020-1048, CVE-2020-1337 and CVE-2020-1300 and verify that the impacted system is patched."
+  },
+  {
+    "name": "Suspicious Process Execution via Renamed PsExec Executable",
+    "description": "Identifies suspicious psexec activity which is executing from the psexec service that has been renamed, possibly to evade detection."
+  },
+  {
+    "name": "Suspicious Process from Conhost",
+    "description": "Identifies a suspicious Conhost child process which may be an indication of code injection activity."
+  },
+  {
+    "name": "Suspicious WMIC XSL Script Execution",
+    "description": "Identifies WMIC whitelisting bypass techniques by alerting on suspicious execution of scripts. When WMIC loads scripting libraries it may be indicative of a whitelist bypass."
+  },
+  {
+    "name": "Suspicious WerFault Child Process",
+    "description": "A suspicious WerFault child process was detected, which may indicate an attempt to run unnoticed. Verify process details such as command line, network connections, file writes and parent process details as well.",
+    "false_positives": [
+      "Custom Windows Error Reporting Debugger"
+    ]
+  },
+  {
+    "name": "Suspicious Zoom Child Process",
+    "description": "A suspicious Zoom child process was detected, which may indicate an attempt to run unnoticed. Verify process details such as command line, network connections, file writes and associated file signature details as well.",
+    "false_positives": [
+      "New Zoom Executable"
     ]
   },
   {
@@ -1015,12 +1604,32 @@
     ]
   },
   {
+    "name": "UAC Bypass via DiskCleanup Scheduled Task Hijack",
+    "description": "Identifies User Account Control (UAC) bypass via hijacking DiskCleanup Scheduled Task. Attackers bypass UAC to stealthily execute code with elevated permissions."
+  },
+  {
     "name": "Unusual AWS Command for a User",
     "description": "A machine learning job detected an AWS API command that, while not inherently\nsuspicious or abnormal, is being made by a user that does not normally use the\ncommand. This can be the result of compromised credentials or keys as someone\nuses a valid account to persist, move laterally, or exfiltrate data.",
     "false_positives": [
       "New or unusual user command activity can be due to manual troubleshooting or\nreconfiguration, changes in cloud automation scripts or workflows, adoption of\nnew services, or changes in the way services are used."
     ],
     "note": "Alerts from this rule indicate an AWS API command or method call that is rare\nand unusual for the calling IAM user. Here are some possible avenues of\ninvestigation:\n\n* Consider the user as identified by the `user.name` field. Is this command\npart of an expected workflow for the user context? Examine the user identity in\nthe `aws.cloudtrail.user_identity.arn` field and the access key id in the\n`aws.cloudtrail.user_identity.access_key_id` field, which can help identify the\nprecise user context. The user agent details in the `user_agent.original` field\nmay also indicate what type of client made the request.\n* Consider the source IP address and geolocation for the calling user who\nissued the command. Do they look normal for the calling user? If the source is\nan EC2 IP address, is it associated with an EC2 instance in one of your\naccounts or could it be sourcing from an EC2 instance not under your control?\nIf it is an authorized EC2 instance, is the activity associated with normal\nbehavior for the instance role or roles? Are there any other alerts or signs of\nsuspicious activity involving this instance?\n* Consider the time of day. If the user is a human, not a program or script,\ndid the activity take place during normal working hours?\n* Examine the history of the command. If the command, which is visible in the\n`event.action field`, manifested only very recently, it might be part of a new\nautomation module or script. If its usage rate is consistent - for example, if\nit appears in small numbers on a weekly or monthly basis - it might be part of\na housekeeping or maintenance process.\n* Examine the request parameters. These may provide indications as to the\nsource of the program or the nature of the tasks it is performing."
+  },
+  {
+    "name": "Unusual Child Process from a System Virtual Process",
+    "description": "Identifies a suspicious child process of the Windows virtual system process, which could indicate code injection."
+  },
+  {
+    "name": "Unusual Child Process of dns.exe",
+    "description": "Identifies an unexpected process spawning from dns.exe, the process responsible for Windows DNS server services, which may indicate activity related to remote code execution or other forms of exploitation.",
+    "false_positives": [
+      "Werfault.exe will legitimately spawn when dns.exe crashes, but the DNS service is very stable and so this is a low occurring event. Denial of Service (DoS) attempts by intentionally crashing the service will also cause werfault.exe to spawn."
+    ],
+    "note": "Detection alerts from this rule indicate potential suspicious child processes\nspawned after exploitation from CVE-2020-1350 (SigRed) has occurred. Here are\nsome possible avenues of investigation:\n\n* Any suspicious or abnormal child process spawned from dns.exe should be reviewed and investigated with care. It's impossible to predict what an adversary may deploy as the follow-on process after the exploit, but built-in discovery/enumeration utilities should be top of mind (whoami.exe, netstat.exe, systeminfo.exe, tasklist.exe).\n* Built-in Windows programs that contain capabilities used to download and execute additional payloads should also be considered. This is not an exhaustive list, but ideal candidates to start out would be: mshta.exe, powershell.exe, regsvr32.exe, rundll32.exe, wscript.exe, wmic.exe.\n* If the DoS exploit is successful and DNS Server service crashes, be mindful of potential child processes related to werfault.exe occurring.\n* Any subsequent activity following the child process spawned related to execution/network activity should be thoroughly reviewed from the endpoint."
+  },
+  {
+    "name": "Unusual Child Processes of RunDLL32",
+    "description": "Identifies child processes of unusual instances of RunDLL32 where the command line parameters were suspicious. Misuse of RunDLL32 could indicate malicious activity."
   },
   {
     "name": "Unusual City For an AWS Command",
@@ -1046,9 +1655,25 @@
     ]
   },
   {
+    "name": "Unusual Executable File Creation by a System Critical Process",
+    "description": "Identifies an unexpected executable file being created or modified by a Windows system critical process, which may indicate activity related to remote code execution or other forms of exploitation."
+  },
+  {
+    "name": "Unusual File Modification by dns.exe",
+    "description": "Identifies an unexpected file being modified by dns.exe, the process responsible for Windows DNS Server services, which may indicate activity related to remote code execution or other forms of exploitation.",
+    "note": "Detection alerts from this rule indicate potential unusual/abnormal file writes\nfrom the DNS Server service process (`dns.exe`) after exploitation from\nCVE-2020-1350 (SigRed) has occurred. Here are some possible avenues of\ninvestigation:\n\n* Post-exploitation, adversaries may write additional files or payloads to the system as additional discovery/exploitation/persistence mechanisms. \n* Any suspicious or abnormal files written from `dns.exe` should be reviewed and investigated with care."
+  },
+  {
     "name": "Unusual Linux Network Activity",
     "description": "Identifies Linux processes that do not usually use the network but have\nunexpected network activity, which can indicate command-and-control, lateral\nmovement, persistence, or data exfiltration activity. A process with unusual\nnetwork activity can denote process exploitation or injection, where the process\nis used to run persistence mechanisms that allow a malicious actor remote access\nor control of the host, data exfiltration, and execution of unauthorized network\napplications.",
     "note": "Alerts from this rule indicate the presence of network activity from a Linux\nprocess for which network activity is rare and unusual.  Here are some possible\navenues of investigation:\n\n* Consider the IP addresses and ports. Are these used by normal but infrequent\nnetwork workflows? Are they expected or unexpected?\n* If the destination IP address is remote or external, does it associate with\nan expected domain, organization or geography?\n+\nNOTE: Avoid interacting directly with suspected malicious IP addresses. \n\n* Consider the user as identified by the username field. Is this network\nactivity part of an expected workflow for the user who ran the program?\n* Examine the history of execution. If this process manifested only\nvery recently, it might be part of a new software package. If it has a\nconsistent schedule - for example if it runs monthly or quarterly - it might be\npart of a monthly or quarterly business or maintenance process.\n* Examine the process arguments, title and working directory. These may provide\nindications as to the source of the program or the nature of the tasks it is\nperforming."
+  },
+  {
+    "name": "Unusual Linux Network Connection Discovery",
+    "description": "Looks for commands related to system network connection discovery from an unusual user context. This can be due to uncommon troubleshooting activity or due to a compromised account. A compromised account may be used by a threat actor to engage in system network connection discovery in order to increase their understanding of connected services and systems. This information may be used to shape follow-up behaviors such as lateral movement or additional discovery.",
+    "false_positives": [
+      "Uncommon user command activity can be due to an engineer logging onto a server instance in order to perform manual troubleshooting or reconfiguration.\n==== Threat mapping\n\n*Framework*: MITRE ATT&CK^TM^\n\n* Tactic:\n** Name: Discovery\n** ID: TA0007\n** Reference URL: https://attack.mitre.org/tactics/TA0007/\n* Technique:\n** Name: System Network Connections Discovery\n** ID: T1049\n** Reference URL: https://attack.mitre.org/techniques/T1049/"
+    ]
   },
   {
     "name": "Unusual Linux Network Port Activity",
@@ -1062,6 +1687,41 @@
     "description": "Identifies unusual listening ports on Linux instances that can indicate\nexecution of unauthorized services, backdoors, or persistence mechanisms.",
     "false_positives": [
       "A newly installed program or one that rarely uses the network could trigger this alert."
+    ]
+  },
+  {
+    "name": "Unusual Linux Process Discovery Activity",
+    "description": "Looks for commands related to system process discovery from an unusual user context. This can be due to uncommon troubleshooting activity or due to a compromised account. A compromised account may be used by a threat actor to engage in system process discovery in order to increase their understanding of software applications running on a target host or network. This may be a precursor to selection of a persistence mechanism or a method of privilege elevation.",
+    "false_positives": [
+      "Uncommon user command activity can be due to an engineer logging onto a server instance in order to perform manual troubleshooting or reconfiguration.\n==== Threat mapping\n\n*Framework*: MITRE ATT&CK^TM^\n\n* Tactic:\n** Name: Discovery\n** ID: TA0007\n** Reference URL: https://attack.mitre.org/tactics/TA0007/\n* Technique:\n** Name: Process Discovery\n** ID: T1057\n** Reference URL: https://attack.mitre.org/techniques/T1057/"
+    ]
+  },
+  {
+    "name": "Unusual Linux System Information Discovery Activity",
+    "description": "Looks for commands related to system information discovery from an unusual user context. This can be due to uncommon troubleshooting activity or due to a compromised account. A compromised account may be used to engage in system information discovery in order to gather detailed information about system configuration and software versions. This may be a precursor to selection of a persistence mechanism or a method of privilege elevation.",
+    "false_positives": [
+      "Uncommon user command activity can be due to an engineer logging onto a server instance in order to perform manual troubleshooting or reconfiguration.\n==== Threat mapping\n\n*Framework*: MITRE ATT&CK^TM^\n\n* Tactic:\n** Name: Discovery\n** ID: TA0007\n** Reference URL: https://attack.mitre.org/tactics/TA0007/\n* Technique:\n** Name: System Information Discovery\n** ID: T1082\n** Reference URL: https://attack.mitre.org/techniques/T1082/"
+    ]
+  },
+  {
+    "name": "Unusual Linux System Network Configuration Discovery",
+    "description": "Looks for commands related to system network configuration discovery from an unusual user context. This can be due to uncommon troubleshooting activity or due to a compromised account. A compromised account may be used by a threat actor to engage in system network configuration discovery in order to increase their understanding of connected networks and hosts. This information may be used to shape follow-up behaviors such as lateral movement or additional discovery.",
+    "false_positives": [
+      "Uncommon user command activity can be due to an engineer logging onto a server instance in order to perform manual troubleshooting or reconfiguration.\n==== Threat mapping\n\n*Framework*: MITRE ATT&CK^TM^\n\n* Tactic:\n** Name: Discovery\n** ID: TA0007\n** Reference URL: https://attack.mitre.org/tactics/TA0007/\n* Technique:\n** Name: System Network Configuration Discovery\n** ID: T1016\n** Reference URL: https://attack.mitre.org/techniques/T1016/"
+    ]
+  },
+  {
+    "name": "Unusual Linux System Owner or User Discovery Activity",
+    "description": "Looks for commands related to system user or owner discovery from an unusual user context. This can be due to uncommon troubleshooting activity or due to a compromised account. A compromised account may be used to engage in system owner or user discovery in order to identify currently active or primary users of a system. This may be a precursor to additional discovery, credential dumping or privilege elevation activity.",
+    "false_positives": [
+      "Uncommon user command activity can be due to an engineer logging onto a server instance in order to perform manual troubleshooting or reconfiguration.\n==== Threat mapping\n\n*Framework*: MITRE ATT&CK^TM^\n\n* Tactic:\n** Name: Discovery\n** ID: TA0007\n** Reference URL: https://attack.mitre.org/tactics/TA0007/\n* Technique:\n** Name: System Owner/User Discovery\n** ID: T1033\n** Reference URL: https://attack.mitre.org/techniques/T1033/"
+    ]
+  },
+  {
+    "name": "Unusual Linux User Calling the Metadata Service",
+    "description": "Looks for anomalous access to the cloud platform metadata service by an unusual user. The metadata service may be targeted in order to harvest credentials or user data scripts containing secrets.",
+    "false_positives": [
+      "A newly installed program, or one that runs under a new or rarely used user context, could trigger this detection rule. Manual interrogation of the metadata service during debugging or troubleshooting could trigger this rule."
     ]
   },
   {
@@ -1087,6 +1747,14 @@
     ]
   },
   {
+    "name": "Unusual Network Activity from a Windows System Binary",
+    "description": "Identifies network activity from unexpected system applications. This may indicate adversarial activity as these applications are often leveraged by adversaries to execute code and evade detection."
+  },
+  {
+    "name": "Unusual Network Connection Sequence via RunDLL32",
+    "description": "Identifies unusual instances of Rundll32.exe making outbound network connections. This may indicate adversarial activity and may identify malicious DLLs."
+  },
+  {
     "name": "Unusual Network Connection via RunDLL32",
     "description": "Identifies unusual instances of `rundll32.exe` making outbound network\nconnections. This may indicate adversarial activity and may identify malicious\nDLLs."
   },
@@ -1098,8 +1766,19 @@
     ]
   },
   {
+    "name": "Unusual Parent Process for cmd.exe",
+    "description": "Identifies a suspicious parent child process relationship with cmd.exe descending from an unusual process."
+  },
+  {
     "name": "Unusual Parent-Child Relationship",
     "description": "Identifies Windows programs run from unexpected parent processes. This could\nindicate masquerading or other strange activity on a system."
+  },
+  {
+    "name": "Unusual Process Calling the Metadata Service",
+    "description": "Looks for anomalous access to the metadata service by an unusual process. The metadata service may be targeted in order to harvest credentials or user data scripts containing secrets.",
+    "false_positives": [
+      "A newly installed program or one that runs very rarely as part of a monthly or quarterly workflow could trigger this detection rule."
+    ]
   },
   {
     "name": "Unusual Process Execution - Temp",
@@ -1127,6 +1806,13 @@
   {
     "name": "Unusual Process Network Connection",
     "description": "Identifies network activity from unexpected system applications. This may\nindicate adversarial activity as these applications are often leveraged by\nadversaries to execute code and evade detection."
+  },
+  {
+    "name": "Unusual Sudo Activity",
+    "description": "Looks for sudo activity from an unusual user context. An unusual sudo user could be due to troubleshooting activity or it could be a sign of credentialed access via compromised accounts.",
+    "false_positives": [
+      "Uncommon sudo activity can be due to an engineer logging onto a server instance in order to perform manual troubleshooting or reconfiguration.\n==== Threat mapping\n\n*Framework*: MITRE ATT&CK^TM^\n\n* Tactic:\n** Name: Defense Evasion\n** ID: TA0005\n** Reference URL: https://attack.mitre.org/tactics/TA0005/\n* Technique:\n** Name: Abuse Elevation Control Mechanism\n** ID: T1548\n** Reference URL: https://attack.mitre.org/techniques/T1548/\n\n\n* Tactic:\n** Name: Privilege Escalation\n** ID: TA0004\n** Reference URL: https://attack.mitre.org/tactics/TA0004/\n* Technique:\n** Name: Abuse Elevation Control Mechanism\n** ID: T1548\n** Reference URL: https://attack.mitre.org/techniques/T1548/"
+    ]
   },
   {
     "name": "Unusual Web Request",
@@ -1158,6 +1844,13 @@
     ]
   },
   {
+    "name": "Unusual Windows Process Calling the Metadata Service",
+    "description": "Looks for anomalous access to the metadata service by an unusual process. The metadata service may be targeted in order to harvest credentials or user data scripts containing secrets.",
+    "false_positives": [
+      "A newly installed program or one that runs very rarely as part of a monthly or quarterly workflow could trigger this detection rule."
+    ]
+  },
+  {
     "name": "Unusual Windows Remote User",
     "description": "A machine learning job detected an unusual remote desktop protocol (RDP)\nusername, which can indicate account takeover or credentialed persistence using\ncompromised accounts. RDP attacks, such as BlueKeep, also tend to use unusual\nusernames.",
     "false_positives": [
@@ -1170,6 +1863,13 @@
     "description": "A machine learning job detected an unusual Windows service, This can indicate\nexecution of unauthorized services, malware, or persistence mechanisms. In\ncorporate Windows environments, hosts do not generally run many rare or unique\nservices. This job helps detect malware and persistence mechanisms that have\nbeen installed and run as a service.",
     "false_positives": [
       "A newly installed program or one that runs rarely as part of a monthly or quarterly workflow could trigger this alert."
+    ]
+  },
+  {
+    "name": "Unusual Windows User Calling the Metadata Service",
+    "description": "Looks for anomalous access to the cloud platform metadata service by an unusual user. The metadata service may be targeted in order to harvest credentials or user data scripts containing secrets.",
+    "false_positives": [
+      "A newly installed program, or one that runs under a new or rarely used user context, could trigger this detection rule. Manual interrogation of the metadata service during debugging or troubleshooting could trigger this rule."
     ]
   },
   {
@@ -1190,6 +1890,16 @@
   {
     "name": "User Account Creation",
     "description": "Identifies attempts to create new local users. This is sometimes done by\nattackers to increase access to a system or domain."
+  },
+  {
+    "name": "User Added as Owner for Azure Application",
+    "description": "Identifies when a user is added as an owner for an Azure application. An adversary may add a user account as an owner for an Azure application in order to grant additional permissions and modify the application's configuration using another account.",
+    "note": "The Azure Filebeat module must be enabled to use this rule."
+  },
+  {
+    "name": "User Added as Owner for Azure Service Principal",
+    "description": "Identifies when a user is added as an owner for an Azure service principal. The service principal object defines what the application can do in the specific tenant, who can access the application, and what resources the app can access. A service principal object is created when an application is given permission to access resources in a tenant. An adversary may add a user account as an owner for a service principal and use that account in order to define what an application can do in the Azure AD tenant.",
+    "note": "The Azure Filebeat module must be enabled to use this rule."
   },
   {
     "name": "User Discovery via Whoami",
@@ -1226,6 +1936,10 @@
   {
     "name": "Volume Shadow Copy Deletion via WMIC",
     "description": "Identifies use of `wmic.exe` for shadow copy deletion on endpoints. This\ncommonly occurs in tandem with ransomware or other destructive attacks."
+  },
+  {
+    "name": "WPAD Service Exploit",
+    "description": "Identifies probable exploitation of the Web Proxy Auto-Discovery Protocol (WPAD) service. Attackers who have access to the local network or upstream DNS traffic can inject malicious JavaScript to the WPAD service which can lead to a full system compromise."
   },
   {
     "name": "Web Application Suspicious Activity: No User Agent",
@@ -1269,5 +1983,9 @@
   {
     "name": "Windows Script Executing PowerShell",
     "description": "Identifies a PowerShell process launched by either `cscript.exe` or\n`wscript.exe`. Observing Windows scripting processes executing a PowerShell\nscript, may be indicative of malicious activity."
+  },
+  {
+    "name": "Windows Suspicious Script Object Execution",
+    "description": "Identifies scrobj.dll loaded into unusual Microsoft processes. This usually means a malicious scriptlet is being executed in the target process."
   }
 ]

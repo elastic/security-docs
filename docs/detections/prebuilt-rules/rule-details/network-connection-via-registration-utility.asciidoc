@@ -3,7 +3,7 @@
 
 Identifies the native Windows tools regsvr32.exe, regsvr64.exe, RegSvcs.exe, or RegAsm.exe making a network connection. This may be indicative of an attacker bypassing allowlists or running arbitrary scripts via a signed Microsoft binary.
 
-*Rule type*: query
+*Rule type*: eql
 
 *Rule indices*:
 
@@ -23,7 +23,10 @@ Identifies the native Windows tools regsvr32.exe, regsvr64.exe, RegSvcs.exe, or 
 *Tags*:
 
 * Elastic
+* Host
 * Windows
+* Threat Detection
+* Execution
 
 *Version*: 5 (<<network-connection-via-registration-utility-history, version history>>)
 
@@ -44,10 +47,14 @@ Security testing may produce events like this. Activity of this kind performed b
 
 [source,js]
 ----------------------------------
-event.category:network and event.type:connection and
-process.name:(regsvr32.exe or regsvr64.exe or RegAsm.exe or
-RegSvcs.exe) and not destination.ip:(10.0.0.0/8 or 169.254.169.254 or
-172.16.0.0/12 or 192.168.0.0/16)
+sequence by process.entity_id [process where (process.name :
+"regsvr32.exe" or process.name : "regsvr64.exe" or
+process.name : "RegAsm.exe" or process.name : "RegSvcs.exe") and
+event.type == "start"] [network where (process.name : "regsvr32.exe"
+or process.name : "regsvr64.exe" or process.name :
+"RegAsm.exe" or process.name : "RegSvcs.exe") and not
+cidrmatch(destination.ip, "10.0.0.0/8", "169.254.169.254",
+"172.16.0.0/12", "192.168.0.0/16")]
 ----------------------------------
 
 ==== Threat mapping
