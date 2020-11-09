@@ -21,7 +21,7 @@ running, the rule will:
 ** Run and create alerts if existing anomaly scores above the defined threshold
 are discovered.
 ** Issue an error stating the {ml} job was not running when the rule executed.
-* *Threshold rules*: Searches the defined indices and creates a detections alert
+* <<create-threshold-rule, *Threshold rules*>>: Searches the defined indices and creates a detections alert
 when the number of times the specified field's value meets the threshold during
 a single execution. When multiple values meet the threshold, an alert is
 generated for each value.
@@ -29,9 +29,9 @@ generated for each value.
 For example, if the threshold `field` is `source.ip` and its `value` is `10`, an
 alert is generated for every source IP address that appears in at least 10 of
 the rule's search results.
-* *Event correlation*: Searches the defined indices and creates an alert when results match an
+* <<create-eql-rule, *Event correlation*>>: Searches the defined indices and creates an alert when results match an
 {ref}/eql.html[Event Query Language (EQL)] query.
-* *Threat match*: Creates an alert when {es-sec} index field values match
+* <<create-indicator-rule, *Indicator match*>>: Creates an alert when {es-sec} index field values match
 field values defined in the specified threat indices. For example, you
 can create a threat index for IP addresses and use this index to create an alert
 whenever an event's `destination.ip` equals a value in the index. Threat index
@@ -43,7 +43,7 @@ field mappings should be {ecs-ref}[ECS-compliant]. For information on creating
 
 When creating or modifying rules, you can add exceptions that prevent a rule from generating an alert even when its criteria are met. This is useful for reducing noise, such as preventing alerts from trusted processes and internal IP addresses. <<detections-ui-exceptions>> describes how to add exceptions to a rule.
 
-NOTE: You can add exceptions to custom query, EQL, and threat-matching rule types.
+NOTE: You can add exceptions to custom query, EQL, and indicator match rule types.
 
 If you are creating a custom query, threshold, or EQL rule, you can preview the rule beforehand to see what kind of results you can expect. See <<preview-rules, Preview your rule>> in this topic for more information.
 
@@ -99,6 +99,7 @@ https://www.elastic.co/subscriptions[appropriate license] or use a
 {ml} job must be running for the rule to function correctly.
 ==============
 
+[[create-custom-rule]]
 * To create a rule based on a KQL or Lucene query, select *Custom query* and
 then:
 .. Define which {es} indices the rule searches for alerts.
@@ -112,19 +113,22 @@ Windows command is executed:
 
 ** *Index patterns*: `winlogbeat-*`
 +
-*Definition*: Winlogbeat ships Windows event logs to {es-sec}.
+> Winlogbeat ships Windows event logs to {es-sec}.
+
 ** *Custom query*: `event.action:"Process Create (rule: ProcessCreate)" and process.name:"vssadmin.exe" and process.args:("delete" and "shadows")`
 +
-*Definition*: Searches the `winlogbeat-*` indices for `vssadmin.exe` executions with
+> Searches the `winlogbeat-*` indices for `vssadmin.exe` executions with
 the `delete` and `shadow` arguments, which are used to delete a volume's shadow
 copies.
 +
 [role="screenshot"]
 image::images/rule-query-example.png[]
 +
+--
 TIP: This example is based on the
 <<volume-shadow-copy-deletion-via-vssadmin, Volume Shadow Copy Deletion via VssAdmin>> prebuilt rule.
 
+[[create-threshold-rule]]
 * To create a rule based on a source event field threshold, select *Threshold*
 and then:
 .. Define which {es} indices the rule analyzes for alerts.
@@ -147,16 +151,18 @@ per rule execution, enter the following rule parameters:
 ** *Field*: Leave blank
 ** *Threshold*: `10`
 
+[[create-eql-rule]]
 * To create an event correlation rule using Event Query Language, select *Event Correlation* and then:
 .. Define which {es} indices the rule searches for alerts.
 .. Add an {ref}/eql-syntax.html[EQL statement] used to detect alerts.
-
++
 For example, the following rule detects when `msxsl.exe` makes an outbound
 network connection:
-
++
 ** *Index patterns*: `winlogbeat-*`
 +
-*Defintion*: Winlogbeat ships Windows events to {es-sec}.
+> Winlogbeat ships Windows events to {es-sec}.
+
 ** *EQL query*:
 +
 [source,eql]
@@ -180,8 +186,9 @@ image::images/eql-rule-query-example.png[]
 
 NOTE: For sequence events, the {security-app} generates a single alert when all events listed in the sequence are detected. To see the matched sequence events in more detail, you can view the alert in the Timeline, and, if all events came from the same process, open the alert in Analyze Event view.
 
-* To create a threat match rule that searches the specified threat indices for
-field values, select *Threat Match* and then fill in these fields:
+[[create-indicator-rule]]
+* To create an indicator match rule that searches the specified threat indices for
+field values, select *Indicator Match* and then fill in these fields:
 .. *Index patterns*: The {es-sec} event indices on which the rules runs.
 .. *Custom query*: The query and filters used to retrieve the required results from
 the {es-sec} event indices. For example, if you only need to check
@@ -189,27 +196,27 @@ the {es-sec} event indices. For example, if you only need to check
 +
 TIP: If you want the rule to check every field in the indices, use this
 wildcard expression: `*:*`.
-.. *Threat index patterns*: The threat indices containing field values for which
+.. *Indicator index patterns*: The threat indices containing field values for which
 you want to generate alerts.
-.. *Threat index query*: The query and filters used to filter the fields from
+.. *Indicator index query*: The query and filters used to filter the fields from
 the threat indices.
-.. *Threat Mapping*: Compares the values of the specified event and threat field
+.. *Indicator Mapping*: Compares the values of the specified event and indicator field
 values. When the field values are identical, an alert is generated. To define
 which field values are compared from the indices:
 ** *Field*: The field used for comparing values in the {es-sec} event
 indices.
-** *Threat index field*: The field used for comparing values in the threat
+** *Indicator index field*: The field used for comparing values in the threat
 indices.
 .. You can add `AND` and `OR` clauses to define when alerts are generated.
 +
 For example, to create a rule that generates alerts when `host.name` *and*
 `destination.ip` field values in the `logs-*` or `packetbeat-*` {es-sec} indices
-are identical to the corresponding field values in the `ip-threat-list` threat
+are identical to the corresponding field values in the `mock-threat-list` threat
 index, enter the rule parameters seen in the following image:
 +
 [role="screenshot"]
-image::images/threat-math-rule-query-example.png[]
-TIP: When threat matches are found against a list, those matching fields and values are not populated in the alert details. As such, when you <<rule-ui-basic-params, configure basic rule settings>>, it is recommended that you specify those values in the rule `Name`, `Description`, and in the <<timelines-ui, Timeline template>> so you can identify what was matched against the list.
+image::images/indicator-rule-example.png[]
+TIP: When an Indicator Match rule's conditions are met, the resulting detection alert does not contain explicit information about which event field(s) match which indicator field(s). As such, when you <<rule-ui-basic-params, configure basic rule settings>>, it is recommended that you include a reference to the field(s) to be matched in the rule `Name` and rule `Description`, and ensure that the Timeline template associated with the rule includes pre-defined column(s) for these fields. For example, if you create an Indicator Match rule that looks for matches between the `file.extension` field in file events and the `threat.file.extension` field in an indicator index, you might name your rule *"file.extension matches ransomware file extension"*, so that when an analyst investigates the detection alerts, they will see the rule name and know to further investigate the `file.extension` field value.
 . Select the Timeline template used when you investigate an alert created by
 the rule in Timeline (optional).
 +
@@ -359,9 +366,9 @@ To preview a rule:
 
 . Write the rule query.
 +
-. Select a timeframe of data to preview query results -- `Last hour` or `Last day` -- from the *Quick query preview* drop-down.
+. Select a timeframe of data to preview query results -- `Last hour`, `Last day`, or `Last month` -- from the *Quick query preview* drop-down.
 +
-. Click *Preview results*. A histogram shows the number of events you can expect based on the defined rule parameters and historical events in your indices.
+. Click *Preview results*. A histogram shows the number of alerts you can expect based on the defined rule parameters and historical events in your indices.
 
 A "noise warning" is displayed if the preview generates more than alert per hour.
 
