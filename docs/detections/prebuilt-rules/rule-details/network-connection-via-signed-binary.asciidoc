@@ -6,7 +6,7 @@ protected by digital signature validation. Adversaries may use these binaries to
 'live off the land' and execute malicious files that could bypass application
 allowlists and signature validation.
 
-*Rule type*: query
+*Rule type*: eql
 
 *Rule indices*:
 
@@ -26,13 +26,16 @@ allowlists and signature validation.
 *Tags*:
 
 * Elastic
+* Host
 * Windows
+* Threat Detection
+* Defense Evasion
 
-*Version*: 4 (<<network-connection-via-signed-binary-history, version history>>)
+*Version*: 5 (<<network-connection-via-signed-binary-history, version history>>)
 
 *Added ({stack} release)*: 7.6.0
 
-*Last modified ({stack} release)*: 7.9.1
+*Last modified ({stack} release)*: 7.10.0
 
 *Rule authors*: Elastic
 
@@ -43,9 +46,14 @@ allowlists and signature validation.
 
 [source,js]
 ----------------------------------
-event.category:network and event.type:connection and
-process.name:(expand.exe or extrac.exe or ieexec.exe or makecab.exe)
-and not destination.ip:(10.0.0.0/8 or 172.16.0.0/12 or 192.168.0.0/16)
+sequence by process.entity_id [process where (process.name :
+"expand.exe" or process.name : "extrac.exe" or
+process.name : "ieexec.exe" or process.name : "makecab.exe") and
+event.type == "start"] [network where (process.name : "expand.exe"
+or process.name : "extrac.exe" or process.name :
+"ieexec.exe" or process.name : "makecab.exe") and not
+cidrmatch(destination.ip, "10.0.0.0/8", "172.16.0.0/12",
+"192.168.0.0/16")]
 ----------------------------------
 
 ==== Threat mapping
@@ -73,6 +81,16 @@ and not destination.ip:(10.0.0.0/8 or 172.16.0.0/12 or 192.168.0.0/16)
 
 [[network-connection-via-signed-binary-history]]
 ==== Rule version history
+
+Version 5 (7.10.0 release)::
+* Updated query, changed from:
++
+[source, js]
+----------------------------------
+event.category:network and event.type:connection and
+process.name:(expand.exe or extrac.exe or ieexec.exe or makecab.exe)
+and not destination.ip:(10.0.0.0/8 or 172.16.0.0/12 or 192.168.0.0/16)
+----------------------------------
 
 Version 4 (7.9.1 release)::
 * Formatting only

@@ -5,7 +5,7 @@ Identifies `MsBuild.exe` making outbound network connections. This may indicate
 adversarial activity as MsBuild is often leveraged by adversaries to execute
 code and evade detection.
 
-*Rule type*: query
+*Rule type*: eql
 
 *Rule indices*:
 
@@ -25,13 +25,16 @@ code and evade detection.
 *Tags*:
 
 * Elastic
+* Host
 * Windows
+* Threat Detection
+* Execution
 
-*Version*: 4 (<<msbuild-making-network-connections-history, version history>>)
+*Version*: 5 (<<msbuild-making-network-connections-history, version history>>)
 
 *Added ({stack} release)*: 7.6.0
 
-*Last modified ({stack} release)*: 7.9.1
+*Last modified ({stack} release)*: 7.10.0
 
 *Rule authors*: Elastic
 
@@ -42,8 +45,10 @@ code and evade detection.
 
 [source,js]
 ----------------------------------
-event.category:network and event.type:connection and
-process.name:MSBuild.exe and not destination.ip:(127.0.0.1 or "::1")
+sequence by process.entity_id [process where process.name :
+"MSBuild.exe" and event.type == "start"] [network where process.name
+: "MSBuild.exe" and not cidrmatch(destination.ip, "127.0.0.1",
+"::1")]
 ----------------------------------
 
 ==== Threat mapping
@@ -55,12 +60,21 @@ process.name:MSBuild.exe and not destination.ip:(127.0.0.1 or "::1")
 ** ID: TA0002
 ** Reference URL: https://attack.mitre.org/tactics/TA0002/
 * Technique:
-** Name: Trusted Developer Utilities
+** Name: Trusted Developer Utilities Proxy Execution
 ** ID: T1127
 ** Reference URL: https://attack.mitre.org/techniques/T1127/
 
 [[msbuild-making-network-connections-history]]
 ==== Rule version history
+
+Version 5 (7.10.0 release)::
+* Updated query, changed from:
++
+[source, js]
+----------------------------------
+event.category:network and event.type:connection and
+process.name:MSBuild.exe and not destination.ip:(127.0.0.1 or "::1")
+----------------------------------
 
 Version 4 (7.9.1 release)::
 * Formatting only
