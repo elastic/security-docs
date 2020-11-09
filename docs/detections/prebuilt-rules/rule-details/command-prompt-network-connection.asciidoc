@@ -4,7 +4,7 @@
 Identifies `cmd.exe` making a network connection. Adversaries can abuse
 `cmd.exe` to download or execute malware from a remote URL.
 
-*Rule type*: query
+*Rule type*: eql
 
 *Rule indices*:
 
@@ -24,13 +24,16 @@ Identifies `cmd.exe` making a network connection. Adversaries can abuse
 *Tags*:
 
 * Elastic
+* Host
 * Windows
+* Threat Detection
+* Execution
 
-*Version*: 4 (<<command-prompt-network-connection-history, version history>>)
+*Version*: 5 (<<command-prompt-network-connection-history, version history>>)
 
 *Added ({stack} release)*: 7.6.0
 
-*Last modified ({stack} release)*: 7.9.1
+*Last modified ({stack} release)*: 7.10.0
 
 *Rule authors*: Elastic
 
@@ -45,9 +48,10 @@ Administrators may use the command prompt for regular administrative tasks. It's
 
 [source,js]
 ----------------------------------
-event.category:network and event.type:connection and
-process.name:cmd.exe and not destination.ip:(10.0.0.0/8 or
-172.16.0.0/12 or 192.168.0.0/16)
+sequence by process.entity_id [process where process.name :
+"cmd.exe" and event.type == "start"] [network where process.name :
+"cmd.exe" and not cidrmatch(destination.ip, "10.0.0.0/8",
+"172.16.0.0/12", "192.168.0.0/16")]
 ----------------------------------
 
 ==== Threat mapping
@@ -59,7 +63,7 @@ process.name:cmd.exe and not destination.ip:(10.0.0.0/8 or
 ** ID: TA0002
 ** Reference URL: https://attack.mitre.org/tactics/TA0002/
 * Technique:
-** Name: Command-Line Interface
+** Name: Command and Scripting Interpreter
 ** ID: T1059
 ** Reference URL: https://attack.mitre.org/techniques/T1059/
 
@@ -69,12 +73,22 @@ process.name:cmd.exe and not destination.ip:(10.0.0.0/8 or
 ** ID: TA0011
 ** Reference URL: https://attack.mitre.org/tactics/TA0011/
 * Technique:
-** Name: Remote File Copy
+** Name: Ingress Tool Transfer
 ** ID: T1105
 ** Reference URL: https://attack.mitre.org/techniques/T1105/
 
 [[command-prompt-network-connection-history]]
 ==== Rule version history
+
+Version 5 (7.10.0 release)::
+* Updated query, changed from:
++
+[source, js]
+----------------------------------
+event.category:network and event.type:connection and
+process.name:cmd.exe and not destination.ip:(10.0.0.0/8 or
+172.16.0.0/12 or 192.168.0.0/16)
+----------------------------------
 
 Version 4 (7.9.1 release)::
 * Formatting only

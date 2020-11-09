@@ -1,0 +1,71 @@
+[[possible-fin7-dga-command-and-control-behavior]]
+=== Possible FIN7 DGA Command and Control Behavior
+
+This rule detects a known command and control pattern in network events. The FIN7 threat group is known to use this command and control technique, while maintaining persistence in their target's network.
+
+*Rule type*: query
+
+*Rule indices*:
+
+* packetbeat-*
+
+*Severity*: high
+
+*Risk score*: 73
+
+*Runs every*: 5 minutes
+
+*Searches indices from*: now-6m ({ref}/common-options.html#date-math[Date Math format], see also <<rule-schedule, `Additional look-back time`>>)
+
+*Maximum alerts per execution*: 100
+
+*References*:
+
+* https://www.fireeye.com/blog/threat-research/2018/08/fin7-pursuing-an-enigmatic-and-evasive-global-criminal-operation.html
+
+*Tags*:
+
+* Elastic
+* Network
+* Threat Detection
+* Command and Control
+
+*Version*: 1
+
+*Added ({stack} release)*: 7.10.0
+
+*Rule authors*: Elastic
+
+*Rule license*: Elastic License
+
+==== Potential false positives
+
+This rule could identify benign domains that are formatted similarly to FIN7's command and control algorithm. Alerts should be investigated by an analyst to assess the validity of the individual observations.
+
+==== Investigation guide
+
+In the event this rule identifies benign domains in your environment, the `destination.domain` field in the rule can be modified to include those domains. Example: `...AND NOT destination.domain:(zoom.us OR benign.domain1 OR benign.domain2)`.
+
+==== Rule query
+
+
+[source,js]
+----------------------------------
+event.category:(network OR network_traffic) AND type:(tls OR http) AND
+network.transport:tcp AND
+destination.domain:/[a-zA-Z]{4,5}\.(pw|us|club|info|site|top)/ AND NOT
+destination.domain:zoom.us
+----------------------------------
+
+==== Threat mapping
+
+*Framework*: MITRE ATT&CK^TM^
+
+* Tactic:
+** Name: Command and Control
+** ID: TA0011
+** Reference URL: https://attack.mitre.org/tactics/TA0011/
+* Technique:
+** Name: Domain Generation Algorithms
+** ID: T1483
+** Reference URL: https://attack.mitre.org/techniques/T1483/

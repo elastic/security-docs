@@ -6,7 +6,7 @@ import glob
 from pathlib import Path
 import re
 
-releaseVersion = "7.9.1" #Security app release version - update as required
+releaseVersion = "7.10.0" #Security app release version - update as required
 
 def sort_by_name(rule):
     '''

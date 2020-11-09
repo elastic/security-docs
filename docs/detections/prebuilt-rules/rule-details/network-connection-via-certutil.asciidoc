@@ -4,7 +4,7 @@
 Identifies `certutil.exe` making a network connection. Adversaries could abuse
 `certutil.exe` to download a certificate or malware from a remote URL.
 
-*Rule type*: query
+*Rule type*: eql
 
 *Rule indices*:
 
@@ -24,13 +24,16 @@ Identifies `certutil.exe` making a network connection. Adversaries could abuse
 *Tags*:
 
 * Elastic
+* Host
 * Windows
+* Threat Detection
+* Command and Control
 
-*Version*: 3 (<<network-connection-via-certutil-history, version history>>)
+*Version*: 4 (<<network-connection-via-certutil-history, version history>>)
 
 *Added ({stack} release)*: 7.7.0
 
-*Last modified ({stack} release)*: 7.9.1
+*Last modified ({stack} release)*: 7.10.0
 
 *Rule authors*: Elastic
 
@@ -41,9 +44,10 @@ Identifies `certutil.exe` making a network connection. Adversaries could abuse
 
 [source,js]
 ----------------------------------
-event.category:network and event.type:connection and
-process.name:certutil.exe and not destination.ip:(10.0.0.0/8 or
-172.16.0.0/12 or 192.168.0.0/16)
+sequence by process.entity_id [process where process.name :
+"certutil.exe" and event.type == "start"] [network where
+process.name : "certutil.exe" and not cidrmatch(destination.ip,
+"10.0.0.0/8", "172.16.0.0/12", "192.168.0.0/16")]
 ----------------------------------
 
 ==== Threat mapping
@@ -55,12 +59,22 @@ process.name:certutil.exe and not destination.ip:(10.0.0.0/8 or
 ** ID: TA0011
 ** Reference URL: https://attack.mitre.org/tactics/TA0011/
 * Technique:
-** Name: Remote File Copy
+** Name: Ingress Tool Transfer
 ** ID: T1105
 ** Reference URL: https://attack.mitre.org/techniques/T1105/
 
 [[network-connection-via-certutil-history]]
 ==== Rule version history
+
+Version 4 (7.10.0 release)::
+* Updated query, changed from:
++
+[source, js]
+----------------------------------
+event.category:network and event.type:connection and
+process.name:certutil.exe and not destination.ip:(10.0.0.0/8 or
+172.16.0.0/12 or 192.168.0.0/16)
+----------------------------------
 
 Version 3 (7.9.1 release)::
 * Formatting only
