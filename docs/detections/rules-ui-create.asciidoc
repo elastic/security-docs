@@ -12,15 +12,19 @@ You can create these types of rules:
 
 * *Custom query*: Query-based rule, which searches the defined indices and
 creates an alert when a document matches the rule's query.
+
 * *Machine learning*: {ml-cap} rule, which creates an alert when a {ml} job
 discovers an anomaly above the defined threshold (see <<machine-learning>>).
 +
+--
 For {ml} rules, the associated {ml} job must be running. If the {ml} job is not
 running, the rule will:
 
 ** Run and create alerts if existing anomaly scores above the defined threshold
 are discovered.
 ** Issue an error stating the {ml} job was not running when the rule executed.
+--
+
 * <<create-threshold-rule, *Threshold rules*>>: Searches the defined indices and creates a detections alert
 when the number of times the specified field's value meets the threshold during
 a single execution. When multiple values meet the threshold, an alert is
@@ -29,8 +33,10 @@ generated for each value.
 For example, if the threshold `field` is `source.ip` and its `value` is `10`, an
 alert is generated for every source IP address that appears in at least 10 of
 the rule's search results.
+
 * <<create-eql-rule, *Event correlation*>>: Searches the defined indices and creates an alert when results match an
 {ref}/eql.html[Event Query Language (EQL)] query.
+
 * <<create-indicator-rule, *Indicator match*>>: Creates an alert when {es-sec} index field values match
 field values defined in the specified threat indices. For example, you
 can create a threat index for IP addresses and use this index to create an alert
@@ -79,17 +85,22 @@ image::images/all-rules.png[]
 === Select rule type and scope
 
 . Go to *Security* -> *Detections* -> *Manage detection rules*.
+
 . Click *Create new rule*.
 +
+--
 The *Create new rule* page displays.
 [role="screenshot"]
 image::images/create-new-rule.png[]
+--
+
 . Do *one* of the following:
-* To create a rule based on a {ml} anomaly threshold, select *Machine Learning*,
+** To create a rule based on a {ml} anomaly threshold, select *Machine Learning*,
 then select:
-.. The required {ml} job.
-.. The anomaly score threshold above which alerts are created.
+... The required {ml} job.
+... The anomaly score threshold above which alerts are created.
 +
+--
 [IMPORTANT]
 ==============
 To create or edit {ml} rules, you must have the
@@ -98,6 +109,7 @@ https://www.elastic.co/subscriptions[appropriate license] or use a
 {ref}/built-in-roles.html[`machine_learning_admin`] user role, and the selected
 {ml} job must be running for the rule to function correctly.
 ==============
+--
 
 [[create-custom-rule]]
 * To create a rule based on a KQL or Lucene query, select *Custom query* and
@@ -106,26 +118,30 @@ then:
 .. Use the filter and query fields to create the criteria used for detecting
 alerts.
 +
+--
 NOTE: You can use {kib} saved queries (save icon) and queries from saved timelines (`Import query from saved timeline`) as rule conditions.
-+
+
 For example, the following rule detects when the `vssadmin delete shadows`
 Windows command is executed:
 
-** *Index patterns*: `winlogbeat-*`
+* *Index patterns*: `winlogbeat-*`
 +
 > Winlogbeat ships Windows event logs to {es-sec}.
 
-** *Custom query*: `event.action:"Process Create (rule: ProcessCreate)" and process.name:"vssadmin.exe" and process.args:("delete" and "shadows")`
+* *Custom query*: `event.action:"Process Create (rule: ProcessCreate)" and process.name:"vssadmin.exe" and process.args:("delete" and "shadows")`
 +
 > Searches the `winlogbeat-*` indices for `vssadmin.exe` executions with
 the `delete` and `shadow` arguments, which are used to delete a volume's shadow
 copies.
-+
+
 [role="screenshot"]
 image::images/rule-query-example.png[]
 +
+--
 TIP: This example is based on the
 <<volume-shadow-copy-deletion-via-vssadmin, Volume Shadow Copy Deletion via VssAdmin>> prebuilt rule.
+
+--
 
 [[create-threshold-rule]]
 * To create a rule based on a source event field threshold, select *Threshold*
@@ -136,33 +152,36 @@ alerts.
 .. Use the `Field` and `Threshold` fields to determine which source event field
 is used as a threshold and the threshold's value.
 +
+--
 For example, if the `Field` is `source.ip` and its `Threshold` is `10`, an
 alert is generated for every source IP address that appears in at least 10 of
 the rule's search results.
-+
+
 You can also leave the `Field` undefined. The rule then creates an alert when
 the number of search results is equal to or greater than the `Threshold` value.
-+
+
 If you want an alert for 10 or more failed login attempts to a specific host
 per rule execution, enter the following rule parameters:
 
-** *Custom query*: `host.name : liv-win-19 and event.category : "authentication" and event.outcome : "failure"`
-** *Field*: Leave blank
-** *Threshold*: `10`
+* *Custom query*: `host.name : liv-win-19 and event.category : "authentication" and event.outcome : "failure"`
+* *Field*: Leave blank
+* *Threshold*: `10`
+--
 
 [[create-eql-rule]]
 * To create an event correlation rule using Event Query Language, select *Event Correlation* and then:
 .. Define which {es} indices the rule searches for alerts.
 .. Add an {ref}/eql-syntax.html[EQL statement] used to detect alerts.
 +
+--
 For example, the following rule detects when `msxsl.exe` makes an outbound
 network connection:
-+
-** *Index patterns*: `winlogbeat-*`
+
+* *Index patterns*: `winlogbeat-*`
 +
 > Winlogbeat ships Windows events to {es-sec}.
 
-** *EQL query*:
+* *EQL query*:
 +
 [source,eql]
 ----
@@ -185,6 +204,8 @@ image::images/eql-rule-query-example.png[]
 
 NOTE: For sequence events, the {security-app} generates a single alert when all events listed in the sequence are detected. To see the matched sequence events in more detail, you can view the alert in the Timeline, and, if all events came from the same process, open the alert in Analyze Event view.
 
+--
+
 [[create-indicator-rule]]
 * To create an indicator match rule that searches the specified threat indices for
 field values, select *Indicator Match* and then fill in these fields:
@@ -193,8 +214,11 @@ field values, select *Indicator Match* and then fill in these fields:
 the {es-sec} event indices. For example, if you only need to check
 `destination.ip` event values, add `destination.ip : *`.
 +
+--
 TIP: If you want the rule to check every field in the indices, use this
 wildcard expression: `*:*`.
+
+--
 .. *Indicator index patterns*: The threat indices containing field values for which
 you want to generate alerts.
 .. *Indicator index query*: The query and filters used to filter the fields from
@@ -202,33 +226,46 @@ the threat indices.
 .. *Indicator Mapping*: Compares the values of the specified event and indicator field
 values. When the field values are identical, an alert is generated. To define
 which field values are compared from the indices:
-** *Field*: The field used for comparing values in the {es-sec} event
++
+--
+* *Field*: The field used for comparing values in the {es-sec} event
 indices.
-** *Indicator index field*: The field used for comparing values in the threat
+* *Indicator index field*: The field used for comparing values in the threat
 indices.
+--
 .. You can add `AND` and `OR` clauses to define when alerts are generated.
 +
+--
 For example, to create a rule that generates alerts when `host.name` *and*
 `destination.ip` field values in the `logs-*` or `packetbeat-*` {es-sec} indices
 are identical to the corresponding field values in the `mock-threat-list` threat
 index, enter the rule parameters seen in the following image:
-+
+
 [role="screenshot"]
 image::images/indicator-rule-example.png[]
+
 TIP: When an Indicator Match rule's conditions are met, the resulting detection alert does not contain explicit information about which event field(s) match which indicator field(s). As such, when you <<rule-ui-basic-params, configure basic rule settings>>, it is recommended that you include a reference to the field(s) to be matched in the rule `Name` and rule `Description`, and ensure that the Timeline template associated with the rule includes pre-defined column(s) for these fields. For example, if you create an Indicator Match rule that looks for matches between the `file.extension` field in file events and the `threat.file.extension` field in an indicator index, you might name your rule *"file.extension matches ransomware file extension"*, so that when an analyst investigates the detection alerts, they will see the rule name and know to further investigate the `file.extension` field value.
+
+--
+
 . Select the Timeline template used when you investigate an alert created by
 the rule in Timeline (optional).
 +
+--
 TIP: Before you create rules, create <<timelines-ui, Timeline templates>> so
 they can be selected here. When alerts generated by the rule are investigated
 in Timeline, Timeline query values are replaced with their corresponding alert
 field values.
-+
+
+--
+
 . Click *Continue*. The *About rule* pane is displayed.
 +
+--
 [role="screenshot"]
 image::images/about-rule-pane.png[]
-+
+--
+
 . Continue with <<rule-ui-basic-params>>.
 
 [float]
@@ -239,6 +276,8 @@ image::images/about-rule-pane.png[]
 .. *Name*: The rule's name.
 .. *Description*: A description of what the rule does.
 .. *Default severity*: Select the severity level of alerts created by the rule:
++
+--
 * `Low`: Alerts that are of interest but generally not considered to be
 security incidents. Sometimes, a combination of low severity events can
 indicate suspicious activity.
@@ -246,33 +285,42 @@ indicate suspicious activity.
 * `High`: Alerts that require an immediate investigation.
 * `Critical`: Alerts that indicate it is highly likely a security incident has
 occurred.
+--
 .. *Severity override* (optional): Select to use source event values to
 override the *Default severity* in generated alerts. When selected, a UI
 component is displayed where you can map the source event field values to
 severity levels. The following example shows how to map severity levels to `host.name`
 values:
 +
+--
 [role="screenshot"]
 image::images/severity-mapping-ui.png[]
+--
 .. *Default risk score*: A numerical value between 0 and 100 that correlates
 with the *Severity* level. General guidelines are:
++
+--
 * `0` - `21` represents low severity.
 * `22` - `47` represents medium severity.
 * `48` - `73` represents high severity.
 * `74` - `100` represents critical severity.
+--
 .. *Risk score override* (optional): Select to use a source event value to
 override the *Default risk score* in generated alerts. When selected, a UI
 component is displayed where you can select the source field used for the risk
 score. For example, if you want to use the source event's risk score in
 alerts:
 +
+--
 [role="screenshot"]
 image::images/risk-source-field-ui.png[]
-
+--
 . Continue with *one* of the following:
-
++
+--
 * <<rule-ui-advanced-params>>
 * <<rule-schedule>>
+--
 
 [float]
 [[rule-ui-advanced-params]]
@@ -294,11 +342,13 @@ alerts created by the rule.
 .. *Elastic endpoint exceptions* (optional): Adds all Elastic Endpoint Security
 rule exceptions to this rule (see <<detections-ui-exceptions>>).
 +
+--
 NOTE: If you select this option, you can add
 <<endpoint-rule-exceptions, Endpoint exceptions>> on the Rule details page.
 Additionally, all future exceptions added to the Elastic Endpoint Security rule
 also affect this rule.
 
+--
 .. *Building block* (optional): Select to create a building-block rule. By
 default, alerts generated from a building-block rule are not displayed in the
 UI. See <<building-block-rule>> for more information.
@@ -309,16 +359,21 @@ Suricata, selecting `event.action` lets you see what action (Suricata category)
 caused the event directly in the Alerts table.
 .. *Timestamp override* (optional): Select a source event timestamp field. When selected, the rule's query uses the selected field, instead of the default `@timestamp` field, to search for alerts. This can help reduce missing alerts due to network or server outages. Specifically, if your ingest pipeline adds a timestamp when events are sent to {es}, this avoids missing alerts due to ingestion delays.
 +
+--
 TIP: These Filebeat modules have an `event.ingested` timestamp field that can
 be used instead of the default `@timestamp` field:
 {filebeat-ref}/filebeat-module-microsoft.html[Microsoft] and
 {filebeat-ref}/filebeat-module-gsuite.html[GSuite].
 
+--
+
 . Click *Continue*.
 +
+--
 [role="screenshot"]
 image::images/schedule-rule.png[]
 The *Schedule rule* pane is displayed.
+--
 
 . Continue with <<rule-schedule>>.
 
@@ -330,10 +385,11 @@ The *Schedule rule* pane is displayed.
 . Optionally, add `Additional look-back time` to the rule. When defined, the
 rule searches indices with the additional time.
 +
+--
 For example, if you set a rule to run every 5 minutes with an additional
 look-back time of 1 minute, the rule runs every 5 minutes but analyses the
 documents added to indices during the last 6 minutes.
-+
+
 [IMPORTANT]
 ==============
 It is recommended to set the `Additional look-back time` to at
@@ -343,17 +399,22 @@ run exactly at its scheduled time.
 The {es-sec-app} performs deduplication. Duplicate alerts discovered during the
 `Additional look-back time` are *not* created.
 ==============
+--
 . Click *Continue*.
 +
+--
 [[rule-actions]]
 The *Rule actions* pane is displayed.
 [role="screenshot"]
 image::images/rule-actions.png[]
+--
 
 . Do *one* of the following:
-
++
+--
 * Continue with <<rule-notifications>>.
 * Create the rule (with or without activation).
+--
 
 [discrete]
 [[preview-rules]]
@@ -364,9 +425,9 @@ You can preview a custom query, threshold, or EQL (Event Correlation) rule to ge
 To preview a rule:
 
 . Write the rule query.
-+
+
 . Select a timeframe of data to preview query results -- `Last hour`, `Last day`, or `Last month` -- from the *Quick query preview* drop-down.
-+
+
 . Click *Preview results*. A histogram shows the number of alerts you can expect based on the defined rule parameters and historical events in your indices.
 
 A "noise warning" is displayed if the preview generates more than alert per hour.
@@ -387,30 +448,34 @@ NOTE: To use {kib} Actions for alert notifications, you need the
 https://www.elastic.co/subscriptions[appropriate license].
 
 . Set when to send notifications:
-
++
+--
 * *On each rule execution*: Sends a notification every time new alerts are
 generated.
 * `Hourly`: Sends a notification every hour.
 * `Daily`: Sends a notification every day.
 * `Weekly`: Sends a notification every week.
-+
+
 NOTE: Notifications are sent only when new alerts are generated.
-+
+
 The available action types are displayed.
 [role="screenshot"]
 image::images/available-action-types.png[]
+--
 
 . Select the required action type, which determines how notifications are sent (Email, PagerDuty, Slack, Webhook).
 +
+--
 NOTE: Each action type requires a connector. Connectors store the
 information required to send the notification from the external system. You can
 configure connectors while creating the rule or on the {kib} Alerts and Actions
 page (*Management* -> *Alerts and Actions* -> *Connectors*). For more
 information, see {kibana-ref}/action-types.html[Action and connector types].
-+
+
 The selected action type fields are displayed (Slack example).
 [role="screenshot"]
 image::images/selected-action-type.png[]
+--
 
 .. Fill in the fields for the selected action types. For all action types, click
 the icon above the `Message` field to add
@@ -419,9 +484,12 @@ notifications.
 
 . Create the rule with or without activation.
 +
+--
 NOTE: When you activate a rule, it is queued and its schedule is determined by
 its initial run time. For example, if you activate a rule that runs every 5
 minutes at 14:03 but it does not run until 14:04, it will run again at 14:09.
+
+--
 
 [float]
 [[rule-action-variables]]
