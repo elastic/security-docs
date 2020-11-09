@@ -10,8 +10,8 @@ import re
 # generated for the previous release. It checks if rule queries have been
 # changed and updates the version history as required (changelog object).
 
-releaseVersion = "7.9.1" # Security app release version - update as required
-previousReleaseVersion = "7.9.0" # Release pf the previous release for which docs were generated 
+releaseVersion = "7.10.0" # Security app release version - update as required
+previousReleaseVersion = "7.9.1" # Release pf the previous release for which docs were generated 
 
 def sort_by_name(rule):
     '''

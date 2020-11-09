@@ -8,7 +8,7 @@ connections are established by the kernel. Processes making 445/tcp connections
 may be port scanners, exploits, or suspicious user-level processes moving
 laterally.
 
-*Rule type*: query
+*Rule type*: eql
 
 *Rule indices*:
 
@@ -28,13 +28,16 @@ laterally.
 *Tags*:
 
 * Elastic
+* Host
 * Windows
+* Threat Detection
+* Lateral Movement
 
-*Version*: 4 (<<direct-outbound-smb-connection-history, version history>>)
+*Version*: 5 (<<direct-outbound-smb-connection-history, version history>>)
 
 *Added ({stack} release)*: 7.6.0
 
-*Last modified ({stack} release)*: 7.9.1
+*Last modified ({stack} release)*: 7.10.0
 
 *Rule authors*: Elastic
 
@@ -45,9 +48,10 @@ laterally.
 
 [source,js]
 ----------------------------------
-event.category:network and event.type:connection and
-destination.port:445 and not process.pid:4 and not
-destination.ip:(127.0.0.1 or "::1")
+sequence by process.entity_id [process where event.type == "start"
+and process.pid != 4] [network where destination.port == 445 and
+process.pid != 4 and not cidrmatch(destination.ip, "127.0.0.1",
+"::1")]
 ----------------------------------
 
 ==== Threat mapping
@@ -65,6 +69,16 @@ destination.ip:(127.0.0.1 or "::1")
 
 [[direct-outbound-smb-connection-history]]
 ==== Rule version history
+
+Version 5 (7.10.0 release)::
+* Updated query, changed from:
++
+[source, js]
+----------------------------------
+event.category:network and event.type:connection and
+destination.port:445 and not process.pid:4 and not
+destination.ip:(127.0.0.1 or "::1")
+----------------------------------
 
 Version 4 (7.9.1 release)::
 * Formatting only
