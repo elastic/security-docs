@@ -9,7 +9,7 @@ import re
 # Creates a JSON file from the existing prebuilt rules documentation and saves
 # it in the diff-files folder.
 
-releaseVersion = "7.9.1" #Security app release version - update as required
+releaseVersion = "7.10.0" #Security app release version - update as required
 
 def sort_by_name(rule):
     '''
