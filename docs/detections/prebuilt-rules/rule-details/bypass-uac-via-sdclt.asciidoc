@@ -1,0 +1,66 @@
+[[bypass-uac-via-sdclt]]
+=== Bypass UAC via Sdclt
+
+Identifies User Account Control (UAC) bypass via sdclt.exe. Attackers bypass UAC to stealthily execute code with elevated permissions.
+
+*Rule type*: eql
+
+*Rule indices*:
+
+* logs-endpoint.events.*
+* winlogbeat-*
+
+*Severity*: high
+
+*Risk score*: 21
+
+*Runs every*: 5 minutes
+
+*Searches indices from*: now-9m ({ref}/common-options.html#date-math[Date Math format], see also <<rule-schedule, `Additional look-back time`>>)
+
+*Maximum alerts per execution*: 100
+
+*Tags*:
+
+* Elastic
+* Windows
+
+*Version*: 1
+
+*Added ({stack} release)*: 7.10.0
+
+*Rule authors*: Elastic
+
+*Rule license*: Elastic License
+
+==== Rule query
+
+
+[source,js]
+----------------------------------
+sequence with maxspan=1m [process where event.type in ("start",
+"process_started") and process.name == "sdclt.exe" and /*
+process.code_signature.* fields need to be populated for 7.10 */
+process.code_signature.subject_name == "Microsoft Corporation" and
+process.code_signature.trusted == true and process.args ==
+"/kickoffelev" ] by process.entity_id [process where event.type in
+("start", "process_started") and process.parent.name == "sdclt.exe"
+and process.executable not in
+("C:\\Windows\\System32\\sdclt.exe",
+"C:\\Windows\\System32\\control.exe",
+"C:\\Windows\\SysWOW64\\sdclt.exe",
+"C:\\Windows\\SysWOW64\\control.exe") ] by process.parent.entity_id
+----------------------------------
+
+==== Threat mapping
+
+*Framework*: MITRE ATT&CK^TM^
+
+* Tactic:
+** Name: Privilege Escalation
+** ID: TA0004
+** Reference URL: https://attack.mitre.org/tactics/TA0004/
+* Technique:
+** Name: Bypass User Account Control
+** ID: T1088
+** Reference URL: https://attack.mitre.org/techniques/T1088/
