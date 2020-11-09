@@ -5,7 +5,7 @@ Identifies network activity from unexpected system applications. This may
 indicate adversarial activity as these applications are often leveraged by
 adversaries to execute code and evade detection.
 
-*Rule type*: query
+*Rule type*: eql
 
 *Rule indices*:
 
@@ -25,13 +25,16 @@ adversaries to execute code and evade detection.
 *Tags*:
 
 * Elastic
+* Host
 * Windows
+* Threat Detection
+* Execution
 
-*Version*: 4 (<<unusual-process-network-connection-history, version history>>)
+*Version*: 5 (<<unusual-process-network-connection-history, version history>>)
 
 *Added ({stack} release)*: 7.6.0
 
-*Last modified ({stack} release)*: 7.9.1
+*Last modified ({stack} release)*: 7.10.0
 
 *Rule authors*: Elastic
 
@@ -42,10 +45,24 @@ adversaries to execute code and evade detection.
 
 [source,js]
 ----------------------------------
-event.category:network and event.type:connection and
-process.name:(Microsoft.Workflow.Compiler.exe or bginfo.exe or cdb.exe
-or cmstp.exe or csi.exe or dnx.exe or fsi.exe or ieexec.exe or
-iexpress.exe or odbcconf.exe or rcsi.exe or xwizard.exe)
+sequence by process.entity_id [process where (process.name :
+"Microsoft.Workflow.Compiler.exe" or process.name :
+"bginfo.exe" or process.name : "cdb.exe" or
+process.name : "cmstp.exe" or process.name :
+"csi.exe" or process.name : "dnx.exe" or
+process.name : "fsi.exe" or process.name :
+"ieexec.exe" or process.name : "iexpress.exe" or
+process.name : "odbcconf.exe" or process.name :
+"rcsi.exe" or process.name : "xwizard.exe") and
+event.type == "start"] [network where (process.name :
+"Microsoft.Workflow.Compiler.exe" or process.name :
+"bginfo.exe" or process.name : "cdb.exe" or
+process.name : "cmstp.exe" or process.name :
+"csi.exe" or process.name : "dnx.exe" or
+process.name : "fsi.exe" or process.name :
+"ieexec.exe" or process.name : "iexpress.exe" or
+process.name : "odbcconf.exe" or process.name :
+"rcsi.exe" or process.name : "xwizard.exe")]
 ----------------------------------
 
 ==== Threat mapping
@@ -57,12 +74,23 @@ iexpress.exe or odbcconf.exe or rcsi.exe or xwizard.exe)
 ** ID: TA0002
 ** Reference URL: https://attack.mitre.org/tactics/TA0002/
 * Technique:
-** Name: Trusted Developer Utilities
+** Name: Trusted Developer Utilities Proxy Execution
 ** ID: T1127
 ** Reference URL: https://attack.mitre.org/techniques/T1127/
 
 [[unusual-process-network-connection-history]]
 ==== Rule version history
+
+Version 5 (7.10.0 release)::
+* Updated query, changed from:
++
+[source, js]
+----------------------------------
+event.category:network and event.type:connection and
+process.name:(Microsoft.Workflow.Compiler.exe or bginfo.exe or cdb.exe
+or cmstp.exe or csi.exe or dnx.exe or fsi.exe or ieexec.exe or
+iexpress.exe or odbcconf.exe or rcsi.exe or xwizard.exe)
+----------------------------------
 
 Version 4 (7.9.1 release)::
 * Formatting only
