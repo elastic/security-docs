@@ -8,9 +8,9 @@ Rules run periodically and search for source events or {ml} job anomaly scores
 that meet their criteria. When a rule's criteria are met, a detections alert is
 created.
 
-You can create these types of rules:
+You can create the following types of rules:
 
-* *Custom query*: Query-based rule, which searches the defined indices and
+* <<create-custom-rule, *Custom query*>>: Query-based rule, which searches the defined indices and
 creates an alert when a document matches the rule's query.
 * *Machine learning*: {ml-cap} rule, which creates an alert when a {ml} job
 discovers an anomaly above the defined threshold (see <<machine-learning>>).
@@ -56,6 +56,7 @@ edit a rule.
 Creating a new rule requires the following steps:
 
 . <<create-rule-ui>>
+. <<preview-rules>>
 . <<rule-ui-basic-params>>
 . <<rule-ui-advanced-params>>
 . <<rule-schedule>>
@@ -79,11 +80,11 @@ image::images/all-rules.png[]
 === Select rule type and scope
 
 . Go to *Security* -> *Detections* -> *Manage detection rules*.
-. Click *Create new rule*.
+. Click *Create new rule*. The *Create new rule* page displays.
 +
-The *Create new rule* page displays.
 [role="screenshot"]
 image::images/create-new-rule.png[]
++
 . Do *one* of the following:
 * To create a rule based on a {ml} anomaly threshold, select *Machine Learning*,
 then select:
@@ -98,7 +99,7 @@ https://www.elastic.co/subscriptions[appropriate license] or use a
 {ref}/built-in-roles.html[`machine_learning_admin`] user role, and the selected
 {ml} job must be running for the rule to function correctly.
 ==============
-
++
 [[create-custom-rule]]
 * To create a rule based on a KQL or Lucene query, select *Custom query* and
 then:
@@ -126,7 +127,7 @@ image::images/rule-query-example.png[]
 +
 TIP: This example is based on the
 <<volume-shadow-copy-deletion-via-vssadmin, Volume Shadow Copy Deletion via VssAdmin>> prebuilt rule.
-
++
 [[create-threshold-rule]]
 * To create a rule based on a source event field threshold, select *Threshold*
 and then:
@@ -149,7 +150,7 @@ per rule execution, enter the following rule parameters:
 ** *Custom query*: `host.name : liv-win-19 and event.category : "authentication" and event.outcome : "failure"`
 ** *Field*: Leave blank
 ** *Threshold*: `10`
-
++
 [[create-eql-rule]]
 * To create an event correlation rule using Event Query Language, select *Event Correlation* and then:
 .. Define which {es} indices the rule searches for alerts.
@@ -176,15 +177,15 @@ sequence by process.entity_id
     and network.direction == "outgoing"`
 ----
 +
-*Definition*: Searches the `winlogbeat-*` indices for sequences of a `msxsl.exe` process start
+Searches the `winlogbeat-*` indices for sequences of a `msxsl.exe` process start
 event followed by an outbound network connection event that was started by the
 `msxsl.exe` process.
-
++
 [role="screenshot"]
 image::images/eql-rule-query-example.png[]
-
++
 NOTE: For sequence events, the {security-app} generates a single alert when all events listed in the sequence are detected. To see the matched sequence events in more detail, you can view the alert in the Timeline, and, if all events came from the same process, open the alert in Analyze Event view.
-
++
 [[create-indicator-rule]]
 * To create an indicator match rule that searches the specified threat indices for
 field values, select *Indicator Match* and then fill in these fields:
@@ -215,7 +216,7 @@ index, enter the rule parameters seen in the following image:
 +
 [role="screenshot"]
 image::images/indicator-rule-example.png[]
-TIP: When an Indicator Match rule's conditions are met, the resulting detection alert does not contain explicit information about which event field(s) match which indicator field(s). As such, when you <<rule-ui-basic-params, configure basic rule settings>>, it is recommended that you include a reference to the field(s) to be matched in the rule `Name` and rule `Description`, and ensure that the Timeline template associated with the rule includes pre-defined column(s) for these fields. For example, if you create an Indicator Match rule that looks for matches between the `file.extension` field in file events and the `threat.file.extension` field in an indicator index, you might name your rule *"file.extension matches ransomware file extension"*, so that when an analyst investigates the detection alerts, they will see the rule name and know to further investigate the `file.extension` field value.
+TIP: When an indicator match rule's conditions are met, the resulting detection alert does not contain explicit information about which event field(s) match which indicator field(s). As such, when you <<rule-ui-basic-params, configure basic rule settings>>, it is recommended that you include a reference to the field(s) to be matched in the rule `Name` and rule `Description`, and ensure that the Timeline template associated with the rule includes pre-defined column(s) for these fields. For example, if you create an indicator match rule that looks for matches between the `file.extension` field in file events and the `threat.file.extension` field in an indicator index, you might name your rule *"file.extension matches ransomware file extension"*, so that when an analyst investigates the detection alerts, they will see the rule name and know to further investigate the `file.extension` field value.
 . Select the Timeline template used when you investigate an alert created by
 the rule in Timeline (optional).
 +
@@ -229,7 +230,28 @@ field values.
 [role="screenshot"]
 image::images/about-rule-pane.png[]
 +
-. Continue with <<rule-ui-basic-params>>.
+. Continue with <<preview-rules, previewing the rule>> (optional) or <<rule-ui-basic-params, configuring basic rule settings>>.
+
+[discrete]
+[[preview-rules]]
+=== Preview your rule (optional)
+
+You can preview a custom query, threshold, or EQL (Event Correlation) rule to get feedback on how noisy the rule will be before submitting it. This allows you to fine-tune the query, if needed, to reduce the amount of alerts that may come in.
+
+To preview a rule:
+
+. Write the rule query.
++
+. Select a timeframe of data to preview query results -- `Last hour`, `Last day`, or `Last month` -- from the *Quick query preview* drop-down.
++
+. Click *Preview results*. A histogram shows the number of alerts you can expect based on the defined rule parameters and historical events in your indices.
+
+A "noise warning" is displayed if the preview generates more than alert per hour.
+
+[role="screenshot"]
+image::images/preview-rule.png[]
+
+NOTE: The preview shows a maximum number of 100 results and excludes effects of rule exceptions and timestamp overrides.
 
 [float]
 [[rule-ui-basic-params]]
@@ -278,7 +300,6 @@ image::images/risk-source-field-ui.png[]
 [[rule-ui-advanced-params]]
 === Configure advanced rule settings (optional)
 
-
 . Click *Advanced settings* and fill in these fields:
 .. *Reference URLs* (optional): References to information that is relevant to
 the rule. For example, links to background information.
@@ -298,7 +319,7 @@ NOTE: If you select this option, you can add
 <<endpoint-rule-exceptions, Endpoint exceptions>> on the Rule details page.
 Additionally, all future exceptions added to the Elastic Endpoint Security rule
 also affect this rule.
-
++
 .. *Building block* (optional): Select to create a building-block rule. By
 default, alerts generated from a building-block rule are not displayed in the
 UI. See <<building-block-rule>> for more information.
@@ -314,13 +335,12 @@ be used instead of the default `@timestamp` field:
 {filebeat-ref}/filebeat-module-microsoft.html[Microsoft] and
 {filebeat-ref}/filebeat-module-gsuite.html[GSuite].
 
-. Click *Continue*.
+. Click *Continue*. The *Schedule rule* pane is displayed.
 +
 [role="screenshot"]
 image::images/schedule-rule.png[]
-The *Schedule rule* pane is displayed.
 
-. Continue with <<rule-schedule>>.
+. Continue with <<rule-schedule, setting the rule's schedule>>.
 
 [float]
 [[rule-schedule]]
@@ -343,38 +363,15 @@ run exactly at its scheduled time.
 The {es-sec-app} performs deduplication. Duplicate alerts discovered during the
 `Additional look-back time` are *not* created.
 ==============
-. Click *Continue*.
+. Click *Continue*. The *Rule actions* pane is displayed.
 +
-[[rule-actions]]
-The *Rule actions* pane is displayed.
 [role="screenshot"]
 image::images/rule-actions.png[]
 
 . Do *one* of the following:
 
-* Continue with <<rule-notifications>>.
+* Continue with <<rule-notifications, setting up alert notifications>> (optional).
 * Create the rule (with or without activation).
-
-[discrete]
-[[preview-rules]]
-=== Preview your rule (optional)
-
-You can preview a custom query, threshold, or EQL (Event Correlation) rule to get feedback on how noisy the rule will be before submitting it. This allows you to fine-tune the query, if needed, to reduce the amount of alerts that may come in.
-
-To preview a rule:
-
-. Write the rule query.
-+
-. Select a timeframe of data to preview query results -- `Last hour`, `Last day`, or `Last month` -- from the *Quick query preview* drop-down.
-+
-. Click *Preview results*. A histogram shows the number of alerts you can expect based on the defined rule parameters and historical events in your indices.
-
-A "noise warning" is displayed if the preview generates more than alert per hour.
-
-[role="screenshot"]
-image::images/preview-rule.png[]
-
-NOTE: The preview shows a maximum number of 100 results and excludes effects of rule exceptions and timestamp overrides.
 
 [float]
 [[rule-notifications]]
@@ -411,12 +408,12 @@ information, see {kibana-ref}/action-types.html[Action and connector types].
 The selected action type fields are displayed (Slack example).
 [role="screenshot"]
 image::images/selected-action-type.png[]
-
-.. Fill in the fields for the selected action types. For all action types, click
++
+. Fill in the fields for the selected action types. For all action types, click
 the icon above the `Message` field to add
 <<rule-action-variables, placeholders>> for rule and alert details to the
 notifications.
-
++
 . Create the rule with or without activation.
 +
 NOTE: When you activate a rule, it is queued and its schedule is determined by
