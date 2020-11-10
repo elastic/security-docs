@@ -6,7 +6,9 @@ Creates a new detection rule.
 You can create these types of rules:
 
 * *Query rules*: Searches the defined indices and creates an alert when
-a document matches the rule's query.
+a document matches the rule's KQL query.
+* *EQL*: Searches the defined indices and creates an alert when results match an
+{ref}/eql.html[Event Query Language (EQL)] query.
 * *Threshold rules*: Searches the defined indices and creates an alert when the
 number of times the specified field's value meets the threshold during a single
 execution. When there are multiple values that meet the threshold, an alert is
@@ -17,6 +19,11 @@ alert is generated for every source IP address that appears in at least 10 of
 the rule's search results. If you're interested, see
 {ref}/search-aggregations-bucket-terms-aggregation.html[Terms Aggregation] for
 more information.
+* *Threat match*: Creates an alert when fields match values defined in the
+specified {ref}/indices-create-index.html[{es} index]. For example, you can
+create an index for IP addresses and use this index to create an alert whenever
+an event's `destination.ip` equals a value in the index. The index's field
+mappings should be {ecs-ref}[ECS-compliant].
 * *{ml-cap} rules*: Creates an alert when a {ml} job discovers an anomaly above
 the defined threshold (see <<machine-learning>>).
 
@@ -73,8 +80,22 @@ calls, see:
 
 ==== Request body
 
-A JSON object that defines the rule's values.
+A JSON object that defines the rule's values:
 
+* <<ref-fields-all>>
+* <<req-fields-query-threshold>>
+* <<req-fields-threshold>>
+* <<req-fields-saved-query>>
+* <<req-fields-eql>>
+* <<req-fields-ml>>
+* <<req-fields-threat-match>>
+* <<opt-fields-all>>
+* <<opt-fields-query-eql>>
+* <<opt-fields-threat-match>>
+* <<opt-fields-query-threshold>>
+* <<opt-fields-eql-query-threshold>>
+
+[[ref-fields-all]]
 ===== Required fields for all rule types
 
 [width="100%",options="header"]
@@ -105,26 +126,31 @@ occurred
 
 |type |String a|Data type on which the rule is based:
 
+* `eql`: EQL query (see {ref}/eql.html[Event Query Language]).
 * `query`: query with or without additional filters.
 * `saved_query`: saved search, identified in the `saved_id` field.
 * `machine_learning`: rule based on a {ml} job's anomaly scores.
+* `threat_match`: rule that matches event values with values in the specified
+{es} index.
 * `threshold`: rule based on the number of times a `query` matches the
 specified field.
 
 |==============================================
 
-===== Required field for query and threshold rules
+[[req-fields-query-threshold]]
+===== Required field for query, threat-match and threshold rules
 
 [width="100%",options="header"]
 |==============================================
 |Name |Type |Description
 
 |query |String a|{kibana-ref}/search.html[Query] used by the rule to create
-alerts. Technically, this is not required and defaults to an empty string but
-that's not very useful.
+alerts. For threat-match rules, only the query's results are used to determine
+whether an alert is generated.
 
 |==============================================
 
+[[req-fields-threshold]]
 ===== Required field for threshold rules
 
 [width="100%",options="header"]
@@ -142,6 +168,7 @@ generated.
 
 |==============================================
 
+[[req-fields-saved-query]]
 ===== Required field for saved-query rules
 
 [width="100%",options="header"]
@@ -152,6 +179,18 @@ generated.
 
 |==============================================
 
+[[req-fields-eql]]
+===== Required field for EQL rules
+
+[width="100%",options="header"]
+|==============================================
+|Name |Type |Description
+
+|language |String |Must be `eql`.
+
+|==============================================
+
+[[req-fields-ml]]
 ===== Required fields for machine-learning rules
 
 [width="100%",options="header"]
@@ -166,6 +205,36 @@ anomaly scores.
 
 |==============================================
 
+[[req-fields-threat-match]]
+===== Required fields for threat-match rules
+
+[width="100%",options="header"]
+|==============================================
+|Name |Type |Description
+
+|threat_index |String[] |{es} indices used to check which field values generate
+alerts.
+
+|threat_query |String |Query used to determine which fields in the {es} index
+are used for generating alerts.
+
+|threat_mapping |Object[] a|Array of `entries` objects that define mappings
+between the source event fields and the values in the {es} threat index. Each
+`entries` object must contain these fields:
+
+* `field`: field from the event indices on which the rule runs
+* `type`: must be `mapping`
+* `value`: field from the {es} threat index
+
+You can use Boolean `and` and `or` logic to define the conditions for when
+matching fields and values generate alerts. Sibling `entries` objects
+are evaluated using `or` logic, whereas multiple entries in a single `entries`
+object use `and` logic. See <<threat-match-example, below>> for an example that
+uses both `and` and `or` logic.
+
+|==============================================
+
+[[opt-fields-all]]
 ===== Optional fields for all rule types
 
 [width="100%",options="header"]
@@ -239,7 +308,8 @@ Required when `actions` are used to send notifications.
 
 |==============================================
 
-===== Optional fields for query and threshold rules
+[[opt-fields-query-eql]]
+===== Optional fields for query, threat-match and EQL rules
 
 [width="100%",options="header"]
 |==============================================
@@ -257,6 +327,37 @@ valid in only the rule's {kib} space (`single`) or in all {kib} spaces
 (`agnostic`).
 * `type` (string, required): The exception type, which must be either
 a detection rule exception (`detection`) or an endpoint exception (`endpoint`).
+|==============================================
+
+[[opt-fields-threat-match]]
+===== Optional fields for threat-match rules
+
+[width="100%",options="header"]
+|==============================================
+|Name |Type |Description
+
+|threat_filter |Object[]
+|{ref}/query-filter-context.html[Query and filter context] array used to filter
+documents from the {es} index containing the threat values.
+|==============================================
+
+[[opt-fields-query-threshold]]
+===== Optional fields for query, threat-match and threshold rules
+
+[width="100%",options="header"]
+|==============================================
+|Name |Type |Description
+
+|language |String |Determines the query language, which must be
+`kuery` or `lucene`. Defaults to `kuery`.
+|==============================================
+
+[[opt-fields-eql-query-threshold]]
+===== Optional fields for EQL, query and threshold rules
+
+[width="100%",options="header"]
+|==============================================
+|Name |Type |Description
 
 |filters |Object[] |The {ref}/query-filter-context.html[query and filter
 context] array used to define the conditions for when alerts are created from
@@ -266,9 +367,6 @@ events. Defaults to an empty array.
 Security Solution indices defined on the {kib} Advanced Settings page
 (*Kibana* → *Stack Management* → *Advanced Settings* →
 `securitySolution:defaultIndex`).
-
-|language |String |Determines the query language, which must be
-`kuery` or `lucene`. Defaults to `kuery`.
 
 |risk_score_mapping |Object[] a|Overrides generated alerts' `risk_score` with
 a value from the source event:
@@ -574,6 +672,98 @@ POST api/detection_engine/rules
 --------------------------------------------------
 // KIBANA
 
+*Example 4*
+
+EQL rule that creates alerts when the Windows `rundll32.exe` process makes
+unusual network connections:
+
+[source,console]
+--------------------------------------------------
+POST api/detection_engine/rules
+{
+  "rule_id": "eql-outbound-rundll32-connections",
+  "risk_score": 21,
+  "description": "Unusual rundll32.exe network connection",
+  "name": "rundll32.exe network connection",
+  "severity": "low",
+  "tags": [
+   "EQL",
+   "Windows",
+   "rundll32.exe"
+   ],
+  "type": "eql",
+  "language": "eql",
+  "query": "sequence by process.entity_id with maxspan=2h [process where event.type in (\"start\", \"process_started\") and (process.name == \"rundll32.exe\" or process.pe.original_file_name == \"rundll32.exe\") and ((process.args == \"rundll32.exe\" and process.args_count == 1) or (process.args != \"rundll32.exe\" and process.args_count == 0))] [network where event.type == \"connection\" and (process.name == \"rundll32.exe\" or process.pe.original_file_name == \"rundll32.exe\")]"
+}
+--------------------------------------------------
+// KIBANA
+
+[[threat-match-example]]
+*Example 5*
+
+Threat-match rule that creates an alert when one of the following is true:
+
+* The event's destination IP address *and* port number matches destination IP
+*and* port values in the `threat_index` index.
+* The event's source IP address matches a host IP address value in the
+`threat_index` index.
+
+[source,console]
+--------------------------------------------------
+POST api/detection_engine/rules
+{
+    "type": "threat_match",
+    "index": [
+        "packetbeat-*"
+    ],
+    "query": "destination.ip:* or host.ip:*",
+    "threat_index": [
+        "ip-threat-list" <1>
+    ],
+    "threat_query": "*:*", <2>
+    "threat_mapping": [
+        {
+            "entries": [ <3>
+                {
+                    "field": "destination.ip",
+                    "type": "mapping",
+                    "value": "destination.ip"
+                },
+                {
+                    "field": "destination.port",
+                    "type": "mapping",
+                    "value": "destination.port"
+                }
+            ]
+        },
+        {
+            "entries": [ <4>
+                {
+                    "field": "source.ip",
+                    "type": "mapping",
+                    "value": "host.ip"
+                }
+            ]
+        }
+    ],
+    "risk_score": 50,
+    "severity": "medium",
+    "name": "Bad IP threat match",
+    "description": "Checks for bad IP addresses listed in the ip-threat-list index"
+}
+--------------------------------------------------
+// KIBANA
+
+<1> The {es} index used for matching threat values.
+<2> Query defining which threat index fields are used for matching values. In
+this example, all values from the `ip-threat-list` index are used.
+<3> Multiple objects in a single `entries` element are evaluated using `and`
+logic. In this example, both the event's `destination.ip` and
+`destination.port` values must match the corresponding field values in the
+`ip-threat-list`.
+<4> Sibling `entries` are evaluated using `or` logic. An alert is generated when
+at least one `entries` object evaluates to `true`.
+
 ==== Response code
 
 `200`::
@@ -761,5 +951,119 @@ Example response for a threshold rule:
     "field": "source.ip",
     "value": 20
   }
+}
+--------------------------------------------------
+
+Example response for an EQL rule:
+
+[source,json]
+--------------------------------------------------
+{
+  "author": [],
+  "created_at": "2020-10-05T09:06:16.392Z",
+  "updated_at": "2020-10-05T09:06:16.403Z",
+  "created_by": "Liverpool",
+  "description": "Unusual rundll32.exe network connection",
+  "enabled": true,
+  "false_positives": [],
+  "from": "now-6m",
+  "id": "93808cae-b05b-4dc9-8479-73574b50f8b1",
+  "immutable": false,
+  "interval": "5m",
+  "rule_id": "eql-outbound-rundll32-connections",
+  "output_index": ".siem-signals-default",
+  "max_signals": 100,
+  "risk_score": 21,
+  "risk_score_mapping": [],
+  "name": "rundll32.exe network connection",
+  "references": [],
+  "severity": "low",
+  "severity_mapping": [],
+  "updated_by": "Liverpool",
+  "tags": [
+    "EQL",
+    "Windows",
+    "rundll32.exe"
+  ],
+  "to": "now",
+  "type": "eql",
+  "threat": [],
+  "version": 1,
+  "exceptions_list": [],
+  "actions": [],
+  "throttle": "no_actions",
+  "query": "sequence by process.entity_id with maxspan=2h [process where event.type in (\"start\", \"process_started\") and (process.name == \"rundll32.exe\" or process.pe.original_file_name == \"rundll32.exe\") and ((process.args == \"rundll32.exe\" and process.args_count == 1) or (process.args != \"rundll32.exe\" and process.args_count == 0))] [network where event.type == \"connection\" and (process.name == \"rundll32.exe\" or process.pe.original_file_name == \"rundll32.exe\")]",
+  "language": "eql"
+}
+--------------------------------------------------
+
+Example response for a threat-match rule:
+
+[source,json]
+--------------------------------------------------
+{
+  "author": [],
+  "created_at": "2020-10-06T07:07:58.227Z",
+  "updated_at": "2020-10-06T07:07:58.237Z",
+  "created_by": "Liverpool",
+  "description": "Checks for bad IP addresses listed in the ip-threat-list index",
+  "enabled": true,
+  "false_positives": [],
+  "from": "now-6m",
+  "id": "d5daa13f-81fb-4b13-be2f-31011e1d9ae1",
+  "immutable": false,
+  "interval": "5m",
+  "rule_id": "608501e4-c768-4f64-9326-cec55b5d439b",
+  "output_index": ".siem-signals-default",
+  "max_signals": 100,
+  "risk_score": 50,
+  "risk_score_mapping": [],
+  "name": "Bad IP threat match",
+  "references": [],
+  "severity": "medium",
+  "severity_mapping": [],
+  "updated_by": "Liverpool",
+  "tags": [],
+  "to": "now",
+  "type": "threat_match",
+  "threat": [],
+  "version": 1,
+  "exceptions_list": [],
+  "actions": [],
+  "index": [
+    "packetbeat-*"
+  ],
+  "throttle": "no_actions",
+  "query": "destination.ip:* or host.ip:*",
+  "language": "kuery",
+  "threat_query": "*:*",
+  "threat_index": [
+    "ip-threat-list"
+  ],
+  "threat_mapping": [
+    {
+      "entries": [
+        {
+          "field": "destination.ip",
+          "type": "mapping",
+          "value": "destination.ip"
+        },
+        {
+          "field": "destination.port",
+          "type": "mapping",
+          "value": "destination.port"
+        }
+      ]
+    },
+    {
+      "entries": [
+        {
+          "field": "source.ip",
+          "type": "mapping",
+          "value": "host.ip"
+        }
+      ]
+    }
+  ]
 }
 --------------------------------------------------

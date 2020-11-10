@@ -24,7 +24,7 @@ A JSON object with:
 IMPORTANT: If you call `PUT` to update a rule, all unspecified fields are
 deleted. You cannot modify the `id` or `rule_id` values.
 
-For `PATCH` calls, any of the fields can be modified, whereas for `PUT` calls,
+For `PATCH` calls any of the fields can be modified, whereas for `PUT` calls
 some fields are required.
 
 ===== Fields required for `PUT` calls
@@ -57,23 +57,26 @@ occurred
 
 |type |String a|Data type on which the rule is based:
 
+* `eql`: EQL query (see {ref}/eql.html[Event Query Language]).
 * `query`: query with or without additional filters.
 * `saved_query`: saved search, identified in the `saved_id` field.
 * `machine_learning`: rule based on a {ml} job's anomaly scores.
+* `threat_match`: rule that matches event values with values in the specified
+{es} index.
 * `threshold`: rule based on the number of times a `query` matches the
 specified field.
 
 |==============================================
 
-===== Field required for query and threshold rules `PUT` calls
+===== Field required for query, threat-match and threshold rules `PUT` calls
 
 [width="100%",options="header"]
 |==============================================
 |Name |Type |Description
 
 |query |String a|{kibana-ref}/search.html[Query] used by the rule to create
-alerts. Technically, this is not required and defaults to an empty string but
-that's not very useful.
+alerts. For threat-match rules, only the query's results are used to determine
+whether an alert is generated.
 
 |==============================================
 
@@ -104,6 +107,16 @@ generated.
 
 |==============================================
 
+===== Field required for EQL rules `PUT` calls
+
+[width="100%",options="header"]
+|==============================================
+|Name |Type |Description
+
+|language |String |Must be `eql`.
+
+|==============================================
+
 ===== Fields required for machine-learning rules `PUT` calls
 
 [width="100%",options="header"]
@@ -115,6 +128,34 @@ creates an alert. Valid values are from `0` to `100`.
 
 |machine_learning_job_id |String |{ml-cap} job ID the rule monitors for
 anomaly scores. 
+
+|==============================================
+
+===== Fields required for threat-match rules `PUT` calls
+
+[width="100%",options="header"]
+|==============================================
+|Name |Type |Description
+
+|threat_index |String[] |{es} indices used to check which field values generate
+alerts.
+
+|threat_query |String |Query used to determine which fields in the {es} index
+are used for generating alerts.
+
+|threat_mapping |Object[] a|Array of `entries` objects that define mappings
+between the source event fields and the values in the {es} threat index. Each
+`entries` object must contain these fields:
+
+* `field`: field from the event indices on which the rule runs
+* `type`: must be `mapping`
+* `value`: field from the {es} threat index
+
+You can use Boolean `and` and `or` logic to define the conditions for when
+matching fields and values generate alerts. Sibling `entries` objects
+are evaluated using `or` logic, whereas multiple entries in a single `entries`
+object use `and` logic. See <<threat-match-example, below>> for an example that
+uses both `and` and `or` logic.
 
 |==============================================
 
@@ -191,7 +232,7 @@ number.
 
 |==============================================
 
-===== Optional fields for query and threshold rules
+===== Optional fields for query, threat-match and EQL rules
 
 [width="100%",options="header"]
 |==============================================
@@ -206,9 +247,37 @@ criteria are met. The object has these fields:
 * `list_id` (string, required): List ID of the exception container.
 * `namespace_type` (string required): Determines whether the exceptions are
 valid in only the rule's {kib} space (`single`) or in all {kib} spaces
-(`agnostic`). 
+(`agnostic`).
 * `type` (string, required): The exception type, which must be either
 a detection rule exception (`detection`) or an endpoint exception (`endpoint`).
+|==============================================
+
+===== Optional fields for threat-match rules
+
+[width="100%",options="header"]
+|==============================================
+|Name |Type |Description
+
+|threat_filter |Object[]
+|{ref}/query-filter-context.html[Query and filter context] array used to filter
+documents from the {es} index containing the threat values.
+|==============================================
+
+===== Optional fields for query, threat-match and threshold rules
+
+[width="100%",options="header"]
+|==============================================
+|Name |Type |Description
+
+|language |String |Determines the query language, which must be
+`kuery` or `lucene`. Defaults to `kuery`.
+|==============================================
+
+===== Optional fields for EQL, query and threshold rules
+
+[width="100%",options="header"]
+|==============================================
+|Name |Type |Description
 
 |filters |Object[] |The {ref}/query-filter-context.html[query and filter 
 context] array used to define the conditions for when alerts are created from 
@@ -218,9 +287,6 @@ events. Defaults to an empty array.
 Security Solution indices defined on the {kib} Advanced Settings page
 (*Kibana* → *Stack Management* → *Advanced Settings* →
 `securitySolution:defaultIndex`).
-
-|language |String |Determines the query language, which must be
-`kuery` or `lucene`. Defaults to `kuery`.
 
 |risk_score_mapping |Object[] a|Overrides generated alerts' `risk_score` with
 a value from the source event:
