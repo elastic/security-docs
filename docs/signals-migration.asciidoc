@@ -1,0 +1,88 @@
+[[detection-alerts-migration]]
+[role="xpack"]
+= Detection Alerts Migration
+
+After an upgrade of kibana, the latest Elastic Security features will be available for any new <<detection-alert-def, detection alerts>> that are generated. However, in order to enable new features on existing detection alerts, a migration may be necessary. See <<release-notes, Release Notes>> for instructions specific to your upgrade.
+
+Migration of detection alerts is performed at the index level and is broken into three steps:
+
+1. <<migration-1, Determining which indices to migrate>>
+2. <<migration-2, Initiating migrations>>
+3. <<migration-3, Finalizing migrations>>
+
+[[migration-1]]
+== Determining which indices to migrate
+The Migration Status API can be used to determine which indices contain detection alerts of a particular age, along with migration info for each of those indices.
+
+=== Request
+
+`GET <kibana host>:<port>/api/detection_engine/signals/migration_status?from=now-30d`
+
+==== Request query parameters
+
+[width="100%",options="header"]
+|==============================================
+|Name |Type |Description
+
+|`from` |datemath|Maximum age of qualifying detection alerts
+|==============================================
+
+
+==== Response example
+
+[source,json]
+--------------------------------------------------
+{
+  "indices": [
+    {
+      "index": ".siem-signals-default-000002",
+      "version": 15,
+      "signal_versions": [
+        {
+          "version": 15,
+          "count": 100
+        },
+        {
+          "version": 16,
+          "count": 87
+        }
+      ],
+      "migrations": [
+        {
+          "id": "924f7c50-505f-11eb-ae0a-3fa2e626a51d",
+          "status": "pending",
+          "version": 16,
+          "updated": "2021-01-06T20:41:37.173Z"
+        }
+      ],
+      "is_outdated": true
+    },
+    {
+      "index": ".siem-signals-default-000003",
+      "version": 16,
+      "signal_versions": [
+        {
+          "version": 16,
+          "count": 54
+        }
+      ],
+      "migrations": [],
+      "is_outdated": false
+    }
+  ]
+}
+--------------------------------------------------
+The above response shows two indices: `.siem-signals-default-000002` is outdated, with multiple versions of detection alerts and a pending migration, and `.siem-signals-default-000003`, which is up to date as the current write index.
+
+NOTE: indices that do not contain detection alerts in the specified range will be filtered from the response.
+
+With the above info, we can compile a list of indices that we wish to migrate.
+
+[[migration-2]]
+== Initiating migrations
+
+[[migration-3]]
+== Finalizing migrations
+
+[[migration-4]]
+== Migration cleanup
