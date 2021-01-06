@@ -2,13 +2,14 @@
 [role="xpack"]
 = Detection Alerts Migration
 
-After an upgrade of kibana, the latest Elastic Security features will be available for any new <<detection-alert-def, detection alerts>> that are generated. However, in order to enable new features on existing detection alerts, a migration may be necessary. See <<release-notes, Release Notes>> for instructions specific to your upgrade.
+After an upgrade of kibana, the latest {es-sec} features will be available for any new <<detection-alert-def, detection alerts>> that are generated. However, in order to enable new features on existing detection alerts, a migration may be necessary. See <<release-notes, Release Notes>> for instructions specific to your upgrade.
 
-Migration of detection alerts is performed at the index level and is broken into three steps:
+Migration of detection alerts is performed at the index level and is broken into the following steps:
 
 1. <<migration-1, Determining which indices to migrate>>
 2. <<migration-2, Initiating migrations>>
 3. <<migration-3, Finalizing migrations>>
+4. <<migration-4, Migration cleanup>> (optional)
 
 [[migration-1]]
 == Determining which indices to migrate
@@ -159,3 +160,39 @@ Finalized migrations will be `completed: true`, with a corresponding `status`. I
 
 [[migration-4]]
 == Migration cleanup
+Migrations favor data integrity over shard size, and as a consequence unused/orphaned indices are artifacts of the migration process. Indeed, a successful migration will result in both the old and new indices being present, and so the old, orphaned index can (and likely should) be deleted. 
+
+While you can delete these indices manually, this endpoint accomplishes this task by applying a deletion policy to the relevant index, causing it to be deleted after 30 days. It also deletes other artifacts specific to the migration implementation.
+
+=== Request
+
+`DELETE <kibana host>:<port>/api/detection_engine/signals/migration`
+
+==== Request body
+
+[width="100%",options="header"]
+|==============================================
+|Name |Type |Description | Required
+
+|`migration_ids` |String[]|Array of `migration_id`s to finalize|Yes
+|==============================================
+
+
+==== Response example
+
+[source,json]
+--------------------------------------------------
+ {
+  "migrations": [
+    {
+      "id": "924f7c50-505f-11eb-ae0a-3fa2e626a51d",
+      "destinationIndex": ".siem-signals-default-000002-r000016",
+      "status": "success",
+      "sourceIndex": ".siem-signals-default-000002",
+      "version": 16,
+      "updated": "2021-01-06T22:05:56.859Z"
+    }
+  ]
+}
+--------------------------------------------------
+The response will include all migrations that were successfully deleted.
