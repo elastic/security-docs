@@ -80,6 +80,40 @@ With the above info, we can compile a list of indices that we wish to migrate.
 
 [[migration-2]]
 == Initiating migrations
+Migrations are initiated per index. While the process is not destructive nor does it interfere with existing data, it may be resource intensive and thus it is recommended that you monitor/plan your migrations accordingly.
+
+=== Request
+
+`POST <kibana host>:<port>/api/detection_engine/signals/migration`
+
+==== Request body
+
+[width="100%",options="header"]
+|==============================================
+|Name |Type |Description | Required
+
+|`index` |String[]|Array of index names to migrate|Yes
+|`size`|Integer|Number of alerts to migrate per batch. Corresponds to the `source.size` option on the {ref}/docs-reindex.html[Reindex API]|No
+|`requests_per_second`|Integer|The throttle for the migration task in sub-requests per second. Corresponds to `requests_per_second` on the {ref}/docs-reindex.html[Reindex API]| No
+|`slices`|Integer|The number of subtasks for the migration task. Corresponds to `slices` on the {ref}/docs-reindex.html[Reindex API]|No
+|==============================================
+
+
+==== Response example
+
+[source,json]
+--------------------------------------------------
+{
+  "indices": [
+    {
+      "index": ".siem-signals-default-000001",
+      "migration_id": "923f7c50-505f-11eb-ae0a-3fa2e626a51d",
+      "migration_index": ".siem-signals-default-000001-r000016"
+    }
+  ]
+}
+--------------------------------------------------
+Response will include, for each index specified, an ID and destination index for the migration, and an error if unsuccessful.
 
 [[migration-3]]
 == Finalizing migrations
