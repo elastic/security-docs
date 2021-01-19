@@ -428,13 +428,10 @@ minutes at 14:03 but it does not run until 14:04, it will run again at 14:09.
 [[rule-action-variables]]
 ==== Alert notification placeholders
 
-These placeholders can be added to <<rule-notifications, rule action>> fields:
+You can use http://mustache.github.io/[mustache syntax] to add the following placeholders to <<rule-notifications, rule action>> fields:
 
 * `{{state.signals_count}}`: Number of alerts detected
 * `{{context.alerts}}`: Array of detected alerts
-+
-NOTE: An array contains each alert generated since the last time the action was executed. For example, ``{{#context.alerts}}Detection alert for user: {{user.name}}{{/context.alerts}}` will create the string `Detection alert for user: <user.name>` for every alert in the array.
-+
 * `{{{context.results_link}}}`: URL to the alerts in {kib}
 * `{{context.rule.anomaly_threshold}}`: Anomaly threshold score above which
 alerts are generated ({ml} rules only)
@@ -468,7 +465,13 @@ NOTE: The `{{context.rule.severity}}` and `{{context.rule.risk_score}}`
 placeholders contain the rule's default values even when the *Severity override*
 and *Risk score override* options are used.
 
-To understand which fields to parse, see the <<rule-api-overview>> to view the JSON representation of rules. The following is an example of http://mustache.github.io/[mustache syntax] to display the list of enabled filters:
+[float]
+[[placeholder-examples]]
+===== Alert placeholder examples
+
+To understand which fields to parse, see the <<rule-api-overview>> to view the JSON representation of rules.
+
+Example using `{{context.rule.filters}}` to specify a list of filters:
 
 [source,json]
 --------------------------------------------------
@@ -477,25 +480,41 @@ To understand which fields to parse, see the <<rule-api-overview>> to view the J
 {{/context.rule.filters}}
 --------------------------------------------------
 
+Example using `{{context.alerts}}` as an array, which contains each alert generated since the last time the action was executed:
+
+[source,json]
+--------------------------------------------------
+{{#context.alerts}}
+Detection alert for user: {{user.name}}
+{{/context.alerts}}
+--------------------------------------------------
+
+Example using the mustache "current element" notation `{{.}}` to output all the rule references in the `signal.rule.references` array:
+
+[source,json]
+--------------------------------------------------
+{{#signal.rule.references}} {{.}} {{/signal.rule.references}}
+--------------------------------------------------
+
 [float]
 [[indicator-value-lists]]
 ==== Use value lists with indicator match rules
 
 While there are numerous ways you can add data into indicator indices, you can use value lists as the indicator match index in an indicator match rule. Take the following scenario, for example:
 
-You uploaded a value list of known ransomeware domains, and you want to be notified if any of those domains match in an indicator index pattern.
+You uploaded a value list of known ransomware domains, and you want to be notified if any of those domains match a value contained in a domain field in your security event index pattern.
 
-Create an indicator match rule and fill in the following fields:
-
-* *Index patterns*: The Elastic Security event indices on which the rules runs.
-* *Custom query*: The query and filters used to retrieve the required results from the Elastic Security event indices (e.g., `host.domain :*`).
-* *Indicator index patterns*: Value lists are stored in a hidden index called `.items-<Kibana space>`. Enter the appropriate {kib} space in this field.
-* *Indicator index query*: Enter the field `list_id :`, then select the name of the value list you want to use as your indicator index.
-* *Indicator mapping*
-** *Field*: Enter the field used for comparing values in the Elastic Security event indices.
-** *Indicator index field*: Select the field associated with the type of value list you created.
+. Upload a value list of indicators.
+. Create an indicator match rule and fill in the following fields:
+.. *Index patterns*: The Elastic Security event indices on which the rule runs.
+.. *Custom query*: The query and filters used to retrieve the required results from the Elastic Security event indices (e.g., `host.domain :*`).
+.. *Indicator index patterns*: Value lists are stored in a hidden index called `.items-<Kibana space>`. Enter the name of the {kib} space in which this rule will run in this field.
+.. *Indicator index query*: Enter the value `list_id :`, followed by the name of the value list you want to use as your indicator index (uploaded in Step 1 above).
+.. *Indicator mapping*
+* *Field*: Enter the field from the Elastic Security event indices to be used for comparing values.
+* *Indicator index field*: Enter the type of value list you created (i.e., `keyword`, `text`, or `IP`).
 +
-TIP: If you don't remember this information, go to *Detections > Upload value lists*. Locate the appropriate value list and note the field in the corresponding `Type` column.
+TIP: If you don't remember this information, go to *Detections > Manage detection rules > Upload value lists*. Locate the appropriate value list and note the field in the corresponding `Type` column.
 
 [role="screenshot"]
 image::images/indicator_value_list.png[]
