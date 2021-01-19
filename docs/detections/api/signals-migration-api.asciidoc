@@ -1,0 +1,213 @@
+[[signals-migration-api]]
+[role="xpack"]
+== Detection Alerts Migration API
+
+After an upgrade of {kib}, the latest {es-sec} features will be available for any new <<detection-alert-def, detection alerts>> that are generated. However, in order to enable new features on existing detection alerts, migration may be necessary. See <<release-notes, Release Notes>> for instructions specific to your upgrade.
+
+Migrating detection alerts is performed at the index level and requires the following steps:
+
+1. <<migration-1, Determine which indices to migrate>>
+2. <<migration-2, Initiate migrations>>
+3. <<migration-3, Finalize migrations>>
+4. <<migration-4, Migration cleanup>> (optional)
+
+[[migration-1]]
+[float]
+=== Determine which indices to migrate
+You can use the Migration Status API to determine which indices contain detection alerts of a particular age, along with migration info for each of those indices.
+
+[float]
+==== Request
+
+`GET <kibana host>:<port>/api/detection_engine/signals/migration_status?from=now-30d`
+
+[float]
+==== Request query parameters
+
+[width="100%",options="header"]
+|==============================================
+|Name |Type |Description
+
+|`from` |datemath|Maximum age of qualifying detection alerts
+|==============================================
+
+[float]
+==== Response example
+
+[source,json]
+--------------------------------------------------
+{
+  "indices": [
+    {
+      "index": ".siem-signals-default-000002",
+      "version": 15,
+      "signal_versions": [
+        {
+          "version": 15,
+          "count": 100
+        },
+        {
+          "version": 16,
+          "count": 87
+        }
+      ],
+      "migrations": [
+        {
+          "id": "924f7c50-505f-11eb-ae0a-3fa2e626a51d",
+          "status": "pending",
+          "version": 16,
+          "updated": "2021-01-06T20:41:37.173Z"
+        }
+      ],
+      "is_outdated": true
+    },
+    {
+      "index": ".siem-signals-default-000003",
+      "version": 16,
+      "signal_versions": [
+        {
+          "version": 16,
+          "count": 54
+        }
+      ],
+      "migrations": [],
+      "is_outdated": false
+    }
+  ]
+}
+--------------------------------------------------
+The above response shows two indices: `.siem-signals-default-000002` is outdated, with multiple versions of detection alerts and a pending migration, and `.siem-signals-default-000003`, which is up to date as the current write index.
+
+NOTE: Indices that do not contain detection alerts in the specified range will be filtered from the response.
+
+With the above info, we can compile a list of indices that we wish to migrate.
+
+[[migration-2]]
+[float]
+=== Initiate migrations
+
+Migrations are initiated per index. While the process is neither destructive nor interferes with existing data, it may be resource-intensive. As such, it is recommended that you plan your migrations accordingly.
+
+[float]
+==== Request
+
+`POST <kibana host>:<port>/api/detection_engine/signals/migration`
+
+[float]
+==== Request body
+
+[width="100%",options="header"]
+|==============================================
+|Name |Type |Description | Required
+
+|`index` |String[]|Array of index names to migrate|Yes
+|`size`|Integer|Number of alerts to migrate per batch. Corresponds to the `source.size` option on the {ref}/docs-reindex.html[Reindex API]|No
+|`requests_per_second`|Integer|The throttle for the migration task in sub-requests per second. Corresponds to `requests_per_second` on the {ref}/docs-reindex.html[Reindex API]| No
+|`slices`|Integer|The number of subtasks for the migration task. Corresponds to `slices` on the {ref}/docs-reindex.html[Reindex API]|No
+|==============================================
+
+[float]
+==== Response example
+
+[source,json]
+--------------------------------------------------
+{
+  "indices": [
+    {
+      "index": ".siem-signals-default-000001",
+      "migration_id": "923f7c50-505f-11eb-ae0a-3fa2e626a51d",
+      "migration_index": ".siem-signals-default-000001-r000016"
+    }
+  ]
+}
+--------------------------------------------------
+The response will include, for each index specified, an ID and destination index for the migration, and an error if unsuccessful.
+
+[[migration-3]]
+[float]
+=== Finalize migrations
+
+The finalization endpoint replaces the original index's alias with the successfully migrated index's alias. The endpoint is idempotent; therefore, it can safely be used to poll a given migration and, upon completion, finalize it.
+
+NOTE: The original indices are not removed as part of this step. After verifying the integrity of the migrated index, you can use the <<migration-4, Migration cleanup>> endpoint to apply a 30-day deletion policy to the original, outdated index.
+
+NOTE: If an unsuccessful migration is finalized, a deletion policy will be applied to its index, causing it to be deleted after 30 days.
+
+[float]
+==== Request
+
+`POST <kibana host>:<port>/api/detection_engine/signals/finalize_migration`
+
+[float]
+==== Request body
+
+[width="100%",options="header"]
+|==============================================
+|Name |Type |Description | Required
+
+|`migration_ids` |String[]|Array of `migration_id`s to finalize|Yes
+|==============================================
+
+[float]
+==== Response example
+
+[source,json]
+--------------------------------------------------
+{
+  "migrations": [
+    {
+      "id": "924f7c50-505f-11eb-ae0a-3fa2e626a51d",
+      "completed": true,
+      "destinationIndex": ".siem-signals-default-000002-r000016",
+      "status": "success",
+      "sourceIndex": ".siem-signals-default-000002",
+      "version": 16,
+      "updated": "2021-01-06T22:05:56.859Z"
+    }
+  ]
+}
+--------------------------------------------------
+Finalized migrations will show a response of `completed: true`, with a corresponding `status`. If the migration is still running when you attempt to finalize it, its response will show as `completed: false`.
+
+[float]
+[[migration-4]]
+=== Migration cleanup
+
+Migrations favor data integrity over shard size. Consequently, unused or orphaned indices are artifacts of the migration process. A successful migration will result in both the old and new indices being present. As such, the old, orphaned index can (and likely should) be deleted.
+
+While you can delete these indices manually, the endpoint accomplishes this task by applying a deletion policy to the relevant index, causing it to be deleted after 30 days. It also deletes other artifacts specific to the migration implementation.
+
+[float]
+==== Request
+
+`DELETE <kibana host>:<port>/api/detection_engine/signals/migration`
+
+[float]
+==== Request body
+
+[width="100%",options="header"]
+|==============================================
+|Name |Type |Description | Required
+
+|`migration_ids` |String[]|Array of `migration_id`s to finalize|Yes
+|==============================================
+
+[float]
+==== Response example
+
+[source,json]
+--------------------------------------------------
+ {
+  "migrations": [
+    {
+      "id": "924f7c50-505f-11eb-ae0a-3fa2e626a51d",
+      "destinationIndex": ".siem-signals-default-000002-r000016",
+      "status": "success",
+      "sourceIndex": ".siem-signals-default-000002",
+      "version": 16,
+      "updated": "2021-01-06T22:05:56.859Z"
+    }
+  ]
+}
+--------------------------------------------------
+The response will include all migrations that were successfully deleted.
