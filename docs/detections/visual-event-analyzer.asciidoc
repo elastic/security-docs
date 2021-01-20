@@ -8,13 +8,18 @@ Elastic Security allows any event detected by Elastic Endpoint to be analyzed us
 [[find-events-analyze]]
 === Find events to analyze
 
-You can only visualize events triggered by hosts configured with the Elastic Endpoint Security Integration. In KQL, this translates to any event with the `agent.type` set to `endpoint`.
+You can only visualize events triggered by hosts configured with the Elastic Endpoint Security Integration or any sysmon data for `winlogbeat`. 
+
+In KQL, this translates to any event with the `agent.type` set to either: 
+
+- `endpoint`
+- `winlogbeat` with `event.module` set to `sysmon`.
 
 To access events that can be visually analyzed:
 
 1. In Elastic Security, select **Hosts** > **Events**. A list of all your host's events appears in the bottom panel of the host's view.
 
-2. Create a KQL query that filters all `endpoint` detected events by entering `agent.type: endpoint and process.entity_id : *` into the KQL search bar, and then select **Update**.
+2. Create a KQL query that filters all `endpoint` detected events by entering `agent.type: endpoint and process.entity_id : *` or `agent.type: winlogbeat, event.modile: sysmon, process.entity_id : *` into the KQL search bar, and then select **Update**.
 +
 [role="screenshot"]
 image::images/kql-agent-type.png[]
@@ -25,6 +30,10 @@ A list of all `endpoint` related events appears.
 +
 [role="screenshot"]
 image::images/analyze-event.png[]
++
+Any events that cannot be analyzed will contain the warning "This event cannot be analyzed since it has incompatiable field mappings".
+[role="screenshot"]
+image::images/incompatible-field-mappings.png[]
 
 The visual **Analyzer** view appears.
 
@@ -39,6 +48,20 @@ You can also analyze events from <<timelines-ui,Timelines>>
 === Visual event analyzer UI
 
 Inside the visual analyzer, each cube represents a process (i.e. an executable file or network event). Click and drag in timeline view to see all process relationships. 
+
+To help understand what field were used to create the process, select the **Process Tree** to view the schema that created the graphical view. The fields included are:
+
+-`SOURCE`: Can be either `endpoint` or `winlogbeat`.
+- `ID`: What KQL entity created the process.
+- `EDGE`: The parent of the process ID.
+
+[role="screenshot"]
+image::images/process-schema.png[]
+
+Use the **Node Legend** to know the state of each process symbol.
+
+[role="screenshot"]
+image::images/node-legend.png[]
 
 To make the analyzer full screen, select the **Full Screen** icon above the left-panel. 
 
@@ -77,10 +100,11 @@ To see more details about each related process, select the process either in the
 [role="screenshot"]
 image::images/process-details.png[]
 
+Loading process appear in a loading state when selecting that process for the first time. If loading data for a given process fails, simply click **Reload {process-name}** underneath the process to reload the data.
+
 See event details by selecting the **# events** URL at the top of the process details view or choosing one of the event pills in the graphical view.
 
-
-Events are categorized based on their `event.category`. 
+Events are categorized based on their `event.category`.
 
 [role="screenshot"]
 image::event-type.png[]
