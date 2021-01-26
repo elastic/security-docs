@@ -6,22 +6,26 @@ combination before a user has logged in. An adversary can modify the way these
 programs are launched to get a command prompt or backdoor without logging in to
 the system.
 
-*Rule type*: query
+*Rule type*: eql
 
 *Rule indices*:
 
 * winlogbeat-*
 * logs-endpoint.events.*
 
-*Severity*: low
+*Severity*: high
 
-*Risk score*: 21
+*Risk score*: 73
 
 *Runs every*: 5 minutes
 
 *Searches indices from*: now-6m ({ref}/common-options.html#date-math[Date Math format], see also <<rule-schedule, `Additional look-back time`>>)
 
 *Maximum alerts per execution*: 100
+
+*References*:
+
+* https://www.elastic.co/blog/practical-security-engineering-stateful-detection
 
 *Tags*:
 
@@ -31,11 +35,11 @@ the system.
 * Threat Detection
 * Persistence
 
-*Version*: 4 (<<potential-modification-of-accessibility-binaries-history, version history>>)
+*Version*: 5 (<<potential-modification-of-accessibility-binaries-history, version history>>)
 
 *Added ({stack} release)*: 7.6.0
 
-*Last modified ({stack} release)*: 7.10.0
+*Last modified ({stack} release)*: 7.11.0
 
 *Rule authors*: Elastic
 
@@ -46,10 +50,22 @@ the system.
 
 [source,js]
 ----------------------------------
-event.category:process and event.type:(start or process_started) and
-process.parent.name:winlogon.exe and not process.name:(atbroker.exe or
-displayswitch.exe or magnify.exe or narrator.exe or osk.exe or
-sethc.exe or utilman.exe)
+process where event.type in ("start", "process_started", "info") and
+process.parent.name : ("Utilman.exe", "winlogon.exe") and user.name ==
+"SYSTEM" and process.args : (
+"C:\\Windows\\System32\\osk.exe",
+"C:\\Windows\\System32\\Magnify.exe",
+"C:\\Windows\\System32\\Narrator.exe",
+"C:\\Windows\\System32\\Sethc.exe", "utilman.exe",
+"ATBroker.exe", "DisplaySwitch.exe", "sethc.exe" ) and
+not process.pe.original_file_name in ( "osk.exe",
+"sethc.exe", "utilman2.exe", "DisplaySwitch.exe",
+"ATBroker.exe", "ScreenMagnifier.exe", "SR.exe",
+"Narrator.exe", "magnify.exe", "MAGNIFY.EXE" ) /*
+uncomment once in winlogbeat to avoid bypass with rogue process with
+matching pe original file name */ /* and
+process.code_signature.subject_name == "Microsoft Windows" and
+process.code_signature.status == "trusted" */
 ----------------------------------
 
 ==== Threat mapping
@@ -61,9 +77,9 @@ sethc.exe or utilman.exe)
 ** ID: TA0003
 ** Reference URL: https://attack.mitre.org/tactics/TA0003/
 * Technique:
-** Name: Accessibility Features
-** ID: T1015
-** Reference URL: https://attack.mitre.org/techniques/T1015/
+** Name: Event Triggered Execution
+** ID: T1546
+** Reference URL: https://attack.mitre.org/techniques/T1546/
 
 
 * Tactic:
@@ -71,12 +87,23 @@ sethc.exe or utilman.exe)
 ** ID: TA0004
 ** Reference URL: https://attack.mitre.org/tactics/TA0004/
 * Technique:
-** Name: Accessibility Features
-** ID: T1015
-** Reference URL: https://attack.mitre.org/techniques/T1015/
+** Name: Event Triggered Execution
+** ID: T1546
+** Reference URL: https://attack.mitre.org/techniques/T1546/
 
 [[potential-modification-of-accessibility-binaries-history]]
 ==== Rule version history
+
+Version 5 (7.11.0 release)::
+* Updated query, changed from:
++
+[source, js]
+----------------------------------
+event.category:process and event.type:(start or process_started) and
+process.parent.name:winlogon.exe and not process.name:(atbroker.exe or
+displayswitch.exe or magnify.exe or narrator.exe or osk.exe or
+sethc.exe or utilman.exe)
+----------------------------------
 
 Version 4 (7.10.0 release)::
 * Updated query, changed from:
