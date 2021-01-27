@@ -19,6 +19,61 @@ A JSON object with these fields:
 |`description` |String |The case's description. |Yes
 |`tags` |String[] |String array containing words and phrases that help
 categorize cases. |Yes, can be an empty array.
+|`connector` |<<create-case-connector-schema, connector>> |Object containing the connector's
+configuration. |Yes
+|`settings` |<<create-case-settings-schema, settings>> |Object containing the case's
+settings. |Yes
+|==============================================
+
+[[create-case-connector-schema]]
+*`connector` schema*
+
+[width="100%",options="header"]
+|==============================================
+|Name |Type |Description |Required
+
+|`id` |String |ID of the <<actions-api-overview, connector>>
+used for pushing case updates to external systems (returned when calling
+<<cases-api-find-connectors>>). |Yes
+|`name` |String a|The connector name. |Yes
+|`type` |String a|The type of the connector. 
+
+Must be one of these:
+
+* `.servicenow`
+* `.jira`
+* `.resilient`
+* `.none`
+|Yes
+|`fields` |Object a| Object containing the connector's fields.
+
+For {sn} connectors:
+
+* `urgency` (string \| null): The urgency of the incident.
+* `severity` (string \| null): The severity of the incident.
+* `impact` (string \| null): The impact of the incident.
+
+For {jira} connectors:
+
+* `issueType` (string): The issue type of the issue.
+* `priority` (string \| null): The priority of the issue.
+* `parent` (string \| null): The key of the parent issue (Valid when the issue type is `Sub-task`).
+
+For {ibm-r} connectors:
+
+* `issueTypes` (number[]): The issue types of the issue.
+* `severityCode` (number): The severity code of the issue.
+
+|Yes
+|==============================================
+
+[[create-case-settings-schema]]
+*`settings` schema*
+
+[width="100%",options="header"]
+|==============================================
+|Name |Type |Description |Required
+|`syncAlerts` |Boolean| Turn on or off synching with alerts. | Yes
 |==============================================
 
 ===== Example request
@@ -33,7 +88,19 @@ POST api/cases
   "tags": [
     "phishing",
     "social engineering"
-  ]
+  ],
+  "connector": {
+    "id": "131d4448-abe0-4789-939d-8ef60680b498",
+    "name": "My connector",
+    "type": ".jira",
+    "fields": {
+      "issueType": "10006",
+      "priority": "High",
+    }
+  },
+  "settings": {
+    "syncAlerts": true
+  }
 }
 --------------------------------------------------
 // KIBANA
@@ -59,7 +126,6 @@ version, and creation time. The case's ID is also its saved object ID
   "version": "WzUzMiwxXQ==",
   "comments": [],
   "totalComment": 0,
-  "connector_id": "05da469f-1fde-4058-99a3-91e4807e2de8", <1>
   "title": "This case will self-destruct in 5 seconds",
   "description": "James Bond clicked on a highly suspicious email banner advertising cheap holidays for underpaid civil servants. Operation bubblegum is active. Repeat - operation bubblegum is now active",
   "tags": [
@@ -75,14 +141,26 @@ version, and creation time. The case's ID is also its saved object ID
     "full_name": "Alan Hunley",
     "username": "ahunley"
   },
-  "external_service": null, <2>
+  "external_service": null, <1>
   "status": "open",
   "updated_at": null,
-  "updated_by": null
+  "updated_by": null,
+  "connector": {
+    "id": "131d4448-abe0-4789-939d-8ef60680b498", <2>
+    "name": "My connector",
+    "type": ".jira",
+    "fields": {
+      "issueType": "10006",
+      "priority": "High",
+    }
+  },
+  "settings": {
+    "syncAlerts": true
+  }
 }
 --------------------------------------------------
 
-<1> The default connector ID used to push cases to external services (see
-<<assign-connector>>).
-<2> The `external_service` object stores information when the case is pushed to
+<1> The `external_service` object stores information when the case is pushed to
 external systems. For more information, see <<actions-api-overview>>.
+<2> The default connector ID used to push cases to external services (see
+<<assign-connector>>).
