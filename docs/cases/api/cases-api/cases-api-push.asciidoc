@@ -1,0 +1,190 @@
+[[cases-api-push]]
+=== Push case 
+
+Push case to an external service.
+
+==== Request URL
+
+`POST <kibana host>:<port>/api/cases/configure/connectors/<connector ID>/push`
+
+==== Request body
+
+A JSON object with these fields:
+
+[width="100%",options="header"]
+|==============================================
+|Name |Type |Description |Required
+
+|`connector_type` |String a|The type of the connector. 
+
+Must be one of these:
+
+* `.servicenow`
+* `.jira`
+* `.resilient`
+|Yes
+|`params` |<<connector-push-schema, params>> |Contains the {es-sec} case details
+for which you are opening or updating an external incident. |Yes
+|==============================================
+
+[[connector-push-schema]]
+*`params` schema*
+
+[width="100%",options="header"]
+|==============================================
+|Name |Type |Description |Required
+
+|`createdAt` |String |The time the case was created, using ISO 8601 with UTC
+notation. For example, `2020-03-31T06:40:21.674Z`. |Yes
+|`createdBy` |Object a|The user who created the case:
+
+* `fullName` (string): The user's full name.
+* `username` (string): The user's username.
+
+|Yes
+
+|`comments` |Object[] a|Array containing case comments:
+
+* `commentId` (string, required): The comment ID.
+* `comment` (string, required): The comment text.
+* `createdAt` (string, required): The time the comment was created, using ISO
+8601 with UTC notation.
+* `createdBy` (object, required): The user who created the comment, containing
+`fullName` and `username` fields.
+* `updatedBy` (object, optional): The user who last updated the comment,
+containing `fullName` and `username` fields.
+
+|No
+|`description` |String |The case description. |No
+|`externalId` |String |The external incident/issue ID. |No, only required
+when updating an existing issue.
+|`impact` |String |ServiceNow incident impact. |No. Valid only for ServiceNow connectors.
+|`incidentTypes` |String |{ibm-r} incident types. |No. Valid only for {ibm-r} connectors.
+|`issueType` |String |{jira} issue type. |No. Valid only for {jira} connectors.
+|`labels` |String |{jira} issue labels. |No. Valid only for {jira} connectors.
+|`name` |String |{ibm-r} organization incident name. |Yes. Valid only for {ibm-r} connectors.
+|`parent` |String |{jira} issue parent. |No. Valid only for {jira} connectors.
+|`priority` |String |{jira} issue priority. |No. Valid only for {jira} connectors.
+|`savedObjectId` |String |The case's ID. |Yes
+|`severity` |String |ServiceNow incident severity. |No. Valid only for ServiceNow connectors.
+|`severityCode` |String |{ibm-r} incident severity code. |No. Valid only for {ibm-r} connectors.
+|`short_description` |String |ServiceNow incident name. |Yes. Valid only for ServiceNow connectors.
+|`summary` |String |{jira} issue title. |Yes. Valid only for {jira} connectors.
+|`title` |String |The case title. |Yes
+|`updatedAt` |String |The time the case was updated, using ISO 8601 with UTC
+notation. |No
+|`updatedBy` |Object a|The user who last updated the case:
+
+* `fullName` (string): The user's full name.
+* `username` (string): The user's username.
+
+|No
+|`urgency` |String |ServiceNow incident urgency. |No. Valid only for ServiceNow connectors.
+|==============================================
+
+===== Example request
+
+Creates a new {sn} incident:
+
+[source,sh]
+--------------------------------------------------
+POST api/cases/configure/connectors/7349772f-421a-4de3-b8bb-2d9b22ccee30/push
+{
+    "connector_type": ".servicenow",
+    "params": {
+        "savedObjectId": "7528e530-5f32-11eb-a713-e1e769fa873c",
+        "createdAt": "2021-01-25T17:26:27.990Z",
+        "createdBy": {
+            "fullName": "Alan Hunley",
+            "username": "ahunley"
+        },
+        "comments": [],
+        "description": "James Bond clicked on a highly suspicious email banner advertising cheap holidays for underpaid civil servants. Operation bubblegum is active.",
+        "externalId": null,
+        "title": "This case will self-destruct in 5 seconds"
+        "impact": "2",
+        "severity": "1",
+        "urgency": "2",
+        "updatedAt": null,
+        "updatedBy": null
+    }
+}
+--------------------------------------------------
+// KIBANA
+
+Updates an existing {sn} incident:
+
+[source,sh]
+--------------------------------------------------
+POST api/cases/configure/connectors/7349772f-421a-4de3-b8bb-2d9b22ccee30/push
+
+{
+    "connector_type": ".servicenow",
+    "params": {
+        "savedObjectId": "7528e530-5f32-11eb-a713-e1e769fa873c",
+        "createdAt": "2021-01-25T17:26:27.990Z",
+        "createdBy": {
+            "fullName": "Alan Hunley",
+            "username": "ahunley"
+        },
+        "comments": [
+          {
+            "commentId": "dda30310-732a-11ea-a0b2-c51ea50a58e2",
+            "comment": "That is nothing - Ethan Hunt answered a targeted social media campaign promoting phishy pension schemes to IMF operatives.",
+            "createdAt": "2020-03-31T08:37:33.240Z",
+            "createdBy": {
+              "fullName": "Ms Moneypenny",
+              "username": "moneypenny"
+            }
+          }
+        ],
+        "description": "James Bond clicked on a highly suspicious email banner advertising cheap holidays for underpaid civil servants. Operation bubblegum is active.",
+        "externalId": "ba6defa32f3520107616c886f699b630",
+        "title": "This case will self-destruct in 15 seconds"
+        "impact": "2",
+        "severity": "1",
+        "urgency": "2",
+        "updatedAt": "2021-01-25T17:27:10.925Z",
+        "updatedBy": {
+            "fullName": "Alan Hunley",
+            "username": "ahunley"
+        }
+    }
+}
+--------------------------------------------------
+// KIBANA
+
+==== Response code
+
+`200`:: 
+   Indicates a successful call.
+   
+==== Response payload
+
+A JSON object with the ID and the URL of the external incident.
+
+IMPORTANT: You need the returned information to associate it with the original
+{es-sec} case. To add the external incident details to the {es-sec} case,
+call <<cases-api-associate-sn-incident>>.
+
+===== Example response
+
+[source,json]
+--------------------------------------------------
+{
+  "status": "ok",
+  "actionId": "61787f53-4eee-4741-8df6-8fe84fa616f7",
+  "data": {
+    "title": "INC0010012",
+    "id": "62dc3c8bdb7300106ba884da0b9619ea",
+    "pushedDate": "2020-03-31T09:01:33.000Z",
+    "url": "https://dev78437.service-now.com/nav_to.do?uri=incident.do?sys_id=62dc3c8bdb7300106ba884da0b9619ea",
+    "comments": [
+      {
+        "commentId": "dda30310-732a-11ea-a0b2-c51ea50a58e2",
+        "pushedDate": "2020-03-31T09:01:34.000Z"
+      }
+    ]
+  }
+}
+--------------------------------------------------
