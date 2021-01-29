@@ -17,8 +17,7 @@ The following still applies:
 
 
 > Additionally, when the script detects a rule name has been changed, it prints a list of the relevant rule-details 
-> files to the terminal. The text of these .asciidoc files should be reviewed, as the update_current_text.py script does 
-> not update the text with the existing documentation when a rule's name has been changed.
+> files to the terminal. These files will be deleted and printed
 
 Basically, delete the old files for which new ones (the printed files) were generated. If you open the file, you can
 see the previous filename

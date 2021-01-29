@@ -102,6 +102,13 @@ def _left_align(text):
     return '\n'.join([t.lstrip() for t in text.splitlines()])
 
 
+def _convert_name_to_filename(name: str) -> str:
+    name = re.sub(r'[():]', '', name.lower())
+    name = re.sub(r'[ -+/\\]+', '-', name)
+    name = re.sub(r'-+', '-', name)
+    return name
+
+
 def get_release_rules(package_version, local_kibana, rules_dir):
     rule_source_folder = Path(local_kibana).resolve().joinpath(rules_dir)
     assert rule_source_folder.exists(), f'Rules folder does not exist in {local_kibana}'
@@ -268,6 +275,10 @@ def get_rule_diff(package_version):
                 if old_rule['name'] != new_rule['name']:
                     old_name = old_rule['name']
 
+                old_file_name = _convert_name_to_filename(old_rule["name"])
+                new_file_name = _convert_name_to_filename(new_rule["name"])
+                file_name_changed = old_file_name != new_file_name
+
                 old_rule['name'] = new_rule['name']
                 if 'changelog' in old_rule:
                     new_rule['changelog'] = old_rule['changelog']
@@ -276,19 +287,35 @@ def get_rule_diff(package_version):
                     if 'changelog' not in new_rule:
                         new_rule['changelog'] = {}
                         new_rule['changelog']['changes'] = []
+
                     if 'query' in new_rule:
                         if old_rule['query'] != new_rule['query']:
-                            new_rule['changelog']['changes'].append(
-                                {"version": new_rule['version'], "updated": new_rule['last_update'],
-                                 "pre_query": old_rule['query'], "doc_text": "Updated query.", "pre_name": old_name})
-                        if old_rule['query'] == new_rule['query']:
-                            new_rule['changelog']['changes'].append(
-                                {"version": new_rule['version'], "updated": new_rule['last_update'],
-                                 "pre_query": old_rule['query'], "doc_text": "Formatting only", "pre_name": old_name})
+                            new_rule['changelog']['changes'].append({
+                                "version": new_rule['version'],
+                                "updated": new_rule['last_update'],
+                                "pre_query": old_rule['query'],
+                                "doc_text": "Updated query.",
+                                "pre_name": old_name
+                                })
+                        elif old_rule['query'] == new_rule['query']:
+                            new_rule['changelog']['changes'].append({
+                                "version": new_rule['version'],
+                                "updated": new_rule['last_update'],
+                                "pre_query": old_rule['query'],
+                                "doc_text": "Formatting only",
+                                "pre_name": old_name
+                            })
                     if 'query' not in new_rule:
-                        new_rule['changelog']['changes'].append(
-                            {"version": new_rule['version'], "updated": new_rule['last_update'], "pre_query": "N/A",
-                             "doc_text": "Formatting only", "pre_name": old_name})
+                        new_rule['changelog']['changes'].append({
+                            "version": new_rule['version'],
+                            "updated": new_rule['last_update'],
+                            "pre_query": "N/A",
+                            "doc_text": "Formatting only",
+                            "pre_name": old_name
+                        })
+
+                    if file_name_changed:
+                        new_rule['changelog']['changes'][-1]['duplicate_old_file'] = old_file_name
                 else:
                     new_rule['last_update'] = old_rule['last_update']
 
@@ -351,10 +378,7 @@ def create_documentation(package_release):
     for rule in sorted_rules:
         tag_strings = ""
         version_text = ""
-        link_string = re.sub(' ', '-', rule['name'].lower())
-        link_string = re.sub('[():]', '', link_string)
-        link_string = re.sub('-+', '-', link_string)
-        link_string = re.sub('/', '-', link_string)
+        link_string = _convert_name_to_filename(rule["name"])
         new_text = new_text + "|<<" + link_string + ", " + rule['name'] + ">> |" + re.sub(' +', ' ',
                                                                                           rule['description'].replace(
                                                                                               '\n', ' '))
@@ -380,17 +404,17 @@ def create_documentation(package_release):
 
     # Create files for each rule and the index (ToC) file
 
+    rule_details_dir = GENERATED_ASCII.joinpath('rule-details')
+    rule_details_dir.mkdir(exist_ok=True)
+
     file_text = ""
     rules_index_file = []
     rule_name_changed = False
-    files_with_updated_rule_name = set()
+    files_with_updated_rule_name = {}
     updated_queries = False
 
     for rule in sorted_rules:
-        rule_link = re.sub(' ', '-', rule['name'].lower())
-        rule_link = re.sub('[():]', '', rule_link)
-        rule_link = re.sub('-+', '-', rule_link)
-        rule_link = re.sub('/', '-', rule_link)
+        rule_link = _convert_name_to_filename(rule["name"])
         file_text = "[[" + rule_link + "]]\n=== " + rule['name'] + "\n\n"
         file_text = file_text + format_text(rule['description']) + "\n\n"
         file_text = file_text + "*Rule type*: " + rule['type'] + "\n\n"
@@ -507,7 +531,8 @@ def create_documentation(package_release):
                         file_text = file_text + "* Rule name changed from: " + i['pre_name'] + "\n"
                         rule_name_changed = True
                         if i['updated'] == package_release:
-                            files_with_updated_rule_name.add(rule_link + ".asciidoc")
+                            rule_link_file = rule_link + ".asciidoc"
+                            files_with_updated_rule_name[rule_link_file] = i['duplicate_old_file']
                 if i['doc_text'] == "Updated query.":
                     if 'pre_name' in i:
                         if i['pre_name'] != None:
@@ -526,12 +551,10 @@ def create_documentation(package_release):
 
                 rule_name_changed = False
 
-        rule_details_dir = GENERATED_ASCII.joinpath('rule-details')
-        rule_details_dir.mkdir(exist_ok=True)
         asciidoc_file = str(rule_details_dir.joinpath(f'{rule_link}.asciidoc'))
 
-        with open(asciidoc_file, "w+") as asciiWrite:
-            asciiWrite.write(file_text)
+        with open(asciidoc_file, "w+") as f:
+            f.write(file_text)
 
         rules_index_file.append("include::rule-details/" + rule_link + ".asciidoc[]")
 
@@ -548,10 +571,10 @@ def create_documentation(package_release):
 
     # Print files of rules with changed names to terminal
 
-    files_with_updated_rule_name = sorted(files_with_updated_rule_name)
-    print("Rule names in these files have been changed:\n")
-    for cn in files_with_updated_rule_name:
-        print(cn)
+    print('\n')
+    for new_file, old_file in sorted(files_with_updated_rule_name.items()):
+        print(f'Name of rule changed in {new_file} - removing old file: {old_file}')
+        rule_details_dir.joinpath(f'{old_file}.asciidoc').unlink(missing_ok=True)
     print("\n")
 
     # END: Create files for each rule
@@ -596,10 +619,7 @@ def create_documentation(package_release):
                 if 'changelog' in r:
                     for i in (r['changelog']['changes']):
                         if i['updated'] == update_version and i['doc_text'] != "Formatting only":
-                            link_string = re.sub(' ', '-', r['name'].lower())
-                            link_string = re.sub('[():]', '', link_string)
-                            link_string = re.sub('-+', '-', link_string)
-                            link_string = re.sub('/', '-', link_string)
+                            link_string = _convert_name_to_filename(r['name'])
                             version_history_page = version_history_page + "<<" + link_string + ">>\n\n"
 
     # anytime this is built and changes are made to any queries, it will be added as an entry, to be included in future
