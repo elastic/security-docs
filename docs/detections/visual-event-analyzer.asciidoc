@@ -8,13 +8,18 @@ Elastic Security allows any event detected by Elastic Endpoint to be analyzed us
 [[find-events-analyze]]
 === Find events to analyze
 
-You can only visualize events triggered by hosts configured with the Elastic Endpoint Security Integration. In KQL, this translates to any event with the `agent.type` set to `endpoint`.
+You can only visualize events triggered by hosts configured with the Elastic Endpoint Security Integration or any sysmon data from `winlogbeat`. 
+
+In KQL, this translates to any event with the `agent.type` set to either: 
+
+* `endpoint`.
+* `winlogbeat` with `event.module` set to `sysmon`.
 
 To access events that can be visually analyzed:
 
 1. In Elastic Security, select **Hosts** > **Events**. A list of all your host's events appears in the bottom panel of the host's view.
 
-2. Create a KQL query that filters all `endpoint` detected events by entering `agent.type: endpoint and process.entity_id : *` into the KQL search bar, and then select **Update**.
+2. Create a KQL query that filters all `endpoint` detected events by entering `agent.type:"endpoint" and process.entity_id : *` or  `agent.type:"winlogbeat" and event.module: "sysmon" and process.entity_id : *` into the KQL search bar, and then select **Update**.
 +
 [role="screenshot"]
 image::images/kql-agent-type.png[]
@@ -25,22 +30,40 @@ A list of all `endpoint` related events appears.
 +
 [role="screenshot"]
 image::images/analyze-event.png[]
++
+Any events that cannot be analyzed will contain the warning "This event cannot be analyzed since it has incompatible field mappings."
+[role="screenshot"]
+image::images/incompatible-field-mappings.png[]
 
 The visual **Analyzer** view appears.
 
 [role="screenshot"]
 image::images/analyze-event-view.png[]
 
-You can also analyze events from <<timelines-ui,Timelines>>
+TIP: You can also analyze events from <<timelines-ui,Timelines>>.
 
 
 [discrete]
 [[visual-analyzer-ui]]
 === Visual event analyzer UI
 
-Inside the visual analyzer, each cube represents a process (i.e. an executable file or network event). Click and drag in timeline view to see all process relationships. 
+Inside the visual analyzer, each cube represents a process (e.g. an executable file or network event). Click and drag in timeline view to see all process relationships. 
 
-To make the analyzer full screen, select the **Full Screen** icon above the left-panel. 
+To help understand what fields were used to create the process, select the **Process Tree** to view the schema that created the graphical view. The fields included are:
+
+* `SOURCE`: Can be either `endpoint` or `winlogbeat`.
+* `ID`: Event field that uniquely identifies a node.
+* `EDGE`: Event field which indicates the relationship between two nodes.
+
+[role="screenshot"]
+image::images/process-schema.png[]
+
+View the **Legend** to understand the state of each process node.
+
+[role="screenshot"]
+image::images/node-legend.png[]
+
+To expand the analyzer to a full screen, select the **Full Screen** icon above the left panel. 
 
 [role="screenshot"]
 image::images/full-screen-analyzer.png[]
@@ -65,29 +88,30 @@ image::images/graphical-view.png[]
 [[process-and-event-details]]
 === Process and event details
 
-To see more details about each related process, select the process either in the left panel or the graphical view. The information on the process appears in the left panel, which typically includes but isn't limited to:
+To see more details about each related process, select the process either in the left panel or the graphical view. The left panel displays process details such as:
 
-- The number of events associated with the process.
-- The timestamp when the process was executed.
-- The file path of the process within the host.
-- The `process-pid`.
-- The user name and domain that ran the process.
-- Any other relevant process information. 
+* The number of events associated with the process.
+* The timestamp when the process was executed.
+* The file path of the process within the host.
+* The `process-pid`.
+* The user name and domain that ran the process.
+* Any other relevant process information. 
 
 [role="screenshot"]
 image::images/process-details.png[]
 
-See event details by selecting the **# events** URL at the top of the process details view or choosing one of the event pills in the graphical view.
+When you first select a process, it appears in a loading state. If loading data for a given process fails, click **Reload `{process-name}`** beneath the process to reload the data.
 
+See event details by selecting that event's URL at the top of the process details view or choosing one of the event pills in the graphical view.
 
-Events are categorized based on their `event.category`. 
+Events are categorized based on their `event.category`.
 
 [role="screenshot"]
 image::event-type.png[]
 
-When selecting an `event.type`, a list of all those types of events appears in the left panel. If you want further details on the event, choose the event from the list. Event details appear in the left panel. 
+When you select an `event.category`, pill, all the events within that category are listed in the left panel. To view more details about a specific event, select it from the list.
 
 [role="screenshot"]
 image::event-details.png[]
 
-In Elastic Security 7.10 and later, there is no limit to the number of events that can be associated with a process. However, in 7.9, each process is limited to only 100 events.
+NOTE: In {stack} version >= 7.10.0, there is no limit to the number of events that can be associated with a process. However, in {stack} minor versions < = 7.9.0, each process is limited to only 100 events.
