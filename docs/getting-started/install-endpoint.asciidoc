@@ -13,7 +13,7 @@ NOTE: Configuring the Endpoint Integration on the Elastic Agent requires that th
 [[security-before-you-begin]]
 == Before you begin
 
-Depending on the version of macOS you're using, macOS requires that you give full disk access to different kernels, system extensions, or files. Review <<sensor-full-disk-access>> for details.
+Depending on the macOS version you're using, macOS requires that you give full disk access to different kernels, system extensions, or files. Review <<sensor-full-disk-access>> for details.
 
 [discrete]
 [[add-security-integration]]
@@ -26,7 +26,7 @@ image::images/install-endpoint/security-integration.png[]
 +
 2. On the Administration page of the {security-app} or the Endpoint Security integration page in Fleet, select **Add Endpoint Security**. The integration configuration page appears.
 3. Select a configuration for the Elastic Agent. You can use either the **Default config**, or add security integration to a custom or existing configuration. For more details on Elastic Agent configuration settings, see {fleet-guide}/elastic-agent-configuration.html[Configuration settings].
-4. Configure the Endpoint Security integration with a name and optional description. When configuration is complete, select **Save integration**. Kibana redirects you back to the administration section of the {security-app}.
+4. Configure the Endpoint Security integration with a name and optional description. When the configuration is complete, select **Save integration**. Kibana redirects you back to the administration section of the {security-app}.
 +
 [role="screenshot"]
 image::images/install-endpoint/add-elastic-endpoint-security.png[]
@@ -42,7 +42,7 @@ When integrating with the Elastic Agent, Endpoint Security **requires** enrollme
 
 IMPORTANT: Endpoint Security cannot be integrated with an Elastic Agent in Standalone mode.
 
-1. Go to Fleet. Select **Overview** > **Add agent**.
+1. Go to {fleet}. Select **Overview** > **Add agent**.
 +
 [role="screenshot"]
 image::images/install-endpoint/add-agent.png[]
@@ -83,48 +83,71 @@ image::images/install-endpoint/unlock-security-panel.png[]
 image::images/install-endpoint/allow-endgame.png[]
 
 
-If the prompt does not appear because you're using a version before macOS Big Sur (11.0), enable the extension by:
+If the prompt does not appear because you're using a version earlier than macOS Big Sur (11.0), enable the extension by doing the following:
 
 1. Open a Terminal application.
 2. Enter `kextload /Library/Extension/kendpoint.kext`. Prepend the command with `sudo` if necessary.
-3. Confirm the kernel extension has loaded, enter `kextstat | grep co.elastic.kendpoint`.
-4. You should receive and output similar to `149    0 0xffffff7f82e7b000 0x21000    0x21000    co.elastic.kendpoint (7.9.0) BD152A57-ABD3-370A-BBE8-D15A0FCBD19A <6 5 2 1>`.
+3. To confirm the kernel extension has loaded, enter `kextstat | grep co.elastic.kendpoint`.
+4. You should receive an output similar to `149    0 0xffffff7f82e7b000 0x21000    0x21000    co.elastic.kendpoint (7.11.0) BD152A57-ABD3-370A-BBE8-D15A0FCBD19A <6 5 2 1>`. If you receive this output, the kernel extension is enabled.
 
 [discrete]
-[[configure-malware]]
-== Configure malware protection settings
+[[configure-security-policy]]
+== Configure an integration policy (optional)
 
-After you have installed the agent, malware prevention is automatically enabled on protected hosts. If needed, you can configure malware protection settings to meet your company's security needs.
+After the {agent} is installed successfully, malware prevention is automatically enabled on protected hosts. If needed, you can update the Integration Policy to configure malware protection, event collection, and antivirus settings to meet your company's security needs.
 
-1. In the security app, select the **Administration** tab to view the Endpoints list. Remember that you must have admin permissions in {kib} to access this page.
+To access the security integration policy:
+
+1. In the {security-app}, select the **Administration** tab to view the Endpoints list. Remember that you must have admin permissions in {kib} to access this page.
 2. From the **Integration Policy** column, select the Policy you want to configure. The Integration Policy page appears.
-3. By default, the **Malware Protections Enabled** toggle is on. To disable malware protection, switch the toggle off. Malware protection levels are as follows:
-* **Detect**: Detects malware on the host and generates an alert. The agent will **not** block malware. You must pay attention to and analyze any malware alerts that are generated.
-* **Prevent** (Default): Detects malware on the host, blocks it from executing, and generates an alert.
-4. Click **Save** to save changes to the Policy.
-5. On the dialog that appears, click **Save and Deploy changes**. If successful, a "Success" confirmation appears in the lower-right corner.
+
+[discrete]
+[[malware-protection]]
+=== Malware protection
+
+By default, the **Malware Protections Enabled** toggle is on, with host notifications enabled or disabled based on the protection level. To disable malware protection, switch the toggle off. Malware protection levels are as follows:
+
+* **Detect**: Detects malware on the host and generates an alert. The agent will **not** block malware. You must pay attention to and analyze any malware alerts that are generated. Notifications do not appear by default. Select the **Notify User** option to enable them.
+* **Prevent** (Default): Detects malware on the host, blocks it from executing, and generates an alert. Notifications appear by default. Deselect the **Notify User** option to disable them.
++
+TIP: Platinum and enterprise users can customize these notifications using the `Elastic Security {action} {filename}` syntax. 
+
+
+[discrete]
+[[event-collection]]
+=== Event Collection
+
+In the **Settings** section, review the events that collect data on each operating system. By default, all event data is collected. If you no longer want a specific event to collect data, deselect it.
 
 [role="screenshot"]
 image::images/install-endpoint/malware-protection.png[]
 
-## Register as antivirus (Windows Only)
+
+[discrete]
+[[register-as-antivirus]]
+=== (Optional) Register as Windows 10 antivirus 
 
 If you download the Elastic Agent on Windows 10 or above, you can configure Elastic Security as your antivirus software by doing the following:
+ 
+On the Integration Edit page, look for the **Settings** section and find **Type: Register as antivirus**. Toggle this option to enable. 
 
-1. Go to **Fleet** > **Agents**. A list of hosts with the Elastic Agent appears. 
-2. Select your desired host from the list.
-3. From the host's page, find your named **Endpoint** integration and select it. 
-4. On the Integration Edit page, look for the **Protections** section and find **Type: Register as antivirus**. Toggle this option to enable. 
-+
 [role="screenshot"]
 image::images/register-as-antivirus.png[]
-5. Click **Save Integration**. Confirm that you would like to update your Elastic Agent. Once updated, Windows Defender will be disabled on your local host in favor of Elastic Security.
+
+[discrete]
+[[save-policy]]
+=== Save Integration
+
+1. After you have customized your desired policy settings, click **Save**.
+
+2. On the dialog that appears, click **Save and Deploy changes**. If successful, a "Success" confirmation appears in the lower-right corner.
+
 
 [discrete]
 [[verify-endpoint-enrollment]]
 == Verify Endpoint Enrollment
 
-After installing the {agent}, there's a lag time of several hours between when the Elastic Endpoint begins detecting and sending alerts to {Kibana}. To ensure that the installation of Elastic Endpoint on your host was successful,  go to **Administration > Endpoints**. A message appears that says, "Endpoints are enrolling. View agents to track progress".
+After installing the {agent}, there's a lag time of several hours between when the Elastic Endpoint begins detecting and sending alerts to {kib}. To ensure that the installation of Elastic Endpoint on your host was successful,  go to **Administration > Endpoints**. A message appears that says, "Endpoints are enrolling. View agents to track progress". Select **View agents** to check the status of your endpoint enrollment.
 
 [role="screenshot"]
 image::images/install-endpoint/endpoints-enrolling.png[]
