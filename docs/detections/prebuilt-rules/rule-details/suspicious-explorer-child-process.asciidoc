@@ -1,0 +1,62 @@
+[[suspicious-explorer-child-process]]
+=== Suspicious Explorer Child Process
+
+Identifies a suspicious Windows explorer child process. Explorer.exe can be abused to launch malicious scripts or executables from a trusted parent process.
+
+*Rule type*: eql
+
+*Rule indices*:
+
+* logs-endpoint.events.*
+* winlogbeat-*
+
+*Severity*: medium
+
+*Risk score*: 43
+
+*Runs every*: 5 minutes
+
+*Searches indices from*: now-9m ({ref}/common-options.html#date-math[Date Math format], see also <<rule-schedule, `Additional look-back time`>>)
+
+*Maximum alerts per execution*: 100
+
+*Tags*:
+
+* Elastic
+* Host
+* Windows
+* Threat Detection
+* Execution
+
+*Version*: 1
+
+*Added ({stack} release)*: 7.11.0
+
+*Rule authors*: Elastic
+
+*Rule license*: Elastic License
+
+==== Rule query
+
+
+[source,js]
+----------------------------------
+process where event.type in ("start", "process_started") and
+process.name : ("cscript.exe", "wscript.exe", "powershell.exe",
+"rundll32.exe", "cmd.exe", "mshta.exe", "regsvr32.exe") and /*
+Explorer started via DCOM */ process.parent.name : "explorer.exe"
+and process.parent.args : "-Embedding"
+----------------------------------
+
+==== Threat mapping
+
+*Framework*: MITRE ATT&CK^TM^
+
+* Tactic:
+** Name: Initial Access
+** ID: TA0001
+** Reference URL: https://attack.mitre.org/tactics/TA0001/
+* Technique:
+** Name: Phishing
+** ID: T1566
+** Reference URL: https://attack.mitre.org/techniques/T1566/

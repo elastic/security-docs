@@ -3,7 +3,7 @@
 
 Identifies User Account Control (UAC) bypass via hijacking DiskCleanup Scheduled Task. Attackers bypass UAC to stealthily execute code with elevated permissions.
 
-*Rule type*: query
+*Rule type*: eql
 
 *Rule indices*:
 
@@ -28,9 +28,11 @@ Identifies User Account Control (UAC) bypass via hijacking DiskCleanup Scheduled
 * Threat Detection
 * Privilege Escalation
 
-*Version*: 1
+*Version*: 2 (<<uac-bypass-via-diskcleanup-scheduled-task-hijack-history, version history>>)
 
 *Added ({stack} release)*: 7.10.0
+
+*Last modified ({stack} release)*: 7.11.0
 
 *Rule authors*: Elastic
 
@@ -41,11 +43,10 @@ Identifies User Account Control (UAC) bypass via hijacking DiskCleanup Scheduled
 
 [source,js]
 ----------------------------------
-event.category:process and event.type:(start or process_started) and
-process.args:(/autoclean or /AUTOCLEAN) and
-process.parent.name:svchost.exe and not
-process.executable:("C:\Windows\System32\cleanmgr.exe" or
-"C:\Windows\SysWOW64\cleanmgr.exe")
+process where event.type in ("start", "process_started") and
+process.args:"/autoclean" and process.args:"/d" and not
+process.executable : ("C:\\Windows\\System32\\cleanmgr.exe",
+"C:\\Windows\\SysWOW64\\cleanmgr.exe")
 ----------------------------------
 
 ==== Threat mapping
@@ -57,6 +58,22 @@ process.executable:("C:\Windows\System32\cleanmgr.exe" or
 ** ID: TA0004
 ** Reference URL: https://attack.mitre.org/tactics/TA0004/
 * Technique:
-** Name: Bypass User Account Control
-** ID: T1088
-** Reference URL: https://attack.mitre.org/techniques/T1088/
+** Name: Abuse Elevation Control Mechanism
+** ID: T1548
+** Reference URL: https://attack.mitre.org/techniques/T1548/
+
+[[uac-bypass-via-diskcleanup-scheduled-task-hijack-history]]
+==== Rule version history
+
+Version 2 (7.11.0 release)::
+* Updated query, changed from:
++
+[source, js]
+----------------------------------
+event.category:process and event.type:(start or process_started) and
+process.args:(/autoclean or /AUTOCLEAN) and
+process.parent.name:svchost.exe and not
+process.executable:("C:\Windows\System32\cleanmgr.exe" or
+"C:\Windows\SysWOW64\cleanmgr.exe")
+----------------------------------
+

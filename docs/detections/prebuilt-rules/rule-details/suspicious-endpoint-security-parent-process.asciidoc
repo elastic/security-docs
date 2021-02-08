@@ -3,7 +3,7 @@
 
 A suspicious Endpoint Security parent process was detected. This may indicate a process hollowing or other form of code injection.
 
-*Rule type*: query
+*Rule type*: eql
 
 *Rule indices*:
 
@@ -28,9 +28,11 @@ A suspicious Endpoint Security parent process was detected. This may indicate a 
 * Threat Detection
 * Defense Evasion
 
-*Version*: 1
+*Version*: 2 (<<suspicious-endpoint-security-parent-process-history, version history>>)
 
 *Added ({stack} release)*: 7.10.0
+
+*Last modified ({stack} release)*: 7.11.0
 
 *Rule authors*: Elastic
 
@@ -41,10 +43,13 @@ A suspicious Endpoint Security parent process was detected. This may indicate a 
 
 [source,js]
 ----------------------------------
-event.category:process and event.type:(start or process_started) and
-process.name:(esensor.exe or "elastic-endpoint.exe" or "elastic-
-agent.exe") and not
-process.parent.executable:"C:\Windows\System32\services.exe"
+process where event.type in ("start", "process_started", "info") and
+process.name : ("esensor.exe", "elastic-endpoint.exe") and
+process.parent.executable != null and /* add FPs here */ not
+process.parent.executable : ("C:\\Program Files\\Elastic\\*",
+"C:\\Windows\\System32\\services.exe",
+"C:\\Windows\\System32\\WerFault*.exe",
+"C:\\Windows\\System32\\wermgr.exe")
 ----------------------------------
 
 ==== Threat mapping
@@ -59,3 +64,18 @@ process.parent.executable:"C:\Windows\System32\services.exe"
 ** Name: Masquerading
 ** ID: T1036
 ** Reference URL: https://attack.mitre.org/techniques/T1036/
+
+[[suspicious-endpoint-security-parent-process-history]]
+==== Rule version history
+
+Version 2 (7.11.0 release)::
+* Updated query, changed from:
++
+[source, js]
+----------------------------------
+event.category:process and event.type:(start or process_started) and
+process.name:(esensor.exe or "elastic-endpoint.exe" or "elastic-
+agent.exe") and not
+process.parent.executable:"C:\Windows\System32\services.exe"
+----------------------------------
+

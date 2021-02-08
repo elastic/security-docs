@@ -1,0 +1,62 @@
+[[program-files-directory-masquerading]]
+=== Program Files Directory Masquerading
+
+Identifies execution from a directory masquerading as the Windows Program Files directories. These paths are trusted and usually host trusted third party programs. An adversary may leverage masquerading, along with low privileges to bypass detections whitelisting those folders.
+
+*Rule type*: eql
+
+*Rule indices*:
+
+* winlogbeat-*
+* logs-endpoint.events.*
+
+*Severity*: medium
+
+*Risk score*: 43
+
+*Runs every*: 5 minutes
+
+*Searches indices from*: now-9m ({ref}/common-options.html#date-math[Date Math format], see also <<rule-schedule, `Additional look-back time`>>)
+
+*Maximum alerts per execution*: 100
+
+*Tags*:
+
+* Elastic
+* Host
+* Windows
+* Threat Detection
+* Defense Evasion
+
+*Version*: 1
+
+*Added ({stack} release)*: 7.11.0
+
+*Rule authors*: Elastic
+
+*Rule license*: Elastic License
+
+==== Rule query
+
+
+[source,js]
+----------------------------------
+process where event.type in ("start", "process_started", "info") and
+/* capture both fake program files directory in process executable as
+well as if passed in process args as a dll*/ process.args :
+("C:\\*Program*Files*\\*", "C:\\*Program*Files*\\*") and not
+process.args : ("C:\\Program Files\\*", "C:\\Program Files (x86)\\*")
+----------------------------------
+
+==== Threat mapping
+
+*Framework*: MITRE ATT&CK^TM^
+
+* Tactic:
+** Name: Defense Evasion
+** ID: TA0005
+** Reference URL: https://attack.mitre.org/tactics/TA0005/
+* Technique:
+** Name: Masquerading
+** ID: T1036
+** Reference URL: https://attack.mitre.org/techniques/T1036/
