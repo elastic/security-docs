@@ -3,7 +3,7 @@
 
 Identifies suspicious psexec activity which is executing from the psexec service that has been renamed, possibly to evade detection.
 
-*Rule type*: query
+*Rule type*: eql
 
 *Rule indices*:
 
@@ -28,9 +28,11 @@ Identifies suspicious psexec activity which is executing from the psexec service
 * Threat Detection
 * Execution
 
-*Version*: 1
+*Version*: 2 (<<suspicious-process-execution-via-renamed-psexec-executable-history, version history>>)
 
 *Added ({stack} release)*: 7.10.0
+
+*Last modified ({stack} release)*: 7.11.0
 
 *Rule authors*: Elastic
 
@@ -41,11 +43,9 @@ Identifies suspicious psexec activity which is executing from the psexec service
 
 [source,js]
 ----------------------------------
-event.category:process and event.type:(start or process_started) and
-(process.pe.original_file_name:(psexesvc.exe or PSEXESVC.exe) or
-winlog.event_data.OriginalFileName:(psexesvc.exe or PSEXESVC.exe)) and
-process.parent.name:services.exe and not process.name:(psexesvc.exe or
-PSEXESVC.exe)
+process where event.type in ("start", "process_started", "info") and
+process.pe.original_file_name : "psexesvc.exe" and not process.name :
+"PSEXESVC.exe"
 ----------------------------------
 
 ==== Threat mapping
@@ -57,6 +57,22 @@ PSEXESVC.exe)
 ** ID: TA0002
 ** Reference URL: https://attack.mitre.org/tactics/TA0002/
 * Technique:
-** Name: Service Execution
-** ID: T1035
-** Reference URL: https://attack.mitre.org/techniques/T1035/
+** Name: System Services
+** ID: T1569
+** Reference URL: https://attack.mitre.org/techniques/T1569/
+
+[[suspicious-process-execution-via-renamed-psexec-executable-history]]
+==== Rule version history
+
+Version 2 (7.11.0 release)::
+* Updated query, changed from:
++
+[source, js]
+----------------------------------
+event.category:process and event.type:(start or process_started) and
+(process.pe.original_file_name:(psexesvc.exe or PSEXESVC.exe) or
+winlog.event_data.OriginalFileName:(psexesvc.exe or PSEXESVC.exe)) and
+process.parent.name:services.exe and not process.name:(psexesvc.exe or
+PSEXESVC.exe)
+----------------------------------
+

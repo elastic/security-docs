@@ -8,6 +8,7 @@ Identifies when a user grants permissions to an Azure-registered application or 
 *Rule indices*:
 
 * filebeat-*
+* logs-azure*
 
 *Severity*: medium
 
@@ -32,9 +33,11 @@ Identifies when a user grants permissions to an Azure-registered application or 
 * SecOps
 * Identity and Access
 
-*Version*: 1
+*Version*: 2 (<<possible-consent-grant-attack-via-azure-registered-application-history, version history>>)
 
 *Added ({stack} release)*: 7.10.0
+
+*Last modified ({stack} release)*: 7.11.0
 
 *Rule authors*: Elastic
 
@@ -52,10 +55,11 @@ Identifies when a user grants permissions to an Azure-registered application or 
 
 [source,js]
 ----------------------------------
-event.dataset:(azure.activitylogs or azure.auditlogs) and (
-azure.activitylogs.operation_name:"Consent to application" or
-azure.auditlogs.operation_name:"Consent to application" ) and
-event.outcome:success
+event.dataset:(azure.activitylogs or azure.auditlogs or o365.audit)
+and ( azure.activitylogs.operation_name:"Consent to application" or
+azure.auditlogs.operation_name:"Consent to application" or
+o365.audit.Operation:"Consent to application." ) and
+event.outcome:(Success or success)
 ----------------------------------
 
 ==== Threat mapping
@@ -67,9 +71,9 @@ event.outcome:success
 ** ID: TA0001
 ** Reference URL: https://attack.mitre.org/tactics/TA0001/
 * Technique:
-** Name: Spearphishing Link
-** ID: T1192
-** Reference URL: https://attack.mitre.org/techniques/T1192/
+** Name: Phishing
+** ID: T1566
+** Reference URL: https://attack.mitre.org/techniques/T1566/
 
 
 * Tactic:
@@ -80,3 +84,18 @@ event.outcome:success
 ** Name: Steal Application Access Token
 ** ID: T1528
 ** Reference URL: https://attack.mitre.org/techniques/T1528/
+
+[[possible-consent-grant-attack-via-azure-registered-application-history]]
+==== Rule version history
+
+Version 2 (7.11.0 release)::
+* Updated query, changed from:
++
+[source, js]
+----------------------------------
+event.dataset:(azure.activitylogs or azure.auditlogs) and (
+azure.activitylogs.operation_name:"Consent to application" or
+azure.auditlogs.operation_name:"Consent to application" ) and
+event.outcome:success
+----------------------------------
+
