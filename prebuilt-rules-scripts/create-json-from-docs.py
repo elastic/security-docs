@@ -1,26 +1,24 @@
 import json
-import textwrap
-import toml
-import os
-import glob
 from pathlib import Path
-import re
+
 
 # Creates a JSON file from the existing prebuilt rules documentation and saves
 # it in the diff-files folder.
 
-releaseVersion = "7.10.0" #Security app release version - update as required
+releaseVersion = "7.11.0"  # Security app release version - update as required
+ROOT = Path(__file__).resolve().parent.parent
+
 
 def sort_by_name(rule):
-    '''
-    Helper to sort rule by name'''
+    """Helper to sort rule by name"""
     return rule['name']
-    
-docSourcePath = "../docs/detections/prebuilt-rules/rule-details/*.asciidoc"
+
+
+docSourcePath = ROOT.joinpath('docs', 'detections', 'prebuilt-rules', 'rule-details')
 
 rule_dict = []
     
-files = [f for f in glob.glob(docSourcePath)]
+files = docSourcePath.glob("*.asciidoc")
 
 name = ""
 description = ""
@@ -49,7 +47,8 @@ for file in files:
                 continue
             if isFalsePos:
                 falsePos = falsePos + line
-                if ("==== Rule query" in text[count]) or ("==== Investigation guide" in text[count]) or ("==== Rule version history" in text[count]):
+                if ("==== Rule query" in text[count]) or ("==== Investigation guide" in text[count]) or \
+                        ("==== Rule version history" in text[count]):
                     isFalsePos = False
             if "==== Investigation guide" in line:
                 isNotes = True
@@ -96,5 +95,6 @@ for file in files:
 
 rule_dict = sorted(rule_dict, key=sort_by_name)
 
-with open("diff-files/gen-files/json-from-docs-" + releaseVersion + ".json", "w") as fp:
+diff_file = ROOT.joinpath("prebuilt-rules-scripts/diff-files/gen-files/json-from-docs-" + releaseVersion + ".json")
+with open(diff_file, "w") as fp:
     json.dump(rule_dict, fp, indent=2)
