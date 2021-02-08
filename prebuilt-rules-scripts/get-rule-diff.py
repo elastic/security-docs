@@ -1,31 +1,30 @@
 import json
-import textwrap
-import toml
-import os
-import glob
 from pathlib import Path
-import re
 
 # Compares the newly generated JSON file for the new release with the JSON file
 # generated for the previous release. It checks if rule queries have been
 # changed and updates the version history as required (changelog object).
 
-releaseVersion = "7.10.0" # Security app release version - update as required
-previousReleaseVersion = "7.9.1" # Release pf the previous release for which docs were generated 
+releaseVersion = "7.11.0"  # Security app release version - update as required
+previousReleaseVersion = "7.10.0"  # Release pf the previous release for which docs were generated
+ROOT = Path(__file__).resolve().parent.parent
+
 
 def sort_by_name(rule):
     '''
     Helper to sort rule by name'''
     return rule['name']
 
-# Path to the JSON rule file generated for this release
 
-with open('diff-files/gen-files/updated-text-json-file-' + releaseVersion + '.json', 'r') as source:
+# Path to the JSON rule file generated for this release
+diff_file = ROOT.joinpath("prebuilt-rules-scripts/diff-files/gen-files/json-from-docs-" + releaseVersion + ".json")
+with open(diff_file, 'r') as source:
     lasted_rules_dict = json.load(source)
 
 # Path to the final JSON rule file generated for the previous release
-    
-with open('diff-files/final-files/final-rule-file-' + previousReleaseVersion + '.json', 'r') as source:
+prev_final = ROOT.joinpath("prebuilt-rules-scripts/diff-files/final-files/final-rule-file-" +
+                           previousReleaseVersion + ".json")
+with open(prev_final, 'r') as source:
     previous_rules_dict = json.load(source)
     
 diff_dict = []
@@ -78,6 +77,6 @@ for new_rule in lasted_rules_dict:
 
 # Outputs the final JSON file from which the documentation is generated. Note
 # that this file is needed for the next release to compare future changes.
-
-with open("diff-files/final-files/final-rule-file-" + releaseVersion +  ".json", "w") as fp:
+final = ROOT.joinpath("prebuilt-rules-scripts/diff-files/final-files/final-rule-file-" + releaseVersion + ".json")
+with open(final, "w") as fp:
     json.dump(diff_dict, fp, indent=2)
