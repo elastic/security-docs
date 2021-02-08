@@ -1,0 +1,71 @@
+[[encrypting-files-with-winrar-or-7z]]
+=== Encrypting Files with WinRar or 7z
+
+Identifies use of WinRar or 7z to create an encrypted files. Adversaries will often compress and encrypt data in preparation for exfiltration.
+
+*Rule type*: eql
+
+*Rule indices*:
+
+* logs-endpoint.events.*
+* winlogbeat-*
+
+*Severity*: medium
+
+*Risk score*: 47
+
+*Runs every*: 5 minutes
+
+*Searches indices from*: now-6m ({ref}/common-options.html#date-math[Date Math format], see also <<rule-schedule, `Additional look-back time`>>)
+
+*Maximum alerts per execution*: 100
+
+*References*:
+
+* https://www.welivesecurity.com/2020/12/02/turla-crutch-keeping-back-door-open/
+
+*Tags*:
+
+* Elastic
+* Host
+* Windows
+* Threat Detection
+* Exfiltration
+
+*Version*: 1
+
+*Added ({stack} release)*: 7.11.0
+
+*Rule authors*: Elastic
+
+*Rule license*: Elastic License
+
+==== Rule query
+
+
+[source,js]
+----------------------------------
+process where event.type in ("start", "process_started") and
+((process.name:"rar.exe" or process.code_signature.subject_name ==
+"win.rar GmbH" or process.pe.original_file_name == "Command line
+RAR") and process.args == "a" and process.args : ("-hp*", "-p*",
+"-dw", "-tb", "-ta", "/hp*", "/p*", "/dw", "/tb", "/ta")) or
+(process.pe.original_file_name in ("7z.exe", "7za.exe") and
+process.args == "a" and process.args : ("-p*", "-sdel")) /*
+uncomment if noisy for backup software related FPs */ /* not
+process.parent.executable : ("C:\\Program Files\\*.exe", "C:\\Program
+Files (x86)\\*.exe") */
+----------------------------------
+
+==== Threat mapping
+
+*Framework*: MITRE ATT&CK^TM^
+
+* Tactic:
+** Name: Collection
+** ID: TA0009
+** Reference URL: https://attack.mitre.org/tactics/TA0009/
+* Technique:
+** Name: Archive Collected Data
+** ID: T1560
+** Reference URL: https://attack.mitre.org/techniques/T1560/

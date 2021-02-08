@@ -1,8 +1,5 @@
 import json
 import textwrap
-import toml
-import os
-import glob
 from pathlib import Path
 import re
 
@@ -10,18 +7,22 @@ import re
 # are generated, even those that have not been changed, so you can just copy and
 # paste the updated files to the documentation folders.
 
-releaseVersion = "7.10.0" # Security app release version - update as required
+releaseVersion = "7.11.0"  # Security app release version - update as required
+ROOT = Path(__file__).resolve().parent.parent
+PREBUILT_RULES = ROOT.joinpath('prebuilt-rules-scripts')
+GENERATED_ASCII = ROOT.joinpath('generated-ascii-files')
 
-def sort_by_name(rule):
-    '''
-    Helper to sort rule by name'''
-    return rule['name']
-    
-def sort_tag_by_name(tag):
-    '''
-    Helper to sort tags by name'''
-    return rule['tag']
-    
+
+def sort_by_name(_rule):
+    """Helper to sort rule by name"""
+    return _rule['name']
+
+
+def sort_tag_by_name(_rule):
+    """Helper to sort tags by name"""
+    return _rule['tag']
+
+
 def translate_interval_period(interval):
     units = ""
     length = ""
@@ -52,14 +53,16 @@ def translate_interval_period(interval):
             units = units[:-1]
     return str(length + " " + units)
 
+
 # Formats text using asciidoc syntax
 
-def formatText(text):
+def format_text(text):
     return text.replace('\\n', '\n')
 
-# Path to the generated JSON file
 
-with open('diff-files/final-files/final-rule-file-' + releaseVersion + '.json', 'r') as source:
+# Path to the generated JSON file
+final_diff = str(PREBUILT_RULES.joinpath('diff-files', 'final-files', f'final-rule-file-{releaseVersion}.json'))
+with open(final_diff, 'r') as source:
      rules_dict = json.load(source)
 
 
@@ -107,9 +110,10 @@ for rule in sorted_rules:
 
 newText = newText + "|=============================================="
 
-fileWrite = "generated-ascii-files" + "/" + "prebuilt-rules-reference.asciidoc"
-with open(fileWrite, "w+") as writeFile:
-        writeFile.write(newText)
+GENERATED_ASCII.mkdir(exist_ok=True)
+file_write = str(GENERATED_ASCII.joinpath('prebuilt-rules-reference.asciidoc'))
+with open(file_write, "w+") as writeFile:
+    writeFile.write(newText)
     
         
 # End overview table
@@ -127,7 +131,7 @@ for rule in sorted_rules:
     rule_link = re.sub('-+', '-', rule_link)
     rule_link = re.sub('/', '-', rule_link)
     fileText = "[[" + rule_link + "]]\n=== " + rule['name'] + "\n\n"
-    fileText = fileText + formatText(rule['description']) + "\n\n"
+    fileText = fileText + format_text(rule['description']) + "\n\n"
     fileText = fileText + "*Rule type*: " + rule['type'] + "\n\n"
     if 'machine_learning_job_id' in rule:
         fileText = fileText + "*Machine learning job*: " + rule['machine_learning_job_id'] + "\n\n"
@@ -181,10 +185,10 @@ for rule in sorted_rules:
         if len(rule['false_positives']) != 0:
             fileText = fileText + "\n==== Potential false positives" + "\n\n"
             for i in rule['false_positives']:
-                fileText = fileText + formatText(i) + "\n"
+                fileText = fileText + format_text(i) + "\n"
     if 'note' in rule:
         fileText = fileText + "\n==== Investigation guide" + "\n\n"
-        fileText = fileText + formatText(rule['note']) + "\n"
+        fileText = fileText + format_text(rule['note']) + "\n"
     if 'query' in rule:
         fileText = fileText + "\n==== Rule query\n\n"
         fileText = fileText + "\n[source,js]\n"
@@ -213,10 +217,12 @@ for rule in sorted_rules:
                 fileText = fileText + "** Name: " + i['tactic']['name'] + "\n"
                 fileText = fileText + "** ID: " + i['tactic']['id'] + "\n"
                 fileText = fileText + "** Reference URL: " + i['tactic']['reference'] + "\n"
-                fileText = fileText + "* Technique:\n"
-                fileText = fileText + "** Name: " + i['technique'][0]['name'] + "\n"
-                fileText = fileText + "** ID: " + i['technique'][0]['id'] + "\n"
-                fileText = fileText + "** Reference URL: " + i['technique'][0]['reference'] + "\n"
+
+                if i.get('technique'):
+                    fileText = fileText + "* Technique:\n"
+                    fileText = fileText + "** Name: " + i['technique'][0]['name'] + "\n"
+                    fileText = fileText + "** ID: " + i['technique'][0]['id'] + "\n"
+                    fileText = fileText + "** Reference URL: " + i['technique'][0]['reference'] + "\n"
     if 'changelog' in rule:
         identifier = rule_link + "-history"
         fileText = fileText + "\n[[" + identifier + "]]\n"
@@ -241,9 +247,14 @@ for rule in sorted_rules:
             if i['doc_text'] != "Updated query." and ruleNameChanged == False:
                 fileText = fileText + "* " + i['doc_text'] + "\n\n"
             ruleNameChanged = False
-    asciidocFile = "generated-ascii-files/rule-details/" + rule_link + ".asciidoc"
-    with open(asciidocFile, "w+") as asciiWrite:
+
+    rule_details_dir = GENERATED_ASCII.joinpath('rule-details')
+    rule_details_dir.mkdir(exist_ok=True)
+    asciidoc_file = str(rule_details_dir.joinpath(f'{rule_link}.asciidoc'))
+
+    with open(asciidoc_file, "w+") as asciiWrite:
         asciiWrite.write(fileText)
+
     rules_index_file.append("include::rule-details/" + rule_link + ".asciidoc[]")
 
 # Create index file
@@ -253,9 +264,9 @@ index_file_text = ""
 for index_link in rules_index_file:
     index_file_text += index_link + "\n"
 
-indexFileWrite = "generated-ascii-files" + "/" + "rule-desc-index.asciidoc"
-with open(indexFileWrite, "w+") as indexFileWrite:
-        indexFileWrite.write(index_file_text)
+index_file_write = str(GENERATED_ASCII.joinpath('rule-desc-index.asciidoc'))
+with open(index_file_write, "w+") as indexFileWrite:
+    indexFileWrite.write(index_file_text)
 
 # Print files of rules with changed names to terminal
 
@@ -295,12 +306,13 @@ These prebuilt rules have been updated:
 
 """
 
+
 def addVersionUpdates(updated):
     global versionHistoryPage
     versionHistoryPage = versionHistoryPage + "[float]\n"
     versionHistoryPage = versionHistoryPage + "=== " + updated + "\n\n"
     if updated == "7.7.0":
-                        versionHistoryPage = versionHistoryPage + deletedRules
+        versionHistoryPage = versionHistoryPage + deletedRules
     for rule in sorted_rules:
         if 'changelog' in rule:
             for i in (rule['changelog']['changes']):
@@ -311,6 +323,8 @@ def addVersionUpdates(updated):
                     linkString = re.sub('/', '-', linkString)
                     versionHistoryPage = versionHistoryPage + "<<" + linkString + ">>\n\n"
 
+
+addVersionUpdates("7.11.0")
 addVersionUpdates("7.10.0")
 addVersionUpdates("7.9.0")
 addVersionUpdates("7.8.0")
@@ -318,6 +332,6 @@ addVersionUpdates("7.7.0")
 addVersionUpdates("7.6.2")
 addVersionUpdates("7.6.1")       
 
-fileWrite = "generated-ascii-files" + "/" + "prebuilt-rules-changelog.asciidoc"
-with open(fileWrite, "w+") as writeFile:
-        writeFile.write(versionHistoryPage)
+file_write = str(GENERATED_ASCII.joinpath('prebuilt-rules-changelog.asciidoc'))
+with open(file_write, "w+") as writeFile:
+    writeFile.write(versionHistoryPage)

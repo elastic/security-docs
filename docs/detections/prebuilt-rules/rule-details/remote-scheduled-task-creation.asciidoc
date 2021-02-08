@@ -1,0 +1,79 @@
+[[remote-scheduled-task-creation]]
+=== Remote Scheduled Task Creation
+
+Identifies remote scheduled task creations on a target host. This could be indicative of adversary lateral movement.
+
+*Rule type*: eql
+
+*Rule indices*:
+
+* logs-endpoint.events.*
+* winlogbeat-*
+
+*Severity*: medium
+
+*Risk score*: 47
+
+*Runs every*: 5 minutes
+
+*Searches indices from*: now-9m ({ref}/common-options.html#date-math[Date Math format], see also <<rule-schedule, `Additional look-back time`>>)
+
+*Maximum alerts per execution*: 100
+
+*Tags*:
+
+* Elastic
+* Host
+* Windows
+* Threat Detection
+* Lateral Movement
+
+*Version*: 1
+
+*Added ({stack} release)*: 7.11.0
+
+*Rule authors*: Elastic
+
+*Rule license*: Elastic License
+
+==== Investigation guide
+
+Decode the base64 encoded tasks actions registry value to investigate the task configured action.
+
+==== Rule query
+
+
+[source,js]
+----------------------------------
+/* Task Scheduler service incoming connection followed by TaskCache
+registry modification */ sequence by host.id, process.entity_id with
+maxspan = 1m [network where process.name : "svchost.exe" and
+network.direction == "incoming" and source.port >= 49152 and
+destination.port >= 49152 and source.address != "127.0.0.1" and
+source.address != "::1" ] [registry where registry.path :
+"HKLM\\SOFTWARE\\Microsoft\\Windows
+NT\\CurrentVersion\\Schedule\\TaskCache\\Tasks\\*\\Actions"]
+----------------------------------
+
+==== Threat mapping
+
+*Framework*: MITRE ATT&CK^TM^
+
+* Tactic:
+** Name: Lateral Movement
+** ID: TA0008
+** Reference URL: https://attack.mitre.org/tactics/TA0008/
+* Technique:
+** Name: Remote Services
+** ID: T1021
+** Reference URL: https://attack.mitre.org/techniques/T1021/
+
+
+* Tactic:
+** Name: Execution
+** ID: TA0002
+** Reference URL: https://attack.mitre.org/tactics/TA0002/
+* Technique:
+** Name: Scheduled Task/Job
+** ID: T1053
+** Reference URL: https://attack.mitre.org/techniques/T1053/
