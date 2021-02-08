@@ -2,10 +2,8 @@
 [role="xpack"]
 == Creating detection rules
 
-beta[]
-
 Rules run periodically and search for source events or {ml} job anomaly scores
-that meet their criteria. When a rule's criteria are met, a detections alert is
+that meet their criteria. When a rule's criteria are met, a detection alert is
 created.
 
 You can create the following types of rules:
@@ -31,19 +29,16 @@ alert is generated for every source IP address that appears in at least 10 of
 the rule's search results.
 * <<create-eql-rule, *Event correlation*>>: Searches the defined indices and creates an alert when results match an
 {ref}/eql.html[Event Query Language (EQL)] query.
-* <<create-indicator-rule, *Indicator match*>>: Creates an alert when {es-sec} index field values match
-field values defined in the specified indicator index patterns. For example, you
-can create a threat index for IP addresses and use this index to create an alert
-whenever an event's `destination.ip` equals a value in the index. Threat index
-field mappings should be {ecs-ref}[ECS-compliant]. For information on creating
-{es} indices and field types, see
+* <<create-indicator-rule, *Indicator match*>>: Creates an alert when {es-sec} index field values match field values defined in the specified indicator index patterns. For example, you can create an indicator index for IP addresses and use this index to create an alert whenever an event's `destination.ip` equals a value in the index. Indicator index field mappings should be {ecs-ref}[ECS-compliant]. For information on creating {es} indices and field types, see
 {ref}/getting-started-index.html[Index some documents],
 {ref}/indices-create-index.html[Create index API] and
 {ref}/mapping-types.html[Field data types].
 
+TIP: You can use value lists as the indicator match index. See <<indicator-value-lists>> at the end of this topic for more information.
+
 When creating or modifying rules, you can add exceptions that prevent a rule from generating an alert even when its criteria are met. This is useful for reducing noise, such as preventing alerts from trusted processes and internal IP addresses. <<detections-ui-exceptions>> describes how to add exceptions to a rule.
 
-NOTE: You can add exceptions to custom query, event correlation, and indicator match rule types.
+NOTE: You can add exceptions to custom query, machine learning, event correlation, and indicator match rule types.
 
 If you are creating a custom query, threshold, or event correlation rule, you can preview the rule beforehand to see what kind of results you can expect. See <<preview-rules, Preview your rule>> in this topic for more information.
 
@@ -109,7 +104,7 @@ then:
 .. Use the filter and query fields to create the criteria used for detecting
 alerts.
 +
-NOTE: You can use {kib} saved queries (save icon) and queries from saved timelines (`Import query from saved timeline`) as rule conditions.
+NOTE: You can use {kib} saved queries (save icon) and queries from saved Timelines (`Import query from saved Timeline`) as rule conditions.
 +
 For example, the following rule detects when the `vssadmin delete shadows`
 Windows command is executed:
@@ -197,7 +192,7 @@ NOTE: For sequence events, the {security-app} generates a single alert when all 
 [[create-indicator-rule]]
 ==== Create an indicator match rule
 * To create an indicator match rule that searches the specified indicator index patterns for
-field values, select *Indicator Match* and then fill in these fields:
+field values, select *Indicator Match* and then fill in the following fields:
 .. *Index patterns*: The {es-sec} event indices on which the rules runs.
 .. *Custom query*: The query and filters used to retrieve the required results from
 the {es-sec} event indices. For example, if you only need to check
@@ -205,33 +200,35 @@ the {es-sec} event indices. For example, if you only need to check
 +
 TIP: If you want the rule to check every field in the indices, use this
 wildcard expression: `*:*`.
-.. *Indicator index patterns*: The indicator index patterns containing field values for which
-you want to generate alerts.
+.. *Indicator index patterns*: The indicator index patterns containing field values for which you want to generate alerts.
++
+IMPORTANT: Data in indicator indices must be <<ecs-compliant-reqs, ECS compatible>>, and, therefore, must contain a `@timestamp` field.
++
 .. *Indicator index query*: The query and filters used to filter the fields from
 the indicator index patterns.
-.. *Indicator Mapping*: Compares the values of the specified event and indicator field
+.. *Indicator mapping*: Compares the values of the specified event and indicator field
 values. When the field values are identical, an alert is generated. To define
-which field values are compared from the indices:
+which field values are compared from the indices add the following:
 ** *Field*: The field used for comparing values in the {es-sec} event
 indices.
-** *Indicator index field*: The field used for comparing values in the threat
+** *Indicator index field*: The field used for comparing values in the indicator
 indices.
 .. You can add `AND` and `OR` clauses to define when alerts are generated.
 +
 For example, to create a rule that generates alerts when `host.name` *and*
 `destination.ip` field values in the `logs-*` or `packetbeat-*` {es-sec} indices
-are identical to the corresponding field values in the `mock-threat-list` threat
+are identical to the corresponding field values in the `mock-threat-list` indicator
 index, enter the rule parameters seen in the following image:
 +
 [role="screenshot"]
 image::images/indicator-rule-example.png[]
-TIP: When an indicator match rule's conditions are met, the resulting detection alert does not contain explicit information about which event field(s) match which indicator field(s). As such, when you <<rule-ui-basic-params, configure basic rule settings>>, it is recommended that you include a reference to the field(s) to be matched in the rule `Name` and rule `Description`, and ensure that the Timeline template associated with the rule includes pre-defined column(s) for these fields. For example, if you create an indicator match rule that looks for matches between the `file.extension` field in file events and the `threat.file.extension` field in an indicator index, you might name your rule *"file.extension matches ransomware file extension"*, so that when an analyst investigates the detection alerts, they will see the rule name and know to further investigate the `file.extension` field value.
+TIP: When an indicator match rule's conditions are met, the resulting detection alert does not contain explicit information about which event field(s) match which indicator field(s). As such, when you <<rule-ui-basic-params, configure basic rule settings>>, it is recommended that you include a reference to the field(s) to be matched in the rule `Name` and rule `Description`, and ensure that the Timeline template associated with the rule includes pre-defined column(s) for these fields. For example, if you create an indicator match rule that looks for matches between the `file.extension` field in file events and the `threat.file.extension` field in an indicator index, you might name your rule `"file.extension matches ransomware file extension"`, so that when an analyst investigates the detection alerts, they will see the rule name and know to further investigate the `file.extension` field value.
 . Select the Timeline template used when you investigate an alert created by
 the rule in Timeline (optional).
 +
 TIP: Before you create rules, create <<timelines-ui, Timeline templates>> so
 they can be selected here. When alerts generated by the rule are investigated
-in Timeline, Timeline query values are replaced with their corresponding alert
+in the Timeline, Timeline query values are replaced with their corresponding alert
 field values.
 +
 . Click *Continue*. The *About rule* pane is displayed.
@@ -245,7 +242,7 @@ image::images/about-rule-pane.png[]
 [[preview-rules]]
 === Preview your rule (optional)
 
-You can preview a custom query, threshold, or EQL (Event Correlation) rule to get feedback on how noisy the rule will be before submitting it. This allows you to fine-tune the query, if needed, to reduce the amount of alerts that may come in.
+You can preview a custom query, threshold, or EQL (Event Correlation) rule to get feedback on how noisy the rule will be before submitting it. You can then fine-tune the query, if needed, to reduce the number of alerts that may come in.
 
 To preview a rule:
 
@@ -255,12 +252,12 @@ To preview a rule:
 +
 . Click *Preview results*. A histogram shows the number of alerts you can expect based on the defined rule parameters and historical events in your indices.
 
-A "noise warning" is displayed if the preview generates more than alert per hour.
+A "noise warning" is displayed if the preview generates more than one alert per hour.
 
 [role="screenshot"]
 image::images/preview-rule.png[]
 
-NOTE: The preview excludes effects of rule exceptions and timestamp overrides.
+NOTE: The preview excludes the effects of rule exceptions and timestamp overrides.
 
 [float]
 [[rule-ui-basic-params]]
@@ -293,12 +290,15 @@ with the *Severity* level. General guidelines are:
 * `74` - `100` represents critical severity.
 .. *Risk score override* (optional): Select to use a source event value to
 override the *Default risk score* in generated alerts. When selected, a UI
-component is displayed where you can select the source field used for the risk
+component is displayed to select the source field used for the risk
 score. For example, if you want to use the source event's risk score in
 alerts:
 +
 [role="screenshot"]
 image::images/risk-source-field-ui.png[]
++
+.. *Tags* (optional): Words and phrases used to categorize, filter, and search
+the rule.
 
 . Continue with *one* of the following:
 
@@ -309,14 +309,12 @@ image::images/risk-source-field-ui.png[]
 [[rule-ui-advanced-params]]
 === Configure advanced rule settings (optional)
 
-. Click *Advanced settings* and fill in these fields:
+. Click *Advanced settings* and fill in the following fields where applicable:
 .. *Reference URLs* (optional): References to information that is relevant to
 the rule. For example, links to background information.
-.. *False positives* (optional): List of common scenarios that may produce
+.. *False positive examples* (optional): List of common scenarios that may produce
 false-positive alerts.
-.. *MITRE ATT&CK^TM^* (optional): Relevant MITRE framework tactics and techniques.
-.. *Tags* (optional): Words and phrases used to categorize, filter, and search
-the rule.
+.. *MITRE ATT&CK^TM^ threats* (optional): Add relevant https://attack.mitre.org/[MITRE] framework tactics, techniques, and subtechniques.
 .. *Investigation guide* (optional): Information for analysts investigating
 alerts created by the rule.
 .. *Author* (optional): The rule's authors.
@@ -360,7 +358,7 @@ image::images/schedule-rule.png[]
 rule searches indices with the additional time.
 +
 For example, if you set a rule to run every 5 minutes with an additional
-look-back time of 1 minute, the rule runs every 5 minutes but analyses the
+look-back time of 1 minute, the rule runs every 5 minutes but analyzes the
 documents added to indices during the last 6 minutes.
 +
 [IMPORTANT]
@@ -369,7 +367,7 @@ It is recommended to set the `Additional look-back time` to at
 least 1 minute. This ensures there are no missing alerts when a rule does not
 run exactly at its scheduled time.
 
-The {es-sec-app} performs deduplication. Duplicate alerts discovered during the
+The {es-sec-app} prevents duplication. Any duplicate alerts that are discovered during the
 `Additional look-back time` are *not* created.
 ==============
 . Click *Continue*. The *Rule actions* pane is displayed.
@@ -425,7 +423,7 @@ notifications.
 +
 . Create the rule with or without activation.
 +
-NOTE: When you activate a rule, it is queued and its schedule is determined by
+NOTE: When you activate a rule, it is queued, and its schedule is determined by
 its initial run time. For example, if you activate a rule that runs every 5
 minutes at 14:03 but it does not run until 14:04, it will run again at 14:09.
 
@@ -433,7 +431,7 @@ minutes at 14:03 but it does not run until 14:04, it will run again at 14:09.
 [[rule-action-variables]]
 ==== Alert notification placeholders
 
-These placeholders can be added to <<rule-notifications, rule action>> fields:
+You can use http://mustache.github.io/[mustache syntax] to add the following placeholders to <<rule-notifications, rule action>> fields:
 
 * `{{state.signals_count}}`: Number of alerts detected
 * `{{{context.results_link}}}`: URL to the alerts in {kib}
@@ -460,8 +458,8 @@ used as an identifier across systems
 * `{{context.rule.severity}}`: Default rule severity
 * `{{context.rule.threat}}`: Rule threat framework
 * `{{context.rule.threshold}}`: Rule threshold values (threshold rules only)
-* `{{context.rule.timeline_id}}`: Associated timeline ID
-* `{{context.rule.timeline_title}}`: Associated timeline name
+* `{{context.rule.timeline_id}}`: Associated Timeline ID
+* `{{context.rule.timeline_title}}`: Associated Timeline name
 * `{{context.rule.type}}`: Rule type
 * `{{context.rule.version}}`: Rule version
 
@@ -469,7 +467,13 @@ NOTE: The `{{context.rule.severity}}` and `{{context.rule.risk_score}}`
 placeholders contain the rule's default values even when the *Severity override*
 and *Risk score override* options are used.
 
-To understand which fields to parse, see the <<rule-api-overview>> to view the JSON representation of rules. The following is an example of http://mustache.github.io/[mustache syntax] to display the list of enabled filters:
+[float]
+[[placeholder-examples]]
+===== Alert placeholder examples
+
+To understand which fields to parse, see the <<rule-api-overview>> to view the JSON representation of rules.
+
+Example using `{{context.rule.filters}}` to output a list of filters:
 
 [source,json]
 --------------------------------------------------
@@ -477,3 +481,42 @@ To understand which fields to parse, see the <<rule-api-overview>> to view the J
 {{^meta.disabled}}{{meta.key}} {{#meta.negate}}NOT {{/meta.negate}}{{meta.type}} {{^exists}}{{meta.value}}{{meta.params.query}}{{/exists}}{{/meta.disabled}}
 {{/context.rule.filters}}
 --------------------------------------------------
+
+Example using `{{context.alerts}}` as an array, which contains each alert generated since the last time the action was executed:
+
+[source,json]
+--------------------------------------------------
+{{#context.alerts}}
+Detection alert for user: {{user.name}}
+{{/context.alerts}}
+--------------------------------------------------
+
+Example using the mustache "current element" notation `{{.}}` to output all the rule references in the `signal.rule.references` array:
+
+[source,json]
+--------------------------------------------------
+{{#signal.rule.references}} {{.}} {{/signal.rule.references}}
+--------------------------------------------------
+
+[float]
+[[indicator-value-lists]]
+==== Use value lists with indicator match rules
+
+While there are numerous ways you can add data into indicator indices, you can use value lists as the indicator match index in an indicator match rule. Take the following scenario, for example:
+
+You uploaded a value list of known ransomware domains, and you want to be notified if any of those domains match a value contained in a domain field in your security event index pattern.
+
+. Upload a value list of indicators.
+. Create an indicator match rule and fill in the following fields:
+.. *Index patterns*: The Elastic Security event indices on which the rule runs.
+.. *Custom query*: The query and filters used to retrieve the required results from the Elastic Security event indices (e.g., `host.domain :*`).
+.. *Indicator index patterns*: Value lists are stored in a hidden index called `.items-<Kibana space>`. Enter the name of the {kib} space in which this rule will run in this field.
+.. *Indicator index query*: Enter the value `list_id :`, followed by the name of the value list you want to use as your indicator index (uploaded in Step 1 above).
+.. *Indicator mapping*
+* *Field*: Enter the field from the Elastic Security event indices to be used for comparing values.
+* *Indicator index field*: Enter the type of value list you created (i.e., `keyword`, `text`, or `IP`).
++
+TIP: If you don't remember this information, go to *Detections > Manage detection rules > Upload value lists*. Locate the appropriate value list and note the field in the corresponding `Type` column.
+
+[role="screenshot"]
+image::images/indicator_value_list.png[]
