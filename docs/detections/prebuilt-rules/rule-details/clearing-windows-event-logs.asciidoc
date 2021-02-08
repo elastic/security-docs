@@ -30,11 +30,11 @@ system.
 * Threat Detection
 * Defense Evasion
 
-*Version*: 5 (<<clearing-windows-event-logs-history, version history>>)
+*Version*: 6 (<<clearing-windows-event-logs-history, version history>>)
 
 *Added ({stack} release)*: 7.6.0
 
-*Last modified ({stack} release)*: 7.10.0
+*Last modified ({stack} release)*: 7.11.0
 
 *Rule authors*: Elastic
 
@@ -45,9 +45,11 @@ system.
 
 [source,js]
 ----------------------------------
-event.category:process and event.type:(start or process_started) and
-process.name:wevtutil.exe and process.args:cl or
-process.name:powershell.exe and process.args:Clear-EventLog
+event.category:process and event.type:(process_started or start) and
+(process.name:"wevtutil.exe" or
+process.pe.original_file_name:"wevtutil.exe") and
+process.args:("/e:false" or cl or "clear-log") or
+process.name:"powershell.exe" and process.args:"Clear-EventLog"
 ----------------------------------
 
 ==== Threat mapping
@@ -65,6 +67,16 @@ process.name:powershell.exe and process.args:Clear-EventLog
 
 [[clearing-windows-event-logs-history]]
 ==== Rule version history
+
+Version 6 (7.11.0 release)::
+* Updated query, changed from:
++
+[source, js]
+----------------------------------
+event.category:process and event.type:(start or process_started) and
+process.name:wevtutil.exe and process.args:cl or
+process.name:powershell.exe and process.args:Clear-EventLog
+----------------------------------
 
 Version 5 (7.10.0 release)::
 * Formatting only

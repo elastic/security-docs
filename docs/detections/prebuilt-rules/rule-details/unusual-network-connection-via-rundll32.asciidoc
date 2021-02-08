@@ -12,9 +12,9 @@ DLLs.
 * winlogbeat-*
 * logs-endpoint.events.*
 
-*Severity*: low
+*Severity*: medium
 
-*Risk score*: 21
+*Risk score*: 47
 
 *Runs every*: 5 minutes
 
@@ -30,11 +30,11 @@ DLLs.
 * Threat Detection
 * Execution
 
-*Version*: 6 (<<unusual-network-connection-via-rundll32-history, version history>>)
+*Version*: 7 (<<unusual-network-connection-via-rundll32-history, version history>>)
 
 *Added ({stack} release)*: 7.6.0
 
-*Last modified ({stack} release)*: 7.10.0
+*Last modified ({stack} release)*: 7.11.0
 
 *Rule authors*: Elastic
 
@@ -45,9 +45,11 @@ DLLs.
 
 [source,js]
 ----------------------------------
-sequence by process.entity_id [process where process.name :
-"rundll32.exe" and event.type == "start"] [network where
-process.name : "rundll32.exe" and not cidrmatch(destination.ip,
+sequence by host.id, process.entity_id with maxspan=1m [process
+where event.type in ("start", "process_started", "info") and
+process.name : "rundll32.exe" and process.args_count == 1] [network
+where process.name : "rundll32.exe" and network.protocol != "dns" and
+network.direction == "outgoing" and not cidrmatch(destination.ip,
 "10.0.0.0/8", "172.16.0.0/12", "192.168.0.0/16", "127.0.0.0/8")]
 ----------------------------------
 
@@ -56,16 +58,27 @@ process.name : "rundll32.exe" and not cidrmatch(destination.ip,
 *Framework*: MITRE ATT&CK^TM^
 
 * Tactic:
-** Name: Execution
-** ID: TA0002
-** Reference URL: https://attack.mitre.org/tactics/TA0002/
+** Name: Defense Evasion
+** ID: TA0005
+** Reference URL: https://attack.mitre.org/tactics/TA0005/
 * Technique:
-** Name: Rundll32
-** ID: T1085
-** Reference URL: https://attack.mitre.org/techniques/T1085/
+** Name: Signed Binary Proxy Execution
+** ID: T1218
+** Reference URL: https://attack.mitre.org/techniques/T1218/
 
 [[unusual-network-connection-via-rundll32-history]]
 ==== Rule version history
+
+Version 7 (7.11.0 release)::
+* Updated query, changed from:
++
+[source, js]
+----------------------------------
+sequence by process.entity_id [process where process.name :
+"rundll32.exe" and event.type == "start"] [network where
+process.name : "rundll32.exe" and not cidrmatch(destination.ip,
+"10.0.0.0/8", "172.16.0.0/12", "192.168.0.0/16", "127.0.0.0/8")]
+----------------------------------
 
 Version 6 (7.10.0 release)::
 * Updated query, changed from:

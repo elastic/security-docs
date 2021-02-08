@@ -1,0 +1,83 @@
+[[connection-to-commonly-abused-web-services]]
+=== Connection to Commonly Abused Web Services
+
+Adversaries may implement command and control communications that use common web services in order to hide their activity. This attack technique is typically targeted to an organization and uses web services common to the victim network which allows the adversary to blend into legitimate traffic. activity. These popular services are typically targeted since they have most likely been used before a compromise and allow adversaries to blend in the network.
+
+*Rule type*: eql
+
+*Rule indices*:
+
+* winlogbeat-*
+* logs-endpoint.events.*
+
+*Severity*: low
+
+*Risk score*: 21
+
+*Runs every*: 5 minutes
+
+*Searches indices from*: now-9m ({ref}/common-options.html#date-math[Date Math format], see also <<rule-schedule, `Additional look-back time`>>)
+
+*Maximum alerts per execution*: 100
+
+*Tags*:
+
+* Elastic
+* Host
+* Windows
+* Threat Detection
+* Command and Control
+
+*Version*: 1
+
+*Added ({stack} release)*: 7.11.0
+
+*Rule authors*: Elastic
+
+*Rule license*: Elastic License
+
+==== Rule query
+
+
+[source,js]
+----------------------------------
+network where network.protocol == "dns" and /* Add new
+WebSvc domains here */ wildcard(dns.question.name,
+"*.githubusercontent.*",
+"*.pastebin.*",
+"*drive.google.*",
+"*docs.live.*",
+"*api.dropboxapi.*",
+"*dropboxusercontent.*",
+"*onedrive.*", "*4shared.*",
+"*.file.io", "*filebin.net",
+"*slack-files.com",
+"*ghostbin.*", "*ngrok.*",
+"*portmap.*", "*serveo.net",
+"*localtunnel.me",
+"*pagekite.me",
+"*localxpose.io",
+"*notabug.org" ) and
+/* Insert noisy false positives here */ not process.name
+in ("MicrosoftEdgeCP.exe",
+"MicrosoftEdge.exe",
+"iexplore.exe", "chrome.exe",
+"msedge.exe", "opera.exe",
+"firefox.exe", "Dropbox.exe",
+"slack.exe", "svchost.exe",
+"thunderbird.exe", "outlook.exe",
+"OneDrive.exe")
+----------------------------------
+
+==== Threat mapping
+
+*Framework*: MITRE ATT&CK^TM^
+
+* Tactic:
+** Name: Command and Control
+** ID: TA0011
+** Reference URL: https://attack.mitre.org/tactics/TA0011/
+* Technique:
+** Name: Web Service
+** ID: T1102
+** Reference URL: https://attack.mitre.org/techniques/T1102/

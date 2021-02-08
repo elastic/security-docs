@@ -1,0 +1,71 @@
+[[incoming-execution-via-powershell-remoting]]
+=== Incoming Execution via PowerShell Remoting
+
+Identifies remote execution via Windows PowerShell remoting. Windows PowerShell remoting allows for running any Windows PowerShell command on one or more remote computers. This could be an indication of lateral movement.
+
+*Rule type*: eql
+
+*Rule indices*:
+
+* winlogbeat-*
+* logs-endpoint.events.*
+
+*Severity*: medium
+
+*Risk score*: 43
+
+*Runs every*: 5 minutes
+
+*Searches indices from*: now-9m ({ref}/common-options.html#date-math[Date Math format], see also <<rule-schedule, `Additional look-back time`>>)
+
+*Maximum alerts per execution*: 100
+
+*References*:
+
+* https://docs.microsoft.com/en-us/powershell/scripting/learn/remoting/running-remote-commands?view=powershell-7.1
+
+*Tags*:
+
+* Elastic
+* Host
+* Windows
+* Threat Detection
+* Lateral Movement
+
+*Version*: 1
+
+*Added ({stack} release)*: 7.11.0
+
+*Rule authors*: Elastic
+
+*Rule license*: Elastic License
+
+==== Potential false positives
+
+PowerShell remoting is a dual-use protocol that can be used for benign or malicious activity. It's important to baseline your environment to determine the amount of noise to expect from this tool.
+
+==== Rule query
+
+
+[source,js]
+----------------------------------
+sequence by host.id with maxspan = 30s [network where
+network.direction == "incoming" and destination.port in (5985, 5986)
+and network.protocol == "http" and source.address != "127.0.0.1"
+and source.address != "::1" ] [process where event.type ==
+"start" and process.parent.name : "wsmprovhost.exe" and not
+process.name : "conhost.exe"]
+----------------------------------
+
+==== Threat mapping
+
+*Framework*: MITRE ATT&CK^TM^
+
+* Tactic:
+** Name: Lateral Movement
+** ID: TA0008
+** Reference URL: https://attack.mitre.org/tactics/TA0008/
+* Technique:
+** Name: Remote Services
+** ID: T1021
+** Reference URL: https://attack.mitre.org/techniques/T1021/
