@@ -1,5 +1,52 @@
 # Create prebuilt rule documentation
 
+There are two ways to run the doc-generating scripts, the [simplified method](#simplified-method) or the original
+[multi-script method](#existing-multi-script-method)
+
+## Simplified method
+
+Within a virtual environment: 
+   * run `pip install requirements-rules.txt`
+   * run `python prebuilt-rules-scripts/generate.py generate 7.11.0`
+
+The following still applies:
+
+> After creating the documentation, you need to copy and paste the files in the generated-ascii-files folder to their 
+> relevant location in the docs folder, and then manually edit the text of new rules added for the latest release. 
+> This includes converting Markdown to AsciiDoc and editing the English.
+
+
+> Additionally, when the script detects a rule name has been changed, it prints a list of the relevant rule-details 
+> files to the terminal. These files will be deleted and printed
+
+Basically, delete the old files for which new ones (the printed files) were generated. If you open the file, you can
+see the previous filename
+
+
+### Details
+The previous existing scripts were combined into a single script for simplification and to eliminate the need to make
+code changes for every release.
+
+```console
+Usage: generate generate [OPTIONS] PACKAGE_VERSION
+
+  Generate pre-built rule documentation.
+
+Options:
+  -d, --rules-dir TEXT          Path of rules in Kibana repo
+  -l, --local-kibana DIRECTORY  Location of local kibana repo
+  -h, --help                    Show this message and exit.
+```
+
+So for generating docs for 7.11, run: `python prebuilt-rules-scripts/generate.py generate 7.11.0 -l ../kibana-fork`
+
+The default for `--local-kibana` is `kibana` and so can be passed using `-l` or it will prompt if not detected.
+
+Changelog entries are dependent on whether queries changed in rules. With the old method, this required updating the
+`create_documentation.py` script. Now, releases will be tracked in `/prebuilt-rules-scripts/changelog-entries.yml`
+
+## Existing multi-script method
+
 Scripts are use to create the prebuilt rules documentation. Currently, five
 scrips are used and they must be run in this order:
 
@@ -13,6 +60,8 @@ After creating the documentation, you need to copy and paste the files in the
 `generated-ascii-files` folder to their relevant location in the `docs` folder,
 and then manually edit the text of new rules added for the latest release. This
 includes converting Markdown to AsciiDoc and editing the English.
+
+*scripts must be run from `prebuilt-rules-scripts` directory*
 
 ### `get-release-rules.py`
 

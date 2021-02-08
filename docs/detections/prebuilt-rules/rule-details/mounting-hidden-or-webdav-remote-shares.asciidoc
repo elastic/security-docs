@@ -1,0 +1,65 @@
+[[mounting-hidden-or-webdav-remote-shares]]
+=== Mounting Hidden or WebDav Remote Shares
+
+Identifies the use of net.exe to mount a WebDav or hidden remote share. This may indicate lateral movement or preparation for data exfiltration.
+
+*Rule type*: eql
+
+*Rule indices*:
+
+* logs-endpoint.events.*
+* winlogbeat-*
+
+*Severity*: medium
+
+*Risk score*: 21
+
+*Runs every*: 5 minutes
+
+*Searches indices from*: now-9m ({ref}/common-options.html#date-math[Date Math format], see also <<rule-schedule, `Additional look-back time`>>)
+
+*Maximum alerts per execution*: 100
+
+*Tags*:
+
+* Elastic
+* Host
+* Windows
+* Threat Detection
+* Lateral Movement
+
+*Version*: 1
+
+*Added ({stack} release)*: 7.11.0
+
+*Rule authors*: Elastic
+
+*Rule license*: Elastic License
+
+==== Rule query
+
+
+[source,js]
+----------------------------------
+process where event.type in ("start", "process_started") and
+((process.name : "net.exe" or process.pe.original_file_name ==
+"net.exe") or ((process.name : "net1.exe" or
+process.pe.original_file_name == "net1.exe") and not
+process.parent.name : "net.exe")) and process.args : "use" and /*
+including hidden and webdav based online shares such as onedrive */
+process.args : ("\\\\*\\*$*", "\\\\*@SSL\\*", "http*") and /*
+excluding shares deletion operation */ not process.args : "/d*"
+----------------------------------
+
+==== Threat mapping
+
+*Framework*: MITRE ATT&CK^TM^
+
+* Tactic:
+** Name: Lateral Movement
+** ID: TA0008
+** Reference URL: https://attack.mitre.org/tactics/TA0008/
+* Technique:
+** Name: Remote Services
+** ID: T1021
+** Reference URL: https://attack.mitre.org/techniques/T1021/

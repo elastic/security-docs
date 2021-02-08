@@ -3,7 +3,7 @@
 
 Identifies use of aspnet_regiis to decrypt Microsoft IIS connection strings. An attacker with Microsoft IIS web server access via a webshell or alike can decrypt and dump any hardcoded connection strings, such as the MSSQL service account password using aspnet_regiis command.
 
-*Rule type*: query
+*Rule type*: eql
 
 *Rule indices*:
 
@@ -33,9 +33,11 @@ Identifies use of aspnet_regiis to decrypt Microsoft IIS connection strings. An 
 * Threat Detection
 * Credential Access
 
-*Version*: 1
+*Version*: 2 (<<microsoft-iis-connection-strings-decryption-history, version history>>)
 
 *Added ({stack} release)*: 7.10.0
+
+*Last modified ({stack} release)*: 7.11.0
 
 *Rule authors*: Elastic
 
@@ -46,11 +48,10 @@ Identifies use of aspnet_regiis to decrypt Microsoft IIS connection strings. An 
 
 [source,js]
 ----------------------------------
-event.category:process and event.type:(start or process_started) and
-(process.name:aspnet_regiis.exe or
-process.pe.original_file_name:aspnet_regiis.exe or
-winlog.event_data.OriginalFileName:aspnet_regiis.exe) and
-process.args:(connectionStrings and "-pdf")
+process where event.type in ("start", "process_started") and
+(process.name : "aspnet_regiis.exe" or process.pe.original_file_name
+== "aspnet_regiis.exe") and process.args : "connectionStrings" and
+process.args : "-pdf"
 ----------------------------------
 
 ==== Threat mapping
@@ -65,3 +66,19 @@ process.args:(connectionStrings and "-pdf")
 ** Name: OS Credential Dumping
 ** ID: T1003
 ** Reference URL: https://attack.mitre.org/techniques/T1003/
+
+[[microsoft-iis-connection-strings-decryption-history]]
+==== Rule version history
+
+Version 2 (7.11.0 release)::
+* Updated query, changed from:
++
+[source, js]
+----------------------------------
+event.category:process and event.type:(start or process_started) and
+(process.name:aspnet_regiis.exe or
+process.pe.original_file_name:aspnet_regiis.exe or
+winlog.event_data.OriginalFileName:aspnet_regiis.exe) and
+process.args:(connectionStrings and "-pdf")
+----------------------------------
+
