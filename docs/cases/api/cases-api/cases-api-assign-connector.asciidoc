@@ -23,8 +23,8 @@ A JSON object with these fields:
 |==============================================
 |Name |Type |Description |Required
 
-|`connector_id` |String |The connector ID. |Yes
-|`connector_name` |String |The connector name. |Yes
+|`connector` |<<assign-connector-connector-schema, connector>> |Object containing the connector's
+configuration. |Yes
 |`closure_type` |String a|Determines whether a case is automatically closed in
 {es-sec} when it is pushed to external systems. Valid values are:
 
@@ -35,7 +35,49 @@ are pushed.
 |Yes
 |==============================================
 
+[[assign-connector-connector-schema]]
+*`connector` schema*
+
+[width="100%",options="header"]
+|==============================================
+|Name |Type |Description |Required
+
+|`id` |String |The ID of the connector you want to use for sending cases to external systems. |Yes
+|`name` |String a|The connector name. |Yes
+|`type` |String a|The type of the connector. 
+
+Must be one of these:
+
+* `.servicenow`
+* `.jira`
+* `.resilient`
+* `.none`
+|Yes
+|`fields` |Object a| Object containing the connector's fields.
+
+For {jira} connectors:
+
+* `urgency` (string \| null): The urgency of the incident.
+* `severity` (string \| null): The severity of the incident.
+* `impact` (string \| null): The impact of the incident.
+
+For {jira} connectors:
+
+* `issueType` (string): The issue type of the issue.
+* `priority` (string \| null): The priority of the issue.
+* `parent` (string \| null): The key of the parent issue (Valid when the issue type is `Sub-task`).
+
+For {ibm-r} connectors:
+
+* `issueTypes` (number[]): The issue types of the issue.
+* `severityCode` (number): The severity code of the issue.
+
+|Yes
+|==============================================
+
 NOTE: Call <<cases-api-find-connectors>> to retrieve connector IDs and names.
+
+NOTE: Fields can be set but are not being used by case configuration. You can set the fields of the connector at <<cases-api-create>>.
 
 ==== Example request
 
@@ -43,9 +85,13 @@ NOTE: Call <<cases-api-find-connectors>> to retrieve connector IDs and names.
 --------------------------------------------------
 POST api/cases/configure
 {
-  "connector_id": "61787f53-4eee-4741-8df6-8fe84fa616f7",
+  "connector": { 
+    "id": "131d4448-abe0-4789-939d-8ef60680b498",
+    "name": "Jira",
+    "type": ".jira",
+    "fields": null,
+  },
   "closure_type": "close-by-user",
-  "connector_name": "ServiceNow"
 }
 --------------------------------------------------
 
@@ -59,9 +105,13 @@ POST api/cases/configure
 [source,json]
 --------------------------------------------------
 {
-  "connector_id": "61787f53-4eee-4741-8df6-8fe84fa616f7",
+  "connector": { 
+    "id": "131d4448-abe0-4789-939d-8ef60680b498",
+    "name": "Jira",
+    "type": ".jira",
+    "fields": null,
+  },
   "closure_type": "close-by-user",
-  "connector_name": "ServiceNow",
   "created_at": "2020-03-30T13:31:38.083Z",
   "created_by": {
     "email": "moneypenny@hms.gov.uk",
