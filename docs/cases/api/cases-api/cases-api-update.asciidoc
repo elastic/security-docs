@@ -25,9 +25,8 @@ A JSON array containing one or more case objects with updated field values:
 
 |`id` |String |The ID of the case being updated. |Yes
 |`title` |String |The updated case title. |No
-| `connector_id` |String |ID of the <<actions-api-overview, connector>>
-used for pushing case updates to external systems (returned when calling
-<<cases-api-find-connectors>>). |No
+|`connector` |<<case-update-connector-schema, connector>> |Object containing the connector's
+configuration. |No
 |`description` |String |The updated case description. |No
 |`status` |String a|The updated case status, which can be:
 
@@ -40,6 +39,49 @@ used for pushing case updates to external systems (returned when calling
 <<cases-api-get-case>> or <<cases-api-find-cases>>). |Yes
 |==============================================
 
+[[case-update-connector-schema]]
+*`connector` schema*
+
+[width="100%",options="header"]
+|==============================================
+|Name |Type |Description |Required
+
+|`id` |String |ID of the <<actions-api-overview, connector>>
+used for pushing case updates to external systems (returned when calling
+<<cases-api-find-connectors>>). |Yes
+|`name` |String a|The connector name. |Yes
+|`type` |String a|The type of the connector. 
+
+Must be one of these:
+
+* `.servicenow`
+* `.jira`
+* `.resilient`
+* `.none`
+|Yes
+|`fields` |Object a| Object containing the connector's fields.
+
+For {sn} connectors:
+
+* `urgency` (string \| null): The urgency of the incident.
+* `severity` (string \| null): The severity of the incident.
+* `impact` (string \| null): The impact of the incident.
+
+For {jira} connectors:
+
+* `issueType` (string): The issue type of the issue.
+* `priority` (string \| null): The priority of the issue.
+* `parent` (string \| null): The key of the parent issue (Valid when the issue type is `Sub-task`).
+
+For {ibm-r} connectors:
+
+* `issueTypes` (number[]): The issue types of the issue.
+* `severityCode` (number): The severity code of the issue.
+
+|Yes
+|==============================================
+
+
 ===== Example request
 
 Updates the description, tags, and connector of case ID
@@ -51,7 +93,15 @@ PATCH api/cases
 {
   "cases": [
     {
-      "connector_id": "5b347c7b-6925-4452-a4dd-215550294ba2",
+      "connector": {
+        "id": "131d4448-abe0-4789-939d-8ef60680b498",
+        "name": "My connector",
+        "type": ".jira",
+        "fields": {
+          "issueType": "10006",
+          "priority": null,
+        }
+      },
       "id": "a18b38a0-71b0-11ea-a0b2-c51ea50a58e2",
       "description": "James Bond clicked on a highly suspicious email
       banner advertising cheap holidays for underpaid civil servants.
@@ -88,7 +138,15 @@ The updated case with a new `version` value.
     "version": "WzU0OCwxXQ==",
     "comments": [],
     "totalComment": 0,
-    "connector_id": "5b347c7b-6925-4452-a4dd-215550294ba2",
+    "connector": {
+      "id": "131d4448-abe0-4789-939d-8ef60680b498",
+      "name": "My connector",
+      "type": ".jira",
+      "fields": {
+        "issueType": "10006",
+        "priority": null,
+      }
+    },
     "title": "This case will self-destruct in 5 seconds",
     "description": "James Bond clicked on a highly suspicious email banner advertising cheap holidays for underpaid civil servants. Operation bubblegum is active. Repeat - operation bubblegum is now active!",
     "tags": [
