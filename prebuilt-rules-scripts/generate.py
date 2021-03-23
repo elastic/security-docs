@@ -574,7 +574,9 @@ def create_documentation(package_release):
     print('\n')
     for new_file, old_file in sorted(files_with_updated_rule_name.items()):
         print(f'Name of rule changed in {new_file} - removing old file: {old_file}')
-        rule_details_dir.joinpath(f'{old_file}.asciidoc').unlink(missing_ok=True)
+        old_path = rule_details_dir.joinpath(f'{old_file}.asciidoc')
+        if old_path.exists():
+            old_path.unlink()  # unlink(missing_ok=True) only in 3.8+
     print("\n")
 
     # END: Create files for each rule
