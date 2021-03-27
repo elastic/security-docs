@@ -9,6 +9,7 @@ Identifies the PowerShell engine being invoked by unexpected processes. Rather t
 
 * logs-endpoint.events.*
 * winlogbeat-*
+* logs-windows.*
 
 *Severity*: medium
 
@@ -26,22 +27,70 @@ Identifies the PowerShell engine being invoked by unexpected processes. Rather t
 * Host
 * Windows
 * Threat Detection
-* Defense Evasion
+* Execution
 
-*Version*: 2 (<<suspicious-powershell-engine-imageload-history, version history>>)
+*Version*: 3 (<<suspicious-powershell-engine-imageload-history, version history>>)
 
 *Added ({stack} release)*: 7.11.0
 
-*Last modified ({stack} release)*: 7.11.2
+*Last modified ({stack} release)*: 7.12.0
 
 *Rule authors*: Elastic
 
-*Rule license*: Elastic License
+*Rule license*: Elastic License v2
 
 ==== Rule query
 
 
 [source,js]
+----------------------------------
+library where dll.name : ("System.Management.Automation.ni.dll",
+"System.Management.Automation.dll") and /* add false positives
+relevant to your environment here */ not process.executable :
+("C:\\Windows\\System32\\RemoteFXvGPUDisablement.exe",
+"C:\\Windows\\System32\\sdiagnhost.exe", "C:\\Program Files*\\*.exe")
+and not process.name : ( "Altaro.SubAgent.exe",
+"AppV_Manage.exe", "azureadconnect.exe", "CcmExec.exe",
+"configsyncrun.exe", "choco.exe", "ctxappvservice.exe",
+"DVLS.Console.exe", "edgetransport.exe", "exsetup.exe",
+"forefrontactivedirectoryconnector.exe", "InstallUtil.exe",
+"JenkinsOnDesktop.exe",
+"Microsoft.EnterpriseManagement.ServiceManager.UI.Console.exe",
+"mmc.exe", "mscorsvw.exe", "msexchangedelivery.exe",
+"msexchangefrontendtransport.exe", "msexchangehmworker.exe",
+"msexchangesubmission.exe", "msiexec.exe", "MsiExec.exe",
+"noderunner.exe", "NServiceBus.Host.exe",
+"NServiceBus.Host32.exe",
+"NServiceBus.Hosting.Azure.HostProcess.exe", "OuiGui.WPF.exe",
+"powershell.exe", "powershell_ise.exe", "pwsh.exe",
+"SCCMCliCtrWPF.exe", "ScriptEditor.exe", "ScriptRunner.exe",
+"sdiagnhost.exe", "servermanager.exe", "setup100.exe",
+"ServiceHub.VSDetouredHost.exe", "SPCAF.Client.exe",
+"SPCAF.SettingsEditor.exe", "SQLPS.exe",
+"telemetryservice.exe", "UMWorkerProcess.exe", "w3wp.exe",
+"wsmprovhost.exe" )
+----------------------------------
+
+==== Threat mapping
+
+*Framework*: MITRE ATT&CK^TM^
+
+* Tactic:
+** Name: Execution
+** ID: TA0002
+** Reference URL: https://attack.mitre.org/tactics/TA0002/
+* Technique:
+** Name: Command and Scripting Interpreter
+** ID: T1059
+** Reference URL: https://attack.mitre.org/techniques/T1059/
+
+[[suspicious-powershell-engine-imageload-history]]
+==== Rule version history
+
+Version 3 (7.12.0 release)::
+* Updated query, changed from:
++
+[source, js]
 ----------------------------------
 library where file.name : ("System.Management.Automation.ni.dll",
 "System.Management.Automation.dll") and /* add false positives
@@ -68,22 +117,6 @@ and not process.name : ( "Altaro.SubAgent.exe",
 "SPCAF.SettingsEditor.exe", "SQLPS.exe", "telemetryservice.exe",
 "UMWorkerProcess.exe", "w3wp.exe", "wsmprovhost.exe" )
 ----------------------------------
-
-==== Threat mapping
-
-*Framework*: MITRE ATT&CK^TM^
-
-* Tactic:
-** Name: Execution
-** ID: TA0002
-** Reference URL: https://attack.mitre.org/tactics/TA0002/
-* Technique:
-** Name: Command and Scripting Interpreter
-** ID: T1059
-** Reference URL: https://attack.mitre.org/techniques/T1059/
-
-[[suspicious-powershell-engine-imageload-history]]
-==== Rule version history
 
 Version 2 (7.11.2 release)::
 * Formatting only

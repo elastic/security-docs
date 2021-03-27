@@ -3,12 +3,13 @@
 
 Identifies potential hijacking of the Microsoft Update Orchestrator Service to establish persistence with an integrity level of SYSTEM.
 
-*Rule type*: query
+*Rule type*: eql
 
 *Rule indices*:
 
 * winlogbeat-*
 * logs-endpoint.events.*
+* logs-windows.*
 
 *Severity*: high
 
@@ -32,26 +33,30 @@ Identifies potential hijacking of the Microsoft Update Orchestrator Service to e
 * Threat Detection
 * Persistence
 
-*Version*: 3 (<<persistence-via-update-orchestrator-service-hijack-history, version history>>)
+*Version*: 4 (<<persistence-via-update-orchestrator-service-hijack-history, version history>>)
 
 *Added ({stack} release)*: 7.10.0
 
-*Last modified ({stack} release)*: 7.11.2
+*Last modified ({stack} release)*: 7.12.0
 
 *Rule authors*: Elastic
 
-*Rule license*: Elastic License
+*Rule license*: Elastic License v2
 
 ==== Rule query
 
 
 [source,js]
 ----------------------------------
-event.category:process and event.type:(start or process_started) and
-process.parent.name:svchost.exe and process.parent.args:(UsoSvc or
-usosvc) and not process.name:(UsoClient.exe or usoclient.exe or
-MusNotification.exe or musnotification.exe or MusNotificationUx.exe or
-musnotificationux.exe)
+process where event.type == "start" and process.parent.executable :
+"C:\\Windows\\System32\\svchost.exe" and process.parent.args :
+"UsoSvc" and not process.executable : (
+"C:\\Windows\\System32\\UsoClient.exe",
+"C:\\Windows\\System32\\MusNotification.exe",
+"C:\\Windows\\System32\\MusNotificationUx.exe",
+"C:\\Windows\\System32\\MusNotifyIcon.exe",
+"C:\\Windows\\System32\\WerFault.exe",
+"C:\\Windows\\System32\\WerMgr.exe" )
 ----------------------------------
 
 ==== Threat mapping
@@ -69,6 +74,18 @@ musnotificationux.exe)
 
 [[persistence-via-update-orchestrator-service-hijack-history]]
 ==== Rule version history
+
+Version 4 (7.12.0 release)::
+* Updated query, changed from:
++
+[source, js]
+----------------------------------
+event.category:process and event.type:(start or process_started) and
+process.parent.name:svchost.exe and process.parent.args:(UsoSvc or
+usosvc) and not process.name:(UsoClient.exe or usoclient.exe or
+MusNotification.exe or musnotification.exe or MusNotificationUx.exe or
+musnotificationux.exe)
+----------------------------------
 
 Version 3 (7.11.2 release)::
 * Formatting only

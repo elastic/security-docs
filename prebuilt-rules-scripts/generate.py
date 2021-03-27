@@ -1,6 +1,7 @@
 """Manage documentation generation for pre-built rules."""
 
 import re
+import shutil
 import textwrap
 from pathlib import Path
 from typing import List
@@ -395,6 +396,7 @@ def create_documentation(package_release):
 
     new_text = new_text + "|=============================================="
 
+    shutil.rmtree(str(GENERATED_ASCII))
     GENERATED_ASCII.mkdir(exist_ok=True)
     reference_asciidoc = str(GENERATED_ASCII.joinpath('prebuilt-rules-reference.asciidoc'))
     with open(reference_asciidoc, "w+") as f:

@@ -9,6 +9,7 @@ Enumeration of files and directories using built-in tools. Adversaries may use t
 
 * logs-endpoint.events.*
 * winlogbeat-*
+* logs-windows.*
 
 *Severity*: low
 
@@ -16,7 +17,7 @@ Enumeration of files and directories using built-in tools. Adversaries may use t
 
 *Runs every*: 5 minutes
 
-*Searches indices from*: now-6m ({ref}/common-options.html#date-math[Date Math format], see also <<rule-schedule, `Additional look-back time`>>)
+*Searches indices from*: now-9m ({ref}/common-options.html#date-math[Date Math format], see also <<rule-schedule, `Additional look-back time`>>)
 
 *Maximum alerts per execution*: 100
 
@@ -28,24 +29,35 @@ Enumeration of files and directories using built-in tools. Adversaries may use t
 * Threat Detection
 * Discovery
 
-*Version*: 2 (<<file-and-directory-discovery-history, version history>>)
+*Version*: 3 (<<file-and-directory-discovery-history, version history>>)
 
 *Added ({stack} release)*: 7.11.0
 
-*Last modified ({stack} release)*: 7.11.2
+*Last modified ({stack} release)*: 7.12.0
 
 *Rule authors*: Elastic
 
-*Rule license*: Elastic License
+*Rule license*: Elastic License v2
+
+==== Potential false positives
+
+Enumeration of files and directories may not be inherently malicious and noise may come from scripts, automation tools, or normal command line usage. It's important to baseline your environment to determine the amount of expected noise and exclude any known FP's from the rule.
 
 ==== Rule query
 
 
 [source,js]
 ----------------------------------
-process where event.type in ("start", "process_started") and
-(process.name : "cmd.exe" or process.pe.original_file_name ==
-"Cmd.Exe") and process.args : ("dir", "tree")
+sequence by agent.id, user.name with maxspan=1m [process where
+event.type in ("start", "process_started") and ((process.name :
+"cmd.exe" or process.pe.original_file_name == "Cmd.Exe") and
+process.args : "dir") or process.name : "tree.com"] [process where
+event.type in ("start", "process_started") and ((process.name :
+"cmd.exe" or process.pe.original_file_name == "Cmd.Exe") and
+process.args : "dir") or process.name : "tree.com"] [process where
+event.type in ("start", "process_started") and ((process.name :
+"cmd.exe" or process.pe.original_file_name == "Cmd.Exe") and
+process.args : "dir") or process.name : "tree.com"]
 ----------------------------------
 
 ==== Threat mapping
@@ -63,6 +75,16 @@ process where event.type in ("start", "process_started") and
 
 [[file-and-directory-discovery-history]]
 ==== Rule version history
+
+Version 3 (7.12.0 release)::
+* Updated query, changed from:
++
+[source, js]
+----------------------------------
+process where event.type in ("start", "process_started") and
+(process.name : "cmd.exe" or process.pe.original_file_name ==
+"Cmd.Exe") and process.args : ("dir", "tree")
+----------------------------------
 
 Version 2 (7.11.2 release)::
 * Updated query, changed from:

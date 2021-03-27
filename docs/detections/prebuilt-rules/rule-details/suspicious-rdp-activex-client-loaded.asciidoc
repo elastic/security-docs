@@ -9,6 +9,7 @@ Identifies suspicious Image Loading of the Remote Desktop Services ActiveX Clien
 
 * logs-endpoint.events.*
 * winlogbeat-*
+* logs-windows.*
 
 *Severity*: medium
 
@@ -32,30 +33,27 @@ Identifies suspicious Image Loading of the Remote Desktop Services ActiveX Clien
 * Threat Detection
 * Lateral Movement
 
-*Version*: 2 (<<suspicious-rdp-activex-client-loaded-history, version history>>)
+*Version*: 3 (<<suspicious-rdp-activex-client-loaded-history, version history>>)
 
 *Added ({stack} release)*: 7.11.0
 
-*Last modified ({stack} release)*: 7.11.2
+*Last modified ({stack} release)*: 7.12.0
 
 *Rule authors*: Elastic
 
-*Rule license*: Elastic License
+*Rule license*: Elastic License v2
 
 ==== Rule query
 
 
 [source,js]
 ----------------------------------
-library where file.name == "mstscax.dll" and /* depending on noise
-in your env add here extra paths */ wildcard(process.executable,
-"C:\\Windows\\*",
-"C:\\Users\\Public\\*",
-"C:\\Users\\Default\\*",
-"C:\\Intel\\*", "C:\\PerfLogs\\*",
-"C:\\ProgramData\\*",
-"\\Device\\Mup\\*", "\\\\*") and
-/* add here FPs */ not process.executable in
+library where dll.name : "mstscax.dll" and /* depending on noise in
+your env add here extra paths */ process.executable : (
+"C:\\Windows\\*", "C:\\Users\\Public\\*",
+"C:\\Users\\Default\\*", "C:\\Intel\\*", "C:\\PerfLogs\\*",
+"C:\\ProgramData\\*", "\\Device\\Mup\\*", "\\\\*" ) and
+/* add here FPs */ not process.executable :
 ("C:\\Windows\\System32\\mstsc.exe",
 "C:\\Windows\\SysWOW64\\mstsc.exe")
 ----------------------------------
@@ -75,6 +73,24 @@ in your env add here extra paths */ wildcard(process.executable,
 
 [[suspicious-rdp-activex-client-loaded-history]]
 ==== Rule version history
+
+Version 3 (7.12.0 release)::
+* Updated query, changed from:
++
+[source, js]
+----------------------------------
+library where file.name == "mstscax.dll" and /* depending on noise
+in your env add here extra paths */ wildcard(process.executable,
+"C:\\Windows\\*",
+"C:\\Users\\Public\\*",
+"C:\\Users\\Default\\*",
+"C:\\Intel\\*", "C:\\PerfLogs\\*",
+"C:\\ProgramData\\*",
+"\\Device\\Mup\\*", "\\\\*") and
+/* add here FPs */ not process.executable in
+("C:\\Windows\\System32\\mstsc.exe",
+"C:\\Windows\\SysWOW64\\mstsc.exe")
+----------------------------------
 
 Version 2 (7.11.2 release)::
 * Formatting only
