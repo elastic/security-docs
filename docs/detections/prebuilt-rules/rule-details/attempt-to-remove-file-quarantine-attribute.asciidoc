@@ -12,7 +12,7 @@ Identifies a potential Gatekeeper bypass. In macOS, when applications or program
 
 *Severity*: medium
 
-*Risk score*: 43
+*Risk score*: 47
 
 *Runs every*: 5 minutes
 
@@ -23,6 +23,7 @@ Identifies a potential Gatekeeper bypass. In macOS, when applications or program
 *References*:
 
 * https://www.trendmicro.com/en_us/research/20/k/new-macos-backdoor-connected-to-oceanlotus-surfaces.html
+* https://ss64.com/osx/xattr.html
 
 *Tags*:
 
@@ -32,13 +33,15 @@ Identifies a potential Gatekeeper bypass. In macOS, when applications or program
 * Threat Detection
 * Defense Evasion
 
-*Version*: 1
+*Version*: 3 (<<attempt-to-remove-file-quarantine-attribute-history, version history>>)
 
 *Added ({stack} release)*: 7.11.0
 
+*Last modified ({stack} release)*: 7.12.0
+
 *Rule authors*: Elastic
 
-*Rule license*: Elastic License
+*Rule license*: Elastic License v2
 
 ==== Rule query
 
@@ -46,8 +49,11 @@ Identifies a potential Gatekeeper bypass. In macOS, when applications or program
 [source,js]
 ----------------------------------
 process where event.type in ("start", "process_started") and
-process.name == "xattr" and process.args == "com.apple.quarantine" and
-process.args == "-d"
+process.args : "xattr" and ( (process.args :
+"com.apple.quarantine" and process.args : ("-d", "-w")) or
+(process.args : "-c" and process.command_line : (
+"/bin/bash -c xattr -c *", "/bin/zsh -c xattr -c *",
+"/bin/sh -c xattr -c *" ) ) )
 ----------------------------------
 
 ==== Threat mapping
@@ -62,3 +68,20 @@ process.args == "-d"
 ** Name: Impair Defenses
 ** ID: T1562
 ** Reference URL: https://attack.mitre.org/techniques/T1562/
+
+[[attempt-to-remove-file-quarantine-attribute-history]]
+==== Rule version history
+
+Version 3 (7.12.0 release)::
+* Updated query, changed from:
++
+[source, js]
+----------------------------------
+process where event.type in ("start", "process_started") and
+process.name == "xattr" and process.args == "com.apple.quarantine" and
+process.args == "-d"
+----------------------------------
+
+Version 2 (7.11.2 release)::
+* Formatting only
+
