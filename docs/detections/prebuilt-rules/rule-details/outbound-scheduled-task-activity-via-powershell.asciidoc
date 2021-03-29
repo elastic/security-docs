@@ -9,6 +9,7 @@ Identifies the PowerShell process loading the Task Scheduler COM DLL followed by
 
 * winlogbeat-*
 * logs-endpoint.events.*
+* logs-windows.*
 
 *Severity*: medium
 
@@ -30,16 +31,17 @@ Identifies the PowerShell process loading the Task Scheduler COM DLL followed by
 * Host
 * Windows
 * Threat Detection
-* Discovery
-* Lateral Movement
+* Execution
 
-*Version*: 1
+*Version*: 2 (<<outbound-scheduled-task-activity-via-powershell-history, version history>>)
 
 *Added ({stack} release)*: 7.11.0
 
+*Last modified ({stack} release)*: 7.12.0
+
 *Rule authors*: Elastic
 
-*Rule license*: Elastic License
+*Rule license*: Elastic License v2
 
 ==== Potential false positives
 
@@ -51,7 +53,7 @@ Legitimate scheduled tasks may be created during installation of new software.
 [source,js]
 ----------------------------------
 sequence by host.id, process.entity_id with maxspan = 5s [library
-where file.name: "taskschd.dll" and process.name: ("powershell.exe",
+where dll.name : "taskschd.dll" and process.name : ("powershell.exe",
 "pwsh.exe")] [network where process.name : ("powershell.exe",
 "pwsh.exe") and destination.port == 135 and not destination.address in
 ("127.0.0.1", "::1")]
@@ -69,3 +71,19 @@ where file.name: "taskschd.dll" and process.name: ("powershell.exe",
 ** Name: Scheduled Task/Job
 ** ID: T1053
 ** Reference URL: https://attack.mitre.org/techniques/T1053/
+
+[[outbound-scheduled-task-activity-via-powershell-history]]
+==== Rule version history
+
+Version 2 (7.12.0 release)::
+* Updated query, changed from:
++
+[source, js]
+----------------------------------
+sequence by host.id, process.entity_id with maxspan = 5s [library
+where file.name: "taskschd.dll" and process.name: ("powershell.exe",
+"pwsh.exe")] [network where process.name : ("powershell.exe",
+"pwsh.exe") and destination.port == 135 and not destination.address in
+("127.0.0.1", "::1")]
+----------------------------------
+
