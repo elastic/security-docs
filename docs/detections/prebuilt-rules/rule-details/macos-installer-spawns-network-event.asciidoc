@@ -1,0 +1,82 @@
+[[macos-installer-spawns-network-event]]
+=== macOS Installer Spawns Network Event
+
+Identifies when the built in macOS Installer program generates a network event after attempting to install a .pkg file. This activity has been observed being leveraged by malware.
+
+*Rule type*: eql
+
+*Rule indices*:
+
+* logs-endpoint.events.*
+
+*Severity*: medium
+
+*Risk score*: 47
+
+*Runs every*: 5 minutes
+
+*Searches indices from*: now-9m ({ref}/common-options.html#date-math[Date Math format], see also <<rule-schedule, `Additional look-back time`>>)
+
+*Maximum alerts per execution*: 100
+
+*References*:
+
+* https://redcanary.com/blog/clipping-silver-sparrows-wings
+
+*Tags*:
+
+* Elastic
+* Host
+* macOS
+* Threat Detection
+* Execution
+
+*Version*: 1
+
+*Added ({stack} release)*: 7.12.0
+
+*Rule authors*: Elastic
+
+*Rule license*: Elastic License v2
+
+==== Potential false positives
+
+Custom organization-specific macOS packages that use .pkg files to run cURL could trigger this rule. If known behavior is causing false positives, it can be excluded from the rule.
+
+==== Rule query
+
+
+[source,js]
+----------------------------------
+sequence by process.entity_id with maxspan=1m [ process where
+event.type == "start" and host.os.family == "macos" and
+process.parent.executable in ("/usr/sbin/installer",
+"/System/Library/CoreServices/Installer.app/Contents/MacOS/Installer")
+] [ network where not cidrmatch(destination.ip,
+"192.168.0.0/16", "10.0.0.0/8", "172.16.0.0/12",
+"224.0.0.0/8", "127.0.0.0/8", "169.254.0.0/16",
+"::1", "FE80::/10", "FF00::/8") ]
+----------------------------------
+
+==== Threat mapping
+
+*Framework*: MITRE ATT&CK^TM^
+
+* Tactic:
+** Name: Execution
+** ID: TA0002
+** Reference URL: https://attack.mitre.org/tactics/TA0002/
+* Technique:
+** Name: Command and Scripting Interpreter
+** ID: T1059
+** Reference URL: https://attack.mitre.org/techniques/T1059/
+
+
+* Tactic:
+** Name: Command and Control
+** ID: TA0011
+** Reference URL: https://attack.mitre.org/tactics/TA0011/
+* Technique:
+** Name: Application Layer Protocol
+** ID: T1071
+** Reference URL: https://attack.mitre.org/techniques/T1071/

@@ -7,7 +7,9 @@ Identifies WMIC whitelisting bypass techniques by alerting on suspicious executi
 
 *Rule indices*:
 
+* winlogbeat-*
 * logs-endpoint.events.*
+* logs-windows.*
 
 *Severity*: medium
 
@@ -27,26 +29,27 @@ Identifies WMIC whitelisting bypass techniques by alerting on suspicious executi
 * Threat Detection
 * Defense Evasion
 
-*Version*: 1
+*Version*: 2 (<<suspicious-wmic-xsl-script-execution-history, version history>>)
 
 *Added ({stack} release)*: 7.10.0
 
+*Last modified ({stack} release)*: 7.12.0
+
 *Rule authors*: Elastic
 
-*Rule license*: Elastic License
+*Rule license*: Elastic License v2
 
 ==== Rule query
 
 
 [source,js]
 ----------------------------------
-sequence by process.entity_id with maxspan=2m [process where
+sequence by process.entity_id with maxspan = 2m [process where
 event.type in ("start", "process_started") and (process.name :
-"WMIC.exe" or process.pe.original_file_name == "wmic.exe") and
-wildcard(process.args, "format*:*", "/format*:*", "*-format*:*") and
-not wildcard(process.command_line, "* /format:table *")] [library
-where event.type == "start" and file.name in ("jscript.dll",
-"vbscript.dll")]
+"WMIC.exe" or process.pe.original_file_name : "wmic.exe") and
+process.args : ("format*:*", "/format*:*", "*-format*:*") and not
+process.command_line : "* /format:table *"] [library where event.type
+== "start" and dll.name : ("jscript.dll", "vbscript.dll")]
 ----------------------------------
 
 ==== Threat mapping
@@ -61,3 +64,21 @@ where event.type == "start" and file.name in ("jscript.dll",
 ** Name: XSL Script Processing
 ** ID: T1220
 ** Reference URL: https://attack.mitre.org/techniques/T1220/
+
+[[suspicious-wmic-xsl-script-execution-history]]
+==== Rule version history
+
+Version 2 (7.12.0 release)::
+* Updated query, changed from:
++
+[source, js]
+----------------------------------
+sequence by process.entity_id with maxspan=2m [process where
+event.type in ("start", "process_started") and (process.name :
+"WMIC.exe" or process.pe.original_file_name == "wmic.exe") and
+wildcard(process.args, "format*:*", "/format*:*", "*-format*:*") and
+not wildcard(process.command_line, "* /format:table *")] [library
+where event.type == "start" and file.name in ("jscript.dll",
+"vbscript.dll")]
+----------------------------------
+
