@@ -1,0 +1,74 @@
+[[potential-persistence-via-cron-job]]
+=== Potential Persistence via Cron Job
+
+Identifies the creation or execution of a cron job. Adversaries may abuse cron jobs to perform task scheduling for initial or recurring execution of malicious code.
+
+*Rule type*: query
+
+*Rule indices*:
+
+* auditbeat-*
+* logs-endpoint.events.*
+
+*Severity*: low
+
+*Risk score*: 21
+
+*Runs every*: 5 minutes
+
+*Searches indices from*: now-9m ({ref}/common-options.html#date-math[Date Math format], see also <<rule-schedule, `Additional look-back time`>>)
+
+*Maximum alerts per execution*: 100
+
+*References*:
+
+* https://archive.f-secure.com/weblog/archives/00002576.html
+* https://ss64.com/osx/crontab.html
+
+*Tags*:
+
+* Elastic
+* Host
+* Linux
+* macOS
+* Threat Detection
+* Persistence
+
+*Version*: 1
+
+*Added ({stack} release)*: 7.12.0
+
+*Rule authors*: Elastic
+
+*Rule license*: Elastic License v2
+
+==== Potential false positives
+
+Legitimate software or scripts using cron jobs for recurring tasks.
+
+==== Rule query
+
+
+[source,js]
+----------------------------------
+event.category:process and event.type:(start or process_started or
+info) and not user.name:root and ((process.name:crontab and not
+process.args:("-l" or "-r" or "-e" or "-help" or "-h")) or
+(process.parent.name:cron and not process.name:"running job" and not p
+rocess.executable:(/Applications/Docker.app/Contents/Resources/bin/doc
+ker or /usr/bin/killall or /usr/sbin/sendmail or /usr/bin/env or
+/usr/bin/timeshift or /bin/rm)))
+----------------------------------
+
+==== Threat mapping
+
+*Framework*: MITRE ATT&CK^TM^
+
+* Tactic:
+** Name: Persistence
+** ID: TA0003
+** Reference URL: https://attack.mitre.org/tactics/TA0003/
+* Technique:
+** Name: Scheduled Task/Job
+** ID: T1053
+** Reference URL: https://attack.mitre.org/techniques/T1053/

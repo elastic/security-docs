@@ -9,6 +9,7 @@ Identifies suspicious command execution (cmd) via Windows Management Instrumenta
 
 * logs-endpoint.events.*
 * winlogbeat-*
+* logs-windows.*
 
 *Severity*: medium
 
@@ -26,15 +27,17 @@ Identifies suspicious command execution (cmd) via Windows Management Instrumenta
 * Host
 * Windows
 * Threat Detection
-* Lateral Movement
+* Execution
 
-*Version*: 1
+*Version*: 3 (<<suspicious-cmd-execution-via-wmi-history, version history>>)
 
 *Added ({stack} release)*: 7.11.0
 
+*Last modified ({stack} release)*: 7.12.0
+
 *Rule authors*: Elastic
 
-*Rule license*: Elastic License
+*Rule license*: Elastic License v2
 
 ==== Rule query
 
@@ -42,9 +45,8 @@ Identifies suspicious command execution (cmd) via Windows Management Instrumenta
 [source,js]
 ----------------------------------
 process where event.type in ("start", "process_started") and
-process.parent.name == "WmiPrvSE.exe" and process.name == "cmd.exe"
-and wildcard(process.args, "\\\\127.0.0.1\\*") and process.args in
-("2>&1", "1>")
+process.parent.name : "WmiPrvSE.exe" and process.name : "cmd.exe" and
+process.args : "\\\\127.0.0.1\\*" and process.args : ("2>&1", "1>")
 ----------------------------------
 
 ==== Threat mapping
@@ -59,3 +61,21 @@ and wildcard(process.args, "\\\\127.0.0.1\\*") and process.args in
 ** Name: Windows Management Instrumentation
 ** ID: T1047
 ** Reference URL: https://attack.mitre.org/techniques/T1047/
+
+[[suspicious-cmd-execution-via-wmi-history]]
+==== Rule version history
+
+Version 3 (7.12.0 release)::
+* Updated query, changed from:
++
+[source, js]
+----------------------------------
+process where event.type in ("start", "process_started") and
+process.parent.name == "WmiPrvSE.exe" and process.name == "cmd.exe"
+and wildcard(process.args, "\\\\127.0.0.1\\*") and process.args in
+("2>&1", "1>")
+----------------------------------
+
+Version 2 (7.11.2 release)::
+* Formatting only
+
