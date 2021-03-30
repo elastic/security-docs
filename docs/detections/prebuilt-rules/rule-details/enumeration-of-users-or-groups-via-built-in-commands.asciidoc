@@ -1,0 +1,65 @@
+[[enumeration-of-users-or-groups-via-built-in-commands]]
+=== Enumeration of Users or Groups via Built-in Commands
+
+Identifies the execution of macOS built-in commands related to account or group enumeration.
+
+*Rule type*: eql
+
+*Rule indices*:
+
+* auditbeat-*
+* logs-endpoint.events.*
+
+*Severity*: low
+
+*Risk score*: 21
+
+*Runs every*: 5 minutes
+
+*Searches indices from*: now-9m ({ref}/common-options.html#date-math[Date Math format], see also <<rule-schedule, `Additional look-back time`>>)
+
+*Maximum alerts per execution*: 100
+
+*Tags*:
+
+* Elastic
+* Host
+* macOS
+* Threat Detection
+* Discovery
+
+*Version*: 1
+
+*Added ({stack} release)*: 7.12.0
+
+*Rule authors*: Elastic
+
+*Rule license*: Elastic License v2
+
+==== Rule query
+
+
+[source,js]
+----------------------------------
+process where event.type in ("start", "process_started") and not
+process.parent.executable :
+("/Applications/NoMAD.app/Contents/MacOS/NoMAD",
+"/Applications/ZoomPresence.app/Contents/MacOS/ZoomPresence") and
+process.name : ("ldapsearch", "dsmemberutil") or (process.name :
+"dscl" and process.args : ("read", "-read", "list", "-list",
+"ls", "search", "-search") and process.args : ("/Active
+Directory/*", "/Users*", "/Groups*"))
+----------------------------------
+
+==== Threat mapping
+
+*Framework*: MITRE ATT&CK^TM^
+
+* Tactic:
+** Name: Discovery
+** ID: TA0007
+** Reference URL: https://attack.mitre.org/tactics/TA0007/
+* Technique:
+** Name: Permission Groups Discovery
+** ID: T1069
+** Reference URL: https://attack.mitre.org/techniques/T1069/
