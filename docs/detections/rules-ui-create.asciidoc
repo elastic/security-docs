@@ -2,25 +2,25 @@
 [role="xpack"]
 == Create a detection rule
 
-Rules run periodically and search for source events or {ml} job anomaly scores
+Rules run periodically and search for source events, matches, sequences, or {ml} job anomaly results
 that meet their criteria. When a rule's criteria are met, a detection alert is
 created.
 
 You can create the following types of rules:
 
 * <<create-custom-rule, *Custom query*>>: Query-based rule, which searches the defined indices and
-creates an alert when a document matches the rule's query.
+creates an alert when one or more documents match the rule's query.
 * *Machine learning*: {ml-cap} rule, which creates an alert when a {ml} job
 discovers an anomaly above the defined threshold (see <<machine-learning>>).
 +
 For {ml} rules, the associated {ml} job must be running. If the {ml} job is not
 running, the rule will:
 
-** Run and create alerts if existing anomaly scores above the defined threshold
+** Run and create alerts if existing anomaly results with scores above the defined threshold
 are discovered.
 ** Issue an error stating the {ml} job was not running when the rule executed.
 * <<create-threshold-rule, *Threshold rules*>>: Searches the defined indices and creates a detections alert
-when the number of times the specified field's value meets the threshold during
+when the number of times the specified field's value is present and meets the threshold during
 a single execution. When multiple values meet the threshold, an alert is
 generated for each value.
 +
@@ -32,19 +32,17 @@ the rule's search results.
 * <<create-indicator-rule, *Indicator match*>>: Creates an alert when {es-sec} index field values match field values defined in the specified indicator index patterns. For example, you can create an indicator index for IP addresses and use this index to create an alert whenever an event's `destination.ip` equals a value in the index. Indicator index field mappings should be {ecs-ref}[ECS-compliant]. For information on creating {es} indices and field types, see
 {ref}/getting-started-index.html[Index some documents],
 {ref}/indices-create-index.html[Create index API], and
-{ref}/mapping-types.html[Field data types].
+{ref}/mapping-types.html[Field data types]. If you have indicators in a standard file format, such as CSV or JSON, you can also use the Machine Learning Data Visualizer to import your indicators into an indicator index. See https://www.elastic.co/guide/en/machine-learning/7.10/ml-gs-visualizer.html and use the Import Data option to import your indicators.
 
-TIP: You can use value lists as the indicator match index. See <<indicator-value-lists>> at the end of this topic for more information.
+TIP: You can also use value lists as the indicator match index. See <<indicator-value-lists>> at the end of this topic for more information.
 
-When creating or modifying rules, you can add exceptions that prevent a rule from generating an alert even when its criteria are met. This is useful for reducing noise, such as preventing alerts from trusted processes and internal IP addresses. <<detections-ui-exceptions>> describes how to add exceptions to a rule.
+When modifying rules or managing detection alerts, you can add exceptions that prevent a rule from generating an alert even when its criteria are met. This is useful for reducing noise, such as preventing alerts from trusted processes and internal IP addresses. <<detections-ui-exceptions>> describes how to add exceptions to a rule.
 
 NOTE: You can add exceptions to custom query, machine learning, event correlation, and indicator match rule types.
 
 If you are creating a custom query, threshold, or event correlation rule, you can preview the rule beforehand to see what kind of results you can expect. See <<preview-rules, Preview your rule>> in this topic for more information.
 
-For both prebuilt and custom rules, you can use the
-{kib} {kibana-ref}/alerting-getting-started.html[Alerting and Actions] feature
-to send notifications when alerts are created. Notifications can be sent via
+For both prebuilt and custom rules, you can send notifications when alerts are created. Notifications can be sent via
 Email, PagerDuty, Slack, and Webhook, and can be configured when you create or
 edit a rule.
 
@@ -59,7 +57,7 @@ Creating a new rule requires the following steps:
 
 [IMPORTANT]
 ==============
-After you activate a rule, periodically check the rule is running as expected
+After you activate a rule, you can periodically check the rule is running as expected
 in the <<alerts-ui-monitor, Monitoring tab>> on the All rules page. If you see
 values in the `Gap` column, you can <<troubleshoot-signals>>.
 
@@ -184,9 +182,8 @@ NOTE: For sequence events, the {security-app} generates a single alert when all 
 
 NOTE: {es-sec} provides limited support for indicator match rules. See <<support-indicator-rules>> for more information.
 
-* To create an indicator match rule that searches the specified indicator index patterns for
-field values, select *Indicator Match* and then fill in the following fields:
-.. *Index patterns*: The {es-sec} event indices on which the rules runs.
+* To create an indicator match rule that searches for events whose specified field value matches the specified indicator field value in the indicator index patterns, select *Indicator Match* and then fill in the following fields:
+.. *Index patterns*: The {es-sec} event indices on which the rule runs.
 .. *Custom query*: The query and filters used to retrieve the required results from
 the {es-sec} event indices. For example, if you want to match documents that only contain a `destination.ip` address field, add `destination.ip : *`.
 +
@@ -494,7 +491,7 @@ Example using the mustache "current element" notation `{{.}}` to output all the 
 
 While there are numerous ways you can add data into indicator indices, you can use value lists as the indicator match index in an indicator match rule. Take the following scenario, for example:
 
-You uploaded a value list of known ransomware domains, and you want to be notified if any of those domains match a value contained in a domain field in your security event index pattern.
+You uploaded a value list of known ransomware domains, and you want to be notified if any of those domains matchs a value contained in a domain field in your security event index pattern.
 
 . Upload a value list of indicators.
 . Create an indicator match rule and fill in the following fields:
@@ -506,7 +503,7 @@ You uploaded a value list of known ransomware domains, and you want to be notifi
 * *Field*: Enter the field from the Elastic Security event indices to be used for comparing values.
 * *Indicator index field*: Enter the type of value list you created (i.e., `keyword`, `text`, or `IP`).
 +
-TIP: If you don't remember this information, go to *Detections > Manage detection rules > Upload value lists*. Locate the appropriate value list and note the field in the corresponding `Type` column.
+TIP: If you don't remember this information, go to *Detections > Manage detection rules > Upload value lists*. Locate the appropriate value list and note the field in the corresponding `Type` column. (Examples include keyword, text, IP).
 
 [role="screenshot"]
 image::images/indicator_value_list.png[]
