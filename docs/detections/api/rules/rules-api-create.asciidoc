@@ -3,6 +3,8 @@
 
 Creates a new detection rule.
 
+NOTE: The {kib} Console supports only Elasticsearch APIs. You cannot interact with the {kib} APIs with the Console and must use `curl` or another HTTP tool instead. For more information, refer to https://www.elastic.co/guide/en/kibana/current/console-kibana.html[Console].
+
 You can create the following types of rules:
 
 * *Custom query*: Searches the defined indices and creates an alert when
@@ -53,11 +55,11 @@ the `groups` field can be used to create rules:
 Additionally, you can set up notifications for when rules create alerts. The
 notifications use the {kib} {kibana-ref}/alerting-getting-started.html[Alerting and Actions framework].
 Each action type requires a connector. Connectors store the information
-required to send notifications via external systems. These action types are
+required to send notifications via external systems. The following action types are
 supported for rule notifications:
 
 * Slack
-* email
+* Email
 * PagerDuty
 * Webhook
 
@@ -145,7 +147,7 @@ specified field.
 |Name |Type |Description
 
 |query |String a|{kibana-ref}/search.html[Query] used by the rule to create
-alerts. For threat-match rules, only the query's results are used to determine
+alerts. For indicator match rules, only the query's results are used to determine
 whether an alert is generated.
 
 |==============================================
@@ -174,7 +176,7 @@ generated.
 |==============================================
 
 [[req-fields-saved-query]]
-===== Required field for saved-query rules
+===== Required field for saved query rules
 
 [width="100%",options="header"]
 |==============================================
@@ -185,7 +187,7 @@ generated.
 |==============================================
 
 [[req-fields-eql]]
-===== Required field for EQL rules
+===== Required field for event correlation rules
 
 [width="100%",options="header"]
 |==============================================
@@ -196,7 +198,7 @@ generated.
 |==============================================
 
 [[req-fields-ml]]
-===== Required fields for machine-learning rules
+===== Required fields for machine learning rules
 
 [width="100%",options="header"]
 |==============================================
@@ -205,13 +207,13 @@ generated.
 |anomaly_threshold |Integer |Anomaly score threshold above which the rule
 creates an alert. Valid values are from `0` to `100`.
 
-|machine_learning_job_id |String |{ml-cap} job ID the rule monitors for
+|machine_learning_job_id |String[] |{ml-cap} job ID(s) the rule monitors for
 anomaly scores.
 
 |==============================================
 
 [[req-fields-threat-match]]
-===== Required fields for threat-match rules
+===== Required fields for indicator match rules
 
 [width="100%",options="header"]
 |==============================================
@@ -314,7 +316,7 @@ Required when `actions` are used to send notifications.
 |==============================================
 
 [[opt-fields-query-eql]]
-===== Optional fields for query, threat-match and EQL rules
+===== Optional fields for query, indicator match, and event correlation rules
 
 [width="100%",options="header"]
 |==============================================
@@ -335,7 +337,7 @@ a detection rule exception (`detection`) or an endpoint exception (`endpoint`).
 |==============================================
 
 [[opt-fields-threat-match]]
-===== Optional fields for threat-match rules
+===== Optional fields for indicator match rules
 
 [width="100%",options="header"]
 |==============================================
@@ -350,7 +352,7 @@ documents from the {es} index containing the threat values.
 |==============================================
 
 [[opt-fields-query-threshold]]
-===== Optional fields for query, threat-match and threshold rules
+===== Optional fields for query, indicator match, and threshold rules
 
 [width="100%",options="header"]
 |==============================================
@@ -361,7 +363,7 @@ documents from the {es} index containing the threat values.
 |==============================================
 
 [[opt-fields-eql-query-threshold]]
-===== Optional fields for EQL, query and threshold rules
+===== Optional fields for event correlation, query, and threshold rules
 
 [width="100%",options="header"]
 |==============================================
@@ -508,8 +510,14 @@ All fields are required:
 * `name` - string, required
 * `reference` - string, required
 
-|technique |Object a|Object containing information on the attack
-technique:
+|technique |Array a|Array containing information on the attack techniques (optional):
+
+* `id` - string, required
+* `name` - string, required
+* `reference` - string, required
+* `subtechnique` - Array, optional
+
+|subtechnique |Array a|Array containing more specific information on the attack technique:
 
 * `id` - string, required
 * `name` - string, required
@@ -518,7 +526,7 @@ technique:
 |==============================================
 
 NOTE: Only threats described using the MITRE ATT&CK^TM^ framework are displayed
-in the UI (*Security* -> *Detections* -> *Manage detection rules* -> <rule
+in the UI (*Detections* -> *Manage detection rules* -> <rule
 name>).
 
 ===== Example requests
@@ -683,7 +691,7 @@ POST api/detection_engine/rules
 
 *Example 4*
 
-EQL rule that creates alerts when the Windows `rundll32.exe` process makes
+Event correlation rule that creates alerts when the Windows `rundll32.exe` process makes
 unusual network connections:
 
 [source,console]
@@ -710,7 +718,7 @@ POST api/detection_engine/rules
 [[threat-match-example]]
 *Example 5*
 
-Threat-match rule that creates an alert when one of the following is true:
+Indicator match rule that creates an alert when one of the following is true:
 
 * The event's destination IP address *and* port number matches destination IP
 *and* port values in the `threat_index` index.
@@ -1006,7 +1014,7 @@ Example response for an EQL rule:
 }
 --------------------------------------------------
 
-Example response for a threat-match rule:
+Example response for an indicator match rule:
 
 [source,json]
 --------------------------------------------------
