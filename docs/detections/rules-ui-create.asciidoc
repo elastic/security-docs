@@ -6,6 +6,15 @@ Rules run periodically and search for source events, matches, sequences, or {ml}
 that meet their criteria. When a rule's criteria are met, a detection alert is
 created.
 
+[IMPORTANT]
+==============
+To create or edit {ml} rules, you must have the
+https://www.elastic.co/subscriptions[appropriate license] or use a
+{ess-trial}[cloud deployment]. Additionally, you must have the
+{ref}/built-in-roles.html[`machine_learning_admin`] user role, and the selected
+{ml} job must be running for the rule to function correctly.
+==============
+
 You can create the following types of rules:
 
 * <<create-custom-rule, *Custom query*>>: Query-based rule, which searches the defined indices and
@@ -78,25 +87,27 @@ image::images/all-rules.png[]
 [role="screenshot"]
 image::images/create-new-rule.png[]
 +
-. Do *one* of the following:
-* To create a rule based on a {ml} anomaly threshold, select *Machine Learning*,
+. Select the type of rule you want to create, then follow the steps outlined in that section:
+
+* <<create-ml-rule, Machine learning>>
+* <<create-custom-rule, Custom query>>
+* <<create-threshold-rule, Threshold rules>>
+* <<create-eql-rule, Event correlation>>
+* <<create-indicator-rule, Indicator match>>
+
+[discrete]
+[[create-ml-rule]]
+==== Create a machine learning rule
+. To create a rule based on a {ml} anomaly threshold, select *Machine Learning*,
 then select:
-.. The required {ml} job.
+.. The required {ml} job(s).
 .. The anomaly score threshold above which alerts are created.
-+
-[IMPORTANT]
-==============
-To create or edit {ml} rules, you must have the
-https://www.elastic.co/subscriptions[appropriate license] or use a
-{ess-trial}[cloud deployment]. Additionally, you must have the
-{ref}/built-in-roles.html[`machine_learning_admin`] user role, and the selected
-{ml} job must be running for the rule to function correctly.
-==============
+. Continue with <<rule-ui-basic-params, configuring basic rule settings>>.
 
 [discrete]
 [[create-custom-rule]]
 ==== Create a custom rule
-* To create a rule based on a KQL or Lucene query, select *Custom query* and
+. To create a rule based on a KQL or Lucene query, select *Custom query*,
 then:
 .. Define which {es} indices the rule searches for alerts.
 .. Use the filter and query fields to create the criteria used for detecting
@@ -122,13 +133,13 @@ image::images/rule-query-example.png[]
 +
 TIP: This example is based on the
 <<volume-shadow-copy-deletion-via-vssadmin, Volume Shadow Copy Deletion via VssAdmin>> prebuilt rule.
-
++
+... Continue with <<preview-rules, previewing the rule>> (optional) or <<rule-ui-basic-params, configuring basic rule settings>>.
 
 [discrete]
 [[create-threshold-rule]]
 ==== Create a threshold rule
-* To create a rule based on a source event field threshold, select *Threshold*
-and then:
+. To create a rule based on a source event field threshold, select *Threshold*, then:
 .. Define which {es} indices the rule analyzes for alerts.
 .. Use the filter and query fields to create the criteria used for detecting
 alerts.
@@ -138,11 +149,14 @@ alerts.
 For example, if `Group by` is `source.ip`, `destination.ip` and its `Threshold` is `10`, an alert is generated for every pair of source and destination IP addresses that appear in at least 10 of the rule's search results.
 +
 You can also leave the `Group by` field undefined. The rule then creates an alert when the number of search results is equal to or greater than the threshold value. If you set `Count` to limit the results by `process.name` >= 2, an alert will only be generated for source/destination IP pairs that appear with at least 2 unique process names across all events.
++
+. Click *Continue.* The About rule pane is displayed.
+. Continue with <<preview-rules, previewing the rule>> (optional) or <<rule-ui-basic-params, configuring basic rule settings>>.
 
 [discrete]
 [[create-eql-rule]]
 ==== Create an event correlation rule
-* To create an event correlation rule using EQL, select *Event Correlation* and then:
+. To create an event correlation rule using EQL, select *Event Correlation*, then:
 .. Define which {es} indices the rule searches for alerts.
 .. Add an {ref}/eql-syntax.html[EQL statement] used to detect alerts.
 +
@@ -175,6 +189,8 @@ event followed by an outbound network connection event that was started by the
 image::images/eql-rule-query-example.png[]
 +
 NOTE: For sequence events, the {security-app} generates a single alert when all events listed in the sequence are detected. To see the matched sequence events in more detail, you can view the alert in the Timeline, and, if all events came from the same process, open the alert in Analyze Event view.
++
+. Continue with <<preview-rules, previewing the rule>> (optional) or click *Continue* to proceed with <<rule-ui-basic-params, configuring basic rule settings>>.
 
 [discrete]
 [[create-indicator-rule]]
@@ -182,7 +198,7 @@ NOTE: For sequence events, the {security-app} generates a single alert when all 
 
 NOTE: {es-sec} provides limited support for indicator match rules. See <<support-indicator-rules>> for more information.
 
-* To create an indicator match rule that searches for events whose specified field value matches the specified indicator field value in the indicator index patterns, select *Indicator Match* and then fill in the following fields:
+. To create an indicator match rule that searches for events whose specified field value matches the specified indicator field value in the indicator index patterns, select *Indicator Match* and then fill in the following fields:
 .. *Index patterns*: The {es-sec} event indices on which the rule runs.
 .. *Custom query*: The query and filters used to retrieve the required results from
 the {es-sec} event indices. For example, if you want to match documents that only contain a `destination.ip` address field, add `destination.ip : *`.
@@ -217,18 +233,13 @@ they can be selected here. When alerts generated by the rule are investigated
 in the Timeline, Timeline query values are replaced with their corresponding alert
 field values.
 +
-. Click *Continue*. The *About rule* pane is displayed.
-+
-[role="screenshot"]
-image::images/about-rule-pane.png[]
-+
-. Continue with <<preview-rules, previewing the rule>> (optional) or <<rule-ui-basic-params, configuring basic rule settings>>.
+. Continue with <<preview-rules, previewing the rule>> (optional) or click *Continue* to proceed with <<rule-ui-basic-params, configuring basic rule settings>>.
 
 [discrete]
 [[preview-rules]]
 === Preview your rule (optional)
 
-You can preview a custom query, threshold, or EQL (Event Correlation) rule to get feedback on how noisy the rule will be before submitting it. You can then fine-tune the query, if needed, to reduce the number of alerts that may come in.
+You can preview a custom query, threshold, or event correlation rule to get feedback on how noisy the rule will be before submitting it. You can then fine-tune the query, if needed, to reduce the number of alerts that may come in.
 
 To preview a rule:
 
