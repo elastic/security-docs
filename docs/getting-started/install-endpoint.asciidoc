@@ -1,70 +1,79 @@
 [[install-endpoint]]
 [role="xpack"]
-= Configure and install Elastic Endpoint integration
+= Configure and install the Elastic Endpoint integration
+
+[beta]
 
 Like other Elastic integrations, Endpoint Security can be integrated into the Elastic Agent through {fleet-guide}/fleet-overview.html[{fleet}]. Upon configuration, the integration allows the Elastic Agent to monitor for events on your host and send data to the Elastic Security app.
 
-NOTE: To configure the Endpoint integration on the {agent}, you must have permission to use {fleet} in {kib}.
+NOTE: To configure the Endpoint integration on the {agent}, you must have permission to use {fleet} in {kib}. You must also have admin permissions in {kib} to access the **Administration** page in the {security-app}.
 
 [discrete]
 [[security-before-you-begin]]
 == Before you begin
 
-Depending on the macOS version you're using, macOS requires that you give full disk access to different kernels, system extensions, or files. See <<sensor-full-disk-access>> for more information.
+Depending on the macOS version you're using, macOS may require you to grant full disk access to different kernels, system extensions, or files. See <<sensor-full-disk-access>> for more information.
 
 [discrete]
 [[add-security-integration]]
-== Add Elastic Endpoint integration
+== Add the Elastic Endpoint integration
 
-1. In Kibana, select **Security** > **Administration**. If this is not your first time using Elastic Security, select **{fleet}** > **Integrations** and search for "Endpoint Security".
+1. In Kibana, select **Security** > **Administration**. If this is not your first time using Elastic Security, select **{fleet}** > **Integrations** and search for "Endpoint Security."
 +
 [role="screenshot"]
 image::images/install-endpoint/security-integration.png[]
 +
 2. On the Administration page of the {security-app} or the Endpoint Security integration page in Fleet, select **Add Endpoint Security**. The integration configuration page appears.
-3. Select a configuration for the Elastic Agent. You can use either the **Default config**, or add security integration to a custom or existing configuration. For more details on Elastic Agent configuration settings, see {fleet-guide}/elastic-agent-configuration.html[Configuration settings].
-4. Configure the Endpoint Security integration with a name and optional description. When the configuration is complete, select **Save integration**. Kibana redirects you back to the administration section of the {security-app}.
+3. Select an agent policy for the {agent}. You can select one of the two default policy options, an existing policy, or select **Create agent policy** to create a new one. For more details on Elastic Agent configuration settings, see {fleet-guide}/elastic-agent-configuration.html[Configuration settings].
+4. Configure the Endpoint Security integration with a name and optional description. When the configuration is complete, click **Save integration** in the lower right corner.
 +
 [role="screenshot"]
 image::images/install-endpoint/add-elastic-endpoint-security.png[]
-+
-5. On the "Enable Endpoint Security" on your Agent's page, select the name of your new integration. To enroll your agents with Endpoint Security, select **Enroll Agent**.
-6. Kibana redirects you back to Fleet to add the Elastic Agent to your host.
 
 [discrete]
 [[enroll-security-agent]]
 == Configure and enroll the Elastic Agent
 
-When integrating with the Elastic Agent, Endpoint Security **requires** enrollment through Fleet to enable the integration.
+To configure the {agent}, Endpoint Security requires enrollment through Fleet to enable the integration.
 
-IMPORTANT: Endpoint Security cannot be integrated with an Elastic Agent in Standalone mode.
+IMPORTANT: Before you add an {agent}, a {fleet-server} must be running. See {fleet-guide}/fleet-server.html#add-fleet-server[Add a {fleet-server}].
 
-1. Go to {fleet}. Select **Overview** > **Add agent**.
+[discrete]
+[[fleet-server-upgrade]]
+=== Important information about the new {fleet-server}
+
+NOTE: If you are running an {stack} version earlier than 7.13.0, you can skip this section.
+
+If you have upgraded to an {stack} version that includes the new {fleet-server} (>=7.13.0), you will need to redeploy your agents. Review the following scenarios to ensure you take the appropriate steps.
+
+* If you redeploy the {agent} to the same machine through the {fleet} application after you upgrade, a new agent will appear.
+* If you want to remove the {agent} entirely without transitioning to the {fleet-server}, then you will need to manually uninstall the agent on the machine. This will also uninstall the endpoint. See {fleet-guide}/uninstall-elastic-agent.html[Uninstall Elastic Agent].
+* In the rare event that the {agent} fails to uninstall, you might need to manually uninstall the endpoint. See <<uninstall-endpoint, Uninstall an endpoint>> at the end of this topic.
+
+NOTE: Endpoint Security cannot be integrated with an {agent} in Standalone mode.
+
+1. Go to *{fleet}* > *Agents* > **Add agent**.
 +
 [role="screenshot"]
 image::images/install-endpoint/add-agent.png[]
 +
-2. In the Add agent pane of the Configurations section, download the Elastic Agent on your host's machine.
-3. After the download is complete, select an agent configuration. The selected integrations should include **Endpoint Security**.
+2. In the Add agent pane, download the {agent} on your host's machine.
+3. After the download is complete, select the **Endpoint Security** integration.
 +
 [role="screenshot"]
 image::images/install-endpoint/endpoint-configuration.png[]
 +
-4. After the {agent} is installed on your host machine, open a command-line interface, and navigate to your Agent's directory. Copy the commands from Fleet for your OS to enroll and run the Agent.
-
-After you have enrolled the {agent} on your host, select **Continue**. The host now appears in the Endpoints list, located on the Administration page in the {security-app}.
-
-To unenroll an agent from your host, see {fleet-guide}/unenroll-elastic-agent.html[Unenroll Elastic Agent].
+4. After the {agent} is installed on your host machine, open a command line interface and navigate to the directory where the agent is located. Copy the commands from {fleet} for your OS to enroll and run the agent.
++
+5. After you have enrolled the {agent} on your host, select **Continue**. The host now appears in the Endpoints list, located on the **Administration** page in the {security-app}.
 
 [discrete]
 [[enable-kernel-extension]]
 == Enable Elastic Endpoint kernel
 
-When running the {agent} with endpoint integrated on macOS 10.13, 10.14 and 10.15, you will be prompted to approve a kernel extension from "Endgame, Inc". To approve the extension:
+If you are running the {agent} with the {elastic-endpoint} integrated on macOS 10.13, 10.14 and 10.15, you will be prompted to approve a kernel extension from "Endgame, Inc". To approve the extension:
 
-TIP: Endgame Sensor users can approve the kernel the same way for the **Elastic Endgame** app.
-
-1. Select **Open Security Preferences**. The **Security and Privacy** window opens.
+1. Select **Open Security Preferences**. The **Security and Privacy** pane opens.
 +
 [role="screenshot"]
 image::images/install-endpoint/system-extension.png[]
@@ -74,11 +83,12 @@ image::images/install-endpoint/system-extension.png[]
 [role="screenshot"]
 image::images/install-endpoint/unlock-security-panel.png[]
 +
-3. Allow "Endgame, Inc" by selecting the **Allow** button.
+3. Allow "Endgame, Inc" by clicking the **Allow** button.
 +
 [role="screenshot"]
 image::images/install-endpoint/allow-endgame.png[]
 
+TIP: Endgame Sensor users can approve the kernel the same way for the **Elastic Endgame** app.
 
 If the prompt does not appear because you're using a version earlier than macOS Big Sur (11.0), enable the extension by doing the following:
 
@@ -89,14 +99,15 @@ If the prompt does not appear because you're using a version earlier than macOS 
 
 [discrete]
 [[configure-security-policy]]
-== Configure an Integration Policy (optional)
+== Configure an Integration policy (optional)
 
-After the {agent} is installed successfully, malware prevention and ransomware prevention (a Platinum+ license feature) are automatically enabled on protected hosts. If needed, you can update the Integration Policy to configure malware protection, ransomware protection, event collection, and antivirus settings to meet your company's security needs.
+After the {agent} is installed successfully, malware prevention and ransomware prevention (a Platinum+ license feature) are automatically enabled on protected hosts. If needed, you can update the Integration policy to configure malware protection, ransomware protection, event collection, and antivirus settings to meet your company's security needs.
 
-To access the Integration Policy:
+To access the Integration policy:
 
 1. In the {security-app}, select the **Administration** tab to view the Endpoints list. Remember that you must have admin permissions in {kib} to access this page.
-2. From the **Integration Policy** column, select the Policy you want to configure. The Integration Policy Configuration page appears.
+2. From the **Integration Policy** column, select the policy you want to configure. The Integration policy Configuration page appears.
+3. Review the policy settings below and configure as appropriate.
 
 [discrete]
 [[malware-protection]]
@@ -118,7 +129,7 @@ image::images/install-endpoint/malware-protection.png[]
 [[ransomware-protection]]
 === Ransomware protection
 
-Behavioral ransomware prevention on the Elastic Agent detects and stops ransomware attacks on Windows systems by analyzing data from low-level system processes, and is effective across an array of widespread ransomware families — including those targeting the system’s master boot record.
+Behavioral ransomware prevention detects and stops ransomware attacks on Windows systems by analyzing data from low-level system processes. It is effective across an array of widespread ransomware families — including those targeting the system’s master boot record.
 
 Ransomware protection is a paid feature and is enabled by default if you have a https://www.elastic.co/pricing[Platinum or Enterprise license]. If you upgrade to a Platinum+ license from Basic or Gold, ransomware protection will be disabled by default.
 
@@ -153,9 +164,9 @@ image::images/register-as-antivirus.png[]
 
 [discrete]
 [[adv-policy-settings]]
-=== Advanced Policy settings (optional)
+=== Advanced policy settings (optional)
 
-Users who have unique configuration and security requirements can select **Show Advanced Settings** to configure the Policy to support advanced use cases. Hover over each setting to view its description.
+Users with unique configuration and security requirements can select **Show Advanced Settings** to configure the policy to support advanced use cases. Hover over each setting to view its description.
 
 NOTE: Advanced settings are not recommended for most users.
 [discrete]
@@ -163,16 +174,52 @@ NOTE: Advanced settings are not recommended for most users.
 [[save-policy]]
 === Save the integration
 
-1. After you have customized your desired Policy settings, click **Save**.
+1. After you have configured the policy, click **Save**.
 
-2. On the dialog that appears, click **Save and Deploy changes**. If successful, a "Success" confirmation appears in the lower-right corner.
+2. On the dialog that appears, click **Save and Deploy changes**. If successful, a "Success" confirmation appears in the lower right corner.
 
 
 [discrete]
 [[verify-endpoint-enrollment]]
-== Verify Endpoint enrollment
+== Verify Elastic Endpoint enrollment
 
-After installing the {agent}, there's a lag time of several hours between when the Elastic Endpoint begins detecting and sending alerts to {kib}. To ensure that the installation of Elastic Endpoint on your host was successful,  go to **Administration > Endpoints**. A message appears that says, "Endpoints are enrolling. View agents to track progress". Select **View agents** to check the status of your endpoint enrollment.
+After installing the {agent}, there's a lag time of several hours between when the Elastic Endpoint begins detecting and sending alerts to {kib}. To ensure that the installation of Elastic Endpoint on your host was successful,  go to **Administration > Endpoints**. A message appears that says, "Endpoints are enrolling. View agents to track progress." Select **View agents** to check the status of your endpoint enrollment.
 
 [role="screenshot"]
 image::images/install-endpoint/endpoints-enrolling.png[]
+
+
+[[uninstall-endpoint]]
+*Uninstall an endpoint*
+
+Follow these instructions to uninstall an endpoint **ONLY** if uninstalling an {agent} is unsuccessful.
+
+Windows
+
+[source,console]
+----------------------------------
+cd %TEMP%
+copy "c:\Program Files\Elastic\Endpoint\elastic-endpoint.exe" elastic-endpoint.exe
+.\elastic-endpoint.exe uninstall
+del .\elastic-endpoint.exe
+----------------------------------
+
+macOS
+
+[source,console]
+----------------------------------
+cd /tmp
+cp /Library/Elastic/Endpoint/elastic-endpoint elastic-endpoint
+sudo ./elastic-endpoint uninstall
+rm elastic-endpoint
+----------------------------------
+
+Linux
+
+[source,console]
+----------------------------------
+cd /tmp
+cp /opt/Elastic/Endpoint/elastic-endpoint elastic-endpoint
+sudo ./elastic-endpoint uninstall
+rm elastic-endpoint
+----------------------------------
