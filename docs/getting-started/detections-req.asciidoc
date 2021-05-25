@@ -1,18 +1,18 @@
 [[detections-permissions-section]]
 = Detections prerequisites and requirements
 
-To use the <<detection-engine-overview, Detections feature>>, you need to
-configure a few things.
+To use the <<detection-engine-overview, Detections feature>>, you first need to
+configure a few settings. You also need the https://www.elastic.co/subscriptions[appropriate license] to send
+<<rule-notifications, notifications>> when detection alerts are generated.
 
-IMPORTANT: There are a number of step that are *only* required for *self-managed*
-{stack} deployments. If you are using an Elastic Cloud deployment, you only need to
-configure <<enable-detections-ui>> and <<access-detections-ui>>.
+IMPORTANT: Several steps are *only* required for *self-managed* {stack}
+deployments. If you are using an Elastic Cloud deployment, you only need to
+<<enable-detections-ui, enable detections>>.
 
 Additionally, there are some <<adv-list-settings, advanced settings>> used to
 configure {kib} <<detections-ui-exceptions, value list>> upload limits.
 
-You need the https://www.elastic.co/subscriptions[appropriate license] to send
-<<rule-notifications, notifications>> when detection alerts are generated.
+
 
 [discrete]
 [[detections-on-prem-requirements]]
@@ -37,6 +37,73 @@ and restarting {kib}, you must restart all detection rules.
 
 [discrete]
 [[enable-detections-ui]]
+== Enable and access detections
+To use the Detections page, the Detections feature must be enabled and your role must have access to rules and alerts. If your role does not have the cluster and index privileges needed to enable this feature, you can request someone who has these privileges to visit your Kibana space, which will turn it on for you. The following table describes the required privileges to access the Detections page - including rules and alerts.
+
+NOTE: For instructions about using Machine Learning jobs and rules, refer to <<ml-requirements, Machine learning job and rule requirements>>.
+
+[discrete]
+[width="100%",options="header"]
+|==============================================
+|Action |Cluster Privileges |Index Privileges |Kibana Privileges
+
+|Enable the Detections feature in your Kibana space
+|The `manage` privilege
+
+a|The `manage`, `write`,`read`, and `view_index_metadata` index privileges for the following system indices where `<kib-space>` is the {kib} space name:
+
+* `.siem-signals-<kib-space>`
+* `.lists-<kib-space>`
+* `.items-<kib-space>`
+|{kib} space `All` privileges for the `Security` feature (see
+{kibana-ref}/xpack-spaces.html#spaces-control-user-access[Feature access based on user privileges])
+
+
+|Enable the Detections feature in all Kibana spaces
+
+*Note*: To turn on the Detections feature, visit the Detections page for each appropriate Kibana space.
+
+|The `manage` privilege
+a|The `manage`, `write`,`read`, and `view_index_metadata` index privileges for the following system indices:
+
+* `.siem-signals-*`
+* `.lists-*`
+* `.items-*`
+|{kib} space `All` privileges for the `Security` feature (see
+{kibana-ref}/xpack-spaces.html#spaces-control-user-access[Feature access based on user privileges])
+
+|Manage rules
+| N/A
+a|The `manage`, `write`,`read`, and `view_index_metadata` index privileges for the for the following system indices where `<kib-space>` is the {kib} space name:
+
+* `.siem-signals-<kib-space>`
+* `.lists-<kib-space>`
+* `.items-<kib-space>`
+|{kib} space `All` privileges for the `Security` feature (see
+{kibana-ref}/xpack-spaces.html#spaces-control-user-access[Feature access based on user privileges])
+
+|Manage alerts
+
+**Note**: Allows you to manage alerts, but not modify rules.
+|N/A
+a|The `maintenance`, `write`,`read`, and `view_index_metadata` index privileges for the following system indices where `<kib-space>` is the {kib} space name:
+
+* `.siem-signals-<kib-space>`
+* `.lists-<kib-space>`
+* `.items-<kib-space>`
+|{kib} space `All` privileges for the `Security` feature (see
+{kibana-ref}/xpack-spaces.html#spaces-control-user-access[Feature access based on user privileges])
+
+|==============================================
+
+Here is an example of a user who has the Detections feature enabled in all {kib}
+spaces:
+
+[role="screenshot"]
+image::images/sec-admin-user.png[]
+
+////
+[discrete]
 == Enable Detections
 
 To enable the <<detection-engine-overview, Detections feature>>, a user with
@@ -64,11 +131,7 @@ To create a user who can enable Detections in all {kib} spaces, use glob
 patterns. For example, `.siem-signals-*`, `.lists-*`, and `.items-*`.
 ==============
 
-Here's a screenshot of a user role that can enable Detections in all {kib}
-spaces:
 
-[role="screenshot"]
-image::images/sec-admin-user.png[]
 
 [discrete]
 [[access-detections-ui]]
@@ -97,15 +160,15 @@ For rule management, make sure {kib} space with `All` privileges is enabled for 
 
 **Alert**
 
-If you only want a user to update the status of alerts but not rule, only {kib} space with `All` privileges enabled for `Security` is required. 
-
+If you only want a user to update the status of alerts but not rule, only {kib} space with `All` privileges enabled for `Security` is required.
+////
 
 [discrete]
 [[adv-list-settings]]
 == Configure list upload limits
 
 You can set limits to the number of bytes and the buffer size used to upload
-<<detections-ui-exceptions, values lists>> to {kib}.
+<<detections-ui-exceptions, value lists>> to {es-sec}.
 
 To set the value:
 
@@ -113,14 +176,14 @@ To set the value:
 {kib} cloud instance.
 . Add any of these settings and their required values:
 * `xpack.lists.maxImportPayloadBytes`: Sets the number of bytes allowed for
-uploading Security Solution value lists (default `9000000`, maximum
+uploading {es-sec} value lists (default `9000000`, maximum
 `100000000`). For every 10 megabytes, it is recommended to have an additional 1
 gigabyte of RAM reserved for Kibana.
 +
 For example, on a Kibana instance with 2 gigabytes of RAM, you can set this value up
 to 20000000 (20 megabytes).
 * `xpack.lists.importBufferSize`: Sets the buffer size used for uploading
-Security Solution value lists (default `1000`). Change the value if you are
+{es-sec} value lists (default `1000`). Change the value if you are
 experiencing slow upload speeds or larger than wanted memory usage when
 uploading value lists. Set to a higher value to increase throughput at the
 expense of using more Kibana memory, or a lower value to decrease throughput and
