@@ -1,10 +1,9 @@
 [[modification-of-boot-configuration]]
 === Modification of Boot Configuration
 
-Identifies use of `bcdedit.exe` to delete boot configuration data. Malware and
-attackers sometimes use this tactic as a destructive technique.
+Identifies use of bcdedit.exe to delete boot configuration data. This tactic is sometimes used as by malware or an attacker as a destructive technique.
 
-*Rule type*: query
+*Rule type*: eql
 
 *Rule indices*:
 
@@ -30,11 +29,11 @@ attackers sometimes use this tactic as a destructive technique.
 * Threat Detection
 * Defense Evasion
 
-*Version*: 7 (<<modification-of-boot-configuration-history, version history>>)
+*Version*: 8 (<<modification-of-boot-configuration-history, version history>>)
 
 *Added ({stack} release)*: 7.7.0
 
-*Last modified ({stack} release)*: 7.12.0
+*Last modified ({stack} release)*: 7.13.0
 
 *Rule authors*: Elastic
 
@@ -45,9 +44,11 @@ attackers sometimes use this tactic as a destructive technique.
 
 [source,js]
 ----------------------------------
-event.category:process and event.type:(start or process_started) and
-process.name:bcdedit.exe and process.args:(/set and (bootstatuspolicy
-and ignoreallfailures or no and recoveryenabled))
+process where event.type in ("start", "process_started") and
+(process.name : "bcdedit.exe" or process.pe.original_file_name ==
+"bcdedit.exe") and (process.args : "/set" and process.args :
+"bootstatuspolicy" and process.args : "ignoreallfailures") or
+(process.args : "no" and process.args : "recoveryenabled")
 ----------------------------------
 
 ==== Threat mapping
@@ -65,6 +66,16 @@ and ignoreallfailures or no and recoveryenabled))
 
 [[modification-of-boot-configuration-history]]
 ==== Rule version history
+
+Version 8 (7.13.0 release)::
+* Updated query, changed from:
++
+[source, js]
+----------------------------------
+event.category:process and event.type:(start or process_started) and
+process.name:bcdedit.exe and process.args:(/set and (bootstatuspolicy
+and ignoreallfailures or no and recoveryenabled))
+----------------------------------
 
 Version 7 (7.12.0 release)::
 * Formatting only

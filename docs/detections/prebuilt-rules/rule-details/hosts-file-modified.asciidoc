@@ -3,7 +3,7 @@
 
 The hosts file on endpoints is used to control manual IP address to hostname resolutions. The hosts file is the first point of lookup for DNS hostname resolution so if adversaries can modify the endpoint hosts file, they can route traffic to malicious infrastructure. This rule detects modifications to the hosts file on Microsoft Windows, Linux (Ubuntu or RHEL) and macOS systems.
 
-*Rule type*: query
+*Rule type*: eql
 
 *Rule indices*:
 
@@ -36,17 +36,19 @@ The hosts file on endpoints is used to control manual IP address to hostname res
 * Threat Detection
 * Impact
 
-*Version*: 4 (<<hosts-file-modified-history, version history>>)
+*Version*: 5 (<<hosts-file-modified-history, version history>>)
 
 *Added ({stack} release)*: 7.10.0
 
-*Last modified ({stack} release)*: 7.12.0
+*Last modified ({stack} release)*: 7.13.0
 
 *Rule authors*: Elastic
 
 *Rule license*: Elastic License v2
 
 ==== Investigation guide
+
+## Config
 
 For Windows systems using Auditbeat, this rule requires adding 'C:/Windows/System32/drivers/etc' as an additional path in the 'file_integrity' module of auditbeat.yml.
 
@@ -55,9 +57,9 @@ For Windows systems using Auditbeat, this rule requires adding 'C:/Windows/Syste
 
 [source,js]
 ----------------------------------
-event.category:file and event.type:(change or creation) and
-file.path:("/private/etc/hosts" or "/etc/hosts" or
-"C:\Windows\System32\drivers\etc\hosts")
+file where event.type in ("change", "creation") and file.path :
+("/private/etc/hosts", "/etc/hosts",
+"?:\\Windows\\System32\\drivers\\etc\\hosts")
 ----------------------------------
 
 ==== Threat mapping
@@ -75,6 +77,16 @@ file.path:("/private/etc/hosts" or "/etc/hosts" or
 
 [[hosts-file-modified-history]]
 ==== Rule version history
+
+Version 5 (7.13.0 release)::
+* Updated query, changed from:
++
+[source, js]
+----------------------------------
+event.category:file and event.type:(change or creation) and
+file.path:("/private/etc/hosts" or "/etc/hosts" or
+"C:\Windows\System32\drivers\etc\hosts")
+----------------------------------
 
 Version 4 (7.12.0 release)::
 * Formatting only

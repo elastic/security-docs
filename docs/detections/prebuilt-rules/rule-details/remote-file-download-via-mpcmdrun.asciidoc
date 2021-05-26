@@ -3,7 +3,7 @@
 
 Identifies the Windows Defender configuration utility (MpCmdRun.exe) being used to download a remote file.
 
-*Rule type*: query
+*Rule type*: eql
 
 *Rule indices*:
 
@@ -34,11 +34,11 @@ Identifies the Windows Defender configuration utility (MpCmdRun.exe) being used 
 * Threat Detection
 * Command and Control
 
-*Version*: 4 (<<remote-file-download-via-mpcmdrun-history, version history>>)
+*Version*: 5 (<<remote-file-download-via-mpcmdrun-history, version history>>)
 
 *Added ({stack} release)*: 7.10.0
 
-*Last modified ({stack} release)*: 7.12.0
+*Last modified ({stack} release)*: 7.13.0
 
 *Rule authors*: Elastic
 
@@ -46,6 +46,9 @@ Identifies the Windows Defender configuration utility (MpCmdRun.exe) being used 
 
 ==== Investigation guide
 
+## Triage and analysis
+
+### Investigating Remote File Download via MpCmdRun
 Verify details such as the parent process, URL reputation, and downloaded file details. Additionally, `MpCmdRun` logs this information in the Appdata Temp folder in `MpCmdRun.log`.
 
 ==== Rule query
@@ -53,11 +56,10 @@ Verify details such as the parent process, URL reputation, and downloaded file d
 
 [source,js]
 ----------------------------------
-event.category:process and event.type:(start or process_started) and
-(process.name:MpCmdRun.exe or
-process.pe.original_file_name:MpCmdRun.exe) and
-process.args:(("-DownloadFile" or "-downloadfile") and "-url" and
-"-path")
+process where event.type == "start" and (process.name :
+"MpCmdRun.exe" or process.pe.original_file_name == "MpCmdRun.exe") and
+process.args : "-DownloadFile" and process.args : "-url" and
+process.args : "-path"
 ----------------------------------
 
 ==== Threat mapping
@@ -75,6 +77,18 @@ process.args:(("-DownloadFile" or "-downloadfile") and "-url" and
 
 [[remote-file-download-via-mpcmdrun-history]]
 ==== Rule version history
+
+Version 5 (7.13.0 release)::
+* Updated query, changed from:
++
+[source, js]
+----------------------------------
+event.category:process and event.type:(start or process_started) and
+(process.name:MpCmdRun.exe or
+process.pe.original_file_name:MpCmdRun.exe) and
+process.args:(("-DownloadFile" or "-downloadfile") and "-url" and
+"-path")
+----------------------------------
 
 Version 4 (7.12.0 release)::
 * Formatting only

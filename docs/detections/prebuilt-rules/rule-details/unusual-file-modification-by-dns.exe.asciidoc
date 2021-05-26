@@ -3,7 +3,7 @@
 
 Identifies an unexpected file being modified by dns.exe, the process responsible for Windows DNS Server services, which may indicate activity related to remote code execution or other forms of exploitation.
 
-*Rule type*: query
+*Rule type*: eql
 
 *Rule indices*:
 
@@ -34,11 +34,11 @@ Identifies an unexpected file being modified by dns.exe, the process responsible
 * Threat Detection
 * Initial Access
 
-*Version*: 4 (<<unusual-file-modification-by-dns.exe-history, version history>>)
+*Version*: 5 (<<unusual-file-modification-by-dns.exe-history, version history>>)
 
 *Added ({stack} release)*: 7.10.0
 
-*Last modified ({stack} release)*: 7.12.0
+*Last modified ({stack} release)*: 7.13.0
 
 *Rule authors*: Elastic
 
@@ -46,21 +46,20 @@ Identifies an unexpected file being modified by dns.exe, the process responsible
 
 ==== Investigation guide
 
-Detection alerts from this rule indicate potential unusual/abnormal file writes
-from the DNS Server service process (`dns.exe`) after exploitation from
-CVE-2020-1350 (SigRed) has occurred. Here are some possible avenues of
-investigation:
+## Triage and analysis
 
-* Post-exploitation, adversaries may write additional files or payloads to the system as additional discovery/exploitation/persistence mechanisms. 
-* Any suspicious or abnormal files written from `dns.exe` should be reviewed and investigated with care.
+### Investigating Unusual File Write
+Detection alerts from this rule indicate potential unusual/abnormal file writes from the DNS Server service process (`dns.exe`) after exploitation from CVE-2020-1350 (SigRed) has occurred. Here are some possible avenues of investigation:
+- Post-exploitation, adversaries may write additional files or payloads to the system as additional discovery/exploitation/persistence mechanisms.
+- Any suspicious or abnormal files written from `dns.exe` should be reviewed and investigated with care.
 
 ==== Rule query
 
 
 [source,js]
 ----------------------------------
-event.category:file and process.name:dns.exe and event.type:(creation
-or deletion or change) and not file.name:dns.log
+file where process.name : "dns.exe" and event.type in ("creation",
+"deletion", "change") and not file.name : "dns.log"
 ----------------------------------
 
 ==== Threat mapping
@@ -78,6 +77,15 @@ or deletion or change) and not file.name:dns.log
 
 [[unusual-file-modification-by-dns.exe-history]]
 ==== Rule version history
+
+Version 5 (7.13.0 release)::
+* Updated query, changed from:
++
+[source, js]
+----------------------------------
+event.category:file and process.name:dns.exe and event.type:(creation
+or deletion or change) and not file.name:dns.log
+----------------------------------
 
 Version 4 (7.12.0 release)::
 * Formatting only
