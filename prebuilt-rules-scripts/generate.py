@@ -352,8 +352,6 @@ def create_documentation(package_release):
     [role="xpack"]
     == Prebuilt rule reference
 
-    beta[]
-
     This section lists all available prebuilt rules.
 
     IMPORTANT: To run {ml} prebuilt rules, you must have the
@@ -582,8 +580,6 @@ def create_documentation(package_release):
 
     version_history_page = _left_align("""[[prebuilt-rules-changelog]]
     == Prebuilt rule changes per release
-
-    beta[]
 
     The following lists prebuilt rule updates per release. Only rules with
     significant modifications to their query or scope are listed. For detailed
