@@ -1,10 +1,9 @@
 [[deleting-backup-catalogs-with-wbadmin]]
 === Deleting Backup Catalogs with Wbadmin
 
-Identifies use of the `wbadmin.exe` to delete the backup catalog. Ransomware and
-other malware may do this to prevent system recovery.
+Identifies use of the wbadmin.exe to delete the backup catalog. Ransomware and other malware may do this to prevent system recovery.
 
-*Rule type*: query
+*Rule type*: eql
 
 *Rule indices*:
 
@@ -30,11 +29,11 @@ other malware may do this to prevent system recovery.
 * Threat Detection
 * Defense Evasion
 
-*Version*: 8 (<<deleting-backup-catalogs-with-wbadmin-history, version history>>)
+*Version*: 9 (<<deleting-backup-catalogs-with-wbadmin-history, version history>>)
 
 *Added ({stack} release)*: 7.6.0
 
-*Last modified ({stack} release)*: 7.12.0
+*Last modified ({stack} release)*: 7.13.0
 
 *Rule authors*: Elastic
 
@@ -45,8 +44,10 @@ other malware may do this to prevent system recovery.
 
 [source,js]
 ----------------------------------
-event.category:process and event.type:(start or process_started) and
-process.name:wbadmin.exe and process.args:(catalog and delete)
+process where event.type in ("start", "process_started") and
+(process.name : "wbadmin.exe" or process.pe.original_file_name ==
+"WBADMIN.EXE") and process.args : "catalog" and process.args :
+"delete"
 ----------------------------------
 
 ==== Threat mapping
@@ -64,6 +65,15 @@ process.name:wbadmin.exe and process.args:(catalog and delete)
 
 [[deleting-backup-catalogs-with-wbadmin-history]]
 ==== Rule version history
+
+Version 9 (7.13.0 release)::
+* Updated query, changed from:
++
+[source, js]
+----------------------------------
+event.category:process and event.type:(start or process_started) and
+process.name:wbadmin.exe and process.args:(catalog and delete)
+----------------------------------
 
 Version 8 (7.12.0 release)::
 * Formatting only

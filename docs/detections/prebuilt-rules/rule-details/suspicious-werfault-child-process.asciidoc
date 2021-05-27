@@ -3,7 +3,7 @@
 
 A suspicious WerFault child process was detected, which may indicate an attempt to run unnoticed. Verify process details such as command line, network connections, file writes and parent process details as well.
 
-*Rule type*: query
+*Rule type*: eql
 
 *Rule indices*:
 
@@ -35,11 +35,11 @@ A suspicious WerFault child process was detected, which may indicate an attempt 
 * Threat Detection
 * Defense Evasion
 
-*Version*: 3 (<<suspicious-werfault-child-process-history, version history>>)
+*Version*: 4 (<<suspicious-werfault-child-process-history, version history>>)
 
 *Added ({stack} release)*: 7.10.0
 
-*Last modified ({stack} release)*: 7.12.0
+*Last modified ({stack} release)*: 7.13.0
 
 *Rule authors*: Elastic
 
@@ -47,16 +47,22 @@ A suspicious WerFault child process was detected, which may indicate an attempt 
 
 ==== Potential false positives
 
-Custom Windows Error Reporting Debugger
+Custom Windows error reporting debugger or applications restarted by WerFault after a crash.
 
 ==== Rule query
 
 
 [source,js]
 ----------------------------------
-event.category:process and event.type:(start or process_started) and
-process.parent.name:WerFault.exe and not process.name:(cofire.exe or
-psr.exe or VsJITDebugger.exe or TTTracer.exe or rundll32.exe)
+process where event.type in ("start", "process_started") and
+process.parent.name : "WerFault.exe" and not process.name :
+("cofire.exe", "psr.exe",
+"VsJITDebugger.exe", "TTTracer.exe",
+"rundll32.exe", "LogiOptionsMgr.exe") and not
+process.args : ("/LOADSAVEDWINDOWS", "/restore",
+"RestartByRestartManager*", "--restarted",
+"createdump", "dontsend",
+"/watson")
 ----------------------------------
 
 ==== Threat mapping
@@ -74,6 +80,16 @@ psr.exe or VsJITDebugger.exe or TTTracer.exe or rundll32.exe)
 
 [[suspicious-werfault-child-process-history]]
 ==== Rule version history
+
+Version 4 (7.13.0 release)::
+* Updated query, changed from:
++
+[source, js]
+----------------------------------
+event.category:process and event.type:(start or process_started) and
+process.parent.name:WerFault.exe and not process.name:(cofire.exe or
+psr.exe or VsJITDebugger.exe or TTTracer.exe or rundll32.exe)
+----------------------------------
 
 Version 3 (7.12.0 release)::
 * Formatting only

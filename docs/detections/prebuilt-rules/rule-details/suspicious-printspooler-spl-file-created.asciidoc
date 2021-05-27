@@ -3,7 +3,7 @@
 
 Detects attempts to exploit privilege escalation vulnerabilities related to the Print Spooler service including CVE-2020-1048 and CVE-2020-1337. .
 
-*Rule type*: query
+*Rule type*: eql
 
 *Rule indices*:
 
@@ -33,17 +33,19 @@ Detects attempts to exploit privilege escalation vulnerabilities related to the 
 * Threat Detection
 * Privilege Escalation
 
-*Version*: 3 (<<suspicious-printspooler-spl-file-created-history, version history>>)
+*Version*: 4 (<<suspicious-printspooler-spl-file-created-history, version history>>)
 
 *Added ({stack} release)*: 7.10.0
 
-*Last modified ({stack} release)*: 7.12.0
+*Last modified ({stack} release)*: 7.13.0
 
 *Rule authors*: Elastic
 
 *Rule license*: Elastic License v2
 
 ==== Investigation guide
+
+**Threat intel**
 
 Refer to CVEs, CVE-2020-1048 and CVE-2020-1337 for further information on the vulnerability and exploit. Verify that the relevant system is patched.
 
@@ -52,11 +54,12 @@ Refer to CVEs, CVE-2020-1048 and CVE-2020-1337 for further information on the vu
 
 [source,js]
 ----------------------------------
-event.category:file and not event.type:deletion and
-file.extension:(spl or SPL) and
-file.path:C\:\\Windows\\System32\\spool\\PRINTERS\\* and not
-process.name:(spoolsv.exe or printfilterpipelinesvc.exe or
-PrintIsolationHost.exe or splwow64.exe or msiexec.exe or poqexec.exe)
+file where event.type != "deletion" and file.extension : "spl" and
+file.path : "?:\\Windows\\System32\\spool\\PRINTERS\\*" and not
+process.name : ("spoolsv.exe",
+"printfilterpipelinesvc.exe",
+"PrintIsolationHost.exe", "splwow64.exe",
+"msiexec.exe", "poqexec.exe")
 ----------------------------------
 
 ==== Threat mapping
@@ -74,6 +77,18 @@ PrintIsolationHost.exe or splwow64.exe or msiexec.exe or poqexec.exe)
 
 [[suspicious-printspooler-spl-file-created-history]]
 ==== Rule version history
+
+Version 4 (7.13.0 release)::
+* Updated query, changed from:
++
+[source, js]
+----------------------------------
+event.category:file and not event.type:deletion and
+file.extension:(spl or SPL) and
+file.path:C\:\\Windows\\System32\\spool\\PRINTERS\\* and not
+process.name:(spoolsv.exe or printfilterpipelinesvc.exe or
+PrintIsolationHost.exe or splwow64.exe or msiexec.exe or poqexec.exe)
+----------------------------------
 
 Version 3 (7.12.0 release)::
 * Formatting only
