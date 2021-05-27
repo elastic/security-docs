@@ -1,11 +1,9 @@
 [[net-command-via-system-account]]
 === Net command via SYSTEM account
 
-Identifies the SYSTEM account using the Net utility. The Net utility is a
-component of the Windows operating system. It is used in command line operations
-for control of users, groups, services, and network connections.
+Identifies the SYSTEM account using an account discovery utility. This could be a sign of discovery activity after an adversary has achieved privilege escalation.
 
-*Rule type*: query
+*Rule type*: eql
 
 *Rule indices*:
 
@@ -31,11 +29,11 @@ for control of users, groups, services, and network connections.
 * Threat Detection
 * Discovery
 
-*Version*: 6 (<<net-command-via-system-account-history, version history>>)
+*Version*: 7 (<<net-command-via-system-account-history, version history>>)
 
 *Added ({stack} release)*: 7.7.0
 
-*Last modified ({stack} release)*: 7.12.0
+*Last modified ({stack} release)*: 7.13.0
 
 *Rule authors*: Elastic
 
@@ -46,9 +44,10 @@ for control of users, groups, services, and network connections.
 
 [source,js]
 ----------------------------------
-event.category:process and event.type:(start or process_started) and
-(process.name:(whoami.exe or net.exe) or process.name:net1.exe and not
-process.parent.name:net.exe) and user.name:SYSTEM
+process where event.type in ("start", "process_started") and
+user.id in ("S-1-5-18", "S-1-5-19", "S-1-5-20") and process.name :
+"whoami.exe" or (process.name : "net1.exe" and not
+process.parent.name : "net.exe")
 ----------------------------------
 
 ==== Threat mapping
@@ -66,6 +65,16 @@ process.parent.name:net.exe) and user.name:SYSTEM
 
 [[net-command-via-system-account-history]]
 ==== Rule version history
+
+Version 7 (7.13.0 release)::
+* Updated query, changed from:
++
+[source, js]
+----------------------------------
+event.category:process and event.type:(start or process_started) and
+(process.name:(whoami.exe or net.exe) or process.name:net1.exe and not
+process.parent.name:net.exe) and user.name:SYSTEM
+----------------------------------
 
 Version 6 (7.12.0 release)::
 * Formatting only

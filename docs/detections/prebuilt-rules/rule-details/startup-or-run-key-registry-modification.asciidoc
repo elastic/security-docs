@@ -29,11 +29,11 @@ Identifies run key or startup key registry modifications. In order to survive re
 * Threat Detection
 * Persistence
 
-*Version*: 3 (<<startup-or-run-key-registry-modification-history, version history>>)
+*Version*: 4 (<<startup-or-run-key-registry-modification-history, version history>>)
 
 *Added ({stack} release)*: 7.11.0
 
-*Last modified ({stack} release)*: 7.12.0
+*Last modified ({stack} release)*: 7.13.0
 
 *Rule authors*: Elastic
 
@@ -43,6 +43,57 @@ Identifies run key or startup key registry modifications. In order to survive re
 
 
 [source,js]
+----------------------------------
+registry where registry.data.strings != null and registry.path : (
+/* Machine Hive */
+"HKLM\\Software\\Microsoft\\Windows\\CurrentVersion\\Run\\*",
+"HKLM\\Software\\Microsoft\\Windows\\CurrentVersion\\RunOnce\\*",
+"HKLM\\Software\\Microsoft\\Windows\\CurrentVersion\\RunOnceEx\\*",
+"HKLM\\Software\\Microsoft\\Windows\\CurrentVersion\\Policies\\Explore
+r\\Run\\*", "HKLM\\Software\\Microsoft\\Windows
+NT\\CurrentVersion\\Winlogon\\Shell\\*", /* Users Hive */
+"HKEY_USERS\\*\\Software\\Microsoft\\Windows\\CurrentVersion\\Run\\*",
+"HKEY_USERS\\*\\Software\\Microsoft\\Windows\\CurrentVersion\\RunOnce\
+\*", "HKEY_USERS\\*\\Software\\Microsoft\\Windows\\CurrentVersio
+n\\RunOnceEx\\*", "HKEY_USERS\\*\\Software\\Microsoft\\Windows\\C
+urrentVersion\\Policies\\Explorer\\Run\\*",
+"HKEY_USERS\\*\\Software\\Microsoft\\Windows
+NT\\CurrentVersion\\Winlogon\\Shell\\*" ) and /* add common
+legitimate changes without being too restrictive as this is one of the
+most abused AESPs */ not registry.data.strings : "ctfmon.exe /n" and
+not (registry.value : "Application Restart #*" and process.name :
+"csrss.exe") and user.id not in ("S-1-5-18", "S-1-5-19", "S-1-5-20")
+and not registry.data.strings : ("?:\\Program Files\\*.exe",
+"?:\\Program Files (x86)\\*.exe") and not process.executable :
+("?:\\Windows\\System32\\msiexec.exe",
+"?:\\Windows\\SysWOW64\\msiexec.exe") and not (process.name :
+"OneDriveSetup.exe" and registry.value : ("Delete Cached
+Standalone Update Binary", "Delete Cached Update Binary", "amd64",
+"Uninstall *") and registry.data.strings :
+"?:\\Windows\\system32\\cmd.exe /q /c *
+\"?:\\Users\\*\\AppData\\Local\\Microsoft\\OneDrive\\*\"")
+----------------------------------
+
+==== Threat mapping
+
+*Framework*: MITRE ATT&CK^TM^
+
+* Tactic:
+** Name: Persistence
+** ID: TA0003
+** Reference URL: https://attack.mitre.org/tactics/TA0003/
+* Technique:
+** Name: Boot or Logon Autostart Execution
+** ID: T1547
+** Reference URL: https://attack.mitre.org/techniques/T1547/
+
+[[startup-or-run-key-registry-modification-history]]
+==== Rule version history
+
+Version 4 (7.13.0 release)::
+* Updated query, changed from:
++
+[source, js]
 ----------------------------------
 /* uncomment length once stable */ registry where /*
 length(registry.data.strings) > 0 and */ registry.path : ( /*
@@ -76,22 +127,6 @@ Files (x86)\\*.exe") and not process.executable :
 ("C:\\Windows\\System32\\msiexec.exe",
 "C:\\Windows\\SysWOW64\\msiexec.exe")
 ----------------------------------
-
-==== Threat mapping
-
-*Framework*: MITRE ATT&CK^TM^
-
-* Tactic:
-** Name: Persistence
-** ID: TA0003
-** Reference URL: https://attack.mitre.org/tactics/TA0003/
-* Technique:
-** Name: Boot or Logon Autostart Execution
-** ID: T1547
-** Reference URL: https://attack.mitre.org/techniques/T1547/
-
-[[startup-or-run-key-registry-modification-history]]
-==== Rule version history
 
 Version 3 (7.12.0 release)::
 * Formatting only

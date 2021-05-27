@@ -3,7 +3,7 @@
 
 The malware known as SUNBURST targets the SolarWind's Orion business software for command and control. This rule detects post-exploitation command and control activity of the SUNBURST backdoor.
 
-*Rule type*: query
+*Rule type*: eql
 
 *Rule indices*:
 
@@ -31,17 +31,19 @@ The malware known as SUNBURST targets the SolarWind's Orion business software fo
 * Threat Detection
 * Command and Control
 
-*Version*: 3 (<<sunburst-command-and-control-activity-history, version history>>)
+*Version*: 4 (<<sunburst-command-and-control-activity-history, version history>>)
 
 *Added ({stack} release)*: 7.11.0
 
-*Last modified ({stack} release)*: 7.12.0
+*Last modified ({stack} release)*: 7.13.0
 
 *Rule authors*: Elastic
 
 *Rule license*: Elastic License v2
 
 ==== Investigation guide
+
+**Triage and analysis**
 
 The SUNBURST malware attempts to hide within the Orion Improvement Program (OIP) network traffic. As this rule detects post-exploitation network traffic, investigations into this should be prioritized.
 
@@ -50,15 +52,20 @@ The SUNBURST malware attempts to hide within the Orion Improvement Program (OIP)
 
 [source,js]
 ----------------------------------
-event.category:network and event.type:protocol and
-network.protocol:http and process.name:( ConfigurationWizard.exe or
-NetFlowService.exe or NetflowDatabaseMaintenance.exe or
-SolarWinds.Administration.exe or SolarWinds.BusinessLayerHost.exe or
-SolarWinds.BusinessLayerHostx64.exe or
-SolarWinds.Collector.Service.exe or SolarwindsDiagnostics.exe) and
-http.request.body.content:(( (*/swip/Upload.ashx* and (POST* or PUT*))
-or (*/swip/SystemDescription* and (GET* or HEAD*)) or (*/swip/Events*
-and (GET* or HEAD*))) and not *solarwinds.com*)
+network where event.type == "protocol" and network.protocol == "http"
+and process.name : ("ConfigurationWizard.exe",
+"NetFlowService.exe",
+"NetflowDatabaseMaintenance.exe",
+"SolarWinds.Administration.exe",
+"SolarWinds.BusinessLayerHost.exe",
+"SolarWinds.BusinessLayerHostx64.exe",
+"SolarWinds.Collector.Service.exe",
+"SolarwindsDiagnostics.exe") and (http.request.body.content :
+"*/swip/Upload.ashx*" and http.request.body.content : ("POST*",
+"PUT*")) or (http.request.body.content :
+("*/swip/SystemDescription*", "*/swip/Events*") and
+http.request.body.content : ("GET*", "HEAD*")) and not
+http.request.body.content : "*solarwinds.com*"
 ----------------------------------
 
 ==== Threat mapping
@@ -86,6 +93,22 @@ and (GET* or HEAD*))) and not *solarwinds.com*)
 
 [[sunburst-command-and-control-activity-history]]
 ==== Rule version history
+
+Version 4 (7.13.0 release)::
+* Updated query, changed from:
++
+[source, js]
+----------------------------------
+event.category:network and event.type:protocol and
+network.protocol:http and process.name:( ConfigurationWizard.exe or
+NetFlowService.exe or NetflowDatabaseMaintenance.exe or
+SolarWinds.Administration.exe or SolarWinds.BusinessLayerHost.exe or
+SolarWinds.BusinessLayerHostx64.exe or
+SolarWinds.Collector.Service.exe or SolarwindsDiagnostics.exe) and
+http.request.body.content:(( (*/swip/Upload.ashx* and (POST* or PUT*))
+or (*/swip/SystemDescription* and (GET* or HEAD*)) or (*/swip/Events*
+and (GET* or HEAD*))) and not *solarwinds.com*)
+----------------------------------
 
 Version 3 (7.12.0 release)::
 * Formatting only

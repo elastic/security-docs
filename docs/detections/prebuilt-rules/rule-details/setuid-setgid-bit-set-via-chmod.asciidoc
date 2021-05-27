@@ -29,11 +29,11 @@ An adversary may add the setuid or setgid bit to a file or directory in order to
 * Threat Detection
 * Privilege Escalation
 
-*Version*: 7 (<<setuid-setgid-bit-set-via-chmod-history, version history>>)
+*Version*: 8 (<<setuid-setgid-bit-set-via-chmod-history, version history>>)
 
 *Added ({stack} release)*: 7.8.0
 
-*Last modified ({stack} release)*: 7.12.0
+*Last modified ({stack} release)*: 7.13.0
 
 *Rule authors*: Elastic
 
@@ -46,7 +46,20 @@ An adversary may add the setuid or setgid bit to a file or directory in order to
 ----------------------------------
 event.category:process AND event.type:(start OR process_started) AND
 process.name:chmod AND process.args:("+s" OR "u+s" OR /4[0-9]{3}/ OR
-g+s OR /2[0-9]{3}/)
+g+s OR /2[0-9]{3}/) AND NOT process.args: (
+/.*\/Applications\/VirtualBox.app\/.+/ OR
+/\/usr\/local\/lib\/python.+/ OR
+/\/var\/folders\/.+\/FP.*nstallHelper/ OR /\/Library\/Filesystems\/.+/
+OR /\/usr\/lib\/virtualbox\/.+/ OR /\/Library\/Application.*/ OR
+"/run/postgresql" OR "/var/crash" OR "/var/run/postgresql" OR
+/\/usr\/bin\/.+/ OR /\/usr\/local\/share\/.+/ OR /\/Applications\/.+/
+OR /\/usr\/libexec\/.+/ OR "/var/metrics" OR /\/var\/lib\/dpkg\/.+/ OR
+/\/run\/log\/journal\/.*/ OR \/Users\/*\/.minikube\/bin\/docker-
+machine-driver-hyperkit ) AND NOT process.parent.executable: (
+/\/var\/lib\/docker\/.+/ OR "/System/Library/PrivateFrameworks/Package
+Kit.framework/Versions/A/XPCServices/package_script_service.xpc/Conten
+ts/MacOS/package_script_service" OR
+"/var/lib/dpkg/info/whoopsie.postinst" )
 ----------------------------------
 
 ==== Threat mapping
@@ -70,6 +83,16 @@ g+s OR /2[0-9]{3}/)
 
 [[setuid-setgid-bit-set-via-chmod-history]]
 ==== Rule version history
+
+Version 8 (7.13.0 release)::
+* Updated query, changed from:
++
+[source, js]
+----------------------------------
+event.category:process AND event.type:(start OR process_started) AND
+process.name:chmod AND process.args:("+s" OR "u+s" OR /4[0-9]{3}/ OR
+g+s OR /2[0-9]{3}/)
+----------------------------------
 
 Version 7 (7.12.0 release)::
 * Rule name changed from: Setuid Bit Set via chmod
