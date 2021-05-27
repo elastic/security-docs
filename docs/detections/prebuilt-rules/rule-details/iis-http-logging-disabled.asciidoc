@@ -3,7 +3,7 @@
 
 Identifies when Internet Information Services (IIS) HTTP Logging is disabled on a server. An attacker with IIS server access via a webshell or other mechanism can disable HTTP Logging as an effective anti-forensics measure.
 
-*Rule type*: query
+*Rule type*: eql
 
 *Rule indices*:
 
@@ -29,11 +29,11 @@ Identifies when Internet Information Services (IIS) HTTP Logging is disabled on 
 * Threat Detection
 * Defense Evasion
 
-*Version*: 4 (<<iis-http-logging-disabled-history, version history>>)
+*Version*: 5 (<<iis-http-logging-disabled-history, version history>>)
 
 *Added ({stack} release)*: 7.10.0
 
-*Last modified ({stack} release)*: 7.12.0
+*Last modified ({stack} release)*: 7.13.0
 
 *Rule authors*: Elastic
 
@@ -44,10 +44,10 @@ Identifies when Internet Information Services (IIS) HTTP Logging is disabled on 
 
 [source,js]
 ----------------------------------
-event.category:process and event.type:(start or process_started) and
-(process.name:appcmd.exe or process.pe.original_file_name:appcmd.exe)
-and process.args:/dontLog\:\"True\" and not
-process.parent.name:iissetup.exe
+process where event.type in ("start", "process_started") and
+(process.name : "appcmd.exe" or process.pe.original_file_name ==
+"appcmd.exe") and process.args : "/dontLog*:*True" and not
+process.parent.name : "iissetup.exe"
 ----------------------------------
 
 ==== Threat mapping
@@ -65,6 +65,17 @@ process.parent.name:iissetup.exe
 
 [[iis-http-logging-disabled-history]]
 ==== Rule version history
+
+Version 5 (7.13.0 release)::
+* Updated query, changed from:
++
+[source, js]
+----------------------------------
+event.category:process and event.type:(start or process_started) and
+(process.name:appcmd.exe or process.pe.original_file_name:appcmd.exe)
+and process.args:/dontLog\:\"True\" and not
+process.parent.name:iissetup.exe
+----------------------------------
 
 Version 4 (7.12.0 release)::
 * Formatting only

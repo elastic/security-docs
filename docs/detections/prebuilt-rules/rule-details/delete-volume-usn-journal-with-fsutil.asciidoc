@@ -1,11 +1,9 @@
 [[delete-volume-usn-journal-with-fsutil]]
 === Delete Volume USN Journal with Fsutil
 
-Identifies use of the `fsutil.exe` to delete the `USNJRNL` volume. This
-technique is used by attackers to eliminate evidence of files created during
-post-exploitation activities.
+Identifies use of the fsutil.exe to delete the volume USNJRNL. This technique is used by attackers to eliminate evidence of files created during post-exploitation activities.
 
-*Rule type*: query
+*Rule type*: eql
 
 *Rule indices*:
 
@@ -31,11 +29,11 @@ post-exploitation activities.
 * Threat Detection
 * Defense Evasion
 
-*Version*: 8 (<<delete-volume-usn-journal-with-fsutil-history, version history>>)
+*Version*: 9 (<<delete-volume-usn-journal-with-fsutil-history, version history>>)
 
 *Added ({stack} release)*: 7.6.0
 
-*Last modified ({stack} release)*: 7.12.0
+*Last modified ({stack} release)*: 7.13.0
 
 *Rule authors*: Elastic
 
@@ -46,8 +44,10 @@ post-exploitation activities.
 
 [source,js]
 ----------------------------------
-event.category:process and event.type:(start or process_started) and
-process.name:fsutil.exe and process.args:(deletejournal and usn)
+process where event.type in ("start", "process_started") and
+(process.name : "fsutil.exe" or process.pe.original_file_name ==
+"fsutil.exe") and process.args : "deletejournal" and process.args :
+"usn"
 ----------------------------------
 
 ==== Threat mapping
@@ -65,6 +65,15 @@ process.name:fsutil.exe and process.args:(deletejournal and usn)
 
 [[delete-volume-usn-journal-with-fsutil-history]]
 ==== Rule version history
+
+Version 9 (7.13.0 release)::
+* Updated query, changed from:
++
+[source, js]
+----------------------------------
+event.category:process and event.type:(start or process_started) and
+process.name:fsutil.exe and process.args:(deletejournal and usn)
+----------------------------------
 
 Version 8 (7.12.0 release)::
 * Formatting only

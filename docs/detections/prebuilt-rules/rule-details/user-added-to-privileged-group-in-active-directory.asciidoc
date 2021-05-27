@@ -3,17 +3,16 @@
 
 Identifies a user being added to a privileged group in Active Directory. Privileged accounts and groups in Active Directory are those to which powerful rights, privileges, and permissions are granted that allow them to perform nearly any action in Active Directory and on domain-joined systems.
 
-*Rule type*: query
+*Rule type*: eql
 
 *Rule indices*:
 
 * winlogbeat-*
-* logs-endpoint.events.*
 * logs-windows.*
 
-*Severity*: low
+*Severity*: medium
 
-*Risk score*: 21
+*Risk score*: 47
 
 *Runs every*: 5 minutes
 
@@ -33,9 +32,11 @@ Identifies a user being added to a privileged group in Active Directory. Privile
 * Threat Detection
 * Persistence
 
-*Version*: 1
+*Version*: 2 (<<user-added-to-privileged-group-in-active-directory-history, version history>>)
 
 *Added ({stack} release)*: 7.12.0
+
+*Last modified ({stack} release)*: 7.13.0
 
 *Rule authors*: Elastic, Skoetting
 
@@ -46,10 +47,11 @@ Identifies a user being added to a privileged group in Active Directory. Privile
 
 [source,js]
 ----------------------------------
-event.category:iam and event.action:"added-member-to-group" and
-group.name:(Administrators or "Local Administrators" or "Domain
-Admins" or "Enterprise Admins" or "Backup Admins" or "Schema Admins"
-or "DnsAdmins")
+iam where event.action == "added-member-to-group" and group.name :
+("Admin*", "Local Administrators",
+"Domain Admins", "Enterprise Admins",
+"Backup Admins", "Schema Admins",
+"DnsAdmins", "Exchange Organization Administrators")
 ----------------------------------
 
 ==== Threat mapping
@@ -64,3 +66,18 @@ or "DnsAdmins")
 ** Name: Create Account
 ** ID: T1136
 ** Reference URL: https://attack.mitre.org/techniques/T1136/
+
+[[user-added-to-privileged-group-in-active-directory-history]]
+==== Rule version history
+
+Version 2 (7.13.0 release)::
+* Updated query, changed from:
++
+[source, js]
+----------------------------------
+event.category:iam and event.action:"added-member-to-group" and
+group.name:(Administrators or "Local Administrators" or "Domain
+Admins" or "Enterprise Admins" or "Backup Admins" or "Schema Admins"
+or "DnsAdmins")
+----------------------------------
+

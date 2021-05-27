@@ -1,10 +1,9 @@
 [[bypass-uac-via-event-viewer]]
 === Bypass UAC via Event Viewer
 
-Identifies User Account Control (UAC) bypass via `eventvwr.exe.` Attackers
-bypass UAC to stealthily execute code with elevated permissions.
+Identifies User Account Control (UAC) bypass via eventvwr.exe. Attackers bypass UAC to stealthily execute code with elevated permissions.
 
-*Rule type*: query
+*Rule type*: eql
 
 *Rule indices*:
 
@@ -12,9 +11,9 @@ bypass UAC to stealthily execute code with elevated permissions.
 * logs-endpoint.events.*
 * logs-windows.*
 
-*Severity*: low
+*Severity*: high
 
-*Risk score*: 21
+*Risk score*: 73
 
 *Runs every*: 5 minutes
 
@@ -30,11 +29,11 @@ bypass UAC to stealthily execute code with elevated permissions.
 * Threat Detection
 * Privilege Escalation
 
-*Version*: 7 (<<bypass-uac-via-event-viewer-history, version history>>)
+*Version*: 8 (<<bypass-uac-via-event-viewer-history, version history>>)
 
 *Added ({stack} release)*: 7.7.0
 
-*Last modified ({stack} release)*: 7.12.0
+*Last modified ({stack} release)*: 7.13.0
 
 *Rule authors*: Elastic
 
@@ -45,10 +44,12 @@ bypass UAC to stealthily execute code with elevated permissions.
 
 [source,js]
 ----------------------------------
-event.category:process and event.type:(start or process_started) and
-process.parent.name:eventvwr.exe and not
-process.executable:("C:\Windows\SysWOW64\mmc.exe" or
-"C:\Windows\System32\mmc.exe")
+process where event.type in ("start", "process_started") and
+process.parent.name : "eventvwr.exe" and not process.executable :
+("?:\\Windows\\SysWOW64\\mmc.exe",
+"?:\\Windows\\System32\\mmc.exe",
+"?:\\Windows\\SysWOW64\\WerFault.exe",
+"?:\\Windows\\System32\\WerFault.exe")
 ----------------------------------
 
 ==== Threat mapping
@@ -66,6 +67,17 @@ process.executable:("C:\Windows\SysWOW64\mmc.exe" or
 
 [[bypass-uac-via-event-viewer-history]]
 ==== Rule version history
+
+Version 8 (7.13.0 release)::
+* Updated query, changed from:
++
+[source, js]
+----------------------------------
+event.category:process and event.type:(start or process_started) and
+process.parent.name:eventvwr.exe and not
+process.executable:("C:\Windows\SysWOW64\mmc.exe" or
+"C:\Windows\System32\mmc.exe")
+----------------------------------
 
 Version 7 (7.12.0 release)::
 * Formatting only

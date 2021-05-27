@@ -1,11 +1,9 @@
 [[disable-windows-firewall-rules-via-netsh]]
 === Disable Windows Firewall Rules via Netsh
 
-Identifies use of the `netsh.exe` to disable or weaken the local firewall.
-Attackers will use this command line tool to disable the firewall during
-troubleshooting or to enable network mobility.
+Identifies use of the netsh.exe to disable or weaken the local firewall. Attackers will use this command line tool to disable the firewall during troubleshooting or to enable network mobility.
 
-*Rule type*: query
+*Rule type*: eql
 
 *Rule indices*:
 
@@ -31,11 +29,11 @@ troubleshooting or to enable network mobility.
 * Threat Detection
 * Defense Evasion
 
-*Version*: 8 (<<disable-windows-firewall-rules-via-netsh-history, version history>>)
+*Version*: 9 (<<disable-windows-firewall-rules-via-netsh-history, version history>>)
 
 *Added ({stack} release)*: 7.6.0
 
-*Last modified ({stack} release)*: 7.12.0
+*Last modified ({stack} release)*: 7.13.0
 
 *Rule authors*: Elastic
 
@@ -46,9 +44,10 @@ troubleshooting or to enable network mobility.
 
 [source,js]
 ----------------------------------
-event.category:process and event.type:(start or process_started) and
-process.name:netsh.exe and process.args:(disable and firewall and set)
-or process.args:(advfirewall and off and state)
+process where event.type in ("start", "process_started") and
+process.name : "netsh.exe" and (process.args : "disable" and
+process.args : "firewall" and process.args : "set") or (process.args
+: "advfirewall" and process.args : "off" and process.args : "state")
 ----------------------------------
 
 ==== Threat mapping
@@ -66,6 +65,16 @@ or process.args:(advfirewall and off and state)
 
 [[disable-windows-firewall-rules-via-netsh-history]]
 ==== Rule version history
+
+Version 9 (7.13.0 release)::
+* Updated query, changed from:
++
+[source, js]
+----------------------------------
+event.category:process and event.type:(start or process_started) and
+process.name:netsh.exe and process.args:(disable and firewall and set)
+or process.args:(advfirewall and off and state)
+----------------------------------
 
 Version 8 (7.12.0 release)::
 * Formatting only

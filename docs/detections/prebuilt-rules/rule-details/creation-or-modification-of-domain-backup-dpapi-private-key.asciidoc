@@ -3,7 +3,7 @@
 
 Identifies the creation or modification of Domain Backup private keys. Adversaries may extract the Data Protection API (DPAPI) domain backup key from a Domain Controller (DC) to be able to decrypt any domain user master key file.
 
-*Rule type*: query
+*Rule type*: eql
 
 *Rule indices*:
 
@@ -34,17 +34,19 @@ Identifies the creation or modification of Domain Backup private keys. Adversari
 * Threat Detection
 * Credential Access
 
-*Version*: 4 (<<creation-or-modification-of-domain-backup-dpapi-private-key-history, version history>>)
+*Version*: 5 (<<creation-or-modification-of-domain-backup-dpapi-private-key-history, version history>>)
 
 *Added ({stack} release)*: 7.10.0
 
-*Last modified ({stack} release)*: 7.12.0
+*Last modified ({stack} release)*: 7.13.0
 
 *Rule authors*: Elastic
 
 *Rule license*: Elastic License v2
 
 ==== Investigation guide
+
+**Triage and analysis**
 
 Domain DPAPI Backup keys are stored on domain controllers and can be dumped remotely with tools such as Mimikatz. The resulting .pvk private key can be used to decrypt ANY domain user masterkeys, which then can be used to decrypt any secrets protected by those keys.
 
@@ -53,8 +55,8 @@ Domain DPAPI Backup keys are stored on domain controllers and can be dumped remo
 
 [source,js]
 ----------------------------------
-event.category:file and not event.type:deletion and
-file.name:(ntds_capi_*.pfx or ntds_capi_*.pvk)
+file where event.type != "deletion" and file.name :
+("ntds_capi_*.pfx", "ntds_capi_*.pvk")
 ----------------------------------
 
 ==== Threat mapping
@@ -72,6 +74,15 @@ file.name:(ntds_capi_*.pfx or ntds_capi_*.pvk)
 
 [[creation-or-modification-of-domain-backup-dpapi-private-key-history]]
 ==== Rule version history
+
+Version 5 (7.13.0 release)::
+* Updated query, changed from:
++
+[source, js]
+----------------------------------
+event.category:file and not event.type:deletion and
+file.name:(ntds_capi_*.pfx or ntds_capi_*.pvk)
+----------------------------------
 
 Version 4 (7.12.0 release)::
 * Formatting only

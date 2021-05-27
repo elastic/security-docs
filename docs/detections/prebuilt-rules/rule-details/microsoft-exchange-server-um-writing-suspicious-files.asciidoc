@@ -34,9 +34,11 @@ Identifies suspicious files being written by the Microsoft Exchange Server Unifi
 * Threat Detection
 * Initial Access
 
-*Version*: 1
+*Version*: 2 (<<microsoft-exchange-server-um-writing-suspicious-files-history, version history>>)
 
 *Added ({stack} release)*: 7.12.0
+
+*Last modified ({stack} release)*: 7.13.0
 
 *Rule authors*: Elastic, Austin Songer
 
@@ -45,18 +47,37 @@ Identifies suspicious files being written by the Microsoft Exchange Server Unifi
 ==== Potential false positives
 
 Files generated during installation will generate a lot of noise, so the rule should only be enabled after the fact.
+This rule was tuned using the following baseline: https://raw.githubusercontent.com/microsoft/CSS-Exchange/main/Security/Baselines/baseline_15.2.792.5.csv from Microsoft. Depending on version, consult https://github.com/microsoft/CSS-Exchange/tree/main/Security/Baselines to help determine normalcy.
+
+==== Investigation guide
+
+**Triage and analysis**
+
+Positive hits can be checked against the established Microsoft [baselines](https://github.com/microsoft/CSS-Exchange/tree/main/Security/Baselines).
+
+Microsoft highly recommends that the best course of action is patching, but this may not protect already compromised systems
+from existing intrusions. Other tools for detecting and mitigating can be found within their Exchange support
+[repository](https://github.com/microsoft/CSS-Exchange/tree/main/Security)
+
 
 ==== Rule query
 
 
 [source,js]
 ----------------------------------
-file where event.type == "creation" and process.parent.name :
+file where event.type == "creation" and process.name :
 ("UMWorkerProcess.exe", "umservice.exe") and file.extension :
 ("php", "jsp", "js", "aspx", "asmx", "asax", "cfm", "shtml") and (
-file.path : ("C:\\inetpub\\wwwroot\\aspnet_client\\*",
-"C:\\*\\FrontEnd\\HttpProxy\\owa\\auth\\*") or (file.path :
-"C:\\*\\FrontEnd\\HttpProxy\\ecp\\auth\\*" and not file.name :
+file.path : "?:\\inetpub\\wwwroot\\aspnet_client\\*" or
+(file.path : "?:\\*\\Microsoft\\Exchange
+Server*\\FrontEnd\\HttpProxy\\owa\\auth\\*" and not (file.path
+: "?:\\*\\Microsoft\\Exchange
+Server*\\FrontEnd\\HttpProxy\\owa\\auth\\version\\*" or
+file.name : ("errorFE.aspx", "expiredpassword.aspx", "frowny.aspx",
+"GetIdToken.htm", "logoff.aspx", "logon.aspx",
+"OutlookCN.aspx", "RedirSuiteServiceProxy.aspx", "signout.aspx"))) or
+(file.path : "?:\\*\\Microsoft\\Exchange
+Server*\\FrontEnd\\HttpProxy\\ecp\\auth\\*" and not file.name :
 "TimeoutLogoff.aspx") )
 ----------------------------------
 
@@ -72,3 +93,21 @@ file.path : ("C:\\inetpub\\wwwroot\\aspnet_client\\*",
 ** Name: Exploit Public-Facing Application
 ** ID: T1190
 ** Reference URL: https://attack.mitre.org/techniques/T1190/
+
+[[microsoft-exchange-server-um-writing-suspicious-files-history]]
+==== Rule version history
+
+Version 2 (7.13.0 release)::
+* Updated query, changed from:
++
+[source, js]
+----------------------------------
+file where event.type == "creation" and process.parent.name :
+("UMWorkerProcess.exe", "umservice.exe") and file.extension :
+("php", "jsp", "js", "aspx", "asmx", "asax", "cfm", "shtml") and (
+file.path : ("C:\\inetpub\\wwwroot\\aspnet_client\\*",
+"C:\\*\\FrontEnd\\HttpProxy\\owa\\auth\\*") or (file.path :
+"C:\\*\\FrontEnd\\HttpProxy\\ecp\\auth\\*" and not file.name :
+"TimeoutLogoff.aspx") )
+----------------------------------
+

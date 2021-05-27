@@ -29,29 +29,36 @@ Identifies instances of Internet Explorer (iexplore.exe) being started via the C
 * Threat Detection
 * Command and Control
 
-*Version*: 2 (<<potential-command-and-control-via-internet-explorer-history, version history>>)
+*Version*: 3 (<<potential-command-and-control-via-internet-explorer-history, version history>>)
 
 *Added ({stack} release)*: 7.11.0
 
-*Last modified ({stack} release)*: 7.12.0
+*Last modified ({stack} release)*: 7.13.0
 
 *Rule authors*: Elastic
 
 *Rule license*: Elastic License v2
+
+==== Potential false positives
+
+Processes such as MS Office using IEproxy to render HTML content.
 
 ==== Rule query
 
 
 [source,js]
 ----------------------------------
-sequence by host.id, process.entity_id with maxspan = 1s [process
-where event.type == "start" and process.parent.name : "iexplore.exe"
-and process.parent.args : "-Embedding"] /* IE started via COM in
-normal conditions makes few connections, mainly to Microsoft and OCSP
-related domains, add FPs here */ [network where network.protocol ==
-"dns" and process.name : "iexplore.exe" and not dns.question.name :
-( "*.microsoft.com", "*.digicert.com", "*.msocsp.com",
-"*.windowsupdate.com", "*.bing.com", "*.identrust.com" )
+sequence by host.id, user.id with maxspan = 5s [library where
+dll.name : "IEProxy.dll" and process.name : ("rundll32.exe",
+"regsvr32.exe")] [process where event.type == "start" and
+process.parent.name : "iexplore.exe" and process.parent.args :
+"-Embedding"] /* IE started via COM in normal conditions makes few
+connections, mainly to Microsoft and OCSP related domains, add FPs
+here */ [network where network.protocol == "dns" and process.name :
+"iexplore.exe" and not dns.question.name : (
+"*.microsoft.com", "*.digicert.com", "*.msocsp.com",
+"*.windowsupdate.com", "*.bing.com", "*.identrust.com",
+"*.sharepoint.com", "*.office365.com", "*.office.com" )
 ]
 ----------------------------------
 
@@ -70,6 +77,22 @@ related domains, add FPs here */ [network where network.protocol ==
 
 [[potential-command-and-control-via-internet-explorer-history]]
 ==== Rule version history
+
+Version 3 (7.13.0 release)::
+* Updated query, changed from:
++
+[source, js]
+----------------------------------
+sequence by host.id, process.entity_id with maxspan = 1s [process
+where event.type == "start" and process.parent.name : "iexplore.exe"
+and process.parent.args : "-Embedding"] /* IE started via COM in
+normal conditions makes few connections, mainly to Microsoft and OCSP
+related domains, add FPs here */ [network where network.protocol ==
+"dns" and process.name : "iexplore.exe" and not dns.question.name :
+( "*.microsoft.com", "*.digicert.com", "*.msocsp.com",
+"*.windowsupdate.com", "*.bing.com", "*.identrust.com" )
+]
+----------------------------------
 
 Version 2 (7.12.0 release)::
 * Updated query, changed from:

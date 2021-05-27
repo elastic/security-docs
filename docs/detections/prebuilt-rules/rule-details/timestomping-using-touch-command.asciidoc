@@ -29,11 +29,11 @@ Timestomping is an anti-forensics technique which is used to modify the timestam
 * Threat Detection
 * Defense Evasion
 
-*Version*: 3 (<<timestomping-using-touch-command-history, version history>>)
+*Version*: 4 (<<timestomping-using-touch-command-history, version history>>)
 
 *Added ({stack} release)*: 7.11.0
 
-*Last modified ({stack} release)*: 7.12.0
+*Last modified ({stack} release)*: 7.13.0
 
 *Rule authors*: Elastic
 
@@ -44,8 +44,10 @@ Timestomping is an anti-forensics technique which is used to modify the timestam
 
 [source,js]
 ----------------------------------
-process where event.type in ("start", "process_started") and
-process.name : "touch" and process.args : ("-r", "-t", "-a*","-m*")
+process where event.type == "start" and process.name : "touch" and
+user.id != "0" and process.args : ("-r", "-t", "-a*","-m*") and not
+process.args : ("/usr/lib/go-*/bin/go", "/usr/lib/dracut/dracut-
+functions.sh", "/tmp/KSInstallAction.*/m/.patch/*")
 ----------------------------------
 
 ==== Threat mapping
@@ -63,6 +65,15 @@ process.name : "touch" and process.args : ("-r", "-t", "-a*","-m*")
 
 [[timestomping-using-touch-command-history]]
 ==== Rule version history
+
+Version 4 (7.13.0 release)::
+* Updated query, changed from:
++
+[source, js]
+----------------------------------
+process where event.type in ("start", "process_started") and
+process.name : "touch" and process.args : ("-r", "-t", "-a*","-m*")
+----------------------------------
 
 Version 3 (7.12.0 release)::
 * Updated query, changed from:
