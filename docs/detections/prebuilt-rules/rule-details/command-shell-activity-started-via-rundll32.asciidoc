@@ -29,26 +29,31 @@ Identifies command shell activity started via RunDLL32, which is commonly abused
 * Threat Detection
 * Execution
 
-*Version*: 3 (<<command-shell-activity-started-via-rundll32-history, version history>>)
+*Version*: 4 (<<command-shell-activity-started-via-rundll32-history, version history>>)
 
 *Added ({stack} release)*: 7.11.0
 
-*Last modified ({stack} release)*: 7.12.0
+*Last modified ({stack} release)*: 7.13.0
 
 *Rule authors*: Elastic
 
 *Rule license*: Elastic License v2
+
+==== Potential false positives
+
+Microsoft Windows installers leveraging RunDLL32 for installation.
 
 ==== Rule query
 
 
 [source,js]
 ----------------------------------
-process where event.type in ("start", "process_started") and
-process.name : ("cmd.exe", "powershell.exe") and process.parent.name
-: "rundll32.exe" and /* common FPs can be added here */ not
-process.parent.args :
-"C:\\Windows\\System32\\SHELL32.dll,RunAsNewUser_RunDLL"
+process where event.type == "start" and process.name : ("cmd.exe",
+"powershell.exe") and process.parent.name : "rundll32.exe" and
+process.parent.command_line != null and /* common FPs can be added
+here */ not process.parent.args :
+("C:\\Windows\\System32\\SHELL32.dll,RunAsNewUser_RunDLL",
+"C:\\WINDOWS\\*.tmp,zzzzInvokeManagedCustomActionOutOfProc")
 ----------------------------------
 
 ==== Threat mapping
@@ -66,6 +71,18 @@ process.parent.args :
 
 [[command-shell-activity-started-via-rundll32-history]]
 ==== Rule version history
+
+Version 4 (7.13.0 release)::
+* Updated query, changed from:
++
+[source, js]
+----------------------------------
+process where event.type in ("start", "process_started") and
+process.name : ("cmd.exe", "powershell.exe") and process.parent.name
+: "rundll32.exe" and /* common FPs can be added here */ not
+process.parent.args :
+"C:\\Windows\\System32\\SHELL32.dll,RunAsNewUser_RunDLL"
+----------------------------------
 
 Version 3 (7.12.0 release)::
 * Formatting only

@@ -29,11 +29,11 @@ Identifies the native Windows tools regsvr32.exe, regsvr64.exe, RegSvcs.exe, or 
 * Threat Detection
 * Execution
 
-*Version*: 7 (<<network-connection-via-registration-utility-history, version history>>)
+*Version*: 8 (<<network-connection-via-registration-utility-history, version history>>)
 
 *Added ({stack} release)*: 7.6.0
 
-*Last modified ({stack} release)*: 7.12.0
+*Last modified ({stack} release)*: 7.13.0
 
 *Rule authors*: Elastic
 
@@ -48,14 +48,15 @@ Security testing may produce events like this. Activity of this kind performed b
 
 [source,js]
 ----------------------------------
-sequence by process.entity_id [process where (process.name :
-"regsvr32.exe" or process.name : "regsvr64.exe" or
-process.name : "RegAsm.exe" or process.name : "RegSvcs.exe") and
-event.type == "start"] [network where (process.name : "regsvr32.exe"
-or process.name : "regsvr64.exe" or process.name :
-"RegAsm.exe" or process.name : "RegSvcs.exe") and not
-cidrmatch(destination.ip, "10.0.0.0/8", "169.254.169.254",
-"172.16.0.0/12", "192.168.0.0/16")]
+sequence by process.entity_id [process where event.type == "start"
+and process.name : ("regsvr32.exe", "RegAsm.exe", "RegSvcs.exe")
+and not ( user.id == "S-1-5-18" and
+(process.parent.name : "msiexec.exe" or process.parent.executable :
+("C:\\Program Files (x86)\\*.exe", "C:\\Program Files\\*.exe"))
+) ] [network where process.name : ("regsvr32.exe", "RegAsm.exe",
+"RegSvcs.exe") and not cidrmatch(destination.ip, "10.0.0.0/8",
+"169.254.169.254", "172.16.0.0/12", "192.168.0.0/16") and
+network.protocol != "dns"]
 ----------------------------------
 
 ==== Threat mapping
@@ -79,6 +80,21 @@ cidrmatch(destination.ip, "10.0.0.0/8", "169.254.169.254",
 
 [[network-connection-via-registration-utility-history]]
 ==== Rule version history
+
+Version 8 (7.13.0 release)::
+* Updated query, changed from:
++
+[source, js]
+----------------------------------
+sequence by process.entity_id [process where (process.name :
+"regsvr32.exe" or process.name : "regsvr64.exe" or
+process.name : "RegAsm.exe" or process.name : "RegSvcs.exe") and
+event.type == "start"] [network where (process.name : "regsvr32.exe"
+or process.name : "regsvr64.exe" or process.name :
+"RegAsm.exe" or process.name : "RegSvcs.exe") and not
+cidrmatch(destination.ip, "10.0.0.0/8", "169.254.169.254",
+"172.16.0.0/12", "192.168.0.0/16")]
+----------------------------------
 
 Version 7 (7.12.0 release)::
 * Formatting only
