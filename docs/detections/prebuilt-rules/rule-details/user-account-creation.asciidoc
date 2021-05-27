@@ -1,10 +1,9 @@
 [[user-account-creation]]
 === User Account Creation
 
-Identifies attempts to create new local users. This is sometimes done by
-attackers to increase access to a system or domain.
+Identifies attempts to create new local users. This is sometimes done by attackers to increase access to a system or domain.
 
-*Rule type*: query
+*Rule type*: eql
 
 *Rule indices*:
 
@@ -30,11 +29,11 @@ attackers to increase access to a system or domain.
 * Threat Detection
 * Persistence
 
-*Version*: 7 (<<user-account-creation-history, version history>>)
+*Version*: 8 (<<user-account-creation-history, version history>>)
 
 *Added ({stack} release)*: 7.6.0
 
-*Last modified ({stack} release)*: 7.12.0
+*Last modified ({stack} release)*: 7.13.0
 
 *Rule authors*: Elastic
 
@@ -45,9 +44,10 @@ attackers to increase access to a system or domain.
 
 [source,js]
 ----------------------------------
-event.category:process and event.type:(start or process_started) and
-process.name:(net.exe or net1.exe) and not process.parent.name:net.exe
-and process.args:(user and (/ad or /add))
+process where event.type in ("start", "process_started") and
+process.name : ("net.exe", "net1.exe") and not process.parent.name :
+"net.exe" and (process.args : "user" and process.args : ("/ad",
+"/add"))
 ----------------------------------
 
 ==== Threat mapping
@@ -65,6 +65,16 @@ and process.args:(user and (/ad or /add))
 
 [[user-account-creation-history]]
 ==== Rule version history
+
+Version 8 (7.13.0 release)::
+* Updated query, changed from:
++
+[source, js]
+----------------------------------
+event.category:process and event.type:(start or process_started) and
+process.name:(net.exe or net1.exe) and not process.parent.name:net.exe
+and process.args:(user and (/ad or /add))
+----------------------------------
 
 Version 7 (7.12.0 release)::
 * Formatting only

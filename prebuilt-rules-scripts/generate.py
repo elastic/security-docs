@@ -133,6 +133,7 @@ def get_release_rules(package_version, local_kibana, rules_dir):
 
 
 def create_json_from_docs(package_version):
+    """Create a json file of the exiting rule docs."""
     existing_rule_asciidocs = ROOT.joinpath('docs', 'detections', 'prebuilt-rules', 'rule-details')
     rule_asciidoc_files = existing_rule_asciidocs.glob("*.asciidoc")
     rule_dict = []
@@ -186,21 +187,14 @@ def create_json_from_docs(package_version):
             if "[[" in false_pos:
                 false_pos = false_pos.split("[[")[0]
 
-            false_pos = false_pos.rstrip()
-            if false_pos != "" and notes == "":
-                false_pos = false_pos.split("\n", 1)[1]
-                rule_text = {"name": name, "description": description, "false_positives": [false_pos]}
-            if false_pos == "" and notes == "":
-                rule_text = {"name": name, "description": description}
-            if false_pos == "" and notes != "":
-                notes = notes.rstrip()
-                notes = notes.split("\n", 1)[1]
-                rule_text = {"name": name, "description": description, "note": notes}
-            if false_pos != "" and notes != "":
-                notes = notes.rstrip()
-                notes = notes.split("\n", 1)[1]
-                false_pos = false_pos.split("\n", 1)[1]
-                rule_text = {"name": name, "description": description, "false_positives": [false_pos], "note": notes}
+            rule_text = {"name": name, "description": description}
+
+            if false_pos:
+                rule_text['false_positives'] = [false_pos.lstrip()]
+            if notes:
+                notes_text = notes.rstrip()
+                notes_text = notes_text[1:] if notes_text.startswith('\n') else notes_text
+                rule_text['note'] = notes_text
 
             rule_dict.append(rule_text)
             name = ""
@@ -231,11 +225,11 @@ def update_current_text(package_version):
     for rule in current_text:
         for new_text in updated_text:
             if rule['name'] == new_text['name']:
-                rule['description'] = new_text['description']
+                new_text['description'] = rule['description']
                 if 'false_positives' in new_text and 'false_positives' in rule:
-                    rule['false_positives'][0] = new_text['false_positives'][0]
+                    new_text['false_positives'][0] = rule['false_positives'][0]
                 if 'note' in new_text:
-                    rule['note'] = new_text['note']
+                    new_text['note'] = rule['note']
 
     # Output file with updated text from the documentation for previously existing
     # prebuilt rules. New rules are unchanged.
@@ -358,8 +352,6 @@ def create_documentation(package_release):
     [role="xpack"]
     == Prebuilt rule reference
 
-    beta[]
-
     This section lists all available prebuilt rules.
 
     IMPORTANT: To run {ml} prebuilt rules, you must have the
@@ -396,7 +388,7 @@ def create_documentation(package_release):
 
     new_text = new_text + "|=============================================="
 
-    shutil.rmtree(str(GENERATED_ASCII))
+    shutil.rmtree(str(GENERATED_ASCII), ignore_errors=True)
     GENERATED_ASCII.mkdir(exist_ok=True)
     reference_asciidoc = str(GENERATED_ASCII.joinpath('prebuilt-rules-reference.asciidoc'))
     with open(reference_asciidoc, "w+") as f:
@@ -588,8 +580,6 @@ def create_documentation(package_release):
 
     version_history_page = _left_align("""[[prebuilt-rules-changelog]]
     == Prebuilt rule changes per release
-
-    beta[]
 
     The following lists prebuilt rule updates per release. Only rules with
     significant modifications to their query or scope are listed. For detailed

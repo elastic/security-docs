@@ -3,7 +3,7 @@
 
 Identifies a suspicious managed code hosting process which could indicate code injection or other form of suspicious code execution.
 
-*Rule type*: query
+*Rule type*: eql
 
 *Rule indices*:
 
@@ -33,11 +33,11 @@ Identifies a suspicious managed code hosting process which could indicate code i
 * Threat Detection
 * Defense Evasion
 
-*Version*: 3 (<<suspicious-managed-code-hosting-process-history, version history>>)
+*Version*: 4 (<<suspicious-managed-code-hosting-process-history, version history>>)
 
 *Added ({stack} release)*: 7.10.0
 
-*Last modified ({stack} release)*: 7.12.0
+*Last modified ({stack} release)*: 7.13.0
 
 *Rule authors*: Elastic
 
@@ -48,10 +48,14 @@ Identifies a suspicious managed code hosting process which could indicate code i
 
 [source,js]
 ----------------------------------
-event.category:file and not event.type:deletion and
-file.name:(wscript.exe.log or mshta.exe.log or wscript.exe.log or
-wmic.exe.log or svchost.exe.log or dllhost.exe.log or cmstp.exe.log or
-regsvr32.exe.log)
+sequence by process.entity_id with maxspan=5m [process where
+event.type == "start" and process.name : ("wscript.exe",
+"cscript.exe", "mshta.exe", "wmic.exe", "regsvr32.exe", "svchost.exe",
+"dllhost.exe", "cmstp.exe")] [file where event.type != "deletion" and
+file.name : ("wscript.exe.log", "cscript.exe",
+"mshta.exe.log", "wmic.exe.log",
+"svchost.exe.log", "dllhost.exe.log",
+"cmstp.exe.log", "regsvr32.exe.log")]
 ----------------------------------
 
 ==== Threat mapping
@@ -69,6 +73,17 @@ regsvr32.exe.log)
 
 [[suspicious-managed-code-hosting-process-history]]
 ==== Rule version history
+
+Version 4 (7.13.0 release)::
+* Updated query, changed from:
++
+[source, js]
+----------------------------------
+event.category:file and not event.type:deletion and
+file.name:(wscript.exe.log or mshta.exe.log or wscript.exe.log or
+wmic.exe.log or svchost.exe.log or dllhost.exe.log or cmstp.exe.log or
+regsvr32.exe.log)
+----------------------------------
 
 Version 3 (7.12.0 release)::
 * Formatting only
