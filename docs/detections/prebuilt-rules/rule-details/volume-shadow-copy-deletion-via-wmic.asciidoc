@@ -1,10 +1,9 @@
 [[volume-shadow-copy-deletion-via-wmic]]
 === Volume Shadow Copy Deletion via WMIC
 
-Identifies use of `wmic.exe` for shadow copy deletion on endpoints. This
-commonly occurs in tandem with ransomware or other destructive attacks.
+Identifies use of wmic.exe for shadow copy deletion on endpoints. This commonly occurs in tandem with ransomware or other destructive attacks.
 
-*Rule type*: query
+*Rule type*: eql
 
 *Rule indices*:
 
@@ -30,11 +29,11 @@ commonly occurs in tandem with ransomware or other destructive attacks.
 * Threat Detection
 * Defense Evasion
 
-*Version*: 8 (<<volume-shadow-copy-deletion-via-wmic-history, version history>>)
+*Version*: 9 (<<volume-shadow-copy-deletion-via-wmic-history, version history>>)
 
 *Added ({stack} release)*: 7.6.0
 
-*Last modified ({stack} release)*: 7.12.0
+*Last modified ({stack} release)*: 7.13.0
 
 *Rule authors*: Elastic
 
@@ -45,8 +44,10 @@ commonly occurs in tandem with ransomware or other destructive attacks.
 
 [source,js]
 ----------------------------------
-event.category:process and event.type:(start or process_started) and
-process.name:WMIC.exe and process.args:(delete and shadowcopy)
+process where event.type in ("start", "process_started") and
+(process.name : "WMIC.exe" or process.pe.original_file_name ==
+"wmic.exe") and process.args : "delete" and process.args :
+"shadowcopy"
 ----------------------------------
 
 ==== Threat mapping
@@ -64,6 +65,15 @@ process.name:WMIC.exe and process.args:(delete and shadowcopy)
 
 [[volume-shadow-copy-deletion-via-wmic-history]]
 ==== Rule version history
+
+Version 9 (7.13.0 release)::
+* Updated query, changed from:
++
+[source, js]
+----------------------------------
+event.category:process and event.type:(start or process_started) and
+process.name:WMIC.exe and process.args:(delete and shadowcopy)
+----------------------------------
 
 Version 8 (7.12.0 release)::
 * Formatting only

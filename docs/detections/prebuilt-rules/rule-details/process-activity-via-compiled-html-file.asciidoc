@@ -1,12 +1,9 @@
 [[process-activity-via-compiled-html-file]]
 === Process Activity via Compiled HTML File
 
-Compiled HTML files (`.chm`) are commonly distributed as part of the Microsoft
-HTML Help system. Adversaries may conceal malicious code in a CHM file and
-deliver it to a victim for execution. CHM content is loaded by the HTML Help
-executable program (`hh.exe`).
+Compiled HTML files (.chm) are commonly distributed as part of the Microsoft HTML Help system. Adversaries may conceal malicious code in a CHM file and deliver it to a victim for execution. CHM content is loaded by the HTML Help executable program (hh.exe).
 
-*Rule type*: query
+*Rule type*: eql
 
 *Rule indices*:
 
@@ -14,9 +11,9 @@ executable program (`hh.exe`).
 * logs-endpoint.events.*
 * logs-windows.*
 
-*Severity*: low
+*Severity*: medium
 
-*Risk score*: 21
+*Risk score*: 47
 
 *Runs every*: 5 minutes
 
@@ -32,11 +29,11 @@ executable program (`hh.exe`).
 * Threat Detection
 * Execution
 
-*Version*: 7 (<<process-activity-via-compiled-html-file-history, version history>>)
+*Version*: 8 (<<process-activity-via-compiled-html-file-history, version history>>)
 
 *Added ({stack} release)*: 7.6.0
 
-*Last modified ({stack} release)*: 7.12.0
+*Last modified ({stack} release)*: 7.13.0
 
 *Rule authors*: Elastic
 
@@ -51,8 +48,9 @@ The HTML Help executable program (hh.exe) runs whenever a user clicks a compiled
 
 [source,js]
 ----------------------------------
-event.category:process and event.type:(start or process_started) and
-process.name:hh.exe
+process where event.type in ("start", "process_started") and
+process.parent.name : "hh.exe" and process.name : ("mshta.exe",
+"cmd.exe", "powershell.exe", "pwsh.exe", "cscript.exe", "wscript.exe")
 ----------------------------------
 
 ==== Threat mapping
@@ -76,6 +74,15 @@ process.name:hh.exe
 
 [[process-activity-via-compiled-html-file-history]]
 ==== Rule version history
+
+Version 8 (7.13.0 release)::
+* Updated query, changed from:
++
+[source, js]
+----------------------------------
+event.category:process and event.type:(start or process_started) and
+process.name:hh.exe
+----------------------------------
 
 Version 7 (7.12.0 release)::
 * Formatting only
