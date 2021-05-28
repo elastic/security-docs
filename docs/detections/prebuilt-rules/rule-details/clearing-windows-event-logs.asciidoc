@@ -1,11 +1,9 @@
 [[clearing-windows-event-logs]]
 === Clearing Windows Event Logs
 
-Identifies attempts to clear Windows event log stores. This is often done by
-attackers in an attempt to evade detection or destroy forensic evidence on a
-system.
+Identifies attempts to clear or disable Windows event log stores using Windows wevetutil command. This is often done by attackers in an attempt to evade detection or destroy forensic evidence on a system.
 
-*Rule type*: query
+*Rule type*: eql
 
 *Rule indices*:
 
@@ -31,11 +29,11 @@ system.
 * Threat Detection
 * Defense Evasion
 
-*Version*: 8 (<<clearing-windows-event-logs-history, version history>>)
+*Version*: 9 (<<clearing-windows-event-logs-history, version history>>)
 
 *Added ({stack} release)*: 7.6.0
 
-*Last modified ({stack} release)*: 7.12.0
+*Last modified ({stack} release)*: 7.13.0
 
 *Rule authors*: Elastic
 
@@ -46,11 +44,11 @@ system.
 
 [source,js]
 ----------------------------------
-event.category:process and event.type:(process_started or start) and
-(process.name:"wevtutil.exe" or
-process.pe.original_file_name:"wevtutil.exe") and
-process.args:("/e:false" or cl or "clear-log") or
-process.name:"powershell.exe" and process.args:"Clear-EventLog"
+process where event.type in ("process_started", "start") and
+(process.name : "wevtutil.exe" or process.pe.original_file_name ==
+"wevtutil.exe") and process.args : ("/e:false", "cl", "clear-log")
+or process.name : "powershell.exe" and process.args : "Clear-
+EventLog"
 ----------------------------------
 
 ==== Threat mapping
@@ -68,6 +66,18 @@ process.name:"powershell.exe" and process.args:"Clear-EventLog"
 
 [[clearing-windows-event-logs-history]]
 ==== Rule version history
+
+Version 9 (7.13.0 release)::
+* Updated query, changed from:
++
+[source, js]
+----------------------------------
+event.category:process and event.type:(process_started or start) and
+(process.name:"wevtutil.exe" or
+process.pe.original_file_name:"wevtutil.exe") and
+process.args:("/e:false" or cl or "clear-log") or
+process.name:"powershell.exe" and process.args:"Clear-EventLog"
+----------------------------------
 
 Version 8 (7.12.0 release)::
 * Formatting only
