@@ -3,7 +3,7 @@
 
 Identifies an instance of a Windows trusted program that is known to be vulnerable to DLL Search Order Hijacking starting after being renamed or from a non-standard path. This is uncommon behavior and may indicate an attempt to evade defenses via side loading a malicious DLL within the memory space of one of those processes.
 
-*Rule type*: query
+*Rule type*: eql
 
 *Rule indices*:
 
@@ -29,11 +29,11 @@ Identifies an instance of a Windows trusted program that is known to be vulnerab
 * Threat Detection
 * Defense Evasion
 
-*Version*: 4 (<<potential-dll-sideloading-via-trusted-microsoft-programs-history, version history>>)
+*Version*: 5 (<<potential-dll-sideloading-via-trusted-microsoft-programs-history, version history>>)
 
 *Added ({stack} release)*: 7.10.0
 
-*Last modified ({stack} release)*: 7.12.0
+*Last modified ({stack} release)*: 7.13.0
 
 *Rule authors*: Elastic
 
@@ -44,15 +44,17 @@ Identifies an instance of a Windows trusted program that is known to be vulnerab
 
 [source,js]
 ----------------------------------
-event.category:process and event.type:(start or process_started) and
-process.pe.original_file_name:(WinWord.exe or EXPLORER.EXE or w3wp.exe
-or DISM.EXE) and not (process.name:(winword.exe or WINWORD.EXE or
-explorer.exe or w3wp.exe or Dism.exe) or
-process.executable:("C:\Windows\explorer.exe" or
-C\:\\Program?Files\\Microsoft?Office\\root\\Office*\\WINWORD.EXE or C\
-:\\Program?Files?\(x86\)\\Microsoft?Office\\root\\Office*\\WINWORD.EXE
-or "C:\Windows\System32\Dism.exe" or "C:\Windows\SysWOW64\Dism.exe" or
-"C:\Windows\System32\inetsrv\w3wp.exe"))
+process where event.type == "start" and
+process.pe.original_file_name in ("WinWord.exe", "EXPLORER.EXE",
+"w3wp.exe", "DISM.EXE") and not (process.name : ("winword.exe",
+"explorer.exe", "w3wp.exe", "Dism.exe") or process.executable
+: ("?:\\Windows\\explorer.exe",
+"?:\\Program Files\\Microsoft Office\\root\\Office*\\WINWORD.EXE",
+"?:\\Program Files?(x86)\\Microsoft
+Office\\root\\Office*\\WINWORD.EXE",
+"?:\\Windows\\System32\\Dism.exe",
+"?:\\Windows\\SysWOW64\\Dism.exe",
+"?:\\Windows\\System32\\inetsrv\\w3wp.exe") )
 ----------------------------------
 
 ==== Threat mapping
@@ -70,6 +72,22 @@ or "C:\Windows\System32\Dism.exe" or "C:\Windows\SysWOW64\Dism.exe" or
 
 [[potential-dll-sideloading-via-trusted-microsoft-programs-history]]
 ==== Rule version history
+
+Version 5 (7.13.0 release)::
+* Updated query, changed from:
++
+[source, js]
+----------------------------------
+event.category:process and event.type:(start or process_started) and
+process.pe.original_file_name:(WinWord.exe or EXPLORER.EXE or w3wp.exe
+or DISM.EXE) and not (process.name:(winword.exe or WINWORD.EXE or
+explorer.exe or w3wp.exe or Dism.exe) or
+process.executable:("C:\Windows\explorer.exe" or
+C\:\\Program?Files\\Microsoft?Office\\root\\Office*\\WINWORD.EXE or C\
+:\\Program?Files?\(x86\)\\Microsoft?Office\\root\\Office*\\WINWORD.EXE
+or "C:\Windows\System32\Dism.exe" or "C:\Windows\SysWOW64\Dism.exe" or
+"C:\Windows\System32\inetsrv\w3wp.exe"))
+----------------------------------
 
 Version 4 (7.12.0 release)::
 * Formatting only
