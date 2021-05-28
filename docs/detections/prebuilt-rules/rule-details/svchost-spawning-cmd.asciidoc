@@ -1,10 +1,9 @@
 [[svchost-spawning-cmd]]
 === Svchost spawning Cmd
 
-Identifies a suspicious parent-child process relationship with cmd.exe
-descending from `svchost.exe`.
+Identifies a suspicious parent child process relationship with cmd.exe descending from svchost.exe
 
-*Rule type*: query
+*Rule type*: eql
 
 *Rule indices*:
 
@@ -30,11 +29,11 @@ descending from `svchost.exe`.
 * Threat Detection
 * Execution
 
-*Version*: 7 (<<svchost-spawning-cmd-history, version history>>)
+*Version*: 8 (<<svchost-spawning-cmd-history, version history>>)
 
 *Added ({stack} release)*: 7.6.0
 
-*Last modified ({stack} release)*: 7.12.0
+*Last modified ({stack} release)*: 7.13.0
 
 *Rule authors*: Elastic
 
@@ -45,8 +44,10 @@ descending from `svchost.exe`.
 
 [source,js]
 ----------------------------------
-event.category:process and event.type:(start or process_started) and
-process.parent.name:svchost.exe and process.name:cmd.exe
+process where event.type in ("start", "process_started") and
+process.parent.name : "svchost.exe" and process.name : "cmd.exe" and
+not (process.pe.original_file_name == "Cmd.Exe" and process.args :
+"?:\\Program Files\\Npcap\\CheckStatus.bat??")
 ----------------------------------
 
 ==== Threat mapping
@@ -64,6 +65,15 @@ process.parent.name:svchost.exe and process.name:cmd.exe
 
 [[svchost-spawning-cmd-history]]
 ==== Rule version history
+
+Version 8 (7.13.0 release)::
+* Updated query, changed from:
++
+[source, js]
+----------------------------------
+event.category:process and event.type:(start or process_started) and
+process.parent.name:svchost.exe and process.name:cmd.exe
+----------------------------------
 
 Version 7 (7.12.0 release)::
 * Formatting only

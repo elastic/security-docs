@@ -1,9 +1,7 @@
 [[unusual-network-connection-via-rundll32]]
 === Unusual Network Connection via RunDLL32
 
-Identifies unusual instances of `rundll32.exe` making outbound network
-connections. This may indicate adversarial activity and may identify malicious
-DLLs.
+Identifies unusual instances of rundll32.exe making outbound network connections. This may indicate adversarial Command and Control activity.
 
 *Rule type*: eql
 
@@ -31,11 +29,11 @@ DLLs.
 * Threat Detection
 * Defense Evasion
 
-*Version*: 8 (<<unusual-network-connection-via-rundll32-history, version history>>)
+*Version*: 9 (<<unusual-network-connection-via-rundll32-history, version history>>)
 
 *Added ({stack} release)*: 7.6.0
 
-*Last modified ({stack} release)*: 7.12.0
+*Last modified ({stack} release)*: 7.13.0
 
 *Rule authors*: Elastic
 
@@ -47,11 +45,11 @@ DLLs.
 [source,js]
 ----------------------------------
 sequence by host.id, process.entity_id with maxspan=1m [process
-where event.type in ("start", "process_started", "info") and
-process.name : "rundll32.exe" and process.args_count == 1] [network
-where process.name : "rundll32.exe" and network.protocol != "dns" and
-network.direction == "outgoing" and not cidrmatch(destination.ip,
-"10.0.0.0/8", "172.16.0.0/12", "192.168.0.0/16", "127.0.0.0/8")]
+where event.type in ("start", "process_started") and process.name :
+"rundll32.exe" and process.args_count == 1] [network where
+process.name : "rundll32.exe" and not cidrmatch(destination.ip,
+"10.0.0.0/8", "172.16.0.0/12", "192.168.0.0/16", "127.0.0.0/8",
+"FE80::/10", "::1/128")]
 ----------------------------------
 
 ==== Threat mapping
@@ -69,6 +67,19 @@ network.direction == "outgoing" and not cidrmatch(destination.ip,
 
 [[unusual-network-connection-via-rundll32-history]]
 ==== Rule version history
+
+Version 9 (7.13.0 release)::
+* Updated query, changed from:
++
+[source, js]
+----------------------------------
+sequence by host.id, process.entity_id with maxspan=1m [process
+where event.type in ("start", "process_started", "info") and
+process.name : "rundll32.exe" and process.args_count == 1] [network
+where process.name : "rundll32.exe" and network.protocol != "dns" and
+network.direction == "outgoing" and not cidrmatch(destination.ip,
+"10.0.0.0/8", "172.16.0.0/12", "192.168.0.0/16", "127.0.0.0/8")]
+----------------------------------
 
 Version 8 (7.12.0 release)::
 * Formatting only
