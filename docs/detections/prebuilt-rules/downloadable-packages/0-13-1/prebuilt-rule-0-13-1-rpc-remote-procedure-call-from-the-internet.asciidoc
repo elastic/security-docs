@@ -1,7 +1,7 @@
-[[prebuilt-rule-0-13-1-vnc--virtual-network-computing--to-the-internet]]
-=== VNC (Virtual Network Computing) to the Internet
+[[prebuilt-rule-0-13-1-rpc-remote-procedure-call-from-the-internet]]
+=== RPC (Remote Procedure Call) from the Internet
 
-This rule detects network events that may indicate the use of VNC traffic to the Internet. VNC is commonly used by system administrators to remotely control a system for maintenance or to use shared resources. It should almost never be directly exposed to the Internet, as it is frequently targeted and exploited by threat actors as an initial access or back-door vector.
+This rule detects network events that may indicate the use of RPC traffic from the Internet. RPC is commonly used by system administrators to remotely control a system for maintenance or to use shared resources. It should almost never be directly exposed to the Internet, as it is frequently targeted and exploited by threat actors as an initial access or back-door vector.
 
 *Rule type*: query
 
@@ -11,9 +11,9 @@ This rule detects network events that may indicate the use of VNC traffic to the
 * packetbeat-*
 * logs-endpoint.events.*
 
-*Severity*: medium
+*Severity*: high
 
-*Risk score*: 47
+*Risk score*: 73
 
 *Runs every*: None
 
@@ -31,7 +31,7 @@ This rule detects network events that may indicate the use of VNC traffic to the
 * Host
 * Network
 * Threat Detection
-* Command and Control
+* Initial Access
 
 *version*: 9
 
@@ -47,13 +47,8 @@ This rule detects network events that may indicate the use of VNC traffic to the
 
 [source, js]
 ----------------------------------
-event.category:(network or network_traffic) and network.transport:tcp and destination.port >= 5800 and destination.port <= 5810 and
-  source.ip:(
-    10.0.0.0/8 or
-    172.16.0.0/12 or
-    192.168.0.0/16
-  ) and
-  not destination.ip:(
+event.category:(network or network_traffic) and network.transport:tcp and (destination.port:135 or event.dataset:zeek.dce_rpc) and
+  not source.ip:(
     10.0.0.0/8 or
     127.0.0.0/8 or
     169.254.0.0/16 or
@@ -80,6 +75,11 @@ event.category:(network or network_traffic) and network.transport:tcp and destin
     "::1" or
     "FE80::/10" or
     "FF00::/8"
+  ) and
+  destination.ip:(
+    10.0.0.0/8 or
+    172.16.0.0/12 or
+    192.168.0.0/16
   )
 
 ----------------------------------
@@ -87,10 +87,10 @@ event.category:(network or network_traffic) and network.transport:tcp and destin
 *Framework*: MITRE ATT&CK^TM^
 
 * Tactic:
-** Name: Command and Control
-** ID: TA0011
-** Reference URL: https://attack.mitre.org/tactics/TA0011/
+** Name: Initial Access
+** ID: TA0001
+** Reference URL: https://attack.mitre.org/tactics/TA0001/
 * Technique:
-** Name: Remote Access Software
-** ID: T1219
-** Reference URL: https://attack.mitre.org/techniques/T1219/
+** Name: Exploit Public-Facing Application
+** ID: T1190
+** Reference URL: https://attack.mitre.org/techniques/T1190/
