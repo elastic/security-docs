@@ -3,7 +3,7 @@
 
 Creates a new case.
 
-NOTE: The {kib} Console supports only Elasticsearch APIs. You cannot interact with the {kib} APIs with the Console and must use `curl` or another HTTP tool instead. For more information, refer to https://www.elastic.co/guide/en/kibana/current/console-kibana.html[Console].
+NOTE: The {kib} Console supports only Elasticsearch APIs. Console doesn't allow interactions with {kib} APIs. You must use `curl` or another HTTP tool instead. For more information, refer to https://www.elastic.co/guide/en/kibana/current/console-kibana.html[Console].
 
 ==== Request URL
 
@@ -25,6 +25,9 @@ categorize cases. |Yes, can be an empty array.
 configuration. |Yes
 |`settings` |<<create-case-settings-schema, settings>> |Object containing the case's
 settings. |Yes
+|`owner` |String |The application that owns the case. |Yes
+
+Must be a valid application owner that is registered within the Cases Role Based Access Control system (i.e. `securitySolution`).
 |==============================================
 
 [[create-case-connector-schema]]
@@ -43,17 +46,31 @@ used for pushing case updates to external systems (returned when calling
 Must be one of these:
 
 * `.servicenow`
+* `.servicenow-sir`
 * `.jira`
 * `.resilient`
+* `.swimlane`
 * `.none`
 |Yes
 |`fields` |Object a| Object containing the connector's fields.
 
-For {sn} connectors:
+For {sn-itsm} connectors:
 
 * `urgency` (string \| null): The urgency of the incident.
 * `severity` (string \| null): The severity of the incident.
 * `impact` (string \| null): The impact of the incident.
+* `category` (string \| null): The category of the incident.
+* `subcategory` (string \| null): The subcategory of the incident.
+
+For {sn-sir} connectors:
+
+* `destIp` (string \| null): A comma separated list of destination IPs.
+* `malwareHash` (string \| null): A comma separated list of malware hashes.
+* `malwareUrl` (string \| null): A comma separated list of malware URLs.
+* `sourceIp` (string \| null): A comma separated list of source IPs.
+* `priority` (string \| null): The priority of the incident.
+* `category` (string \| null): The category of the incident.
+* `subcategory` (string \| null): The subcategory of the incident.
 
 For {jira} connectors:
 
@@ -65,6 +82,10 @@ For {ibm-r} connectors:
 
 * `issueTypes` (number[]): The issue types of the issue.
 * `severityCode` (number): The severity code of the issue.
+
+For {swimlane} connectors:
+
+* `caseId` (string | null): The case ID.
 
 |Yes
 |==============================================
@@ -102,7 +123,8 @@ POST api/cases
   },
   "settings": {
     "syncAlerts": true
-  }
+  },
+  "owner": "securitySolution",
 }
 --------------------------------------------------
 // KIBANA
@@ -158,7 +180,8 @@ version, and creation time. The case's ID is also its saved object ID
   },
   "settings": {
     "syncAlerts": true
-  }
+  },
+  "owner": "securitySolution",
 }
 --------------------------------------------------
 
