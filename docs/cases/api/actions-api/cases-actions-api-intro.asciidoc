@@ -8,28 +8,23 @@ You can push {es-sec} cases to these third-party systems:
 * {jira} (including Jira Service Desk)
 * {ibm-r}
 
-NOTE: The {kib} Console supports only Elasticsearch APIs. You cannot interact with the {kib} APIs with the Console and must use `curl` or another HTTP tool instead. For more information, refer to https://www.elastic.co/guide/en/kibana/current/console-kibana.html[Console].
+NOTE: The {kib} Console supports only Elasticsearch APIs. Console doesn't allow interactions with {kib} APIs. You must use `curl` or another HTTP tool instead. For more information, refer to https://www.elastic.co/guide/en/kibana/current/console-kibana.html[Console].
 
 To push cases, you need to create a connector using the {kib} Actions API,
 which stores the information required to interface with the external system.
 
 {es-sec} uses these external APIs to send cases:
 
-* {sn}: https://developer.servicenow.com/dev.do#!/reference/api/madrid/rest/c_TableAPI[Table API]
+* {sn}: https://developer.servicenow.com/dev.do#!/reference/api/quebec/rest/c_TableAPI[Table API]
 * {jira}: https://developer.atlassian.com/cloud/jira/platform/rest/v2/[REST API v2]
 * {ibm-r}: https://developer.ibm.com/security/resilient/rest/[Resilient REST API]
+* {swimlane}: https://swimlane.com/knowledge-center/docs/developer-guide/rest-api/[Swimlane REST API]
 
 To send cases to an external system and keep the {es-sec-ui} updated:
 
 . <<register-connector>>: Create the connector (Actions API).
-. <<assign-connector>> or <<case-api-update-connector>>: If required, configure
-connector options (Cases API).
-. [[sn-returned-data]]<<cases-actions-api-execute>>: Send the case to an
-external system (Actions API). You must store the returned data as it is
-required for updating the the {es-sec} case.
-. [[update-case-sn-data]]<<cases-api-associate-sn-incident>>: Update the
-{es-sec} case with the associated external system data returned in
-<<sn-returned-data, step 3>> (Cases API).
+. <<cases-api-create>>: Create a case with the connector from the previous step.
+. <<cases-api-push>>: Push the case to the external system.
 
 [[register-connector]]
 === Create connector
@@ -37,11 +32,11 @@ required for updating the the {es-sec} case.
 Creates a connector, which can then be used to open and update cases in external
 systems.
 
-NOTE: The {kib} Console supports only Elasticsearch APIs. You cannot interact with the {kib} APIs with the Console and must use `curl` or another HTTP tool instead. For more information, refer to https://www.elastic.co/guide/en/kibana/current/console-kibana.html[Console].
+NOTE: The {kib} Console supports only Elasticsearch APIs. Console doesn't allow interactions with {kib} APIs. You must use `curl` or another HTTP tool instead. For more information, refer to https://www.elastic.co/guide/en/kibana/current/console-kibana.html[Console].
 
 ==== Request URL
 
-`POST <kibana host>:<port>/api/actions/action`
+`POST <kibana host>:<port>/api/actions/connector`
 
 ==== Request body
 
@@ -51,18 +46,20 @@ A JSON object with these fields:
 |==============================================
 |Name |Type |Description |Required
 
-|`actionTypeId` |String a|Must be one of these:
+|`connector_type_id` |String a|Must be one of these:
 
-* `.servicenow`: Send cases to {sn}
+* `.servicenow`: Send cases to {sn-itsm}
+* `.servicenow-sir`: Send cases to {sn-sir}
 * `.jira`: Send cases to {jira}
 * `.resilient` Send cases to {ibm-r}
+* `.swimlane` Send cases to {swimlane}
 |Yes
 |`config` |<<config-schema, config>> |Object containing the action's
 configuration. |Yes
 |`secrets` |Object a|Object containing the third-party account information used
 to create and update incidents.
 
-For {sn} connectors:
+For {sn-itsm} and {sn-sir} connectors:
 
 * `username` (string): The account username.
 * `password` (string): The account password.
@@ -77,6 +74,10 @@ For {ibm-r} connectors:
 * `apiKeyId` (string): The authentication key ID.
 * `apiKeySecret` (string): The authentication key secret.
 
+For {swimlane} connectors:
+
+* `apiToken` (string): {swimlane} API authentication token.
+
 |Yes
 
 |`name` |String |The connector's name. |Yes
@@ -90,6 +91,39 @@ For {ibm-r} connectors:
 |Name |Type |Description |Required
 
 |`apiUrl` |String |URL of the third-party instance. |Yes
+|`appId` |String |{swimlane} application ID. |For {swimlane} connectors, yes. or other
+connectors, no.
+|`connectorType` |String a|The type of the connector.
+
+Must be one of these:
+
+* `all`
+* `alerts`
+* `cases`
+
+|For {swimlane} connectors, yes. For other
+connectors, no.
+|`mappings` |Object a| The field mapping. 
+
+Must be:
+
+* `alertIdConfig` (Object): Mapping for the alert ID.
+* `caseIdConfig` (Object): Mapping for the case ID.
+* `caseNameConfig` (Object): Mapping for the case name.
+* `commentsConfig` (Object): Mapping for the case comments.
+* `ruleNameConfig` (Object): Mapping for the name of the alert's rule.
+* `severityConfig` (Object): Mapping for the severity.
+* `descriptionConfig` (Object): Mapping for the case description.
+
+The object of each attribute in the `mappings` must be:
+
+* `id` (string): The id of the field in {swimlane}.
+* `key` (string): The key of the field in {swimlane}.
+* `name` (string): The name of the field in {swimlane}.
+* `fieldType` (Object): The type of the field in {swimlane}.
+
+|For {swimlane} connectors, yes. or other
+connectors, no.
 |`projectKey` |String |{jira} project key. |For {jira} connectors, yes. For other
 connectors, no.
 |`orgId` |String |{ibm-r} organization ID. |For {ibm-r} connectors, yes. For
@@ -98,13 +132,13 @@ other connectors, no.
 
 ===== Example requests
 
-Creates a {sn} connector:
+Creates a {sn-itsm} connector:
 
 [source,sh]
 --------------------------------------------------
-POST api/actions/action
+POST api/actions/connector
 {
-  "actionTypeId": ".servicenow",
+  "connector_type_id": ".servicenow",
   "config": {
     "apiUrl": "https://dev87359.service-now.com",
   },
@@ -112,7 +146,25 @@ POST api/actions/action
     "username": "admin",
     "password": "securePassword123!"
   },
-  "name": "ServiceNow"
+  "name": "ServiceNow ITSM"
+}
+--------------------------------------------------
+
+Creates a {sn-sir} connector:
+
+[source,sh]
+--------------------------------------------------
+POST api/actions/connector
+{
+  "connector_type_id": ".servicenow-sir",
+  "config": {
+    "apiUrl": "https://dev87359.service-now.com",
+  },
+  "secrets": {
+    "username": "admin",
+    "password": "securePassword123!"
+  },
+  "name": "ServiceNow SecOps"
 }
 --------------------------------------------------
 
@@ -120,9 +172,9 @@ Creates a {jira} connector:
 
 [source,sh]
 --------------------------------------------------
-POST api/actions/action
+POST api/actions/connector
 {
-  "actionTypeId": ".jira",
+  "connector_type_id": ".jira",
   "config": {
     "apiUrl": "https://hms.atlassian.net",
     "projectKey": "HMS"
@@ -140,9 +192,9 @@ Creates an {ibm-r} connector:
 
 [source,sh]
 --------------------------------------------------
-POST api/actions/action
+POST api/actions/connector
 {
-  "actionTypeId": ".resilient",
+  "connector_type_id": ".resilient",
   "config": {
     "apiUrl": "https://ibm-resilient.siem.estc.dev",
     "orgId": "201"
@@ -152,6 +204,69 @@ POST api/actions/action
     "apiKeySecret": "Hzol67ZoeATAR-8pQxSp3q_NPTDtWU6_QNBoCSCA-ic"
   },
   "name": "IBM"
+}
+--------------------------------------------------
+// KIBANA
+
+Creates a {swimlane} connector:
+
+[source,sh]
+--------------------------------------------------
+POST api/actions/connector
+{
+   "name":"Swimlane",
+   "config":{
+      "connectorType":"all",
+      "mappings":{
+         "ruleNameConfig":{
+            "id":"b6fst",
+            "name":"Alert Name",
+            "key":"alert-name",
+            "fieldType":"text"
+         },
+         "alertIdConfig":{
+            "id":"bpvow",
+            "name":"Alert ID",
+            "key":"alert-id",
+            "fieldType":"text"
+         },
+         "caseIdConfig":{
+            "id":"be1mi",
+            "name":"Case ID",
+            "key":"case-id",
+            "fieldType":"text"
+         },
+         "caseNameConfig":{
+            "id":"bnxnr",
+            "name":"Case Name",
+            "key":"case-name",
+            "fieldType":"text"
+         },
+         "commentsConfig":{
+            "id":"bu18d",
+            "name":"Comments",
+            "key":"comments",
+            "fieldType":"comments"
+         },
+         "severityConfig":{
+            "id":"b71ik",
+            "name":"severity",
+            "key":"severity",
+            "fieldType":"text"
+         },
+         "descriptionConfig":{
+            "id":"b5zrn",
+            "name":"Description",
+            "key":"description",
+            "fieldType":"text"
+         }
+      },
+      "appId":"myAppID",
+      "apiUrl":"https://myswimlaneinstance.com"
+   },
+   "secrets":{
+      "apiToken":"secureToken"
+   }
 }
 --------------------------------------------------
 // KIBANA
@@ -173,7 +288,7 @@ A JSON object with a connector `id` that is required to push cases to {sn}.
 --------------------------------------------------
 {
   "id": "f07a60c7-a340-4cb1-93b8-1f5e35dc56b1",
-  "actionTypeId": ".servicenow",
+  "connector_type_id": ".servicenow",
   "name": "SN API 2",
   "config": {
     "apiUrl": "https://dev185413.service-now.com",
@@ -187,11 +302,11 @@ A JSON object with a connector `id` that is required to push cases to {sn}.
 
 Updates a connector.
 
-NOTE: The {kib} Console supports only Elasticsearch APIs. You cannot interact with the {kib} APIs with the Console and must use `curl` or another HTTP tool instead. For more information, refer to https://www.elastic.co/guide/en/kibana/current/console-kibana.html[Console].
+NOTE: The {kib} Console supports only Elasticsearch APIs. Console doesn't allow interactions with {kib} APIs. You must use `curl` or another HTTP tool instead. For more information, refer to https://www.elastic.co/guide/en/kibana/current/console-kibana.html[Console].
 
 ==== Request URL
 
-`PUT <kibana host>:<port>/api/actions/action/<connector ID>`
+`PUT <kibana host>:<port>/api/actions/connector/<connector ID>`
 
 ===== URL parts
 
@@ -226,6 +341,10 @@ For {ibm-r} connectors:
 * `apiKeyId` (string): The authentication key ID.
 * `apiKeySecret` (string): The authentication key secret.
 
+For {swimlane} connectors:
+
+* `apiToken` (string): {swimlane} API authentication token.
+
 |Yes
 
 |`name` |String |The connector's name. |Yes
@@ -239,6 +358,37 @@ For {ibm-r} connectors:
 |Name |Type |Description |Required
 
 |`apiUrl` |String |URL of the third-party instance. |Yes
+|`connectorType` |String a|The type of the connector.
+
+Must be one of these:
+
+* `all`
+* `alerts`
+* `cases`
+
+|For {swimlane} connectors, yes. For other
+connectors, no.
+|`mappings` |Object a| The field mapping. 
+
+Must be:
+
+* `alertIdConfig` (Object): Mapping for the alert ID.
+* `caseIdConfig` (Object): Mapping for the case ID.
+* `caseNameConfig` (Object): Mapping for the case name.
+* `commentsConfig` (Object): Mapping for the case comments.
+* `ruleNameConfig` (Object): Mapping for the name of the alert's rule.
+* `severityConfig` (Object): Mapping for the severity.
+* `descriptionConfig` (Object): Mapping for the case description.
+
+The object of each attribute in the `mappings` must be:
+
+* `id` (string): The id of the field in {swimlane}.
+* `key` (string): The key of the field in {swimlane}.
+* `name` (string): The name of the field in {swimlane}.
+* `fieldType` (Object): The type of the field in {swimlane}.
+
+|For {swimlane} connectors, yes. or other
+connectors, no.
 |`projectKey` |String |{jira} project key. |For {jira} connectors, yes. For other
 connectors, no.
 |`orgId` |String |{ibm-r} organization ID. |For {ibm-r} connectors, yes. For
@@ -252,7 +402,7 @@ Updates the `description` field mapping of connector ID
 
 [source,sh]
 --------------------------------------------------
-PUT api/actions/action/61787f53-4eee-4741-8df6-8fe84fa616f7
+PUT api/actions/connector/61787f53-4eee-4741-8df6-8fe84fa616f7
 {
   "config": {
     "apiUrl": "https://dev357417.service-now.com",
@@ -281,7 +431,7 @@ The updated JSON connector object.
 --------------------------------------------------
 {
   "id": "61787f53-4eee-4741-8df6-8fe84fa616f7",
-  "actionTypeId": ".servicenow",
+  "connector_type_id": ".servicenow",
   "name": "ServiceNow",
   "config": {
     "apiUrl": "https://dev78437.service-now.com",
@@ -294,16 +444,14 @@ The updated JSON connector object.
 
 Creates a new or updates an existing external incident from a {es-sec} case.
 
-NOTE: The {kib} Console supports only Elasticsearch APIs. You cannot interact with the {kib} APIs with the Console and must use `curl` or another HTTP tool instead. For more information, refer to https://www.elastic.co/guide/en/kibana/current/console-kibana.html[Console].
+NOTE: The {kib} Console supports only Elasticsearch APIs. Console doesn't allow interactions with {kib} APIs. You must use `curl` or another HTTP tool instead. For more information, refer to https://www.elastic.co/guide/en/kibana/current/console-kibana.html[Console].
 
 NOTE: You can only send cases to external systems after you have
-<<register-connector, created>> a connector. After you have sent the case to
-an external system, you must call <<cases-api-associate-sn-incident>> to update
-the {es-sec} case with the returned external incident details.
+<<register-connector, created>> a connector.
 
 ==== Request URL
 
-`POST <kibana host>:<port>/api/actions/action/<connector ID>/_execute`
+`POST <kibana host>:<port>/api/actions/connector/<connector ID>/_execute`
 
 ===== URL parts
 
@@ -353,20 +501,28 @@ to external systems. |Yes
 *`incident` schema*
 |==============================================
 |Name |Type |Description |Required
+|`alertId` |String |The alert ID. |No. Valid only for {swimlane} connectors.
+|`caseId` |String |The case ID. |No. Valid only for {swimlane} connectors.
+|`caseName` |String |The case name. |No. Valid only for {swimlane} connectors.
+|`dest_ip` |String |A comma separated list of destination IPs. |No. Valid only for {sn-sir} connectors.
 |`description` |String |The case description. |No
 |`externalId` |String |The external incident/issue ID. |No, only required when updating an existing issue.
-|`impact` |String |ServiceNow incident impact. |No. Valid only for ServiceNow connectors.
+|`impact` |String |{sn-itsm} incident impact. |No. Valid only for {sn-itsm} connectors.
 |`incidentTypes` |String |{ibm-r} incident types. |No. Valid only for {ibm-r} connectors.
 |`issueType` |String |{jira} issue type. |No. Valid only for {jira} connectors.
 |`labels` |String |{jira} issue labels. |No. Valid only for {jira} connectors.
+|`malware_hash` |String |A comma separated list of malware hashes. |No. Valid only for {sn-sir} connectors.
+|`malware_url` |String |A comma separated list of malware URLs. |No. Valid only for {sn-sir} connectors.
 |`name` |String |{ibm-r} organization incident name. |Yes. Valid only for {ibm-r} connectors.
 |`parent` |String |{jira} issue parent. |No. Valid only for {jira} connectors.
-|`priority` |String |{jira} issue priority. |No. Valid only for {jira} connectors.
-|`severity` |String |ServiceNow incident severity. |No. Valid only for ServiceNow connectors.
+|`priority` |String |{jira} issue priority. |No. Valid only for {jira} and {sn-sir} connectors.
+|`ruleName` |String |The name of the alert's rule. |No. Valid only for {swimlane} connectors.
+|`severity` |String |{sn-itsm} incident severity. |No. Valid only for {sn-itsm} and {swimlane} connectors.
 |`severityCode` |String |{ibm-r} incident severity code. |No. Valid only for {ibm-r} connectors.
-|`short_description` |String |ServiceNow incident name. |Yes. Valid only for ServiceNow connectors.
+|`short_description` |String |{sn} incident name. |Yes. Valid only for {sn} connectors.
+|`source_ip` |String |A comma separated list of source IPs. |No. Valid only for {sn-sir} connectors.
 |`summary` |String |{jira} issue title. |Yes. Valid only for {jira} connectors.
-|`urgency` |String |ServiceNow incident urgency. |No. Valid only for ServiceNow connectors.
+|`urgency` |String |{sn-itsm} incident urgency. |No. Valid only for {sn-itsm} connectors.
 |==============================================
 
 NOTE: When updating an existing case, call <<cases-api-get-case>> or
@@ -379,7 +535,7 @@ Creates a new {sn} incident:
 
 [source,sh]
 --------------------------------------------------
-POST api/actions/action/7349772f-421a-4de3-b8bb-2d9b22ccee30/_execute
+POST api/actions/connector/7349772f-421a-4de3-b8bb-2d9b22ccee30/_execute
 {
   "params": {
     "subAction": "pushToService",
@@ -402,7 +558,7 @@ Updates an existing {sn} incident:
 
 [source,sh]
 --------------------------------------------------
-POST api/actions/action/7349772f-421a-4de3-b8bb-2d9b22ccee30/_execute
+POST api/actions/connector/7349772f-421a-4de3-b8bb-2d9b22ccee30/_execute
 {
   "params": {
     "subAction": "pushToService",
@@ -429,10 +585,6 @@ POST api/actions/action/7349772f-421a-4de3-b8bb-2d9b22ccee30/_execute
 ==== Response payload
 
 A JSON object with the ID and the URL of the external incident.
-
-IMPORTANT: You need the returned information to associate it with the original
-{es-sec} case. To add the external incident details to the {es-sec} case,
-call <<cases-api-associate-sn-incident>>.
 
 ===== Example response
 
