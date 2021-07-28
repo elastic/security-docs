@@ -3,7 +3,7 @@
 
 Updates existing cases.
 
-NOTE: The {kib} Console supports only Elasticsearch APIs. You cannot interact with the {kib} APIs with the Console and must use `curl` or another HTTP tool instead. For more information, refer to https://www.elastic.co/guide/en/kibana/current/console-kibana.html[Console].
+NOTE: The {kib} Console supports only Elasticsearch APIs. Console doesn't allow interactions with {kib} APIs. You must use `curl` or another HTTP tool instead. For more information, refer to https://www.elastic.co/guide/en/kibana/current/console-kibana.html[Console].
 
 ==== Request URL
 
@@ -44,6 +44,8 @@ settings. |No
 <<cases-api-get-case>> or <<cases-api-find-cases>>). |Yes
 |==============================================
 
+NOTE: The Case `owner` field cannot be updated.
+
 [[case-update-connector-schema]]
 *`connector` schema*
 
@@ -60,8 +62,10 @@ used for pushing case updates to external systems (returned when calling
 Must be one of these:
 
 * `.servicenow`
+* `.servicenow-sir`
 * `.jira`
 * `.resilient`
+* `.swimlane`
 * `.none`
 |Yes
 |`fields` |Object a| Object containing the connector's fields.
@@ -71,6 +75,18 @@ For {sn} connectors:
 * `urgency` (string \| null): The urgency of the incident.
 * `severity` (string \| null): The severity of the incident.
 * `impact` (string \| null): The impact of the incident.
+* `category` (string \| null): The category of the incident.
+* `subcategory` (string \| null): The subcategory of the incident.
+
+For {sn-sir} connectors:
+
+* `destIp` (string \| null): A comma separated list of destination IPs.
+* `malwareHash` (string \| null): A comma separated list of malware hashes.
+* `malwareUrl` (string \| null): A comma separated list of malware URLs.
+* `sourceIp` (string \| null): A comma separated list of source IPs.
+* `priority` (string \| null): The priority of the incident.
+* `category` (string \| null): The category of the incident.
+* `subcategory` (string \| null): The subcategory of the incident.
 
 For {jira} connectors:
 
@@ -82,6 +98,10 @@ For {ibm-r} connectors:
 
 * `issueTypes` (number[]): The issue types of the issue.
 * `severityCode` (number): The severity code of the issue.
+
+For {swimlane} connectors:
+
+* `caseId` (string | null): The case ID.
 
 |Yes
 |==============================================
@@ -194,6 +214,7 @@ The updated case with a new `version` value.
       "external_id": "10003",
       "connector_name": "Jira"
     },
+    "owner": "securitySolution",
     "status": "open",
     "updated_at": "2020-05-13T09:48:33.043Z",
     "updated_by": {
