@@ -17,7 +17,7 @@ Identifies Mshta.exe making outbound network connections. This may indicate adve
 
 *Runs every*: 5 minutes
 
-*Searches indices from*: now-9m ({ref}/common-options.html#date-math[Date Math format], see also <<rule-schedule, `Additional look-back time`>>)
+*Searches indices from*: now-20m ({ref}/common-options.html#date-math[Date Math format], see also <<rule-schedule, `Additional look-back time`>>)
 
 *Maximum alerts per execution*: 100
 
@@ -29,11 +29,11 @@ Identifies Mshta.exe making outbound network connections. This may indicate adve
 * Threat Detection
 * Defense Evasion
 
-*Version*: 3 (<<mshta-making-network-connections-history, version history>>)
+*Version*: 4 (<<mshta-making-network-connections-history, version history>>)
 
 *Added ({stack} release)*: 7.10.0
 
-*Last modified ({stack} release)*: 7.12.0
+*Last modified ({stack} release)*: 7.14.0
 
 *Rule authors*: Elastic
 
@@ -44,7 +44,7 @@ Identifies Mshta.exe making outbound network connections. This may indicate adve
 
 [source,js]
 ----------------------------------
-sequence by process.entity_id with maxspan=2h [process where
+sequence by process.entity_id with maxspan=10m [process where
 event.type in ("start", "process_started") and process.name :
 "mshta.exe" and not process.parent.name :
 "Microsoft.ConfigurationManagement.exe" and not
@@ -70,6 +70,22 @@ process.name : "mshta.exe"]
 
 [[mshta-making-network-connections-history]]
 ==== Rule version history
+
+Version 4 (7.14.0 release)::
+* Updated query, changed from:
++
+[source, js]
+----------------------------------
+sequence by process.entity_id with maxspan=2h [process where
+event.type in ("start", "process_started") and process.name :
+"mshta.exe" and not process.parent.name :
+"Microsoft.ConfigurationManagement.exe" and not
+(process.parent.executable : "C:\\Amazon\\Amazon
+Assistant\\amazonAssistantService.exe" or
+process.parent.executable : "C:\\TeamViewer\\TeamViewer.exe") and
+not process.args : "ADSelfService_Enroll.hta"] [network where
+process.name : "mshta.exe"]
+----------------------------------
 
 Version 3 (7.12.0 release)::
 * Formatting only

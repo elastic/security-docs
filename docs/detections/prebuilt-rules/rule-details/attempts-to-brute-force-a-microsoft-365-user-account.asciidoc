@@ -20,6 +20,10 @@ Identifies attempts to brute force a Microsoft 365 user account. An adversary ma
 
 *Maximum alerts per execution*: 100
 
+*References*:
+
+* https://blueteamblog.com/7-ways-to-monitor-your-office-365-logs-using-siem
+
 *Tags*:
 
 * Elastic
@@ -29,13 +33,13 @@ Identifies attempts to brute force a Microsoft 365 user account. An adversary ma
 * SecOps
 * Identity and Access
 
-*Version*: 3 (<<attempts-to-brute-force-a-microsoft-365-user-account-history, version history>>)
+*Version*: 5 (<<attempts-to-brute-force-a-microsoft-365-user-account-history, version history>>)
 
 *Added ({stack} release)*: 7.11.0
 
-*Last modified ({stack} release)*: 7.13.0
+*Last modified ({stack} release)*: 7.14.0
 
-*Rule authors*: Elastic
+*Rule authors*: Elastic, Willem D'Haese, Austin Songer
 
 *Rule license*: Elastic License v2
 
@@ -45,7 +49,7 @@ Automated processes that attempt to authenticate using expired credentials and u
 
 ==== Investigation guide
 
-**Config**
+*Config*
 
 The Microsoft 365 Fleet integration, Filebeat module, or similarly structured data is required to be compatible with this rule.
 
@@ -54,8 +58,13 @@ The Microsoft 365 Fleet integration, Filebeat module, or similarly structured da
 
 [source,js]
 ----------------------------------
-event.dataset:o365.audit and event.provider:AzureActiveDirectory and
-event.category:authentication and event.action:UserLoginFailed and
+event.dataset:o365.audit and event.provider:(AzureActiveDirectory or
+Exchange) and event.category:authentication and
+event.action:(UserLoginFailed or
+PasswordLogonInitialAuthUsingPassword) and not
+o365.audit.LogonError:(UserAccountNotFound or
+EntitlementGrantsNotFound or UserStrongAuthEnrollmentRequired or
+UserStrongAuthClientAuthNRequired or InvalidReplyTo) and
 event.outcome:failure
 ----------------------------------
 
@@ -74,6 +83,16 @@ event.outcome:failure
 
 [[attempts-to-brute-force-a-microsoft-365-user-account-history]]
 ==== Rule version history
+
+Version 5 (7.14.0 release)::
+* Updated query, changed from:
++
+[source, js]
+----------------------------------
+event.dataset:o365.audit and event.provider:AzureActiveDirectory and
+event.category:authentication and event.action:UserLoginFailed and
+event.outcome:failure
+----------------------------------
 
 Version 3 (7.13.0 release)::
 * Formatting only
