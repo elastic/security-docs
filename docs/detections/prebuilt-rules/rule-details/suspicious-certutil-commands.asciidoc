@@ -1,7 +1,7 @@
-[[encoding-or-decoding-files-via-certutil]]
-=== Encoding or Decoding Files via CertUtil
+[[suspicious-certutil-commands]]
+=== Suspicious CertUtil Commands
 
-Identifies the use of certutil.exe to encode or decode data. CertUtil is a native Windows component which is part of Certificate Services. CertUtil is often abused by attackers to encode or decode base64 data for stealthier command and control or exfiltration.
+Identifies suspicious commands being used with certutil.exe. CertUtil is a native Windows component which is part of Certificate Services. CertUtil is often abused by attackers to live off the land for stealthier command and control or data exfiltration.
 
 *Rule type*: eql
 
@@ -21,6 +21,13 @@ Identifies the use of certutil.exe to encode or decode data. CertUtil is a nativ
 
 *Maximum alerts per execution*: 100
 
+*References*:
+
+* https://twitter.com/Moriarty_Meng/status/984380793383370752
+* https://twitter.com/egre55/status/1087685529016193025
+* https://www.sysadmins.lv/blog-en/certutil-tips-and-tricks-working-with-x509-file-format.aspx
+* https://docs.microsoft.com/en-us/archive/blogs/pki/basic-crl-checking-with-certutil
+
 *Tags*:
 
 * Elastic
@@ -29,11 +36,11 @@ Identifies the use of certutil.exe to encode or decode data. CertUtil is a nativ
 * Threat Detection
 * Defense Evasion
 
-*Version*: 8 (<<encoding-or-decoding-files-via-certutil-history, version history>>)
+*Version*: 9 (<<suspicious-certutil-commands-history, version history>>)
 
 *Added ({stack} release)*: 7.6.0
 
-*Last modified ({stack} release)*: 7.13.0
+*Last modified ({stack} release)*: 7.14.0
 
 *Rule authors*: Elastic
 
@@ -46,7 +53,8 @@ Identifies the use of certutil.exe to encode or decode data. CertUtil is a nativ
 ----------------------------------
 process where event.type == "start" and (process.name :
 "certutil.exe" or process.pe.original_file_name == "CertUtil.exe") and
-process.args : ("?decode", "?encode")
+process.args : ("?decode", "?encode", "?urlcache", "?verifyctl",
+"?encodehex", "?decodehex")
 ----------------------------------
 
 ==== Threat mapping
@@ -62,8 +70,20 @@ process.args : ("?decode", "?encode")
 ** ID: T1140
 ** Reference URL: https://attack.mitre.org/techniques/T1140/
 
-[[encoding-or-decoding-files-via-certutil-history]]
+[[suspicious-certutil-commands-history]]
 ==== Rule version history
+
+Version 9 (7.14.0 release)::
+* Rule name changed from: Encoding or Decoding Files via CertUtil
++
+* Updated query, changed from:
++
+[source, js]
+----------------------------------
+process where event.type == "start" and (process.name :
+"certutil.exe" or process.pe.original_file_name == "CertUtil.exe") and
+process.args : ("?decode", "?encode")
+----------------------------------
 
 Version 8 (7.13.0 release)::
 * Updated query, changed from:
