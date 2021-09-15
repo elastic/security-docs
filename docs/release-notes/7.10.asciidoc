@@ -1,0 +1,83 @@
+[[release-notes-7.10-header]]
+== 7.10
+
+[discrete]
+[[release-notes-7.10.1]]
+=== 7.10.1
+
+[discrete]
+[[bug-fixes-7.10.1]]
+==== Bug fixes and enhancements
+
+* Fixes EQL previews which now accept all date formats ({pull}83939[#83939]).
+* Fixes incorrect time for DNS histograms ({pull}83781[#83781]).
+* Fixes UI strings around indicator matching and mapping definitions
+({pull}82510[#82510]).
+* Fixes layout in "Severity override" drop-down when creating a new rule ({pull}82271[#82271]).
+
+
+[discrete]
+[[release-notes-7.10.0]]
+=== 7.10.0
+
+[discrete]
+[[upgrade-notes-7.10]]
+==== Post upgrade requirements
+
+When upgrading the {stack} to version 7.10.0 from a previous minor version (7.9.x),
+perform the following:
+
+* Grant `view_index_metadata` https://www.elastic.co/guide/en/security/current/detections-permissions-section.html#enable-detections-ui[permissions] to any Elastic Security users. This is required to enable **event correlation** rules. Other previously activated detection rules will continue to run after upgrade.
+
+[discrete]
+[[breaking-changes-7.10.0]]
+==== Breaking changes
+
+*Signals template updated for rollover indices*
+
+The `create_index_route` now checks if the template needs to be upgraded
+before creating the index. If the index already exists and the template was upgraded,
+the index rolls over so that the write index has the upgraded mapping.
+This breaks the old mappings that have `risk_score mapped` as a keyword.
+In the new mapping, `signal.rule.risk_score` is a float.  After rolling over,
+there is a conflict between the old and new `signal.rule.risk_score` for some
+features, such as aggregations.
+
+This requires the `view_index_metadata` permission in Kibana. See ({pull}/80019[#80019]) for details.
+
+*Connect incident fields allowed when cases are sent*
+
+You can now specify connector incident fields when cases are sent. This includes:
+* Jira: issue type, priority, and parent issue in the case of a subtask.
+* IBM Resilient: issue types, and severity.
+* ServiceNow: urgency, severity, and impact.
+
+See ({pull}77327[#77327]) for details.
+
+[discrete]
+[[bug-fixes-7.10.0]]
+==== Bug fixes and enhancements
+* Adds Metadata and Discovery Analysis Jobs to Security Integration ({pull}76023[#76023]).
+* Improves Alert Telemetry for the Security app ({pull}77200[#77200]).
+* Allows passwords to be visible on security screens ({pull}77394[#77394]).
+* Groups features for role management ({pull}78152[#78152]).
+* Warns users when security is not configured ({pull}78545[#78545]).
+* Enhancements for saved object management workflows ({pull}75444[#75444]).
+* Adds EQL search strategy for security ({pull}78645[#78645]).
+* Fetches related events from specified devices ({pull}78780[#78780]).
+* Excludes cloud alias index from EQL query ({pull}81551[#81551]).
+* Telemetry: Displays collected security event sample ({pull}78963[#78963]).
+* Analyze Events: Requests data from new event API ({pull}78782[#78782]).
+* Detections: Handle conflicts on alert status update ({pull}75492[#75492]).
+
+[discrete]
+[[known-issues-7.10.0]]
+==== Known issues
+
+* If you edit a rule while that rule is running, the rule fails. Subsequent successful runs will retain the previous failure message ({pull}82320[#82320]).
++
+[role="screenshot"]
+image::images/detection-rule-failure.png[]
+
+* When adding a rule exception, you cannot select value lists of type `ip_range`. Lists of type `ip_range` will not appear in the **Add Exception** dropdown as possible values after selecting the is in list operator. ({pull}79511[#79511]).
+
