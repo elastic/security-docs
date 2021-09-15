@@ -52,29 +52,36 @@ image::images/customize-event-renderer-page.png[Shows the Event Renderer page]
 [float]
 [[view-alert-details]]
 === View alert details
-To further inspect an alert, click the *View details* button from the Alerts table. The Alert details flyout appears and provides several options to view alert data.
+To further inspect a detection alert, click the *View details* button from the Alerts table. The Alert details flyout appears with several options to view alert data.
 
 [role="screenshot"]
-image::images/view-alert-details.png[Shows the Event Renderer button, 200]
+image::images/view-alert-details.png[Shows the Event Renderer button, 300]
 
 The Alert details flyout contains the following informational tabs:
 
 [discrete]
-*Summary*
+*Overview*
 
-The *Summary* tab provides an overview of the alert and shows relevant threat intelligence details. Use this information to analyze what generated the alert, so you can triage its relevance and resolve it as appropriate.
+The *Overview* tab provides an overview of the alert and shows relevant threat intelligence details. Use this information to analyze what generated the alert, so you can triage its relevance and resolve it as appropriate.
 
-The *Summary* tab always begins with a list of general alert details. These details are conveyed as a curated list of fields containing essential and available information about the alert. Within this section, you can find the alert's current status, locate the rule that produced the alert, learn the alert's severity, and more. You can use these details to start forming a sense of what caused the alert and then continue your investigation by checking out available threat intelligence on the alert.
+The *Overview* tab has two main sections: *Reason* and *Document Summary*. The *Reason* section describes what generated the alert and provides general alert details. Use this information to understand the alert's origin and determine if the alert is relevant to your investigation.
 
-{es-sec} collects threat intelligence data for all alerts. Fields that show threat intelligence data are appended with an informational icon and placed after general alert details on the *Summary* tab.
+TIP: To view more details about the rule that produced the alert, click *View Rule detail page*.
+
+[role="screenshot"]
+image::images/reason-section.png[Shows the Reason section of an alert]
+
+The *Document Summary* section provides general alert details, including any available threat intelligence data. Use this information to investigate what generated the alert.
+
+[role="screenshot"]
+image::images/document-summary-section.png[Shows the Document Summary section of an alert]
+
+{elastic-sec} collects threat intelligence data for all alerts. Fields that show threat intelligence data display an informational icon.
 
 [role="screenshot"]
 image::images/threat-intel-fields.png[Shows a field with threat intel]
 
-When gathering threat intelligence, {es-sec} queries indicator data from the past 30 days to find threat intelligence for the following fields.
-If these fields aren't present, {es-sec} does not perform the query and no additional threat intelligence is displayed.
-
-TIP: To learn more about the query, select the **Threat Intel** tab, then click the **Inspect** icon next to the threat you want to inspect.
+When gathering threat intelligence data for an alert, {elastic-sec} queries the alert for indicator matches from the past 30 days. The query looks for the following fields:
 
 - `file.hash.md5`: The MD5 hash
 - `file.hash.sha1`: The SHA1 hash
@@ -87,19 +94,28 @@ TIP: To learn more about the query, select the **Threat Intel** tab, then click 
 - `url.full`: The full URL of the event source
 - `registry.path`: The full registry path, including the hive, key, and value
 
-Additional threat intelligence data is generated for indicator match alerts when indicators are matched with source events, as outlined by the conditions in the relevant indicator match rule.
+If these fields aren't available, {elastic-sec} does not perform the query and does not display threat intelligence data for the alert.
+
+TIP: To learn more about the query, select the **Threat Intel** tab, then click the **Inspect** button next to the threat you want to inspect.
+
+Additional threat intelligence data is generated for indicator match alerts when indicators are matched with source events, as outlined by the conditions in the relevant indicator match rule. Indicator match alerts always populate the *Threat Matched Detected* section under the *Threat Intel* tab with additional threat match data.
 
 *Threat Intel*
 
-Shows the number of individual threats matching the alert in reverse chronological order, with the most recent threats at the top. Each threat is labelled with values from the `matched.field` and `matched.atomic` fields. All mapped fields are displayed for each matched threat.
+The *Threat Intel* tab shows the number of individual threats matching the alert. You can expand and collapse threat details by clicking the arrow button at the end of the threat label. Each threat is labelled with values from the `matched.field` and `matched.atomic` fields and displays the threat intelligence provider. If the alert does not contain threat intelligence data, the *Threat Intel* tab displays a message that none is available.
 
-NOTE: If the alert does not contain threat intelligence data, the *Threat Intel* tab displays a message that none is available and provides a link to Threat Intel module documentation. The event enrichment query uses the indices specified in the `securitySolution:defaultThreatIndex` advanced setting. For more information, see <<update-threat-intel-indices, Update default Elastic Security threat intelligence indices>>.
+Matched threats are organized into several sections, described below. Within each section, matched threats are shown in reverse chronological order, with the most recent at the top. All mapped fields are displayed for each matched threat.
+
+* *Threat Matched Detected*: This section is solely reserved for threat indicator matches identified by an indicator match rule. Threat indicator matches are produced whenever event data matches a threat indicator field value in your indicator index. If indicator threat matches are not discovered, the section displays a message that none are available.
+* *Enriched with Threat Intelligence*: This section shows indicator matches that {elastic-sec} found when querying the alert for fields with threat intelligence. You can use the date time picker to modify the query time frame, which looks at the past 30 days by default. Click the **Inspect** button, located on the far right of the threat label, to view more information on the query. If threat matches are not discovered within the selected time frame, the section displays a message that none are available.
+
+NOTE: The event enrichment query uses the indices specified in the `securitySolution:defaultThreatIndex` advanced setting. For more information, see <<update-threat-intel-indices, Update default Elastic Security threat intelligence indices>>.
 
 *Table*
 
 Shows the alert details in table format. Alert details are organized into field value pairs.
 
-*JSON View*
+*JSON*
 
 Shows the alert details in JSON format.
 
