@@ -482,7 +482,7 @@ def create_documentation(package_release):
             file_text = file_text + "\n==== Investigation guide" + "\n\n"
             file_text = file_text + "\n[source,markdown]\n"
             file_text = file_text + "----------------------------------" + "\n"
-            file_text = file_text + re.sub(' +', ' ', textwrap.fill(rule['note'], width=70)) + "\n"
+            file_text = file_text + rule['note'] + "\n"
             file_text = file_text + "----------------------------------" + "\n\n"
         if 'query' in rule:
             file_text = file_text + "\n==== Rule query\n\n"
