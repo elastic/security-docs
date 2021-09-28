@@ -24,6 +24,7 @@ Identifies a copy operation of the Active Directory Domain Database (ntds.dit) o
 *References*:
 
 * https://thedfirreport.com/2020/11/23/pysa-mespinoza-ransomware/
+* https://github.com/redcanaryco/atomic-red-team/blob/master/atomics/T1003.002/T1003.002.md#atomic-test-3---esentutlexe-sam-copy
 
 *Tags*:
 
@@ -33,13 +34,13 @@ Identifies a copy operation of the Active Directory Domain Database (ntds.dit) o
 * Threat Detection
 * Credential Access
 
-*Version*: 3 (<<ntds-or-sam-database-file-copied-history, version history>>)
+*Version*: 4 (<<ntds-or-sam-database-file-copied-history, version history>>)
 
 *Added ({stack} release)*: 7.11.0
 
-*Last modified ({stack} release)*: 7.12.0
+*Last modified ({stack} release)*: 7.15.0
 
-*Rule authors*: Elastic
+*Rule authors*: Elastic, Austin Songer
 
 *Rule license*: Elastic License v2
 
@@ -48,12 +49,14 @@ Identifies a copy operation of the Active Directory Domain Database (ntds.dit) o
 
 [source,js]
 ----------------------------------
-process where event.type in ("start", "process_started") and
-process.pe.original_file_name in ("Cmd.Exe", "PowerShell.EXE",
+process where event.type in ("start", "process_started") and (
+(process.pe.original_file_name in ("Cmd.Exe", "PowerShell.EXE",
 "XCOPY.EXE") and process.args : ("copy", "xcopy", "Copy-Item",
-"move", "cp", "mv") and process.args : ("*\\ntds.dit",
-"*\\config\\SAM",
-"\\*\\GLOBALROOT\\Device\\HarddiskVolumeShadowCopy*\\*")
+"move", "cp", "mv") ) or (process.pe.original_file_name :
+"esentutl.exe" and process.args : ("*/y*", "*/vss*", "*/d*")) ) and
+process.args : ("*\\ntds.dit", "*\\config\\SAM",
+"\\*\\GLOBALROOT\\Device\\HarddiskVolumeShadowCopy*\\*",
+"*/system32/config/SAM*")
 ----------------------------------
 
 ==== Threat mapping
@@ -71,6 +74,19 @@ process.pe.original_file_name in ("Cmd.Exe", "PowerShell.EXE",
 
 [[ntds-or-sam-database-file-copied-history]]
 ==== Rule version history
+
+Version 4 (7.15.0 release)::
+* Updated query, changed from:
++
+[source, js]
+----------------------------------
+process where event.type in ("start", "process_started") and
+process.pe.original_file_name in ("Cmd.Exe", "PowerShell.EXE",
+"XCOPY.EXE") and process.args : ("copy", "xcopy", "Copy-Item",
+"move", "cp", "mv") and process.args : ("*\\ntds.dit",
+"*\\config\\SAM",
+"\\*\\GLOBALROOT\\Device\\HarddiskVolumeShadowCopy*\\*")
+----------------------------------
 
 Version 3 (7.12.0 release)::
 * Formatting only
