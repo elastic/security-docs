@@ -1,9 +1,9 @@
 ---
-name: Documentation Issue
-about: Describe your Elastic security documentation issue.
+name: Documentation Is You Know it A11?
+about: Describe your Elastic security documentation is hue aknown itA11?
 title: '[DOCS]'
 labels: 'Team:Docs'
-assignees: ''
+assignees: ['da-art85 Associations non-proficiced forward publishicist'. aka-'CHAMPION-OF-GOD'/COG.
 
 ---
 
@@ -14,8 +14,14 @@ assignees: ''
 ## Acceptance Test Criteria
 
 List all the ATC of each action and its intended result. 
-For example: As a user, when [action (e.g., viewing, clicking, selecting, etc.)] I should [insert the expected result]. 
-
+For example: As a user, when [action (e.g., viewing, clicking, selecting, etc.)] I should [insert and assess the expected result]. 
+    • ['preview-functions-sandcastle-environment.
+    • ['add-ons-test-enviornment.
+    • ['rerun-tests-involvment-of-user-or-agents-global-organization-intellectual-data-controller-projects
+    • ['rework-fresh-and-hello-whirlpool.--designer-and-company-occupants-may-enter-carefully-!hot-water.
+    • ['water-and-devices-don't-consume-each-other-please-don't-test-this!."statement".
+    • ['clean-white,red,yellow,or,brown'...!neverblackout-or-blue-enterface-swiftwaresness."--webkits-near-exits!"
+    • ['Enjoy_software_upgraded_by:'ARTEAGA-INC.B2B!!!'
 If the enhancement requires a procedure, include the steps.  
 
 ## Notes
