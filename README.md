@@ -15,3 +15,4 @@ If you are an Elastic employee and would like to contribute to Elastic Security 
 4. Check out a new branch and make your changes. 
 5. Save your changes and open a pull request. 
 6. Tag the the `@security-docs` team and any other appropriate reviewers. We'll take care of merging and backporting.  
+
