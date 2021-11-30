@@ -1,0 +1,82 @@
+[[host-risk-score]]
+== Host Risk Score metadata
+
+The Host Risk Score feature highlights risky hosts from within your environment. It utilizes a transform with a scripted metric aggregation to calculate host risk scores based on detection rule alerts with an "open" status within a 5-day window. The transform runs hourly to keep the score updated as new detection rule alerts are generated.
+
+The contribution of each rule to the host risk score is calculated as a function of the rule risk score (`signal.rule.risk_score`) and a time decay factor to reduce the contribution of stale alerts, while considering recent alerts. A weighted sum of the individual time-corrected rule risks is then applied to the risk score. As such, rules with a higher time-corrected risk also have a higher weight. Each host risk score is on a scale of 0 to 100.
+
+The following table shows how risk levels are applied to a host, based on the normalized risk score:
+
+[width="100%",options="header"]
+|==============================================
+|Risk level |Host Risk Score
+
+|Unknown |< 20
+|Low |20-40
+|Moderate |40-70
+|High     | 70-90
+|Critical  | > 90
+
+
+|==============================================
+
+[discrete]
+=== Deploy the Host Risk Score package
+
+To deploy the Host Risk Score framework in your environment, follow the steps outlined in the https://github.com/elastic/detection-rules/blob/main/docs/experimental-machine-learning/host-risk-score.md[readme file]. These instructions also include steps to enable the `riskyHostsEnabled` feature flag.
+
+NOTE: To view host risk score data on the {elastic-sec} Overview page and the Alert details flyout, you must enable the feature flag. However, enabling the feature flag is NOT required to view the dashboards.
+
+[discrete]
+=== View host risk score data
+
+If the `riskyHostsEnabled` feature flag is enabled:
+
+. Go to the {security-app}.
+. On the Overview page, locate the *Current host risk scores* card in the lower-right corner.
+. Click *View dashboard*.
+
+[role="screenshot"]
+image::images/host-score-overview.png[]
+
+If the `riskyHostsEnabled` feature flag is NOT enabled:
+
+. In {kib}, go to *Analytics -> Dashboard*.
+. Select one of the following Host Risk Score dashboards:
+* Current Risk Score for Hosts
+* Current Risk Score for Hosts v2
+* Drilldown of Host Risk Score
+* Host Risk Score v2
++
+[role="screenshot"]
+image::images/select-dashboard.png[]
+. In the *Current Risk Scores for Hosts* list, hover your cursor over the host name to view, click the *+* button, then select *Go to Dashboard*.
++
+[role="screenshot"]
+image::images/go-to-dashboard.png[]
+
+TIP: It is recommended you analyze hosts with the highest risk scores -- or those in the `Critical` and `Moderate` categories first.
+
+[role="screenshot"]
+image::images/full-dashboard.png[]
+
+Use the histogram to track how a particular host has been associated with risky alerts over time. To specify a date range, you can use the date and time picker or drag and select a time range within the histogram.
+
+[role="screenshot"]
+image::images/histogram.png[]
+
+The data tables beneath the histogram display associated rules, users, and MITRE tactics of risky hosts. The table data is sorted in reverse chronological order by default, with the highest total risk score at the top. Use this information to triage security alerts that pose the highest risk to your network.
+
+To go to the associated host's detail page, hover your cursor over a rule name, click the *+* button, then select *Go to Host View*.
+
+[role="screenshot"]
+image::images/go-to-host.png[]
+
+NOTE: The cumulative risk score, located in the histogram, is the sum of the host risk score over the selected time frame. The total risk score is the sum of the rule's risk on a particular host. For example, if you have 100 rule hits for a rule with a rule risk score of 73, the total risk score is 7300.
+
+*Host risk score in Alert details flyout*
+
+If the `riskyHostsEnabled` feature flag is enabled, the host risk score keyword is displayed in the *Overview* tab of the Alert details flyout.
+
+[role="screenshot"]
+image::images/score-in-flyout.png[]
