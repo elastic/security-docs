@@ -1,15 +1,15 @@
-[[host-isolation-api]]
-=== Isolate a host
+[[host-isolation-release-api]]
+=== Release an isolated host
 
-Isolates a host running {endpoint-sec} from the network.
+Removes a host's isolation status and allows it to rejoin a network.
 
 NOTE: Console supports Elasticsearch APIs only. Console doesn't allow interactions with {kib} APIs. You must use `curl` or another HTTP tool instead. For more information, refer to https://www.elastic.co/guide/en/kibana/current/console-kibana.html[Run Elasticsearch API requests].
 
-`Isolated` is a persistent status until the endpoint is given a release command. You must have the `superuser` role to perform this action and at least a Platinum license.
+You must have the `superuser` role to perform this action. It is available to all license levels.
 
 ==== Request URL
 
-`POST <kibana host>:<port>/api/endpoint/isolate`
+`POST <kibana host>:<port>/api/endpoint/unisolate`
 
 ==== Request body
 
@@ -19,57 +19,59 @@ A JSON object with these fields:
 |==============================================
 |Name |Type |Description |Required
 
-|`endpoint_ids` |Array (String) |The IDs of each endpoint you want to isolate. |Yes
-|`alert_ids` |Array (String) |If this action is associated with any alerts, they can be specified here. The isolated event will be logged in any cases associated with the specified alerts. |No
+|`endpoint_ids` |Array (String) |The IDs of each endpoint you want to release. |Yes
+|`alert_ids` |Array (String) |If this action is associated with any alerts, they can be specified here. The released event will be logged in cases associated with the specified alerts. |No
 |`case_ids` |Array (String) |Logs the action taken on specified cases. |No
-|`comment` |String |Attach a comment to this action's log. The comment text will appear in associated cases. |No
+|`comment` |String |Attaches a comment to this action's log. The comment text will appear in associated cases. |No
 |==============================================
-
 
 ===== Example requests
 
-Isolates a single host with an `endpoint_id` value of `ed518850-681a-4d60-bb98-e22640cae2a8`:
+Releases a single host with an `endpoint_id` value of `ed518850-681a-4d60-bb98-e22640cae2a8`:
 
 [source,sh]
 --------------------------------------------------
-POST /api/endpoint/isolate
+POST /api/endpoint/unisolate
 {
   "endpoint_ids": ["ed518850-681a-4d60-bb98-e22640cae2a8"]
 }
 --------------------------------------------------
 // KIBANA
 
-Isolates several hosts; includes a comment:
+
+Releases several hosts; includes a comment:
 
 [source,sh]
 --------------------------------------------------
-POST /api/endpoint/isolate
+POST /api/endpoint/unisolate
 {
   "endpoint_ids": [
   	"9972d10e-4b9e-41aa-a534-a85e2a28ea42",
   	"bc0e4f0c-3bca-4633-9fee-156c0b505d16",
   	"fa89271b-b9d4-43f2-a684-307cffddeb5a"
   ],
-  "comment": "Locked down, pending further investigation"
+  "comment": "Benign process identified, releasing group"
 }
 --------------------------------------------------
 // KIBANA
 
-Isolates hosts with an associated case; includes a comment:
+
+Releases hosts with an associated case; includes a comment.
 
 [source,sh]
 --------------------------------------------------
-POST /api/endpoint/isolate
+POST /api/endpoint/unisolate
 {
   "endpoint_ids": [
   	"1aa1f8fd-0fb0-4fe4-8c30-92068272d3f0",
   	"b30a11bf-1395-4707-b508-fbb45ef9793e"
   ],
   "case_ids": ["4976be38-c134-4554-bd5e-0fd89ce63667"]
-  "comment": "Isolating as initial response"
+  "comment": "Remediation complete, restoring network"
 }
 --------------------------------------------------
 // KIBANA
+
 
 ===== Response code
 
@@ -77,7 +79,7 @@ POST /api/endpoint/isolate
    Indicates a successful call.
 
 `403`::
-	Indicates insufficient user role (must be `superuser`), or unsupported license level (minimum Platinum license required).
+	Indicates insufficient user role (must be `superuser`).
 
 `500`::
 	General error. A response message will indicate the failure.
