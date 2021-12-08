@@ -33,11 +33,11 @@ Identifies the use of Distributed Component Object Model (DCOM) to execute comma
 * Threat Detection
 * Lateral Movement
 
-*Version*: 2 (<<incoming-dcom-lateral-movement-via-mshta-history, version history>>)
+*Version*: 4 (<<incoming-dcom-lateral-movement-via-mshta-history, version history>>)
 
 *Added ({stack} release)*: 7.11.0
 
-*Last modified ({stack} release)*: 7.12.0
+*Last modified ({stack} release)*: 7.16.0
 
 *Rule authors*: Elastic
 
@@ -52,10 +52,10 @@ sequence with maxspan=1m [process where event.type in ("start",
 "process_started") and process.name : "mshta.exe" and
 process.args : "-Embedding" ] by host.id, process.entity_id
 [network where event.type == "start" and process.name : "mshta.exe"
-and network.direction == "incoming" and network.transport ==
-"tcp" and source.port > 49151 and destination.port > 49151 and
-not source.address in ("127.0.0.1", "::1") ] by host.id,
-process.entity_id
+and network.direction : ("incoming", "ingress") and
+network.transport == "tcp" and source.port > 49151 and
+destination.port > 49151 and not source.address in ("127.0.0.1",
+"::1") ] by host.id, process.entity_id
 ----------------------------------
 
 ==== Threat mapping
@@ -71,8 +71,33 @@ process.entity_id
 ** ID: T1021
 ** Reference URL: https://attack.mitre.org/techniques/T1021/
 
+
+* Tactic:
+** Name: Defense Evasion
+** ID: TA0005
+** Reference URL: https://attack.mitre.org/tactics/TA0005/
+* Technique:
+** Name: Signed Binary Proxy Execution
+** ID: T1218
+** Reference URL: https://attack.mitre.org/techniques/T1218/
+
 [[incoming-dcom-lateral-movement-via-mshta-history]]
 ==== Rule version history
+
+Version 4 (7.16.0 release)::
+* Updated query, changed from:
++
+[source, js]
+----------------------------------
+sequence with maxspan=1m [process where event.type in ("start",
+"process_started") and process.name : "mshta.exe" and
+process.args : "-Embedding" ] by host.id, process.entity_id
+[network where event.type == "start" and process.name : "mshta.exe"
+and network.direction == "incoming" and network.transport ==
+"tcp" and source.port > 49151 and destination.port > 49151 and
+not source.address in ("127.0.0.1", "::1") ] by host.id,
+process.entity_id
+----------------------------------
 
 Version 2 (7.12.0 release)::
 * Formatting only
