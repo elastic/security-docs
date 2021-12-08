@@ -232,10 +232,17 @@ Yes, if action is `update`
 
 [[updates-object-schema]]
 
-===== `Updates` values
+
+
+Update object consist of 2 properties:
+
+* `type` - enum - that defines what will updated in rules
+* `value` - any - value which will be applied in update.
+
+===== Possible `Update` object values
 [width="100%",options="header"]
 |==============================================
-|Type |Value format |Description
+|`type` field |`value` field |Description
 | `add_tags` | String[] |  Adds tags to rules
 | `delete_tags` | String[] |  Delete tags from rules
 | `set_tags` | String[] |  Set value as tags in rules
@@ -250,7 +257,7 @@ Yes, if action is `update`
  |  Adds timeline to rule
 |==============================================
 
-====== Example request
+====== Example requests
 
 The following request will activate all rules that have the `test` tag:
 
@@ -262,6 +269,17 @@ POST api/detection_engine/rules/_bulk_action
   "action": "enable"
 }
 --------------------------------------------------
+
+The following request will add tags `tag-1`, `tag-2` to all rules that have the `test` tag:
+[source,console]
+--------------------------------------------------
+POST api/detection_engine/rules/_bulk_action
+{
+  "query": "alert.attributes.tags: \"test\"",
+  "action": "update",
+  "updates": [{ action: "add_tags", value:["tag-1", "tag-2"] }]
+}
+--------------------------------------------------
 // KIBANA
 
 ===== Response code
@@ -271,7 +289,7 @@ POST api/detection_engine/rules/_bulk_action
 
 ===== Response payload
 
-For `enable`, `disable`, `delete`, and `duplicate` actions, a JSON object containing the outcome of the call and the number of affected rules:
+For `enable`, `disable`, `delete`, `update`, and `duplicate` actions, a JSON object containing the outcome of the call and the number of affected rules:
 
 [source,json]
 --------------------------------------------------
