@@ -29,11 +29,11 @@ Identifies remote execution of Windows services over remote procedure call (RPC)
 * Threat Detection
 * Lateral Movement
 
-*Version*: 2 (<<remotely-started-services-via-rpc-history, version history>>)
+*Version*: 3 (<<remotely-started-services-via-rpc-history, version history>>)
 
 *Added ({stack} release)*: 7.11.0
 
-*Last modified ({stack} release)*: 7.12.0
+*Last modified ({stack} release)*: 7.16.0
 
 *Rule authors*: Elastic
 
@@ -45,8 +45,8 @@ Identifies remote execution of Windows services over remote procedure call (RPC)
 [source,js]
 ----------------------------------
 sequence with maxspan=1s [network where process.name :
-"services.exe" and network.direction == "incoming" and
-network.transport == "tcp" and source.port >= 49152 and
+"services.exe" and network.direction : ("incoming", "ingress")
+and network.transport == "tcp" and source.port >= 49152 and
 destination.port >= 49152 and source.address not in ("127.0.0.1",
 "::1") ] by host.id, process.entity_id [process where
 event.type in ("start", "process_started") and process.parent.name :
@@ -72,6 +72,24 @@ is noisy in your environment */ /* and not process.name :
 
 [[remotely-started-services-via-rpc-history]]
 ==== Rule version history
+
+Version 3 (7.16.0 release)::
+* Updated query, changed from:
++
+[source, js]
+----------------------------------
+sequence with maxspan=1s [network where process.name :
+"services.exe" and network.direction == "incoming" and
+network.transport == "tcp" and source.port >= 49152 and
+destination.port >= 49152 and source.address not in ("127.0.0.1",
+"::1") ] by host.id, process.entity_id [process where
+event.type in ("start", "process_started") and process.parent.name :
+"services.exe" and not (process.name : "svchost.exe" and
+process.args : "tiledatamodelsvc") and not (process.name :
+"msiexec.exe" and process.args : "/V") /* uncomment if psexec
+is noisy in your environment */ /* and not process.name :
+"PSEXESVC.exe" */ ] by host.id, process.parent.entity_id
+----------------------------------
 
 Version 2 (7.12.0 release)::
 * Formatting only
