@@ -36,11 +36,11 @@ The hosts file on endpoints is used to control manual IP address to hostname res
 * Threat Detection
 * Impact
 
-*Version*: 5 (<<hosts-file-modified-history, version history>>)
+*Version*: 6 (<<hosts-file-modified-history, version history>>)
 
 *Added ({stack} release)*: 7.10.0
 
-*Last modified ({stack} release)*: 7.13.0
+*Last modified ({stack} release)*: 7.16.0
 
 *Rule authors*: Elastic
 
@@ -53,7 +53,7 @@ The hosts file on endpoints is used to control manual IP address to hostname res
 ----------------------------------
 ## Config
 
-For Windows systems using Auditbeat, this rule requires adding 'C:/Windows/System32/drivers/etc' as an additional path in the 'file_integrity' module of auditbeat.yml.
+For Windows systems using Auditbeat, this rule requires adding `C:/Windows/System32/drivers/etc` as an additional path in the 'file_integrity' module of auditbeat.yml.
 ----------------------------------
 
 
@@ -62,9 +62,16 @@ For Windows systems using Auditbeat, this rule requires adding 'C:/Windows/Syste
 
 [source,js]
 ----------------------------------
-file where event.type in ("change", "creation") and file.path :
-("/private/etc/hosts", "/etc/hosts",
-"?:\\Windows\\System32\\drivers\\etc\\hosts")
+any where /* file events for creation; file change events are not
+captured by some of the included sources for linux and so may
+miss this, which is the purpose of the process + command line args
+logic below */ ( event.category == "file" and event.type in
+("change", "creation") and file.path : ("/private/etc/hosts",
+"/etc/hosts", "?:\\Windows\\System32\\drivers\\etc\\hosts") ) or
+/* process events for change targeting linux only */ (
+event.category == "process" and event.type in ("start") and
+process.name in ("nano", "vim", "vi", "emacs", "echo", "sed") and
+process.args : ("/etc/hosts") )
 ----------------------------------
 
 ==== Threat mapping
@@ -82,6 +89,16 @@ file where event.type in ("change", "creation") and file.path :
 
 [[hosts-file-modified-history]]
 ==== Rule version history
+
+Version 6 (7.16.0 release)::
+* Updated query, changed from:
++
+[source, js]
+----------------------------------
+file where event.type in ("change", "creation") and file.path :
+("/private/etc/hosts", "/etc/hosts",
+"?:\\Windows\\System32\\drivers\\etc\\hosts")
+----------------------------------
 
 Version 5 (7.13.0 release)::
 * Updated query, changed from:
