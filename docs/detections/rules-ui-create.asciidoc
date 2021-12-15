@@ -6,15 +6,6 @@ Rules run periodically and search for source events, matches, sequences, or {ml}
 that meet their criteria. When a rule's criteria are met, a detection alert is
 created.
 
-[IMPORTANT]
-==============
-To create or edit {ml} rules, you must have the
-https://www.elastic.co/subscriptions[appropriate license] or use a
-{ess-trial}[cloud deployment]. Additionally, you must have the
-{ref}/built-in-roles.html[`machine_learning_admin`] user role, and the selected
-{ml} job must be running for the rule to function correctly.
-==============
-
 You can create the following types of rules:
 
 * <<create-custom-rule, *Custom query*>>: Query-based rule, which searches the defined indices and
@@ -51,9 +42,7 @@ NOTE: You can add exceptions to custom query, machine learning, event correlatio
 
 If you are creating a custom query, threshold, or event correlation rule, you can preview the rule beforehand to see what kind of results you can expect. See <<preview-rules, Preview your rule>> in this topic for more information.
 
-For both prebuilt and custom rules, you can send notifications when alerts are created. Notifications can be sent via
-Email, PagerDuty, Slack, and Webhook, and can be configured when you create or
-edit a rule.
+For both prebuilt and custom rules, you can send notifications when alerts are created. Notifications can be sent via {jira}, Microsoft Teams, PagerDuty, Slack, and others, and can be configured when you create or edit a rule.
 
 Creating a new rule requires the following steps:
 
@@ -108,15 +97,30 @@ image::images/create-new-rule.png[]
 [discrete]
 [[create-ml-rule]]
 ==== Create a machine learning rule
+
+[IMPORTANT]
+==============
+To create or edit {ml} rules, you must have the https://www.elastic.co/subscriptions[appropriate license] or use a
+{ess-trial}[cloud deployment]. Additionally, you must have the {ref}/built-in-roles.html[`machine_learning_admin`] user 
+role, and the selected {ml} job must be running for the rule to function correctly.
+==============
+
 . To create a rule based on a {ml} anomaly threshold, select *Machine Learning*,
 then select:
 .. The required {ml} job(s).
 .. The anomaly score threshold above which alerts are created.
+. Make sure that the {ml} jobs required for the rule are running. If a required {ml} job is not running, an alert is displayed.
+.. Select **ML job settings** in the upper-right corner of the page, then search for the required {ml} job.
+.. Turn on the **Run job** switch for the required {ml} job.
++
+[role="screenshot"]
+image::images/rule-start-ml-job.png[]
++
 . Click **Continue**, then proceed with <<rule-ui-basic-params, configuring basic rule settings>>.
 
 [discrete]
 [[create-custom-rule]]
-==== Create a custom rule
+==== Create a custom query rule
 . To create a rule based on a KQL or Lucene query, select *Custom query*,
 then:
 .. Define which {es} indices the rule searches for alerts.
@@ -142,7 +146,7 @@ copies.
 image::images/rule-query-example.png[]
 +
 TIP: This example is based on the
-<<volume-shadow-copy-deletion-via-vssadmin, Volume Shadow Copy Deletion via VssAdmin>> prebuilt rule.
+<<prebuilt-rule-0-14-2-volume-shadow-copy-deleted-or-resized-via-vssadmin, Volume Shadow Copy Deleted or Resized via VssAdmin>> prebuilt rule.
 +
 . Continue with <<preview-rules, previewing the rule>> (optional) or click **Continue** to <<rule-ui-basic-params, configure basic rule settings>>.
 
@@ -231,7 +235,7 @@ wildcard expression: `*:*`.
 IMPORTANT: Data in indicator indices must be <<ecs-compliant-reqs, ECS compatible>>, and so it must contain a `@timestamp` field.
 +
 .. *Indicator index query*: The query and filters used to filter the fields from
-the indicator index patterns.
+the indicator index patterns. The default query (`@timestamp > "now-30d"`) checks the indicator index patterns for matched indicators that have occurred in the past 30 days.
 .. *Indicator mapping*: Compares the values of the specified event and indicator field
 values. When the field values are identical, an alert is generated. To define
 which field values are compared from the indices add the following:
@@ -425,14 +429,14 @@ NOTE: Notifications are sent only when new alerts are generated.
 +
 The available connector types are displayed.
 [role="screenshot"]
-image::images/available-action-types.png[]
+image::images/available-action-types.png[Shows available connector types]
 
 . Select the required connector type, which determines how notifications are sent. For example, if you select the {jira} connector, notifications are sent to your {jira} system.
 +
 NOTE: Each action type requires a connector. Connectors store the
 information required to send the notification from the external system. You can
 configure connectors while creating the rule or on the {kib} Rules and Connectors
-page (*Stack Management* -> *Rules and Connectors*). For more
+page (*Stack Management* -> *Rules and Connectors* -> *Connectors*). For more
 information, see {kibana-ref}/action-types.html[Action and connector types].
 +
 The selected connector type fields are displayed ({jira} example).
