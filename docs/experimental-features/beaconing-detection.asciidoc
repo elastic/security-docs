@@ -1,0 +1,48 @@
+[[beaconing-detection]]
+== Beaconing detection
+
+This feature provides an early warning system for command and control (C2) beaconing activity. It monitors network traffic for indicators of compromise (IOCs), and provides analytics to aid your threat hunting.
+
+=== Deploy the Beaconing detection package
+
+To deploy Beaconing detection in your environment, follow https://github.com/elastic/detection-rules/blob/main/docs/experimental-machine-learning/beaconing.md[these steps].
+
+The release package includes dashboards for monitoring beaconing activity in your environment. Users can review signals via a Lens dashboard called `Beaconing discovery`. 
+
+[role="screenshot"]
+image::images/beaconing-detection-1.png[]
+
+=== Feature details
+
+The feature uses a {ref}/transforms.html[transform] to segment network data by host and process name, then runs scripted metric aggregations on the host-process name pairs. For a given time window, the scripted metric aggregation checks each partition for the following:
+
+* Periodicity of signals, accounting for jitter.
+* Low variation of bytes sent from source to destination.
+* Low variation of bytes sent from destination to source.
+
+The transform also filters out trusted applications and IPs in an attempt to reduce false positives. The transform outputs information about the process and host indicators, and the detection. It runs every hour to poll for new beacons.
+
+
+=== Further customizations
+
+Advanced users can also tune the scripted metric aggregation's parameters, such as jitter percentage or time window. To overwrite the default parameters, delete the transform, change the parameters, and restart. The configurable parameters are as follows:
+
+* `number_buckets_in_range:`
+* `time_bucket_length:`
+* `number_destination_ips:`
+* `truncate_at:`
+* `max_beaconing_bytes_cov:`
+* `max_beaconing_count_rv:`
+* `min_beaconing_count_autocovariance:`
+* `min_number_periods:`
+* `min_not_empty:`
+* `max_jitter:`
+
+You can also make changes to the transform query. The default query looks for beaconing activity over a 6h time range, but you can change this to a different time range. As mentioned previously, beaconing is not a characteristic specific to malware and a lot of legitimate, benign processes also exhibit beacon-like activity. In order to reduce false positives, a list of starter filters are included by default in the transform query to exclude known beaconing processes, and IPs that fall into two groups:
+
+* The source IP is local and the destination is remote.
+* For certain Microsoft processes, the destination IP is in a Microsoft block.
+
+You can add to this list based on your environment.
+
+We are working towards embedding this feature in {elastic-sec}.
