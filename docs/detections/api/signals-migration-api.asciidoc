@@ -4,7 +4,7 @@
 
 After an upgrade of {kib}, the latest {es-sec} features will be available for any new <<detection-alert-def, detection alerts>> that are generated. However, in order to enable new features on existing detection alerts, migration may be necessary. See <<release-notes, Release Notes>> for instructions specific to your upgrade.
 
-NOTE: The {kib} Console supports only Elasticsearch APIs. You cannot interact with the {kib} APIs with the Console and must use `curl` or another HTTP tool instead. For more information, refer to https://www.elastic.co/guide/en/kibana/current/console-kibana.html[Console].
+NOTE: Console supports only Elasticsearch APIs. Console doesn't allow interactions with {kib} APIs. You must use `curl` or another HTTP tool instead. For more information, refer to {kibana-ref}/console-kibana.html[Run {es} API requests].
 
 Migrating detection alerts is performed at the index level and requires the following steps:
 
@@ -83,6 +83,28 @@ The above response shows two indices: `.siem-signals-default-000002` is outdated
 NOTE: Indices that do not contain detection alerts in the specified range will be filtered from the response.
 
 With the above info, we can compile a list of indices that we wish to migrate.
+
+*Find outdated detection alerts with threat intelligence data*
+
+After upgrading to {stack} version 7.15.x from release versions 7.12.0 through 7.14.2, you need to migrate detection alerts enriched with threat intelligence data to ensure threat intelligence properly displays in {elastic-sec}. Run this query to find outdated detection alerts with threat intelligence data:
+
+[source,json]
+--------------------------------------------------
+GET .siem-signals-{KIBANA SPACE ID}/_search
+{
+  "query": {
+    "nested": {
+      "path": "threat.indicator",
+      "query": {
+        "exists": {
+          "field": "threat.indicator.matched.*"
+        }
+      }
+    }
+  }
+}
+--------------------------------------------------
+
 
 [[migration-2]]
 [float]

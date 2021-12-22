@@ -414,7 +414,10 @@ def create_documentation(package_release):
         file_text = file_text + "*Rule type*: " + rule['type'] + "\n\n"
 
         if 'machine_learning_job_id' in rule:
-            file_text = file_text + "*Machine learning job*: " + rule['machine_learning_job_id'] + "\n\n"
+            # can be a list or str
+            job_id = rule['machine_learning_job_id']
+            jod_id_str = ', '.join(job_id) if isinstance(job_id, list) else job_id
+            file_text = file_text + "*Machine learning job*: " + jod_id_str + "\n\n"
             file_text = file_text + "*Machine learning anomaly threshold*: " + str(rule['anomaly_threshold']) + "\n\n"
         if 'index' in rule:
             if len(rule['index']) != 0:
@@ -477,7 +480,10 @@ def create_documentation(package_release):
 
         if 'note' in rule:
             file_text = file_text + "\n==== Investigation guide" + "\n\n"
-            file_text = file_text + format_text(rule['note']) + "\n"
+            file_text = file_text + "\n[source,markdown]\n"
+            file_text = file_text + "----------------------------------" + "\n"
+            file_text = file_text + rule['note'] + "\n"
+            file_text = file_text + "----------------------------------" + "\n\n"
         if 'query' in rule:
             file_text = file_text + "\n==== Rule query\n\n"
             file_text = file_text + "\n[source,js]\n"

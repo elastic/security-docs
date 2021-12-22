@@ -34,11 +34,11 @@ Identifies potential behavior of SharpRDP, which is a tool that can be used to p
 * Threat Detection
 * Lateral Movement
 
-*Version*: 2 (<<potential-sharprdp-behavior-history, version history>>)
+*Version*: 4 (<<potential-sharprdp-behavior-history, version history>>)
 
 *Added ({stack} release)*: 7.11.0
 
-*Last modified ({stack} release)*: 7.12.0
+*Last modified ({stack} release)*: 7.16.0
 
 *Rule authors*: Elastic
 
@@ -53,16 +53,16 @@ Identifies potential behavior of SharpRDP, which is a tool that can be used to p
 powershell, taskmgr or tsclient, followed by process execution within
 1m */ sequence by host.id with maxspan=1m [network where event.type
 == "start" and process.name : "svchost.exe" and destination.port ==
-3389 and network.direction == "incoming" and network.transport ==
-"tcp" and source.address != "127.0.0.1" and source.address != "::1"
-] [registry where process.name : "explorer.exe" and
-registry.path : ("HKEY_USERS\\*\\Software\\Microsoft\\Windows\\Current
-Version\\Explorer\\RunMRU\\*") and registry.data.strings :
-("cmd.exe*", "powershell.exe*", "taskmgr*", "\\\\tsclient\\*.exe\\*")
-] [process where event.type in ("start", "process_started") and
-(process.parent.name : ("cmd.exe", "powershell.exe", "taskmgr.exe") or
-process.args : ("\\\\tsclient\\*.exe")) and not process.name :
-"conhost.exe" ]
+3389 and network.direction : ("incoming", "ingress") and
+network.transport == "tcp" and source.address != "127.0.0.1" and
+source.address != "::1" ] [registry where process.name :
+"explorer.exe" and registry.path : ("HKEY_USERS\\*\\Software\\Micr
+osoft\\Windows\\CurrentVersion\\Explorer\\RunMRU\\*") and
+registry.data.strings : ("cmd.exe*", "powershell.exe*", "taskmgr*",
+"\\\\tsclient\\*.exe\\*") ] [process where event.type in
+("start", "process_started") and (process.parent.name : ("cmd.exe",
+"powershell.exe", "taskmgr.exe") or process.args :
+("\\\\tsclient\\*.exe")) and not process.name : "conhost.exe" ]
 ----------------------------------
 
 ==== Threat mapping
@@ -80,6 +80,27 @@ process.args : ("\\\\tsclient\\*.exe")) and not process.name :
 
 [[potential-sharprdp-behavior-history]]
 ==== Rule version history
+
+Version 4 (7.16.0 release)::
+* Updated query, changed from:
++
+[source, js]
+----------------------------------
+/* Incoming RDP followed by a new RunMRU string value set to cmd,
+powershell, taskmgr or tsclient, followed by process execution within
+1m */ sequence by host.id with maxspan=1m [network where event.type
+== "start" and process.name : "svchost.exe" and destination.port ==
+3389 and network.direction == "incoming" and network.transport ==
+"tcp" and source.address != "127.0.0.1" and source.address != "::1"
+] [registry where process.name : "explorer.exe" and
+registry.path : ("HKEY_USERS\\*\\Software\\Microsoft\\Windows\\Current
+Version\\Explorer\\RunMRU\\*") and registry.data.strings :
+("cmd.exe*", "powershell.exe*", "taskmgr*", "\\\\tsclient\\*.exe\\*")
+] [process where event.type in ("start", "process_started") and
+(process.parent.name : ("cmd.exe", "powershell.exe", "taskmgr.exe") or
+process.args : ("\\\\tsclient\\*.exe")) and not process.name :
+"conhost.exe" ]
+----------------------------------
 
 Version 2 (7.12.0 release)::
 * Formatting only

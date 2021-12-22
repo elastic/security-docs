@@ -33,11 +33,11 @@ The Debugger and SilentProcessExit registry keys can allow an adversary to inter
 * Threat Detection
 * Persistence
 
-*Version*: 3 (<<image-file-execution-options-injection-history, version history>>)
+*Version*: 4 (<<image-file-execution-options-injection-history, version history>>)
 
 *Added ({stack} release)*: 7.11.0
 
-*Last modified ({stack} release)*: 7.12.0
+*Last modified ({stack} release)*: 7.14.0
 
 *Rule authors*: Elastic
 
@@ -57,8 +57,9 @@ NT\\CurrentVersion\\Image File Execution Options\\*\\Debugger",
 NT\\CurrentVersion\\SilentProcessExit\\*\\MonitorProcess",
 "HKLM\\SOFTWARE\\WOW6432Node\\Microsoft\\Windows
 NT\\CurrentVersion\\SilentProcessExit\\*\\MonitorProcess") and /*
-add FPs here */ not registry.data.strings : ("C:\\Program
-Files*\\ThinKiosk\\thinkiosk.exe", "*\\PSAppDeployToolkit\\*")
+add FPs here */ not registry.data.strings regex~ ("""C:\\Program
+Files( \(x86\))?\\ThinKiosk\\thinkiosk\.exe""",
+""".*\\PSAppDeployToolkit\\.*""")
 ----------------------------------
 
 ==== Threat mapping
@@ -76,6 +77,24 @@ Files*\\ThinKiosk\\thinkiosk.exe", "*\\PSAppDeployToolkit\\*")
 
 [[image-file-execution-options-injection-history]]
 ==== Rule version history
+
+Version 4 (7.14.0 release)::
+* Updated query, changed from:
++
+[source, js]
+----------------------------------
+registry where length(registry.data.strings) > 0 and registry.path :
+("HKLM\\SOFTWARE\\Microsoft\\Windows NT\\CurrentVersion\\Image File
+Execution Options\\*.exe\\Debugger",
+"HKLM\\SOFTWARE\\WOW6432Node\\Microsoft\\Windows
+NT\\CurrentVersion\\Image File Execution Options\\*\\Debugger",
+"HKLM\\SOFTWARE\\Microsoft\\Windows
+NT\\CurrentVersion\\SilentProcessExit\\*\\MonitorProcess",
+"HKLM\\SOFTWARE\\WOW6432Node\\Microsoft\\Windows
+NT\\CurrentVersion\\SilentProcessExit\\*\\MonitorProcess") and /*
+add FPs here */ not registry.data.strings : ("C:\\Program
+Files*\\ThinKiosk\\thinkiosk.exe", "*\\PSAppDeployToolkit\\*")
+----------------------------------
 
 Version 3 (7.12.0 release)::
 * Formatting only
