@@ -8,7 +8,7 @@ This feature provides an early warning system for command and control beaconing 
 
 To deploy the network beaconing framework in your environment using the https://github.com/elastic/detection-rules/releases/tag/ML-Beaconing-20211216-1[release package], follow https://github.com/elastic/detection-rules/blob/main/docs/experimental-machine-learning/beaconing.md[these steps].
 
-The release package includes dashboards for monitoring beaconing activity in your environment. Users can review signals via a Lens dashboard called `Network beaconing`.
+The release package includes dashboards for monitoring beaconing activity in your environment. You can review signals via a Lens dashboard called Network beaconing.
 
 [role="screenshot"]
 image::images/beaconing-detection-1.png[]
@@ -16,13 +16,13 @@ image::images/beaconing-detection-1.png[]
 [discrete]
 === Feature details
 
-The feature uses a {ref}/transforms.html[transform] to segment network data by host and process name, then runs scripted metric aggregations on the host-process name pairs. For a given time window, the scripted metric aggregation checks each partition for the following:
+This feature uses a {ref}/transforms.html[transform] to segment network data by host and process name, then runs scripted metric aggregations on the host-process name pairs. For a given time window, the scripted metric aggregation checks each partition for the following:
 
 * Signals repeating at regular intervals, accounting for minor variations in those intervals.
 * Low variation of bytes sent from source to destination.
 * Low variation of bytes sent from destination to source.
 
-The transform, which runs every hour, also filters out trusted applications and IPs in an attempt to reduce false positives. The transform outputs information about the detection and the process and host indicators, for example: 
+The transform, which runs every hour, also filters out trusted applications and IPs in an attempt to reduce false positives. The transform outputs information about the detection and the process and host indicators, for example:
 
 [role="screenshot"]
 image::images/beaconing-detection-2.png[]
@@ -32,18 +32,18 @@ image::images/beaconing-detection-2.png[]
 
 Advanced users can also tune the scripted metric aggregation's parameters, such as jitter percentage or time window. To overwrite the default parameters: delete the transform, change the parameters, and restart the transform. The configurable parameters are:
 
-* `number_buckets_in_range:` The number of time buckets into which the time window is split. Using more buckets will improve estimates for the various statistics, but also increase resource usage.
-* `time_bucket_length:` The length of each time bucket. The larger this value the longer the time window. Set this longer to check for very low frequency beacons.
-* `number_destination_ips:` The number of destination IPs to gather in the results. Setting this higher increases resource usage.
-* `max_beaconing_bytes_cov:` The maximum coefficient of variation in the payload bytes for the low source and destination bytes variance test. Higher values increase the chance of flagging traffic as beaconing, increasing https://en.wikipedia.org/wiki/Precision_and_recall[recall] while reducing https://en.wikipedia.org/wiki/Precision_and_recall[precision].
-* `max_beaconing_count_rv:` The maximum relative variance in the bucket counts for the high frequency beacon test. As with `max_beaconing_bytes_cov`, tuning this parameter involves a tradeoff between recall and precision.
+* `number_buckets_in_range`: The number of time buckets into which the time window is split. Using more buckets will improve estimates for the various statistics, but also increase resource usage.
+* `time_bucket_length`: The length of each time bucket. A higher value indicates a longer time window. Set this higher to check for very low-frequency beacons.
+* `number_destination_ips`: The number of destination IPs to gather in the results. Setting this higher increases resource usage.
+* `max_beaconing_bytes_cov`: The maximum coefficient of variation in the payload bytes for the low source and destination bytes variance test. Higher values increase the chance of flagging traffic as beaconing, increasing https://en.wikipedia.org/wiki/Precision_and_recall[recall] while reducing https://en.wikipedia.org/wiki/Precision_and_recall[precision].
+* `max_beaconing_count_rv`: The maximum relative variance in the bucket counts for the high frequency beacon test. As with `max_beaconing_bytes_cov`, tuning this parameter involves a tradeoff between recall and precision.
 * `truncate_at`: The lower and upper fraction of bucket values discarded when computing `max_beaconing_bytes_cov` and `max_beaconing_count_rv`. This allows you to ignore occasional changes in traffic patterns. However, if you retain too small a fraction of the data, these tests will be unreliable.
-* `min_beaconing_count_autocovariance:` The minimum autocorrelation of the signal for the low frequency beacon test. Lowering this value generally increases recall for malicious C2 beacons, while reducing precision.
-* `max_jitter:` The maximum amount of https://en.wikipedia.org/wiki/Jitter[jitter] assumed to be possible for a periodic beacon, as a fraction of its period.
+* `min_beaconing_count_autocovariance`: The minimum autocorrelation of the signal for the low-frequency beacon test. Lowering this value generally increases recall for malicious command and control beacons, while reducing precision.
+* `max_jitter`: The maximum amount of https://en.wikipedia.org/wiki/Jitter[jitter] assumed to be possible for a periodic beacon, as a fraction of its period.
 
 You can also make changes to the transform query. The default query looks for beaconing activity over a 6-hour time range, but you can use a different time range.
 
-As mentioned previously, beaconing is not used exclusively by malware. Many legitimate, benign processes also exhibit beacon-like activity. In order to reduce false positives, a list of starter filters is included by default in the transform query to exclude known beaconing processes, and IPs that fall into two groups:
+As mentioned previously, beaconing is not used exclusively by malware. Many legitimate, benign processes also exhibit beacon-like activity. In order to reduce false positives, a list of starter filters is included by default in the transform query to exclude known beaconing processes and IPs that fall into two groups:
 
 * The source IP is local and the destination is remote.
 * The destination IP is in a block of known Microsoft IP addresses.
