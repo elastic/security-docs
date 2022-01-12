@@ -7,33 +7,23 @@ NOTE: Console supports Elasticsearch APIs only. Console doesn't allow interactio
 
 ==== Request URL
 
-`POST <kibana host>:<port>/api/endpoint/metadata`
+`GET <kibana host>:<port>/api/endpoint/metadata`
 
 
-==== Request body
+==== URL query parameters
 
-A JSON object with these fields:
+All parameters are optional:
 
 [width="100%",options="header"]
 |==============================================
-|Name |Type |Description |Required
+|Name |Type |Description| Default
 
-|`paging_properties` |Array a|A set of page instruction Objects that contain the following:
+|`page` |number |The zero-based page of results to retrieve. | 0
+|`pageSize` |number |Size of results per page. 1 to 10000. | 10
+|`kuery` |string |A KQL string. |
+|`hostStatuses` |string[] a|A set of agent health statuses to filter by.
 
-* `page_size` (number): Size of results per page. 1 to 10000.
-* `page_index` (number): The zero-based page of results to retrieve.
-
-A sample value for `paging_properties` would be:
-
-`paging_properties: [{page_size: 20}, {page_index: 0}]`
-
- |No
-|`filters` |Object a|Filters to apply to the list query. It may contain the following filters as properties:
-
-* `kql` (string): A KQL string.
-* `host_status` (array, string): A set of agent health statuses to filter by.
-
-Accepted health status values are:
+Accepted host status values are:
 
 * `healthy`
 * `unhealthy`
@@ -42,7 +32,7 @@ Accepted health status values are:
 * `inactive`
 * `unenrolled`
 
-|No
+|
 |==============================================
 
 
@@ -52,13 +42,7 @@ List endpoints:
 
 [source,sh]
 --------------------------------------------------
-POST /api/endpoint/metadata
-{
-	"paging_properties": [
-		{ "page_size": 10 },
-		{ "page_index": 0 }
-	]
-}
+GET /api/endpoint/metadata
 --------------------------------------------------
 // KIBANA
 
@@ -66,16 +50,15 @@ Lists endpoints, filtered by Windows OS:
 
 [source,sh]
 --------------------------------------------------
-POST /api/endpoint/metadata
-{
-    "paging_properties": [
-        { "page_size": 10 },
-        { "page_index": 0 }
-    ],
-    "filters": {
-        "kql": "united.endpoint.host.os.name : \"Windows\""
-    }
-}
+GET /api/endpoint/metadata?kuery="united.endpoint.host.os.name : 'Windows'"
+--------------------------------------------------
+// KIBANA
+
+Lists endpoints, filtered by host status:
+
+[source,sh]
+--------------------------------------------------
+GET /api/endpoint/metadata?hostStatuses=["healthy", "updating"]
 --------------------------------------------------
 // KIBANA
 
@@ -90,7 +73,7 @@ POST /api/endpoint/metadata
 [source,json]
 --------------------------------------------------
 {
-    "hosts": [
+    "data": [
         {
             "host_status": "healthy",
             "metadata": {
@@ -310,8 +293,8 @@ POST /api/endpoint/metadata
             }
         }
     ],
-    "request_page_index": 0,
-    "request_page_size": 10,
-    "total": 2
+    "total": 2,
+    "page": 0,
+    "pageSize": 10
 }
 --------------------------------------------------
