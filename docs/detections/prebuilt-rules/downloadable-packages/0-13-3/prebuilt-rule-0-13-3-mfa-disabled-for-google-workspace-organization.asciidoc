@@ -1,51 +1,44 @@
-[[domain-added-to-google-workspace-trusted-domains]]
-=== Domain Added to Google Workspace Trusted Domains
+[[prebuilt-rule-0-13-3-mfa-disabled-for-google-workspace-organization]]
+=== MFA Disabled for Google Workspace Organization
 
-Detects when a domain is added to the list of trusted Google Workspace domains. An adversary may add a trusted domain in order to collect and exfiltrate data from their target’s organization with less restrictive security controls.
+Detects when multi-factor authentication (MFA) is disabled for a Google Workspace organization. An adversary may attempt to modify a password policy in order to weaken an organization’s security controls.
 
 *Rule type*: query
 
-*Rule indices*:
+*Rule indices*: 
 
 * filebeat-*
 * logs-google_workspace*
 
-*Severity*: high
+*Severity*: medium
 
-*Risk score*: 73
+*Risk score*: 47
 
-*Runs every*: 10 minutes
+*Runs every*: 10m
 
 *Searches indices from*: now-130m ({ref}/common-options.html#date-math[Date Math format], see also <<rule-schedule, `Additional look-back time`>>)
 
 *Maximum alerts per execution*: 100
 
-*References*:
+*References*: None
 
-* https://support.google.com/a/answer/6160020?hl=en
-
-*Tags*:
+*Tags*: 
 
 * Elastic
 * Cloud
 * Google Workspace
 * Continuous Monitoring
 * SecOps
-* Configuration Audit
+* Identity and Access
 
-*Version*: 3 (<<domain-added-to-google-workspace-trusted-domains-history, version history>>)
+*Version*: 5
 
-*Added ({stack} release)*: 7.11.0
+*Rule authors*: 
 
-*Last modified ({stack} release)*: 7.12.0
-
-*Rule authors*: Elastic
+* Elastic
 
 *Rule license*: Elastic License v2
 
-==== Potential false positives
-
-Trusted domains may be added by system administrators. Verify that the configuration change was expected. Exceptions can be added to this rule to filter expected behavior.
 
 ==== Investigation guide
 
@@ -66,23 +59,11 @@ The Google Workspace Fleet integration, Filebeat module, or similarly structured
   - https://www.elastic.co/guide/en/beats/filebeat/{branch}/filebeat-module-google_workspace.html
 ----------------------------------
 
-
 ==== Rule query
 
 
-[source,js]
+[source, js]
 ----------------------------------
-event.dataset:(gsuite.admin or google_workspace.admin) and
-event.provider:admin and event.category:iam and
-event.action:ADD_TRUSTED_DOMAINS
+event.dataset:(gsuite.admin or google_workspace.admin) and event.provider:admin and event.category:iam and event.action:(ENFORCE_STRONG_AUTHENTICATION or ALLOW_STRONG_AUTHENTICATION) and (gsuite.admin.new_value:false or google_workspace.admin.new_value:false)
+
 ----------------------------------
-
-
-[[domain-added-to-google-workspace-trusted-domains-history]]
-==== Rule version history
-
-Version 3 (7.12.0 release)::
-* Formatting only
-
-Version 2 (7.11.2 release)::
-* Formatting only
