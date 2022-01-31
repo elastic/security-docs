@@ -1,16 +1,20 @@
 [[rules-api-export]]
 === Export rules
 
-Exports rules to an `.ndjson` file. Please note that you cannot export prebuilt rules, but they are available at https://github.com/elastic/detection-rules/tree/main/rules/.
+Exports rules to an `.ndjson` file. The following configuration items are also included in the `.ndjson` file:
+
+* Actions
+* Exception lists
+
+You cannot export prebuilt rules, but they are available at https://github.com/elastic/detection-rules/tree/main/rules/.
 
 NOTE: Console supports {es} APIs only. Console doesn't allow interactions with {kib} APIs. You must use `curl` or another HTTP tool instead. For more information, refer to {kibana-ref}/console-kibana.html[Run {es} API requests].
 
-
 [IMPORTANT]
 =================
-Detection rule actions are included in the exported file, but the connectors used by the actions are not included. 
+Although detection rule actions are included in the exported file, the connectors used by the actions are not included. Use the {kibana-ref}/managing-saved-objects.html#managing-saved-objects-export-objects[Saved Objects] UI in Kibana (*Stack Management* -> *Kibana* -> *Saved Objects*) or the Saved Objects APIs (experimental) to {kibana-ref}/saved-objects-api-export.html[export] and {kibana-ref}/saved-objects-api-import.html[import] any necessary connectors _before_ you export and import the detection rules.
 
-Use the {kibana-ref}/managing-saved-objects.html#managing-saved-objects-export-objects[Saved Objects] UI in Kibana (*Stack Management* -> *Kibana* -> *Saved Objects*) or the Saved Objects APIs (experimental) to {kibana-ref}/saved-objects-api-export.html[export] and {kibana-ref}/saved-objects-api-import.html[import] any connectors used by your detection rule actions _before_ you export and import the detection rules.
+Similarly, any value lists used for rule exceptions are not included in rule exports or imports. Use the <<edit-value-lists, Upload value lists>> UI (*Detect* -> *Rules* -> *Upload value lists*) to export and import value lists separately.
 =================
 
 ==== Request URL
@@ -73,3 +77,19 @@ POST api/detection_engine/rules/_export?exclude_export_details=true&file_name=ex
 
 `200`::
     Indicates a successful call.
+
+===== Response payload
+
+An `.ndjson` file containing the returned rules.
+
+Each line in the file represents an object (a rule, exception list parent container, or exception list item), and the last line includes a summary of what was exported.
+
+Example response payload:
+
+[source,json]
+--------------------------------------------------
+{"id":"d4db8800-30df-11ec-88a5-fb21b48c9b4e","rule_id":"query-with-single-exception-list"[....]} // Rule
+{"id":"cd62f410-30de-11ec-88a5-fb21b48c9b4e","list_id":"simple_list"[...]} // Exception list parent container
+{"id":"e54ffbe0-30de-11ec-88a5-fb21b48c9b4e","item_id":"my-exception-item","list_id":"simple_list"[...]} // Exception list item
+{"exported_rules_count":1,"missing_rules":[],"missing_rules_count":0,"exported_exception_list_count":1,"exported_exception_list_item_count":1,"missing_exception_list_item_count":0,"missing_exception_list_items":[],"missing_exception_lists":[],"missing_exception_lists_count":0} // Export summary
+--------------------------------------------------
