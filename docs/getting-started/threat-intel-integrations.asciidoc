@@ -1,12 +1,21 @@
 [[es-threat-intel-integrations]]
 = Enable threat intelligence integrations
 
-The Threat Intelligence view gives you a streamlined way to collect threat intelligence data that you can use for threat detection and matching. You can connect to threat intelligence sources using an <<agent-ti-integration, {agent} integration>>, the <<ti-mod-integration, Threat Intel module>>, or a <<custom-ti-integration, custom integration>>.
+The Threat Intelligence view gives you a streamlined way to collect threat intelligence data that you can use for threat detection and matching. Threat intelligence data consists of threat indicators ingested from third-party threat intelligence sources.
 
-NOTE: The warning message about remaining threat intelligence sources is removed once you’ve enabled all available {elastic-sec} threat intelligence integrations.
+Threat indicators describe potential threats, unusual behavior, or malicious activity on a network or in an environment. They are commonly used in indicator match rules to detect and match known threats. When an indicator match rule generates an alert, it includes information about the matched threat indicator.
+
+NOTE: To learn more about alerts with threat intelligence, visit <<view-alert-details, View alert details>>.
+
+You can connect to threat intelligence sources using an <<agent-ti-integration, {agent} integration>>, the <<ti-mod-integration, Threat Intel module>>, or a <<custom-ti-integration, custom integration>>.
 
 [role="screenshot"]
 image::images/threat-intelligence-view.png[width=90%][height=90%][Shows the Threat Intelligence view on the Overview page]
+
+There are a few scenarios when data won't display in the Threat Intelligence view:
+
+- If you've chosen a time range that doesn't contain threat indicator event data, you are prompted to choose a different range. Use the the date and time picker in the {security-app} or Kibana to select a new range to analyze.
+- If the {agent} or {filebeat} agent hasn't ingested Threat Intel module data yet, the threat indicator event counts won't load. You can wait for data to generate or reach out to your administrator for help resolving this.
 
 [float]
 [[agent-ti-integration]]
@@ -14,9 +23,12 @@ image::images/threat-intelligence-view.png[width=90%][height=90%][Shows the Thre
 
 To set up an {agent} integration:
 
-. Install a {fleet-guide}/install-fleet-managed-elastic-agent.html[{fleet} managed {agent}] on the servers you want to monitor.
+. Install a {fleet-guide}/install-fleet-managed-elastic-agent.html[{fleet}-managed {agent}] on the servers you want to monitor.
 . In the Threat Intelligence view, click *Enable sources*.
 . Select an integration, and complete the installation steps.
++
+NOTE: The message about disabled threat intelligence sources disappears when you enable all available {elastic-sec} threat intelligence integrations.
+
 . Return to the Threat Intelligence view on the Overview page. Refresh the page if indicator data isn't displaying.
 
 [float]
@@ -30,8 +42,8 @@ To set up an integration through the Threat Intel module:
 NOTE: For more information about enabling available threat intelligence filesets, refer to {filebeat-ref}/filebeat-module-threatintel.html[Threat Intel module].
 
 . Update the `securitySolution:defaultThreatIndex` <<update-threat-intel-indices, advanced setting>> by adding the appropriate index pattern name after the default {fleet} threat intelligence index pattern (`logs-ti*`):
-.. If you're using {filebeat} version 8.x _only_, add the appropriate {filebeat} threat intelligence index pattern, for example, `filebeat-8*` or `filebeat*`.
-.. If you're using a previous version of Filebeat _and_ a current one, differentiate between the threat intelligence indices by using unique index pattern names. For example, if you’re using {filebeat} version 7.0.0 and 8.0.0, add `filebeat-7*` and `filebeat-8*`.
+.. If you're _only_ using {filebeat} version 8.x, add the appropriate {filebeat} threat intelligence index pattern, for example, `logs-ti*`, `filebeat-8*`.
+.. If you're using a previous version of Filebeat _and_ a current one, differentiate between the threat intelligence indices by using unique index pattern names. For example, if you’re using {filebeat} version 7.0.0 and 8.0.0, update the setting to `logs-ti*`,`filebeat-7*`,`filebeat-8*`.
 . Return to the Threat Intelligence view on the Overview page. Refresh the page if indicator data isn't displaying.
 
 [float]
@@ -41,10 +53,10 @@ NOTE: For more information about enabling available threat intelligence filesets
 To enable a custom integration:
 
 . Set up a way to <<ingest-data, ingest data>> into your system.
-. Update the `securitySolution:defaultThreatIndex` <<update-threat-intel-indices, advanced setting>> by adding the appropriate index pattern name after the default {fleet} threat intelligence index pattern (`logs-ti*`), for example, `custom-ti-index*`.
+. Update the `securitySolution:defaultThreatIndex` <<update-threat-intel-indices, advanced setting>> by adding the appropriate index pattern name after the default {fleet} threat intelligence index pattern (`logs-ti*`), for example, `logs-ti*`,`custom-ti-index*`.
 +
-NOTE: Threat intelligence indices aren’t required to be ECS compatible. However, we strongly recommend compatibility if you’d like for your alerts to be enriched with relevant threat indicator information. You can find a list of ECS compliant threat intelligence fields at {ecs-ref}/ecs-threat.html[Threat Fields].
+NOTE: Threat intelligence indices aren’t required to be ECS compatible. However, we strongly recommend compatibility if you’d like for your alerts to be enriched with relevant threat indicator information. You can find a list of ECS-compliant threat intelligence fields at {ecs-ref}/ecs-threat.html[Threat Fields].
 
 . Return to the Threat Intelligence view on the Overview page. Refresh the page if indicator data isn't displaying.
 +
-NOTE: The Threat Intelligence view looks for a `threat.feed.name` field value to define the source name in the *Name* column. If a custom source doesn't have the `threat.feed.name` field, or hasn't defined a `threat.feed.name` field value, it's named *Other*. In addition, dashboards links are not typically not created for sources in the *Other* category unless a source has the `threat.feed.dashboard_id` field defined.
+NOTE: The Threat Intelligence view searches for a `threat.feed.name` field value to define the source name in the *Name* column. If a custom source doesn't have the `threat.feed.name` field, or hasn't defined a `threat.feed.name` field value, it's considered unnamed and labeled as *Other*. Dashboards aren't created for unnamed sources unless the `threat.feed.dashboard_id` field is defined.
