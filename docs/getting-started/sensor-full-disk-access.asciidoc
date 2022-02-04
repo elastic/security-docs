@@ -1,13 +1,17 @@
 [[sensor-full-disk-access]]
-= Enable Full Disk Access
+= Enable Full Disk Access for {elastic-endpoint}
 
 ////
 The {endpoint-sec} requires Full Disk Access to protect you from malware and other cybersecurity threats. Full Disk Access permissions is a new privacy feature introduced in macOS Mojave (10.14) that prevents some applications from accessing your data. This means you need to manually grant permission for the Endgame sensor and Elastic Endpoint to access these protected areas of your Mac.
 ////
 
-In order for {elastic-endpoint} to subscribe to system events using the Endpoint Security framework and protect the endpoint from malware, {elastic-endpoint} needs Full Disk Access. To enable Full Disk Access, you must manually approve {elastic-endpoint} as well as the {elastic-endpoint} system extension for Full Disk Access.
+{elastic-endpoint} requires Full Disk Access to protect you from malware and other cybersecurity threats. Full Disk Access permissions is a new privacy feature introduced in macOS Mojave (10.14) that prevents some applications from accessing your data. To enable Full Disk Access, you must manually approve {elastic-endpoint}. For endpoints running macOS Mojave (10.14) and earlier, you must also approve the {elastic-endpoint} <<kernel-extension-approval, kernel system extension>>.
 
-This article describes how to enable Full Disk Access for the required security system extensions, the {elastic-endpoint} sensor, and the legacy Endgame sensor.
+NOTE: The following instructions apply to {elastic-endpoint} only. To see Full Disk Access requirements for the Endgame sensor, refer to <will insert topic when added to TOC.>
+
+[discrete]
+[[enable-fda-endpoint]]
+== Enable Full Disk Access for {elastic-endpoint}
 
 . Open the **System Preferences** application.
 +
@@ -16,98 +20,47 @@ This article describes how to enable Full Disk Access for the required security 
 --
 image::images/fda/sec-privacy-pane.png[]
 --
-. On the Security and Privacy pane, select the **Privacy** tab.
+. On the *Security and Privacy* pane, select the **Privacy** tab.
 +
-. On the left pane, select **Full Disk Access**.
+. From the left pane, select **Full Disk Access**.
 +
 --
 image::images/fda/select-fda.png[Select Full Disk Access]
 --
 +
-. In the lower-left corner of the panel, click the **Lock button** and enter your credentials to authenticate.
+. In the lower-left corner of the pane, click the **Lock button**, then enter your credentials to authenticate.
 +
 . Ensure that `ElasticEndpoint` AND `co.elastic.systemextension` are checked to properly enable Full Disk Access.
 +
-NOTE: If the endpoint is running version 7.16 or below of {elastic-endpoint}, ensure that `elastic-endpoint` AND `co.elastic.systemextension` are checked to properly enable Full Disk Access.
+NOTE: If the endpoint is running version 7.16 or earlier of {elastic-endpoint}, ensure that `elastic-endpoint` AND `co.elastic.systemextension` are checked to properly enable Full Disk Access.
 +
 --
 image::images/fda/fda-7-16.png[]
 --
 
-
-
-
 [discrete]
-[[macos-permissions]]
-== macOS permissions
+[[kernel-extension-approval]]
+== Approve the kernel extension
 
-The behavior of the Endgame sensor and Elastic Endpoint differs based on your macOS version. MDM/JAMF users can pre-approve all Full Disk Access without granting permission to the sensors. However, depending on the macOS version and sensor type, non-MDM/JAMF users may be prompted to enable Full Disk Access for required security files.
-
-**Endgame Sensor**
-
-- `10.13, 10.14, 10.15`: Users cannot proceed with installation without first granting the sensor the ability to load a <<enable-kernel-extension,kernel extension>>. During installation, you will be prompted to go to **System preferences** and approve loading the kernel. Upon approval, installation proceeds.
-
-- `11.0` (Big Sur): Users cannot proceed with installation without first granting the sensor the ability to load <<system-extension>>. During installation, you will be prompted to go to **System preferences** and approve loading the system extension. Upon approval, a second prompt appears to enable **Network Filtering**. Approve this final prompt for installation to proceed.
-+
-You also must grant Full Disk Access to `com.endgame.systemextension`.
-
-- `10.14.6+, 10.15, 11.0`: Grant the <<endpoint-endgame-sensor,esensor>> Full Disk Access.
-
-
-**Elastic Endpoint**
-
-No prompts appear to approve the <<enable-kernel-extension,kernel>>, <<system-extension>>, or <<endpoint-endgame-sensor,elastic-endpoint>>, due to installation happening through the {agent}. After installation, Endpoint policies **will fail** to detect events until you approve and enable kernel or system extension loading and Full Disk Access for each version, as reflected in the *Endpoints* page of the {security-app}.
-
-- `10.13, 10.14, 10.15`: Approve the <<enable-kernel-extension,kernel-extension>>.
-
-- `11.0` (Big Sur): Give Full Disk Access to the <<system-extension>>, as well as `co.elastic.systemextension`.
-
-- - `10.14.6+, 10.15, 11.0`: Grant the <<endpoint-endgame-sensor,elastic-endpoint>> Full Disk Access.
-
-[discrete]
-[[system-extension]]
-== Enable Full Disk Access for {elastic-endpoint}
-
-To fully protect endpoints from malware and other cybersecurity threats when using Elastic Endpoint with system extensions, Full Disk Access must be enabled for the system extension during <<install-endpoint,installation>> on macOS Big Sur (11.0) and later.
+For endpoints running macOS Mojave (10.14) and earlier, {elastic-endpoint} will attempt to load a kernel extension (as opposed to a system extension) during installation. This kernel extension is required to provide insight into system events such as process events, file system events, and network events. The following prompt appears during installation:
 
 --
-image::images/system-extension-prompt.png[System Extension Prompt]
+image::images/fda/sys-ext-blocked.png[System extension blocked]
 --
 
-If you select **OK** and continue installation, you'll receive a prompt to **Filter Network Content**. Select **Allow**, and then use the following steps to enable Full Disk Access for the system extension.
+To approve the extension:
 
-
-
-The system extension now has Full Disk Access. However, for both the {agent} and Elastic Endgame sensor to detect events from a macOS host, you must enable Full Disk Access for the file most relevant to your security setup.
-
-[discrete]
-[[endpoint-endgame-sensor]]
-== Elastic Endpoint and Endgame sensor
-
-The `elastic-endpoint` files appear after you've downloaded and installed the {agent} with <<install-endpoint,Endpoint Security Integration>>. Similarly, the `esensor` file for Elastic Endgame appears once you've downloaded the sensor on your host.
-
-
-1. Open the **System Preferences** application.
-+
-2. Click **Security and Privacy**. On the Security and Privacy panel, select the **Privacy** tab.
-+
-3. In the left pane, select **Full Disk Access**.
+. Click *Open Security Preferences.*
+. In the lower-left corner of the pane, click the **Lock button**, then enter your credentials to authenticate.
+. Click *Allow* to load the kernel extension.
 +
 --
-image::images/select-fda.png[Select Full Disk Access]
+image::images/fda/allow-kernel-ext.png[Allow kernel extension]
 --
 +
-4. In the lower-left corner of the panel, click the **Lock button** and enter your username and password. You can now add the `elastic-endpoint` or `esensor` file.
 
-5. Click the + button to view Finder. Select the file that pertains most to your Endpoint configuration:
-+
-- Endpoint Security: Navigate to `/Library/Elastic/Endpoint/` and select the `elastic-endpoint` file.
-+
-- Elastic Endgame: Navigate to `/Library/Endgame` and select the `esensor` file.
+If the prompt does not appear, enable the extension by doing the following:
 
-6. After you've selected the applicable file, click **Open**.
-
-7. In the **Privacy** tab, confirm that the `elastic-agent` or `esensor` file appears in the list of applications that have Full Disk Access permissions.
-
-
-Elastic Endpoint now has the access required to fully protect your system.
+. Open a Terminal application.
+. Enter `kextload /Library/Extension/kendpoint.kext`. Prepend the command with `sudo` if necessary.
+You should receive an output similar to `149    0 0xffffff7f82e7b000 0x21000    0x21000    co.elastic.kendpoint (7.11.0) BD152A57-ABD3-370A-BBE8-D15A0FCBD19A <6 5 2 1>`. If you receive this output, the kernel extension is enabled.
