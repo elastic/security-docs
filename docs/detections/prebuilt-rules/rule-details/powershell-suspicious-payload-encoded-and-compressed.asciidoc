@@ -1,0 +1,75 @@
+[[powershell-suspicious-payload-encoded-and-compressed]]
+=== PowerShell Suspicious Payload Encoded and Compressed
+
+Identifies the use of .Net functionality for decompression and base64 decoding combined in PowerShell scripts, which Malware and security tools heavily use to deobfuscate payloads and load them directly in memory to bypass defenses.
+
+*Rule type*: query
+
+*Rule indices*:
+
+* winlogbeat-*
+* logs-windows.*
+
+*Severity*: medium
+
+*Risk score*: 47
+
+*Runs every*: 5 minutes
+
+*Searches indices from*: now-9m ({ref}/common-options.html#date-math[Date Math format], see also <<rule-schedule, `Additional look-back time`>>)
+
+*Maximum alerts per execution*: 100
+
+*Tags*:
+
+* Elastic
+* Host
+* Windows
+* Threat Detection
+* Defense Evasion
+
+*Version*: 1
+
+*Added ({stack} release)*: 8.0
+
+*Rule authors*: Elastic
+
+*Rule license*: Elastic License v2
+
+==== Potential false positives
+
+Legitimate PowerShell Scripts which makes use of compression and encoding
+
+==== Rule query
+
+
+[source,js]
+----------------------------------
+event.category:process and powershell.file.script_block_text : (
+(System.IO.Compression.DeflateStream or
+System.IO.Compression.GzipStream or IO.Compression.DeflateStream or
+IO.Compression.GzipStream) and FromBase64String )
+----------------------------------
+
+==== Threat mapping
+
+*Framework*: MITRE ATT&CK^TM^
+
+* Tactic:
+** Name: Defense Evasion
+** ID: TA0005
+** Reference URL: https://attack.mitre.org/tactics/TA0005/
+* Technique:
+** Name: Deobfuscate/Decode Files or Information
+** ID: T1140
+** Reference URL: https://attack.mitre.org/techniques/T1140/
+
+
+* Tactic:
+** Name: Execution
+** ID: TA0002
+** Reference URL: https://attack.mitre.org/tactics/TA0002/
+* Technique:
+** Name: Command and Scripting Interpreter
+** ID: T1059
+** Reference URL: https://attack.mitre.org/techniques/T1059/
