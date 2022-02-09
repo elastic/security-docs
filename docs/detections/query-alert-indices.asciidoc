@@ -3,51 +3,20 @@
 == Query alert indices
 This page explains how you should query alert indices, for example when building rule queries, custom dashboards, or visualizations. For more information about alert event field definitions, review the [Alert schema].
 
+=== Alert indices
 Alert events are stored in hidden {es} indices. The naming conventions for these indices and their aliases differ depending on which version of {stack} you're running:
 
-*Alerts from {stack} versions before 8.0.0*
+* *8.0.0 and later:* `.internal.alerts-security.alerts-<space-id>-NNNNNN` where `NNNNNN` is a number that increases over time, starting from 000001.
 
-The naming convention is `.siem-signals-<space-id>-NNNNNN` where `NNNNNN` is a number that counts up over time, starting from 000001.
+* *Before 8.0.0:* `.siem-signals-<space-id>-NNNNNN` where `NNNNNN` is a number that increases over time, starting from 000001.
 
-*Alerts from {stack} versions 8.0 and later*
+=== Alert index aliases
+We recommend querying the following index aliases to avoid querying the numbered alert indices:
 
-The naming convention is `.internal.alerts-security.alerts-<space-id>-NNNNNN` where `NNNNNN` is a number that counts up over time, starting from 000001.
+* If you're using version 8.0.0 or later: `.alerts-security.alerts-<space-id>`
+This alias includes both the legacy (before 8.0.0) and the new alert indices.
 
-You can query the following index aliases to avoid querying the numbered alert indices:
+* If you're using a version before 8.0.0: `.siem-signals-<space-id>`
+Queries on this alias will function regardless of your {stack} version, but will not follow the newer `.alerts` naming convention, and may be deprecated in future releases.
 
-[discrete]
-=== Best practices
-If you're using a version before 8.0, you should query the following index alias:
-
-* `.siem-signals-<space-id>` (Note that there is no dash or wildcard after the space ID).
-For example, to query all spaces: `.siem-signals-*`.
-
-Once you update to 8.0.0 or later, you should query the following index alias, which will include both legacy (before 8.0.0) and new alerts:
-
-* `.alerts-security.alerts-<space-id>` (Note that there is no dash or wildcard after the space ID).
-For example, to query all spaces: `.alerts-security.alerts-*`.
-
-[discrete]
-=== Acceptable practices
-Queries on the following index aliases will function regardless of your {stack} version, but will not follow the `.alerts` naming convention and may be deprecated in future releases:
-
-* `.siem-signals-<space-ID>` (Note that there is no dash or wildcard after the space ID).
-For example, to query all spaces: `.siem-signals-*`.
-
-
-[discrete]
-== Alert aliases by {stack} version
-Here is a complete list of the available alert index aliases, by version.
-
-[discrete]
-=== For alerts from versions before 8.0.0:
-
-* `.siem-signals-<space id>`
-* `.alerts-security.alerts-<space id>` (Only available after upgrading to 8.0).
-NOTE: Alerts from versions before 8.0 will stay saved in legacy alert indices, but can be queried using the new alias once you upgrade to 8.0.
-
-[discrete]
-=== For alerts from versions 8.0 and later:
-
-* `.siem-signals-<space id>`
-* `.alerts-security.alerts-<space id>`
+Regardless of which alias you query, you should not include a dash or wildcard after the space ID. To query all spaces, use the following syntax: `.alerts-security.alerts-*` or `.siem-signals-*`.
