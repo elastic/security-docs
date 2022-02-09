@@ -455,8 +455,9 @@ def create_documentation(package_release):
             file_text = file_text + "* " + i + "\n"
         if rule['version'] == 1:
             file_text = file_text + "\n*Version*: " + str(rule['version']) + "\n\n"
-        if rule['version'] > 1 and not rule.get('changelog'):
-            print(rule_link)
+        # DEBUG
+        # if rule['version'] > 1 and not rule.get('changelog'):
+        #    print(rule_link)
         if rule['version'] > 1 and rule.get('changelog'):
             file_text = file_text + "\n*Version*: " + str(
                 rule['version']) + " (<<" + rule_link + "-history, version history>>)" + "\n\n"
