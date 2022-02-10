@@ -2,32 +2,45 @@
 [role="xpack"]
 == Elastic Security ECS field reference
 
-This section lists ECS fields Elastic Security uses to display data.
+This section lists {ecs-ref}[Elastic Common Schema] (ECS) fields used by {elastic-sec} to provide an optimal SIEM and security analytics experience to users. These fields are used to display data, provide rule previews, enable detection by prebuilt detection rules, provide context during rule triage and investigation, escalate to cases, and more.
 
-IMPORTANT: It is recommended to use {beats} to ship your data. Beat modules
-(for example, {filebeat-ref}/filebeat-modules.html[{filebeat} modules])
-are ECS-compliant so manual field mapping is not required, and all {es-sec-app}
-data is automatically populated. If you cannot use {beats}, map your data to
-{ecs-ref}[ECS fields] (see {ecs-ref}/ecs-converting.html[how to map data to ECS]).
-You can also try using the experimental https://github.com/elastic/ecs-mapper[ECS Mapper] tool.
+IMPORTANT: We recommend you use {agent} integrations or {beats}  to ship your data to {elastic-sec}. {agent} integrations and Beat modules (for example, {filebeat-ref}/filebeat-modules.html[{filebeat} modules]) are ECS-compliant, which means data they ship to {elastic-sec} will automatically populate the relevant ECS fields.
+If you plan to use a custom implementation to map your data to ECS fields (see {ecs-ref}/ecs-converting.html[how to map data to ECS]), ensure the <<siem-always-required-fields, always required fields>> are populated. Ideally, all relevant ECS fields should be populated as well. You can also try out the experimental https://github.com/elastic/ecs-mapper[ECS Mapper tool] to create your custom implementation.
+
+[float]
+[[siem-always-required-fields]]
+== Always required fields
+{elastic-sec} requires all event and threat intelligence data to be normalized to ECS.  For proper operation, all data must contain the following ECS fields:
+
+* `@timestamp`
+* `ecs.version`
+* `event.kind`
+* `event.category`
+* `event.type`
+
+[float]
+[[siem-required-process-event-fields]]
+== Fields required for process events
+{elastic-sec} relies on these fields to analyze and display process data:
+
+* `process.name`
+* `process.pid`
 
 [float]
 [[siem-host-fields]]
-== Host fields
+== Fields required for host events
+{elastic-sec} relies on these fields to analyze and display host data:
 
-These fields must be mapped to display host data in the {es-sec-app}:
-
-* `@timestamp`
 * `host.name`
+* `host.id`
 
-These fields can be mapped to display additional host data in the {es-sec-app}:
+{elastic-sec} may use these fields to display additional host data:
 
 * `cloud.instance.id`
 * `cloud.machine.type`
 * `cloud.provider`
 * `cloud.region`
 * `host.architecture`
-* `host.id`
 * `host.ip`
 * `host.mac`
 * `host.os.family`
@@ -38,35 +51,26 @@ These fields can be mapped to display additional host data in the {es-sec-app}:
 [discrete]
 ==== Authentication fields
 
-These fields must be mapped to display host authentication data in the
-{es-sec-app}:
+{elastic-sec} relies on these fields and values to analyze and display host authentication data:
 
-* `event.category`
-+
-NOTE: To display authentication data in the {es-sec-app}, you must map authentication events to the `event.category` field with a value of
-`authentication`.
- 
-* `event.outcome`
+* `event.category:authentication`
+* `event.outcome:success` or `event.outcome:failure`
 
-This field can be mapped to display additional host authentication data in the
-{es-sec-app}:
+{elastic-sec} may also use this field to display additional host authentication data:
 
 * `user.name`
 
 [discrete]
 ==== Uncommon process fields
 
-This field must be mapped to display host uncommon process data in the
-{es-sec-app}:
+{elastic-sec} relies on this field to analyze and display host uncommon process data:
 
 * `process.name`
 
-These fields can be mapped to display additional uncommon process data in the
-{es-sec-app}:
+{elastic-sec} may also use these fields to display uncommon process data:
 
 * `agent.type`
 * `event.action`
-* `event.category`
 * `event.code`
 * `event.dataset`
 * `event.module`
@@ -75,18 +79,16 @@ These fields can be mapped to display additional uncommon process data in the
 * `user.name`
 
 [float]
-[[siem-network-fields]]
-== Network fields
+[[siem-required-network-fields]]
+== Fields required for network events
+{elastic-sec} relies on these fields to analyze and display network data:
 
-These fields must be mapped to display network data in the {es-sec-app}:
-
-* `@timestamp`
-* `destination.geo.location` (required for displaying <<conf-map-ui, map data>>)
+* `destination.geo.location` (required for display of <<conf-map-ui, map data>>)
 * `destination.ip`
-* `source.geo.location` (required for displaying map data)
+* `source.geo.location` (required to display map data)
 * `source.ip`
 
-These fields can be mapped to display additional network data in the {es-sec-app}:
+{elastic-sec} may also use these fields to analyze and display network data:
 
 * `destination.as.number`
 * `destination.as.organization.name`
@@ -102,22 +104,23 @@ These fields can be mapped to display additional network data in the {es-sec-app
 [discrete]
 ==== DNS query fields
 
-These fields must be mapped to display DNS data in the {es-sec-app}:
+{elastic-sec} relies on these fields to analyze and display DNS data:
 
 * `dns.question.name`
 * `dns.question.registered_domain`
 
-This field can be mapped to display additional DNS data in the {es-sec-app}:
+{elastic-sec} may also use this field to display DNS data:
 
 * `dns.question.type`
+
 +
 NOTE: If you want to be able to filter out PTR records, make sure relevant
-events populate the `dns.question.type` field with a value of `PTR`.
+events have `dns.question.type` fields with values of `PTR`.
 
 [discrete]
 ==== HTTP request fields
 
-These fields must be mapped to display HTTP request data in the {es-sec-app}:
+{elastic-sec} relies on these fields to analyze and display HTTP request data:
 
 * `http.request.method`
 * `http.response.status_code`
@@ -127,11 +130,11 @@ These fields must be mapped to display HTTP request data in the {es-sec-app}:
 [discrete]
 ==== TLS fields
 
-This field must be mapped to display TLS data in the {es-sec-app}:
+{elastic-sec} relies on this field to analyze and display TLS data:
 
 * `tls.server.hash.sha1`
 
-These fields can be mapped to display additional TLS data in the {es-sec-app}:
+{elastic-sec} may also use these fields to analyze and display TLS data:
 
 * `tls.server.issuer`
 * `tls.server.ja3s`
@@ -139,18 +142,15 @@ These fields can be mapped to display additional TLS data in the {es-sec-app}:
 * `tls.server.subject`
 
 [float]
-== Event and external alert fields
+== Fields required for events and external alerts
+{elastic-sec} relies on this field to analyze and display event and external alert data:
 
-These fields must be mapped to display event and external alert data in the
-{es-sec-app}:
-
-* `@timestamp`
 * `event.kind`
-+
-NOTE: For external alerts, the `event.kind` field value must be `alert`.
 
-These fields can be mapped to display additional event and external alert data
-in the {es-sec-app}:
++
+NOTE: For external alerts, the `event.kind` field's value must be `alert`.
+
+{elastic-sec} may also use these fields to analyze and display event and external alert data:
 
 * `destination.bytes`
 * `destination.geo.city_name`
@@ -167,7 +167,6 @@ in the {es-sec-app}:
 * `dns.resolved_ip`
 * `dns.response_code`
 * `event.action`
-* `event.category`
 * `event.code`
 * `event.created`
 * `event.dataset`
@@ -184,7 +183,6 @@ in the {es-sec-app}:
 * `event.severity`
 * `event.start`
 * `event.timezone`
-* `event.type`
 * `file.ctime`
 * `file.device`
 * `file.extension`
