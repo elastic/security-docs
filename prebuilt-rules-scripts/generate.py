@@ -380,7 +380,7 @@ def create_documentation(package_release):
 
         if rule['version'] == 1:
             version_text = str(rule['version'])
-        if rule['version'] > 1:
+        if rule['version'] > 1 and rule.get('changelog'):
             version_text = str(rule['version']) + " <<" + link_string + "-history, Version history>>"
 
         new_text = new_text + " |" + tag_strings + " |" + rule['added'] + " |" + version_text + "\n\n"
@@ -455,7 +455,10 @@ def create_documentation(package_release):
             file_text = file_text + "* " + i + "\n"
         if rule['version'] == 1:
             file_text = file_text + "\n*Version*: " + str(rule['version']) + "\n\n"
-        if rule['version'] > 1:
+        # DEBUG
+        # if rule['version'] > 1 and not rule.get('changelog'):
+        #    print(rule_link)
+        if rule['version'] > 1 and rule.get('changelog'):
             file_text = file_text + "\n*Version*: " + str(
                 rule['version']) + " (<<" + rule_link + "-history, version history>>)" + "\n\n"
 
