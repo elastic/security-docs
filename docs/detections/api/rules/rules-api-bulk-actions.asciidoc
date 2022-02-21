@@ -290,15 +290,228 @@ POST api/detection_engine/rules/_bulk_action
 
 ===== Response payload
 
-For `enable`, `disable`, `delete`, `edit`, and `duplicate` actions, a JSON object containing the outcome of the call and the number of affected rules:
+For `enable`, `disable`, `delete`, `edit`, and `duplicate` actions, a JSON object containing the outcome of the action: number of failed, succeeded, total rules, as well as full rule's objects(either created, deleted or updated depends on action) in array.
 
 [source,json]
 --------------------------------------------------
 {
-  "success": true,
-  "rules_count": 4280
+   "success":true,
+   "rules_count":1,
+   "attributes":{
+      "results":{
+         "updated":[
+            {
+               "id":"8bc7dad0-9320-11ec-9265-8b772383a08d",
+               "updated_at":"2022-02-21T17:05:50.883Z",
+               "updated_by":"elastic",
+               "created_at":"2022-02-21T14:14:13.801Z",
+               "created_by":"elastic",
+               "name":"DNS Tunneling [Duplicate]",
+               "tags":[
+                  "Elastic",
+                  "Network",
+                  "Threat Detection",
+                  "ML",
+                  "777",
+                  "888",
+                  "nine-nine-seven",
+                  "test",
+                  "test-2"
+               ],
+               "interval":"15m",
+               "enabled":true,
+               "description":"A machine learning job detected unusually large numbers of DNS queries for a single top-level DNS domain, which is often used for DNS tunneling. DNS tunneling can be used for command-and-control, persistence, or data exfiltration activity. For example, dnscat tends to generate many DNS questions for a top-level domain as it uses the DNS protocol to tunnel data.",
+               "risk_score":21,
+               "severity":"low",
+               "license":"Elastic License v2",
+               "output_index":".siem-signals-default",
+               "author":[
+                  "Elastic"
+               ],
+               "false_positives":[
+                  "DNS domains that use large numbers of child domains, such as software or content distribution networks, can trigger this alert and such parent domains can be excluded."
+               ],
+               "from":"now-45m",
+               "rule_id":"7289bf08-4e91-4c70-bf01-e04c4c5d7756",
+               "max_signals":100,
+               "risk_score_mapping":[
+                  
+               ],
+               "severity_mapping":[
+                  
+               ],
+               "threat":[
+                  
+               ],
+               "to":"now",
+               "references":[
+                  "https://www.elastic.co/guide/en/security/current/prebuilt-ml-jobs.html"
+               ],
+               "version":6,
+               "exceptions_list":[
+                  
+               ],
+               "immutable":false,
+               "type":"machine_learning",
+               "anomaly_threshold":50,
+               "machine_learning_job_id":[
+                  "packetbeat_dns_tunneling"
+               ],
+               "throttle":"no_actions",
+               "actions":[
+                  
+               ]
+            }
+         ],
+         "created":[
+            
+         ],
+         "deleted":[
+            
+         ]
+      },
+      "summary":{
+         "failed":0,
+         "succeeded":1,
+         "total":1
+      }
+   }
 }
 --------------------------------------------------
 
 
 For an `export` action, an `.ndjson` file containing exported rules.
+
+
+===== Response code
+
+`500`::
+    Partial failure of bulk action
+
+===== Response payload
+
+If processing of any of rule fail, partial error will be return with id/name of affected rule and corresponding error together with successfully processed rules(same format as for successful 200 request)
+
+Example payload
+
+[source,json]
+--------------------------------------------------
+{
+    "message": "Bulk edit partially failed",
+    "status_code": 500,
+    "attributes": {
+        "errors": [
+            {
+                "message": "Index patterns can't be added. Machine learning rule doesn't have index patterns property",
+                "status_code": 500,
+                "rules": [
+                    {
+                        "id": "8bc7dad0-9320-11ec-9265-8b772383a08d",
+                        "name": "DNS Tunneling [Duplicate]"
+                    }
+                ]
+            }
+        ],
+        "results": {
+            "updated": [
+                {
+                    "id": "8e5c1a40-9320-11ec-9265-8b772383a08d",
+                    "updated_at": "2022-02-21T16:56:22.818Z",
+                    "updated_by": "elastic",
+                    "created_at": "2022-02-21T14:14:17.883Z",
+                    "created_by": "elastic",
+                    "name": "External Alerts [Duplicate]",
+                    "tags": [
+                        "Elastic",
+                        "Network",
+                        "Windows",
+                        "APM",
+                        "macOS",
+                        "Linux",
+                        "777",
+                        "888",
+                        "nine-nine-seven"
+                    ],
+                    "interval": "5m",
+                    "enabled": true,
+                    "description": "Generates a detection alert for each external alert written to the configured indices. Enabling this rule allows you to immediately begin investigating external alerts in the app.",
+                    "risk_score": 47,
+                    "severity": "medium",
+                    "license": "Elastic License v2",
+                    "output_index": ".siem-signals-default",
+                    "rule_name_override": "message",
+                    "timestamp_override": "event.ingested",
+                    "author": [
+                        "Elastic"
+                    ],
+                    "false_positives": [],
+                    "from": "now-6m",
+                    "rule_id": "941faf98-0cdc-4569-b16d-4af962914d61",
+                    "max_signals": 10000,
+                    "risk_score_mapping": [
+                        {
+                            "field": "event.risk_score",
+                            "value": "",
+                            "operator": "equals"
+                        }
+                    ],
+                    "severity_mapping": [
+                        {
+                            "severity": "low",
+                            "field": "event.severity",
+                            "value": "21",
+                            "operator": "equals"
+                        },
+                        {
+                            "severity": "medium",
+                            "field": "event.severity",
+                            "value": "47",
+                            "operator": "equals"
+                        },
+                        {
+                            "severity": "high",
+                            "field": "event.severity",
+                            "value": "73",
+                            "operator": "equals"
+                        },
+                        {
+                            "severity": "critical",
+                            "field": "event.severity",
+                            "value": "99",
+                            "operator": "equals"
+                        }
+                    ],
+                    "threat": [],
+                    "to": "now",
+                    "references": [],
+                    "version": 5,
+                    "exceptions_list": [],
+                    "immutable": false,
+                    "type": "query",
+                    "language": "kuery",
+                    "index": [
+                        "apm-*-transaction*",
+                        "traces-apm*",
+                        "auditbeat-*",
+                        "filebeat-*",
+                        "logs-*",
+                        "packetbeat-*",
+                        "winlogbeat-*",
+                        "added-by-id-*"
+                    ],
+                    "query": "event.kind:alert and not event.module:(endgame or endpoint)\n",
+                    "throttle": "no_actions",
+                    "actions": []
+                }
+            ],
+            "created": [],
+            "deleted": []
+        },
+        "summary": {
+            "failed": 1,
+            "succeeded": 1,
+            "total": 2
+        }
+    }
+}
+--------------------------------------------------
