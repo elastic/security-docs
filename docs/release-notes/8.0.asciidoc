@@ -1,0 +1,148 @@
+[[release-notes-header-8.0.0]]
+== 8.0
+
+[discrete]
+[[release-notes-8.0.0]]
+=== 8.0.0
+
+[discrete]
+[[known-issues-8.0.0]]
+==== Known issues
+*Case migration errors might be logged when upgrading*
+
+You might find the `Failed to migrate user action alerts` error message in your {kib} migration logs when upgrading to {stack} version 8.0.0. This error is incorrectly logged when migrating cases and can be ignored ({pull}124950[#124950]).
+
+Here is an example of an error message you might encounter:
+
+[code block]
+----
+[2022-02-07T20:25:58.614+00:00][ERROR][savedobjects-service] Failed to migrate user action alerts with doc id: 7420fe08-c2ed-51d2-b077-46deb4bf76c9 version: 8.0.0 error: Unexpected token in JSON at position 0
+----
+
+*Existing or new rules that use the legacy alerts index may temporarily fail after upgrading*
+
+After you upgrade to {stack} version 8.0.0, existing and new rules might fail to execute  if their source index is configured to use a legacy alert index pattern created in {stack} version 7.x (`.siem-signals-<space-id>`). Rule failures will likely cause detection gaps, which will be proportional in time to the scheduled interval of the rule. Rules will start to successfully execute after legacy alerts are no longer within the scheduled time period queried by the rule. Despite this automatic correction, coverage gaps might still remain ({pull}124327[#124327]).
+
+*The Threat Intel Filebeat Module (v8.x) Indicator Match rule query is misconfigured*
+
+The indicator index query of the prebuilt rule is misconfigured and will prevent the rule from generating alerts ({pull}121045[#121045], {pull}1560[#1560]). To resolve this, duplicate the rule and update its settings:
+
+. Go to the Rules table (*Detect -> Rules*).
+. Locate the Threat Intel Filebeat Module (v8.x) Indicator Match prebuilt rule.
++
+TIP: You can search for the rule by entering the rule name in the Rule table's search bar.
+
+. Click the rule to view the rule details.
+. Click the actions menu, then click *Duplicate rule*.
+. Go to the *Indicator index query* field and update the query by removing `event.dataset:ti_*` and replacing it with `event.module:threatintel`. For reference, the correct query is:
+
++
+[code block]
+----
+`@timestamp >= "now-30d" and event.module:threatintel and (threat.indicator.file.hash.*:* or threat.indicator.file.pe.imphash:* or threat.indicator.ip:* or threat.indicator.registry.path:* or threat.indicator.url.full:*)`
+----
+
+. Under the *Indicator index query* field, update the query's filters by removing `event.dataset:ti_*` and replacing it with `event.module:threatintel`.
+. Save the changes.
+. Activate the rule.
+
+[discrete]
+[[upgrade-reqs-8.0.0]]
+==== Upgrade requirements
+* Rules must be manually disabled before upgrading to {stack} version 8.0.0, and then manually enabled after the process completes to avoid gaps in rule coverage. Refer to <<upgrade-intro, Upgrade {elastic-sec}>> for more information.
+* To make the *Data view* option appear in an environment with legacy alerts, a user with elevated role privileges must visit the {es-sec-app}, open a page that displays alert data (such as the Overview page), then refresh the page. The user's role privileges must allow them to enable the detections feature in a Kibana space. Refer to <<enable-detections-ui, Enable and access detections>> for more information.
+
++
+NOTE: If new alerts are generated in an upgraded environment without legacy alerts, refreshing any page with alert data in {elastic-sec} will make the *Data view* option appear in the {es-sec-ui}.
+
+* The system index for detection alerts has been renamed from `.siem-signals-*` to `.alerts-security.alerts-*` and is now a hidden index. As such, the schema used for alert documents in {elastic-sec} has changed. Users that access documents in the `.siem-signals` indices via the {elastic-sec} API must modify their API queries and scripts to operate properly on the new 8.0 alert documents. The new schema is available at <<alert-schema, Alert schema>>.
+* To view alerts, users need `manage`, `write`, `read`, and `view_index_metadata` privileges to two new indices, `.alerts-security.alerts` and `.internal.alerts-security.alerts`. Existing users who are upgrading to 8.0 can retain their privileges to the `.siem-signals` index. Refer to <<detections-permissions-section>> for more information.
+* To <<preview-rules, preview rules>>, users need `read` access to the new `.preview.alerts-security.alerts` index. Refer to <<detections-permissions-section>> for more information.
+* New Full Disk Access approval is needed when deploying {elastic-endpoint} on macOS. Refer to [deploy-elastic-endpoint] for information.
+* Changes to the indicator match rule's <<rule-ui-advanced-params, default threat indicator path>> might require you to update existing rules, or create new ones, after upgrading to {stack} version 8.0.0. Be mindful of the following:
+** If an indicator match rule's default threat indicator path was not defined before the upgrade, it will default to `threatintel.indicator` after the upgrade. This allows the rule to continue using indicator data ingested by {filebeat} version 7.x. If a custom value was defined before the upgrade, the value will not change.
+** If an existing indicator match rule was configured to use threat indicator indices generated from {filebeat} version 7.x, updating the default threat indicator path to `threat.indicator` after you upgrade to {stack} version 8.0.0 and {agent} or {filebeat} version 8.0.0 configures the rule to use threat indicator indices generated by those later versions.
+** You must create separate rules to query threat intelligence indices created by {filebeat} version 7.x and version 8.0.0 because each version requires a different default threat indicator path value.
+
+[discrete]
+[[breaking-changes-8.0.0]]
+==== Breaking Changes
+// tag::breaking-changes[]
+:pull: https://github.com/elastic/kibana/pull/
+* Removes the trusted application API. The trusted application interface retains current functionality, but now uses the exception list API ({pull}120134[#120134]).
+* Removes the list endpoint metadata API ({pull}119401[#119401]).
+* Lets you grant privileges for cases separately from {elastic-sec} privileges ({pull}113573[#113573], {pull}112980[#112980]). As a result of this change, you must update case privileges for existing roles _before_ upgrading to {stack} 8.0.0. Follow these steps:
+. Open the main menu and click *Management -> Stack Management -> Stack -> Upgrade Assistant*.
+. From the Upgrade Assistant page, review the Kibana deprecation warnings. A message prompts you to update role privileges because of changes to the {elastic-sec} Cases feature.
+. Click the message to open it, then click *Quick resolve*.
+. Refresh the page to verify the deprecation was resolved, then return to the guided steps on the Upgrade Assistant page.
+// end::breaking-changes[]
+
+[discrete]
+[[new-features-8.0.0]]
+==== Features
+* Shows all historical alerts for a given rule on the rule details page, including those associated with previous versions of the rule ({pull}120053[#120053]).
+* Enhances the UI and functionality for the Rules and Rule Monitoring tables and enables actions on the Rule Monitoring table ({pull}119644[#119644]).
+* The Threat Intelligence view supports {agent}, {filebeat}, and custom integrations ({pull}116175[#116175]).
+* Allows exception lists to be exported and imported with detection rules ({pull}115144[#115144], {pull}118816[#118816]).
+
+[discrete]
+[[bug-fixes-8.0.0]]
+==== Bug fixes and enhancements
+* Enhances the UI for the Exceptions table; improves how dates are displayed in the Rules and Exceptions tables ({pull}117643[#117643], {pull}118940[#118940]).
+* Updates the mappings of the rule registry to ECS version 8.0.0 so that detection rules can process ECS version 8.0.0 data ({pull}123012[#123012]).
+* Allows you to create and add runtime fields from the Alert and Timeline tables ({pull}117627[#117627], {pull}114806[#114806]).
+* Enhances the Data view selection UI and hides the Data view dropdown when no data is present ({pull}117601[#117601], {pull}119956[#119956]).
+* Enhances previews and error flagging during rule creation ({pull}116374[#116374]).
+* Updates rule actions to use `kibana.alert.*` fields instead of `signals.*` fields ({pull}116491[#116491]).
+* Changes the insufficient permissions message type from an error to a warning ({pull}123777[#123777]).
+* Fixes typos in the success messages that appear after you close Timelines or Timeline templates ({pull}123258[#123258]).
+* Updates the Exceptions table header and Export button ({pull}122870[#122870]).
+* Fixes a bug that could break a rule’s details page after you edited, activated, or deactivated the rule ({pull}122024[#122024]).
+* Fixes an overlap between the rule query text field and Timeline banner ({pull}121967[#121967], {pull}121127[#121127]).
+* Adds support for the `threat.feed.name` field in the alert details flyout and Timeline view ({pull}120250[#120250]).
+* Adds the default threat indicator path (`threat_indicator_path`) to indicator match rules where it was missing ({pull}118962[#118962]).
+* Adds a default value for the threat indicator path that indicator match rules use when creating indicator match rules from the {es-sec-app} UI or the create rule API ({pull}118821[#118821]).
+* Enhances the Endpoint details flyout UI ({pull}117987[#117987]).
+* Fixes a bug that prevented you from clearing a connector’s `Additional comments` field ({pull}117901[#117901]).
+* Allows you to modify the default threat indicator path for the Threat Intel Filebeat Module (v7.x) Indicator Match prebuilt rule ({pull}116583[#116583]).
+
+[discrete]
+[[release-notes-8.0.0-rc2]]
+=== 8.0.0-rc2
+
+[discrete]
+[[known-issues-8.0.0-rc2]]
+==== Known issues
+
+*The Data view option might not display in upgraded environments with legacy alerts*
+
+To make the *Data view* option appear, a user with elevated role privileges must visit the {es-sec-app}, open a page that displays alert data (such as the Overview page), then refresh the page. ({pull}121390[#121390]).
+
+The role must have the following privileges:
+
+* *Cluster privileges*: The `manage` privilege
+* *Index privileges*: The `manage`, `write`,`read`, and `view_index_metadata` index privileges for the following system indices where `<space-id>` is the {kib} space name:
+
+** `.siem-signals-<space-id>`
+** `.lists-<space-id>`
+** `.items-<space-id>`
+** `.alerts-security.alerts-<space-id>`
+** `.internal.alerts-security.alerts-<space-id>-*`
+
+* *{kib} space*: `All` privileges for the `Security` feature (visit
+{kibana-ref}/xpack-spaces.html#spaces-control-user-access[Feature access based on user privileges] for more information)
+
+NOTE: If new alerts are generated in an upgraded environment without legacy alerts, refreshing any page with alert data in {elastic-sec} will make the *Data view* option appear in the {es-sec-ui}.
+
+*Detection rules may not generate alerts after upgrading to {stack} 8.0.0*
+
+If you do not manually disable rules before upgrading to {stack} version 8.0.0, they're automatically disabled during the upgrade process and must be manually re-enabled after the process completes. Failure to do so could cause a gap in rule coverage ({pull}120906[#120906]).
+
+NOTE: To use the {es-sec} API to re-enable rules, refer to <<bulk-actions-rules-api, Bulk rule actions>>.
+
+To re-enable your rules from the Rules page:
+
+. Go to the All rules table (*Detect -> Rules*).
+. Click *Select all (number) rules* *Rule* select all rules.
+. Click *Bulk actions -> Activate Selected* to re-enable all rules.

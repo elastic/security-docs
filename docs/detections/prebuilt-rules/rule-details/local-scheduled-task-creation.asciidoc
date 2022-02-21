@@ -29,11 +29,11 @@ A scheduled task can be used by an adversary to establish persistence, move late
 * Threat Detection
 * Persistence
 
-*Version*: 8 (<<local-scheduled-task-creation-history, version history>>)
+*Version*: 9 (<<local-scheduled-task-creation-history, version history>>)
 
 *Added ({stack} release)*: 7.6.0
 
-*Last modified ({stack} release)*: 7.13.0
+*Last modified ({stack} release)*: 7.16.0
 
 *Rule authors*: Elastic
 
@@ -51,11 +51,12 @@ Legitimate scheduled tasks may be created during installation of new software.
 sequence with maxspan=1m [process where event.type != "end" and
 ((process.name : ("cmd.exe", "wscript.exe", "rundll32.exe",
 "regsvr32.exe", "wmic.exe", "mshta.exe",
-"powershell.exe", "pwsh.exe", "WmiPrvSe.exe", "wsmprovhost.exe",
-"winrshost.exe") or process.pe.original_file_name : ("cmd.exe",
-"wscript.exe", "rundll32.exe", "regsvr32.exe", "wmic.exe",
-"mshta.exe", "powershell.exe",
-"pwsh.exe", "WmiPrvSe.exe", "wsmprovhost.exe",
+"powershell.exe", "pwsh.exe", "powershell_ise.exe", "WmiPrvSe.exe",
+"wsmprovhost.exe", "winrshost.exe") or
+process.pe.original_file_name : ("cmd.exe", "wscript.exe",
+"rundll32.exe", "regsvr32.exe", "wmic.exe", "mshta.exe",
+"powershell.exe", "pwsh.dll", "powershell_ise.exe", "WmiPrvSe.exe",
+"wsmprovhost.exe",
 "winrshost.exe")) or process.code_signature.trusted == false)] by
 process.entity_id [process where event.type == "start" and
 (process.name : "schtasks.exe" or process.pe.original_file_name ==
@@ -81,6 +82,29 @@ process.parent.entity_id
 
 [[local-scheduled-task-creation-history]]
 ==== Rule version history
+
+Version 9 (7.16.0 release)::
+* Updated query, changed from:
++
+[source, js]
+----------------------------------
+sequence with maxspan=1m [process where event.type != "end" and
+((process.name : ("cmd.exe", "wscript.exe", "rundll32.exe",
+"regsvr32.exe", "wmic.exe", "mshta.exe",
+"powershell.exe", "pwsh.exe", "WmiPrvSe.exe", "wsmprovhost.exe",
+"winrshost.exe") or process.pe.original_file_name : ("cmd.exe",
+"wscript.exe", "rundll32.exe", "regsvr32.exe", "wmic.exe",
+"mshta.exe", "powershell.exe",
+"pwsh.exe", "WmiPrvSe.exe", "wsmprovhost.exe",
+"winrshost.exe")) or process.code_signature.trusted == false)] by
+process.entity_id [process where event.type == "start" and
+(process.name : "schtasks.exe" or process.pe.original_file_name ==
+"schtasks.exe") and process.args : ("/create", "-create") and
+process.args : ("/RU", "/SC", "/TN", "/TR", "/F", "/XML") and /*
+exclude SYSTEM SIDs - look for task creations by non-SYSTEM user */
+not user.id : ("S-1-5-18", "S-1-5-19", "S-1-5-20")] by
+process.parent.entity_id
+----------------------------------
 
 Version 8 (7.13.0 release)::
 * Rule name changed from: Local Scheduled Task Commands

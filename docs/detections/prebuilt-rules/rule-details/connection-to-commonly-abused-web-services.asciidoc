@@ -29,11 +29,11 @@ Adversaries may implement command and control communications that use common web
 * Threat Detection
 * Command and Control
 
-*Version*: 4 (<<connection-to-commonly-abused-web-services-history, version history>>)
+*Version*: 6 (<<connection-to-commonly-abused-web-services-history, version history>>)
 
 *Added ({stack} release)*: 7.11.0
 
-*Last modified ({stack} release)*: 7.13.0
+*Last modified ({stack} release)*: 8.0.0
 
 *Rule authors*: Elastic
 
@@ -43,6 +43,67 @@ Adversaries may implement command and control communications that use common web
 
 
 [source,js]
+----------------------------------
+network where network.protocol == "dns" and process.name != null
+and user.id not in ("S-1-5-18", "S-1-5-19", "S-1-5-20") and /* Add
+new WebSvc domains here */ dns.question.name : (
+"raw.githubusercontent.*", "*.pastebin.*",
+"*drive.google.*", "*docs.live.*",
+"*api.dropboxapi.*", "*dropboxusercontent.*",
+"*onedrive.*", "*4shared.*", "*.file.io",
+"*filebin.net", "*slack-files.com", "*ghostbin.*",
+"*ngrok.*", "*portmap.*", "*serveo.net",
+"*localtunnel.me", "*pagekite.me", "*localxpose.io",
+"*notabug.org", "rawcdn.githack.*",
+"paste.nrecom.net", "zerobin.net", "controlc.com",
+"requestbin.net", "cdn.discordapp.com",
+"discordapp.com", "discord.com" ) and /* Insert noisy
+false positives here */ not process.executable : (
+"?:\\Program Files\\*.exe", "?:\\Program Files (x86)\\*.exe",
+"?:\\Windows\\System32\\WWAHost.exe",
+"?:\\Windows\\System32\\smartscreen.exe",
+"?:\\Windows\\System32\\MicrosoftEdgeCP.exe",
+"?:\\ProgramData\\Microsoft\\Windows
+Defender\\Platform\\*\\MsMpEng.exe", "?:\\Users\\*\\AppData\\Loc
+al\\Google\\Chrome\\Application\\chrome.exe",
+"?:\\Users\\*\\AppData\\Local\\Programs\\Fiddler\\Fiddler.exe",
+"?:\\Users\\*\\AppData\\Local\\Programs\\Microsoft VS Code\\Code.exe",
+"?:\\Users\\*\\AppData\\Local\\Microsoft\\OneDrive\\OneDrive.exe",
+"?:\\Windows\\system32\\mobsync.exe",
+"?:\\Windows\\SysWOW64\\mobsync.exe",
+"?:\\Users\\*\\AppData\\Local\\Discord\\-*\\Discord.exe" )
+----------------------------------
+
+==== Threat mapping
+
+*Framework*: MITRE ATT&CK^TM^
+
+* Tactic:
+** Name: Command and Control
+** ID: TA0011
+** Reference URL: https://attack.mitre.org/tactics/TA0011/
+* Technique:
+** Name: Web Service
+** ID: T1102
+** Reference URL: https://attack.mitre.org/techniques/T1102/
+
+
+* Tactic:
+** Name: Exfiltration
+** ID: TA0010
+** Reference URL: https://attack.mitre.org/tactics/TA0010/
+* Technique:
+** Name: Exfiltration Over Web Service
+** ID: T1567
+** Reference URL: https://attack.mitre.org/techniques/T1567/
+
+[[connection-to-commonly-abused-web-services-history]]
+==== Rule version history
+
+Version 6 (8.0.0 release)::
+* Updated query, changed from:
++
+[source, js]
 ----------------------------------
 network where network.protocol == "dns" and process.name != null
 and user.id not in ("S-1-5-18", "S-1-5-19", "S-1-5-20") and /* Add
@@ -72,21 +133,8 @@ al\\Google\\Chrome\\Application\\chrome.exe",
 "?:\\Windows\\SysWOW64\\mobsync.exe" )
 ----------------------------------
 
-==== Threat mapping
-
-*Framework*: MITRE ATT&CK^TM^
-
-* Tactic:
-** Name: Command and Control
-** ID: TA0011
-** Reference URL: https://attack.mitre.org/tactics/TA0011/
-* Technique:
-** Name: Web Service
-** ID: T1102
-** Reference URL: https://attack.mitre.org/techniques/T1102/
-
-[[connection-to-commonly-abused-web-services-history]]
-==== Rule version history
+Version 5 (7.16.0 release)::
+* Formatting only
 
 Version 4 (7.13.0 release)::
 * Updated query, changed from:
