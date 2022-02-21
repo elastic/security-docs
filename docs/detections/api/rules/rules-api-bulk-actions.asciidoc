@@ -195,7 +195,7 @@ A JSON array containing the updated rules.
 
 ==== Bulk action
 
-Applies a bulk action to multiple rules. The bulk action is applied to all rules that match the filter.
+Applies a bulk action to multiple rules. The bulk action is applied to all rules that match the filter or to the list of rule by their ids.
 
 ===== Request URL
 
@@ -209,7 +209,7 @@ A JSON object with following properties:
 |==============================================
 |Name |Type |Description |Required
 | `query` | String |  A string containing a KQL search query to match the rules. | No
-| `ids` | String[] |  Array of rule ids, to which bulk action will be applied. Only can be defined when query is property is undefined | No
+| `ids` | String[] |  Array of rule ids, to which bulk action will be applied. Only valid when query is property is undefined | No
 | `action` | Enum a| A bulk action 
 to apply
 
@@ -222,7 +222,7 @@ to apply
 * `edit`
 
 | Yes
-| `edit` | <<bulk-edit-object-schema, BulkEdit[]>> 
+| `edit` | <<bulk-edit-object-schema, BulkEditAction[]>> 
 | Edit object that describes applying update action 
 
 |No.
@@ -240,7 +240,7 @@ Edit object consists of 2 properties:
 * `type` - enum - that defines what will be updated in rules
 * `value` - any - value which will be applied in edit action.
 
-===== Possible `Edit` object values
+===== Possible `BulkEditAction` object values
 [width="100%",options="header"]
 |==============================================
 |`type` field |`value` field |Description
@@ -258,8 +258,12 @@ Edit object consists of 2 properties:
  |  Adds timeline to rule
 |==============================================
 
+Actions(<<bulk-edit-object-schema, BulkEditAction[]>> ) in `edit` array payload's property are applying in a historical order(from first to last).
+
+
 ====== Example requests
 
+*Example 1*
 The following request will activate all rules that have the `test` tag:
 
 [source,console]
@@ -270,18 +274,6 @@ POST api/detection_engine/rules/_bulk_action
   "action": "enable"
 }
 --------------------------------------------------
-
-The following request will add tags `tag-1`, `tag-2` to all rules that have the `test` tag:
-[source,console]
---------------------------------------------------
-POST api/detection_engine/rules/_bulk_action
-{
-  "query": "alert.attributes.tags: \"test\"",
-  "action": "edit",
-  "updates": [{ action: "add_tags", value:["tag-1", "tag-2"] }]
-}
---------------------------------------------------
-// KIBANA
 
 ===== Response code
 
@@ -296,7 +288,7 @@ For `enable`, `disable`, `delete`, `edit`, and `duplicate` actions, a JSON objec
 --------------------------------------------------
 {
    "success":true,
-   "rules_count":1,
+   "rules_count": 1,
    "attributes":{
       "results":{
          "updated":[
@@ -383,6 +375,19 @@ For `enable`, `disable`, `delete`, `edit`, and `duplicate` actions, a JSON objec
 For an `export` action, an `.ndjson` file containing exported rules.
 
 
+*Example 2, Partial failure*
+
+The following request will add tags `tag-1`, `tag-2` to all rules that have the `test` tag:
+[source,console]
+--------------------------------------------------
+POST api/detection_engine/rules/_bulk_action
+{
+  "query": "alert.attributes.tags: \"test\"",
+  "action": "edit",
+  "updates": [{ action: "add_tags", value:["tag-1", "tag-2"] }]
+}
+--------------------------------------------------
+
 ===== Response code
 
 `500`::
@@ -390,7 +395,7 @@ For an `export` action, an `.ndjson` file containing exported rules.
 
 ===== Response payload
 
-If processing of any of rule fail, partial error will be return with id/name of affected rule and corresponding error together with successfully processed rules(same format as for successful 200 request)
+If processing of any rule fails, partial error will be return with id/name of affected rule and corresponding error together with successfully processed rules(same format as for successful 200 request)
 
 Example payload
 
@@ -514,4 +519,3 @@ Example payload
         }
     }
 }
---------------------------------------------------
