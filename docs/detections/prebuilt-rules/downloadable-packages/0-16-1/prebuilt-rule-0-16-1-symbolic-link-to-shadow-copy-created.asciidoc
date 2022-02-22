@@ -1,0 +1,67 @@
+[[prebuilt-rule-0-16-1-symbolic-link-to-shadow-copy-created]]
+=== Symbolic Link to Shadow Copy Created
+
+Identifies the creation of symbolic links to a shadow copy. Symbolic links can be used to access files in the shadow copy, including sensitive files that may contain credential information.
+
+*Rule type*: eql
+
+*Rule indices*: 
+
+* winlogbeat-*
+* logs-endpoint.events.*
+* logs-windows.*
+
+*Severity*: medium
+
+*Risk score*: 47
+
+*Runs every*: 5m
+
+*Searches indices from*: now-9m ({ref}/common-options.html#date-math[Date Math format], see also <<rule-schedule, `Additional look-back time`>>)
+
+*Maximum alerts per execution*: 100
+
+*References*: 
+
+* https://docs.microsoft.com/en-us/windows-server/administration/windows-commands/mklink
+* https://2017.zeronights.org/wp-content/uploads/materials/ZN17_Kheirkhabarov_Hunting_for_Credentials_Dumping_in_Windows_Environment.pdf
+
+*Tags*: 
+
+* Elastic
+* Host
+* Windows
+* Threat Detection
+* Credential Access
+
+*Version*: 2
+
+*Rule authors*: 
+
+* Austin Songer
+
+*Rule license*: Elastic License v2
+
+
+==== Rule query
+
+
+[source, js]
+----------------------------------
+process where event.type in ("start", "process_started") and
+process.pe.original_file_name == "Cmd.Exe" and
+process.args : "*mklink*" and
+process.args : "*\\GLOBALROOT\\Device\\HarddiskVolumeShadowCopy*"
+
+----------------------------------
+
+*Framework*: MITRE ATT&CK^TM^
+
+* Tactic:
+** Name: Credential Access
+** ID: TA0006
+** Reference URL: https://attack.mitre.org/tactics/TA0006/
+* Technique:
+** Name: OS Credential Dumping
+** ID: T1003
+** Reference URL: https://attack.mitre.org/techniques/T1003/

@@ -1,0 +1,78 @@
+[[prebuilt-rule-0-16-1-ms-office-macro-security-registry-modifications]]
+=== MS Office Macro Security Registry Modifications
+
+Microsoft Office Products offers options for users and developers to control the security settings for running and using Macros. Adversaries may abuse these security settings to modify the default behavior of the Office Application to trust future macros and/or disable security warnings, which could increase their chances of establishing persistence.
+
+*Rule type*: eql
+
+*Rule indices*: 
+
+* winlogbeat-*
+* logs-windows.*
+
+*Severity*: medium
+
+*Risk score*: 47
+
+*Runs every*: 5m
+
+*Searches indices from*: now-9m ({ref}/common-options.html#date-math[Date Math format], see also <<rule-schedule, `Additional look-back time`>>)
+
+*Maximum alerts per execution*: 100
+
+*References*: None
+
+*Tags*: 
+
+* Elastic
+* Host
+* Windows
+* Threat Detection
+* Defense Evasion
+
+*Version*: 1
+
+*Rule authors*: 
+
+* Elastic
+
+*Rule license*: Elastic License v2
+
+
+==== Rule query
+
+
+[source, js]
+----------------------------------
+registry where event.type == "change" and
+    registry.path : (
+        "HKU\\S-1-5-21-*\\SOFTWARE\\Microsoft\\Office\\*\\Security\\AccessVBOM",
+        "HKU\\S-1-5-21-*\\SOFTWARE\\Microsoft\\Office\\*\\Security\\VbaWarnings"
+        ) and 
+    registry.data.strings == "0x00000001" and
+    process.name : ("cscript.exe", "wscript.exe", "mshta.exe", "mshta.exe", "winword.exe", "excel.exe")
+
+----------------------------------
+
+*Framework*: MITRE ATT&CK^TM^
+
+* Tactic:
+** Name: Defense Evasion
+** ID: TA0005
+** Reference URL: https://attack.mitre.org/tactics/TA0005/
+* Technique:
+** Name: Modify Registry
+** ID: T1112
+** Reference URL: https://attack.mitre.org/techniques/T1112/
+* Tactic:
+** Name: Execution
+** ID: TA0002
+** Reference URL: https://attack.mitre.org/tactics/TA0002/
+* Technique:
+** Name: User Execution
+** ID: T1204
+** Reference URL: https://attack.mitre.org/techniques/T1204/
+* Sub-technique:
+** Name: Malicious File
+** ID: T1204.002
+** Reference URL: https://attack.mitre.org/techniques/T1204/002/
