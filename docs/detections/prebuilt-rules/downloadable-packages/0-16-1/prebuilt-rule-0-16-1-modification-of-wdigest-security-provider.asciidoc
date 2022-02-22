@@ -1,0 +1,71 @@
+[[prebuilt-rule-0-16-1-modification-of-wdigest-security-provider]]
+=== Modification of WDigest Security Provider
+
+Identifies attempts to modify the WDigest security provider in the registry to force the user's password to be stored in clear text in memory. This behavior can be indicative of an adversary attempting to weaken the security configuration of an endpoint. Once the UseLogonCredential value is modified, the adversary may attempt to dump clear text passwords from memory.
+
+*Rule type*: eql
+
+*Rule indices*: 
+
+* winlogbeat-*
+* logs-endpoint.events.*
+* logs-windows.*
+
+*Severity*: high
+
+*Risk score*: 73
+
+*Runs every*: 5m
+
+*Searches indices from*: now-9m ({ref}/common-options.html#date-math[Date Math format], see also <<rule-schedule, `Additional look-back time`>>)
+
+*Maximum alerts per execution*: 100
+
+*References*: 
+
+* https://www.csoonline.com/article/3438824/how-to-detect-and-halt-credential-theft-via-windows-wdigest.html
+* https://www.praetorian.com/blog/mitigating-mimikatz-wdigest-cleartext-credential-theft?edition=2019
+
+*Tags*: 
+
+* Elastic
+* Host
+* Windows
+* Threat Detection
+* Credential Access
+
+*Version*: 2
+
+*Rule authors*: 
+
+* Elastic
+
+*Rule license*: Elastic License v2
+
+
+==== Rule query
+
+
+[source, js]
+----------------------------------
+registry where event.type : ("creation", "change") and
+    registry.path : 
+        "HKLM\\SYSTEM\\*ControlSet*\\Control\\SecurityProviders\\WDigest\\UseLogonCredential"
+    and registry.data.strings : ("1", "0x00000001")
+
+----------------------------------
+
+*Framework*: MITRE ATT&CK^TM^
+
+* Tactic:
+** Name: Credential Access
+** ID: TA0006
+** Reference URL: https://attack.mitre.org/tactics/TA0006/
+* Technique:
+** Name: OS Credential Dumping
+** ID: T1003
+** Reference URL: https://attack.mitre.org/techniques/T1003/
+* Sub-technique:
+** Name: LSASS Memory
+** ID: T1003.001
+** Reference URL: https://attack.mitre.org/techniques/T1003/001/
