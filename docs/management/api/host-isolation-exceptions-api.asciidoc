@@ -1,0 +1,468 @@
+:endpoint-artifact-list-id:                     endpoint_host_isolation_exceptions
+:endpoint-artifact-name:                        host isolation exceptions
+:endpoint-artifact-name-single:                 host isolation exception
+:endpoint-artifact-name-sentence-start:         Host isolation exceptions
+:endpoint-artifact-name-single-sentence-start:  Host isolation exception
+[[host-isolation-exceptions-api]]
+=== {endpoint-artifact-name-sentence-start}
+
+Create, retrieve, update, and delete endpoint <<host-isolation-exceptions>> via API. {endpoint-artifact-name} are managed via the <<exceptions-api-overview>> using a static container id (`list_id`) of `pass:a[{endpoint-artifact-list-id}]`, which must be created prior to adding a trusted application. Access to these APIs requires that a user has authorization to manage endpoints.
+
+
+NOTE: Console supports Elasticsearch APIs only. Console doesn't allow interactions with {kib} APIs. You must use `curl` or another HTTP tool instead. For more information, refer to https://www.elastic.co/guide/en/kibana/current/console-kibana.html[Run Elasticsearch API requests].
+
+
+==== Create {endpoint-artifact-name} container
+
+`POST <kibana host>:<port>/api/exception_lists`
+
+===== Request body
+
+A JSON object containing the fields listed below. The request must have the following:
+
+include::_exceptions-api-reusable-content.asciidoc[tags=endpoint-exceptions-request-payload-requirements]
+
+include::_exceptions-api-reusable-content.asciidoc[tags=create-exception-container-request-body]
+
+===== Example request
+
+[source,console,subs="attributes"]
+--------------------------------------------------
+POST api/exception_lists
+{
+  "description": "Endpoint Security Host Isolation Exceptions List",
+  "name": "Endpoint Security Host Isolation Exceptions List",
+  "list_id": "{endpoint-artifact-list-id}",
+  "type": "endpoint",
+  "namespace_type": "agnostic"
+}
+--------------------------------------------------
+// KIBANA
+
+===== Response code
+
+`200`::
+    Indicates a successful call.
+
+===== Response payload
+
+[source,json,subs="attributes"]
+--------------------------------------------------
+{
+	"_version": "WzIxMTgsMV0=",
+	"created_at": "2022-03-03T13:55:32.176Z",
+	"created_by": "elastic",
+	"description": "Endpoint Security Host Isolation Exceptions List",
+	"id": "978cbd00-9af9-11ec-94b1-fd7e90cc2a08",
+	"immutable": false,
+	"list_id": "{endpoint-artifact-list-id}",
+	"name": "Endpoint Security Host Isolation Exceptions List",
+	"namespace_type": "agnostic",
+	"os_types": [],
+	"tags": [],
+	"tie_breaker_id": "9894ae5c-2ce0-47dc-8c52-784ca2219fc3",
+	"type": "endpoint",
+	"updated_at": "2022-03-03T13:55:32.178Z",
+	"updated_by": "elastic",
+	"version": 1
+}
+--------------------------------------------------
+
+[#create-item-api]
+==== Create {endpoint-artifact-name-single}
+
+`POST <kibana host>:<port>/api/exception_lists/items`
+
+===== Request body
+
+A JSON object containing the fields listed below. The request must have the following:
+
+include::_exceptions-api-reusable-content.asciidoc[tags=endpoint-exceptions-item-create-update-payload-requirements]
+
+include::_exceptions-api-reusable-content.asciidoc[tag=create-exception-item-request-body]
+
+
+====== Example request
+
+
+[source,console,subs="attributes"]
+--------------------------------------------------
+POST api/exception_lists/items
+{
+    "description": "some description about this entry",
+    "entries": [
+        {
+            "field": "destination.ip",
+            "value": "10.10.0.1",
+            "type": "match",
+            "operator": "included"
+        }
+    ],
+    "list_id": "{endpoint-artifact-list-id}",
+    "name": "Some name for this item",
+    "namespace_type": "agnostic",
+    "os_types": [
+      "linux", 
+      "macos", 
+      "windows"
+    ],
+    "tags": [
+        "policy:all"
+    ],
+    "type": "simple"
+}
+--------------------------------------------------
+// KIBANA
+
+
+===== Response code
+
+`200`::
+    Indicates a successful call.
+
+===== Response payload
+
+[source,json,subs="attributes"]
+--------------------------------------------------
+{
+	"_version": "WzIxNDcsMV0=",
+	"created_at": "2022-03-03T14:04:00.496Z",
+	"created_by": "elastic",
+	"description": "some description about this entry",
+	"entries": [
+		{
+			"field": "destination.ip",
+			"value": "10.10.0.1",
+			"type": "match",
+			"operator": "included"
+		}
+	],
+	"id": "c6883700-9afa-11ec-94b1-fd7e90cc2a08",
+	"item_id": "1342081d-66ad-4b03-b554-131195ce404b",
+	"list_id": "endpoint_host_isolation_exceptions",
+	"name": "Host Isolation Exception - Created with API",
+	"namespace_type": "agnostic",
+	"os_types": [
+		"linux",
+		"macos",
+		"windows"
+	],
+	"tags": [
+		"policy:all"
+	],
+	"tie_breaker_id": "b65843e1-07b8-46d2-9e2b-5f0586dc364a",
+	"type": "simple",
+	"updated_at": "2022-03-03T14:04:00.498Z",
+	"updated_by": "elastic"
+}
+--------------------------------------------------
+
+
+
+[#update-item-api]
+==== Update {endpoint-artifact-name-single}
+
+`PUT <kibana host>:<port>/api/exception_lists/items`
+
+===== Request body
+
+A JSON object containing the fields listed below. The request must have the following:
+
+include::_exceptions-api-reusable-content.asciidoc[tags=endpoint-exceptions-item-create-update-payload-requirements]
+
+include::_exceptions-api-reusable-content.asciidoc[tags=update-exception-item-request-body]
+
+
+====== Example request
+
+Updates the `entries`:
+
+[source,console]
+--------------------------------------------------
+PUT api/exception_lists/items
+{
+	"description": "via API",
+	"entries": [
+		{
+			"field": "destination.ip",
+			"type": "match",
+			"value": "10.10.0.15",
+			"operator": "included"
+		}
+	],
+	"id": "c6883700-9afa-11ec-94b1-fd7e90cc2a08",
+	"item_id": "1342081d-66ad-4b03-b554-131195ce404b",
+	"name": "Host Isolation Exception - Created with API",
+	"namespace_type": "agnostic",
+	"os_types": [
+		"linux",
+		"macos",
+		"windows"
+	],
+	"type": "simple"
+}
+--------------------------------------------------
+// KIBANA
+
+
+===== Response code
+
+`200`::
+    Indicates a successful call.
+
+===== Response payload
+
+[source,json,subs="attributes"]
+--------------------------------------------------
+{
+	"_version": "WzIyMDIsMV0=",
+	"created_at": "2022-03-03T14:04:00.496Z",
+	"created_by": "elastic",
+	"description": "via API",
+	"entries": [
+		{
+			"field": "destination.ip",
+			"type": "match",
+			"value": "10.10.0.15",
+			"operator": "included"
+		}
+	],
+	"id": "c6883700-9afa-11ec-94b1-fd7e90cc2a08",
+	"item_id": "1342081d-66ad-4b03-b554-131195ce404b",
+	"list_id": "endpoint_host_isolation_exceptions",
+	"name": "HIE via API",
+	"namespace_type": "agnostic",
+	"os_types": [
+		"linux",
+		"macos",
+		"windows"
+	],
+	"tags": [],
+	"tie_breaker_id": "b65843e1-07b8-46d2-9e2b-5f0586dc364a",
+	"type": "simple",
+	"updated_at": "2022-03-03T14:22:08.345Z",
+	"updated_by": "elastic"
+}
+--------------------------------------------------
+
+
+==== Delete {endpoint-artifact-name-single}
+
+`DELETE <kibana host>:<port>/api/exception_lists/items`
+
+===== URL query parameters
+
+include::_exceptions-api-reusable-content.asciidoc[tags=api-id-or-itemid-query-params]
+
+
+====== Example request
+
+Deletes a {endpoint-artifact-name-single} with `item_id` of `1342081d-66ad-4b03-b554-131195ce404b`:
+
+[source,console]
+--------------------------------------------------
+DELETE api/exception_lists/items?item_id=1342081d-66ad-4b03-b554-131195ce404b&namespace_type=agnostic
+--------------------------------------------------
+// KIBANA
+
+
+===== Response code
+
+`200`::
+    Indicates a successful call.
+
+===== Response payload
+
+The item that was deleted:
+
+[source,json,subs="attributes"]
+--------------------------------------------------
+{
+	"_version": "WzIyNDksMV0=",
+	"comments": [],
+	"created_at": "2022-03-04T12:42:41.797Z",
+	"created_by": "elastic",
+	"description": "some description about this entry",
+	"entries": [
+		{
+			"field": "destination.ip",
+			"value": "10.10.0.1",
+			"type": "match",
+			"operator": "included"
+		}
+	],
+	"id": "c6883700-9afa-11ec-94b1-fd7e90cc2a08",
+	"item_id": "1342081d-66ad-4b03-b554-131195ce404b",
+	"list_id": "endpoint_host_isolation_exceptions",
+	"name": "Host Isolation Exception via API",
+	"namespace_type": "agnostic",
+	"os_types": [
+		"linux",
+		"macos",
+		"windows"
+	],
+	"tags": [
+		"policy:all"
+	],
+	"tie_breaker_id": "c0401075-7bd5-47e2-bd6c-4f7e088aa348",
+	"type": "simple",
+	"updated_at": "2022-03-04T12:42:41.802Z",
+	"updated_by": "elastic"
+}
+--------------------------------------------------
+
+
+==== Retrieve single {endpoint-artifact-name-single}
+
+`GET <kibana host>:<port>/api/exception_lists/items`
+
+
+===== URL query parameters
+
+include::_exceptions-api-reusable-content.asciidoc[tags=api-id-or-itemid-query-params]
+
+
+====== Example request
+
+[source,console]
+--------------------------------------------------
+GET api/exception_lists/items?item_id=1342081d-66ad-4b03-b554-131195ce404b&namespace_type=agnostic
+--------------------------------------------------
+// KIBANA
+
+
+===== Response code
+
+`200`::
+    Indicates a successful call.
+
+===== Response payload
+
+[source,json,subs="attributes"]
+--------------------------------------------------
+{
+  "_version": "WzEzNjcsMV0=",
+  "created_at": "2022-03-01T16:24:39.471Z",
+  "created_by": "elastic",
+  "description": "Host Isolation Exception item via API",
+  "entries": [
+    {
+      "field": "destination.ip",
+      "type": "match",
+      "value": "10.10.0.15",
+      "operator": "included"
+    }
+  ],
+  "id": "c6883700-9afa-11ec-94b1-fd7e90cc2a08",
+	"item_id": "1342081d-66ad-4b03-b554-131195ce404b",
+  "list_id": "{endpoint-artifact-list-id}",
+  "name": "Host Isolation Exception via API",
+  "namespace_type": "agnostic",
+  "os_types": [
+		"linux",
+		"macos",
+		"windows"
+	],
+  "tags": [
+    "policy:all"
+  ],
+  "tie_breaker_id": "97fe9d23-c8b8-4dc1-97e1-16444c8d863a",
+  "type": "simple",
+  "updated_at": "2022-03-01T17:21:07.273Z",
+  "updated_by": "elastic"
+}
+--------------------------------------------------
+
+
+==== Find {endpoint-artifact-name}
+
+`GET <kibana host>:<port>/api/exception_lists/items/_find`
+
+===== URL query parameters
+
+include::_exceptions-api-reusable-content.asciidoc[tags=find-exception-items-query-params]
+
+
+====== Example request
+
+[source,console,subs="attributes"]
+--------------------------------------------------
+GET api/exception_lists/items/_find?page=1&per_page=10&sort_field=name&sort_order=asc&list_id={endpoint-artifact-list-id}&namespace_type=agnostic
+--------------------------------------------------
+// KIBANA
+
+===== Response code
+
+`200`::
+    Indicates a successful call.
+
+===== Response payload
+
+
+[source,json,subs="attributes"]
+--------------------------------------------------
+{
+  "data": [
+    {
+      "_version": "WzEzNjcsMV0=",
+      "created_at": "2022-03-01T16:24:39.471Z",
+      "created_by": "elastic",
+      "description": "Host Isolation Exception item via API",
+      "entries": [
+        {
+          "field": "destination.ip",
+          "type": "match",
+          "value": "10.10.0.15",
+          "operator": "included"
+        }
+      ],
+      "id": "4e0e4e10-9af8-11ec-94b1-fd7e90cc2a08",
+      "item_id": "6555a6ed-b31c-4c74-b1a1-f2c5d9fb7d4a",
+      "list_id": "{endpoint-artifact-list-id}",
+      "name": "Host Isolation Exception via API",
+      "namespace_type": "agnostic",
+      "os_types": [
+        "linux",
+        "macos",
+        "windows"
+      ],
+      "tags": [
+        "policy:all"
+      ],
+      "tie_breaker_id": "97fe9d23-c8b8-4dc1-97e1-16444c8d863a",
+      "type": "simple",
+      "updated_at": "2022-03-01T17:21:07.273Z",
+      "updated_by": "elastic"
+    }
+  ],
+  "page": 1,
+  "per_page": 10,
+  "total": 1
+}
+--------------------------------------------------
+
+include::_exceptions-api-reusable-content.asciidoc[tag=endpoint-exceptions-value-types-info-section]
+
+[#exception-item-entry-schema]
+===== `entry` object schema
+
+{endpoint-artifact-name} allow for at most 1 condition to be defined. The following entry is supported by {endpoint-artifact-name}:
+
+====== Destination IPs
+
+Destination IPs are supported by all xref:exception-item-os-types[OS types]. A destination IP entry has the following structure:
+
+[source,json]
+-----------------------------
+{
+  "field": "destination.ip",
+  "value": "192.168.1.1",
+  "type": "match",
+  "operator": "included"
+}
+-----------------------------
+
+* `field` : `destination.ip`
+* `value` : a valid IPv4 address with optional CIDR associated with the `field`
+* `type` : must be `match`
+* `operator` : must be `included`
