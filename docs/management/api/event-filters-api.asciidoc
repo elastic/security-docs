@@ -1,13 +1,14 @@
-:endpoint-artifact-list-id:                     endpoint_trusted_apps
-:endpoint-artifact-name:                        trusted applications
-:endpoint-artifact-name-single:                 trusted application
-:endpoint-artifact-name-sentence-start:         Trusted applications
-:endpoint-artifact-name-single-sentence-start:  Trusted application
-:endpoint-artifact-api-doc-name:                trusted-application
-[[trusted-applications-api]]
+:endpoint-artifact-list-id:     endpoint_events
+:endpoint-artifact-name:        event filters
+:endpoint-artifact-name-single: event filter
+:endpoint-artifact-name-sentence-start: Event filters
+:endpoint-artifact-name-single-sentence-start: Event filter
+:endpoint-artifact-api-doc-name: event-filter
+
+[[event-filters-api]]
 === {endpoint-artifact-name-sentence-start}
 
-Create, retrieve, update, and delete endpoint <<trusted-apps-ov>> via API. Endpoint {endpoint-artifact-name} are managed via the <<exceptions-api-overview>> using a static container id (`list_id`) of `pass:a[{endpoint-artifact-list-id}]`, which must be created prior to adding the {endpoint-artifact-name}. Access to these APIs requires that a user has authorization to manage endpoints.
+Create, retrieve, update and delete endpoint <<event-filters>> via API. {endpoint-artifact-name-sentence-start} are managed via the <<exceptions-api-overview>> using a static container id (`list_id`) of `pass:a[{endpoint-artifact-list-id}]`, which must be created prior to adding an event filter. To access these APIs, users must have permission to manage endpoints.
 
 
 NOTE: Console supports Elasticsearch APIs only. Console doesn't allow interactions with {kib} APIs. You must use `curl` or another HTTP tool instead. For more information, refer to https://www.elastic.co/guide/en/kibana/current/console-kibana.html[Run Elasticsearch API requests].
@@ -32,8 +33,8 @@ include::_exceptions-api-reusable-content.asciidoc[tags=create-exception-contain
 --------------------------------------------------
 POST api/exception_lists
 {
-  "description": "Endpoint Security Trusted Apps List",
-  "name": "Endpoint Security Trusted Apps List",
+  "description": "Endpoint Security Event Filters List",
+  "name": "Endpoint Security Event Filters List",
   "list_id": "{endpoint-artifact-list-id}",
   "type": "endpoint",
   "namespace_type": "agnostic"
@@ -53,9 +54,9 @@ POST api/exception_lists
 {
   "_tags": [],
   "created_at": "2020-07-13T09:33:46.187Z",
-  "created_by": "elastic",
-  "description": "Endpoint Security Trusted Apps List",
-  "name": "Endpoint Security Trusted Apps List",
+  "created_by": "user",
+  "description": "Endpoint Security Event Filters List",
+  "name": "Endpoint Security Event Filters List",
   "list_id": "{endpoint-artifact-list-id}",
   "type": "endpoint",
   "namespace_type": "agnostic",
@@ -63,7 +64,7 @@ POST api/exception_lists
   "tags": [],
   "tie_breaker_id": "2c08d5a5-2ecc-4d5a-acfb-0a367f25b3f3",
   "updated_at": "2020-07-13T09:33:46.359Z",
-  "updated_by": "elastic"
+  "updated_by": "user"
 }
 --------------------------------------------------
 
@@ -88,15 +89,19 @@ include::_exceptions-api-reusable-content.asciidoc[tag=create-exception-item-req
 --------------------------------------------------
 POST api/exception_lists/items
 {
-    "comments": [],
+    "comments": [
+      {
+        "comment": "a new comment about this entry"
+      }
+    ],
     "description": "some description about this entry",
     "entries": [
-        {
-            "field": "process.executable.caseless",
-            "value": "c:\\applications\\elastic\\foo.exe",
-            "type": "match",
-            "operator": "included"
-        }
+      {
+        "field": "process.executable",
+        "operator": "included",
+        "type": "match",
+        "value": "c:\\applications\\elastic\\foo.exe"
+      }
     ],
     "list_id": "{endpoint-artifact-list-id}",
     "name": "Some name for this item",
@@ -124,16 +129,23 @@ POST api/exception_lists/items
 --------------------------------------------------
 {
     "_version": "WzEzNjIsMV0=",
-    "comments": [],
+    "comments": [
+      {
+        "comment": "a comment",
+        "created_at": "2022-03-01T16:24:39.471Z",
+        "created_by": "user",
+        "id": "c585d25c-6cb1-43a4-bcfc-919a270c99c1"
+      }
+    ],
     "created_at": "2022-03-01T16:24:39.471Z",
-    "created_by": "elastic",
+    "created_by": "user",
     "description": "some description about this entry",
     "entries": [
         {
-            "field": "process.executable.caseless",
-            "value": "c:\\applications\\elastic\\foo.exe",
-            "type": "match",
-            "operator": "included"
+          "field": "process.executable",
+          "operator": "included",
+          "type": "match",
+          "value": "c:\\applications\\elastic\\foo.exe"
         }
     ],
     "id": "17ba1bf0-997c-11ec-b212-9f4ed8b5942f",
@@ -150,7 +162,7 @@ POST api/exception_lists/items
     "tie_breaker_id": "c6bedf22-2292-4d4a-8eb8-e29a50b5b519",
     "type": "simple",
     "updated_at": "2022-03-01T16:24:39.475Z",
-    "updated_by": "elastic"
+    "updated_by": "user"
 }
 --------------------------------------------------
 
@@ -179,14 +191,14 @@ Updates the `entries`:
 PUT api/exception_lists/items
 {
     "_version": "WzEzNjIsMV0=",
-    "name": "App ABC",
-    "description": "This app is good",
+    "name": "Some name for this item updated",
+    "description": "some description about this entry updated",
     "entries": [
-        {
-            "field": "process.hash.sha1",
-            "value": "aedb279e378bed6c2db3c9dc9e12ba635e0b391c",
-            "type": "match",
-            "operator": "included"
+         {
+          "field": "process.executable",
+          "operator": "included",
+          "type": "match",
+          "value": "c:\\applications\\elastic\\fooV2.exe"
         }
     ],
     "os_types": [
@@ -196,7 +208,17 @@ PUT api/exception_lists/items
         "policy:all"
     ],
     "id": "17ba1bf0-997c-11ec-b212-9f4ed8b5942f",
-    "comments": [],
+    "comments": [
+      {
+        "comment": "a comment",
+        "created_at": "2022-03-01T16:24:39.471Z",
+        "created_by": "user",
+        "id": "c585d25c-6cb1-43a4-bcfc-919a270c99c1"
+      },
+      {
+        "comment": "new comment"
+      }
+    ],
     "item_id": "29f480e6-6d34-4bc7-9038-f809f11cb679",
     "namespace_type": "agnostic",
     "type": "simple"
@@ -216,22 +238,35 @@ PUT api/exception_lists/items
 --------------------------------------------------
 {
     "_version": "WzEzNjcsMV0=",
-    "comments": [],
+    "comments": [
+      {
+        "comment": "a comment",
+        "created_at": "2022-03-01T16:24:39.471Z",
+        "created_by": "user",
+        "id": "c585d25c-6cb1-43a4-bcfc-919a270c99c1"
+      },
+      {
+        "comment": "new comment",
+        "created_at": "2022-03-02T11:22:19.471Z",
+        "created_by": "user",
+        "id": "cd85d25c-6cb1-83a4-bcfc-915a270c19c1"
+      }
+    ]
     "created_at": "2022-03-01T16:24:39.471Z",
-    "created_by": "elastic",
-    "description": "This app is good",
+    "created_by": "user",
+    "description": "some description about this entry updated",
     "entries": [
         {
-            "field": "process.hash.sha1",
-            "value": "aedb279e378bed6c2db3c9dc9e12ba635e0b391c",
-            "type": "match",
-            "operator": "included"
+          "field": "process.executable",
+          "operator": "included",
+          "type": "match",
+          "value": "c:\\applications\\elastic\\fooV2.exe"
         }
     ],
     "id": "17ba1bf0-997c-11ec-b212-9f4ed8b5942f",
     "item_id": "29f480e6-6d34-4bc7-9038-f809f11cb679",
     "list_id": "{endpoint-artifact-list-id}",
-    "name": "App ABC",
+    "name": "Some name for this item updated",
     "namespace_type": "agnostic",
     "os_types": [
         "windows"
@@ -242,7 +277,7 @@ PUT api/exception_lists/items
     "tie_breaker_id": "c6bedf22-2292-4d4a-8eb8-e29a50b5b519",
     "type": "simple",
     "updated_at": "2022-03-01T17:21:07.273Z",
-    "updated_by": "elastic"
+    "updated_by": "user"
 }
 --------------------------------------------------
 
@@ -255,9 +290,10 @@ PUT api/exception_lists/items
 
 include::_exceptions-api-reusable-content.asciidoc[tags=api-id-or-itemid-query-params]
 
+
 ====== Example request
 
-Deletes the {endpoint-artifact-name-single} with `item_id` of `29f480e6-6d34-4bc7-9038-f809f11cb679`:
+Deletes a {endpoint-artifact-name-single} with `item_id` of `29f480e6-6d34-4bc7-9038-f809f11cb679`:
 
 [source,console]
 --------------------------------------------------
@@ -278,34 +314,47 @@ The item that was deleted:
 [source,json,subs="attributes"]
 --------------------------------------------------
 {
-  "_version": "WzEzNjcsMV0=",
-  "comments": [],
-  "created_at": "2022-03-01T16:24:39.471Z",
-  "created_by": "elastic",
-  "description": "This app is good",
-  "entries": [
-    {
-      "field": "process.hash.sha1",
-      "type": "match",
-      "value": "aedb279e378bed6c2db3c9dc9e12ba635e0b391c",
-      "operator": "included"
-    }
-  ],
-  "id": "17ba1bf0-997c-11ec-b212-9f4ed8b5942f",
-  "item_id": "29f480e6-6d34-4bc7-9038-f809f11cb679",
-  "list_id": "{endpoint-artifact-list-id}",
-  "name": "App ABC",
-  "namespace_type": "agnostic",
-  "os_types": [
-    "windows"
-  ],
-  "tags": [
-    "policy:all"
-  ],
-  "tie_breaker_id": "c6bedf22-2292-4d4a-8eb8-e29a50b5b519",
-  "type": "simple",
-  "updated_at": "2022-03-01T17:21:07.273Z",
-  "updated_by": "elastic"
+    "_version": "WzEzNjcsMV0=",
+    "comments": [
+      {
+        "comment": "a comment",
+        "created_at": "2022-03-01T16:24:39.471Z",
+        "created_by": "user",
+        "id": "c585d25c-6cb1-43a4-bcfc-919a270c99c1"
+      },
+      {
+        "comment": "new comment",
+        "created_at": "2022-03-02T11:22:19.471Z",
+        "created_by": "user",
+        "id": "cd85d25c-6cb1-83a4-bcfc-915a270c19c1"
+      }
+    ]
+    "created_at": "2022-03-01T16:24:39.471Z",
+    "created_by": "user",
+    "description": "some description about this entry updated",
+    "entries": [
+        {
+          "field": "process.executable",
+          "operator": "included",
+          "type": "match",
+          "value": "c:\\applications\\elastic\\fooV2.exe"
+        }
+    ],
+    "id": "17ba1bf0-997c-11ec-b212-9f4ed8b5942f",
+    "item_id": "29f480e6-6d34-4bc7-9038-f809f11cb679",
+    "list_id": "{endpoint-artifact-list-id}",
+    "name": "Some name for this item updated",
+    "namespace_type": "agnostic",
+    "os_types": [
+        "windows"
+    ],
+    "tags": [
+        "policy:all"
+    ],
+    "tie_breaker_id": "c6bedf22-2292-4d4a-8eb8-e29a50b5b519",
+    "type": "simple",
+    "updated_at": "2022-03-01T17:21:07.273Z",
+    "updated_by": "user"
 }
 --------------------------------------------------
 
@@ -339,34 +388,47 @@ GET api/exception_lists/items?item_id=29f480e6-6d34-4bc7-9038-f809f11cb679&names
 [source,json,subs="attributes"]
 --------------------------------------------------
 {
-  "_version": "WzEzNjcsMV0=",
-  "comments": [],
-  "created_at": "2022-03-01T16:24:39.471Z",
-  "created_by": "elastic",
-  "description": "This app is good",
-  "entries": [
-    {
-      "field": "process.hash.sha1",
-      "type": "match",
-      "value": "aedb279e378bed6c2db3c9dc9e12ba635e0b391c",
-      "operator": "included"
-    }
-  ],
-  "id": "17ba1bf0-997c-11ec-b212-9f4ed8b5942f",
-  "item_id": "29f480e6-6d34-4bc7-9038-f809f11cb679",
-  "list_id": "{endpoint-artifact-list-id}",
-  "name": "App ABC",
-  "namespace_type": "agnostic",
-  "os_types": [
-    "windows"
-  ],
-  "tags": [
-    "policy:all"
-  ],
-  "tie_breaker_id": "c6bedf22-2292-4d4a-8eb8-e29a50b5b519",
-  "type": "simple",
-  "updated_at": "2022-03-01T17:21:07.273Z",
-  "updated_by": "elastic"
+    "_version": "WzEzNjcsMV0=",
+    "comments": [
+      {
+        "comment": "a comment",
+        "created_at": "2022-03-01T16:24:39.471Z",
+        "created_by": "user",
+        "id": "c585d25c-6cb1-43a4-bcfc-919a270c99c1"
+      },
+      {
+        "comment": "new comment",
+        "created_at": "2022-03-02T11:22:19.471Z",
+        "created_by": "user",
+        "id": "cd85d25c-6cb1-83a4-bcfc-915a270c19c1"
+      }
+    ]
+    "created_at": "2022-03-01T16:24:39.471Z",
+    "created_by": "user",
+    "description": "some description about this entry updated",
+    "entries": [
+        {
+          "field": "process.executable",
+          "operator": "included",
+          "type": "match",
+          "value": "c:\\applications\\elastic\\fooV2.exe"
+        }
+    ],
+    "id": "17ba1bf0-997c-11ec-b212-9f4ed8b5942f",
+    "item_id": "29f480e6-6d34-4bc7-9038-f809f11cb679",
+    "list_id": "{endpoint-artifact-list-id}",
+    "name": "Some name for this item updated",
+    "namespace_type": "agnostic",
+    "os_types": [
+        "windows"
+    ],
+    "tags": [
+        "policy:all"
+    ],
+    "tie_breaker_id": "c6bedf22-2292-4d4a-8eb8-e29a50b5b519",
+    "type": "simple",
+    "updated_at": "2022-03-01T17:21:07.273Z",
+    "updated_by": "user"
 }
 --------------------------------------------------
 
@@ -401,35 +463,48 @@ GET api/exception_lists/items/_find?page=1&per_page=10&sort_field=name&sort_orde
 {
   "data": [
     {
-      "_version": "WzEzNjcsMV0=",
-      "comments": [],
-      "created_at": "2022-03-01T16:24:39.471Z",
-      "created_by": "elastic",
-      "description": "This app is good",
-      "entries": [
+    "_version": "WzEzNjcsMV0=",
+    "comments": [
+      {
+        "comment": "a comment",
+        "created_at": "2022-03-01T16:24:39.471Z",
+        "created_by": "user",
+        "id": "c585d25c-6cb1-43a4-bcfc-919a270c99c1"
+      },
+      {
+        "comment": "new comment",
+        "created_at": "2022-03-02T11:22:19.471Z",
+        "created_by": "user",
+        "id": "cd85d25c-6cb1-83a4-bcfc-915a270c19c1"
+      }
+    ]
+    "created_at": "2022-03-01T16:24:39.471Z",
+    "created_by": "user",
+    "description": "some description about this entry updated",
+    "entries": [
         {
-          "field": "process.hash.sha1",
+          "field": "process.executable",
+          "operator": "included",
           "type": "match",
-          "value": "aedb279e378bed6c2db3c9dc9e12ba635e0b391c",
-          "operator": "included"
+          "value": "c:\\applications\\elastic\\fooV2.exe"
         }
-      ],
-      "id": "17ba1bf0-997c-11ec-b212-9f4ed8b5942f",
-      "item_id": "29f480e6-6d34-4bc7-9038-f809f11cb679",
-      "list_id": "{endpoint-artifact-list-id}",
-      "name": "App ABC",
-      "namespace_type": "agnostic",
-      "os_types": [
+    ],
+    "id": "17ba1bf0-997c-11ec-b212-9f4ed8b5942f",
+    "item_id": "29f480e6-6d34-4bc7-9038-f809f11cb679",
+    "list_id": "{endpoint-artifact-list-id}",
+    "name": "Some name for this item updated",
+    "namespace_type": "agnostic",
+    "os_types": [
         "windows"
-      ],
-      "tags": [
+    ],
+    "tags": [
         "policy:all"
-      ],
-      "tie_breaker_id": "c6bedf22-2292-4d4a-8eb8-e29a50b5b519",
-      "type": "simple",
-      "updated_at": "2022-03-01T17:21:07.273Z",
-      "updated_by": "elastic"
-    }
+    ],
+    "tie_breaker_id": "c6bedf22-2292-4d4a-8eb8-e29a50b5b519",
+    "type": "simple",
+    "updated_at": "2022-03-01T17:21:07.273Z",
+    "updated_by": "user"
+}
   ],
   "page": 1,
   "per_page": 10,
@@ -442,31 +517,11 @@ include::_exceptions-api-reusable-content.asciidoc[tag=endpoint-exceptions-value
 [#exception-{endpoint-artifact-api-doc-name}-item-entry-schema]
 ===== `entry` object schema
 
-Endpoint {endpoint-artifact-name} allow for at most 3 conditions to be defined. No duplicates are allowed. The following entries are supported by {endpoint-artifact-name}:
+{endpoint-artifact-name-sentence-start} allow for an unlimited number of conditions to be defined. Each {endpoint-artifact-name-single} entry contains an `entry` object that has `type`, `value`, `field` and `operator` keys with values. The following operators are supported in an entry object: 
 
-====== Process hashes
+====== Operator `is`
 
-Process hashes are supported by all xref:exception-{endpoint-artifact-api-doc-name}-item-os-types[OS types]. A hash entry has the following structure:
-
-[source,json]
------------------------------
-{
-  "field": "process.hash.sha1",
-  "value": "aedb279e378bed6c2db3c9dc9e12ba635e0b391c",
-  "type": "match",
-  "operator": "included"
-}
------------------------------
-
-* `field` : The following values are supported: `process.hash.md5`, `process.hash.sha1` or `process.hash.sha256`.
-* `value` : The hash value associated with the `field`.
-* `type` : Must be `match`.
-* `operator` : Must be `included`.
-
-
-====== Process file path
-
-Process file paths are supported by all xref:exception-{endpoint-artifact-api-doc-name}-item-os-types[OS types]. A file path entry has the following structure:
+Exactly match with the single given value.
 
 [source,json]
 -----------------------------
@@ -478,83 +533,64 @@ Process file paths are supported by all xref:exception-{endpoint-artifact-api-do
 }
 -----------------------------
 
-* `field` : Must be `process.executable.caseless`.
-* `value` : The file path to match on.
-* `type` : Can be set to `match` (exact match) or `wildcard`. When using `wildcard`, the `*` can be used in the path `value`.
-* `operator` : Must be `included`.
+====== Operator `is not`
 
-
-====== Process signature
-
-Process signature is supported only for Windows xref:exception-{endpoint-artifact-api-doc-name}-item-os-types[OS type]. A signature entry has the following structure:
+Does not exactly match with the single given value.
 
 [source,json]
 -----------------------------
 {
-  "field": "process.Ext.code_signature",
-  "type": "nested",
-  "entries": [
-    {
-      "field": "trusted",
-      "value": "true",
-      "type": "match",
-      "operator": "included"
-    },
-    {
-      "field": "subject_name",
-      "value": "elastic",
-      "type": "match",
-      "operator": "included"
-    }
-  ]
+  "field": "process.executable.caseless",
+  "value": "c:/path/to/file.exe",
+  "type": "match",
+  "operator": "excluded"
 }
 -----------------------------
 
-* `field` : Must be set to `process.Ext.code_signature`.
-* `type` : Must be set to `nested`.
-* `entries`: An array with 2 `entry` items.
-* `entries[0]` : An entry with `{ "field": "trusted", "value": "true", "type": "match", "operator": "included" }`.
-* `entries[1]` : The entry defining the signature to be matched upon:
-** `field`: Must be set to `subject_name`.
-** `value` : The signature name to match on.
-** `type` : Must be set to `match`.
-** `operator` : Must be set to `included`.
+====== Operator `is one of`
 
-
-====== Example for a Windows {endpoint-artifact-name-single}:
+Matches exactly with any of the values in the given list of values.
 
 [source,json]
 -----------------------------
-[
-  {
-    "field": "process.hash.sha1",
-    "value": "aedb279e378bed6c2db3c9dc9e12ba635e0b391c",
-    "type": "match",
-    "operator": "included"
-  },
-  {
-    "field": "process.executable.caseless",
-    "value": "c:/path/to/file.exe",
-    "type": "match",
-    "operator": "included"
-  },
-  {
-    "field": "process.Ext.code_signature",
-    "entries": [
-      {
-        "field": "trusted",
-        "value": "true",
-        "type": "match",
-        "operator": "included"
-      },
-      {
-        "field": "subject_name",
-        "value": "elastic",
-        "type": "match",
-        "operator": "included"
-      }
-    ],
-    "type": "nested"
-  }
-]
+{
+  "field": "process.executable.caseless",
+  "value": ["c:/path/to/file.exe", "c:/path/to/file2.exe"],
+  "type": "match_any",
+  "operator": "included"
+}
+-----------------------------
+
+====== Operator `is not one of`
+
+Does not exactly match with any of the values in the given list of values.
+
+[source,json]
+-----------------------------
+{
+  "field": "process.executable.caseless",
+  "value": ["c:/path/to/file.exe", "c:/path/to/file2.exe"],
+  "type": "match_any",
+  "operator": "excluded"
+}
+-----------------------------
+
+====== Nested conditions
+
+In the case of a `nested` entry, the top-level only has `type`, `field`, and an `entries` array that holds a list of `entry` objects:
+
+[source,json]
+-----------------------------
+{
+  "entries": [
+    {
+      "field": "exists",
+      "operator": "included",
+      "type": "match",
+      "value": "true"
+    }
+  ],
+  "field": "process.Ext.code_signature",
+  "type": "nested"
+}
 -----------------------------
