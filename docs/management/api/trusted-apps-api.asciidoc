@@ -1,0 +1,560 @@
+:endpoint-artifact-list-id:                     endpoint_trusted_apps
+:endpoint-artifact-name:                        trusted applications
+:endpoint-artifact-name-single:                 trusted application
+:endpoint-artifact-name-sentence-start:         Trusted applications
+:endpoint-artifact-name-single-sentence-start:  Trusted application
+:endpoint-artifact-api-doc-name:                trusted-application
+[[trusted-applications-api]]
+=== {endpoint-artifact-name-sentence-start}
+
+Create, retrieve, update, and delete endpoint <<trusted-apps-ov>> via API. Endpoint {endpoint-artifact-name} are managed via the <<exceptions-api-overview>> using a static container id (`list_id`) of `pass:a[{endpoint-artifact-list-id}]`, which must be created prior to adding the {endpoint-artifact-name}. Access to these APIs requires that a user has authorization to manage endpoints.
+
+
+NOTE: Console supports Elasticsearch APIs only. Console doesn't allow interactions with {kib} APIs. You must use `curl` or another HTTP tool instead. For more information, refer to https://www.elastic.co/guide/en/kibana/current/console-kibana.html[Run Elasticsearch API requests].
+
+
+==== Create {endpoint-artifact-name} container
+
+`POST <kibana host>:<port>/api/exception_lists`
+
+===== Request body
+
+A JSON object containing the fields listed below. The request must have the following:
+
+include::_exceptions-api-reusable-content.asciidoc[tags=endpoint-exceptions-request-payload-list-id-and-namespace-requirements]
+- The `type` value must be `endpoint`.
+
+include::_exceptions-api-reusable-content.asciidoc[tags=create-exception-container-request-body]
+
+===== Example request
+
+[source,console,subs="attributes"]
+--------------------------------------------------
+POST api/exception_lists
+{
+  "description": "Endpoint Security Trusted Apps List",
+  "name": "Endpoint Security Trusted Apps List",
+  "list_id": "{endpoint-artifact-list-id}",
+  "type": "endpoint",
+  "namespace_type": "agnostic"
+}
+--------------------------------------------------
+// KIBANA
+
+===== Response code
+
+`200`::
+    Indicates a successful call.
+
+===== Response payload
+
+[source,json,subs="attributes"]
+--------------------------------------------------
+{
+  "_tags": [],
+  "created_at": "2020-07-13T09:33:46.187Z",
+  "created_by": "elastic",
+  "description": "Endpoint Security Trusted Apps List",
+  "name": "Endpoint Security Trusted Apps List",
+  "list_id": "{endpoint-artifact-list-id}",
+  "type": "endpoint",
+  "namespace_type": "agnostic",
+  "id": "f320c070-c4eb-11ea-80bb-11861bae2798",
+  "tags": [],
+  "tie_breaker_id": "2c08d5a5-2ecc-4d5a-acfb-0a367f25b3f3",
+  "updated_at": "2020-07-13T09:33:46.359Z",
+  "updated_by": "elastic"
+}
+--------------------------------------------------
+
+[#create-{endpoint-artifact-api-doc-name}-item-api]
+==== Create {endpoint-artifact-name-single}
+
+`POST <kibana host>:<port>/api/exception_lists/items`
+
+===== Request body
+
+A JSON object containing the fields listed below. The request must have the following:
+
+include::_exceptions-api-reusable-content.asciidoc[tags=endpoint-exceptions-request-payload-requirements]
+
+include::_exceptions-api-reusable-content.asciidoc[tag=create-exception-item-request-body]
+
+
+====== Example request
+
+
+[source,console,subs="attributes"]
+--------------------------------------------------
+POST api/exception_lists/items
+{
+    "comments": [],
+    "description": "some description about this entry",
+    "entries": [
+        {
+            "field": "process.executable.caseless",
+            "value": "c:\\applications\\elastic\\foo.exe",
+            "type": "match",
+            "operator": "included"
+        }
+    ],
+    "list_id": "{endpoint-artifact-list-id}",
+    "name": "Some name for this item",
+    "namespace_type": "agnostic",
+    "os_types": [
+        "windows"
+    ],
+    "tags": [
+        "policy:all"
+    ],
+    "type": "simple"
+}
+--------------------------------------------------
+// KIBANA
+
+
+===== Response code
+
+`200`::
+    Indicates a successful call.
+
+===== Response payload
+
+[source,json,subs="attributes"]
+--------------------------------------------------
+{
+    "_version": "WzEzNjIsMV0=",
+    "comments": [],
+    "created_at": "2022-03-01T16:24:39.471Z",
+    "created_by": "elastic",
+    "description": "some description about this entry",
+    "entries": [
+        {
+            "field": "process.executable.caseless",
+            "value": "c:\\applications\\elastic\\foo.exe",
+            "type": "match",
+            "operator": "included"
+        }
+    ],
+    "id": "17ba1bf0-997c-11ec-b212-9f4ed8b5942f",
+    "item_id": "29f480e6-6d34-4bc7-9038-f809f11cb679",
+    "list_id": "{endpoint-artifact-list-id}",
+    "name": "Some name for this item",
+    "namespace_type": "agnostic",
+    "os_types": [
+        "windows"
+    ],
+    "tags": [
+        "policy:all"
+    ],
+    "tie_breaker_id": "c6bedf22-2292-4d4a-8eb8-e29a50b5b519",
+    "type": "simple",
+    "updated_at": "2022-03-01T16:24:39.475Z",
+    "updated_by": "elastic"
+}
+--------------------------------------------------
+
+
+
+[#update-{endpoint-artifact-api-doc-name}-item-api]
+==== Update {endpoint-artifact-name-single}
+
+`PUT <kibana host>:<port>/api/exception_lists/items`
+
+===== Request body
+
+A JSON object containing the fields listed below. The request must have the following:
+
+include::_exceptions-api-reusable-content.asciidoc[tags=endpoint-exceptions-request-payload-requirements]
+
+include::_exceptions-api-reusable-content.asciidoc[tags=update-exception-item-request-body]
+
+
+====== Example request
+
+Updates the `entries`:
+
+[source,console]
+--------------------------------------------------
+PUT api/exception_lists/items
+{
+    "_version": "WzEzNjIsMV0=",
+    "name": "App ABC",
+    "description": "This app is good",
+    "entries": [
+        {
+            "field": "process.hash.sha1",
+            "value": "aedb279e378bed6c2db3c9dc9e12ba635e0b391c",
+            "type": "match",
+            "operator": "included"
+        }
+    ],
+    "os_types": [
+        "windows"
+    ],
+    "tags": [
+        "policy:all"
+    ],
+    "id": "17ba1bf0-997c-11ec-b212-9f4ed8b5942f",
+    "comments": [],
+    "item_id": "29f480e6-6d34-4bc7-9038-f809f11cb679",
+    "namespace_type": "agnostic",
+    "type": "simple"
+}
+--------------------------------------------------
+// KIBANA
+
+
+===== Response code
+
+`200`::
+    Indicates a successful call.
+
+===== Response payload
+
+[source,json,subs="attributes"]
+--------------------------------------------------
+{
+    "_version": "WzEzNjcsMV0=",
+    "comments": [],
+    "created_at": "2022-03-01T16:24:39.471Z",
+    "created_by": "elastic",
+    "description": "This app is good",
+    "entries": [
+        {
+            "field": "process.hash.sha1",
+            "value": "aedb279e378bed6c2db3c9dc9e12ba635e0b391c",
+            "type": "match",
+            "operator": "included"
+        }
+    ],
+    "id": "17ba1bf0-997c-11ec-b212-9f4ed8b5942f",
+    "item_id": "29f480e6-6d34-4bc7-9038-f809f11cb679",
+    "list_id": "{endpoint-artifact-list-id}",
+    "name": "App ABC",
+    "namespace_type": "agnostic",
+    "os_types": [
+        "windows"
+    ],
+    "tags": [
+        "policy:all"
+    ],
+    "tie_breaker_id": "c6bedf22-2292-4d4a-8eb8-e29a50b5b519",
+    "type": "simple",
+    "updated_at": "2022-03-01T17:21:07.273Z",
+    "updated_by": "elastic"
+}
+--------------------------------------------------
+
+
+==== Delete {endpoint-artifact-name-single}
+
+`DELETE <kibana host>:<port>/api/exception_lists/items`
+
+===== URL query parameters
+
+include::_exceptions-api-reusable-content.asciidoc[tags=api-id-or-itemid-query-params]
+
+====== Example request
+
+Deletes the {endpoint-artifact-name-single} with `item_id` of `29f480e6-6d34-4bc7-9038-f809f11cb679`:
+
+[source,console]
+--------------------------------------------------
+DELETE api/exception_lists/items?item_id=29f480e6-6d34-4bc7-9038-f809f11cb679&namespace_type=agnostic
+--------------------------------------------------
+// KIBANA
+
+
+===== Response code
+
+`200`::
+    Indicates a successful call.
+
+===== Response payload
+
+The item that was deleted:
+
+[source,json,subs="attributes"]
+--------------------------------------------------
+{
+  "_version": "WzEzNjcsMV0=",
+  "comments": [],
+  "created_at": "2022-03-01T16:24:39.471Z",
+  "created_by": "elastic",
+  "description": "This app is good",
+  "entries": [
+    {
+      "field": "process.hash.sha1",
+      "type": "match",
+      "value": "aedb279e378bed6c2db3c9dc9e12ba635e0b391c",
+      "operator": "included"
+    }
+  ],
+  "id": "17ba1bf0-997c-11ec-b212-9f4ed8b5942f",
+  "item_id": "29f480e6-6d34-4bc7-9038-f809f11cb679",
+  "list_id": "{endpoint-artifact-list-id}",
+  "name": "App ABC",
+  "namespace_type": "agnostic",
+  "os_types": [
+    "windows"
+  ],
+  "tags": [
+    "policy:all"
+  ],
+  "tie_breaker_id": "c6bedf22-2292-4d4a-8eb8-e29a50b5b519",
+  "type": "simple",
+  "updated_at": "2022-03-01T17:21:07.273Z",
+  "updated_by": "elastic"
+}
+--------------------------------------------------
+
+
+==== Retrieve single {endpoint-artifact-name-single}
+
+`GET <kibana host>:<port>/api/exception_lists/items`
+
+
+===== URL query parameters
+
+include::_exceptions-api-reusable-content.asciidoc[tags=api-id-or-itemid-query-params]
+
+
+====== Example request
+
+[source,console]
+--------------------------------------------------
+GET api/exception_lists/items?item_id=29f480e6-6d34-4bc7-9038-f809f11cb679&namespace_type=agnostic
+--------------------------------------------------
+// KIBANA
+
+
+===== Response code
+
+`200`::
+    Indicates a successful call.
+
+===== Response payload
+
+[source,json,subs="attributes"]
+--------------------------------------------------
+{
+  "_version": "WzEzNjcsMV0=",
+  "comments": [],
+  "created_at": "2022-03-01T16:24:39.471Z",
+  "created_by": "elastic",
+  "description": "This app is good",
+  "entries": [
+    {
+      "field": "process.hash.sha1",
+      "type": "match",
+      "value": "aedb279e378bed6c2db3c9dc9e12ba635e0b391c",
+      "operator": "included"
+    }
+  ],
+  "id": "17ba1bf0-997c-11ec-b212-9f4ed8b5942f",
+  "item_id": "29f480e6-6d34-4bc7-9038-f809f11cb679",
+  "list_id": "{endpoint-artifact-list-id}",
+  "name": "App ABC",
+  "namespace_type": "agnostic",
+  "os_types": [
+    "windows"
+  ],
+  "tags": [
+    "policy:all"
+  ],
+  "tie_breaker_id": "c6bedf22-2292-4d4a-8eb8-e29a50b5b519",
+  "type": "simple",
+  "updated_at": "2022-03-01T17:21:07.273Z",
+  "updated_by": "elastic"
+}
+--------------------------------------------------
+
+
+==== Find {endpoint-artifact-name}
+
+`GET <kibana host>:<port>/api/exception_lists/items/_find`
+
+===== URL query parameters
+
+include::_exceptions-api-reusable-content.asciidoc[tags=find-exception-items-query-params]
+
+
+====== Example request
+
+[source,console,subs="attributes"]
+--------------------------------------------------
+GET api/exception_lists/items/_find?page=1&per_page=10&sort_field=name&sort_order=asc&list_id={endpoint-artifact-list-id}&namespace_type=agnostic
+--------------------------------------------------
+// KIBANA
+
+===== Response code
+
+`200`::
+    Indicates a successful call.
+
+===== Response payload
+
+
+[source,json,subs="attributes"]
+--------------------------------------------------
+{
+  "data": [
+    {
+      "_version": "WzEzNjcsMV0=",
+      "comments": [],
+      "created_at": "2022-03-01T16:24:39.471Z",
+      "created_by": "elastic",
+      "description": "This app is good",
+      "entries": [
+        {
+          "field": "process.hash.sha1",
+          "type": "match",
+          "value": "aedb279e378bed6c2db3c9dc9e12ba635e0b391c",
+          "operator": "included"
+        }
+      ],
+      "id": "17ba1bf0-997c-11ec-b212-9f4ed8b5942f",
+      "item_id": "29f480e6-6d34-4bc7-9038-f809f11cb679",
+      "list_id": "{endpoint-artifact-list-id}",
+      "name": "App ABC",
+      "namespace_type": "agnostic",
+      "os_types": [
+        "windows"
+      ],
+      "tags": [
+        "policy:all"
+      ],
+      "tie_breaker_id": "c6bedf22-2292-4d4a-8eb8-e29a50b5b519",
+      "type": "simple",
+      "updated_at": "2022-03-01T17:21:07.273Z",
+      "updated_by": "elastic"
+    }
+  ],
+  "page": 1,
+  "per_page": 10,
+  "total": 1
+}
+--------------------------------------------------
+
+include::_exceptions-api-reusable-content.asciidoc[tag=endpoint-exceptions-value-types-info-section]
+
+[#exception-{endpoint-artifact-api-doc-name}-item-entry-schema]
+===== `entry` object schema
+
+Endpoint {endpoint-artifact-name} allow for at most 3 conditions to be defined. No duplicates are allowed. The following entries are supported by {endpoint-artifact-name}:
+
+====== Process hashes
+
+Process hashes are supported by all xref:exception-{endpoint-artifact-api-doc-name}-item-os-types[OS types]. A hash entry has the following structure:
+
+[source,json]
+-----------------------------
+{
+  "field": "process.hash.sha1",
+  "value": "aedb279e378bed6c2db3c9dc9e12ba635e0b391c",
+  "type": "match",
+  "operator": "included"
+}
+-----------------------------
+
+* `field` : The following values are supported: `process.hash.md5`, `process.hash.sha1` or `process.hash.sha256`.
+* `value` : The hash value associated with the `field`.
+* `type` : Must be `match`.
+* `operator` : Must be `included`.
+
+
+====== Process file path
+
+Process file paths are supported by all xref:exception-{endpoint-artifact-api-doc-name}-item-os-types[OS types]. A file path entry has the following structure:
+
+[source,json]
+-----------------------------
+{
+  "field": "process.executable.caseless",
+  "value": "c:/path/to/file.exe",
+  "type": "match",
+  "operator": "included"
+}
+-----------------------------
+
+* `field` : Must be `process.executable.caseless`.
+* `value` : The file path to match on.
+* `type` : Can be set to `match` (exact match) or `wildcard`. When using `wildcard`, the `*` can be used in the path `value`.
+* `operator` : Must be `included`.
+
+
+====== Process signature
+
+Process signature is supported only for Windows xref:exception-{endpoint-artifact-api-doc-name}-item-os-types[OS type]. A signature entry has the following structure:
+
+[source,json]
+-----------------------------
+{
+  "field": "process.Ext.code_signature",
+  "type": "nested",
+  "entries": [
+    {
+      "field": "trusted",
+      "value": "true",
+      "type": "match",
+      "operator": "included"
+    },
+    {
+      "field": "subject_name",
+      "value": "elastic",
+      "type": "match",
+      "operator": "included"
+    }
+  ]
+}
+-----------------------------
+
+* `field` : Must be set to `process.Ext.code_signature`.
+* `type` : Must be set to `nested`.
+* `entries`: An array with 2 `entry` items.
+* `entries[0]` : An entry with `{ "field": "trusted", "value": "true", "type": "match", "operator": "included" }`.
+* `entries[1]` : The entry defining the signature to be matched upon:
+** `field`: Must be set to `subject_name`.
+** `value` : The signature name to match on.
+** `type` : Must be set to `match`.
+** `operator` : Must be set to `included`.
+
+
+====== Example for a Windows {endpoint-artifact-name-single}:
+
+[source,json]
+-----------------------------
+[
+  {
+    "field": "process.hash.sha1",
+    "value": "aedb279e378bed6c2db3c9dc9e12ba635e0b391c",
+    "type": "match",
+    "operator": "included"
+  },
+  {
+    "field": "process.executable.caseless",
+    "value": "c:/path/to/file.exe",
+    "type": "match",
+    "operator": "included"
+  },
+  {
+    "field": "process.Ext.code_signature",
+    "entries": [
+      {
+        "field": "trusted",
+        "value": "true",
+        "type": "match",
+        "operator": "included"
+      },
+      {
+        "field": "subject_name",
+        "value": "elastic",
+        "type": "match",
+        "operator": "included"
+      }
+    ],
+    "type": "nested"
+  }
+]
+-----------------------------
