@@ -33,9 +33,11 @@ Identifies a potential exploitation of InstallerTakeOver (CVE-2021-41379) defaul
 * Threat Detection
 * Privilege Escalation
 
-*Version*: 1
+*Version*: 2 (<<potential-privilege-escalation-via-installerfiletakeover-history, version history>>)
 
 *Added ({stack} release)*: 8.0.0
+
+*Last modified ({stack} release)*: 8.1.0
 
 *Rule authors*: Elastic
 
@@ -53,13 +55,13 @@ Identifies a potential exploitation of InstallerTakeOver (CVE-2021-41379) defaul
 InstallerFileTakeOver is a weaponized EoP PoC to the CVE-2021-41379 vulnerability. Upon successful exploitation,
 an unprivileged user will escalate privileges to SYSTEM/NT AUTHORITY.
 
-This rule detects the default execution of the PoC, which overwrites the `elevation_service.exe` DACL and copy itself
+This rule detects the default execution of the PoC, which overwrites the `elevation_service.exe` DACL and copies itself
 to the location to escalate privileges. An attacker is able to still take over any file that is not in use (locked), which is outside the scope of this rule.
 
 #### Possible investigation steps:
 
-- Check for the digital signature of the executable
-- Look for additional processes spawned by the process, command lines and network communications.
+- Check for the digital signature of the executable.
+- Look for additional processes spawned by the process, command lines, and network communications.
 - Look for additional alerts involving the host and the user.
 
 ### False Positive Analysis
@@ -72,7 +74,7 @@ to the location to escalate privileges. An attacker is able to still take over a
 
 ### Response and Remediation
 
-- Immediate response should be taken to validate activity, investigate and potentially isolate activity to prevent further
+- Immediate response should be taken to validate activity, investigate, and potentially isolate activity to prevent further
 post-compromise behavior.
 
 ----------------------------------
@@ -84,8 +86,10 @@ post-compromise behavior.
 [source,js]
 ----------------------------------
 /* This rule is compatible with both Sysmon and Elastic Endpoint */
-process where event.type == "start" and user.id : "S-1-5-18" and
-( (process.name : "elevation_service.exe" and not
+process where event.type == "start" and
+(process.Ext.token.integrity_level_name : "System" or
+winlog.event_data.IntegrityLevel : "System") and (
+(process.name : "elevation_service.exe" and not
 process.pe.original_file_name == "elevation_service.exe") or
 (process.parent.name : "elevation_service.exe" and
 process.name : ("rundll32.exe", "cmd.exe", "powershell.exe")) )
@@ -103,3 +107,20 @@ process.name : ("rundll32.exe", "cmd.exe", "powershell.exe")) )
 ** Name: Exploitation for Privilege Escalation
 ** ID: T1068
 ** Reference URL: https://attack.mitre.org/techniques/T1068/
+
+[[potential-privilege-escalation-via-installerfiletakeover-history]]
+==== Rule version history
+
+Version 2 (8.1.0 release)::
+* Updated query, changed from:
++
+[source, js]
+----------------------------------
+/* This rule is compatible with both Sysmon and Elastic Endpoint */
+process where event.type == "start" and user.id : "S-1-5-18" and
+( (process.name : "elevation_service.exe" and not
+process.pe.original_file_name == "elevation_service.exe") or
+(process.parent.name : "elevation_service.exe" and
+process.name : ("rundll32.exe", "cmd.exe", "powershell.exe")) )
+----------------------------------
+
