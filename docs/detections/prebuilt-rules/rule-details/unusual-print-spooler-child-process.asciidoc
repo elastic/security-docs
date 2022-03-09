@@ -34,11 +34,11 @@ Detects unusual Print Spooler service (spoolsv.exe) child processes. This may in
 * Threat Detection
 * Privilege Escalation
 
-*Version*: 2
+*Version*: 3 (<<unusual-print-spooler-child-process-history, version history>>)
 
 *Added ({stack} release)*: 7.14.0
 
-*Last modified ({stack} release)*: 7.14.0
+*Last modified ({stack} release)*: 8.1.0
 
 *Rule authors*: Elastic
 
@@ -54,8 +54,9 @@ Install or update of a legitimate printing driver. Verify the printer driver fil
 [source,js]
 ----------------------------------
 process where event.type == "start" and process.parent.name :
-"spoolsv.exe" and user.id : "S-1-5-18" and /* exclusions for FP
-control below */ not process.name : ("splwow64.exe",
+"spoolsv.exe" and (process.Ext.token.integrity_level_name : "System"
+or winlog.event_data.IntegrityLevel : "System") and /* exclusions
+for FP control below */ not process.name : ("splwow64.exe",
 "PDFCreator.exe", "acrodist.exe", "spoolsv.exe", "msiexec.exe",
 "route.exe", "WerFault.exe") and not process.command_line :
 "*\\WINDOWS\\system32\\spool\\DRIVERS*" and not (process.name :
@@ -79,3 +80,26 @@ and process.command_line : "*PrintConfig.dll*")
 ** Name: Exploitation for Privilege Escalation
 ** ID: T1068
 ** Reference URL: https://attack.mitre.org/techniques/T1068/
+
+[[unusual-print-spooler-child-process-history]]
+==== Rule version history
+
+Version 3 (8.1.0 release)::
+* Updated query, changed from:
++
+[source, js]
+----------------------------------
+process where event.type == "start" and process.parent.name :
+"spoolsv.exe" and user.id : "S-1-5-18" and /* exclusions for FP
+control below */ not process.name : ("splwow64.exe",
+"PDFCreator.exe", "acrodist.exe", "spoolsv.exe", "msiexec.exe",
+"route.exe", "WerFault.exe") and not process.command_line :
+"*\\WINDOWS\\system32\\spool\\DRIVERS*" and not (process.name :
+"net.exe" and process.command_line : ("*stop*", "*start*")) and not
+(process.name : ("cmd.exe", "powershell.exe") and process.command_line
+: ("*.spl*", "*\\program files*", "*route add*")) and not
+(process.name : "netsh.exe" and process.command_line : ("*add
+portopening*", "*rule name*")) and not (process.name : "regsvr32.exe"
+and process.command_line : "*PrintConfig.dll*")
+----------------------------------
+
