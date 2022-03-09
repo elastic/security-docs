@@ -29,11 +29,11 @@ Identifies registry write modifications to enable Remote Desktop Protocol (RDP) 
 * Threat Detection
 * Lateral Movement
 
-*Version*: 4 (<<rdp-enabled-via-registry-history, version history>>)
+*Version*: 5 (<<rdp-enabled-via-registry-history, version history>>)
 
 *Added ({stack} release)*: 7.11.0
 
-*Last modified ({stack} release)*: 7.16.0
+*Last modified ({stack} release)*: 8.1.0
 
 *Rule authors*: Elastic
 
@@ -44,11 +44,11 @@ Identifies registry write modifications to enable Remote Desktop Protocol (RDP) 
 
 [source,js]
 ----------------------------------
-registry where registry.path :
-"HKLM\\SYSTEM\\ControlSet*\\Control\\Terminal
-Server\\fDenyTSConnections" and registry.data.strings == "0" and not
-(process.name : "svchost.exe" and user.domain == "NT AUTHORITY") and
-not process.executable :
+registry where event.type in ("creation", "change") and
+registry.path : "HKLM\\SYSTEM\\*ControlSet*\\Control\\Terminal
+Server\\fDenyTSConnections" and registry.data.strings : ("0",
+"0x00000000") and not (process.name : "svchost.exe" and user.domain ==
+"NT AUTHORITY") and not process.executable :
 "C:\\Windows\\System32\\SystemPropertiesRemote.exe"
 ----------------------------------
 
@@ -67,6 +67,19 @@ not process.executable :
 
 [[rdp-enabled-via-registry-history]]
 ==== Rule version history
+
+Version 5 (8.1.0 release)::
+* Updated query, changed from:
++
+[source, js]
+----------------------------------
+registry where registry.path :
+"HKLM\\SYSTEM\\ControlSet*\\Control\\Terminal
+Server\\fDenyTSConnections" and registry.data.strings == "0" and not
+(process.name : "svchost.exe" and user.domain == "NT AUTHORITY") and
+not process.executable :
+"C:\\Windows\\System32\\SystemPropertiesRemote.exe"
+----------------------------------
 
 Version 4 (7.16.0 release)::
 * Formatting only
