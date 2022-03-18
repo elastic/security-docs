@@ -1,17 +1,19 @@
 [[host-risk-score]]
-== Host Risk Score
+== Host risk score
 
 NOTE: This feature is available for {stack} versions 7.16.0 and newer.
 
-The Host Risk Score feature highlights risky hosts from within your environment. It utilizes a transform with a scripted metric aggregation to calculate host risk scores based on alerts that were generated within the past five days. The transform runs hourly to update the score as new alerts are generated.
+The host risk score feature highlights risky hosts from within your environment. It utilizes a transform with a scripted metric aggregation to calculate host risk scores based on alerts that were generated within the past five days. The transform runs hourly to update the score as new alerts are generated.
 
-The contribution of each rule to the host risk score is calculated as a function of the rule risk score (`signal.rule.risk_score`) and a time decay factor to reduce the contribution of stale alerts, while considering recent alerts. A weighted sum of the individual time-corrected rule risks is then applied to the risk score. As such, rules with a higher time-corrected risk also have a higher weight. Each host risk score is normalized to a scale of 0 to 100.
+The contribution of each rule to the host risk score is calculated as a function of the rule risk score (`signal.rule.risk_score`) and a time decay factor to reduce the contribution of stale alerts, while considering recent alerts. A weighted sum is used to calculate the risk score. As such, rules with a higher time-corrected risk also have a higher weight. Each host risk score is normalized to a scale of 0 to 100.
+
+Specific host attributes can boost the final risk score. For example, alert activity on a server poses a greater risk than that on a laptop. Therefore, the host risk score is 1.5 times higher if the host is a server. This boosted score is finalized after calculating the weighted sum of the time-corrected risks.
 
 The following table shows how risk levels are applied to a host, based on the normalized risk score:
 
 [width="100%",options="header"]
 |==============================================
-|Risk level |Host Risk Score
+|Risk level |Host risk score
 
 |Unknown |< 20
 |Low |20-40
@@ -23,14 +25,17 @@ The following table shows how risk levels are applied to a host, based on the no
 |==============================================
 
 [discrete]
-=== Deploy the Host Risk Score package
+=== Deploy the host risk score package
 
-To deploy the Host Risk Score framework in your environment, follow https://github.com/elastic/detection-rules/blob/main/docs/experimental-machine-learning/host-risk-score.md[these steps]. These instructions also include steps to enable the `riskyHostsEnabled` feature flag.
+To deploy the host risk score framework in your environment, follow https://github.com/elastic/detection-rules/blob/main/docs/experimental-machine-learning/host-risk-score.md[these steps]. These instructions also include steps to enable the `riskyHostsEnabled` feature flag.
 
-NOTE: To view Host Risk Score data on the {elastic-sec} Overview page and the Alert details flyout, you must enable the feature flag. However, enabling the feature flag is NOT required to view the Lens dashboards.
+NOTE: Host risk score artifacts should be updated when you upgrade the {stack}. To do this, download a release bundle that's compatible with the new {stack} version and repeat all the steps referenced above. Failure to do so might cause views in the {security-app} to break.
 
+NOTE: To view host risk score data in the {security-app}, you must enable the feature flag. However, enabling the feature flag is NOT required to view the Lens dashboards.
+
+[[view-host-risk-score]]
 [discrete]
-=== View Host Risk Score data
+=== View host risk score data
 
 If the `riskyHostsEnabled` feature flag is enabled:
 
@@ -72,9 +77,32 @@ The data tables beneath the histogram display associated rules, users, and MITRE
 [role="screenshot"]
 image::images/data-tables.png[]
 
-*Host risk score in Alert details flyout*
+[discrete]
+==== Additional places to visualize host risk score data
 
-If the `riskyHostsEnabled` feature flag is enabled, the host risk score keyword is displayed in the *Overview* tab of the Alert details flyout.
+If the `riskyHostsEnabled` feature flag is enabled, you can visualize host risk score data in the following places in the {security-app}:
+
+The *Overview* tab on the Alert details flyout:
 
 [role="screenshot"]
 image::images/score-in-flyout.png[]
+
+The *Host risk classification* column in the All hosts table on the Hosts page:
+
+[role="screenshot"]
+image::images/hrs-all-hosts.png[]
+
+The *Hosts by risk* tab on the Hosts page:
+
+[role="screenshot"]
+image::images/hosts-by-risk-tab.png[]
+
+The *Overview* section on the Host details page:
+
+[role="screenshot"]
+image::images/hrs-overview-section.png[]
+
+The *Hosts by risk* tab on the Host details page:
+
+[role="screenshot"]
+image::images/hosts-by-risk-details-page.png[]
