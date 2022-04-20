@@ -1,7 +1,7 @@
-[[net-command-via-system-account]]
-=== Net command via SYSTEM account
+[[account-discovery-command-via-system-account]]
+=== Account Discovery Command via SYSTEM Account
 
-Identifies the SYSTEM account using an account discovery utility. This could be a sign of discovery activity after an adversary has achieved privilege escalation.
+Identifies when the SYSTEM account uses an account discovery utility. This could be a sign of discovery activity after an adversary has achieved privilege escalation.
 
 *Rule type*: eql
 
@@ -29,15 +29,27 @@ Identifies the SYSTEM account using an account discovery utility. This could be 
 * Threat Detection
 * Discovery
 
-*Version*: 9 (<<net-command-via-system-account-history, version history>>)
+*Version*: 11 (<<account-discovery-command-via-system-account-history, version history>>)
 
 *Added ({stack} release)*: 7.7.0
 
-*Last modified ({stack} release)*: 8.1.0
+*Last modified ({stack} release)*: 8.2.0
 
 *Rule authors*: Elastic
 
 *Rule license*: Elastic License v2
+
+==== Investigation guide
+
+
+[source,markdown]
+----------------------------------
+## Config
+
+If enabling an EQL rule on a non-elastic-agent index (such as beats) for versions <8.2, events will not define `event.ingested` and default fallback for EQL rules was not added until 8.2, so you will need to add a custom pipeline to populate `event.ingested` to @timestamp for this rule to work.
+
+----------------------------------
+
 
 ==== Rule query
 
@@ -45,10 +57,10 @@ Identifies the SYSTEM account using an account discovery utility. This could be 
 [source,js]
 ----------------------------------
 process where event.type in ("start", "process_started") and
-(process.Ext.token.integrity_level_name : "System" or
-winlog.event_data.IntegrityLevel : "System") and process.name :
+(?process.Ext.token.integrity_level_name : "System" or
+?winlog.event_data.IntegrityLevel : "System") and (process.name :
 "whoami.exe" or (process.name : "net1.exe" and not
-process.parent.name : "net.exe")
+process.parent.name : "net.exe"))
 ----------------------------------
 
 ==== Threat mapping
@@ -64,8 +76,22 @@ process.parent.name : "net.exe")
 ** ID: T1033
 ** Reference URL: https://attack.mitre.org/techniques/T1033/
 
-[[net-command-via-system-account-history]]
+[[account-discovery-command-via-system-account-history]]
 ==== Rule version history
+
+Version 11 (8.2.0 release)::
+* Rule name changed from: Net command via SYSTEM account
++
+* Updated query, changed from:
++
+[source, js]
+----------------------------------
+process where event.type in ("start", "process_started") and
+(process.Ext.token.integrity_level_name : "System" or
+winlog.event_data.IntegrityLevel : "System") and process.name :
+"whoami.exe" or (process.name : "net1.exe" and not
+process.parent.name : "net.exe")
+----------------------------------
 
 Version 9 (8.1.0 release)::
 * Updated query, changed from:
