@@ -1,7 +1,7 @@
 [[local-scheduled-task-creation]]
 === Local Scheduled Task Creation
 
-A scheduled task can be used by an adversary to establish persistence, move laterally, and/or escalate privileges.
+Indicates the creation of a scheduled task. Adversaries can use these to establish persistence, move laterally, and/or escalate privileges.
 
 *Rule type*: eql
 
@@ -29,11 +29,11 @@ A scheduled task can be used by an adversary to establish persistence, move late
 * Threat Detection
 * Persistence
 
-*Version*: 10 (<<local-scheduled-task-creation-history, version history>>)
+*Version*: 12 (<<local-scheduled-task-creation-history, version history>>)
 
 *Added ({stack} release)*: 7.6.0
 
-*Last modified ({stack} release)*: 8.1.0
+*Last modified ({stack} release)*: 8.2.0
 
 *Rule authors*: Elastic
 
@@ -63,8 +63,8 @@ process.entity_id [process where event.type == "start" and
 "schtasks.exe") and process.args : ("/create", "-create") and
 process.args : ("/RU", "/SC", "/TN", "/TR", "/F", "/XML") and /*
 exclude SYSTEM Integrity Level - look for task creations by non-SYSTEM
-user */ not (process.Ext.token.integrity_level_name : "System" or
-winlog.event_data.IntegrityLevel : "System") ] by
+user */ not (?process.Ext.token.integrity_level_name : "System" or
+?winlog.event_data.IntegrityLevel : "System") ] by
 process.parent.entity_id
 ----------------------------------
 
@@ -83,6 +83,31 @@ process.parent.entity_id
 
 [[local-scheduled-task-creation-history]]
 ==== Rule version history
+
+Version 12 (8.2.0 release)::
+* Updated query, changed from:
++
+[source, js]
+----------------------------------
+sequence with maxspan=1m [process where event.type != "end" and
+((process.name : ("cmd.exe", "wscript.exe", "rundll32.exe",
+"regsvr32.exe", "wmic.exe", "mshta.exe",
+"powershell.exe", "pwsh.exe", "powershell_ise.exe", "WmiPrvSe.exe",
+"wsmprovhost.exe", "winrshost.exe") or
+process.pe.original_file_name : ("cmd.exe", "wscript.exe",
+"rundll32.exe", "regsvr32.exe", "wmic.exe", "mshta.exe",
+"powershell.exe", "pwsh.dll", "powershell_ise.exe", "WmiPrvSe.exe",
+"wsmprovhost.exe",
+"winrshost.exe")) or process.code_signature.trusted == false)] by
+process.entity_id [process where event.type == "start" and
+(process.name : "schtasks.exe" or process.pe.original_file_name ==
+"schtasks.exe") and process.args : ("/create", "-create") and
+process.args : ("/RU", "/SC", "/TN", "/TR", "/F", "/XML") and /*
+exclude SYSTEM Integrity Level - look for task creations by non-SYSTEM
+user */ not (process.Ext.token.integrity_level_name : "System" or
+winlog.event_data.IntegrityLevel : "System") ] by
+process.parent.entity_id
+----------------------------------
 
 Version 10 (8.1.0 release)::
 * Updated query, changed from:

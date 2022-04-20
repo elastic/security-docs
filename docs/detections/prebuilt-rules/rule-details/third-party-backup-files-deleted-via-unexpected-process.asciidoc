@@ -33,11 +33,11 @@ Identifies the deletion of backup files, saved using third-party software, by a 
 * Threat Detection
 * Impact
 
-*Version*: 2 (<<third-party-backup-files-deleted-via-unexpected-process-history, version history>>)
+*Version*: 3 (<<third-party-backup-files-deleted-via-unexpected-process-history, version history>>)
 
 *Added ({stack} release)*: 7.16.0
 
-*Last modified ({stack} release)*: 8.0.0
+*Last modified ({stack} release)*: 8.2.0
 
 *Rule authors*: Elastic
 
@@ -46,6 +46,57 @@ Identifies the deletion of backup files, saved using third-party software, by a 
 ==== Potential false positives
 
 Certain utilities that delete files for disk cleanup or Administrators manually removing backup files.
+
+==== Investigation guide
+
+
+[source,markdown]
+----------------------------------
+## Triage and analysis
+
+### Investigating Third-party Backup Files Deleted via Unexpected Process
+
+Backups are a significant obstacle for any ransomware operation. They allow the victim to resume business by performing
+data recovery, making them a valuable target.
+
+Attackers can delete backups from the host and gain access to backup servers to remove centralized backups for the
+environment, ensuring that victims have no alternatives to paying the ransom.
+
+This rule identifies file deletions performed by a process that does not belong to the backup suite and aims to delete
+Veritas or Veeam backups.
+
+#### Possible investigation steps
+
+- Identify the process (location, name, etc.) and the user that performed this operation.
+- Check whether the account is authorized to perform this operation.
+- Confirm whether the account owner is aware of the operation.
+- Investigate other alerts associated with the user during the past 48 hours.
+
+### False positive analysis
+
+- This rule can be triggered by the manual removal of backup files and by removal using other third-party tools that are
+not from the backup suite. Exceptions can be added for specific accounts and executables, preferably tied together.
+
+### Related rules
+
+- Deleting Backup Catalogs with Wbadmin - 581add16-df76-42bb-af8e-c979bfb39a59
+- Volume Shadow Copy Deleted or Resized via VssAdmin - b5ea4bfe-a1b2-421f-9d47-22a75a6f2921
+- Volume Shadow Copy Deletion via PowerShell - d99a037b-c8e2-47a5-97b9-170d076827c4
+- Volume Shadow Copy Deletion via WMIC - dc9c1f74-dac3-48e3-b47f-eb79db358f57
+
+### Response and remediation
+
+- Initiate the incident response process based on the outcome of the triage.
+- Reset the password of the involved accounts.
+- Perform data recovery locally or restore the backups from replicated copies (Cloud, other servers, etc.).
+
+
+## Config
+
+If enabling an EQL rule on a non-elastic-agent index (such as beats) for versions <8.2, events will not define `event.ingested` and default fallback for EQL rules was not added until 8.2, so you will need to add a custom pipeline to populate `event.ingested` to @timestamp for this rule to work.
+
+----------------------------------
+
 
 ==== Rule query
 
@@ -78,6 +129,9 @@ Exec\\*", "?:\\Program Files
 
 [[third-party-backup-files-deleted-via-unexpected-process-history]]
 ==== Rule version history
+
+Version 3 (8.2.0 release)::
+* Formatting only
 
 Version 2 (8.0.0 release)::
 * Formatting only
