@@ -34,11 +34,11 @@ Detects unusual Print Spooler service (spoolsv.exe) child processes. This may in
 * Threat Detection
 * Privilege Escalation
 
-*Version*: 3 (<<unusual-print-spooler-child-process-history, version history>>)
+*Version*: 5 (<<unusual-print-spooler-child-process-history, version history>>)
 
 *Added ({stack} release)*: 7.14.0
 
-*Last modified ({stack} release)*: 8.1.0
+*Last modified ({stack} release)*: 8.2.0
 
 *Rule authors*: Elastic
 
@@ -48,14 +48,26 @@ Detects unusual Print Spooler service (spoolsv.exe) child processes. This may in
 
 Install or update of a legitimate printing driver. Verify the printer driver file metadata such as manufacturer and signature information.
 
+==== Investigation guide
+
+
+[source,markdown]
+----------------------------------
+## Config
+
+If enabling an EQL rule on a non-elastic-agent index (such as beats) for versions <8.2, events will not define `event.ingested` and default fallback for EQL rules was not added until 8.2, so you will need to add a custom pipeline to populate `event.ingested` to @timestamp for this rule to work.
+
+----------------------------------
+
+
 ==== Rule query
 
 
 [source,js]
 ----------------------------------
 process where event.type == "start" and process.parent.name :
-"spoolsv.exe" and (process.Ext.token.integrity_level_name : "System"
-or winlog.event_data.IntegrityLevel : "System") and /* exclusions
+"spoolsv.exe" and (?process.Ext.token.integrity_level_name : "System"
+or ?winlog.event_data.IntegrityLevel : "System") and /* exclusions
 for FP control below */ not process.name : ("splwow64.exe",
 "PDFCreator.exe", "acrodist.exe", "spoolsv.exe", "msiexec.exe",
 "route.exe", "WerFault.exe") and not process.command_line :
@@ -83,6 +95,26 @@ and process.command_line : "*PrintConfig.dll*")
 
 [[unusual-print-spooler-child-process-history]]
 ==== Rule version history
+
+Version 5 (8.2.0 release)::
+* Updated query, changed from:
++
+[source, js]
+----------------------------------
+process where event.type == "start" and process.parent.name :
+"spoolsv.exe" and (process.Ext.token.integrity_level_name : "System"
+or winlog.event_data.IntegrityLevel : "System") and /* exclusions
+for FP control below */ not process.name : ("splwow64.exe",
+"PDFCreator.exe", "acrodist.exe", "spoolsv.exe", "msiexec.exe",
+"route.exe", "WerFault.exe") and not process.command_line :
+"*\\WINDOWS\\system32\\spool\\DRIVERS*" and not (process.name :
+"net.exe" and process.command_line : ("*stop*", "*start*")) and not
+(process.name : ("cmd.exe", "powershell.exe") and process.command_line
+: ("*.spl*", "*\\program files*", "*route add*")) and not
+(process.name : "netsh.exe" and process.command_line : ("*add
+portopening*", "*rule name*")) and not (process.name : "regsvr32.exe"
+and process.command_line : "*PrintConfig.dll*")
+----------------------------------
 
 Version 3 (8.1.0 release)::
 * Updated query, changed from:

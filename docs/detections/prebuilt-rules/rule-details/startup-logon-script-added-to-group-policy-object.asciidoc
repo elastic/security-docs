@@ -35,11 +35,11 @@ Detects the modification of Group Policy Objects (GPO) to add a startup/logon sc
 * Privilege Escalation
 * Active Directory
 
-*Version*: 2 (<<startup-logon-script-added-to-group-policy-object-history, version history>>)
+*Version*: 3 (<<startup-logon-script-added-to-group-policy-object-history, version history>>)
 
 *Added ({stack} release)*: 8.0.0
 
-*Last modified ({stack} release)*: 8.1.0
+*Last modified ({stack} release)*: 8.2.0
 
 *Rule authors*: Elastic
 
@@ -58,31 +58,40 @@ Legitimate Administrative Activity
 
 ### Investigating Scheduled Task Execution at Scale via GPO
 
-Group Policy Objects can be used by attackers as a mechanism for an attacker to instruct an arbitrarily large group of clients to
-execute specified commands at startup, logon, shutdown, and logoff. This is done by creating/modifying the `scripts.ini` or 
-`psscripts.ini` files. The scripts are stored in the following path: `<GPOPath>\Machine\Scripts\`, `<GPOPath>\User\Scripts\`
+Group Policy Objects (GPOs) can be used by attackers to instruct arbitrarily large groups of
+clients to execute specified commands at startup, logon, shutdown, and logoff. This is done by creating or modifying the
+`scripts.ini` or `psscripts.ini` files. The scripts are stored in the following path: `<GPOPath>\Machine\Scripts\`,
+`<GPOPath>\User\Scripts\`
 
-#### Possible investigation steps:
-- This attack abuses a legitimate mechanism of the Active Directory, so it is important to determine whether the activity is legitimate
-and the administrator is authorized to perform this operation.
+#### Possible investigation steps
+
+- This attack abuses a legitimate mechanism of the Active Directory, so it is important to determine whether the
+activity is legitimate and the administrator is authorized to perform this operation.
 - Retrieve the contents of the script file, and check for any potentially malicious commands and binaries.
-- If the action is suspicious for the user, check for any other activities done by the user in the last 48 hours.
+- Investigate other alerts related to the user/host in the last 48 hours.
+- Scope which objects have been affected.
 
-### False Positive Analysis
-- Verify if the execution is allowed and done under change management, and legitimate.
+### False positive analysis
 
-### Related Rules
+- Verify if the execution is legitimately authorized and executed under a change management process.
+
+### Related rules
+
 - Group Policy Abuse for Privilege Addition - b9554892-5e0e-424b-83a0-5aef95aa43bf
 - Scheduled Task Execution at Scale via GPO - 15a8ba77-1c13-4274-88fe-6bd14133861e
 
-### Response and Remediation
-- Immediate response should be taken to validate activity, investigate, and potentially isolate activity to prevent further
-post-compromise behavior.
+### Response and remediation
+
+- Initiate the incident response process based on the outcome of the triage.
+- The investigation and containment must be performed in every computer controlled by the GPO, where necessary.
+- Remove the script from the GPO.
+- Check if other GPOs have suspicious scripts attached.
 
 ## Config
 
-The 'Audit Detailed File Share' audit policy is required be configured (Success Failure).
+The 'Audit Detailed File Share' audit policy must be configured (Success Failure).
 Steps to implement the logging policy with with Advanced Audit Configuration:
+
 ```
 Computer Configuration > 
 Policies > 
@@ -94,8 +103,9 @@ Object Access >
 Audit Detailed File Share (Success,Failure)
 ```
 
-The 'Audit Directory Service Changes' audit policy is required be configured (Success Failure).
+The 'Audit Directory Service Changes' audit policy must be configured (Success Failure).
 Steps to implement the logging policy with with Advanced Audit Configuration:
+
 ```
 Computer Configuration > 
 Policies > 
@@ -142,6 +152,9 @@ winlog.event_data.AccessList:*%%4417*) )
 
 [[startup-logon-script-added-to-group-policy-object-history]]
 ==== Rule version history
+
+Version 3 (8.2.0 release)::
+* Formatting only
 
 Version 2 (8.1.0 release)::
 * Formatting only
