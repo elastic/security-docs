@@ -1,7 +1,7 @@
 [[microsoft-windows-defender-tampering]]
 === Microsoft Windows Defender Tampering
 
-Identifies when one or more features on Microsoft Defender are disabled. Adversaries may disable or tamper Microsoft Defender features to evade detection and conceal malicious behavior.
+Identifies when one or more features on Microsoft Defender are disabled. Adversaries may disable or tamper with Microsoft Defender features to evade detection and conceal malicious behavior.
 
 *Rule type*: eql
 
@@ -40,11 +40,11 @@ Identifies when one or more features on Microsoft Defender are disabled. Adversa
 * Threat Detection
 * Defense Evasion
 
-*Version*: 2 (<<microsoft-windows-defender-tampering-history, version history>>)
+*Version*: 3 (<<microsoft-windows-defender-tampering-history, version history>>)
 
 *Added ({stack} release)*: 8.0.0
 
-*Last modified ({stack} release)*: 8.1.0
+*Last modified ({stack} release)*: 8.2.0
 
 *Rule authors*: Austin Songer
 
@@ -53,6 +53,18 @@ Identifies when one or more features on Microsoft Defender are disabled. Adversa
 ==== Potential false positives
 
 Legitimate Windows Defender configuration changes
+
+==== Investigation guide
+
+
+[source,markdown]
+----------------------------------
+## Config
+
+If enabling an EQL rule on a non-elastic-agent index (such as beats) for versions <8.2, events will not define `event.ingested` and default fallback for EQL rules was not added until 8.2, so you will need to add a custom pipeline to populate `event.ingested` to @timestamp for this rule to work.
+
+----------------------------------
+
 
 ==== Rule query
 
@@ -65,7 +77,7 @@ Defender\\PUAProtection" and registry.data.strings : ("0",
 "0x00000000")) or (registry.path :
 "HKLM\\SOFTWARE\\Policies\\Microsoft\\Windows Defender Security
 Center\\App and Browser protection\\DisallowExploitProtectionOverride"
-and registry.data.strings : ("1", "0x00000001")) or (registry.path
+and registry.data.strings : ("0", "0x00000000")) or (registry.path
 : "HKLM\\SOFTWARE\\Policies\\Microsoft\\Windows
 Defender\\DisableAntiSpyware" and registry.data.strings : ("1",
 "0x00000001")) or (registry.path :
@@ -120,6 +132,57 @@ Protection\\DisableBehaviorMonitoring" and registry.data.strings :
 
 [[microsoft-windows-defender-tampering-history]]
 ==== Rule version history
+
+Version 3 (8.2.0 release)::
+* Updated query, changed from:
++
+[source, js]
+----------------------------------
+registry where event.type in ("creation", "change") and
+(registry.path : "HKLM\\SOFTWARE\\Policies\\Microsoft\\Windows
+Defender\\PUAProtection" and registry.data.strings : ("0",
+"0x00000000")) or (registry.path :
+"HKLM\\SOFTWARE\\Policies\\Microsoft\\Windows Defender Security
+Center\\App and Browser protection\\DisallowExploitProtectionOverride"
+and registry.data.strings : ("1", "0x00000001")) or (registry.path
+: "HKLM\\SOFTWARE\\Policies\\Microsoft\\Windows
+Defender\\DisableAntiSpyware" and registry.data.strings : ("1",
+"0x00000001")) or (registry.path :
+"HKLM\\SOFTWARE\\Policies\\Microsoft\\Windows
+Defender\\Features\\TamperProtection" and registry.data.strings :
+("0", "0x00000000")) or (registry.path :
+"HKLM\\SOFTWARE\\Policies\\Microsoft\\Windows Defender\\Real-Time
+Protection\\DisableRealtimeMonitoring" and registry.data.strings :
+("1", "0x00000001")) or (registry.path :
+"HKLM\\SOFTWARE\\Policies\\Microsoft\\Windows Defender\\Real-Time
+Protection\\DisableIntrusionPreventionSystem" and
+registry.data.strings : ("1", "0x00000001")) or (registry.path :
+"HKLM\\SOFTWARE\\Policies\\Microsoft\\Windows Defender\\Real-Time
+Protection\\DisableScriptScanning" and registry.data.strings : ("1",
+"0x00000001")) or (registry.path :
+"HKLM\\SOFTWARE\\Policies\\Microsoft\\Windows Defender\\Windows
+Defender Exploit Guard\\Controlled Folder
+Access\\EnableControlledFolderAccess" and registry.data.strings :
+("0", "0x00000000")) or (registry.path :
+"HKLM\\SOFTWARE\\Policies\\Microsoft\\Windows Defender\\Real-Time
+Protection\\DisableIOAVProtection" and registry.data.strings : ("1",
+"0x00000001")) or (registry.path :
+"HKLM\\SOFTWARE\\Policies\\Microsoft\\Windows
+Defender\\Reporting\\DisableEnhancedNotifications" and
+registry.data.strings : ("1", "0x00000001")) or (registry.path :
+"HKLM\\SOFTWARE\\Policies\\Microsoft\\Windows
+Defender\\SpyNet\\DisableBlockAtFirstSeen" and registry.data.strings
+: ("1", "0x00000001")) or (registry.path :
+"HKLM\\SOFTWARE\\Policies\\Microsoft\\Windows
+Defender\\SpyNet\\SpynetReporting" and registry.data.strings : ("0",
+"0x00000000")) or (registry.path :
+"HKLM\\SOFTWARE\\Policies\\Microsoft\\Windows
+Defender\\SpyNet\\SubmitSamplesConsent" and registry.data.strings :
+("0", "0x00000000")) or (registry.path :
+"HKLM\\SOFTWARE\\Policies\\Microsoft\\Windows Defender\\Real-Time
+Protection\\DisableBehaviorMonitoring" and registry.data.strings :
+("1", "0x00000001"))
+----------------------------------
 
 Version 2 (8.1.0 release)::
 * Updated query, changed from:

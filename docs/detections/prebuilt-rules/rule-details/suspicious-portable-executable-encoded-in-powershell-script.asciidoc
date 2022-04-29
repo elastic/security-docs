@@ -1,7 +1,7 @@
 [[suspicious-portable-executable-encoded-in-powershell-script]]
 === Suspicious Portable Executable Encoded in Powershell Script
 
-Detects the presence of portable executables (PE) in a PowerShell script by looking for its encoded header. Attackers embed PEs into PowerShell scripts for injecting them into the memory, avoiding defenses by not writing to disk.
+Detects the presence of a portable executable (PE) in a PowerShell script by looking for its encoded header. Attackers embed PEs into PowerShell scripts to inject them into memory, avoiding defences by not writing to disk.
 
 *Rule type*: query
 
@@ -32,11 +32,11 @@ Detects the presence of portable executables (PE) in a PowerShell script by look
 * Threat Detection
 * Execution
 
-*Version*: 4 (<<suspicious-portable-executable-encoded-in-powershell-script-history, version history>>)
+*Version*: 5 (<<suspicious-portable-executable-encoded-in-powershell-script-history, version history>>)
 
 *Added ({stack} release)*: 7.16.0
 
-*Last modified ({stack} release)*: 8.1.0
+*Last modified ({stack} release)*: 8.2.0
 
 *Rule authors*: Elastic
 
@@ -51,32 +51,36 @@ Detects the presence of portable executables (PE) in a PowerShell script by look
 
 ### Investigating Suspicious Portable Executable Encoded in Powershell Script
 
-PowerShell is one of the main tools used by system administrators for automation, report routines, and other tasks.
+PowerShell is one of the main tools system administrators use for automation, report routines, and other tasks. This
+makes it available for use in various environments, and creates an attractive way for attackers to execute code.
 
 Attackers can abuse PowerShell in-memory capabilities to inject executables into memory without touching the disk,
-bypassing antivirus software. These executables are generally base64 encoded.
+bypassing file-based security protections. These executables are generally base64 encoded.
 
-#### Possible investigation steps:
+#### Possible investigation steps
 
 - Examine script content that triggered the detection. 
-- Investigate script execution chain (parent process tree).
+- Investigate the script execution chain (parent process tree).
 - Inspect any file or network events from the suspicious PowerShell host process instance.
-- If the action is suspicious for the user, check for any other activities done by the user in the last 48 hours.
+- Investigate other alerts related to the user/host in the last 48 hours.
+- Consider whether the user needs PowerShell to complete its tasks.
+- Retrieve the script and execute it in a sandbox or controlled environment.
 
-### False Positive Analysis
+### False positive analysis
 
-- Verify whether the script content is malicious/harmful.
+- This activity is unlikely to happen legitimately. Benign true positives (B-TPs) can be added as exceptions if necessary.
 
-### Related Rules
+### Related rules
 
 - PowerShell Reflection Assembly Load - e26f042e-c590-4e82-8e05-41e81bd822ad
 - PowerShell Suspicious Payload Encoded and Compressed - 81fe9dc6-a2d7-4192-a2d8-eed98afc766a
 - PowerShell PSReflect Script - 56f2e9b5-4803-4e44-a0a4-a52dc79d57fe
 
-### Response and Remediation
+### Response and remediation
 
-- Immediate response should be taken to validate, investigate, and potentially contain the activity to prevent further
-post-compromise behavior.
+- Initiate the incident response process based on the outcome of the triage.
+- Quarantine the involved host to prevent further post-compromise behavior.
+- Configure AppLocker or equivalent software to restrict access to PowerShell for regular users.
 
 ## Config
 
@@ -123,6 +127,9 @@ TVqQAAMAAAAEAAAA )
 
 [[suspicious-portable-executable-encoded-in-powershell-script-history]]
 ==== Rule version history
+
+Version 5 (8.2.0 release)::
+* Formatting only
 
 Version 4 (8.1.0 release)::
 * Formatting only
