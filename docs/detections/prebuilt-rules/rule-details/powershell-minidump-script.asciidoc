@@ -34,11 +34,11 @@ This rule detects PowerShell scripts capable of dumping process memory using Win
 * Threat Detection
 * Credential Access
 
-*Version*: 5 (<<powershell-minidump-script-history, version history>>)
+*Version*: 6 (<<powershell-minidump-script-history, version history>>)
 
 *Added ({stack} release)*: 7.16.0
 
-*Last modified ({stack} release)*: 8.1.0
+*Last modified ({stack} release)*: 8.2.0
 
 *Rule authors*: Elastic
 
@@ -57,31 +57,37 @@ PowerShell scripts that use this capability for troubleshooting.
 
 ### Investigating PowerShell MiniDump Script
 
-PowerShell is one of the main tools used by system administrators for automation, report routines, and other tasks.
+PowerShell is one of the main tools system administrators use for automation, report routines, and other tasks. This
+makes it available for use in various environments, and creates an attractive way for attackers to execute code.
 
-Process Memory Dump capabilities can be abused by attackers to extract credentials from LSASS or to obtain other privileged
-information stored in the process memory.
+Attackers can abuse Process Memory Dump capabilities to extract credentials from LSASS or to obtain other
+privileged information stored in the process memory.
 
-#### Possible investigation steps:
+#### Possible investigation steps
 
 - Examine script content that triggered the detection. 
-- Investigate script execution chain (parent process tree).
+- Investigate the script execution chain (parent process tree).
 - Inspect any file or network events from the suspicious PowerShell host process instance.
-- If the action is suspicious for the user, check for any other activities done by the user in the last 48 hours.
+- Investigate other alerts related to the user/host in the last 48 hours.
+- Consider whether the user needs PowerShell to complete its tasks.
+- Check if the imported function was executed and which process it targeted.
 
-### False Positive Analysis
+### False positive analysis
 
-- Verify whether the script content is malicious/harmful.
+- Regular users do not have a business justification for using scripting utilities to dump process memory, making false
+positives unlikely.
 
-### Related Rules
+### Related rules
 
 - PowerShell PSReflect Script - 56f2e9b5-4803-4e44-a0a4-a52dc79d57fe
 - Potential Process Injection via PowerShell - 2e29e96a-b67c-455a-afe4-de6183431d0d
 
-### Response and Remediation
+### Response and remediation
 
-- Immediate response should be taken to validate, investigate, and potentially contain the activity to prevent further
-post-compromise behavior.
+- Initiate the incident response process based on the outcome of the triage.
+- Quarantine the involved host for forensic investigation, as well as eradication and recovery activities.
+- Configure AppLocker or equivalent software to restrict access to PowerShell for regular users.
+- Reset the password for the user account.
 
 ## Config
 
@@ -139,6 +145,9 @@ MiniDumpWithFullMemory or pmuDetirWpmuDiniM)
 
 [[powershell-minidump-script-history]]
 ==== Rule version history
+
+Version 6 (8.2.0 release)::
+* Formatting only
 
 Version 5 (8.1.0 release)::
 * Formatting only
