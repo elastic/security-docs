@@ -2,7 +2,6 @@
 name: Documentation Issue
 about: Describe your Elastic security documentation issue.
 title: '[DOCS]'
-labels: 'Team:Docs'
 assignees: ''
 
 ---
@@ -15,8 +14,7 @@ assignees: ''
 
 List all the ATC of each action and its intended result. 
 For example: As a user, when [action (e.g., viewing, clicking, selecting, etc.)] I should [insert the expected result]. 
-
-If the enhancement requires a procedure, include the steps.  
+ 
 
 ## Notes
 
