@@ -27,11 +27,11 @@ Adversaries may implement command and control (C2) communications that use commo
 * Threat Detection
 * Command and Control
 
-*Version*: 8 (<<connection-to-commonly-abused-web-services-history, version history>>)
+*Version*: 9 (<<connection-to-commonly-abused-web-services-history, version history>>)
 
 *Added ({stack} release)*: 7.11.0
 
-*Last modified ({stack} release)*: 8.2.0
+*Last modified ({stack} release)*: 8.3.0
 
 *Rule authors*: Elastic
 
@@ -55,13 +55,20 @@ be abused for exfiltration or command and control.
 
 #### Possible investigation steps
 
-- Investigate the script execution chain (parent process tree).
-- Investigate other alerts related to the user/host in the last 48 hours.
+- Investigate the script execution chain (parent process tree) for unknown processes. Examine their executable files for
+prevalence, whether they are located in expected locations, and if they are signed with valid digital signatures.
+- Investigate other alerts associated with the user/host during the past 48 hours.
 - Verify whether the digital signature exists in the executable.
-- Identify the kind of the operation (upload, download, tunneling, etc.).
-- Use a sandboxed malware analysis system to perform analysis on the executable.
-- Use the PowerShell Get-FileHash cmdlet to get the SHA-256 hash value of the file.
-  - Search for the existence of this file in resources like VirusTotal, Hybrid-Analysis, CISCO Talos, Any.run, etc.
+- Identify the operation type (upload, download, tunneling, etc.).
+- Retrieve the process executable and determine if it is malicious:
+  - Use a private sandboxed malware analysis system to perform analysis.
+    - Observe and collect information about the following activities:
+      - Attempts to contact external domains and addresses.
+      - File and registry access, modification, and creation activities.
+      - Service creation and launch activities.
+      - Scheduled tasks creation.
+  - Use the PowerShell Get-FileHash cmdlet to get the files' SHA-256 hash values.
+    - Search for the existence and reputation of the hashes in resources like VirusTotal, Hybrid-Analysis, CISCO Talos, Any.run, etc.
 
 ### False positive analysis
 
@@ -73,7 +80,17 @@ false positives can be added as exceptions.
 - Initiate the incident response process based on the outcome of the triage.
 - Isolate the involved host to prevent further post-compromise behavior.
 - If the triage identified malware, search the environment for additional compromised hosts.
-- Implement any temporary network rules, procedures, and segmentation required to contain the malware.
+  - Implement temporary network rules, procedures, and segmentation to contain the malware.
+  - Stop suspicious processes.
+  - Immediately block the identified indicators of compromise (IoCs).
+  - Inspect the affected systems for additional malware backdoors like reverse shells, reverse proxies, or droppers that
+  attackers could use to reinfect the system.
+- Remove and block malicious artifacts identified during triage.
+- Run a full antimalware scan. This may reveal additional artifacts left in the system, persistence mechanisms, and
+malware components.
+- Determine the initial vector abused by the attacker and take action to prevent reinfection through the same vector.
+- Using the incident response data, update logging and audit policies to improve the mean time to detect (MTTD) and the
+mean time to respond (MTTR).
 
 ----------------------------------
 
@@ -110,7 +127,7 @@ al\\Google\\Chrome\\Application\\chrome.exe",
 "?:\\Users\\*\\AppData\\Local\\Microsoft\\OneDrive\\OneDrive.exe",
 "?:\\Windows\\system32\\mobsync.exe",
 "?:\\Windows\\SysWOW64\\mobsync.exe",
-"?:\\Users\\*\\AppData\\Local\\Discord\\-*\\Discord.exe" )
+"?:\\Users\\*\\AppData\\Local\\Discord\\app-*\\Discord.exe" )
 ----------------------------------
 
 ==== Threat mapping
@@ -138,6 +155,41 @@ al\\Google\\Chrome\\Application\\chrome.exe",
 
 [[connection-to-commonly-abused-web-services-history]]
 ==== Rule version history
+
+Version 9 (8.3.0 release)::
+* Updated query, changed from:
++
+[source, js]
+----------------------------------
+network where network.protocol == "dns" and process.name != null
+and user.id not in ("S-1-5-18", "S-1-5-19", "S-1-5-20") and /* Add
+new WebSvc domains here */ dns.question.name : (
+"raw.githubusercontent.*", "*.pastebin.*",
+"*drive.google.*", "*docs.live.*",
+"*api.dropboxapi.*", "*dropboxusercontent.*",
+"*onedrive.*", "*4shared.*", "*.file.io",
+"*filebin.net", "*slack-files.com", "*ghostbin.*",
+"*ngrok.*", "*portmap.*", "*serveo.net",
+"*localtunnel.me", "*pagekite.me", "*localxpose.io",
+"*notabug.org", "rawcdn.githack.*",
+"paste.nrecom.net", "zerobin.net", "controlc.com",
+"requestbin.net", "cdn.discordapp.com",
+"discordapp.com", "discord.com" ) and /* Insert noisy
+false positives here */ not process.executable : (
+"?:\\Program Files\\*.exe", "?:\\Program Files (x86)\\*.exe",
+"?:\\Windows\\System32\\WWAHost.exe",
+"?:\\Windows\\System32\\smartscreen.exe",
+"?:\\Windows\\System32\\MicrosoftEdgeCP.exe",
+"?:\\ProgramData\\Microsoft\\Windows
+Defender\\Platform\\*\\MsMpEng.exe", "?:\\Users\\*\\AppData\\Loc
+al\\Google\\Chrome\\Application\\chrome.exe",
+"?:\\Users\\*\\AppData\\Local\\Programs\\Fiddler\\Fiddler.exe",
+"?:\\Users\\*\\AppData\\Local\\Programs\\Microsoft VS Code\\Code.exe",
+"?:\\Users\\*\\AppData\\Local\\Microsoft\\OneDrive\\OneDrive.exe",
+"?:\\Windows\\system32\\mobsync.exe",
+"?:\\Windows\\SysWOW64\\mobsync.exe",
+"?:\\Users\\*\\AppData\\Local\\Discord\\-*\\Discord.exe" )
+----------------------------------
 
 Version 8 (8.2.0 release)::
 * Formatting only
