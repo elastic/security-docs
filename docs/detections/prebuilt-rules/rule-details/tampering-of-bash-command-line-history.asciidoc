@@ -25,14 +25,15 @@ Adversaries may attempt to clear or disable the Bash command-line history in an 
 * Elastic
 * Host
 * Linux
+* macOS
 * Threat Detection
 * Defense Evasion
 
-*Version*: 7 (<<tampering-of-bash-command-line-history-history, version history>>)
+*Version*: 8 (<<tampering-of-bash-command-line-history-history, version history>>)
 
 *Added ({stack} release)*: 7.9.0
 
-*Last modified ({stack} release)*: 8.2.0
+*Last modified ({stack} release)*: 8.3.0
 
 *Rule authors*: Elastic
 
@@ -56,13 +57,18 @@ If enabling an EQL rule on a non-elastic-agent index (such as beats) for version
 [source,js]
 ----------------------------------
 process where event.type in ("start", "process_started") and (
-(process.args : ("rm", "echo") and process.args : (".bash_history",
-"/root/.bash_history", "/home/*/.bash_history")) or (process.name :
-"history" and process.args : "-c") or (process.args : "export" and
-process.args : ("HISTFILE=/dev/null", "HISTFILESIZE=0")) or
-(process.args : "unset" and process.args : "HISTFILE") or
-(process.args : "set" and process.args : "history" and process.args :
-"+o") )
+((process.args : ("rm", "echo") or (process.args : "ln" and
+process.args : "-sf" and process.args : "/dev/null") or
+(process.args : "truncate" and process.args : "-s0")) and
+process.args : (".bash_history", "/root/.bash_history",
+"/home/*/.bash_history","/Users/.bash_history",
+"/Users/*/.bash_history", ".zsh_history",
+"/root/.zsh_history", "/home/*/.zsh_history", "/Users/.zsh_history",
+"/Users/*/.zsh_history")) or (process.name : "history" and
+process.args : "-c") or (process.args : "export" and process.args :
+("HISTFILE=/dev/null", "HISTFILESIZE=0")) or (process.args : "unset"
+and process.args : "HISTFILE") or (process.args : "set" and
+process.args : "history" and process.args : "+o") )
 ----------------------------------
 
 ==== Threat mapping
@@ -80,6 +86,21 @@ process.args : ("HISTFILE=/dev/null", "HISTFILESIZE=0")) or
 
 [[tampering-of-bash-command-line-history-history]]
 ==== Rule version history
+
+Version 8 (8.3.0 release)::
+* Updated query, changed from:
++
+[source, js]
+----------------------------------
+process where event.type in ("start", "process_started") and (
+(process.args : ("rm", "echo") and process.args : (".bash_history",
+"/root/.bash_history", "/home/*/.bash_history")) or (process.name :
+"history" and process.args : "-c") or (process.args : "export" and
+process.args : ("HISTFILE=/dev/null", "HISTFILESIZE=0")) or
+(process.args : "unset" and process.args : "HISTFILE") or
+(process.args : "set" and process.args : "history" and process.args :
+"+o") )
+----------------------------------
 
 Version 7 (8.2.0 release)::
 * Formatting only

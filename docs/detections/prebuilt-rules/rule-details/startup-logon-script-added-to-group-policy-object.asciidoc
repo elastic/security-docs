@@ -35,11 +35,11 @@ Detects the modification of Group Policy Objects (GPO) to add a startup/logon sc
 * Privilege Escalation
 * Active Directory
 
-*Version*: 3 (<<startup-logon-script-added-to-group-policy-object-history, version history>>)
+*Version*: 4 (<<startup-logon-script-added-to-group-policy-object-history, version history>>)
 
 *Added ({stack} release)*: 8.0.0
 
-*Last modified ({stack} release)*: 8.2.0
+*Last modified ({stack} release)*: 8.3.0
 
 *Rule authors*: Elastic
 
@@ -65,11 +65,12 @@ clients to execute specified commands at startup, logon, shutdown, and logoff. T
 
 #### Possible investigation steps
 
-- This attack abuses a legitimate mechanism of the Active Directory, so it is important to determine whether the
-activity is legitimate and the administrator is authorized to perform this operation.
-- Retrieve the contents of the script file, and check for any potentially malicious commands and binaries.
-- Investigate other alerts related to the user/host in the last 48 hours.
-- Scope which objects have been affected.
+- This attack abuses a legitimate mechanism of Active Directory, so it is important to determine whether the activity
+is legitimate and the administrator is authorized to perform this operation.
+- Retrieve the contents of the `ScheduledTasks.xml` file, and check the `<Command>` and `<Arguments>` XML tags for any
+potentially malicious commands or binaries.
+- Investigate other alerts associated with the user/host during the past 48 hours.
+- Scope which objects may be compromised by retrieving information about which objects are controlled by the GPO.
 
 ### False positive analysis
 
@@ -86,6 +87,9 @@ activity is legitimate and the administrator is authorized to perform this opera
 - The investigation and containment must be performed in every computer controlled by the GPO, where necessary.
 - Remove the script from the GPO.
 - Check if other GPOs have suspicious scripts attached.
+- Determine the initial vector abused by the attacker and take action to prevent reinfection through the same vector.
+- Using the incident response data, update logging and audit policies to improve the mean time to detect (MTTD) and the
+mean time to respond (MTTR).
 
 ## Config
 
@@ -152,6 +156,9 @@ winlog.event_data.AccessList:*%%4417*) )
 
 [[startup-logon-script-added-to-group-policy-object-history]]
 ==== Rule version history
+
+Version 4 (8.3.0 release)::
+* Formatting only
 
 Version 3 (8.2.0 release)::
 * Formatting only
