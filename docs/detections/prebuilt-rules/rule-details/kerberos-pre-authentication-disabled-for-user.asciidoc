@@ -22,7 +22,7 @@ Identifies the modification of an account's Kerberos pre-authentication options.
 
 *References*:
 
-* https://www.harmj0y.net/blog/activedirectory/roasting-as-reps
+* https://harmj0y.medium.com/roasting-as-reps-e6179a65216b
 * https://docs.microsoft.com/en-us/windows/security/threat-protection/auditing/event-4738
 * https://github.com/atc-project/atomic-threat-coverage/blob/master/Atomic_Threat_Coverage/Logging_Policies/LP_0026_windows_audit_user_account_management.md
 
@@ -34,11 +34,11 @@ Identifies the modification of an account's Kerberos pre-authentication options.
 * Threat Detection
 * Credential Access
 
-*Version*: 2 (<<kerberos-pre-authentication-disabled-for-user-history, version history>>)
+*Version*: 3 (<<kerberos-pre-authentication-disabled-for-user-history, version history>>)
 
 *Added ({stack} release)*: 8.1.0
 
-*Last modified ({stack} release)*: 8.2.0
+*Last modified ({stack} release)*: 8.3.0
 
 *Rule authors*: Elastic
 
@@ -66,10 +66,10 @@ can be brute-forced offline, similarly to Kerberoasting.
 
 #### Possible investigation steps
 
-- Identify the account that performed the action.
-- Check whether this user should be doing this kind of activity.
-- Investigate if the target account is privileged.
+- Identify the user account that performed the action and whether it should perform this kind of action.
 - Contact the account owner and confirm whether they are aware of this activity.
+- Determine if the target account is sensitive or privileged.
+- Inspect the account activities for suspicious or abnormal behaviors in the alert timeframe.
 
 ### False positive analysis
 
@@ -80,8 +80,13 @@ should map and monitor any potential benign true positives (B-TPs), especially i
 
 - Initiate the incident response process based on the outcome of the triage.
 - Reset the target account's password if there is any risk of TGTs having been retrieved.
-- Reset the password of the origin user if the activity was not recognized by the account owner.
-- Re-enable the preauthentication option for the account.
+- Re-enable the preauthentication option or disable the target account.
+- Review the privileges assigned to the involved users to ensure that the least privilege principle is being followed.
+- Investigate credential exposure on systems compromised or used by the attacker to ensure all compromised accounts are
+identified. Reset passwords for these accounts and other potentially compromised credentials, such as email, business
+systems, and web services.
+- Using the incident response data, update logging and audit policies to improve the mean time to detect (MTTD) and the
+mean time to respond (MTTR).
 
 ## Config
 
@@ -125,6 +130,9 @@ event.code:4738 and message:"'Don't Require Preauth' - Enabled"
 
 [[kerberos-pre-authentication-disabled-for-user-history]]
 ==== Rule version history
+
+Version 3 (8.3.0 release)::
+* Formatting only
 
 Version 2 (8.2.0 release)::
 * Rule name changed from: Kerberos Preauthentication Disabled for User
