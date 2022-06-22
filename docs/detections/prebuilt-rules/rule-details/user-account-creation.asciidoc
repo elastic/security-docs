@@ -29,11 +29,11 @@ Identifies attempts to create new users. This is sometimes done by attackers to 
 * Threat Detection
 * Persistence
 
-*Version*: 10 (<<user-account-creation-history, version history>>)
+*Version*: 11 (<<user-account-creation-history, version history>>)
 
 *Added ({stack} release)*: 7.6.0
 
-*Last modified ({stack} release)*: 8.2.0
+*Last modified ({stack} release)*: 8.3.0
 
 *Rule authors*: Elastic
 
@@ -54,10 +54,11 @@ This rule identifies the usage of `net.exe` to create new accounts.
 
 #### Possible investigation steps
 
-- Investigate the process execution chain (parent process tree).
+- Investigate the process execution chain (parent process tree) for unknown processes. Examine their executable files
+for prevalence, whether they are located in expected locations, and if they are signed with valid digital signatures.
 - Identify the user account that performed the action and whether it should perform this kind of action.
 - Identify if the account was added to privileged groups or assigned special privileges after creation.
-- Investigate other alerts related to the user/host in the last 48 hours.
+- Investigate other alerts associated with the user/host during the past 48 hours.
 
 ### False positive analysis
 
@@ -73,7 +74,12 @@ investigating further, verify that this activity is not benign.
 - Initiate the incident response process based on the outcome of the triage.
 - Isolate the involved host to prevent further post-compromise behavior.
 - Delete the created account.
-- Reset the password for the user account leveraged to create the new account.
+- Investigate credential exposure on systems compromised or used by the attacker to ensure all compromised accounts are
+identified. Reset passwords for these accounts and other potentially compromised credentials, such as email, business
+systems, and web services.
+- Determine the initial vector abused by the attacker and take action to prevent reinfection through the same vector.
+- Using the incident response data, update logging and audit policies to improve the mean time to detect (MTTD) and the
+mean time to respond (MTTR).
 
 ## Config
 
@@ -108,6 +114,9 @@ process.name : ("net.exe", "net1.exe") and not process.parent.name :
 
 [[user-account-creation-history]]
 ==== Rule version history
+
+Version 11 (8.3.0 release)::
+* Formatting only
 
 Version 10 (8.2.0 release)::
 * Formatting only

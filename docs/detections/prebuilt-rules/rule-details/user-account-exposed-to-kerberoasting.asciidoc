@@ -38,9 +38,11 @@ Detects when a user account has the servicePrincipalName attribute modified. Att
 * Credential Access
 * Active Directory
 
-*Version*: 1
+*Version*: 2 (<<user-account-exposed-to-kerberoasting-history, version history>>)
 
 *Added ({stack} release)*: 8.2.0
+
+*Last modified ({stack} release)*: 8.3.0
 
 *Rule authors*: Elastic
 
@@ -76,12 +78,11 @@ write privileges to, making them potentially vulnerable to Kerberoasting.
 
 #### Possible investigation steps
 
-- Identify the account that performed the action.
-- Check whether this user should be doing this kind of activity.
+- Identify the user account that performed the action and whether it should perform this kind of action.
 - Contact the account owner and confirm whether they are aware of this activity.
 - Investigate if the target account is a member of privileged groups (Domain Admins, Enterprise Admins, etc.).
 - Investigate if tickets have been requested for the target account.
-- Investigate other alerts related to the user in the last 48 hours.
+- Investigate other alerts associated with the user/host during the past 48 hours.
 
 ### False positive analysis
 
@@ -94,8 +95,13 @@ them to credential cracking attacks (Kerberoasting, brute force, etc.).
 ### Response and remediation 
 
 - Initiate the incident response process based on the outcome of the triage.
-- Reset the passwords of affected accounts, prioritizing privileged accounts.
-- Quarantine the involved host for forensic investigation, as well as eradication and recovery activities.
+- Investigate credential exposure on systems compromised or used by the attacker to ensure all compromised accounts are
+identified. Reset passwords for these accounts and other potentially compromised credentials, such as email, business
+systems, and web services. Prioritize privileged accounts.
+- Isolate the involved hosts to prevent further post-compromise behavior.
+- Determine the initial vector abused by the attacker and take action to prevent reinfection through the same vector.
+- Using the incident response data, update logging and audit policies to improve the mean time to detect (MTTD) and the
+mean time to respond (MTTR).
 
 ## Config
 
@@ -145,3 +151,10 @@ winlog.event_data.AttributeLDAPDisplayName:"servicePrincipalName"
 ** Name: Steal or Forge Kerberos Tickets
 ** ID: T1558
 ** Reference URL: https://attack.mitre.org/techniques/T1558/
+
+[[user-account-exposed-to-kerberoasting-history]]
+==== Rule version history
+
+Version 2 (8.3.0 release)::
+* Formatting only
+
