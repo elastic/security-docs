@@ -1,0 +1,88 @@
+[[aws-rds-snapshot-restored]]
+=== AWS RDS Snapshot Restored
+
+Identifies when an attempt was made to restore an RDS Snapshot. Snapshots are sometimes shared by threat actors in order to exfiltrate bulk data. If the permissions were modified, verify if the snapshot was shared with an unauthorized or unexpected AWS account.
+
+*Rule type*: query
+
+*Rule indices*:
+
+* filebeat-*
+* logs-aws*
+
+*Severity*: medium
+
+*Risk score*: 47
+
+*Runs every*: 5 minutes
+
+*Searches indices from*: now-6m ({ref}/common-options.html#date-math[Date Math format], see also <<rule-schedule, `Additional look-back time`>>)
+
+*Maximum alerts per execution*: 100
+
+*References*:
+
+* https://docs.aws.amazon.com/AmazonRDS/latest/APIReference/API_RestoreDBInstanceFromDBSnapshot.html
+* https://github.com/RhinoSecurityLabs/pacu/blob/master/pacu/modules/rds__explore_snapshots/main.py
+
+*Tags*:
+
+* Elastic
+* Cloud
+* AWS
+* Continuous Monitoring
+* SecOps
+* Asset Visibility
+
+*Version*: 3 (<<aws-rds-snapshot-restored-history, version history>>)
+
+*Added ({stack} release)*: 7.16.0
+
+*Last modified ({stack} release)*: 8.1.0
+
+*Rule authors*: Austin Songer
+
+*Rule license*: Elastic License v2
+
+==== Potential false positives
+
+Restoring snapshots may be done by a system or network administrator. Verify whether the user identity, user agent, and/or hostname should be making changes in your environment. Snapshot restoration by unfamiliar users or hosts should be investigated. If known behavior is causing false positives, it can be exempted from the rule.
+
+==== Investigation guide
+
+
+[source,markdown]
+----------------------------------
+## Config
+
+The AWS Fleet integration, Filebeat module, or similarly structured data is required to be compatible with this rule.
+----------------------------------
+
+
+==== Rule query
+
+
+[source,js]
+----------------------------------
+event.dataset:aws.cloudtrail and event.provider:rds.amazonaws.com and
+event.action:RestoreDBInstanceFromDBSnapshot and event.outcome:success
+----------------------------------
+
+==== Threat mapping
+
+*Framework*: MITRE ATT&CK^TM^
+
+* Tactic:
+** Name: Exfiltration
+** ID: TA0010
+** Reference URL: https://attack.mitre.org/tactics/TA0010/
+
+[[aws-rds-snapshot-restored-history]]
+==== Rule version history
+
+Version 3 (8.1.0 release)::
+* Formatting only
+
+Version 2 (8.0.0 release)::
+* Formatting only
+
