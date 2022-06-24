@@ -535,7 +535,7 @@ def create_documentation(package_release):
                         rule_name_changed = True
                         if i['updated'] == package_release:
                             rule_link_file = rule_link + ".asciidoc"
-                            files_with_updated_rule_name[rule_link_file] = i['duplicate_old_file']
+                            files_with_updated_rule_name[rule_link_file] = i.get('duplicate_old_file', i['pre_name'])
                 if i['doc_text'] == "Updated query.":
                     if 'pre_name' in i:
                         if i['pre_name'] != None:
