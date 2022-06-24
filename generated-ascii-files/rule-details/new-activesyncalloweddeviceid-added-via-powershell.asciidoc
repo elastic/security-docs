@@ -1,0 +1,110 @@
+[[new-activesyncalloweddeviceid-added-via-powershell]]
+=== New ActiveSyncAllowedDeviceID Added via PowerShell
+
+Identifies the use of the Exchange PowerShell cmdlet, Set-CASMailbox, to add a new ActiveSync allowed device. Adversaries may target user email to collect sensitive information.
+
+*Rule type*: eql
+
+*Rule indices*:
+
+* logs-endpoint.events.*
+* winlogbeat-*
+* logs-windows.*
+
+*Severity*: medium
+
+*Risk score*: 47
+
+*Runs every*: 5 minutes
+
+*Searches indices from*: now-9m ({ref}/common-options.html#date-math[Date Math format], see also <<rule-schedule, `Additional look-back time`>>)
+
+*Maximum alerts per execution*: 100
+
+*References*:
+
+* https://www.volexity.com/blog/2020/12/14/dark-halo-leverages-solarwinds-compromise-to-breach-organizations/
+* https://docs.microsoft.com/en-us/powershell/module/exchange/set-casmailbox?view=exchange-ps
+
+*Tags*:
+
+* Elastic
+* Host
+* Windows
+* Threat Detection
+* Persistence
+
+*Version*: 7 (<<new-activesyncalloweddeviceid-added-via-powershell-history, version history>>)
+
+*Added ({stack} release)*: 7.11.0
+
+*Last modified ({stack} release)*: 8.2.0
+
+*Rule authors*: Elastic
+
+*Rule license*: Elastic License v2
+
+==== Potential false positives
+
+Legitimate exchange system administration activity.
+
+==== Investigation guide
+
+
+[source,markdown]
+----------------------------------
+## Config
+
+If enabling an EQL rule on a non-elastic-agent index (such as beats) for versions <8.2, events will not define `event.ingested` and default fallback for EQL rules was not added until 8.2, so you will need to add a custom pipeline to populate `event.ingested` to @timestamp for this rule to work.
+
+----------------------------------
+
+
+==== Rule query
+
+
+[source,js]
+----------------------------------
+process where event.type in ("start", "process_started") and
+process.name: ("powershell.exe", "pwsh.exe", "powershell_ise.exe") and
+process.args : "Set-CASMailbox*ActiveSyncAllowedDeviceIDs*"
+----------------------------------
+
+==== Threat mapping
+
+*Framework*: MITRE ATT&CK^TM^
+
+* Tactic:
+** Name: Persistence
+** ID: TA0003
+** Reference URL: https://attack.mitre.org/tactics/TA0003/
+* Technique:
+** Name: Account Manipulation
+** ID: T1098
+** Reference URL: https://attack.mitre.org/techniques/T1098/
+
+[[new-activesyncalloweddeviceid-added-via-powershell-history]]
+==== Rule version history
+
+Version 7 (8.2.0 release)::
+* Formatting only
+
+Version 6 (7.16.0 release)::
+* Updated query, changed from:
++
+[source, js]
+----------------------------------
+process where event.type in ("start", "process_started") and
+process.name: ("powershell.exe", "pwsh.exe") and process.args : "Set-
+CASMailbox*ActiveSyncAllowedDeviceIDs*"
+----------------------------------
+
+Version 4 (7.15.0 release)::
+* Formatting only
+
+Version 3 (7.12.0 release)::
+* Formatting only
+
+Version 2 (7.11.2 release)::
+* Formatting only
+
