@@ -1,0 +1,105 @@
+[[aws-ec2-snapshot-activity]]
+=== AWS EC2 Snapshot Activity
+
+An attempt was made to modify AWS EC2 snapshot attributes. Snapshots are sometimes shared by threat actors in order to exfiltrate bulk data from an EC2 fleet. If the permissions were modified, verify the snapshot was not shared with an unauthorized or unexpected AWS account.
+
+*Rule type*: query
+
+*Rule indices*:
+
+* filebeat-*
+* logs-aws*
+
+*Severity*: medium
+
+*Risk score*: 47
+
+*Runs every*: 10 minutes
+
+*Searches indices from*: now-60m ({ref}/common-options.html#date-math[Date Math format], see also <<rule-schedule, `Additional look-back time`>>)
+
+*Maximum alerts per execution*: 100
+
+*References*:
+
+* https://awscli.amazonaws.com/v2/documentation/api/latest/reference/ec2/modify-snapshot-attribute.html
+* https://docs.aws.amazon.com/AWSEC2/latest/APIReference/API_ModifySnapshotAttribute.html
+
+*Tags*:
+
+* Elastic
+* Cloud
+* AWS
+* Continuous Monitoring
+* SecOps
+* Asset Visibility
+
+*Version*: 5 (<<aws-ec2-snapshot-activity-history, version history>>)
+
+*Added ({stack} release)*: 7.9.0
+
+*Last modified ({stack} release)*: 7.13.0
+
+*Rule authors*: Elastic
+
+*Rule license*: Elastic License v2
+
+==== Potential false positives
+
+IAM users may occasionally share EC2 snapshots with another AWS account belonging to the same organization. If known behavior is causing false positives, it can be exempted from the rule.
+
+==== Investigation guide
+
+
+[source,markdown]
+----------------------------------
+## Config
+
+The AWS Fleet integration, Filebeat module, or similarly structured data is required to be compatible with this rule.
+----------------------------------
+
+
+==== Rule query
+
+
+[source,js]
+----------------------------------
+event.dataset:aws.cloudtrail and event.provider:ec2.amazonaws.com and
+event.action:ModifySnapshotAttribute
+----------------------------------
+
+==== Threat mapping
+
+*Framework*: MITRE ATT&CK^TM^
+
+* Tactic:
+** Name: Exfiltration
+** ID: TA0010
+** Reference URL: https://attack.mitre.org/tactics/TA0010/
+* Technique:
+** Name: Transfer Data to Cloud Account
+** ID: T1537
+** Reference URL: https://attack.mitre.org/techniques/T1537/
+
+[[aws-ec2-snapshot-activity-history]]
+==== Rule version history
+
+Version 5 (7.13.0 release)::
+* Formatting only
+
+Version 4 (7.12.0 release)::
+* Formatting only
+
+Version 3 (7.11.2 release)::
+* Formatting only
+
+Version 2 (7.10.0 release)::
+* Updated query, changed from:
++
+[source, js]
+----------------------------------
+event.module:aws and event.dataset:aws.cloudtrail and
+event.provider:ec2.amazonaws.com and
+event.action:ModifySnapshotAttribute
+----------------------------------
+

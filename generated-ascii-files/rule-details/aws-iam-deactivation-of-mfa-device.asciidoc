@@ -1,0 +1,105 @@
+[[aws-iam-deactivation-of-mfa-device]]
+=== AWS IAM Deactivation of MFA Device
+
+Identifies the deactivation of a specified multi-factor authentication (MFA) device and removes it from association with the user name for which it was originally enabled. In AWS Identity and Access Management (IAM), a device must be deactivated before it can be deleted.
+
+*Rule type*: query
+
+*Rule indices*:
+
+* filebeat-*
+* logs-aws*
+
+*Severity*: medium
+
+*Risk score*: 47
+
+*Runs every*: 10 minutes
+
+*Searches indices from*: now-60m ({ref}/common-options.html#date-math[Date Math format], see also <<rule-schedule, `Additional look-back time`>>)
+
+*Maximum alerts per execution*: 100
+
+*References*:
+
+* https://awscli.amazonaws.com/v2/documentation/api/latest/reference/iam/deactivate-mfa-device.html
+* https://docs.aws.amazon.com/IAM/latest/APIReference/API_DeactivateMFADevice.html
+
+*Tags*:
+
+* Elastic
+* Cloud
+* AWS
+* Continuous Monitoring
+* SecOps
+* Monitoring
+
+*Version*: 5 (<<aws-iam-deactivation-of-mfa-device-history, version history>>)
+
+*Added ({stack} release)*: 7.9.0
+
+*Last modified ({stack} release)*: 7.13.0
+
+*Rule authors*: Elastic, Austin Songer
+
+*Rule license*: Elastic License v2
+
+==== Potential false positives
+
+A MFA device may be deactivated by a system or network administrator. Verify whether the user identity, user agent, and/or hostname should be making changes in your environment. MFA device deactivations from unfamiliar users or hosts should be investigated. If known behavior is causing false positives, it can be exempted from the rule.
+
+==== Investigation guide
+
+
+[source,markdown]
+----------------------------------
+## Config
+
+The AWS Fleet integration, Filebeat module, or similarly structured data is required to be compatible with this rule.
+----------------------------------
+
+
+==== Rule query
+
+
+[source,js]
+----------------------------------
+event.dataset:aws.cloudtrail and event.provider:iam.amazonaws.com and
+event.action:(DeactivateMFADevice or DeleteVirtualMFADevice) and
+event.outcome:success
+----------------------------------
+
+==== Threat mapping
+
+*Framework*: MITRE ATT&CK^TM^
+
+* Tactic:
+** Name: Impact
+** ID: TA0040
+** Reference URL: https://attack.mitre.org/tactics/TA0040/
+* Technique:
+** Name: Account Access Removal
+** ID: T1531
+** Reference URL: https://attack.mitre.org/techniques/T1531/
+
+[[aws-iam-deactivation-of-mfa-device-history]]
+==== Rule version history
+
+Version 5 (7.13.0 release)::
+* Updated query, changed from:
++
+[source, js]
+----------------------------------
+event.action:DeactivateMFADevice and event.dataset:aws.cloudtrail and
+event.provider:iam.amazonaws.com and event.outcome:success
+----------------------------------
+
+Version 4 (7.12.0 release)::
+* Formatting only
+
+Version 3 (7.11.2 release)::
+* Formatting only
+
+Version 2 (7.10.0 release)::
+* Formatting only
+
