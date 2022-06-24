@@ -1,0 +1,95 @@
+[[creation-or-modification-of-root-certificate]]
+=== Creation or Modification of Root Certificate
+
+Identifies the creation or modification of a local trusted root certificate in Windows. The install of a malicious root certificate would allow an attacker the ability to masquerade malicious files as valid signed components from any entity (e.g. Microsoft). It could also allow an attacker to decrypt SSL traffic.
+
+*Rule type*: eql
+
+*Rule indices*:
+
+* winlogbeat-*
+* logs-endpoint.events.*
+* logs-windows.*
+
+*Severity*: low
+
+*Risk score*: 21
+
+*Runs every*: 5 minutes
+
+*Searches indices from*: now-9m ({ref}/common-options.html#date-math[Date Math format], see also <<rule-schedule, `Additional look-back time`>>)
+
+*Maximum alerts per execution*: 100
+
+*References*:
+
+* https://posts.specterops.io/code-signing-certificate-cloning-attacks-and-defenses-6f98657fc6ec
+* https://www.ired.team/offensive-security/persistence/t1130-install-root-certificate
+
+*Tags*:
+
+* Elastic
+* Host
+* Windows
+* Threat Detection
+* Defense Evasion
+
+*Version*: 2 (<<creation-or-modification-of-root-certificate-history, version history>>)
+
+*Added ({stack} release)*: 7.12.0
+
+*Last modified ({stack} release)*: 8.2.0
+
+*Rule authors*: Elastic
+
+*Rule license*: Elastic License v2
+
+==== Potential false positives
+
+Certain applications may install root certificates for the purpose of inspecting SSL traffic.
+
+==== Investigation guide
+
+
+[source,markdown]
+----------------------------------
+## Config
+
+If enabling an EQL rule on a non-elastic-agent index (such as beats) for versions <8.2, events will not define `event.ingested` and default fallback for EQL rules was not added until 8.2, so you will need to add a custom pipeline to populate `event.ingested` to @timestamp for this rule to work.
+
+----------------------------------
+
+
+==== Rule query
+
+
+[source,js]
+----------------------------------
+registry where event.type in ("creation", "change") and
+registry.path : ( "HKLM\\Software\\Microsoft\\SystemCertific
+ates\\Root\\Certificates\\*\\Blob", "HKLM\\Software\\Microsoft\\
+SystemCertificates\\AuthRoot\\Certificates\\*\\Blob", "HKLM\\Sof
+tware\\Policies\\Microsoft\\SystemCertificates\\Root\\Certificates\\*\
+\Blob", "HKLM\\Software\\Policies\\Microsoft\\SystemCertificates
+\\AuthRoot\\Certificates\\*\\Blob" )
+----------------------------------
+
+==== Threat mapping
+
+*Framework*: MITRE ATT&CK^TM^
+
+* Tactic:
+** Name: Defense Evasion
+** ID: TA0005
+** Reference URL: https://attack.mitre.org/tactics/TA0005/
+* Technique:
+** Name: Subvert Trust Controls
+** ID: T1553
+** Reference URL: https://attack.mitre.org/techniques/T1553/
+
+[[creation-or-modification-of-root-certificate-history]]
+==== Rule version history
+
+Version 2 (8.2.0 release)::
+* Formatting only
+
