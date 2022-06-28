@@ -62,7 +62,7 @@ image::images/additional-filters.png[Shows multiple ways to filter information]
 === Customize the Alerts table
 Use the toolbar buttons in the upper-left of the Alerts table to customize the columns you want displayed:
 
-* **Columns**: Reorder the columns. 
+* **Columns**: Reorder the columns.
 * **_x_ fields sorted**: Sort the table by one or more columns.
 * **Fields**: Select the fields to display in the table. You can also add <<alerts-runtime-fields, runtime fields>> to detection alerts and display them in the Alerts table.
 
@@ -99,17 +99,23 @@ The *Overview* tab provides an overview of the alert and shows relevant threat i
 The *Overview* tab has three main sections: the alert summary, *Highlighted Fields*, and *Enriched data*. The alert summary and *Highlighted Fields* sections are standard for every alert. The *Enriched data* section only displays for alerts with intelligence data.
 
 [role="screenshot"]
-image::images/alert-details-flyout.png[Shows the alert details flyout]
+image::images/alert-details-flyout.png[Shows the Alert details flyout]
 
 The alert summary section provides general alert details such as the alert's status, the severity of the alert, the alert's calculated risk score, and a link to the rule that produced the alert. These details are provided for all alerts regardless of the alert type.
 
 The alert's reason statement is under the alert summary. The reason statement describes what generated the alert and provides general alert details. You can use this information to understand the alert's origin and determine if the alert is relevant to your investigation.
 
-The alert details flyout also lists the number and names of cases to which the alert has been added. Click a case's names to open its details.
+The Alert details flyout also lists the number and names of cases to which the alert has been added. Click a case's names to open its details.
 
 The *Highlighted Fields* section displays the most relevant fields for the alert type. Use this section to inform your triage efforts as you investigate the alert.
 
-The *Alert prevalence* column shows the total number of alerts within the selected timeframe that have identical values. For example, an alert with an alert prevalence of 3 for the `host.name` field means three alerts with the same `host.name` value exist within the given timeframe. Alert prevalence data can help you investigate relationships with other alerts and gain more context about the event producing the alert.
+NOTE: The *Session ID* field provides a unique ID for tracking a given Linux session and is stored in the `process.entry_leader.entity_id` field in the alert's document. To collect the session ID and other session data, you must enable the *Include session data* setting on your {endpoint-cloud-sec} integration policy. Refer to <<enable-session-view, Enable Session View data>> for more information.
+
+The *Alert prevalence* column shows the total number of alerts within the selected timeframe that have identical values. For example, an alert prevalence of 3 for `host.name` means three alerts with the same `host.name` value exist within the timeframe.
+
+Alert prevalence data can help you investigate relationships with other alerts and gain context about the events producing alerts. You can also click the alert prevalence count to explore the alerts in Timeline.
+
+IMPORTANT: Before investigating alert prevalence data in Timeline, save any Timelines you're working on to ensure you can access them later.
 
 The *Enriched data* section displays available threat indicator matches and threat intelligence data. Click the info icon to learn more about what data is collected.
 
@@ -171,7 +177,7 @@ The *JSON* tab shows the alert details in JSON format.
 === Take actions on an alert
 From the Alerts table or the Alert details flyout, you can do the following:
 
-* <<signals-to-cases,Add an alert to a case>>
+* <<signals-to-cases,Add alerts to a case>>
 * <<detection-alert-status,Change an alert's status>>
 * <<endpoint-rule-exceptions,Add an endpoint exception to an alert>>
 * <<add-exception-from-alerts,Add a rule exception to an alert>>
@@ -199,9 +205,7 @@ image::images/alert-change-status.gif[width=50%][height=50%][Shows how to change
 [float]
 [[signals-to-cases]]
 === Add alerts to cases
-From the Alerts table, you can attach one or more alerts to a case by clicking the *More actions* menu. You can choose to <<signals-to-new-cases, add the alert to a new case>> or <<signals-to-existing-cases, attach it to an existing one>>. You can also add an alert to a case from the Alert details flyout by clicking **Take action**.
-
-You can add multiple alerts from any rule type. If you attach the alert to a case that has been configured to sync its status with associated alerts, the alert's status updates any time the case's status is modified.
+From the Alerts table, you can attach one or more alerts to a <<signals-to-new-cases, new case>> or <<signals-to-existing-cases, an existing one>>. Alerts from any rule type can be added to a case.
 
 NOTE: Once you've added an alert to a case, you can only remove it through the <<cases-api-overview, Elastic Security Cases API>>.
 
@@ -210,12 +214,18 @@ image::images/add-alert-to-case.gif[width=50%][height=50%][Shows how to add an a
 
 [float]
 [[signals-to-new-cases]]
-==== Add an alert to a new case
-To add an alert to a new case:
+==== Add alerts to a new case
+To add alerts to a new case:
 
-. Select the *More actions* menu (*...*) in the Alerts table, or **Take action** in the Alert details flyout, then select
-*Add exception*.
-. In the **Create new case** flyout, give your case a name, add relevant tags (optional), and include a case description.
+. Do one of the following:
+** To add a single alert to a case, select the *More actions* menu (*...*) in the Alerts table or **Take action** in the Alert details flyout, then select
+*Add to a new case*.
+** To add multiple alerts, select the alerts, then select
+*Add to a new case* from the *Bulk actions* menu.
+. In the **Create new case** flyout, give your case a name, add relevant tags (optional), assign a severity level, and include a case description.
++
+NOTE: If you do not assign your case a severity level, it will be assigned *Low* by default.
+
 . Specify whether you want to sync the status of associated alerts. It is enabled by default; however, you can toggle this setting on or off at any time. If it remains enabled, the alert's status updates whenever the case's status is modified.
 . Select a connector. If you've previously added one, that connector displays as the default selection. Otherwise, the default setting is `No connector selected`.
 . Click *Create case* after you've completed all of the required fields. A confirmation message is displayed with an option to view the new case. Click the link in the notification or go to the Cases page to view the case.
@@ -225,11 +235,15 @@ image::images/add-alert-to-new-case.png[Shows how to add an alert to an existing
 
 [float]
 [[signals-to-existing-cases]]
-==== Add an alert to an existing case
-To attach an alert to an existing case:
+==== Add alerts to an existing case
+To add alerts to an existing case:
 
-. Select the *More actions* menu (*...*) in the Alerts table or **Take action** in the Alert details flyout, then select **Add to existing case**.
+. Do one of the following:
+** To add a single alert to a case, select the *More actions* menu (*...*) in the Alerts table or **Take action** in the Alert details flyout, then select **Add to existing case**.
+** To add multiple alerts, select the alerts, then select *Add to an existing case* from the *Bulk actions* menu.
 . From the **Select case** dialog box, select the case to which you want to attach the alert. A confirmation message is displayed with an option to view the updated case. Click the link in the notification or go to the Cases page to view the case's details.
++
+NOTE: If you attach the alert to a case that has been configured to sync its status with associated alerts, the alert's status updates any time the case's status is modified.
 
 [role="screenshot"]
 image::images/add-alert-to-existing-case.png[Shows how to add an alert to an existing case]

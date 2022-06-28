@@ -164,18 +164,8 @@ For example, if `Group by` is `source.ip`, `destination.ip` and its `Threshold` 
 +
 You can also leave the `Group by` field undefined. The rule then creates an alert when the number of search results is equal to or greater than the threshold value. If you set `Count` to limit the results by `process.name` >= 2, an alert will only be generated for source/destination IP pairs that appear with at least 2 unique process names across all events.
 +
-[IMPORTANT]
-==============
-Signals created by *threshold* rules are synthetic signals that do not resemble the source documents. The signal itself only contains data about the fields that were aggregated over (the `Group by` fields). Additionally, the signal contains "lookup" data for retrieving a *Timeline* of all of the source events that caused the threshold to be exceeded.
-If you wish to create an <<rule-notifications, *Action*>> based on a threshold rule, you can obtain values of the fields that were aggregated over by entering the following:
-```
-{{#context.alerts}}
-  {{#signal.threshold_result.terms}}
-    {{value}}
-  {{/signal.threshold_result.terms}}
-{{/context.alerts}}
-```
-==============
+IMPORTANT: Alerts created by threshold rules are synthetic alerts that do not resemble the source documents. The alert itself only contains data about the fields that were aggregated over (the `Group by` fields). Other fields are omitted, because they can vary across all source documents that were counted toward the threshold. Additionally, you can reference the actual count of documents that exceeded the threshold from the `kibana.alert.threshold_result.count` field.
+
 . Continue with <<preview-rules, previewing the rule>> (optional) or click *Continue* to <<rule-ui-basic-params, configure basic rule settings>>.
 
 [discrete]
@@ -190,7 +180,7 @@ network connection:
 +
 ** *Index patterns*: `winlogbeat-*`
 +
-> Winlogbeat ships Windows events to {elastic-sec}.
+Winlogbeat ships Windows events to {elastic-sec}.
 
 ** *EQL query*:
 +
@@ -214,6 +204,11 @@ event followed by an outbound network connection event that was started by the
 image::images/eql-rule-query-example.png[]
 +
 NOTE: For sequence events, the {security-app} generates a single alert when all events listed in the sequence are detected. To see the matched sequence events in more detail, you can view the alert in the Timeline, and, if all events came from the same process, open the alert in Analyze Event view.
++
+. (Optional) Click the EQL settings icon (image:images/eql-settings-icon.png[EQL settings icon,16,16]) to configure additional fields used by {ref}/eql.html#specify-a-timestamp-or-event-category-field[EQL search]:
+  * *Event category field*: Contains the event classification, such as `process`, `file`, or `network`. This field is typically mapped as a field type in the {ref}/keyword.html[keyword family]. Defaults to the `event.category` ECS field.
+  * *Tiebreaker field*: Sets a secondary field for sorting events (in ascending, lexicographic order) if they have the same timestamp.
+  * *Timestamp field*: Contains the event timestamp used for sorting a sequence of events. This is different from the *Timestamp override* advanced setting, which is used for querying events within a range. Defaults to the `@timestamp` ECS field.
 +
 . Continue with <<preview-rules, previewing the rule>> (optional) or click *Continue* to <<rule-ui-basic-params, configure basic rule settings>>.
 
