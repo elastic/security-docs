@@ -112,65 +112,48 @@ image::images/timestamp-override.png[]
 [[ml-job-compatibility]]
 ==== Troubleshoot missing alerts for {ml} jobs
 
-The <<prebuilt-ml-jobs,prebuilt {ml} jobs>> have dependencies on data fields
-that are populated by {beats} and {agent} integrations. In version 7.11, new
-{ml} jobs (<<security-linux-jobs>> and <<security-windows-jobs>>) were provided,
-which operate on newer ECS fields than the previous Security: {winlogbeat} and
-Security: {auditbeat} jobs. However, the <<prebuilt-rules,prebuilt rules>> were
-not updated to use the new {ml} jobs.
+{ml-cap} detection rules use {ml} jobs that have dependencies on data fields populated by the {beats} and {agent} integrations. In {stack} version 8.3, new {ml} jobs (prefixed with `v3`) were released to operate on the ECS fields available at that time. 
 
-Therefore:
+If you're using 8.2 or earlier versions of {beats} or {agent} with {stack} version 8.3 or later, you may need to duplicate prebuilt rules or create new custom rules _before_ you update the Elastic prebuilt rules. Once you update the prebuilt rules, they will only use `v3` {ml} jobs. Duplicating the relevant prebuilt rules before updating them ensures continued coverage by allowing you to keep using `v1` or `v2` jobs (in the duplicated rules) while also running the new `v3` jobs (in the updated prebuilt rules).
 
-* If you have only 7.10 or earlier versions of {beats}, you can continue using
-the Security:Auditbeat and Security:Winlogbeat {ml} jobs and the prebuilt {ml}
-rules that have been in the {security-app} since version 7.5.
-* If you have only 7.11 or later versions of {beats}, use the Security:Linux and
-Security:Windows {ml} jobs. If you want to generate alerts for anomalies in
-these jobs, make clones of the existing {ml} rules and update them to use the
-new jobs.
-* If you have a mix of old and new versions of {beats} or you have a mix of
-{beats} and {elastic-endpoint} integrations, use both the old and new {ml} jobs.
-If you want alerts for anomalies in the new jobs, make clones of the existing
-{ml} rules and update them to use the new jobs.
-* If you have a non-Elastic data shipper that gathers ECS-compatible Windows
-events, use the Security:Windows {ml} jobs. If you want alerts for anomalies in
-these jobs, make clones of the existing {ml} rules and update them to use these
-jobs.
+[IMPORTANT]
+=====
+* Duplicated rules may result in duplicate anomaly detections and alerts.
+* Ensure that the relevant `v3` {ml} jobs are running before you update the Elastic prebuilt rules.
+=====
 
-If you are cloning prebuilt {ml} rules to generate alerts for the new {ml} jobs,
-the following rules are affected:
+* If you only have *8.3 or later versions of {beats} and {agent}*: You can download or update your prebuilt rules and use the latest `v3` {ml} jobs. No additional action is required.
 
-* <<unusual-linux-network-port-activity>>: Use
-`v2_linux_anomalous_network_port_activity_ecs` instead of
-`linux_anomalous_network_port_activity_ecs`.
-* <<anomalous-process-for-a-linux-population>>: Use
-`v2_linux_anomalous_process_all_hosts_ecs` instead of
-`linux_anomalous_process_all_hosts_ecs`.
-* <<unusual-linux-username>>: Use `v2_linux_anomalous_user_name_ecs` instead of
-`linux_anomalous_user_name_ecs`.
-* <<unusual-linux-process-calling-the-metadata-service>>: Use
-`v2_linux_rare_metadata_process` instead of `linux_rare_metadata_process`.
-* <<unusual-linux-user-calling-the-metadata-service>>: Use
-`v2_linux_rare_metadata_user` instead of `linux_rare_metadata_user`.
-* <<unusual-process-for-a-linux-host>>: Use `v2_rare_process_by_host_linux_ecs`
-instead of `rare_process_by_host_linux_ecs`.
-* <<unusual-process-for-a-windows-host>>: Use
-`v2_rare_process_by_host_windows_ecs` instead of
-`rare_process_by_host_windows_ecs`.
-* <<unusual-windows-network-activity>>: Use
-`v2_windows_anomalous_network_activity_ecs` instead of
-`windows_anomalous_network_activity_ecs`.
-* <<unusual-windows-path-activity>>: Use `v2_windows_anomalous_path_activity_ecs`
-instead of `windows_anomalous_path_activity_ecs`.
-* <<anomalous-windows-process-creation>>: Use
-`v2_windows_anomalous_process_creation` instead of
-`windows_anomalous_process_creation`.
-* <<anomalous-process-for-a-windows-population>>: Use
-`v2_windows_anomalous_process_all_hosts_ecs` instead of
-`windows_anomalous_process_all_hosts_ecs`.
-* <<unusual-windows-username>>: Use `v2_windows_anomalous_user_name_ecs` instead
-of `windows_anomalous_user_name_ecs`.
-* <<unusual-windows-process-calling-the-metadata-service>>: Use
-`v2_windows_rare_metadata_process` instead of `windows_rare_metadata_process`.
-* <<unusual-windows-user-calling-the-metadata-service>>: Use
-`v2_windows_rare_metadata_user` instead of `windows_rare_metadata_user`.
+* If you only have *8.2 or earlier versions of {beats} or {agent}*, or *a mix of old and new versions*: To continue using the `v1` and `v2` {ml} jobs specified by pre-8.3 prebuilt detection rules, you must duplicate affected prebuilt rules _before_ updating them to the latest rule versions. The duplicated rules can continue using the same `v1` and `v2` {ml} jobs, and the updated prebuilt {ml} rules will use the new `v3` {ml} jobs.
+
+* If you have *a non-Elastic data shipper that gathers ECS-compatible events*: You can use the latest `v3` {ml} jobs with no additional action required, as long as your data shipper uses the latest ECS specifications. However, if you're migrating from {ml} rules using `v1`/`v2` jobs, ensure that you start the relevant `v3` jobs before updating the Elastic prebuilt rules.
+
+The following Elastic prebuilt rules use the new `v3` {ml} jobs to generate alerts. Duplicate their associated `v1`/`v2` prebuilt rules _before_ updating them if you need continued coverage from the `v1`/`v2` {ml} jobs:
+
+* <<unusual-linux-network-port-activity>>: `v3_linux_anomalous_network_port_activity`
+
+* <<anomalous-process-for-a-linux-population>>: `v3_linux_anomalous_process_all_hosts`
+
+* <<unusual-linux-username>>: `v3_linux_anomalous_user_name`
+
+* <<unusual-linux-process-calling-the-metadata-service>>: `v3_linux_rare_metadata_process`
+
+* <<unusual-linux-user-calling-the-metadata-service>>: `v3_linux_rare_metadata_user`
+
+* <<unusual-process-for-a-linux-host>>: `v3_rare_process_by_host_linux`
+
+* <<unusual-process-for-a-windows-host>>: `v3_rare_process_by_host_windows`
+
+* <<unusual-windows-network-activity>>: `v3_windows_anomalous_network_activity`
+
+* <<unusual-windows-path-activity>>: `v3_windows_anomalous_path_activity`
+
+* <<anomalous-windows-process-creation>>: `v3_windows_anomalous_process_creation`
+
+* <<anomalous-process-for-a-windows-population>>: `v3_windows_anomalous_process_all_hosts` 
+
+* <<unusual-windows-username>>: `v3_windows_anomalous_user_name`
+
+* <<unusual-windows-process-calling-the-metadata-service>>: `v3_windows_rare_metadata_process`
+
+* <<unusual-windows-user-calling-the-metadata-service>>: `v3_windows_rare_metadata_user`
