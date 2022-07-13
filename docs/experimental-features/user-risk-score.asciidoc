@@ -1,0 +1,71 @@
+[[user-risk-score]]
+== User risk score
+
+NOTE: This feature is available for {stack} versions 8.3.0 and newer.
+
+The user risk score feature highlights risky usernames in your environment. It utilizes a transform with a scripted metric aggregation to calculate user risk scores based on alerts generated within the past 90 days. The transform runs hourly to update scores as new alerts are generated.
+
+Each alert's contribution to the user risk score is based on the alert's risk score (`signal.rule.risk_score`). The risk score is calculated using a weighted sum where rules with higher time-corrected risk scores also have higher weights. Each risk score is normalized on a scale of 0 to 100.
+
+The following table shows how risk levels are applied to a username, based on the normalized risk score:
+
+[width="100%",options="header"]
+|==============================================
+|Risk level |User risk score
+
+|Unknown |< 20
+|Low |20-40
+|Moderate |40-70
+|High     | 70-90
+|Critical  | > 90
+
+|==============================================
+
+[discrete]
+[[deploy-user-risk-score]]
+=== Deploy the user risk score package
+
+To deploy the user risk score framework in your environment, follow https://github.com/elastic/detection-rules/blob/main/docs/experimental-machine-learning/user-risk-score.md[these steps]. To view user risk score data in the {security-app}, you must https://github.com/elastic/detection-rules/blob/main/docs/experimental-machine-learning/user-risk-score.md#8-enable-kibana-features[enable the `riskyUsersEnabled` feature flag]. However, enabling the feature flag is *not* required to view the Lens dashboards.
+
+NOTE: Update user risk score artifacts after you upgrade the {stack}. To do this, download a release bundle that's compatible with the new {stack} version and repeat all the steps referenced above. Failure to do so might cause views in the {security-app} to break.
+
+[[view-user-risk-score]]
+[discrete]
+=== View user risk score data
+
+If the `riskyUsersEnabled` feature flag is enabled:
+
+. In the {security-app}, go to *Explore* -> *Users*.
+. On the *Users* page, select the *User risk* tab.
+
+The User risk table shows a list of usernames, their assigned risk scores, and user risk classifications. The table appears in reverse chronological order, with the most recently authenticated user at the top. Select the *User risk classification* menu to filter the table by the classification type.
+
+NOTE: The User risk table is *not* affected by the KQL time range.
+
+[role="screenshot"]
+image::images/urs-table.png[User risk score table]
+
+Click a username to view the user risk details page, which shows how the risk score for that user has changed over time. The *Top risk score contributors* table shows rules with the highest user risk score. Click a rule name to view the rule details page.
+
+NOTE: The data on this page *is* affected by the KQL time range; therefore, modify the date and time picker to filter your results.
+
+[role="screenshot"]
+image::images/urs-details-page.png[User risk score details page]
+
+If the `riskyUsersEnabled` feature flag is *not* enabled:
+
+. In {kib}, go to *Analytics -> Dashboard*, then search for "risk score".
+. Select the *Drilldown of User Risk Score* dashboard.
+
+[role="screenshot"]
+image::images/select-urs-dashboard.png[Select dashboard]
+
+Use the histogram to track how the risk score for a particular user has changed over time. To specify a date range, use the date and time picker or drag and select a time range within the histogram. Click *View source dashboard* to view the top values of `user.name` and `risk.keyword`.
+
+[role="screenshot"]
+image::images/urs-histogram.png[User risk score histogram]
+
+The data tables beneath the histogram display alert counts by users, alert counts by host, and associated MITRE ATT&CK tactics of risky users. The table data is sorted in reverse chronological order by default, with the highest total risk score at the top. Use this information to triage users with the highest risk in your network.
+
+[role="screenshot"]
+image::images/dashboard.gif[User risk score dashboard]
