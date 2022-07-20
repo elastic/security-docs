@@ -280,7 +280,7 @@ Yes, if action is `edit`.
 ==== Dry run mode
 In dry run mode (when URL query parameter `dry_run=true`) rules will be validated depends on action, but rules won't be saved in ES.
 
-WARNING: Because `export`` action doesn't mutate state of rules and returns response in `.ndjson` file, dry run mode is not supported for this action
+IMPORTANT: Because `export` action doesn't mutate state of rules and returns response in `.ndjson` file, dry run mode is not supported for this action
 
 
 [[bulk-edit-object-schema]]
@@ -598,3 +598,83 @@ If processing of any rule fails, a partial error outputs the ID and/or name of t
 --------------------------------------------------
 
 <1> dev:[] `execution_summary` is under development and its schema may change.
+
+*Example 3, Dry run*
+
+The following request adds index pattern `test-*` to the rules with IDs sent in the payload.
+Because, it's in dry ryn mode: no changes will be saved for this rule. But in response, we will be able to see how many rules will be updated if the actual bulk edit happens and which errors should we expect in that case.
+[source,console]
+--------------------------------------------------
+POST api/detection_engine/rules/_bulk_action?dry_run=true
+{
+    "action": "edit",
+    "edit": [
+        {
+            "value": [
+                "test-*"
+            ],
+            "type": "add_index_patterns"
+        }
+    ],
+    "ids": ["81aa0480-06af-11ed-94fb-dd1a0597d8d2", "dc015d10-0831-11ed-ac8b-05a222bd8d4a", "de8f5af0-0831-11ed-ac8b-05a222bd8d4a"]
+}
+--------------------------------------------------
+
+[discrete]
+===== Response code
+
+`500`::
+    Indicates partial bulk action failure.
+
+[discrete]
+===== Response payload
+
+Response payload returns 2 failed rules and 1 successful. In `attributes.errors` section of response also returned errors for failed rules and ids/name of failed rules.
+Contrary to the above example, which returns updated rule objects in `attributes.results`, in case of dry run mode, no rules objects will be returned, as rules are not getting mutated.
+
+[discrete]
+===== Response body
+
+[source,json]
+--------------------------------------------------
+{
+    "message": "Bulk edit partially failed",
+    "status_code": 500,
+    "attributes": {
+        "errors": [
+            {
+                "message": "Elastic rule can't be edited",
+                "status_code": 500,
+                "err_code": "IMMUTABLE",
+                "rules": [
+                    {
+                        "id": "81aa0480-06af-11ed-94fb-dd1a0597d8d2",
+                        "name": "Unusual AWS Command for a User"
+                    }
+                ]
+            },
+            {
+                "message": "Machine learning rule doesn't have index patterns",
+                "status_code": 500,
+                "err_code": "MACHINE_LEARNING_INDEX_PATTERN",
+                "rules": [
+                    {
+                        "id": "dc015d10-0831-11ed-ac8b-05a222bd8d4a",
+                        "name": "Suspicious Powershell Script [Duplicate]"
+                    }
+                ]
+            }
+        ],
+        "results": {
+            "updated": [],
+            "created": [],
+            "deleted": []
+        },
+        "summary": {
+            "failed": 2,
+            "succeeded": 1,
+            "total": 3
+        }
+    }
+}
+--------------------------------------------------
