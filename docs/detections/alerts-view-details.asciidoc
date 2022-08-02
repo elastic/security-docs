@@ -1,0 +1,106 @@
+[[view-alert-details]]
+== View detection alert details
+
+To inspect a detection alert, click the *View details* button from the Alerts table. The alert details flyout appears with several options to view alert data.
+
+[role="screenshot"]
+image::images/view-alert-details.png[View details button, 200]
+
+The alert details flyout contains these informational tabs:
+
+* *Overview*: A summary of the alert, including relevant fields and selected threat intelligence details. <<alert-details-overview, Learn more.>>
+* *Threat Intel*: A list of individual threats matching the alert. <<alert-details-threat-intel, Learn more.>>
+* *Table*: The alert data in table format. Data is organized into field-value pairs.
+* *JSON*: The alert data in JSON format.
+
+[role="screenshot"]
+image::images/alert-details-flyout.png[Alert details flyout]
+
+[discrete]
+[[alert-details-overview]]
+=== Overview tab
+
+The *Overview* tab summarizes the alert and shows relevant threat intelligence details. Use this information to understand what generated the alert so you can triage and resolve it.
+
+The Overview tab contains these features:
+
+* *Summary*: General details such as the alert's status, severity, risk score, and a link to the detection rule that produced the alert.
+
+* *Reason statement*: A description of what generated the alert and provides general alert details. You can use this to understand the alert's origin and determine if the alert is relevant to your investigation.
+
+* *Cases*: The total number and names of cases to which the alert has been added. Click a case's name to open its details.
+
+* *Highlighted fields*: The most relevant fields for the alert type. Use this section to inform your triage efforts as you investigate the alert.
++
+NOTE: The *Session ID* field provides a unique ID for tracking a given Linux session and is stored in the `process.entry_leader.entity_id` field in the alert's document. To collect the session ID and other session data, you must enable the *Include session data* setting on your {endpoint-cloud-sec} integration policy. Refer to <<enable-session-view, Enable Session View data>> for more information.
+
+* *Alert prevalence*: The total number of alerts within the selected timeframe that have identical values. For example, an alert prevalence of 3 for `host.name` means three alerts with the same `host.name` value exist within the timeframe.
++
+Alert prevalence data can help you investigate relationships with other alerts and gain context about the events producing alerts. You can also click the alert prevalence count to explore the alerts in Timeline.
++
+IMPORTANT: Before investigating alert prevalence data in Timeline, save any Timelines you're working on to ensure you can access them later.
+
+* *Enriched data*: Available threat indicator matches and threat intelligence data. This section only displays for alerts with intelligence data. Click the info icon to learn more about what data is collected. Refer to <<enriched-data-overview>> for more information.
++
+[role="screenshot"]
+image::images/enriched-data-info-icon.png[Informational message on enriched data, 600]
+
+[discrete]
+[[enriched-data-overview]]
+==== Enriched data on alerts
+
+When gathering threat intelligence data for an alert, {elastic-sec} queries the alert for indicator matches from the past 30 days. The query looks for the following fields:
+
+- `file.hash.md5`: The MD5 hash
+- `file.hash.sha1`: The SHA1 hash
+- `file.hash.sha256`: The SHA256 hash
+- `file.pe.imphash`: Imports in a PE file
+- `file.elf.telfhash`: Imports in an ELF file
+- `file.hash.ssdeep`: The SSDEEP hash
+- `source.ip`: The IP address of the source (IPv4 or IPv6)
+- `destination.ip`: The event's destination IP address
+- `url.full`: The full URL of the event source
+- `registry.path`: The full registry path, including the hive, key, and value
+
+If these fields aren't available, {elastic-sec} does not perform the query and does not display threat intelligence data for the alert.
+
+Discovered threat indicator match data is placed under the **Threat Match Detected** subsection of the Overview tab.
+
+[role="screenshot"]
+image::images/matched-indicator-sub-sec.png[Threat Match Detected subsection with matched file hash, 600]
+
+All other available threat intelligence data is placed under the **Enriched with Threat Intelligence** subsection of the Overview tab.
+
+[role="screenshot"]
+image::images/threat-intel-sub-sec.png[Enriched with Threat Intelligence subsection with matched file hash, 700]
+
+TIP: To learn more about the query, select the **Threat Intel** tab, then click the **Inspect** button next to the threat you want to inspect.
+
+Additional threat intelligence data is generated for indicator match alerts when indicators are matched with source events, as outlined by the conditions in the relevant indicator match rule. Indicator match alerts always populate the *Threat Matched Detected* section under the *Threat Intel* tab with additional threat match data.
+
+IMPORTANT: After upgrading to {stack} version 7.15.0 or newer from release versions 7.12.0 through 7.14.2, you need to migrate detection alerts enriched with threat intelligence data to ensure threat intelligence properly displays in {elastic-sec}. For more information, refer to instructions for <<post-upgrade-req-cti-alerts, migrating detection alerts enriched with threat intelligence data>>.
+
+[float]
+[[alert-details-threat-intel]]
+=== Threat Intel tab
+
+The *Threat Intel* tab shows the number of individual threats matching the alert. You can expand and collapse threat details by clicking the arrow button at the end of the threat label. Each threat is labelled with values from the `matched.field` and `matched.atomic` fields and displays the threat intelligence provider. If the alert does not contain threat intelligence data, the *Threat Intel* tab displays a message that none is available.
+
+Matched threats are organized into several sections, described below. Within each section, matched threats are shown in reverse chronological order, with the most recent at the top. All mapped fields are displayed for each matched threat.
+
+* *Threat Matched Detected*: This section is solely reserved for threat indicator matches identified by an indicator match rule. Threat indicator matches are produced whenever event data matches a threat indicator field value in your indicator index. If indicator threat matches are not discovered, the section displays a message that none are available.
+* *Enriched with Threat Intelligence*: This section shows indicator matches that {elastic-sec} found when querying the alert for fields with threat intelligence. You can use the date time picker to modify the query time frame, which looks at the past 30 days by default. Click the **Inspect** button, located on the far right of the threat label, to view more information on the query. If threat matches are not discovered within the selected time frame, the section displays a message that none are available.
+
+NOTE: The event enrichment query uses the indices specified in the `securitySolution:defaultThreatIndex` advanced setting. For more information, refer to <<update-threat-intel-indices, Update default Elastic Security threat intelligence indices>>.
+
+////
+[discrete]
+=== Table tab
+
+The *Table* tab shows the alert details in table format. Alert details are organized into field value pairs.
+
+[float]
+=== JSON tab
+
+The *JSON* tab shows the alert details in JSON format.
+////
