@@ -1,0 +1,110 @@
+[[process-execution-from-an-unusual-directory]]
+=== Process Execution from an Unusual Directory
+
+Identifies process execution from suspicious default Windows directories. This is sometimes done by adversaries to hide malware in trusted paths.
+
+*Rule type*: eql
+
+*Rule indices*:
+
+* winlogbeat-*
+* logs-endpoint.events.*
+* logs-windows.*
+
+*Severity*: medium
+
+*Risk score*: 47
+
+*Runs every*: 5 minutes
+
+*Searches indices from*: now-9m ({ref}/common-options.html#date-math[Date Math format], see also <<rule-schedule, `Additional look-back time`>>)
+
+*Maximum alerts per execution*: 100
+
+*Tags*:
+
+* Elastic
+* Host
+* Windows
+* Threat Detection
+* Execution
+
+*Version*: 4 (<<process-execution-from-an-unusual-directory-history, version history>>)
+
+*Added ({stack} release)*: 7.11.0
+
+*Last modified ({stack} release)*: 8.2.0
+
+*Rule authors*: Elastic
+
+*Rule license*: Elastic License v2
+
+==== Investigation guide
+
+
+[source,markdown]
+----------------------------------
+## Config
+
+If enabling an EQL rule on a non-elastic-agent index (such as beats) for versions <8.2, events will not define `event.ingested` and default fallback for EQL rules was not added until 8.2, so you will need to add a custom pipeline to populate `event.ingested` to @timestamp for this rule to work.
+
+----------------------------------
+
+
+==== Rule query
+
+
+[source,js]
+----------------------------------
+process where event.type in ("start", "process_started", "info") and
+/* add suspicious execution paths here */ process.executable : ("C:\\P
+erfLogs\\*.exe","C:\\Users\\Public\\*.exe","C:\\Users\\Default\\*.exe"
+,"C:\\Windows\\Tasks\\*.exe","C:\\Intel\\*.exe","C:\\AMD\\Temp\\*.exe"
+,"C:\\Windows\\AppReadiness\\*.exe", "C:\\Windows\\ServiceState\\*.exe
+","C:\\Windows\\security\\*.exe","C:\\Windows\\IdentityCRL\\*.exe","C:
+\\Windows\\Branding\\*.exe","C:\\Windows\\csc\\*.exe",
+"C:\\Windows\\DigitalLocker\\*.exe","C:\\Windows\\en-US\\*.exe","C:\\W
+indows\\wlansvc\\*.exe","C:\\Windows\\Prefetch\\*.exe","C:\\Windows\\F
+onts\\*.exe", "C:\\Windows\\diagnostics\\*.exe","C:\\Windows\\TAPI\\*
+.exe","C:\\Windows\\INF\\*.exe","C:\\Windows\\System32\\Speech\\*.exe"
+,"C:\\windows\\tracing\\*.exe", "c:\\windows\\IME\\*.exe","c:\\Window
+s\\Performance\\*.exe","c:\\windows\\intel\\*.exe","c:\\windows\\ms\\*
+.exe","C:\\Windows\\dot3svc\\*.exe","C:\\Windows\\ServiceProfiles\\*.e
+xe", "C:\\Windows\\panther\\*.exe","C:\\Windows\\RemotePackages\\*.ex
+e","C:\\Windows\\OCR\\*.exe","C:\\Windows\\appcompat\\*.exe","C:\\Wind
+ows\\apppatch\\*.exe","C:\\Windows\\addins\\*.exe", "C:\\Windows\\Set
+up\\*.exe","C:\\Windows\\Help\\*.exe","C:\\Windows\\SKB\\*.exe","C:\\W
+indows\\Vss\\*.exe","C:\\Windows\\Web\\*.exe","C:\\Windows\\servicing\
+\*.exe","C:\\Windows\\CbsTemp\\*.exe", "C:\\Windows\\Logs\\*.exe","C:
+\\Windows\\WaaS\\*.exe","C:\\Windows\\twain_32\\*.exe","C:\\Windows\\S
+hellExperiences\\*.exe","C:\\Windows\\ShellComponents\\*.exe","C:\\Win
+dows\\PLA\\*.exe", "C:\\Windows\\Migration\\*.exe","C:\\Windows\\debu
+g\\*.exe","C:\\Windows\\Cursors\\*.exe","C:\\Windows\\Containers\\*.ex
+e","C:\\Windows\\Boot\\*.exe","C:\\Windows\\bcastdvr\\*.exe", "C:\\Wi
+ndows\\assembly\\*.exe","C:\\Windows\\TextInput\\*.exe","C:\\Windows\\
+security\\*.exe","C:\\Windows\\schemas\\*.exe","C:\\Windows\\SchCache\
+\*.exe","C:\\Windows\\Resources\\*.exe", "C:\\Windows\\rescache\\*.ex
+e","C:\\Windows\\Provisioning\\*.exe","C:\\Windows\\PrintDialog\\*.exe
+","C:\\Windows\\PolicyDefinitions\\*.exe","C:\\Windows\\media\\*.exe",
+"C:\\Windows\\Globalization\\*.exe","C:\\Windows\\L2Schemas\\*.exe","C
+:\\Windows\\LiveKernelReports\\*.exe","C:\\Windows\\ModemLogs\\*.exe",
+"C:\\Windows\\ImmersiveControlPanel\\*.exe") and not process.name : (
+"SpeechUXWiz.exe","SystemSettings.exe","TrustedInstaller.exe","PrintDi
+alog.exe","MpSigStub.exe","LMS.exe","mpam-*.exe") /* uncomment once
+in winlogbeat */ /* and not (process.code_signature.subject_name ==
+"Microsoft Corporation" and process.code_signature.trusted == true) */
+----------------------------------
+
+
+[[process-execution-from-an-unusual-directory-history]]
+==== Rule version history
+
+Version 4 (8.2.0 release)::
+* Formatting only
+
+Version 3 (7.12.0 release)::
+* Formatting only
+
+Version 2 (7.11.2 release)::
+* Formatting only
+

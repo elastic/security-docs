@@ -1,0 +1,121 @@
+[[possible-consent-grant-attack-via-azure-registered-application]]
+=== Possible Consent Grant Attack via Azure-Registered Application
+
+Detects when a user grants permissions to an Azure-registered application or when an administrator grants tenant-wide permissions to an application. An adversary may create an Azure-registered application that requests access to data such as contact information, email, or documents.
+
+*Rule type*: query
+
+*Rule indices*:
+
+* filebeat-*
+* logs-azure*
+
+*Severity*: medium
+
+*Risk score*: 47
+
+*Runs every*: 5 minutes
+
+*Searches indices from*: now-25m ({ref}/common-options.html#date-math[Date Math format], see also <<rule-schedule, `Additional look-back time`>>)
+
+*Maximum alerts per execution*: 100
+
+*References*:
+
+* https://docs.microsoft.com/en-us/microsoft-365/security/office-365-security/detect-and-remediate-illicit-consent-grants?view=o365-worldwide
+
+*Tags*:
+
+* Elastic
+* Cloud
+* Azure
+* Continuous Monitoring
+* SecOps
+* Identity and Access
+
+*Version*: 5 (<<possible-consent-grant-attack-via-azure-registered-application-history, version history>>)
+
+*Added ({stack} release)*: 7.10.0
+
+*Last modified ({stack} release)*: 7.13.0
+
+*Rule authors*: Elastic
+
+*Rule license*: Elastic License v2
+
+==== Investigation guide
+
+
+[source,markdown]
+----------------------------------
+## Triage and analysis
+
+- In a consent grant attack, an attacker tricks an end user into granting a malicious application consent to access their data, usually via a phishing attack. After the malicious application has been granted consent, it has account-level access to data without the need for an organizational account.
+- Normal remediation steps, like resetting passwords for breached accounts or requiring Multi-Factor Authentication (MFA) on accounts, are not effective against this type of attack, since these are third-party applications and are external to the organization.
+- Security analysts should review the list of trusted applications for any suspicious items.
+
+
+## Config
+
+The Azure Fleet integration, Filebeat module, or similarly structured data is required to be compatible with this rule.
+----------------------------------
+
+
+==== Rule query
+
+
+[source,js]
+----------------------------------
+event.dataset:(azure.activitylogs or azure.auditlogs or o365.audit)
+and ( azure.activitylogs.operation_name:"Consent to
+application" or azure.auditlogs.operation_name:"Consent to
+application" or o365.audit.Operation:"Consent to application." )
+and event.outcome:(Success or success)
+----------------------------------
+
+==== Threat mapping
+
+*Framework*: MITRE ATT&CK^TM^
+
+* Tactic:
+** Name: Initial Access
+** ID: TA0001
+** Reference URL: https://attack.mitre.org/tactics/TA0001/
+* Technique:
+** Name: Phishing
+** ID: T1566
+** Reference URL: https://attack.mitre.org/techniques/T1566/
+
+
+* Tactic:
+** Name: Credential Access
+** ID: TA0006
+** Reference URL: https://attack.mitre.org/tactics/TA0006/
+* Technique:
+** Name: Steal Application Access Token
+** ID: T1528
+** Reference URL: https://attack.mitre.org/techniques/T1528/
+
+[[possible-consent-grant-attack-via-azure-registered-application-history]]
+==== Rule version history
+
+Version 5 (7.13.0 release)::
+* Formatting only
+
+Version 4 (7.12.0 release)::
+* Formatting only
+
+Version 3 (7.11.2 release)::
+* Formatting only
+
+Version 2 (7.11.0 release)::
+* Updated query, changed from:
++
+[source, js]
+----------------------------------
+event.dataset:(azure.activitylogs or azure.auditlogs) and (
+azure.activitylogs.operation_name:"Consent to application" or
+azure.auditlogs.operation_name:"Consent to application" ) and
+event.outcome:success
+----------------------------------
+
