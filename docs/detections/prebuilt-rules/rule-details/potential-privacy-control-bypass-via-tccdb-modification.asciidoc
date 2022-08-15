@@ -34,11 +34,11 @@ Identifies the use of sqlite3 to directly modify the Transparency, Consent, and 
 * Threat Detection
 * Defense Evasion
 
-*Version*: 3 (<<potential-privacy-control-bypass-via-tccdb-modification-history, version history>>)
+*Version*: 5 (<<potential-privacy-control-bypass-via-tccdb-modification-history, version history>>)
 
 *Added ({stack} release)*: 7.12.0
 
-*Last modified ({stack} release)*: 8.2.0
+*Last modified ({stack} release)*: 8.4.0
 
 *Rule authors*: Elastic
 
@@ -49,9 +49,6 @@ Identifies the use of sqlite3 to directly modify the Transparency, Consent, and 
 
 [source,markdown]
 ----------------------------------
-## Config
-
-If enabling an EQL rule on a non-elastic-agent index (such as beats) for versions <8.2, events will not define `event.ingested` and default fallback for EQL rules was not added until 8.2, so you will need to add a custom pipeline to populate `event.ingested` to @timestamp for this rule to work.
 
 ----------------------------------
 
@@ -63,7 +60,8 @@ If enabling an EQL rule on a non-elastic-agent index (such as beats) for version
 ----------------------------------
 process where event.type in ("start", "process_started") and
 process.name : "sqlite*" and process.args : "/*/Application
-Support/com.apple.TCC/TCC.db"
+Support/com.apple.TCC/TCC.db" and not process.parent.executable :
+"/Library/Bitdefender/AVP/product/bin/*"
 ----------------------------------
 
 ==== Threat mapping
@@ -81,6 +79,16 @@ Support/com.apple.TCC/TCC.db"
 
 [[potential-privacy-control-bypass-via-tccdb-modification-history]]
 ==== Rule version history
+
+Version 5 (8.4.0 release)::
+* Updated query, changed from:
++
+[source, js]
+----------------------------------
+process where event.type in ("start", "process_started") and
+process.name : "sqlite*" and process.args : "/*/Application
+Support/com.apple.TCC/TCC.db"
+----------------------------------
 
 Version 3 (8.2.0 release)::
 * Formatting only
