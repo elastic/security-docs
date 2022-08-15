@@ -1,0 +1,139 @@
+[[microsoft-build-engine-started-by-an-office-application]]
+=== Microsoft Build Engine Started by an Office Application
+
+An instance of MSBuild, the Microsoft Build Engine, was started by Excel or Word. This is unusual behavior for the Build Engine and could have been caused by an Excel or Word document executing a malicious script payload.
+
+*Rule type*: eql
+
+*Rule indices*:
+
+* winlogbeat-*
+* logs-endpoint.events.*
+* logs-windows.*
+
+*Severity*: high
+
+*Risk score*: 73
+
+*Runs every*: 5 minutes
+
+*Searches indices from*: now-9m ({ref}/common-options.html#date-math[Date Math format], see also <<rule-schedule, `Additional look-back time`>>)
+
+*Maximum alerts per execution*: 100
+
+*References*:
+
+* https://blog.talosintelligence.com/2020/02/building-bypass-with-msbuild.html
+
+*Tags*:
+
+* Elastic
+* Host
+* Windows
+* Threat Detection
+* Defense Evasion
+
+*Version*: 10 (<<microsoft-build-engine-started-by-an-office-application-history, version history>>)
+
+*Added ({stack} release)*: 7.7.0
+
+*Last modified ({stack} release)*: 8.2.0
+
+*Rule authors*: Elastic
+
+*Rule license*: Elastic License v2
+
+==== Potential false positives
+
+The Build Engine is commonly used by Windows developers but use by non-engineers is unusual. It is quite unusual for this program to be started by an Office application like Word or Excel.
+
+==== Investigation guide
+
+
+[source,markdown]
+----------------------------------
+## Config
+
+If enabling an EQL rule on a non-elastic-agent index (such as beats) for versions <8.2, events will not define `event.ingested` and default fallback for EQL rules was not added until 8.2, so you will need to add a custom pipeline to populate `event.ingested` to @timestamp for this rule to work.
+
+----------------------------------
+
+
+==== Rule query
+
+
+[source,js]
+----------------------------------
+process where event.type in ("start", "process_started") and
+process.name : "MSBuild.exe" and process.parent.name :
+("eqnedt32.exe", "excel.exe",
+"fltldr.exe", "msaccess.exe",
+"mspub.exe", "outlook.exe",
+"powerpnt.exe", "winword.exe" )
+----------------------------------
+
+==== Threat mapping
+
+*Framework*: MITRE ATT&CK^TM^
+
+* Tactic:
+** Name: Defense Evasion
+** ID: TA0005
+** Reference URL: https://attack.mitre.org/tactics/TA0005/
+* Technique:
+** Name: Trusted Developer Utilities Proxy Execution
+** ID: T1127
+** Reference URL: https://attack.mitre.org/techniques/T1127/
+
+
+* Tactic:
+** Name: Execution
+** ID: TA0002
+** Reference URL: https://attack.mitre.org/tactics/TA0002/
+
+[[microsoft-build-engine-started-by-an-office-application-history]]
+==== Rule version history
+
+Version 10 (8.2.0 release)::
+* Formatting only
+
+Version 9 (7.16.0 release)::
+* Formatting only
+
+Version 8 (7.13.0 release)::
+* Updated query, changed from:
++
+[source, js]
+----------------------------------
+event.category:process and event.type:(start or process_started) and
+process.name:MSBuild.exe and process.parent.name:(eqnedt32.exe or
+excel.exe or fltldr.exe or msaccess.exe or mspub.exe or outlook.exe or
+powerpnt.exe or winword.exe)
+----------------------------------
+
+Version 7 (7.12.0 release)::
+* Formatting only
+
+Version 6 (7.11.2 release)::
+* Formatting only
+
+Version 5 (7.11.0 release)::
+* Formatting only
+
+Version 4 (7.10.0 release)::
+* Formatting only
+
+Version 3 (7.9.1 release)::
+* Formatting only
+
+Version 2 (7.9.0 release)::
+* Updated query, changed from:
++
+[source, js]
+----------------------------------
+process.name:MSBuild.exe and process.parent.name:(eqnedt32.exe or
+excel.exe or fltldr.exe or msaccess.exe or mspub.exe or outlook.exe or
+powerpnt.exe or winword.exe) and event.action: "Process Create (rule:
+ProcessCreate)"
+----------------------------------
+
