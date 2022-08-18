@@ -34,11 +34,11 @@ Identifies attempts to disable EventLog via the logman Windows utility, PowerShe
 * Threat Detection
 * Defense Evasion
 
-*Version*: 4 (<<disable-windows-event-and-security-logs-using-built-in-tools-history, version history>>)
+*Version*: 6 (<<disable-windows-event-and-security-logs-using-built-in-tools-history, version history>>)
 
 *Added ({stack} release)*: 7.14.0
 
-*Last modified ({stack} release)*: 8.3.0
+*Last modified ({stack} release)*: 8.4.0
 
 *Rule authors*: Elastic, Ivan Ninichuck, Austin Songer
 
@@ -85,11 +85,6 @@ malware components.
 - Determine the initial vector abused by the attacker and take action to prevent reinfection through the same vector.
 - Using the incident response data, update logging and audit policies to improve the mean time to detect (MTTD) and the
 mean time to respond (MTTR).
-
-## Config
-
-If enabling an EQL rule on a non-elastic-agent index (such as beats) for versions <8.2, events will not define `event.ingested` and default fallback for EQL rules was not added until 8.2, so you will need to add a custom pipeline to populate `event.ingested` to @timestamp for this rule to work.
-
 ----------------------------------
 
 
@@ -125,6 +120,23 @@ process.args: "EventLog" and process.args : "Disabled") or
 
 [[disable-windows-event-and-security-logs-using-built-in-tools-history]]
 ==== Rule version history
+
+Version 6 (8.4.0 release)::
+* Updated query, changed from:
++
+[source, js]
+----------------------------------
+process where event.type in ("start", "process_started") and
+((process.name:"logman.exe" or process.pe.original_file_name ==
+"Logman.exe") and process.args : "EventLog-*" and process.args :
+("stop", "delete")) or ((process.name : ("pwsh.exe",
+"powershell.exe", "powershell_ise.exe") or
+process.pe.original_file_name in ("pwsh.exe", "powershell.exe",
+"powershell_ise.exe")) and process.args : "Set-Service" and
+process.args: "EventLog" and process.args : "Disabled") or
+((process.name:"auditpol.exe" or process.pe.original_file_name ==
+"AUDITPOL.EXE") and process.args : "/success:disable")
+----------------------------------
 
 Version 4 (8.3.0 release)::
 * Formatting only

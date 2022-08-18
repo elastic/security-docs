@@ -29,11 +29,11 @@ Identifies use of bcdedit.exe to delete boot configuration data. This tactic is 
 * Threat Detection
 * Impact
 
-*Version*: 11 (<<modification-of-boot-configuration-history, version history>>)
+*Version*: 13 (<<modification-of-boot-configuration-history, version history>>)
 
 *Added ({stack} release)*: 7.7.0
 
-*Last modified ({stack} release)*: 8.3.0
+*Last modified ({stack} release)*: 8.4.0
 
 *Rule authors*: Elastic
 
@@ -90,11 +90,6 @@ for ransomware preparation and execution activities.
 - Determine the initial vector abused by the attacker and take action to prevent reinfection through the same vector.
 - Using the incident response data, update logging and audit policies to improve the mean time to detect (MTTD) and the
 mean time to respond (MTTR).
-
-## Config
-
-If enabling an EQL rule on a non-elastic-agent index (such as beats) for versions <8.2, events will not define `event.ingested` and default fallback for EQL rules was not added until 8.2, so you will need to add a custom pipeline to populate `event.ingested` to @timestamp for this rule to work.
-
 ----------------------------------
 
 
@@ -105,9 +100,9 @@ If enabling an EQL rule on a non-elastic-agent index (such as beats) for version
 ----------------------------------
 process where event.type in ("start", "process_started") and
 (process.name : "bcdedit.exe" or process.pe.original_file_name ==
-"bcdedit.exe") and (process.args : "/set" and process.args :
-"bootstatuspolicy" and process.args : "ignoreallfailures") or
-(process.args : "no" and process.args : "recoveryenabled")
+"bcdedit.exe") and ( (process.args : "/set" and process.args
+: "bootstatuspolicy" and process.args : "ignoreallfailures") or
+(process.args : "no" and process.args : "recoveryenabled") )
 ----------------------------------
 
 ==== Threat mapping
@@ -125,6 +120,18 @@ process where event.type in ("start", "process_started") and
 
 [[modification-of-boot-configuration-history]]
 ==== Rule version history
+
+Version 13 (8.4.0 release)::
+* Updated query, changed from:
++
+[source, js]
+----------------------------------
+process where event.type in ("start", "process_started") and
+(process.name : "bcdedit.exe" or process.pe.original_file_name ==
+"bcdedit.exe") and (process.args : "/set" and process.args :
+"bootstatuspolicy" and process.args : "ignoreallfailures") or
+(process.args : "no" and process.args : "recoveryenabled")
+----------------------------------
 
 Version 11 (8.3.0 release)::
 * Formatting only
