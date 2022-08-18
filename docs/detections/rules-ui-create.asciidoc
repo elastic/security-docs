@@ -80,6 +80,14 @@ If a rule requires certain privileges to run, such as index privileges, keep in 
 ==============================================
 
 [float]
+[[views-index-patterns]]
+=== Data views vs. index patterns
+
+When you create a rule, you must specify the {es} index pattens for which you'd like the rule to run,  or select a {kibana-ref}/data-views.html[data view] as the source of data. If you select a data view, when you create a rule (with the exception of a {ml} rule), you can select runtime fields associated with that data view.
+
+NOTE: To access data views, ensure you have the {kibana-ref}/data-views.html#data-views-read-only-access[required permissions].
+
+[float]
 [[create-rule-ui]]
 === Select rule type and scope
 
@@ -129,7 +137,7 @@ then:
 .. Use the filter and query fields to create the criteria used for detecting
 alerts.
 +
-NOTE: You can use {kib} saved queries (save icon) and queries from saved Timelines (`Import query from saved Timeline`) as rule conditions.
+NOTE: You can use {kib} saved queries (image:images/saved-query-menu.png[Saved query menu,17,17]) and queries from saved Timelines (`Import query from saved Timeline`) as rule conditions.
 +
 For example, the following rule detects when the `vssadmin delete shadows`
 Windows command is executed:
@@ -220,8 +228,8 @@ NOTE: For sequence events, the {security-app} generates a single alert when all 
 
 NOTE: {es-sec} provides limited support for indicator match rules. See <<support-indicator-rules>> for more information.
 
-. To create an indicator match rule that searches for events whose specified field value matches the specified indicator field value in the indicator index patterns, select *Indicator Match*, then fill in the following fields:
-.. *Index patterns*: The {es-sec} event indices on which the rule runs.
+. To create a rule that searches for events whose specified field value matches the specified indicator field value in the indicator index patterns, select *Indicator Match*, then fill in the following fields:
+.. *Source*: The individual index patterns or data view that specifies what data to search.
 .. *Custom query*: The query and filters used to retrieve the required results from
 the {es-sec} event indices. For example, if you want to match documents that only contain a `destination.ip` address field, add `destination.ip : *`.
 +
@@ -256,6 +264,21 @@ in the Timeline, Timeline query values are replaced with their corresponding ale
 field values.
 +
 . Continue with <<preview-rules, previewing the rule>> (optional) or click *Continue* to <<rule-ui-basic-params, configure basic rule settings>>.
+
+[discrete]
+[[create-new-terms-rule]]
+==== Create a new terms rule
+
+. To create a rule that searches for each new term detected in source documents, select *New Terms*, then:
+.. Specify what data to search by entering individual {es} index patterns or selecting an existing data view.
+.. Use the filter and query fields to create the criteria used for detecting
+alerts.
++
+NOTE: NOTE: You can use {kib} saved queries (image:images/saved-query-menu.png[Saved query menu,17,17]) and queries from saved Timelines (`Import query from saved Timeline`) as rule conditions.
+
+
+
+Continue with <<preview-rules, previewing the rule>> (optional) or click *Continue* to <<rule-ui-basic-params, configure basic rule settings>>.
 
 [discrete]
 [[preview-rules]]
@@ -368,11 +391,10 @@ caused the event directly in the Alerts table.
 +
 NOTE: For threshold rules, not all source event values can be used for overrides; only the fields that were aggregated over (the `Group by` fields) will contain data.
 .. *Timestamp override* (optional): Select a source event timestamp field. When selected, the rule's query uses the selected field, instead of the default `@timestamp` field, to search for alerts. This can help reduce missing alerts due to network or server outages. Specifically, if your ingest pipeline adds a timestamp when events are sent to {es}, this avoids missing alerts due to ingestion delays.
+However, if you know your data source has an inaccurate `@timestamp` value, it is recommended you check the *Do not use @timestamp as a fallback timestamp field* option to ignore the `@timestamp` field entirely.
 +
-TIP: These Filebeat modules have an `event.ingested` timestamp field that can
-be used instead of the default `@timestamp` field:
-{filebeat-ref}/filebeat-module-microsoft.html[Microsoft] and
-{filebeat-ref}/filebeat-module-google_workspace.html[Google Workspace].
+TIP: The {filebeat-ref}/filebeat-module-microsoft.html[Microsoft] and
+{filebeat-ref}/filebeat-module-google_workspace.html[Google Workspace] Filebeat modules have an `event.ingested` timestamp field that can be used instead of the default `@timestamp` field.
 
 . Click *Continue*. The *Schedule rule* pane is displayed.
 +
