@@ -39,11 +39,11 @@ Identifies the loading of a non Microsoft signed DLL that is missing on a defaul
 * Persistence
 * Privilege Escalation
 
-*Version*: 4 (<<suspicious-dll-loaded-for-persistence-or-privilege-escalation-history, version history>>)
+*Version*: 6 (<<suspicious-dll-loaded-for-persistence-or-privilege-escalation-history, version history>>)
 
 *Added ({stack} release)*: 7.12.0
 
-*Last modified ({stack} release)*: 8.3.0
+*Last modified ({stack} release)*: 8.4.0
 
 *Rule authors*: Elastic
 
@@ -54,9 +54,6 @@ Identifies the loading of a non Microsoft signed DLL that is missing on a defaul
 
 [source,markdown]
 ----------------------------------
-## Config
-
-If enabling an EQL rule on a non-elastic-agent index (such as beats) for versions <8.2, events will not define `event.ingested` and default fallback for EQL rules was not added until 8.2, so you will need to add a custom pipeline to populate `event.ingested` to @timestamp for this rule to work.
 
 ----------------------------------
 
@@ -66,14 +63,23 @@ If enabling an EQL rule on a non-elastic-agent index (such as beats) for version
 
 [source,js]
 ----------------------------------
-library where dll.name : ( "wlbsctrl.dll", "wbemcomn.dll",
-"WptsExtensions.dll", "Tsmsisrv.dll", "TSVIPSrv.dll",
-"Msfte.dll", "wow64log.dll", "WindowsCoreDeviceInfo.dll",
-"Ualapi.dll", "wlanhlp.dll", "phoneinfo.dll", "EdgeGdi.dll",
+any where (event.category == "library" or (event.category ==
+"process" and event.action : "Image loaded*")) and ( /* compatible
+with Elastic Endpoint Library Events */ (dll.name : ("wlbsctrl.dll",
+"wbemcomn.dll", "WptsExtensions.dll", "Tsmsisrv.dll", "TSVIPSrv.dll",
+"Msfte.dll", "wow64log.dll",
+"WindowsCoreDeviceInfo.dll", "Ualapi.dll", "wlanhlp.dll",
+"phoneinfo.dll", "EdgeGdi.dll", "cdpsgshims.dll",
+"windowsperformancerecordercontrol.dll", "diagtrack_win.dll") and
+(dll.code_signature.trusted == false or dll.code_signature.exists ==
+false)) or /* compatible with Sysmon EventID 7 - Image Load */
+(file.name : ("wlbsctrl.dll", "wbemcomn.dll", "WptsExtensions.dll",
+"Tsmsisrv.dll", "TSVIPSrv.dll", "Msfte.dll",
+"wow64log.dll", "WindowsCoreDeviceInfo.dll", "Ualapi.dll",
+"wlanhlp.dll", "phoneinfo.dll", "EdgeGdi.dll",
 "cdpsgshims.dll", "windowsperformancerecordercontrol.dll",
-"diagtrack_win.dll" ) and not (dll.code_signature.subject_name :
-("Microsoft Windows", "Microsoft Corporation") and
-dll.code_signature.status : "trusted")
+"diagtrack_win.dll") and not file.code_signature.status == "Valid")
+)
 ----------------------------------
 
 ==== Threat mapping
@@ -101,6 +107,21 @@ dll.code_signature.status : "trusted")
 
 [[suspicious-dll-loaded-for-persistence-or-privilege-escalation-history]]
 ==== Rule version history
+
+Version 6 (8.4.0 release)::
+* Updated query, changed from:
++
+[source, js]
+----------------------------------
+library where dll.name : ( "wlbsctrl.dll", "wbemcomn.dll",
+"WptsExtensions.dll", "Tsmsisrv.dll", "TSVIPSrv.dll",
+"Msfte.dll", "wow64log.dll", "WindowsCoreDeviceInfo.dll",
+"Ualapi.dll", "wlanhlp.dll", "phoneinfo.dll", "EdgeGdi.dll",
+"cdpsgshims.dll", "windowsperformancerecordercontrol.dll",
+"diagtrack_win.dll" ) and not (dll.code_signature.subject_name :
+("Microsoft Windows", "Microsoft Corporation") and
+dll.code_signature.status : "trusted")
+----------------------------------
 
 Version 4 (8.3.0 release)::
 * Formatting only

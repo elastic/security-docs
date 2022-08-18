@@ -35,11 +35,11 @@ Identifies the execution of a shell process with suspicious arguments which may 
 * Threat Detection
 * Execution
 
-*Version*: 2 (<<potential-reverse-shell-activity-via-terminal-history, version history>>)
+*Version*: 4 (<<potential-reverse-shell-activity-via-terminal-history, version history>>)
 
 *Added ({stack} release)*: 7.12.0
 
-*Last modified ({stack} release)*: 8.2.0
+*Last modified ({stack} release)*: 8.4.0
 
 *Rule authors*: Elastic
 
@@ -50,9 +50,6 @@ Identifies the execution of a shell process with suspicious arguments which may 
 
 [source,markdown]
 ----------------------------------
-## Config
-
-If enabling an EQL rule on a non-elastic-agent index (such as beats) for versions <8.2, events will not define `event.ingested` and default fallback for EQL rules was not added until 8.2, so you will need to add a custom pipeline to populate `event.ingested` to @timestamp for this rule to work.
 
 ----------------------------------
 
@@ -64,8 +61,14 @@ If enabling an EQL rule on a non-elastic-agent index (such as beats) for version
 ----------------------------------
 process where event.type in ("start", "process_started") and
 process.name in ("sh", "bash", "zsh", "dash", "zmodload") and
-process.args:("*/dev/tcp/*", "*/dev/udp/*", "zsh/net/tcp",
-"zsh/net/udp")
+process.args : ("*/dev/tcp/*", "*/dev/udp/*", "*zsh/net/tcp*",
+"*zsh/net/udp*") and /* noisy FPs */ not (process.parent.name :
+"timeout" and process.executable : "/var/lib/docker/overlay*") and
+not process.command_line : ("*/dev/tcp/sirh_db/*",
+"*/dev/tcp/remoteiot.com/*", "*dev/tcp/elk.stag.one/*",
+"*dev/tcp/kafka/*", "*/dev/tcp/$0/$1*", "*/dev/tcp/127.*",
+"*/dev/udp/127.*", "*/dev/tcp/localhost/*") and not
+process.parent.command_line : "runc init"
 ----------------------------------
 
 ==== Threat mapping
@@ -83,6 +86,17 @@ process.args:("*/dev/tcp/*", "*/dev/udp/*", "zsh/net/tcp",
 
 [[potential-reverse-shell-activity-via-terminal-history]]
 ==== Rule version history
+
+Version 4 (8.4.0 release)::
+* Updated query, changed from:
++
+[source, js]
+----------------------------------
+process where event.type in ("start", "process_started") and
+process.name in ("sh", "bash", "zsh", "dash", "zmodload") and
+process.args:("*/dev/tcp/*", "*/dev/udp/*", "zsh/net/tcp",
+"zsh/net/udp")
+----------------------------------
 
 Version 2 (8.2.0 release)::
 * Formatting only
