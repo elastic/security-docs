@@ -29,11 +29,11 @@ Identifies unusual processes connecting to domains using known free SSL certific
 * Threat Detection
 * Command and Control
 
-*Version*: 4 (<<connection-to-commonly-abused-free-ssl-certificate-providers-history, version history>>)
+*Version*: 6 (<<connection-to-commonly-abused-free-ssl-certificate-providers-history, version history>>)
 
 *Added ({stack} release)*: 7.11.0
 
-*Last modified ({stack} release)*: 8.2.0
+*Last modified ({stack} release)*: 8.4.0
 
 *Rule authors*: Elastic
 
@@ -44,9 +44,6 @@ Identifies unusual processes connecting to domains using known free SSL certific
 
 [source,markdown]
 ----------------------------------
-## Config
-
-If enabling an EQL rule on a non-elastic-agent index (such as beats) for versions <8.2, events will not define `event.ingested` and default fallback for EQL rules was not added until 8.2, so you will need to add a custom pipeline to populate `event.ingested` to @timestamp for this rule to work.
 
 ----------------------------------
 
@@ -87,6 +84,27 @@ here */ not process.name : ("svchost.exe", "MicrosoftEdge*.exe",
 
 [[connection-to-commonly-abused-free-ssl-certificate-providers-history]]
 ==== Rule version history
+
+Version 6 (8.4.0 release)::
+* Updated query, changed from:
++
+[source, js]
+----------------------------------
+network where network.protocol == "dns" and /* Add new free SSL
+certificate provider domains here */ dns.question.name :
+("*letsencrypt.org", "*.sslforfree.com", "*.zerossl.com",
+"*.freessl.org") and /* Native Windows process paths that are
+unlikely to have network connections to domains secured using free SSL
+certificates */ process.executable :
+("C:\\Windows\\System32\\*.exe",
+"C:\\Windows\\System\\*.exe",
+"C:\\Windows\\SysWOW64\\*.exe",
+"C:\\Windows\\Microsoft.NET\\Framework*\\*.exe",
+"C:\\Windows\\explorer.exe",
+"C:\\Windows\\notepad.exe") and /* Insert noisy false positives
+here */ not process.name : ("svchost.exe", "MicrosoftEdge*.exe",
+"msedge.exe")
+----------------------------------
 
 Version 4 (8.2.0 release)::
 * Formatting only
