@@ -29,11 +29,11 @@ Identifies WMIC allowlist bypass techniques by alerting on suspicious execution 
 * Threat Detection
 * Defense Evasion
 
-*Version*: 3 (<<suspicious-wmic-xsl-script-execution-history, version history>>)
+*Version*: 5 (<<suspicious-wmic-xsl-script-execution-history, version history>>)
 
 *Added ({stack} release)*: 7.10.0
 
-*Last modified ({stack} release)*: 8.1.0
+*Last modified ({stack} release)*: 8.4.0
 
 *Rule authors*: Elastic
 
@@ -48,8 +48,10 @@ sequence by process.entity_id with maxspan = 2m [process where
 event.type in ("start", "process_started") and (process.name :
 "WMIC.exe" or process.pe.original_file_name : "wmic.exe") and
 process.args : ("format*:*", "/format*:*", "*-format*:*") and not
-process.command_line : "* /format:table *"] [library where event.type
-== "start" and dll.name : ("jscript.dll", "vbscript.dll")]
+process.command_line : "* /format:table *"] [any where (event.category
+== "library" or (event.category == "process" and event.action : "Image
+loaded*")) and (dll.name : ("jscript.dll", "vbscript.dll") or
+file.name : ("jscript.dll", "vbscript.dll"))]
 ----------------------------------
 
 ==== Threat mapping
@@ -67,6 +69,19 @@ process.command_line : "* /format:table *"] [library where event.type
 
 [[suspicious-wmic-xsl-script-execution-history]]
 ==== Rule version history
+
+Version 5 (8.4.0 release)::
+* Updated query, changed from:
++
+[source, js]
+----------------------------------
+sequence by process.entity_id with maxspan = 2m [process where
+event.type in ("start", "process_started") and (process.name :
+"WMIC.exe" or process.pe.original_file_name : "wmic.exe") and
+process.args : ("format*:*", "/format*:*", "*-format*:*") and not
+process.command_line : "* /format:table *"] [library where event.type
+== "start" and dll.name : ("jscript.dll", "vbscript.dll")]
+----------------------------------
 
 Version 3 (8.1.0 release)::
 * Formatting only
