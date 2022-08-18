@@ -32,12 +32,13 @@ Identifies potential hijacking of the Microsoft Update Orchestrator Service to e
 * Windows
 * Threat Detection
 * Persistence
+* CVE-2020-1313
 
-*Version*: 5 (<<persistence-via-update-orchestrator-service-hijack-history, version history>>)
+*Version*: 7 (<<persistence-via-update-orchestrator-service-hijack-history, version history>>)
 
 *Added ({stack} release)*: 7.10.0
 
-*Last modified ({stack} release)*: 8.2.0
+*Last modified ({stack} release)*: 8.4.0
 
 *Rule authors*: Elastic
 
@@ -48,9 +49,6 @@ Identifies potential hijacking of the Microsoft Update Orchestrator Service to e
 
 [source,markdown]
 ----------------------------------
-## Config
-
-If enabling an EQL rule on a non-elastic-agent index (such as beats) for versions <8.2, events will not define `event.ingested` and default fallback for EQL rules was not added until 8.2, so you will need to add a custom pipeline to populate `event.ingested` to @timestamp for this rule to work.
 
 ----------------------------------
 
@@ -62,13 +60,20 @@ If enabling an EQL rule on a non-elastic-agent index (such as beats) for version
 ----------------------------------
 process where event.type == "start" and process.parent.executable :
 "C:\\Windows\\System32\\svchost.exe" and process.parent.args :
-"UsoSvc" and not process.executable : (
-"C:\\Windows\\System32\\UsoClient.exe",
-"C:\\Windows\\System32\\MusNotification.exe",
-"C:\\Windows\\System32\\MusNotificationUx.exe",
-"C:\\Windows\\System32\\MusNotifyIcon.exe",
-"C:\\Windows\\System32\\WerFault.exe",
-"C:\\Windows\\System32\\WerMgr.exe" )
+"UsoSvc" and not process.executable : ("?:\\ProgramData\\M
+icrosoft\\Windows\\UUS\\Packages\\*\\amd64\\MoUsoCoreWorker.exe",
+"?:\\Windows\\System32\\UsoClient.exe",
+"?:\\Windows\\System32\\MusNotification.exe",
+"?:\\Windows\\System32\\MusNotificationUx.exe",
+"?:\\Windows\\System32\\MusNotifyIcon.exe",
+"?:\\Windows\\System32\\WerFault.exe",
+"?:\\Windows\\System32\\WerMgr.exe",
+"?:\\Windows\\UUS\\amd64\\MoUsoCoreWorker.exe",
+"?:\\Windows\\System32\\MoUsoCoreWorker.exe",
+"?:\\Windows\\UUS\\amd64\\UsoCoreWorker.exe",
+"?:\\Windows\\System32\\UsoCoreWorker.exe", "?:\\Program
+Files\\Common Files\\microsoft
+shared\\ClickToRun\\OfficeC2RClient.exe")
 ----------------------------------
 
 ==== Threat mapping
@@ -86,6 +91,22 @@ process where event.type == "start" and process.parent.executable :
 
 [[persistence-via-update-orchestrator-service-hijack-history]]
 ==== Rule version history
+
+Version 7 (8.4.0 release)::
+* Updated query, changed from:
++
+[source, js]
+----------------------------------
+process where event.type == "start" and process.parent.executable :
+"C:\\Windows\\System32\\svchost.exe" and process.parent.args :
+"UsoSvc" and not process.executable : (
+"C:\\Windows\\System32\\UsoClient.exe",
+"C:\\Windows\\System32\\MusNotification.exe",
+"C:\\Windows\\System32\\MusNotificationUx.exe",
+"C:\\Windows\\System32\\MusNotifyIcon.exe",
+"C:\\Windows\\System32\\WerFault.exe",
+"C:\\Windows\\System32\\WerMgr.exe" )
+----------------------------------
 
 Version 5 (8.2.0 release)::
 * Formatting only
