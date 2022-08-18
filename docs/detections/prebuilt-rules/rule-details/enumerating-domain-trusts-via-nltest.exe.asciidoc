@@ -1,0 +1,79 @@
+[[enumerating-domain-trusts-via-nltest.exe]]
+=== Enumerating Domain Trusts via NLTEST.EXE
+
+Identifies the use of nltest.exe for domain trust discovery purposes. Adversaries may use this command-line utility to enumerate domain trusts and gain insight into trust relationships, as well as the state of Domain Controller (DC) replication in a Microsoft Windows NT Domain.
+
+*Rule type*: eql
+
+*Rule indices*:
+
+* winlogbeat-*
+* logs-endpoint.events.*
+* logs-windows.*
+
+*Severity*: low
+
+*Risk score*: 23
+
+*Runs every*: 5 minutes
+
+*Searches indices from*: now-9m ({ref}/common-options.html#date-math[Date Math format], see also <<rule-schedule, `Additional look-back time`>>)
+
+*Maximum alerts per execution*: 100
+
+*References*:
+
+* https://docs.microsoft.com/en-us/previous-versions/windows/it-pro/windows-server-2012-r2-and-2012/cc731935(v=ws.11)
+* https://redcanary.com/blog/how-one-hospital-thwarted-a-ryuk-ransomware-outbreak/
+
+*Tags*:
+
+* Elastic
+* Host
+* Windows
+* Threat Detection
+* Discovery
+*Added ({stack} release)*: 8.4.0
+
+*Last modified ({stack} release)*: 8.4.0
+
+*Rule authors*: Elastic
+
+*Rule license*: Elastic License v2
+
+==== Potential false positives
+
+Domain administrators may use this command-line utility for legitimate information gathering purposes, but it is not common for environments with Windows Server 2012 and newer.
+
+==== Investigation guide
+
+
+[source,markdown]
+----------------------------------
+
+----------------------------------
+
+
+==== Rule query
+
+
+[source,js]
+----------------------------------
+process where event.type in ("start", "process_started") and
+process.name : "nltest.exe" and process.args : ( "/DCLIST:*",
+"/DCNAME:*", "/DSGET*", "/LSAQUERYFTI:*", "/PARENTDOMAIN",
+"/DOMAIN_TRUSTS", "/BDC_QUERY:*")
+----------------------------------
+
+==== Threat mapping
+
+*Framework*: MITRE ATT&CK^TM^
+
+* Tactic:
+** Name: Discovery
+** ID: TA0007
+** Reference URL: https://attack.mitre.org/tactics/TA0007/
+* Technique:
+** Name: Domain Trust Discovery
+** ID: T1482
+** Reference URL: https://attack.mitre.org/techniques/T1482/
