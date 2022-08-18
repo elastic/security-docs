@@ -33,11 +33,11 @@ Identifies suspicious file creations in the startup folder of a remote system. A
 * Threat Detection
 * Lateral Movement
 
-*Version*: 4 (<<lateral-movement-via-startup-folder-history, version history>>)
+*Version*: 6 (<<lateral-movement-via-startup-folder-history, version history>>)
 
 *Added ({stack} release)*: 7.11.0
 
-*Last modified ({stack} release)*: 8.2.0
+*Last modified ({stack} release)*: 8.4.0
 
 *Rule authors*: Elastic
 
@@ -48,9 +48,6 @@ Identifies suspicious file creations in the startup folder of a remote system. A
 
 [source,markdown]
 ----------------------------------
-## Config
-
-If enabling an EQL rule on a non-elastic-agent index (such as beats) for versions <8.2, events will not define `event.ingested` and default fallback for EQL rules was not added until 8.2, so you will need to add a custom pipeline to populate `event.ingested` to @timestamp for this rule to work.
 
 ----------------------------------
 
@@ -62,8 +59,11 @@ If enabling an EQL rule on a non-elastic-agent index (such as beats) for version
 ----------------------------------
 file where event.type in ("creation", "change") and /* via RDP
 TSClient mounted share or SMB */ (process.name : "mstsc.exe" or
-process.pid == 4) and file.path : "C:\\*\\Microsoft\\Windows\\Start
-Menu\\Programs\\Startup\\*"
+process.pid == 4) and file.path :
+("?:\\Users\\*\\AppData\\Roaming\\Microsoft\\Windows\\Start
+Menu\\Programs\\Startup\\*",
+"?:\\ProgramData\\Microsoft\\Windows\\Start
+Menu\\Programs\\Startup\\*")
 ----------------------------------
 
 ==== Threat mapping
@@ -91,6 +91,17 @@ Menu\\Programs\\Startup\\*"
 
 [[lateral-movement-via-startup-folder-history]]
 ==== Rule version history
+
+Version 6 (8.4.0 release)::
+* Updated query, changed from:
++
+[source, js]
+----------------------------------
+file where event.type in ("creation", "change") and /* via RDP
+TSClient mounted share or SMB */ (process.name : "mstsc.exe" or
+process.pid == 4) and file.path : "C:\\*\\Microsoft\\Windows\\Start
+Menu\\Programs\\Startup\\*"
+----------------------------------
 
 Version 4 (8.2.0 release)::
 * Formatting only
