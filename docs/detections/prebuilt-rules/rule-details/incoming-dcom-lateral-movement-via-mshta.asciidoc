@@ -33,11 +33,11 @@ Identifies the use of Distributed Component Object Model (DCOM) to execute comma
 * Threat Detection
 * Lateral Movement
 
-*Version*: 6 (<<incoming-dcom-lateral-movement-via-mshta-history, version history>>)
+*Version*: 8 (<<incoming-dcom-lateral-movement-via-mshta-history, version history>>)
 
 *Added ({stack} release)*: 7.11.0
 
-*Last modified ({stack} release)*: 8.2.0
+*Last modified ({stack} release)*: 8.4.0
 
 *Rule authors*: Elastic
 
@@ -77,12 +77,27 @@ destination.port > 49151 and source.ip != "127.0.0.1" and source.ip !=
 ** ID: TA0005
 ** Reference URL: https://attack.mitre.org/tactics/TA0005/
 * Technique:
-** Name: Signed Binary Proxy Execution
+** Name: System Binary Proxy Execution
 ** ID: T1218
 ** Reference URL: https://attack.mitre.org/techniques/T1218/
 
 [[incoming-dcom-lateral-movement-via-mshta-history]]
 ==== Rule version history
+
+Version 8 (8.4.0 release)::
+* Updated query, changed from:
++
+[source, js]
+----------------------------------
+sequence with maxspan=1m [process where event.type in ("start",
+"process_started") and process.name : "mshta.exe" and
+process.args : "-Embedding" ] by host.id, process.entity_id
+[network where event.type == "start" and process.name : "mshta.exe"
+and network.direction : ("incoming", "ingress") and
+network.transport == "tcp" and source.port > 49151 and
+destination.port > 49151 and source.ip != "127.0.0.1" and source.ip !=
+"::1" ] by host.id, process.entity_id
+----------------------------------
 
 Version 6 (8.2.0 release)::
 * Formatting only
