@@ -34,11 +34,11 @@ Identifies a suspicious image load (taskschd.dll) from Microsoft Office processe
 * Threat Detection
 * Persistence
 
-*Version*: 4 (<<suspicious-image-load-taskschd.dll-from-ms-office-history, version history>>)
+*Version*: 6 (<<suspicious-image-load-taskschd.dll-from-ms-office-history, version history>>)
 
 *Added ({stack} release)*: 7.11.0
 
-*Last modified ({stack} release)*: 8.2.0
+*Last modified ({stack} release)*: 8.4.0
 
 *Rule authors*: Elastic
 
@@ -49,9 +49,6 @@ Identifies a suspicious image load (taskschd.dll) from Microsoft Office processe
 
 [source,markdown]
 ----------------------------------
-## Config
-
-If enabling an EQL rule on a non-elastic-agent index (such as beats) for versions <8.2, events will not define `event.ingested` and default fallback for EQL rules was not added until 8.2, so you will need to add a custom pipeline to populate `event.ingested` to @timestamp for this rule to work.
 
 ----------------------------------
 
@@ -61,10 +58,11 @@ If enabling an EQL rule on a non-elastic-agent index (such as beats) for version
 
 [source,js]
 ----------------------------------
-library where process.name : ("WINWORD.EXE", "EXCEL.EXE",
-"POWERPNT.EXE", "MSPUB.EXE", "MSACCESS.EXE") and event.action :
-"load" and event.category : "library" and dll.name :
-"taskschd.dll"
+any where (event.category == "library" or (event.category ==
+"process" and event.action : "Image loaded*")) and process.name :
+("WINWORD.EXE", "EXCEL.EXE", "POWERPNT.EXE", "MSPUB.EXE",
+"MSACCESS.EXE") and (dll.name : "taskschd.dll" or file.name :
+"taskschd.dll")
 ----------------------------------
 
 ==== Threat mapping
@@ -82,6 +80,17 @@ library where process.name : ("WINWORD.EXE", "EXCEL.EXE",
 
 [[suspicious-image-load-taskschd.dll-from-ms-office-history]]
 ==== Rule version history
+
+Version 6 (8.4.0 release)::
+* Updated query, changed from:
++
+[source, js]
+----------------------------------
+library where process.name : ("WINWORD.EXE", "EXCEL.EXE",
+"POWERPNT.EXE", "MSPUB.EXE", "MSACCESS.EXE") and event.action :
+"load" and event.category : "library" and dll.name :
+"taskschd.dll"
+----------------------------------
 
 Version 4 (8.2.0 release)::
 * Formatting only
