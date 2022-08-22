@@ -29,9 +29,11 @@ Identifies the Elastic endpoint agent has stopped and is no longer running on th
 * Threat Detection
 * Defense Evasion
 
-*Version*: 1
+*Version*: 3 (<<elastic-agent-service-terminated-history, version history>>)
 
 *Added ({stack} release)*: 8.3.0
+
+*Last modified ({stack} release)*: 8.4.0
 
 *Rule authors*: Elastic
 
@@ -42,9 +44,6 @@ Identifies the Elastic endpoint agent has stopped and is no longer running on th
 
 [source,markdown]
 ----------------------------------
-## Config
-
-If enabling an EQL rule on a non-elastic-agent index (such as beats) for versions <8.2, events will not define `event.ingested` and default fallback for EQL rules was not added until 8.2, so you will need to add a custom pipeline to populate `event.ingested` to @timestamp for this rule to work.
 
 ----------------------------------
 
@@ -62,9 +61,9 @@ cessHacker.exe") and process.args : ("stopservice","uninstall",
 process.args : ("elasticendpoint", "Elastic Agent","elastic-
 agent","elastic-endpoint")) or /* service or systemctl used to stop
 Elastic Agent on Linux */ (event.type == "end" and (process.name :
-("systemctl","service") and process.args : ("elastic-agent",
-"stop")) or /* Unload Elastic Agent extension on MacOS */
-(process.name : "kextunload" and process.args :
+("systemctl", "service") and process.args : "elastic-agent" and
+process.args : "stop") or /* Unload Elastic Agent extension on
+MacOS */ (process.name : "kextunload" and process.args :
 "com.apple.iokit.EndpointSecurity" and event.action : "end"))
 ----------------------------------
 
@@ -80,3 +79,26 @@ Elastic Agent on Linux */ (event.type == "end" and (process.name :
 ** Name: Impair Defenses
 ** ID: T1562
 ** Reference URL: https://attack.mitre.org/techniques/T1562/
+
+[[elastic-agent-service-terminated-history]]
+==== Rule version history
+
+Version 3 (8.4.0 release)::
+* Updated query, changed from:
++
+[source, js]
+----------------------------------
+process where /* net, sc or wmic stopping or deleting Elastic Agent on
+Windows */ (event.type == "start" and process.name : ("net.exe",
+"sc.exe", "wmic.exe","powershell.exe","taskkill.exe","PsKill.exe","Pro
+cessHacker.exe") and process.args : ("stopservice","uninstall",
+"stop", "disabled","Stop-Process","terminate","suspend") and
+process.args : ("elasticendpoint", "Elastic Agent","elastic-
+agent","elastic-endpoint")) or /* service or systemctl used to stop
+Elastic Agent on Linux */ (event.type == "end" and (process.name :
+("systemctl","service") and process.args : ("elastic-agent",
+"stop")) or /* Unload Elastic Agent extension on MacOS */
+(process.name : "kextunload" and process.args :
+"com.apple.iokit.EndpointSecurity" and event.action : "end"))
+----------------------------------
+
