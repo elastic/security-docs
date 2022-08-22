@@ -1,7 +1,7 @@
 [[enumeration-of-users-or-groups-via-built-in-commands]]
 === Enumeration of Users or Groups via Built-in Commands
 
-Identifies the execution of macOS built-in commands related to account or group enumeration.
+Identifies the execution of macOS built-in commands related to account or group enumeration. Adversaries may use account and group information to orient themselves before deciding how to act.
 
 *Rule type*: eql
 
@@ -28,11 +28,11 @@ Identifies the execution of macOS built-in commands related to account or group 
 * Threat Detection
 * Discovery
 
-*Version*: 3 (<<enumeration-of-users-or-groups-via-built-in-commands-history, version history>>)
+*Version*: 5 (<<enumeration-of-users-or-groups-via-built-in-commands-history, version history>>)
 
 *Added ({stack} release)*: 7.12.0
 
-*Last modified ({stack} release)*: 8.2.0
+*Last modified ({stack} release)*: 8.4.0
 
 *Rule authors*: Elastic
 
@@ -43,9 +43,6 @@ Identifies the execution of macOS built-in commands related to account or group 
 
 [source,markdown]
 ----------------------------------
-## Config
-
-If enabling an EQL rule on a non-elastic-agent index (such as beats) for versions <8.2, events will not define `event.ingested` and default fallback for EQL rules was not added until 8.2, so you will need to add a custom pipeline to populate `event.ingested` to @timestamp for this rule to work.
 
 ----------------------------------
 
@@ -55,7 +52,11 @@ If enabling an EQL rule on a non-elastic-agent index (such as beats) for version
 
 [source,js]
 ----------------------------------
-process where event.type in ("start", "process_started") and not
+process where event.type in ("start", "process_started") and (
+process.name : ("ldapsearch", "dsmemberutil") or (process.name :
+"dscl" and process.args : ("read", "-read", "list", "-list",
+"ls", "search", "-search") and process.args : ("/Active
+Directory/*", "/Users*", "/Groups*")) ) and not
 process.parent.executable :
 ("/Applications/NoMAD.app/Contents/MacOS/NoMAD",
 "/Applications/ZoomPresence.app/Contents/MacOS/ZoomPresence",
@@ -63,10 +64,12 @@ process.parent.executable :
 "/Library/Application Support/JAMF/Jamf.app/Contents/MacOS/JamfDaemon.
 app/Contents/MacOS/JamfDaemon", "/Applications/Jamf
 Connect.app/Contents/MacOS/Jamf Connect",
-"/usr/local/jamf/bin/jamf" ) and process.name : ("ldapsearch",
-"dsmemberutil") or (process.name : "dscl" and process.args :
-("read", "-read", "list", "-list", "ls", "search", "-search") and
-process.args : ("/Active Directory/*", "/Users*", "/Groups*"))
+"/usr/local/jamf/bin/jamf", "/Library/Application
+Support/AirWatch/hubd", "/opt/jc/bin/jumpcloud-agent",
+"/Applications/ESET Endpoint
+Antivirus.app/Contents/MacOS/esets_daemon", "/Applications/ESET
+Endpoint Security.app/Contents/MacOS/esets_daemon", "/Library/Pri
+vilegedHelperTools/com.fortinet.forticlient.uninstall_helper" )
 ----------------------------------
 
 ==== Threat mapping
@@ -84,6 +87,25 @@ process.args : ("/Active Directory/*", "/Users*", "/Groups*"))
 
 [[enumeration-of-users-or-groups-via-built-in-commands-history]]
 ==== Rule version history
+
+Version 5 (8.4.0 release)::
+* Updated query, changed from:
++
+[source, js]
+----------------------------------
+process where event.type in ("start", "process_started") and not
+process.parent.executable :
+("/Applications/NoMAD.app/Contents/MacOS/NoMAD",
+"/Applications/ZoomPresence.app/Contents/MacOS/ZoomPresence",
+"/Applications/Sourcetree.app/Contents/MacOS/Sourcetree",
+"/Library/Application Support/JAMF/Jamf.app/Contents/MacOS/JamfDaemon.
+app/Contents/MacOS/JamfDaemon", "/Applications/Jamf
+Connect.app/Contents/MacOS/Jamf Connect",
+"/usr/local/jamf/bin/jamf" ) and process.name : ("ldapsearch",
+"dsmemberutil") or (process.name : "dscl" and process.args :
+("read", "-read", "list", "-list", "ls", "search", "-search") and
+process.args : ("/Active Directory/*", "/Users*", "/Groups*"))
+----------------------------------
 
 Version 3 (8.2.0 release)::
 * Updated query, changed from:

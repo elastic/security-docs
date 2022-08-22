@@ -29,11 +29,11 @@ Identifies network connections to the standard Kerberos port from an unusual pro
 * Threat Detection
 * Credential Access
 
-*Version*: 7 (<<kerberos-traffic-from-unusual-process-history, version history>>)
+*Version*: 9 (<<kerberos-traffic-from-unusual-process-history, version history>>)
 
 *Added ({stack} release)*: 7.11.0
 
-*Last modified ({stack} release)*: 8.3.0
+*Last modified ({stack} release)*: 8.4.0
 
 *Rule authors*: Elastic
 
@@ -102,11 +102,6 @@ malware components.
 - Determine the initial vector abused by the attacker and take action to prevent reinfection through the same vector.
 - Using the incident response data, update logging and audit policies to improve the mean time to detect (MTTD) and the
 mean time to respond (MTTR).
-
-## Config
-
-If enabling an EQL rule on a non-elastic-agent index (such as beats) for versions <8.2, events will not define `event.ingested` and default fallback for EQL rules was not added until 8.2, so you will need to add a custom pipeline to populate `event.ingested` to @timestamp for this rule to work.
-
 ----------------------------------
 
 
@@ -117,10 +112,17 @@ If enabling an EQL rule on a non-elastic-agent index (such as beats) for version
 ----------------------------------
 network where event.type == "start" and network.direction :
 ("outgoing", "egress") and destination.port == 88 and source.port >=
-49152 and process.executable != "C:\\Windows\\System32\\lsass.exe"
-and destination.address !="127.0.0.1" and destination.address !="::1"
-and /* insert false positives here */ not process.name in
-("swi_fc.exe", "fsIPcam.exe", "IPCamera.exe", "MicrosoftEdgeCP.exe",
+49152 and not process.executable :
+("?:\\Windows\\System32\\lsass.exe", "System",
+"\\device\\harddiskvolume?\\windows\\system32\\lsass.exe",
+"?:\\Program Files\\rapid7\\nexpose\\nse\\.DLLCACHE\\nseserv.exe",
+"?:\\Program Files (x86)\\GFI\\LanGuard 12 Agent\\lnsscomm.exe",
+"?:\\Program Files (x86)\\SuperScan\\scanner.exe",
+"?:\\Program Files (x86)\\Nmap\\nmap.exe",
+"\\device\\harddiskvolume?\\program files (x86)\\nmap\\nmap.exe") and
+destination.address !="127.0.0.1" and destination.address !="::1" and
+/* insert false positives here */ not process.name in ("swi_fc.exe",
+"fsIPcam.exe", "IPCamera.exe", "MicrosoftEdgeCP.exe",
 "MicrosoftEdge.exe", "iexplore.exe", "chrome.exe", "msedge.exe",
 "opera.exe", "firefox.exe")
 ----------------------------------
@@ -140,6 +142,21 @@ and /* insert false positives here */ not process.name in
 
 [[kerberos-traffic-from-unusual-process-history]]
 ==== Rule version history
+
+Version 9 (8.4.0 release)::
+* Updated query, changed from:
++
+[source, js]
+----------------------------------
+network where event.type == "start" and network.direction :
+("outgoing", "egress") and destination.port == 88 and source.port >=
+49152 and process.executable != "C:\\Windows\\System32\\lsass.exe"
+and destination.address !="127.0.0.1" and destination.address !="::1"
+and /* insert false positives here */ not process.name in
+("swi_fc.exe", "fsIPcam.exe", "IPCamera.exe", "MicrosoftEdgeCP.exe",
+"MicrosoftEdge.exe", "iexplore.exe", "chrome.exe", "msedge.exe",
+"opera.exe", "firefox.exe")
+----------------------------------
 
 Version 7 (8.3.0 release)::
 * Formatting only
