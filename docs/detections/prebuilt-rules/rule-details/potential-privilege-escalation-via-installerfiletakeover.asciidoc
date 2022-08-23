@@ -33,11 +33,11 @@ Identifies a potential exploitation of InstallerTakeOver (CVE-2021-41379) defaul
 * Threat Detection
 * Privilege Escalation
 
-*Version*: 5 (<<potential-privilege-escalation-via-installerfiletakeover-history, version history>>)
+*Version*: 7 (<<potential-privilege-escalation-via-installerfiletakeover-history, version history>>)
 
 *Added ({stack} release)*: 8.0.0
 
-*Last modified ({stack} release)*: 8.3.0
+*Last modified ({stack} release)*: 8.4.0
 
 *Rule authors*: Elastic
 
@@ -103,11 +103,6 @@ systems, and web services.
 - Determine the initial vector abused by the attacker and take action to prevent reinfection through the same vector.
 - Using the incident response data, update logging and audit policies to improve the mean time to detect (MTTD) and the
 mean time to respond (MTTR).
-
-## Config
-
-If enabling an EQL rule on a non-elastic-agent index (such as beats) for versions <8.2, events will not define `event.ingested` and default fallback for EQL rules was not added until 8.2, so you will need to add a custom pipeline to populate `event.ingested` to @timestamp for this rule to work.
-
 ----------------------------------
 
 
@@ -122,8 +117,8 @@ process where event.type == "start" and
 ?winlog.event_data.IntegrityLevel : "System") and (
 (process.name : "elevation_service.exe" and not
 process.pe.original_file_name == "elevation_service.exe") or
-(process.parent.name : "elevation_service.exe" and
-process.name : ("rundll32.exe", "cmd.exe", "powershell.exe")) )
+(process.parent.name : "elevation_service.exe" and process.name
+: ("rundll32.exe", "cmd.exe", "powershell.exe")) )
 ----------------------------------
 
 ==== Threat mapping
@@ -141,6 +136,21 @@ process.name : ("rundll32.exe", "cmd.exe", "powershell.exe")) )
 
 [[potential-privilege-escalation-via-installerfiletakeover-history]]
 ==== Rule version history
+
+Version 7 (8.4.0 release)::
+* Updated query, changed from:
++
+[source, js]
+----------------------------------
+/* This rule is compatible with both Sysmon and Elastic Endpoint */
+process where event.type == "start" and
+(?process.Ext.token.integrity_level_name : "System" or
+?winlog.event_data.IntegrityLevel : "System") and (
+(process.name : "elevation_service.exe" and not
+process.pe.original_file_name == "elevation_service.exe") or
+(process.parent.name : "elevation_service.exe" and
+process.name : ("rundll32.exe", "cmd.exe", "powershell.exe")) )
+----------------------------------
 
 Version 5 (8.3.0 release)::
 * Formatting only

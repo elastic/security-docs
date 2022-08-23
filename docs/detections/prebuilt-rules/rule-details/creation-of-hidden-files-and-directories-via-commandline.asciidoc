@@ -1,0 +1,128 @@
+[[creation-of-hidden-files-and-directories-via-commandline]]
+=== Creation of Hidden Files and Directories via CommandLine
+
+Users can mark specific files as hidden simply by putting a "." as the first character in the file or folder name. Adversaries can use this to their advantage to hide files and folders on the system for persistence and defense evasion. This rule looks for hidden files or folders in common writable directories.
+
+*Rule type*: eql
+
+*Rule indices*:
+
+* auditbeat-*
+* logs-endpoint.events.*
+
+*Severity*: medium
+
+*Risk score*: 47
+
+*Runs every*: 5 minutes
+
+*Searches indices from*: now-9m ({ref}/common-options.html#date-math[Date Math format], see also <<rule-schedule, `Additional look-back time`>>)
+
+*Maximum alerts per execution*: 33
+
+*Tags*:
+
+* Elastic
+* Host
+* Linux
+* Threat Detection
+* Defense Evasion
+
+*Version*: 10 (<<creation-of-hidden-files-and-directories-via-commandline-history, version history>>)
+
+*Added ({stack} release)*: 7.9.0
+
+*Last modified ({stack} release)*: 8.4.0
+
+*Rule authors*: Elastic
+
+*Rule license*: Elastic License v2
+
+==== Potential false positives
+
+Certain tools may create hidden temporary files or directories upon installation or as part of their normal behavior. These events can be filtered by the process arguments, username, or process name values.
+
+==== Investigation guide
+
+
+[source,markdown]
+----------------------------------
+
+----------------------------------
+
+
+==== Rule query
+
+
+[source,js]
+----------------------------------
+process where event.type in ("start", "process_started") and
+process.working_directory in ("/tmp", "/var/tmp", "/dev/shm") and
+process.args regex~ """\.[a-z0-9_\-][a-z0-9_\-\.]{1,254}""" and not
+process.name in ("ls", "find", "grep")
+----------------------------------
+
+==== Threat mapping
+
+*Framework*: MITRE ATT&CK^TM^
+
+* Tactic:
+** Name: Defense Evasion
+** ID: TA0005
+** Reference URL: https://attack.mitre.org/tactics/TA0005/
+* Technique:
+** Name: Hide Artifacts
+** ID: T1564
+** Reference URL: https://attack.mitre.org/techniques/T1564/
+
+
+* Tactic:
+** Name: Persistence
+** ID: TA0003
+** Reference URL: https://attack.mitre.org/tactics/TA0003/
+
+[[creation-of-hidden-files-and-directories-via-commandline-history]]
+==== Rule version history
+
+Version 10 (8.4.0 release)::
+* Rule name changed from: Creation of Hidden Files and Directories
++
+* Updated query, changed from:
++
+[source, js]
+----------------------------------
+process where event.type in ("start", "process_started") and
+process.working_directory in ("/tmp", "/var/tmp", "/dev/shm") and
+process.args regex~ """\.[a-z0-9_\-][a-z0-9_\-\.]{1,254}""" and not
+process.name in ("ls", "find")
+----------------------------------
+
+Version 8 (8.2.0 release)::
+* Formatting only
+
+Version 7 (7.14.0 release)::
+* Updated query, changed from:
++
+[source, js]
+----------------------------------
+event.category:process AND event.type:(start or process_started) AND
+process.working_directory:("/tmp" or "/var/tmp" or "/dev/shm") AND
+process.args:/\.[a-zA-Z0-9_\-][a-zA-Z0-9_\-\.]{1,254}/ AND NOT
+process.name:(ls or find)
+----------------------------------
+
+Version 6 (7.12.0 release)::
+* Formatting only
+
+Version 5 (7.11.2 release)::
+* Formatting only
+
+Version 4 (7.11.0 release)::
+* Formatting only
+
+Version 3 (7.10.0 release)::
+* Formatting only
+
+Version 2 (7.9.1 release)::
+* Formatting only
+
