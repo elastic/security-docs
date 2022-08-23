@@ -29,11 +29,11 @@ Identifies script engines creating files in the Startup folder, or the creation 
 * Threat Detection
 * Persistence
 
-*Version*: 5 (<<persistent-scripts-in-the-startup-directory-history, version history>>)
+*Version*: 7 (<<persistent-scripts-in-the-startup-directory-history, version history>>)
 
 *Added ({stack} release)*: 7.11.0
 
-*Last modified ({stack} release)*: 8.3.0
+*Last modified ({stack} release)*: 8.4.0
 
 *Rule authors*: Elastic
 
@@ -99,11 +99,6 @@ malware components.
 - Determine the initial vector abused by the attacker and take action to prevent reinfection through the same vector.
 - Using the incident response data, update logging and audit policies to improve the mean time to detect (MTTD) and the
 mean time to respond (MTTR).
-
-## Config
-
-If enabling an EQL rule on a non-elastic-agent index (such as beats) for versions <8.2, events will not define `event.ingested` and default fallback for EQL rules was not added until 8.2, so you will need to add a custom pipeline to populate `event.ingested` to @timestamp for this rule to work.
-
 ----------------------------------
 
 
@@ -139,6 +134,23 @@ created by any process */ file.path :
 
 [[persistent-scripts-in-the-startup-directory-history]]
 ==== Rule version history
+
+Version 7 (8.4.0 release)::
+* Updated query, changed from:
++
+[source, js]
+----------------------------------
+file where event.type != "deletion" and user.domain != "NT AUTHORITY"
+and /* detect shortcuts created by wscript.exe or cscript.exe */
+(file.path : "C:\\*\\Programs\\Startup\\*.lnk" and process.name :
+("wscript.exe", "cscript.exe")) or /* detect vbs or js files
+created by any process */ file.path :
+("C:\\*\\Programs\\Startup\\*.vbs",
+"C:\\*\\Programs\\Startup\\*.vbe",
+"C:\\*\\Programs\\Startup\\*.wsh",
+"C:\\*\\Programs\\Startup\\*.wsf",
+"C:\\*\\Programs\\Startup\\*.js")
+----------------------------------
 
 Version 5 (8.3.0 release)::
 * Formatting only
