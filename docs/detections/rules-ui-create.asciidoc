@@ -36,7 +36,7 @@ the rule's search results.
 
 TIP: You can also use value lists as the indicator match index. See <<indicator-value-lists>> at the end of this topic for more information.
 
-* <<create-new-terms-rule, *New terms*>>: Generates an alert for each new term it detects in source documents.
+* <<create-new-terms-rule, *New terms*>>: Generates an alert for each new term detected in source documents within a specified time range.
 
 When modifying rules or managing detection alerts, you can add exceptions that prevent a rule from generating an alert even when its criteria are met. This is useful for reducing noise, such as preventing alerts from trusted processes and internal IP addresses. <<detections-ui-exceptions>> describes how to add exceptions to a rule.
 
@@ -83,7 +83,7 @@ If a rule requires certain privileges to run, such as index privileges, keep in 
 [[views-index-patterns]]
 === Data views and index patterns
 
-When you create a rule, you must specify the {es} index pattens for which you'd like the rule to run,  or select a {kibana-ref}/data-views.html[data view] as the source of data. If you select a data view, when you create a rule (with the exception of a {ml} rule), you can select runtime fields associated with that data view.
+When you create a rule, you must either specify the {es} index pattens for which you'd like the rule to run, or select a {kibana-ref}/data-views.html[data view] as the data source. If you select a data view, you can select <<runtime-fields, runtime fields>> associated with that data view to create a query for the rule (with the exception of {ml} rules, which do not use queries).
 
 NOTE: To access data views, ensure you have the {kibana-ref}/data-views.html#data-views-read-only-access[required permissions].
 
@@ -103,7 +103,7 @@ image::images/create-new-rule.png[]
 * <<create-threshold-rule, Threshold>>
 * <<create-eql-rule, Event correlation>>
 * <<create-indicator-rule, Indicator match>>
-* <<create-new-terms-rule, New terms>> 
+* <<create-new-terms-rule, New terms>>
 
 [discrete]
 [[create-ml-rule]]
@@ -138,7 +138,7 @@ then:
 .. Use the filter and query fields to create the criteria used for detecting
 alerts.
 +
-NOTE: You can use {kib} saved queries (image:images/saved-query-menu.png[Saved query menu,17,17]) and queries from saved Timelines (`Import query from saved Timeline`) as rule conditions.
+NOTE: You can use {kib} saved queries (image:images/saved-query-menu.png[Saved query menu,17,17]) and queries from saved Timelines (*Import query from saved Timeline*) as rule conditions.
 +
 For example, the following rule detects when the `vssadmin delete shadows`
 Windows command is executed:
@@ -275,11 +275,13 @@ field values.
 .. Use the filter and query fields to create the criteria used for detecting
 alerts.
 +
-NOTE: NOTE: You can use {kib} saved queries (image:images/saved-query-menu.png[Saved query menu,17,17]) and queries from saved Timelines (`Import query from saved Timeline`) as rule conditions.
+NOTE: You can use {kib} saved queries (image:images/saved-query-menu.png[Saved query menu,17,17]) and queries from saved Timelines (*Import query from saved Timeline*) as rule conditions.
 +
-.. Use the `Fields` menu to select a field to check for new terms.
-.. Use the `History Window Size` to specify the time range to search in minutes, hours, or days to determine if a term is new.
-..Continue with <<preview-rules, previewing the rule>> (optional) or click *Continue* to <<rule-ui-basic-params, configure basic rule settings>>.
+.. Use the *Fields* menu to select a field to check for new terms.
+.. Use the *History Window Size* menu to specify the time range to search in minutes, hours, or days to determine if a term is new. The history window size must be larger than the rule interval plus additional look-back time, because the rule will look for terms where the only time(s) the term appears within the history window is _also_ within the rule interval and additional look-back time.
++
+For example, if a rule has an interval of 5 minutes, no additional look-back time, and a history window size of 7 days, a term will be considered new only if the time it appears within the last 7 days is also within the last 5 minutes. Configure the rule interval and additional look-back time when you <<rule-schedule, set the rule's schedule>>.
+.. Continue with <<preview-rules, previewing the rule>> (optional) or click *Continue* to <<rule-ui-basic-params, configure basic rule settings>>.
 
 [discrete]
 [[preview-rules]]
@@ -392,10 +394,10 @@ caused the event directly in the Alerts table.
 +
 NOTE: For threshold rules, not all source event values can be used for overrides; only the fields that were aggregated over (the `Group by` fields) will contain data.
 .. *Timestamp override* (optional): Select a source event timestamp field. When selected, the rule's query uses the selected field, instead of the default `@timestamp` field, to search for alerts. This can help reduce missing alerts due to network or server outages. Specifically, if your ingest pipeline adds a timestamp when events are sent to {es}, this avoids missing alerts due to ingestion delays.
-However, if you know your data source has an inaccurate `@timestamp` value, it is recommended you check the *Do not use @timestamp as a fallback timestamp field* option to ignore the `@timestamp` field entirely.
+However, if you know your data source has an inaccurate `@timestamp` value, it is recommended you select the *Do not use @timestamp as a fallback timestamp field* option to ignore the `@timestamp` field entirely.
 +
 TIP: The {filebeat-ref}/filebeat-module-microsoft.html[Microsoft] and
-{filebeat-ref}/filebeat-module-google_workspace.html[Google Workspace] Filebeat modules have an `event.ingested` timestamp field that can be used instead of the default `@timestamp` field.
+{filebeat-ref}/filebeat-module-google_workspace.html[Google Workspace] {filebeat} modules have an `event.ingested` timestamp field that can be used instead of the default `@timestamp` field.
 
 . Click *Continue*. The *Schedule rule* pane is displayed.
 +
