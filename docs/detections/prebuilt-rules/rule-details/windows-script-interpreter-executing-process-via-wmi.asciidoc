@@ -29,11 +29,11 @@ Identifies use of the built-in Windows script interpreters (cscript.exe or wscri
 * Threat Detection
 * Initial Access
 
-*Version*: 2 (<<windows-script-interpreter-executing-process-via-wmi-history, version history>>)
+*Version*: 4 (<<windows-script-interpreter-executing-process-via-wmi-history, version history>>)
 
 *Added ({stack} release)*: 7.11.0
 
-*Last modified ({stack} release)*: 7.12.0
+*Last modified ({stack} release)*: 8.4.0
 
 *Rule authors*: Elastic
 
@@ -44,8 +44,10 @@ Identifies use of the built-in Windows script interpreters (cscript.exe or wscri
 
 [source,js]
 ----------------------------------
-sequence by host.id with maxspan = 5s [library where dll.name :
-"wmiutils.dll" and process.name : ("wscript.exe", "cscript.exe")]
+sequence by host.id with maxspan = 5s [any where (event.category
+== "library" or (event.category == "process" and event.action : "Image
+loaded*")) and (dll.name : "wmiutils.dll" or file.name :
+"wmiutils.dll") and process.name : ("wscript.exe", "cscript.exe")]
 [process where event.type in ("start", "process_started") and
 process.parent.name : "wmiprvse.exe" and user.domain != "NT
 AUTHORITY" and (process.pe.original_file_name : (
@@ -74,6 +76,26 @@ or process.executable : ("C:\\Users\\*.exe",
 
 [[windows-script-interpreter-executing-process-via-wmi-history]]
 ==== Rule version history
+
+Version 4 (8.4.0 release)::
+* Updated query, changed from:
++
+[source, js]
+----------------------------------
+sequence by host.id with maxspan = 5s [library where dll.name :
+"wmiutils.dll" and process.name : ("wscript.exe", "cscript.exe")]
+[process where event.type in ("start", "process_started") and
+process.parent.name : "wmiprvse.exe" and user.domain != "NT
+AUTHORITY" and (process.pe.original_file_name : (
+"cscript.exe", "wscript.exe", "PowerShell.EXE",
+"Cmd.Exe", "MSHTA.EXE", "RUNDLL32.EXE",
+"REGSVR32.EXE", "MSBuild.exe", "InstallUtil.exe",
+"RegAsm.exe", "RegSvcs.exe", "msxsl.exe",
+"CONTROL.EXE", "EXPLORER.EXE",
+"Microsoft.Workflow.Compiler.exe", "msiexec.exe" )
+or process.executable : ("C:\\Users\\*.exe",
+"C:\\ProgramData\\*.exe") ) ]
+----------------------------------
 
 Version 2 (7.12.0 release)::
 * Updated query, changed from:

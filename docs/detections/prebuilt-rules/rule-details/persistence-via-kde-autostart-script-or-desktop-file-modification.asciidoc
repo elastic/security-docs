@@ -34,11 +34,11 @@ Identifies the creation or modification of a K Desktop Environment (KDE) AutoSta
 * Threat Detection
 * Persistence
 
-*Version*: 2 (<<persistence-via-kde-autostart-script-or-desktop-file-modification-history, version history>>)
+*Version*: 4 (<<persistence-via-kde-autostart-script-or-desktop-file-modification-history, version history>>)
 
 *Added ({stack} release)*: 7.12.0
 
-*Last modified ({stack} release)*: 8.2.0
+*Last modified ({stack} release)*: 8.4.0
 
 *Rule authors*: Elastic
 
@@ -49,9 +49,6 @@ Identifies the creation or modification of a K Desktop Environment (KDE) AutoSta
 
 [source,markdown]
 ----------------------------------
-## Config
-
-If enabling an EQL rule on a non-elastic-agent index (such as beats) for versions <8.2, events will not define `event.ingested` and default fallback for EQL rules was not added until 8.2, so you will need to add a custom pipeline to populate `event.ingested` to @timestamp for this rule to work.
 
 ----------------------------------
 
@@ -71,7 +68,8 @@ file where event.type != "deletion" and file.extension in ("sh",
 "/home/*/.local/share/autostart/*", "/root/.local/share/autostart/*",
 "/home/*/.config/autostart-scripts/*", "/root/.config/autostart-
 scripts/*", "/etc/xdg/autostart/*", "/usr/share/autostart/*"
-)
+) and not process.name in ("yum", "dpkg", "install", "dnf",
+"teams", "yum-cron", "dnf-automatic")
 ----------------------------------
 
 ==== Threat mapping
@@ -89,6 +87,24 @@ scripts/*", "/etc/xdg/autostart/*", "/usr/share/autostart/*"
 
 [[persistence-via-kde-autostart-script-or-desktop-file-modification-history]]
 ==== Rule version history
+
+Version 4 (8.4.0 release)::
+* Updated query, changed from:
++
+[source, js]
+----------------------------------
+file where event.type != "deletion" and file.extension in ("sh",
+"desktop") and file.path : (
+"/home/*/.config/autostart/*", "/root/.config/autostart/*",
+"/home/*/.kde/Autostart/*", "/root/.kde/Autostart/*",
+"/home/*/.kde4/Autostart/*", "/root/.kde4/Autostart/*",
+"/home/*/.kde/share/autostart/*", "/root/.kde/share/autostart/*",
+"/home/*/.kde4/share/autostart/*", "/root/.kde4/share/autostart/*",
+"/home/*/.local/share/autostart/*", "/root/.local/share/autostart/*",
+"/home/*/.config/autostart-scripts/*", "/root/.config/autostart-
+scripts/*", "/etc/xdg/autostart/*", "/usr/share/autostart/*"
+)
+----------------------------------
 
 Version 2 (8.2.0 release)::
 * Formatting only

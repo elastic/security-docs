@@ -33,11 +33,11 @@ Identifies a potential Gatekeeper bypass. In macOS, when applications or program
 * Threat Detection
 * Defense Evasion
 
-*Version*: 4 (<<attempt-to-remove-file-quarantine-attribute-history, version history>>)
+*Version*: 6 (<<attempt-to-remove-file-quarantine-attribute-history, version history>>)
 
 *Added ({stack} release)*: 7.11.0
 
-*Last modified ({stack} release)*: 8.2.0
+*Last modified ({stack} release)*: 8.4.0
 
 *Rule authors*: Elastic
 
@@ -48,9 +48,6 @@ Identifies a potential Gatekeeper bypass. In macOS, when applications or program
 
 [source,markdown]
 ----------------------------------
-## Config
-
-If enabling an EQL rule on a non-elastic-agent index (such as beats) for versions <8.2, events will not define `event.ingested` and default fallback for EQL rules was not added until 8.2, so you will need to add a custom pipeline to populate `event.ingested` to @timestamp for this rule to work.
 
 ----------------------------------
 
@@ -61,11 +58,11 @@ If enabling an EQL rule on a non-elastic-agent index (such as beats) for version
 [source,js]
 ----------------------------------
 process where event.type in ("start", "process_started") and
-process.args : "xattr" and ( (process.args :
+process.name : "xattr" and ( (process.args :
 "com.apple.quarantine" and process.args : ("-d", "-w")) or
-(process.args : "-c" and process.command_line : (
-"/bin/bash -c xattr -c *", "/bin/zsh -c xattr -c *",
-"/bin/sh -c xattr -c *" ) ) )
+(process.args : "-c") or (process.command_line : ("/bin/bash -c
+xattr -c *", "/bin/zsh -c xattr -c *", "/bin/sh -c xattr -c *")) )
+and not process.args_count > 12
 ----------------------------------
 
 ==== Threat mapping
@@ -83,6 +80,19 @@ process.args : "xattr" and ( (process.args :
 
 [[attempt-to-remove-file-quarantine-attribute-history]]
 ==== Rule version history
+
+Version 6 (8.4.0 release)::
+* Updated query, changed from:
++
+[source, js]
+----------------------------------
+process where event.type in ("start", "process_started") and
+process.args : "xattr" and ( (process.args :
+"com.apple.quarantine" and process.args : ("-d", "-w")) or
+(process.args : "-c" and process.command_line : (
+"/bin/bash -c xattr -c *", "/bin/zsh -c xattr -c *",
+"/bin/sh -c xattr -c *" ) ) )
+----------------------------------
 
 Version 4 (8.2.0 release)::
 * Formatting only

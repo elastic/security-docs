@@ -33,11 +33,11 @@ Identifies attempts to disable PowerShell Script Block Logging via registry modi
 * Threat Detection
 * Defense Evasion
 
-*Version*: 3 (<<powershell-script-block-logging-disabled-history, version history>>)
+*Version*: 5 (<<powershell-script-block-logging-disabled-history, version history>>)
 
 *Added ({stack} release)*: 8.1.0
 
-*Last modified ({stack} release)*: 8.3.0
+*Last modified ({stack} release)*: 8.4.0
 
 *Rule authors*: Elastic
 
@@ -92,28 +92,6 @@ malware components.
 - Determine the initial vector abused by the attacker and take action to prevent reinfection through the same vector.
 - Using the incident response data, update logging and audit policies to improve the mean time to detect (MTTD) and the
 mean time to respond (MTTR).
-
-## Config
-
-The 'PowerShell Script Block Logging' logging policy must be configured (Enable).
-
-Steps to implement the logging policy with with Advanced Audit Configuration:
-
-```
-Computer Configuration > 
-Administrative Templates > 
-Windows PowerShell > 
-Turn on PowerShell Script Block Logging (Enable)
-```
-
-Steps to implement the logging policy via registry:
-
-```
-reg add "hklm\SOFTWARE\Policies\Microsoft\Windows\PowerShell\ScriptBlockLogging" /v EnableScriptBlockLogging /t REG_DWORD /d 1
-```
-
-If enabling an EQL rule on a non-elastic-agent index (such as beats) for versions <8.2, events will not define `event.ingested` and default fallback for EQL rules was not added until 8.2, so you will need to add a custom pipeline to populate `event.ingested` to @timestamp for this rule to work.
-
 ----------------------------------
 
 
@@ -122,7 +100,7 @@ If enabling an EQL rule on a non-elastic-agent index (such as beats) for version
 
 [source,js]
 ----------------------------------
-registry where event.type == "change" and registry.path :
+registry where event.type == "change" and registry.path : 
 "HKLM\\SOFTWARE\\Policies\\Microsoft\\Windows\\PowerShell\\ScriptBlock
 Logging\\EnableScriptBlockLogging" and registry.data.strings :
 ("0", "0x00000000")
@@ -143,6 +121,17 @@ Logging\\EnableScriptBlockLogging" and registry.data.strings :
 
 [[powershell-script-block-logging-disabled-history]]
 ==== Rule version history
+
+Version 5 (8.4.0 release)::
+* Updated query, changed from:
++
+[source, js]
+----------------------------------
+registry where event.type == "change" and registry.path :
+"HKLM\\SOFTWARE\\Policies\\Microsoft\\Windows\\PowerShell\\ScriptBlock
+Logging\\EnableScriptBlockLogging" and registry.data.strings :
+("0", "0x00000000")
+----------------------------------
 
 Version 3 (8.3.0 release)::
 * Formatting only

@@ -24,6 +24,8 @@ operators to define exceptions.
 IMPORTANT: Operators `is in list` and `is not in list` are not available for
 threshold and event correlation rules.
 
+TIP: You can also use value lists as the <<indicator-value-lists,indicator match index>> when creating an indicator match rule.
+
 [float]
 [[manage-value-lists]]
 == Create value lists
@@ -42,17 +44,17 @@ act as value delimiters.
 =========================
 
 . Go to *Manage* -> *Rules*.
-. Click *Upload value lists*. The *Upload value lists* window opens.
+. Click *Import value lists*. The *Import value lists* window opens.
 +
 [role="screenshot"]
-image::images/upload-lists-ui.png[]
+image::images/upload-lists-ui.png[Import value lists flyout,75%]
 
 . Select the list type (*Keywords*, *IP addresses*, *IP ranges*, or *Text*) from the *Type of value list* drop-down.
 . Drag or select the `csv` or `txt` file that contains the values.
-. Click *Upload list*.
+. Click *Import list*.
 
-NOTE: When the name of the file you are uploading already exists, the values in
-the new file are appended to the previously uploaded values.
+NOTE: When the name of the file you are importing already exists, the values in
+the new file are appended to the previously imported values.
 
 [[edit-value-lists]]
 [discrete]
@@ -61,13 +63,11 @@ the new file are appended to the previously uploaded values.
 To view, delete, or export existing value lists:
 
 . Go to *Manage* -> *Rules*.
-. Click *Upload value lists*. The *Upload value lists* window opens.
+. Click *Import value lists*. The *Import value lists* window opens.
 . In the *Value lists* table, click the required action button.
-
++
 [role="screenshot"]
-image::images/manage-value-list.png[]
-
-TIP: You can also use value lists as the indicator match index when creating an indicator match rule. See <<indicator-value-lists>> for more information.
+image::images/manage-value-list.png[Import value list flyout with action buttons highlighted,75%]
 
 [float]
 [[detection-rule-exceptions]]
@@ -77,15 +77,15 @@ You can add exceptions to a rule from the rule details page or the Alerts table.
 When you add an exception, you can also close all alerts that meet the
 exception's criteria.
 
-IMPORTANT:  To ensure an exception is successfully applied, make sure that the fields you've defined for the exception query are correctly and consistently mapped in their respective indices. Refer to {ecs-ref}[ECS] to learn more about supported mappings.
-
 [IMPORTANT]
 ==============
-Be careful when adding exceptions to event correlation rules. Exceptions are evaluated against every event in the sequence, and when the exception matches _all_ event(s) in the sequence, alerts _are not_ generated. If the exception only matches _some_ of the events in the sequence, alerts _are_ generated. 
+* To ensure an exception is successfully applied, make sure that the fields you've defined for the exception query are correctly and consistently mapped in their respective indices. Refer to {ecs-ref}[ECS] to learn more about supported mappings.
 
+* Be careful when adding exceptions to <<create-eql-rule,event correlation>> rules. Exceptions are evaluated against every event in the sequence, and when the exception matches _all_ event(s) in the sequence, alerts _are not_ generated. If the exception only matches _some_ of the events in the sequence, alerts _are_ generated. 
++
 To exclude values from a
 specific event in the sequence, update the rule's EQL statement. For example:
-
++
 [source,eql]
 ----
 `sequence
@@ -117,27 +117,34 @@ The *Add Rule Exception* flyout opens (the example below was opened from the Ale
 +
 [role="screenshot"]
 image::images/add-exception-ui.png[]
-. Add conditions that define when the exception prevents alerts. You can define
-multiple conditions with `OR` and `AND` relationships. In the example above,
-the exception prevents the rule from generating alerts when the
+. Use the following settings to add conditions that define when the exception prevents alerts. In the example above, the exception prevents the rule from generating alerts when the
 `svchost.exe` process runs on agent hostname `siem-kibana`.
-+
-[IMPORTANT]
-============
-* You can use nested conditions. However, this is only required for
-<<nested-field-list, these fields>>. For all other fields, nested conditions
-should not be used.
 
-* Wildcards are not supported in rule exceptions or value lists. Values must be literal values.
-============
+  .. *Field*: Select a field to identify the event being filtered.
+
+  .. *Operator*: Select an operator to define the condition:
+    * `is` | `is not` — Must be an exact match of the defined value.
+    * `is one of` | `is not one of` — Matches any of the defined values.
+    * `exists` | `does not exist` — The field exists.
+    * `is in list` | `is not in list` — Matches values in a value list.
 +
-If you have created value lists, you can use them to exclude or include all
-values in a list with `is in list` and `is not in list` operators:
+[NOTE]
+=======
+*  An exception defined by a value list must use `is in list` or `is not in list` in all conditions.
+* Wildcards are not supported in value lists.
+=======
+    * `matches` | `does not match` — Allows you to use wildcards in *Value*, such as `C:\path\*\app.exe`. Available wildcards are `?` (match one character) and `*` (match zero or more characters). The selected *Field* data type must be {ref}/keyword.html#keyword-field-type[keyword], {ref}/text.html#text-field-type[text], or {ref}/keyword.html#wildcard-field-type[wildcard].
 +
-[role="screenshot"]
-image::images/exceptions-ui-list.png[]
-NOTE: When using a list, all exception statements must use `is in list` and
-`is not in list` operators.
+IMPORTANT: Using wildcards can impact performance. To create a more efficient exception using wildcards, use multiple conditions and make them as specific as possible. For example, adding conditions using `process.name` or `file.name` can help limit the scope of wildcard matching.
+
+  .. *Value*: Enter the value associated with the *Field*. To enter multiple values (when using `is one of` or `is not one of`), enter each value, then press **Return**.
+
+. Click *AND* or *OR* to create multiple conditions and define their relationships.
+
+. Click *Add nested condition* to create conditions using nested fields. This is only required for
+<<nested-field-list, these nested fields>>. For all other fields, nested conditions should not be used.
+
+. (Optional) Enter a comment describing the exception.
 
 . Select one of the following alert actions:
 
@@ -197,7 +204,7 @@ The *Add Endpoint Exception* flyout opens, from either the rule details page or 
 image::images/endpoint-add-exp.png[]
 . If required, modify the conditions.
 +
-NOTE: See <<ex-nested-conditions>> for more information on when nested conditions are required.
+NOTE: Refer to <<ex-nested-conditions>> for more information on when nested conditions are required.
 
 . You can select any of the following:
 
@@ -297,8 +304,8 @@ If no attribute is selected, the app searches the list name by default.
 To export or delete an exception list, select the required action button on the appropriate list. Note that:
 
 * Exception lists are exported to `.ndjson` files.
-* Exception lists are also exported as part of any exported detection rules configured with exceptions. See <<import-export-rules-ui>>.
-* If a list is linked to any rules, you'll see a warning appear that asks you to confirm the deletion. If no rules are linked to a list, it is deleted without confirmation.
+* Exception lists are also exported as part of any exported detection rules configured with exceptions. Refer to <<import-export-rules-ui>>.
+* If an exception list is linked to any rules, you'll get a warning asking you to confirm the deletion. If no rules are linked, the list is deleted without confirmation.
 
 [role="screenshot"]
 image::images/actions-exception-list.png[Detail of Exception lists table with export and delete buttons highlighted,400]

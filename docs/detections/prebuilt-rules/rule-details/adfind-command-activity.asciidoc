@@ -38,11 +38,11 @@ This rule detects the Active Directory query tool, AdFind.exe. AdFind has legiti
 * Threat Detection
 * Discovery
 
-*Version*: 8 (<<adfind-command-activity-history, version history>>)
+*Version*: 10 (<<adfind-command-activity-history, version history>>)
 
 *Added ({stack} release)*: 7.11.0
 
-*Last modified ({stack} release)*: 8.3.0
+*Last modified ({stack} release)*: 8.4.0
 
 *Rule authors*: Elastic
 
@@ -75,7 +75,7 @@ for prevalence, whether they are located in expected locations, and if they are 
 ### False positive analysis
 
 - This rule has a high chance to produce false positives as it is a legitimate tool used by network administrators.
-- If this activity is expected and noisy in your environment, consider adding exceptions — preferably with a combination
+- If this rule is noisy in your environment due to expected activity, consider adding exceptions — preferably with a combination
 of user and command line conditions.
 - Malicious behavior with `AdFind` should be investigated as part of a step within an attack chain. It doesn't happen in
 isolation, so reviewing previous logs/activity from impacted machines can be very telling.
@@ -98,11 +98,6 @@ malware components.
 - Determine the initial vector abused by the attacker and take action to prevent reinfection through the same vector.
 - Using the incident response data, update logging and audit policies to improve the mean time to detect (MTTD) and the
 mean time to respond (MTTR).
-
-## Config
-
-If enabling an EQL rule on a non-elastic-agent index (such as beats) for versions <8.2, events will not define `event.ingested` and default fallback for EQL rules was not added until 8.2, so you will need to add a custom pipeline to populate `event.ingested` to @timestamp for this rule to work.
-
 ----------------------------------
 
 
@@ -140,6 +135,25 @@ process where event.type in ("start", "process_started") and
 
 [[adfind-command-activity-history]]
 ==== Rule version history
+
+Version 10 (8.4.0 release)::
+* Updated query, changed from:
++
+[source, js]
+----------------------------------
+process where event.type in ("start", "process_started") and
+(process.name : "AdFind.exe" or process.pe.original_file_name ==
+"AdFind.exe") and process.args : ("objectcategory=computer",
+"(objectcategory=computer)",
+"objectcategory=person", "(objectcategory=person)",
+"objectcategory=subnet", "(objectcategory=subnet)",
+"objectcategory=group", "(objectcategory=group)",
+"objectcategory=organizationalunit",
+"(objectcategory=organizationalunit)",
+"objectcategory=attributeschema", "(objectcategory=attributeschema)",
+"domainlist", "dcmodes", "adinfo", "dclist", "computers_pwnotreqd",
+"trustdmp")
+----------------------------------
 
 Version 8 (8.3.0 release)::
 * Formatting only

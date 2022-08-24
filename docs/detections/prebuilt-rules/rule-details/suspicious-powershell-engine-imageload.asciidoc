@@ -29,11 +29,11 @@ Identifies the PowerShell engine being invoked by unexpected processes. Rather t
 * Threat Detection
 * Execution
 
-*Version*: 6 (<<suspicious-powershell-engine-imageload-history, version history>>)
+*Version*: 8 (<<suspicious-powershell-engine-imageload-history, version history>>)
 
 *Added ({stack} release)*: 7.11.0
 
-*Last modified ({stack} release)*: 8.3.0
+*Last modified ({stack} release)*: 8.4.0
 
 *Rule authors*: Elastic
 
@@ -98,28 +98,9 @@ malware components.
 - Using the incident response data, update logging and audit policies to improve the mean time to detect (MTTD) and the
 mean time to respond (MTTR).
 
-## Config
 
-The 'PowerShell Script Block Logging' logging policy must be enabled.
-Steps to implement the logging policy with with Advanced Audit Configuration:
-
-```
-Computer Configuration > 
-Administrative Templates > 
-Windows PowerShell > 
-Turn on PowerShell Script Block Logging (Enable)
-```
-
-Steps to implement the logging policy via registry:
-
-```
-reg add "hklm\SOFTWARE\Policies\Microsoft\Windows\PowerShell\ScriptBlockLogging" /v EnableScriptBlockLogging /t REG_DWORD /d 1
-```
-
-## Config
 
 If enabling an EQL rule on a non-elastic-agent index (such as beats) for versions <8.2, events will not define `event.ingested` and default fallback for EQL rules was not added until 8.2, so you will need to add a custom pipeline to populate `event.ingested` to @timestamp for this rule to work.
-
 ----------------------------------
 
 
@@ -128,8 +109,12 @@ If enabling an EQL rule on a non-elastic-agent index (such as beats) for version
 
 [source,js]
 ----------------------------------
-library where dll.name : ("System.Management.Automation.ni.dll",
-"System.Management.Automation.dll") and /* add false positives
+any where (event.category == "library" or (event.category == "process"
+and event.action : "Image loaded*")) and (dll.name :
+("System.Management.Automation.ni.dll",
+"System.Management.Automation.dll") or file.name :
+("System.Management.Automation.ni.dll",
+"System.Management.Automation.dll")) and /* add false positives
 relevant to your environment here */ not process.executable :
 ("C:\\Windows\\System32\\RemoteFXvGPUDisablement.exe",
 "C:\\Windows\\System32\\sdiagnhost.exe") and not process.executable
@@ -171,6 +156,39 @@ process.name : ( "Altaro.SubAgent.exe", "AppV_Manage.exe",
 
 [[suspicious-powershell-engine-imageload-history]]
 ==== Rule version history
+
+Version 8 (8.4.0 release)::
+* Updated query, changed from:
++
+[source, js]
+----------------------------------
+library where dll.name : ("System.Management.Automation.ni.dll",
+"System.Management.Automation.dll") and /* add false positives
+relevant to your environment here */ not process.executable :
+("C:\\Windows\\System32\\RemoteFXvGPUDisablement.exe",
+"C:\\Windows\\System32\\sdiagnhost.exe") and not process.executable
+regex~ """C:\\Program Files( \(x86\))?\\*\.exe""" and not
+process.name : ( "Altaro.SubAgent.exe", "AppV_Manage.exe",
+"azureadconnect.exe", "CcmExec.exe", "configsyncrun.exe",
+"choco.exe", "ctxappvservice.exe", "DVLS.Console.exe",
+"edgetransport.exe", "exsetup.exe",
+"forefrontactivedirectoryconnector.exe", "InstallUtil.exe",
+"JenkinsOnDesktop.exe",
+"Microsoft.EnterpriseManagement.ServiceManager.UI.Console.exe",
+"mmc.exe", "mscorsvw.exe", "msexchangedelivery.exe",
+"msexchangefrontendtransport.exe", "msexchangehmworker.exe",
+"msexchangesubmission.exe", "msiexec.exe", "MsiExec.exe",
+"noderunner.exe", "NServiceBus.Host.exe",
+"NServiceBus.Host32.exe",
+"NServiceBus.Hosting.Azure.HostProcess.exe", "OuiGui.WPF.exe",
+"powershell.exe", "powershell_ise.exe", "pwsh.exe",
+"SCCMCliCtrWPF.exe", "ScriptEditor.exe", "ScriptRunner.exe",
+"sdiagnhost.exe", "servermanager.exe", "setup100.exe",
+"ServiceHub.VSDetouredHost.exe", "SPCAF.Client.exe",
+"SPCAF.SettingsEditor.exe", "SQLPS.exe",
+"telemetryservice.exe", "UMWorkerProcess.exe", "w3wp.exe",
+"wsmprovhost.exe" )
+----------------------------------
 
 Version 6 (8.3.0 release)::
 * Formatting only

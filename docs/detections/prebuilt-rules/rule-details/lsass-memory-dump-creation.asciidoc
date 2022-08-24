@@ -34,11 +34,11 @@ Identifies the creation of a Local Security Authority Subsystem Service (lsass.e
 * Threat Detection
 * Credential Access
 
-*Version*: 9 (<<lsass-memory-dump-creation-history, version history>>)
+*Version*: 11 (<<lsass-memory-dump-creation-history, version history>>)
 
 *Added ({stack} release)*: 7.11.0
 
-*Last modified ({stack} release)*: 8.3.0
+*Last modified ({stack} release)*: 8.4.0
 
 *Rule authors*: Elastic
 
@@ -49,9 +49,6 @@ Identifies the creation of a Local Security Authority Subsystem Service (lsass.e
 
 [source,markdown]
 ----------------------------------
-## Config
-
-If enabling an EQL rule on a non-elastic-agent index (such as beats) for versions <8.2, events will not define `event.ingested` and default fallback for EQL rules was not added until 8.2, so you will need to add a custom pipeline to populate `event.ingested` to @timestamp for this rule to work.
 
 ----------------------------------
 
@@ -62,7 +59,15 @@ If enabling an EQL rule on a non-elastic-agent index (such as beats) for version
 [source,js]
 ----------------------------------
 file where file.name : ("lsass*.dmp", "dumpert.dmp", "Andrew.dmp",
-"SQLDmpr*.mdmp", "Coredump.dmp")
+"SQLDmpr*.mdmp", "Coredump.dmp") and not (process.executable :
+("?:\\Program Files\\Microsoft SQL Server\\*\\Shared\\SqlDumper.exe",
+"?:\\Windows\\System32\\dllhost.exe") and file.path :
+("?:\\Program Files\\Microsoft SQL
+Server\\*\\Shared\\ErrorDumps\\SQLDmpr*.mdmp",
+"?:\\*\\Reporting Services\\Logfiles\\SQLDmpr*.mdmp")) and not
+(process.executable : "?:\\WINDOWS\\system32\\WerFault.exe" and
+file.path : "?:\\Windows\\System32\\config\\systemprofile\\AppData\\Lo
+cal\\CrashDumps\\lsass.exe.*.dmp")
 ----------------------------------
 
 ==== Threat mapping
@@ -80,6 +85,15 @@ file where file.name : ("lsass*.dmp", "dumpert.dmp", "Andrew.dmp",
 
 [[lsass-memory-dump-creation-history]]
 ==== Rule version history
+
+Version 11 (8.4.0 release)::
+* Updated query, changed from:
++
+[source, js]
+----------------------------------
+file where file.name : ("lsass*.dmp", "dumpert.dmp", "Andrew.dmp",
+"SQLDmpr*.mdmp", "Coredump.dmp")
+----------------------------------
 
 Version 9 (8.3.0 release)::
 * Formatting only

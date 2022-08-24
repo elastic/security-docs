@@ -1,7 +1,7 @@
 [[gcp-firewall-rule-modification]]
 === GCP Firewall Rule Modification
 
-Identifies when a firewall rule is modified in Google Cloud Platform (GCP). Virtual Private Cloud (VPC) firewall rules can be configured to allow or deny connections to or from virtual machine (VM) instances. An adversary may modify a firewall rule in order to weaken their target's security controls.
+Identifies when a firewall rule is modified in Google Cloud Platform (GCP) for Virtual Private Cloud (VPC) or App Engine. These firewall rules can be modified to allow or deny connections to or from virtual machine (VM) instances or specific applications. An adversary may modify an existing firewall rule in order to weaken their target's security controls and allow more permissive ingress or egress traffic flows for their benefit.
 
 *Rule type*: query
 
@@ -23,6 +23,7 @@ Identifies when a firewall rule is modified in Google Cloud Platform (GCP). Virt
 *References*:
 
 * https://cloud.google.com/vpc/docs/firewalls
+* https://cloud.google.com/appengine/docs/standard/python/understanding-firewalls
 
 *Tags*:
 
@@ -33,11 +34,11 @@ Identifies when a firewall rule is modified in Google Cloud Platform (GCP). Virt
 * SecOps
 * Configuration Audit
 
-*Version*: 5 (<<gcp-firewall-rule-modification-history, version history>>)
+*Version*: 7 (<<gcp-firewall-rule-modification-history, version history>>)
 
 *Added ({stack} release)*: 7.10.0
 
-*Last modified ({stack} release)*: 7.13.0
+*Last modified ({stack} release)*: 8.4.0
 
 *Rule authors*: Elastic
 
@@ -52,9 +53,7 @@ Firewall rules may be modified by system administrators. Verify that the firewal
 
 [source,markdown]
 ----------------------------------
-## Config
 
-The GCP Fleet integration, Filebeat module, or similarly structured data is required to be compatible with this rule.
 ----------------------------------
 
 
@@ -63,8 +62,8 @@ The GCP Fleet integration, Filebeat module, or similarly structured data is requ
 
 [source,js]
 ----------------------------------
-event.dataset:(googlecloud.audit or gcp.audit) and
-event.action:v*.compute.firewalls.patch
+event.dataset:gcp.audit and event.action:(*.compute.firewalls.patch or
+google.appengine.*.Firewall.Update*Rule)
 ----------------------------------
 
 ==== Threat mapping
@@ -82,6 +81,15 @@ event.action:v*.compute.firewalls.patch
 
 [[gcp-firewall-rule-modification-history]]
 ==== Rule version history
+
+Version 7 (8.4.0 release)::
+* Updated query, changed from:
++
+[source, js]
+----------------------------------
+event.dataset:(googlecloud.audit or gcp.audit) and
+event.action:v*.compute.firewalls.patch
+----------------------------------
 
 Version 5 (7.13.0 release)::
 * Formatting only
