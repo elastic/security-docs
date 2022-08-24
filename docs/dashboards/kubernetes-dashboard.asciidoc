@@ -8,23 +8,24 @@ This page explains how to deploy a https://kubernetes.io/docs/concepts/workloads
 **Prerequisites**:
 
 - You need an active {fleet-guide}/fleet-overview.html[{fleet} Server].
-- This feature requires Elastic Stack version 8.4 or higher. Your Elastic deployment must have the {endpoint-cloud-sec} integration <<install-endpoint,enabled>>.
-- The Elastic Agent policy where you use the {endpoint-cloud-sec} integration must have `Include session data` set to `true`. To modify this setting, go to **Manage -> Policies**, select your policy, and find `Include session data` near the bottom of the `Policy settings` tab:
+- This feature requires Elastic Stack version 8.4 or newer.
+- Your Elastic deployment must have the {endpoint-cloud-sec} integration <<install-endpoint,enabled>>.
+- The {endpoint-cloud-sec} integration policy must have **Include session data** set to `true`. To modify this setting, go to **Manage -> Policies**, select your policy, and find `Include session data` near the bottom of the `Policy settings` tab.
 
-**Support matrix**: This feature is currently available on GKE and EKS using Linux hosts and Kubernetes versions that match the following specifications.
+**Support matrix**: This feature is currently available on GKE and EKS using Linux hosts and Kubernetes versions that match the following specifications:
 |=====================
-| | **Kubernetes versions** | **Container runtime** | **Node OSes**
-|**EKS**| 1.18; 1.19; 1.20; 1.21| Docker | Amazon Linux 2, Bottlerocket OS
-|**GKE**| Regular (default channel): 1.21 and 1.22; Stable: 1.20 and 1.21; Rapid: 1.22 and 1.23 | containerd | Container-optimized OS (COS), Ubuntu
+| | **Kubernetes versions** | **Node OSes**
+|**EKS**| 1.18; 1.19; 1.20; 1.21 | Amazon Linux 2, Bottlerocket OS
+|**GKE**| Regular (default channel): 1.21 and 1.22; Stable: 1.20 and 1.21; Rapid: 1.22 and 1.23 | Container-optimized OS (COS), Ubuntu
 |=====================
 
 [discrete]
 === Download and modify the DaemonSet manifest
-The DaemonSet integrates Elastic Endpoint into your Kubernetes cluster. The Elastic Agent is enrolled to a running Fleet Server using the `FLEET_URL` parameter, and connected to a specific Elastic Agent policy using the `FLEET_ENROLLMENT_TOKEN`.
+The DaemonSet integrates {elastic-endpoint} into your Kubernetes cluster. The {agent} is enrolled to a running {fleet-server} using the `FLEET_URL` parameter, and connected to a specific {agent} policy using the `FLEET_ENROLLMENT_TOKEN`.
 
 You first need to download the DaemonSet manifest `.yaml`, then modify it to include your {fleet} URL and Enrollment Token before you deploy it to the clusters you want to monitor.
 
-1. Download the DaemonSet manifest http://github.com/elastic/placeholder[here] for GKE or http://github.com/elastic/placeholder[here] for EKS.
+1. Download the DaemonSet manifest with `curl -L -O https://raw.githubusercontent.com/elastic/main/releases/8.4.0/kubernetes/deploy/elastic-endpoint-security.yaml`.
 2. Fill in the manifest's `FLEET_URL` field with your {fleet} server's `Host URL`. To find it, go to **{kib} -> Management -> {fleet} -> Settings**. For more information, refer to {fleet-guide}/fleet-settings.html[Fleet UI settings].
 3. Fill in the manifest's `FLEET_ENROLLMENT_TOKEN` field with a Fleet enrollment token. To find one, go to **{kib} -> Management -> {fleet} -> Enrollment tokens**. For more information, refer to {fleet-guide}/fleet-enrollment-tokens.html[Fleet enrollment tokens].
 
@@ -32,15 +33,14 @@ You first need to download the DaemonSet manifest `.yaml`, then modify it to inc
 [discrete]
 === Apply the modified manifest to your cluster or clusters
 
-To ensure you install Endpoint on the desired k8s cluster(s), use `kubectl config use-context <name-of-context>` to set the default context. You can repeat the following process for multiple contexts.
+To ensure you install {elastic-endpoint} on the desired Kubernetes cluster(s), use `kubectl config use-context <name-of-context>` to set the default context. You can repeat the following process for multiple contexts.
 
 NOTE: To check which contexts exist, use `kubectl config get-contexts` to list them from your local kubectl config file. An asterisk, if present, indicates the current default context.
 
-To apply the manifest to a cluster, run for example:
-- EKS: `kubectl apply -f eks-elastic-security.yaml`
-- GKE: `kubectl apply -f gke-elastic-security.yaml`
+**Example**:
 
-To check the DaemonSet’s status, run for example: `kubectl get pods -A`
+- Apply the manifest to a cluster: `kubectl apply -f elastic-endpoint-security.yaml`
+- Check the DaemonSet’s status: `kubectl get pods -A`
 
 Once the DaemonSet is running, Elastic Endpoint will start sending Linux session data from Kubernetes to {kib}. You can then view that data from the Kubernetes dashboard.
 
@@ -52,8 +52,8 @@ image::kubernetes-dashboard.png[The Kubernetes dashboard, with numbered labels 1
 The numbered sections are described below:
 
   1. The charts at the top of the dashboard provide an overview of your monitored Kubernetes infrastructure. You can hide them by clicking *Hide charts*.
-  2. The tree navigation menu allows you to navigate through your deployments and select the scope of the Sessions table to the right. You can select any item in the menu to show its sessions. In Logical view, the menu is organized by Cluster, Namespace, Pod, and Container image. In Infrastructure view, it is organized by Cluster, Node, Pod, and Container image.
-  3. The sessions table displays sessions collected from the selected element of your Kubernetes infrastructure. You can view it in fullscreen by selecting the button in the table's upper right corner, and sort it by any of its fields.
+  2. The tree navigation menu allows you to navigate through your deployments and select the scope of the sessions table to the right. You can select any item in the menu to show its sessions. In Logical view, the menu is organized by Cluster, Namespace, Pod, and Container image. In Infrastructure view, it is organized by Cluster, Node, Pod, and Container image.
+  3. The sessions table displays sessions collected from the selected element of your Kubernetes infrastructure. You can view it in fullscreen by selecting the button in the table's upper right corner. You can sort the table by any of its fields.
 
 You can filter the data using the KQL search bar and date picker at the top of the page. From the sessions table's Actions column, you can take the following investigative actions:
 
@@ -74,7 +74,7 @@ image::metadata-tab.png[The Detail panel's metadata tab]
 
 The *Metadata* tab is organized into these expandable sections:
 
-- `Metadata`: `hostname`, `id`, `ip`, `mac`, `name`, Host OS information
-- `Cloud`: `instance.name`, `provider`, `region`, `account.id`, `project.id`
-- `Container`: `id`, `name`, `image.name`, `image.tag`, `image.hash.all`
-- `Orchestrator`: `resource.ip`, `resource.name`, `resource.type`, `namespace`, `cluster.id`, `cluster.name`, `parent.type`
+- *Metadata*: `hostname`, `id`, `ip`, `mac`, `name`, Host OS information
+- *Cloud*: `instance.name`, `provider`, `region`, `account.id`, `project.id`
+- *Container*: `id`, `name`, `image.name`, `image.tag`, `image.hash.all`
+- *Orchestrator*: `resource.ip`, `resource.name`, `resource.type`, `namespace`, `cluster.id`, `cluster.name`, `parent.type`
