@@ -28,11 +28,11 @@ Identifies instances of an unusual process enumerating built-in Windows privileg
 * Threat Detection
 * Discovery
 
-*Version*: 4 (<<enumeration-of-privileged-local-groups-membership-history, version history>>)
+*Version*: 6 (<<enumeration-of-privileged-local-groups-membership-history, version history>>)
 
 *Added ({stack} release)*: 8.0.0
 
-*Last modified ({stack} release)*: 8.3.0
+*Last modified ({stack} release)*: 8.4.0
 
 *Rule authors*: Elastic
 
@@ -76,7 +76,7 @@ network connections.
 
 - Discovery activities are not inherently malicious if they occur in isolation. As long as the analyst did not identify
 suspicious activity related to the user or host, such alerts can be dismissed.
-- If this activity is expected and noisy in your environment, consider adding exceptions — preferably with a combination
+- If this rule is noisy in your environment due to expected activity, consider adding exceptions — preferably with a combination
 of user and command line conditions.
 
 ### Response and remediation
@@ -92,18 +92,16 @@ malware components.
 - Using the incident response data, update logging and audit policies to improve the mean time to detect (MTTD) and the
 mean time to respond (MTTR).
 
-## Config
-
 The 'Audit Security Group Management' audit policy must be configured (Success).
 Steps to implement the logging policy with with Advanced Audit Configuration:
 
 ```
-Computer Configuration > 
-Policies > 
-Windows Settings > 
-Security Settings > 
-Advanced Audit Policies Configuration > 
-Audit Policies > 
+Computer Configuration >
+Policies >
+Windows Settings >
+Security Settings >
+Advanced Audit Policies Configuration >
+Audit Policies >
 Account Management >
 Audit Security Group Management (Success)
 ```
@@ -111,7 +109,6 @@ Audit Security Group Management (Success)
 Microsoft introduced the [event used](https://docs.microsoft.com/en-us/windows/security/threat-protection/auditing/event-4799) in this detection rule on Windows 10 and Windows Server 2016 or later operating systems.
 
 If enabling an EQL rule on a non-elastic-agent index (such as beats) for versions <8.2, events will not define `event.ingested` and default fallback for EQL rules was not added until 8.2, so you will need to add a custom pipeline to populate `event.ingested` to @timestamp for this rule to work.
-
 ----------------------------------
 
 
@@ -119,6 +116,69 @@ If enabling an EQL rule on a non-elastic-agent index (such as beats) for version
 
 
 [source,js]
+----------------------------------
+iam where event.action == "user-member-enumerated" and /* excluding
+machine account */ not winlog.event_data.SubjectUserName: ("*$",
+"LOCAL SERVICE", "NETWORK SERVICE") and /* noisy and usual legit
+processes excluded */ not winlog.event_data.CallerProcessName:
+("-", "?:\\Windows\\System32\\VSSVC.exe",
+"?:\\Windows\\System32\\SearchIndexer.exe",
+"?:\\Windows\\System32\\CompatTelRunner.exe",
+"?:\\Windows\\System32\\oobe\\msoobe.exe",
+"?:\\Windows\\System32\\net1.exe",
+"?:\\Windows\\System32\\svchost.exe",
+"?:\\Windows\\System32\\Netplwiz.exe",
+"?:\\Windows\\System32\\msiexec.exe",
+"?:\\Windows\\SysWOW64\\msiexec.exe",
+"?:\\Windows\\System32\\CloudExperienceHostBroker.exe",
+"?:\\Windows\\System32\\wbem\\WmiPrvSE.exe",
+"?:\\Windows\\System32\\SrTasks.exe",
+"?:\\Windows\\System32\\lsass.exe",
+"?:\\Windows\\System32\\diskshadow.exe",
+"?:\\Windows\\System32\\dfsrs.exe", "?:\\Program
+Files\\*.exe", "?:\\Program Files (x86)\\*.exe",
+"?:\\WindowsAzure\\*\\WaAppAgent.exe",
+"?:\\Windows\\System32\\vssadmin.exe",
+"?:\\Windows\\VeeamVssSupport\\VeeamGuestHelper.exe",
+"?:\\Windows\\System32\\dllhost.exe",
+"?:\\Windows\\System32\\mmc.exe",
+"?:\\Windows\\System32\\SettingSyncHost.exe",
+"?:\\Windows\\ImmersiveControlPanel\\SystemSettings.exe",
+"?:\\Windows\\System32\\SystemSettingsAdminFlows.exe",
+"?:\\Windows\\Temp\\rubrik_vmware???\\snaptool.exe",
+"?:\\Windows\\System32\\inetsrv\\w3wp.exe",
+"?:\\$WINDOWS.~BT\\Sources\\*.exe",
+"?:\\Windows\\System32\\wsmprovhost.exe",
+"?:\\Windows\\System32\\spool\\drivers\\x64\\3\\x3jobt3?.exe",
+"?:\\Windows\\System32\\mstsc.exe",
+"?:\\Windows\\System32\\esentutl.exe",
+"?:\\Windows\\System32\\RecoveryDrive.exe",
+"?:\\Windows\\System32\\SystemPropertiesComputerName.exe") and /*
+privileged local groups */
+(group.name:("admin*","RemoteDesktopUsers") or
+winlog.event_data.TargetSid:("S-1-5-32-544","S-1-5-32-555"))
+----------------------------------
+
+==== Threat mapping
+
+*Framework*: MITRE ATT&CK^TM^
+
+* Tactic:
+** Name: Discovery
+** ID: TA0007
+** Reference URL: https://attack.mitre.org/tactics/TA0007/
+* Technique:
+** Name: Permission Groups Discovery
+** ID: T1069
+** Reference URL: https://attack.mitre.org/techniques/T1069/
+
+[[enumeration-of-privileged-local-groups-membership-history]]
+==== Rule version history
+
+Version 6 (8.4.0 release)::
+* Updated query, changed from:
++
+[source, js]
 ----------------------------------
 iam where event.action == "user-member-enumerated" and /* noisy and
 usual legit processes excluded */ not
@@ -142,22 +202,6 @@ Files\\*.exe", "?:\\Program Files (x86)\\*.exe") and
 (group.name:("admin*","RemoteDesktopUsers") or
 winlog.event_data.TargetSid:("S-1-5-32-544","S-1-5-32-555"))
 ----------------------------------
-
-==== Threat mapping
-
-*Framework*: MITRE ATT&CK^TM^
-
-* Tactic:
-** Name: Discovery
-** ID: TA0007
-** Reference URL: https://attack.mitre.org/tactics/TA0007/
-* Technique:
-** Name: Permission Groups Discovery
-** ID: T1069
-** Reference URL: https://attack.mitre.org/techniques/T1069/
-
-[[enumeration-of-privileged-local-groups-membership-history]]
-==== Rule version history
 
 Version 4 (8.3.0 release)::
 * Formatting only

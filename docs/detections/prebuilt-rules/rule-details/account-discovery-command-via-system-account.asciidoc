@@ -29,11 +29,11 @@ Identifies when the SYSTEM account uses an account discovery utility. This could
 * Threat Detection
 * Discovery
 
-*Version*: 12 (<<account-discovery-command-via-system-account-history, version history>>)
+*Version*: 14 (<<account-discovery-command-via-system-account-history, version history>>)
 
 *Added ({stack} release)*: 7.7.0
 
-*Last modified ({stack} release)*: 8.3.0
+*Last modified ({stack} release)*: 8.4.0
 
 *Rule authors*: Elastic
 
@@ -84,11 +84,6 @@ malware components.
 - Using the incident response data, update logging and audit policies to improve the mean time to detect (MTTD) and the
 mean time to respond (MTTR).
 - Use the data collected through the analysis to investigate other machines affected in the environment.
-
-## Config
-
-If enabling an EQL rule on a non-elastic-agent index (such as beats) for versions <8.2, events will not define `event.ingested` and default fallback for EQL rules was not added until 8.2, so you will need to add a custom pipeline to populate `event.ingested` to @timestamp for this rule to work.
-
 ----------------------------------
 
 
@@ -119,6 +114,18 @@ process.parent.name : "net.exe"))
 
 [[account-discovery-command-via-system-account-history]]
 ==== Rule version history
+
+Version 14 (8.4.0 release)::
+* Updated query, changed from:
++
+[source, js]
+----------------------------------
+process where event.type in ("start", "process_started") and
+(?process.Ext.token.integrity_level_name : "System" or
+?winlog.event_data.IntegrityLevel : "System") and (process.name :
+"whoami.exe" or (process.name : "net1.exe" and not
+process.parent.name : "net.exe"))
+----------------------------------
 
 Version 12 (8.3.0 release)::
 * Formatting only

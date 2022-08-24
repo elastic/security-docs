@@ -34,11 +34,11 @@ Identifies the modification of the Remote Desktop Protocol (RDP) Shadow registry
 * Threat Detection
 * Lateral Movement
 
-*Version*: 2 (<<potential-remote-desktop-shadowing-activity-history, version history>>)
+*Version*: 4 (<<potential-remote-desktop-shadowing-activity-history, version history>>)
 
 *Added ({stack} release)*: 7.13.0
 
-*Last modified ({stack} release)*: 8.2.0
+*Last modified ({stack} release)*: 8.4.0
 
 *Rule authors*: Elastic
 
@@ -49,9 +49,6 @@ Identifies the modification of the Remote Desktop Protocol (RDP) Shadow registry
 
 [source,markdown]
 ----------------------------------
-## Config
-
-If enabling an EQL rule on a non-elastic-agent index (such as beats) for versions <8.2, events will not define `event.ingested` and default fallback for EQL rules was not added until 8.2, so you will need to add a custom pipeline to populate `event.ingested` to @timestamp for this rule to work.
 
 ----------------------------------
 
@@ -87,6 +84,22 @@ process.parent.name : "svchost.exe") or
 
 [[potential-remote-desktop-shadowing-activity-history]]
 ==== Rule version history
+
+Version 4 (8.4.0 release)::
+* Updated query, changed from:
++
+[source, js]
+----------------------------------
+/* Identifies the modification of RDP Shadow registry or the
+execution of processes indicative of active shadow RDP session */ any
+where (event.category == "registry" and registry.path :
+"HKLM\\Software\\Policies\\Microsoft\\Windows NT\\Terminal
+Services\\Shadow" ) or (event.category == "process" and
+(process.name : ("RdpSaUacHelper.exe", "RdpSaProxy.exe") and
+process.parent.name : "svchost.exe") or
+(process.pe.original_file_name : "mstsc.exe" and process.args :
+"/shadow:*") )
+----------------------------------
 
 Version 2 (8.2.0 release)::
 * Formatting only

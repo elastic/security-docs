@@ -34,11 +34,11 @@ Identifies suspicious processes being spawned by the Microsoft Exchange Server U
 * Threat Detection
 * Initial Access
 
-*Version*: 2 (<<microsoft-exchange-server-um-spawning-suspicious-processes-history, version history>>)
+*Version*: 4 (<<microsoft-exchange-server-um-spawning-suspicious-processes-history, version history>>)
 
 *Added ({stack} release)*: 7.12.0
 
-*Last modified ({stack} release)*: 8.2.0
+*Last modified ({stack} release)*: 8.4.0
 
 *Rule authors*: Elastic, Austin Songer
 
@@ -53,9 +53,6 @@ Legitimate processes may be spawned from the Microsoft Exchange Server Unified M
 
 [source,markdown]
 ----------------------------------
-## Config
-
-If enabling an EQL rule on a non-elastic-agent index (such as beats) for versions <8.2, events will not define `event.ingested` and default fallback for EQL rules was not added until 8.2, so you will need to add a custom pipeline to populate `event.ingested` to @timestamp for this rule to work.
 
 ----------------------------------
 
@@ -66,8 +63,13 @@ If enabling an EQL rule on a non-elastic-agent index (such as beats) for version
 [source,js]
 ----------------------------------
 process where event.type == "start" and process.parent.name :
-("UMService.exe", "UMWorkerProcess.exe") and not process.name :
-("werfault.exe", "wermgr.exe")
+("UMService.exe", "UMWorkerProcess.exe") and not
+process.executable :
+("?:\\Windows\\System32\\werfault.exe",
+"?:\\Windows\\System32\\wermgr.exe", "?:\\Program
+Files\\Microsoft\\Exchange Server\\V??\\Bin\\UMWorkerProcess.exe",
+"D:\\Exchange 2016\\Bin\\UMWorkerProcess.exe",
+"E:\\ExchangeServer\\Bin\\UMWorkerProcess.exe")
 ----------------------------------
 
 ==== Threat mapping
@@ -85,6 +87,16 @@ process where event.type == "start" and process.parent.name :
 
 [[microsoft-exchange-server-um-spawning-suspicious-processes-history]]
 ==== Rule version history
+
+Version 4 (8.4.0 release)::
+* Updated query, changed from:
++
+[source, js]
+----------------------------------
+process where event.type == "start" and process.parent.name :
+("UMService.exe", "UMWorkerProcess.exe") and not process.name :
+("werfault.exe", "wermgr.exe")
+----------------------------------
 
 Version 2 (8.2.0 release)::
 * Formatting only

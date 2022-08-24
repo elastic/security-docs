@@ -35,11 +35,11 @@ Identifies attempts to modify the WDigest security provider in the registry to f
 * Threat Detection
 * Credential Access
 
-*Version*: 4 (<<modification-of-wdigest-security-provider-history, version history>>)
+*Version*: 6 (<<modification-of-wdigest-security-provider-history, version history>>)
 
 *Added ({stack} release)*: 7.12.0
 
-*Last modified ({stack} release)*: 8.3.0
+*Last modified ({stack} release)*: 8.4.0
 
 *Rule authors*: Elastic
 
@@ -106,11 +106,6 @@ malware components.
 - Determine the initial vector abused by the attacker and take action to prevent reinfection through the same vector.
 - Using the incident response data, update logging and audit policies to improve the mean time to detect (MTTD) and the
 mean time to respond (MTTR).
-
-## Config
-
-If enabling an EQL rule on a non-elastic-agent index (such as beats) for versions <8.2, events will not define `event.ingested` and default fallback for EQL rules was not added until 8.2, so you will need to add a custom pipeline to populate `event.ingested` to @timestamp for this rule to work.
-
 ----------------------------------
 
 
@@ -120,9 +115,10 @@ If enabling an EQL rule on a non-elastic-agent index (such as beats) for version
 [source,js]
 ----------------------------------
 registry where event.type : ("creation", "change") and
-registry.path : "HKLM\\SYSTEM\\*ControlSet*\\Control\\Securit
-yProviders\\WDigest\\UseLogonCredential" and registry.data.strings
-: ("1", "0x00000001")
+registry.path : "HKLM\\SYSTEM\\*ControlSet*\\Control\\Security
+Providers\\WDigest\\UseLogonCredential" and registry.data.strings
+: ("1", "0x00000001") and not (process.executable :
+"?:\\Windows\\System32\\svchost.exe" and user.id : "S-1-5-18")
 ----------------------------------
 
 ==== Threat mapping
@@ -140,6 +136,17 @@ yProviders\\WDigest\\UseLogonCredential" and registry.data.strings
 
 [[modification-of-wdigest-security-provider-history]]
 ==== Rule version history
+
+Version 6 (8.4.0 release)::
+* Updated query, changed from:
++
+[source, js]
+----------------------------------
+registry where event.type : ("creation", "change") and
+registry.path : "HKLM\\SYSTEM\\*ControlSet*\\Control\\Securit
+yProviders\\WDigest\\UseLogonCredential" and registry.data.strings
+: ("1", "0x00000001")
+----------------------------------
 
 Version 4 (8.3.0 release)::
 * Formatting only
