@@ -1,0 +1,85 @@
+[[prebuilt-rule-7-16-4-potential-remote-desktop-shadowing-activity]]
+=== Potential Remote Desktop Shadowing Activity
+
+Identifies the modification of the Remote Desktop Protocol (RDP) Shadow registry or the execution of processes indicative of an active RDP shadowing session. An adversary may abuse the RDP Shadowing feature to spy on or control other users active RDP sessions.
+
+*Rule type*: eql
+
+*Rule indices*: 
+
+* logs-endpoint.events.*
+* winlogbeat-*
+* logs-windows.*
+
+*Severity*: high
+
+*Risk score*: 73
+
+*Runs every*: 5m
+
+*Searches indices from*: now-9m ({ref}/common-options.html#date-math[Date Math format], see also <<rule-schedule, `Additional look-back time`>>)
+
+*Maximum alerts per execution*: 100
+
+*References*: 
+
+* https://bitsadm.in/blog/spying-on-users-using-rdp-shadowing
+* https://swarm.ptsecurity.com/remote-desktop-services-shadowing/
+
+*Tags*: 
+
+* Elastic
+* Host
+* Windows
+* Threat Detection
+* Lateral Movement
+
+*Version*: 5
+
+*Rule authors*: 
+
+* Elastic
+
+*Rule license*: Elastic License v2
+
+
+==== Investigation guide
+
+
+[source, markdown]
+----------------------------------
+## Setup
+
+If enabling an EQL rule on a non-elastic-agent index (such as beats) for versions <8.2, events will not define `event.ingested` and default fallback for EQL rules was not added until 8.2, so you will need to add a custom pipeline to populate `event.ingested` to @timestamp for this rule to work.
+
+----------------------------------
+
+==== Rule query
+
+
+[source, js]
+----------------------------------
+/* Identifies the modification of RDP Shadow registry or
+  the execution of processes indicative of active shadow RDP session */
+
+any where
+  (event.category == "registry" and
+     registry.path : "HKLM\\Software\\Policies\\Microsoft\\Windows NT\\Terminal Services\\Shadow"
+  ) or
+  (event.category == "process" and
+     (process.name : ("RdpSaUacHelper.exe", "RdpSaProxy.exe") and process.parent.name : "svchost.exe") or
+     (process.pe.original_file_name : "mstsc.exe" and process.args : "/shadow:*")
+  )
+
+----------------------------------
+
+*Framework*: MITRE ATT&CK^TM^
+
+* Tactic:
+** Name: Lateral Movement
+** ID: TA0008
+** Reference URL: https://attack.mitre.org/tactics/TA0008/
+* Technique:
+** Name: Remote Services
+** ID: T1021
+** Reference URL: https://attack.mitre.org/techniques/T1021/

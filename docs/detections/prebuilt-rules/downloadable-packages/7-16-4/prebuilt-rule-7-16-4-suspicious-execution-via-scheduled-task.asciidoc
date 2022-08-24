@@ -1,0 +1,108 @@
+[[prebuilt-rule-7-16-4-suspicious-execution-via-scheduled-task]]
+=== Suspicious Execution via Scheduled Task
+
+Identifies execution of a suspicious program via scheduled tasks by looking at process lineage and command line usage.
+
+*Rule type*: eql
+
+*Rule indices*: 
+
+* winlogbeat-*
+* logs-endpoint.events.*
+* logs-windows.*
+
+*Severity*: medium
+
+*Risk score*: 47
+
+*Runs every*: 5m
+
+*Searches indices from*: now-9m ({ref}/common-options.html#date-math[Date Math format], see also <<rule-schedule, `Additional look-back time`>>)
+
+*Maximum alerts per execution*: 100
+
+*References*: None
+
+*Tags*: 
+
+* Elastic
+* Host
+* Windows
+* Threat Detection
+* Persistence
+
+*Version*: 8
+
+*Rule authors*: 
+
+* Elastic
+
+*Rule license*: Elastic License v2
+
+
+==== Investigation guide
+
+
+[source, markdown]
+----------------------------------
+## Setup
+
+If enabling an EQL rule on a non-elastic-agent index (such as beats) for versions <8.2, events will not define `event.ingested` and default fallback for EQL rules was not added until 8.2, so you will need to add a custom pipeline to populate `event.ingested` to @timestamp for this rule to work.
+
+----------------------------------
+
+==== Rule query
+
+
+[source, js]
+----------------------------------
+process where event.type == "start" and
+    /* Schedule service cmdline on Win10+ */
+    process.parent.name : "svchost.exe" and process.parent.args : "Schedule" and
+    /* add suspicious programs here */
+    process.pe.original_file_name in
+                                (
+                                  "cscript.exe",
+                                  "wscript.exe",
+                                  "PowerShell.EXE",
+                                  "Cmd.Exe",
+                                  "MSHTA.EXE",
+                                  "RUNDLL32.EXE",
+                                  "REGSVR32.EXE",
+                                  "MSBuild.exe",
+                                  "InstallUtil.exe",
+                                  "RegAsm.exe",
+                                  "RegSvcs.exe",
+                                  "msxsl.exe",
+                                  "CONTROL.EXE",
+                                  "EXPLORER.EXE",
+                                  "Microsoft.Workflow.Compiler.exe",
+                                  "msiexec.exe"
+                                  ) and
+    /* add suspicious paths here */
+    process.args : (
+       "C:\\Users\\*",
+       "C:\\ProgramData\\*",
+       "C:\\Windows\\Temp\\*",
+       "C:\\Windows\\Tasks\\*",
+       "C:\\PerfLogs\\*",
+       "C:\\Intel\\*",
+       "C:\\Windows\\Debug\\*",
+       "C:\\HP\\*")
+
+----------------------------------
+
+*Framework*: MITRE ATT&CK^TM^
+
+* Tactic:
+** Name: Persistence
+** ID: TA0003
+** Reference URL: https://attack.mitre.org/tactics/TA0003/
+* Technique:
+** Name: Scheduled Task/Job
+** ID: T1053
+** Reference URL: https://attack.mitre.org/techniques/T1053/
+* Sub-technique:
+** Name: Scheduled Task
+** ID: T1053.005
+** Reference URL: https://attack.mitre.org/techniques/T1053/005/
