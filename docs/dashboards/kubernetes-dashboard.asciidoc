@@ -1,0 +1,87 @@
+[[kubernetes-dashboard]]
+= Kubernetes dashboard
+
+The Kubernetes dashboard provides insight into Linux process data from your Kubernetes clusters. It shows sessions in detail and in the context of your monitored infrastructure.
+
+image::images/kubernetes-dashboard.png[The Kubernetes dashboard, with numbered labels 1 through 3 for major sections]
+The numbered sections are described below:
+
+  1. The charts at the top of the dashboard provide an overview of your monitored Kubernetes infrastructure. You can hide them by clicking *Hide charts*.
+  2. The tree navigation menu allows you to navigate through your deployments and select the scope of the sessions table to the right. You can select any item in the menu to show its sessions. In Logical view, the menu is organized by Cluster, Namespace, Pod, and Container image. In Infrastructure view, it is organized by Cluster, Node, Pod, and Container image.
+  3. The sessions table displays sessions collected from the selected element of your Kubernetes infrastructure. You can view it in fullscreen by selecting the button in the table's upper right corner. You can sort the table by any of its fields.
+
+You can filter the data using the KQL search bar and date picker at the top of the page.
+
+From the sessions table's Actions column, you can take the following investigative actions:
+
+- View details
+- <<timelines-ui,Open in Timeline>>
+- <<alerts-run-osquery, Run Osquery>>
+- <<visual-event-analyzer, Analyze event>>
+- <<session-view, Open Session View>>
+
+Session View displays Kubernetes metadata under the *Metadata* tab of the Detail panel:
+
+image::images/metadata-tab.png[The Detail panel's metadata tab]
+
+The *Metadata* tab is organized into these expandable sections:
+
+- *Metadata:* `hostname`, `id`, `ip`, `mac`, `name`, Host OS information
+- *Cloud:* `instance.name`, `provider`, `region`, `account.id`, `project.id`
+- *Container:* `id`, `name`, `image.name`, `image.tag`, `image.hash.all`
+- *Orchestrator:* `resource.ip`, `resource.name`, `resource.type`, `namespace`, `cluster.id`, `cluster.name`, `parent.type`
+
+
+[discrete]
+[[k8s-dash-setup]]
+== Setup
+To collect session data for the dashboard, you'll deploy a Kubernetes DaemonSet to your clusters that  implements the {endpoint-cloud-sec} integration.
+
+**Prerequisites**:
+
+- This feature requires Elastic Stack version 8.4 or newer.
+- You need an active {fleet-guide}/fleet-overview.html[{fleet} Server].
+- Your Elastic deployment must have the {endpoint-cloud-sec} integration <<install-endpoint,enabled>>.
+- The {endpoint-cloud-sec} integration policy must have **Include session data** set to `true`. To modify this setting, go to **Manage -> Policies**, select your policy, and find `Include session data` near the bottom of the `Policy settings` tab.
+
+**Support matrix**: This feature is currently available on GKE and EKS using Linux hosts and Kubernetes versions that match the following specifications:
+|=====================
+| | **Kubernetes versions** | **Node OSes**
+|**EKS**| 1.18; 1.19; 1.20; 1.21 | Amazon Linux 2, Bottlerocket OS
+|**GKE**| Regular (default channel): 1.21 and 1.22; Stable: 1.20 and 1.21; Rapid: 1.22 and 1.23 | Container-optimized OS (COS), Ubuntu
+|=====================
+
+[discrete]
+=== Download and modify the DaemonSet manifest
+The DaemonSet integrates {elastic-endpoint} into your Kubernetes cluster. The {agent} is enrolled to a running {fleet-server} using the `FLEET_URL` parameter, and connected to a specific {agent} policy using the `FLEET_ENROLLMENT_TOKEN`.
+
+You first need to download the DaemonSet manifest `.yaml`, then modify it to include your {fleet} URL and Enrollment Token before you deploy it to the clusters you want to monitor.
+
+. Download the DaemonSet manifest using this command: 
++
+[source,console]
+----
+curl -L -O https://raw.githubusercontent.com/elastic/endpoint/main/releases/8.4.0/kubernetes/deploy/elastic-endpoint-security.yaml
+----
+
+. Fill in the manifest's `FLEET_URL` field with your {fleet} server's `Host URL`. To find it, go to **{kib} -> Management -> {fleet} -> Settings**. For more information, refer to {fleet-guide}/fleet-settings.html[Fleet UI settings].
+. Fill in the manifest's `FLEET_ENROLLMENT_TOKEN` field with a Fleet enrollment token. To find one, go to **{kib} -> Management -> {fleet} -> Enrollment tokens**. For more information, refer to {fleet-guide}/fleet-enrollment-tokens.html[Fleet enrollment tokens].
+
+
+[discrete]
+=== Apply the modified manifest to your cluster or clusters
+
+To ensure you install {elastic-endpoint} on the desired Kubernetes cluster(s), set the default context using command: `kubectl config use-context <name-of-context>`.
+To check which contexts exist, use `kubectl config get-contexts` to list them from your local kubectl config file. An asterisk indicates the current default context.
+
+You can repeat the following steps for multiple contexts.
+
+**Example:**
+
+- Apply the manifest to a cluster: `kubectl apply -f elastic-endpoint-security.yaml`
+- Check the DaemonSet’s status: `kubectl get pods -A`
+
+Once the DaemonSet is running, Elastic Endpoint will start sending Linux session data from Kubernetes to {kib}. You can then view that data from the Kubernetes dashboard.
+
+
+IMPORTANT: This dashboard uses data from the `logs-*` index pattern, which is included by default in the <<advanced-settings,`securitySolution:defaultIndex` advanced setting>>. To collect data from multiple {es} clusters (as in a cross-cluster deployment), update `logs-*` to `*:logs-*`.
