@@ -13,6 +13,7 @@ On the Rules page, you can:
 * <<load-prebuilt-rules>>
 * <<select-all-prebuilt-rules>>
 * <<download-prebuilt-rules>>
+* <<rule-prerequisites>>
 * <<edit-rules-settings>>
 * <<manage-rules-ui>>
 * <<import-export-rules-ui>>
@@ -36,7 +37,7 @@ NOTE: Searches for index patterns and MITRE ATT&CK tactics and techniques must m
 
 [float]
 [[load-prebuilt-rules]]
-=== Load and activate prebuilt Elastic rules
+=== Load and activate Elastic prebuilt rules
 
 To load the {es-sec-app}'s <<prebuilt-rules, prebuilt rules>>, go to *Manage* -> *Rules* -> *Load Elastic prebuilt rules and Timeline templates*.
 
@@ -63,7 +64,7 @@ You can then modify the duplicated rules and, if required, delete the prebuilt o
 
 [float]
 [[download-prebuilt-rules]]
-=== Download latest prebuilt Elastic rules
+=== Download latest Elastic prebuilt rules
 
 As of {stack} >=7.13.0, you can download the latest version of Elastic prebuilt rules outside of a regular release cycle. This feature ensures you have the latest detection capabilities before upgrading to the latest {stack}.
 
@@ -81,6 +82,24 @@ image::images/install-prebuilt-settings.png[]
 +
 [role="screenshot"]
 image::images/install-prebuilt-rules.png[]
+
+[float]
+[[rule-prerequisites]]
+=== Confirm rule prerequisites
+
+Many Elastic prebuilt rules are designed to work with specific Elastic integrations and data fields. These prerequisites are identified in the *Related integrations* and *Required fields* fields on a rule's details page (*Manage* -> *Rules*, then click a rule's name). *Related integrations* also displays each integration's installation status and includes links for installing and configuring the listed integrations. 
+
+Additionally, the *Setup guide* section provides guidance on setting up the rule's requirements.
+
+[role="screenshot"]
+image::images/rule-details-prerequisites.png[Rule details page with Related integrations, Required fields, and Setup guide highlighted]
+
+You can also check rules' related integrations in the *Rules* and *Rule Monitoring* tables. Click the *integrations* badge to display the related integrations in a popup.
+
+[role="screenshot"]
+image::images/rules-table-related-integrations.png[Rules table with related integrations popup,75%]
+
+TIP: You can hide the *integrations* badge in the Rules tables. Go to *{kib}* -> *Stack Management* -> *Advanced Settings*, then turn off `securitySolution:showRelatedIntegrations`.
 
 [float]
 [[edit-rules-settings]]
@@ -131,17 +150,15 @@ You cannot export Elastic prebuilt rules, but you can duplicate a prebuilt rule,
 If you try to export with both prebuilt and custom rules selected, only the custom rules are exported.
 ====
 
-The following configuration items are also included in the `.ndjson` file:
+The `.ndjson` file also includes any actions and exception lists related to the exported rules. However, other configuration items require additional handling when exporting and importing rules:
 
-* Actions
-* Exception lists
+- *Data views*: For rules that use a {kib} data view as a data source, the exported file contains the associated `data_view_id`, but does _not_ include any other data view configuration. To export/import between {kib} spaces, first use the {kibana-ref}/managing-saved-objects.html#managing-saved-objects-share-to-space[Saved Objects] UI (*Stack Management* -> *Kibana* -> *Saved Objects*) to share the data view with the destination space.
++
+To import into a different {stack} deployment, the destination cluster must include a data view with a matching data view ID (configured in the {kibana-ref}/data-views.html[data view's advanced settings]). Alternatively, after importing, you can manually reconfigure the rule to use an appropriate data view in the destination system.
 
-[IMPORTANT]
-=================
-Although detection rule actions are included in the exported file, the connectors used by the actions are not included. Use the {kibana-ref}/managing-saved-objects.html#managing-saved-objects-export-objects[Saved Objects] UI in Kibana (*Stack Management* -> *Kibana* -> *Saved Objects*) to export and import any necessary connectors _before_ you export and import the detection rules.
+- *Actions and connectors*: Rule actions are included in the exported file, but the connectors used by the actions are _not_ included. Use {kib}'s {kibana-ref}/managing-saved-objects.html#managing-saved-objects-export-objects[Saved Objects] UI (*Stack Management* -> *Kibana* -> *Saved Objects*) to export and import any necessary connectors _before_ you export and import the detection rules.
 
-Similarly, any value lists used for rule exceptions are not included in rule exports or imports. Use the <<edit-value-lists, Import value lists>> UI (*Detect* -> *Rules* -> *Import value lists*) to export and import value lists separately.
-=================
+- *Value lists*: Any value lists used for rule exceptions are _not_ included in rule exports or imports. Use the <<edit-value-lists, Import value lists>> UI (*Detect* -> *Rules* -> *Import value lists*) to export and import value lists separately.
 
 To export and import detection rules:
 
