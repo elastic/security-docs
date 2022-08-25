@@ -372,6 +372,9 @@ For `enable`, `disable`, `delete`, `edit`, and `duplicate` actions, a JSON objec
 
                ],
                "immutable":false,
+               "related_integrations": [],       <1>
+               "required_fields": [],            <1>
+               "setup": "",                      <1>
                "type":"machine_learning",
                "anomaly_threshold":50,
                "machine_learning_job_id":[
@@ -412,7 +415,7 @@ For `enable`, `disable`, `delete`, `edit`, and `duplicate` actions, a JSON objec
 }
 --------------------------------------------------
 
-<1> dev:[] `execution_summary` is under development and its schema may change.
+<1> dev:[] These fields are under development and their usage or schema may change: `related_integrations`, `required_fields`, `setup`, and `execution_summary`.
 
 
 For an `export` action, an `.ndjson` file containing exported rules.
@@ -538,6 +541,9 @@ If processing of any rule fails, a partial error outputs the ID and/or name of t
                     "version": 5,
                     "exceptions_list": [],
                     "immutable": false,
+                    "related_integrations": [],       <1>
+                    "required_fields": [],            <1>
+                    "setup": "",                      <1>
                     "type": "query",
                     "language": "kuery",
                     "index": [
@@ -580,4 +586,89 @@ If processing of any rule fails, a partial error outputs the ID and/or name of t
 }
 --------------------------------------------------
 
+<<<<<<< HEAD
 <1> dev:[] `execution_summary` is under development and its schema may change.
+=======
+<1> dev:[] These fields are under development and their usage or schema may change: `related_integrations`, `required_fields`, `setup`, and `execution_summary`.
+
+*Example 3, Dry run*
+
+The following request will validate that the `add_index_patterns` bulk action can be successfully applied to three rules. Each rule (specified by its rule ID) is different: one is a prebuilt Elastic rule, another is a custom machine learning rule, and another is a custom query rule. Because dry run mode is enabled, changes to these rules will not be permanent or saved to {es}.
+
+
+[source,console]
+--------------------------------------------------
+POST api/detection_engine/rules/_bulk_action?dry_run=true
+{
+    "action": "edit",
+    "edit": [
+        {
+            "value": [
+                "test-*"
+            ],
+            "type": "add_index_patterns"
+        }
+    ],
+    "ids": ["81aa0480-06af-11ed-94fb-dd1a0597d8d2", "dc015d10-0831-11ed-ac8b-05a222bd8d4a", "de8f5af0-0831-11ed-ac8b-05a222bd8d4a"]
+}
+--------------------------------------------------
+
+[discrete]
+===== Response code
+
+`500`::
+    Indicates a partial bulk action failure.
+
+[discrete]
+===== Response payload
+
+The `attributes.errors` section of the response shows that two rules failed to update and one succeeded. The same results would be returned if you ran the request without dry run mode enabled.
+Notice that there are no arrays in `attributes.results`. In dry run mode, rule updates are not applied and saved to {es}, so the endpoint wouldn't return results for rules that have been `updated`, `created`, or `deleted`.
+
+[discrete]
+===== Response body
+
+[source,json]
+--------------------------------------------------
+{
+    "message": "Bulk edit partially failed",
+    "status_code": 500,
+    "attributes": {
+        "errors": [
+            {
+                "message": "Elastic rule can't be edited",
+                "status_code": 500,
+                "err_code": "IMMUTABLE",
+                "rules": [
+                    {
+                        "id": "81aa0480-06af-11ed-94fb-dd1a0597d8d2",
+                        "name": "Unusual AWS Command for a User"
+                    }
+                ]
+            },
+            {
+                "message": "Machine learning rule doesn't have index patterns",
+                "status_code": 500,
+                "err_code": "MACHINE_LEARNING_INDEX_PATTERN",
+                "rules": [
+                    {
+                        "id": "dc015d10-0831-11ed-ac8b-05a222bd8d4a",
+                        "name": "Suspicious Powershell Script [Duplicate]"
+                    }
+                ]
+            }
+        ],
+        "results": {
+            "updated": [],
+            "created": [],
+            "deleted": []
+        },
+        "summary": {
+            "failed": 2,
+            "succeeded": 1,
+            "total": 3
+        }
+    }
+}
+--------------------------------------------------
+>>>>>>> 953f781 ([DOCS] New rule fields for prerequisites: Related Integrations, Required Fields, and Setup (#2069))
