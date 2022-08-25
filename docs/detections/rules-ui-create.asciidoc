@@ -29,12 +29,14 @@ alert is generated for every source IP address that appears in at least 10 of
 the rule's search results.
 * <<create-eql-rule, *Event correlation*>>: Searches the defined indices and creates an alert when results match an
 {ref}/eql.html[Event Query Language (EQL)] query.
-* <<create-indicator-rule, *Indicator match*>>: Creates an alert when {es-sec} index field values match field values defined in the specified indicator index patterns. For example, you can create an indicator index for IP addresses and use this index to create an alert whenever an event's `destination.ip` equals a value in the index. Indicator index field mappings should be {ecs-ref}[ECS-compliant]. For information on creating {es} indices and field types, see
+* <<create-indicator-rule, *Indicator match*>>: Creates an alert when {elastic-sec} index field values match field values defined in the specified indicator index patterns. For example, you can create an indicator index for IP addresses and use this index to create an alert whenever an event's `destination.ip` equals a value in the index. Indicator index field mappings should be {ecs-ref}[ECS-compliant]. For information on creating {es} indices and field types, see
 {ref}/getting-started-index.html[Index some documents],
 {ref}/indices-create-index.html[Create index API], and
-{ref}/mapping-types.html[Field data types]. If you have indicators in a standard file format, such as CSV or JSON, you can also use the Machine Learning Data Visualizer to import your indicators into an indicator index. See https://www.elastic.co/guide/en/machine-learning/7.10/ml-gs-visualizer.html and use the Import Data option to import your indicators.
+{ref}/mapping-types.html[Field data types]. If you have indicators in a standard file format, such as CSV or JSON, you can also use the Machine Learning Data Visualizer to import your indicators into an indicator index. See {ml-docs}/ml-getting-started.html#sample-data-visualizer[Explore the data in {kib}] and use the *Import Data* option to import your indicators.
 
 TIP: You can also use value lists as the indicator match index. See <<indicator-value-lists>> at the end of this topic for more information.
+
+* <<create-new-terms-rule, *New terms*>>: Generates an alert for each new term detected in source documents within a specified time range.
 
 When modifying rules or managing detection alerts, you can add exceptions that prevent a rule from generating an alert even when its criteria are met. This is useful for reducing noise, such as preventing alerts from trusted processes and internal IP addresses. <<detections-ui-exceptions>> describes how to add exceptions to a rule.
 
@@ -78,6 +80,14 @@ If a rule requires certain privileges to run, such as index privileges, keep in 
 ==============================================
 
 [float]
+[[views-index-patterns]]
+=== Data views and index patterns
+
+When you create a rule, you must either specify the {es} index pattens for which you'd like the rule to run, or select a {kibana-ref}/data-views.html[data view] as the data source. If you select a data view, you can select <<runtime-fields, runtime fields>> associated with that data view to create a query for the rule (with the exception of {ml} rules, which do not use queries).
+
+NOTE: To access data views, ensure you have the {kibana-ref}/data-views.html#data-views-read-only-access[required permissions].
+
+[float]
 [[create-rule-ui]]
 === Select rule type and scope
 
@@ -93,6 +103,7 @@ image::images/create-new-rule.png[]
 * <<create-threshold-rule, Threshold>>
 * <<create-eql-rule, Event correlation>>
 * <<create-indicator-rule, Indicator match>>
+* <<create-new-terms-rule, New terms>>
 
 [discrete]
 [[create-ml-rule]]
@@ -123,11 +134,11 @@ image::images/rule-start-ml-job.png[]
 ==== Create a custom query rule
 . To create a rule based on a KQL or Lucene query, select *Custom query*,
 then:
-.. Define which {es} indices the rule searches for alerts.
+.. Define which {es} indices or data view the rule searches for alerts.
 .. Use the filter and query fields to create the criteria used for detecting
 alerts.
 +
-NOTE: You can use {kib} saved queries (save icon) and queries from saved Timelines (`Import query from saved Timeline`) as rule conditions.
+NOTE: You can use {kib} saved queries (image:images/saved-query-menu.png[Saved query menu,17,17]) and queries from saved Timelines (*Import query from saved Timeline*) as rule conditions.
 +
 For example, the following rule detects when the `vssadmin delete shadows`
 Windows command is executed:
@@ -172,7 +183,7 @@ IMPORTANT: Alerts created by threshold rules are synthetic alerts that do not re
 [[create-eql-rule]]
 ==== Create an event correlation rule
 . To create an event correlation rule using EQL, select *Event Correlation*, then:
-.. Define which {es} indices the rule searches for alerts.
+.. Define which {es} indices or data view the rule searches for alerts.
 .. Add an {ref}/eql-syntax.html[EQL statement] used to detect alerts.
 +
 For example, the following rule detects when `msxsl.exe` makes an outbound
@@ -216,12 +227,12 @@ NOTE: For sequence events, the {security-app} generates a single alert when all 
 [[create-indicator-rule]]
 ==== Create an indicator match rule
 
-NOTE: {es-sec} provides limited support for indicator match rules. See <<support-indicator-rules>> for more information.
+NOTE: {elastic-sec} provides limited support for indicator match rules. See <<support-indicator-rules>> for more information.
 
-. To create an indicator match rule that searches for events whose specified field value matches the specified indicator field value in the indicator index patterns, select *Indicator Match*, then fill in the following fields:
-.. *Index patterns*: The {es-sec} event indices on which the rule runs.
+. To create a rule that searches for events whose specified field value matches the specified indicator field value in the indicator index patterns, select *Indicator Match*, then fill in the following fields:
+.. *Source*: The individual index patterns or data view that specifies what data to search.
 .. *Custom query*: The query and filters used to retrieve the required results from
-the {es-sec} event indices. For example, if you want to match documents that only contain a `destination.ip` address field, add `destination.ip : *`.
+the {elastic-sec} event indices. For example, if you want to match documents that only contain a `destination.ip` address field, add `destination.ip : *`.
 +
 TIP: If you want the rule to check every field in the indices, use this
 wildcard expression: `*:*`.
@@ -254,6 +265,23 @@ in the Timeline, Timeline query values are replaced with their corresponding ale
 field values.
 +
 . Continue with <<preview-rules, previewing the rule>> (optional) or click *Continue* to <<rule-ui-basic-params, configure basic rule settings>>.
+
+[discrete]
+[[create-new-terms-rule]]
+==== Create a new terms rule
+
+. To create a rule that searches for each new term detected in source documents, select *New Terms*, then:
+.. Specify what data to search by entering individual {es} index patterns or selecting an existing data view.
+.. Use the filter and query fields to create the criteria used for detecting
+alerts.
++
+NOTE: You can use {kib} saved queries (image:images/saved-query-menu.png[Saved query menu,17,17]) and queries from saved Timelines (*Import query from saved Timeline*) as rule conditions.
++
+.. Use the *Fields* menu to select a field to check for new terms.
+.. Use the *History Window Size* menu to specify the time range to search in minutes, hours, or days to determine if a term is new. The history window size must be larger than the rule interval plus additional look-back time, because the rule will look for terms where the only time(s) the term appears within the history window is _also_ within the rule interval and additional look-back time.
++
+For example, if a rule has an interval of 5 minutes, no additional look-back time, and a history window size of 7 days, a term will be considered new only if the time it appears within the last 7 days is also within the last 5 minutes. Configure the rule interval and additional look-back time when you <<rule-schedule, set the rule's schedule>>.
+.. Continue with <<preview-rules, previewing the rule>> (optional) or click *Continue* to <<rule-ui-basic-params, configure basic rule settings>>.
 
 [discrete]
 [[preview-rules]]
@@ -366,11 +394,10 @@ caused the event directly in the Alerts table.
 +
 NOTE: For threshold rules, not all source event values can be used for overrides; only the fields that were aggregated over (the `Group by` fields) will contain data.
 .. *Timestamp override* (optional): Select a source event timestamp field. When selected, the rule's query uses the selected field, instead of the default `@timestamp` field, to search for alerts. This can help reduce missing alerts due to network or server outages. Specifically, if your ingest pipeline adds a timestamp when events are sent to {es}, this avoids missing alerts due to ingestion delays.
+However, if you know your data source has an inaccurate `@timestamp` value, it is recommended you select the *Do not use @timestamp as a fallback timestamp field* option to ignore the `@timestamp` field entirely.
 +
-TIP: These Filebeat modules have an `event.ingested` timestamp field that can
-be used instead of the default `@timestamp` field:
-{filebeat-ref}/filebeat-module-microsoft.html[Microsoft] and
-{filebeat-ref}/filebeat-module-google_workspace.html[Google Workspace].
+TIP: The {filebeat-ref}/filebeat-module-microsoft.html[Microsoft] and
+{filebeat-ref}/filebeat-module-google_workspace.html[Google Workspace] {filebeat} modules have an `event.ingested` timestamp field that can be used instead of the default `@timestamp` field.
 
 . Click *Continue*. The *Schedule rule* pane is displayed.
 +
