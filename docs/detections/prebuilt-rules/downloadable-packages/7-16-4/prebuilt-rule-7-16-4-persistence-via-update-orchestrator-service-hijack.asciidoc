@@ -1,0 +1,94 @@
+[[prebuilt-rule-7-16-4-persistence-via-update-orchestrator-service-hijack]]
+=== Persistence via Update Orchestrator Service Hijack
+
+Identifies potential hijacking of the Microsoft Update Orchestrator Service to establish persistence with an integrity level of SYSTEM.
+
+*Rule type*: eql
+
+*Rule indices*: 
+
+* winlogbeat-*
+* logs-endpoint.events.*
+* logs-windows.*
+
+*Severity*: high
+
+*Risk score*: 73
+
+*Runs every*: 5m
+
+*Searches indices from*: now-9m ({ref}/common-options.html#date-math[Date Math format], see also <<rule-schedule, `Additional look-back time`>>)
+
+*Maximum alerts per execution*: 100
+
+*References*: 
+
+* https://github.com/irsl/CVE-2020-1313
+
+*Tags*: 
+
+* Elastic
+* Host
+* Windows
+* Threat Detection
+* Persistence
+* CVE-2020-1313
+
+*Version*: 8
+
+*Rule authors*: 
+
+* Elastic
+
+*Rule license*: Elastic License v2
+
+
+==== Investigation guide
+
+
+[source, markdown]
+----------------------------------
+## Setup
+
+If enabling an EQL rule on a non-elastic-agent index (such as beats) for versions <8.2, events will not define `event.ingested` and default fallback for EQL rules was not added until 8.2, so you will need to add a custom pipeline to populate `event.ingested` to @timestamp for this rule to work.
+
+----------------------------------
+
+==== Rule query
+
+
+[source, js]
+----------------------------------
+process where event.type == "start" and
+  process.parent.executable : "C:\\Windows\\System32\\svchost.exe" and
+  process.parent.args : "UsoSvc" and
+  not process.executable :
+          ("?:\\ProgramData\\Microsoft\\Windows\\UUS\\Packages\\*\\amd64\\MoUsoCoreWorker.exe",
+          "?:\\Windows\\System32\\UsoClient.exe",
+          "?:\\Windows\\System32\\MusNotification.exe",
+          "?:\\Windows\\System32\\MusNotificationUx.exe",
+          "?:\\Windows\\System32\\MusNotifyIcon.exe",
+          "?:\\Windows\\System32\\WerFault.exe",
+          "?:\\Windows\\System32\\WerMgr.exe",
+          "?:\\Windows\\UUS\\amd64\\MoUsoCoreWorker.exe",
+          "?:\\Windows\\System32\\MoUsoCoreWorker.exe",
+          "?:\\Windows\\UUS\\amd64\\UsoCoreWorker.exe",
+          "?:\\Windows\\System32\\UsoCoreWorker.exe",
+          "?:\\Program Files\\Common Files\\microsoft shared\\ClickToRun\\OfficeC2RClient.exe")
+
+----------------------------------
+
+*Framework*: MITRE ATT&CK^TM^
+
+* Tactic:
+** Name: Persistence
+** ID: TA0003
+** Reference URL: https://attack.mitre.org/tactics/TA0003/
+* Technique:
+** Name: Create or Modify System Process
+** ID: T1543
+** Reference URL: https://attack.mitre.org/techniques/T1543/
+* Sub-technique:
+** Name: Windows Service
+** ID: T1543.003
+** Reference URL: https://attack.mitre.org/techniques/T1543/003/

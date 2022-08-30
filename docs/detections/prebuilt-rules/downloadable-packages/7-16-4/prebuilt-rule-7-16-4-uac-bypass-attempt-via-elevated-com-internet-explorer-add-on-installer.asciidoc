@@ -1,0 +1,83 @@
+[[prebuilt-rule-7-16-4-uac-bypass-attempt-via-elevated-com-internet-explorer-add-on-installer]]
+=== UAC Bypass Attempt via Elevated COM Internet Explorer Add-On Installer
+
+Identifies User Account Control (UAC) bypass attempts by abusing an elevated COM Interface to launch a malicious program. Attackers may attempt to bypass UAC to stealthily execute code with elevated permissions.
+
+*Rule type*: eql
+
+*Rule indices*: 
+
+* winlogbeat-*
+* logs-endpoint.events.*
+* logs-windows.*
+
+*Severity*: medium
+
+*Risk score*: 47
+
+*Runs every*: 5m
+
+*Searches indices from*: now-9m ({ref}/common-options.html#date-math[Date Math format], see also <<rule-schedule, `Additional look-back time`>>)
+
+*Maximum alerts per execution*: 100
+
+*References*: 
+
+* https://swapcontext.blogspot.com/2020/11/uac-bypasses-from-comautoapprovallist.html
+
+*Tags*: 
+
+* Elastic
+* Host
+* Windows
+* Threat Detection
+* Privilege Escalation
+
+*Version*: 8
+
+*Rule authors*: 
+
+* Elastic
+
+*Rule license*: Elastic License v2
+
+
+==== Investigation guide
+
+
+[source, markdown]
+----------------------------------
+## Setup
+
+If enabling an EQL rule on a non-elastic-agent index (such as beats) for versions <8.2, events will not define `event.ingested` and default fallback for EQL rules was not added until 8.2, so you will need to add a custom pipeline to populate `event.ingested` to @timestamp for this rule to work.
+
+----------------------------------
+
+==== Rule query
+
+
+[source, js]
+----------------------------------
+process where event.type in ("start", "process_started") and
+ process.executable : "C:\\*\\AppData\\*\\Temp\\IDC*.tmp\\*.exe" and
+ process.parent.name : "ieinstal.exe" and process.parent.args : "-Embedding"
+
+ /* uncomment once in winlogbeat */
+ /* and not (process.code_signature.subject_name == "Microsoft Corporation" and process.code_signature.trusted == true) */
+
+----------------------------------
+
+*Framework*: MITRE ATT&CK^TM^
+
+* Tactic:
+** Name: Privilege Escalation
+** ID: TA0004
+** Reference URL: https://attack.mitre.org/tactics/TA0004/
+* Technique:
+** Name: Abuse Elevation Control Mechanism
+** ID: T1548
+** Reference URL: https://attack.mitre.org/techniques/T1548/
+* Sub-technique:
+** Name: Bypass User Account Control
+** ID: T1548.002
+** Reference URL: https://attack.mitre.org/techniques/T1548/002/

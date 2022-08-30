@@ -1,0 +1,82 @@
+[[prebuilt-rule-7-16-4-suspicious-java-child-process]]
+=== Suspicious JAVA Child Process
+
+Identifies suspicious child processes of the Java interpreter process. This may indicate an attempt to execute a malicious JAR file or an exploitation attempt via a JAVA specific vulnerability.
+
+*Rule type*: eql
+
+*Rule indices*: 
+
+* auditbeat-*
+* logs-endpoint.events.*
+
+*Severity*: medium
+
+*Risk score*: 47
+
+*Runs every*: 5m
+
+*Searches indices from*: now-9m ({ref}/common-options.html#date-math[Date Math format], see also <<rule-schedule, `Additional look-back time`>>)
+
+*Maximum alerts per execution*: 100
+
+*References*: 
+
+* https://www.lunasec.io/docs/blog/log4j-zero-day/
+* https://github.com/christophetd/log4shell-vulnerable-app
+* https://www.blackhat.com/docs/us-16/materials/us-16-Munoz-A-Journey-From-JNDI-LDAP-Manipulation-To-RCE.pdf
+
+*Tags*: 
+
+* Elastic
+* Host
+* Linux
+* macOS
+* Threat Detection
+* Execution
+
+*Version*: 7
+
+*Rule authors*: 
+
+* Elastic
+
+*Rule license*: Elastic License v2
+
+
+==== Investigation guide
+
+
+[source, markdown]
+----------------------------------
+## Setup
+
+If enabling an EQL rule on a non-elastic-agent index (such as beats) for versions <8.2, events will not define `event.ingested` and default fallback for EQL rules was not added until 8.2, so you will need to add a custom pipeline to populate `event.ingested` to @timestamp for this rule to work.
+
+----------------------------------
+
+==== Rule query
+
+
+[source, js]
+----------------------------------
+process where event.type in ("start", "process_started") and
+  process.parent.name : "java" and
+  process.name : ("sh", "bash", "dash", "ksh", "tcsh", "zsh", "curl", "wget")
+
+----------------------------------
+
+*Framework*: MITRE ATT&CK^TM^
+
+* Tactic:
+** Name: Execution
+** ID: TA0002
+** Reference URL: https://attack.mitre.org/tactics/TA0002/
+* Technique:
+** Name: Command and Scripting Interpreter
+** ID: T1059
+** Reference URL: https://attack.mitre.org/techniques/T1059/
+* Sub-technique:
+** Name: JavaScript
+** ID: T1059.007
+** Reference URL: https://attack.mitre.org/techniques/T1059/007/
