@@ -22,7 +22,7 @@ If you are an Elastic employee and would like to contribute to Elastic Security 
 
 ### Preview documentation changes
 
-When you open a pull request, preview links are automatically added as a comment on the PR. Once the CI build is complete, the links will be live and you can follow them to preview your changes.
+When you open a pull request, preview links are automatically added as a comment in the PR. Once the CI check builds successfully, the links will be live and you can click them to preview your changes.
 
 You also might want to add targeted links to help reviewers find specific pages related to your PR. Preview URLs include the following pattern (replace `<YOUR_PR_NUMBER_HERE>` with the PR number):
 
