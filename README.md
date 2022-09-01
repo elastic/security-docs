@@ -3,8 +3,6 @@
 Home for Elastic Endpoint Security Documentation
 
 Please view this template for guidance on creating issues: https://github.com/elastic/security-docs/blob/master/.github/ISSUE_TEMPLATE/documentation-issue.md
-<<<<<<< HEAD
-=======
 
 ## Contributing to Elastic Security docs
 
@@ -29,4 +27,3 @@ You also might want to add targeted links to help reviewers find specific pages 
 ```
 https://security-docs_<YOUR_PR_NUMBER_HERE>.docs-preview.app.elstc.co/guide/en/security/master/
 ```
->>>>>>> 61be246 (Revise preview section in README.md (#2430))
