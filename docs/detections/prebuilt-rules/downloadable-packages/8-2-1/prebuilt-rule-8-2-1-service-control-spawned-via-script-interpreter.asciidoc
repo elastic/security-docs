@@ -1,0 +1,77 @@
+[[prebuilt-rule-8-2-1-service-control-spawned-via-script-interpreter]]
+=== Service Control Spawned via Script Interpreter
+
+Identifies Service Control (sc.exe) spawning from script interpreter processes to create, modify, or start services. This could be indicative of adversary lateral movement but will be noisy if commonly done by admins.
+
+*Rule type*: eql
+
+*Rule indices*: 
+
+* logs-endpoint.events.*
+* logs-system.*
+* winlogbeat-*
+
+*Severity*: low
+
+*Risk score*: 21
+
+*Runs every*: 5m
+
+*Searches indices from*: now-9m ({ref}/common-options.html#date-math[Date Math format], see also <<rule-schedule, `Additional look-back time`>>)
+
+*Maximum alerts per execution*: 100
+
+*References*: None
+
+*Tags*: 
+
+* Elastic
+* Host
+* Windows
+* Threat Detection
+* Lateral Movement
+
+*Version*: 13
+
+*Rule authors*: 
+
+* Elastic
+
+*Rule license*: Elastic License v2
+
+
+==== Investigation guide
+
+
+[source, markdown]
+----------------------------------
+
+----------------------------------
+
+==== Rule query
+
+
+[source, js]
+----------------------------------
+/* This rule is not compatible with Sysmon due to user.id issues */
+
+process where event.type == "start" and
+  (process.name : "sc.exe" or process.pe.original_file_name == "sc.exe") and
+  process.parent.name : ("cmd.exe", "wscript.exe", "rundll32.exe", "regsvr32.exe",
+                         "wmic.exe", "mshta.exe","powershell.exe", "pwsh.exe") and
+  process.args:("config", "create", "start", "delete", "stop", "pause") and
+  /* exclude SYSTEM SID - look for service creations by non-SYSTEM user */
+  not user.id : "S-1-5-18"
+
+----------------------------------
+
+*Framework*: MITRE ATT&CK^TM^
+
+* Tactic:
+** Name: Lateral Movement
+** ID: TA0008
+** Reference URL: https://attack.mitre.org/tactics/TA0008/
+* Technique:
+** Name: Remote Services
+** ID: T1021
+** Reference URL: https://attack.mitre.org/techniques/T1021/
