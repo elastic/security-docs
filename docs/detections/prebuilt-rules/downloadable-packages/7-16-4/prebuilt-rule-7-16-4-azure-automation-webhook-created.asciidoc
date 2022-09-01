@@ -1,0 +1,71 @@
+[[prebuilt-rule-7-16-4-azure-automation-webhook-created]]
+=== Azure Automation Webhook Created
+
+Identifies when an Azure Automation webhook is created. Azure Automation runbooks can be configured to execute via a webhook. A webhook uses a custom URL passed to Azure Automation along with a data payload specific to the runbook. An adversary may create a webhook in order to trigger a runbook that contains malicious code.
+
+*Rule type*: query
+
+*Rule indices*: 
+
+* filebeat-*
+* logs-azure*
+
+*Severity*: low
+
+*Risk score*: 21
+
+*Runs every*: 5m
+
+*Searches indices from*: now-25m ({ref}/common-options.html#date-math[Date Math format], see also <<rule-schedule, `Additional look-back time`>>)
+
+*Maximum alerts per execution*: 100
+
+*References*: 
+
+* https://powerzure.readthedocs.io/en/latest/Functions/operational.html#create-backdoor
+* https://github.com/hausec/PowerZure
+* https://posts.specterops.io/attacking-azure-azure-ad-and-introducing-powerzure-ca70b330511a
+* https://www.ciraltos.com/webhooks-and-azure-automation-runbooks/
+
+*Tags*: 
+
+* Elastic
+* Cloud
+* Azure
+* Continuous Monitoring
+* SecOps
+* Configuration Audit
+
+*Version*: 8
+
+*Rule authors*: 
+
+* Elastic
+
+*Rule license*: Elastic License v2
+
+
+==== Investigation guide
+
+
+[source, markdown]
+----------------------------------
+## Setup
+
+The Azure Fleet integration, Filebeat module, or similarly structured data is required to be compatible with this rule.
+----------------------------------
+
+==== Rule query
+
+
+[source, js]
+----------------------------------
+event.dataset:azure.activitylogs and
+  azure.activitylogs.operation_name:
+    (
+      "MICROSOFT.AUTOMATION/AUTOMATIONACCOUNTS/WEBHOOKS/ACTION" or
+      "MICROSOFT.AUTOMATION/AUTOMATIONACCOUNTS/WEBHOOKS/WRITE"
+    ) and
+  event.outcome:(Success or success)
+
+----------------------------------

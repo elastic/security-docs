@@ -1,0 +1,85 @@
+[[prebuilt-rule-7-16-4-connection-to-commonly-abused-free-ssl-certificate-providers]]
+=== Connection to Commonly Abused Free SSL Certificate Providers
+
+Identifies unusual processes connecting to domains using known free SSL certificates. Adversaries may employ a known encryption algorithm to conceal command and control traffic.
+
+*Rule type*: eql
+
+*Rule indices*: 
+
+* winlogbeat-*
+* logs-endpoint.events.*
+* logs-windows.*
+
+*Severity*: low
+
+*Risk score*: 21
+
+*Runs every*: 5m
+
+*Searches indices from*: now-9m ({ref}/common-options.html#date-math[Date Math format], see also <<rule-schedule, `Additional look-back time`>>)
+
+*Maximum alerts per execution*: 100
+
+*References*: None
+
+*Tags*: 
+
+* Elastic
+* Host
+* Windows
+* Threat Detection
+* Command and Control
+
+*Version*: 7
+
+*Rule authors*: 
+
+* Elastic
+
+*Rule license*: Elastic License v2
+
+
+==== Investigation guide
+
+
+[source, markdown]
+----------------------------------
+## Setup
+
+If enabling an EQL rule on a non-elastic-agent index (such as beats) for versions <8.2, events will not define `event.ingested` and default fallback for EQL rules was not added until 8.2, so you will need to add a custom pipeline to populate `event.ingested` to @timestamp for this rule to work.
+
+----------------------------------
+
+==== Rule query
+
+
+[source, js]
+----------------------------------
+network where network.protocol == "dns" and
+  /* Add new free SSL certificate provider domains here */
+  dns.question.name : ("*letsencrypt.org", "*.sslforfree.com", "*.zerossl.com", "*.freessl.org") and
+
+  /* Native Windows process paths that are unlikely to have network connections to domains secured using free SSL certificates */
+  process.executable : ("C:\\Windows\\System32\\*.exe",
+                        "C:\\Windows\\System\\*.exe",
+	                  "C:\\Windows\\SysWOW64\\*.exe",
+		          "C:\\Windows\\Microsoft.NET\\Framework*\\*.exe",
+		          "C:\\Windows\\explorer.exe",
+		          "C:\\Windows\\notepad.exe") and
+
+  /* Insert noisy false positives here */
+  not process.name : ("svchost.exe", "MicrosoftEdge*.exe", "msedge.exe")
+
+----------------------------------
+
+*Framework*: MITRE ATT&CK^TM^
+
+* Tactic:
+** Name: Command and Control
+** ID: TA0011
+** Reference URL: https://attack.mitre.org/tactics/TA0011/
+* Technique:
+** Name: Encrypted Channel
+** ID: T1573
+** Reference URL: https://attack.mitre.org/techniques/T1573/

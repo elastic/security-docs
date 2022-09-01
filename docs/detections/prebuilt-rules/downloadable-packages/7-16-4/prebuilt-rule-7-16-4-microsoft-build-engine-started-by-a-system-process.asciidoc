@@ -1,0 +1,82 @@
+[[prebuilt-rule-7-16-4-microsoft-build-engine-started-by-a-system-process]]
+=== Microsoft Build Engine Started by a System Process
+
+An instance of MSBuild, the Microsoft Build Engine, was started by Explorer or the WMI (Windows Management Instrumentation) subsystem. This behavior is unusual and is sometimes used by malicious payloads.
+
+*Rule type*: eql
+
+*Rule indices*: 
+
+* winlogbeat-*
+* logs-endpoint.events.*
+* logs-windows.*
+
+*Severity*: medium
+
+*Risk score*: 47
+
+*Runs every*: 5m
+
+*Searches indices from*: now-9m ({ref}/common-options.html#date-math[Date Math format], see also <<rule-schedule, `Additional look-back time`>>)
+
+*Maximum alerts per execution*: 100
+
+*References*: None
+
+*Tags*: 
+
+* Elastic
+* Host
+* Windows
+* Threat Detection
+* Defense Evasion
+
+*Version*: 13
+
+*Rule authors*: 
+
+* Elastic
+
+*Rule license*: Elastic License v2
+
+
+==== Investigation guide
+
+
+[source, markdown]
+----------------------------------
+## Setup
+
+If enabling an EQL rule on a non-elastic-agent index (such as beats) for versions <8.2, events will not define `event.ingested` and default fallback for EQL rules was not added until 8.2, so you will need to add a custom pipeline to populate `event.ingested` to @timestamp for this rule to work.
+
+----------------------------------
+
+==== Rule query
+
+
+[source, js]
+----------------------------------
+process where event.type in ("start", "process_started") and
+  process.name : "MSBuild.exe" and
+  process.parent.name : ("explorer.exe", "wmiprvse.exe")
+
+----------------------------------
+
+*Framework*: MITRE ATT&CK^TM^
+
+* Tactic:
+** Name: Defense Evasion
+** ID: TA0005
+** Reference URL: https://attack.mitre.org/tactics/TA0005/
+* Technique:
+** Name: Trusted Developer Utilities Proxy Execution
+** ID: T1127
+** Reference URL: https://attack.mitre.org/techniques/T1127/
+* Sub-technique:
+** Name: MSBuild
+** ID: T1127.001
+** Reference URL: https://attack.mitre.org/techniques/T1127/001/
+* Tactic:
+** Name: Execution
+** ID: TA0002
+** Reference URL: https://attack.mitre.org/tactics/TA0002/
