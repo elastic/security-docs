@@ -14,9 +14,6 @@ If you are an Elastic employee and would like to contribute to Elastic Security 
 3. Check out the `master` branch and fetch the latest changes. 
 4. Check out a new branch and make your changes. 
 5. Save your changes and open a pull request. 
-<<<<<<< HEAD
-6. Tag the the `@security-docs` team and any other appropriate reviewers. We'll take care of merging and backporting.  
-=======
 6. Add the `[@elastic/security-docs](https://github.com/orgs/elastic/teams/security-docs)` team and any other appropriate members as reviewers. 
 7. Add the appropriate release version label, backport version label if appropriate, and team label to the PR. 
 8. Once the docs team approves all changes, you can merge it. If a backport version label was added to a PR for stack versions 7.14.0 and newer, mergify will automatically open a backport PR. 
@@ -31,4 +28,3 @@ You also might want to add targeted links to help reviewers find specific pages 
 ```
 https://security-docs_<YOUR_PR_NUMBER_HERE>.docs-preview.app.elstc.co/guide/en/security/master/
 ```
->>>>>>> 61be246 (Revise preview section in README.md (#2430))
