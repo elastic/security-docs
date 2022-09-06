@@ -1,7 +1,6 @@
 [[admin-page-ov]]
-[role="xpack"]
 = Endpoints
-The Endpoints page allows admins to view and manage endpoints that are running the <<install-endpoint, {endpoint-cloud-sec} integration>>.
+The Endpoints page allows administrators to view and manage endpoints that are running the <<install-endpoint, {endpoint-cloud-sec} integration>>.
 
 [NOTE]
 =====
@@ -14,9 +13,14 @@ You must have the built-in `superuser` role to access this feature. For more inf
 [discrete]
 == Endpoints list
 
-The *Endpoints* list displays all hosts running {elastic-sec} and their relevant integration details. Endpoints appear in chronological order, with newly added endpoints at the top. The Endpoints list provides the following data:
+The *Endpoints* list displays all hosts running {elastic-sec} and their relevant integration details. Endpoints appear in chronological order, with newly added endpoints at the top.
 
-* *Endpoint*: The system hostname. Click the link to view host details in a flyout.
+[role="screenshot"]
+image::images/endpoints-pg.png[Endpoints page]
+
+The Endpoints list provides the following data:
+
+* *Endpoint*: The system hostname. Click the link to display <<endpoint-details,endpoint details>> in a flyout.
 
 * *Agent Status*: The current status of the {agent}, which is one of the following:
 
@@ -24,7 +28,7 @@ The *Endpoints* list displays all hosts running {elastic-sec} and their relevant
 
 ** `Unenrolling`: The agent is currently unenrolling and will soon be removed from Fleet. Afterward, the endpoint will also uninstall.
 
-** `Unhealthy`: The agent is online but requires attention from an admin because it's reporting a process being unhealthy. An unhealthy status could also mean an upgrade failed and was rolled back to its previous version.
+** `Unhealthy`: The agent is online but requires attention from an administrator because it's reporting a problem with a process. An unhealthy status could mean an upgrade failed and was rolled back to its previous version, or an integration might be missing prerequisites or additional configuration. Refer to <<ts-unhealthy-agent,Endpoint management troubleshooting>> for more on resolving an unhealthy agent status.
 
 ** `Updating`: The agent is online and is updating the agent policy or binary, or is enrolling or unenrolling.
 
@@ -32,43 +36,46 @@ The *Endpoints* list displays all hosts running {elastic-sec} and their relevant
 +
 NOTE: {agent} statuses in {fleet} correspond to the agent statuses in the {security-app}.
 
-* *Policy:* The name of the associated policy when the agent was installed. Click the link to view the Integration policy page.
+* *Policy:* The name of the associated integration policy when the agent was installed. Click the link to display the <<integration-policy-details,integration policy details>> page.
 
-* *Policy Status:* Lists whether the policy application was a success or failure. Click the link to view response details in a flyout.
+* *Policy status:* Indicates whether the integration policy was successfully applied. Click the link to view <<policy-status,policy status>> response details in a flyout.
 
-* *OS:* The associated operating system.
+* *OS*: The host's operating system.
 
-* *IP address:* All IP addresses associated with the hostname.
+* *IP address*: All IP addresses associated with the hostname.
 
-* *Version:* The {stack} version currently running.
+* *Version*: The {stack} version currently running.
 
-* *Last active:* A date and timestamp of the last time the agent was active.
+* *Last active*: A date and timestamp of the last time the {agent} was active.
 
-* *Actions:* Select the context menu (*...*) to do the following:
+* *Actions*: Select the context menu (*...*) to do the following:
 
-** *Isolate host:* <<host-isolation-ov, Isolate the host>> from your network, blocking communication until the host is released.
+** *Isolate host*: <<host-isolation-ov, Isolate the host>> from your network, blocking communication until the host is released.
 
-** *View host details:* View host details on the *Hosts* page in the {security-app}.
+** *Respond*: Open the <<response-actions,response console>> to perform response actions directly on the host.
 
-** *View agent policy:* View the policy in {fleet}.
+** *View actions log*: View a history of response actions performed on the host.
 
-** *View agent details:* View agent details and activity logs in {fleet}.
+** *View host details*: View host details on the *Hosts* page in the {security-app}.
 
-** *Reassign agent policy:* Change the {fleet-guide}/agent-policy.html#apply-a-policy[agent policy] assigned to the host in {fleet}.
+** *View agent policy*: View the agent policy in {fleet}.
 
+** *View agent details*: View {agent} details and activity logs in {fleet}.
 
-[role="screenshot"]
-image::images/endpoints-pg.png[Admin page]
+** *Reassign agent policy*: Change the {fleet-guide}/agent-policy.html#apply-a-policy[agent policy] assigned to the host in {fleet}.
 
-
-*Endpoint details*
+[discrete]
+[[endpoint-details]]
+=== Endpoint details
 
 Click any link in the *Endpoint* column to display host details in a flyout. You can also use the *Take Action* menu button to perform the same actions as those listed in the Actions context menu, such as isolating the host, viewing host details, and viewing or reassigning the agent policy. 
 
 [role="screenshot"]
-image::images/host-flyout.png[Admin page,width=75%]
+image::images/host-flyout.png[Endpoint details flyout,width=75%]
 
-*Integration policy details*
+[discrete]
+[[integration-policy-details]]
+=== Integration policy details
 
 To view the integration policy page, click the link in the *Policy* column. If you are viewing host details, you can also click the *Policy* link on the flyout.
 
@@ -79,35 +86,35 @@ NOTE: Users must have permission to read/write to {fleet} APIs to make changes t
 [role="screenshot"]
 image::images/integration-pg.png[Integration page]
 
-Users who have unique configuration and security requirements can select **Show Advanced Settings** to configure the policy to support advanced use cases. Hover over each setting to view its description.
+Users who have unique configuration and security requirements can select **Show advanced settings** to configure the policy to support advanced use cases. Hover over each setting to view its description.
 
 NOTE: Advanced settings are not recommended for most users.
 
 [role="screenshot"]
 image::images/advanced-settings.png[Integration page]
 
-*Policy status*
+[discrete]
+[[policy-status]]
+=== Policy status
 
-The status of the policy application appears in the *Status* column and displays one of the following possibilities:
+The status of the integration policy appears in the *Policy status* column and displays one of the following:
 
 * `Success`: The policy was applied successfully.
 
-* `Warning or Partially Applied`: The policy is pending application, or the policy was not applied in its entirety.
+* `Warning` or `Partially Applied`: The policy is pending application, or the policy was not applied in its entirety.
++
+NOTE: In some cases, actions taken on the endpoint may fail during policy application, but these cases are not critical failures - meaning there may be a failure, but the endpoints are still protected. In this case, the policy status will display as "Partially Applied."
 
-NOTE: In some cases, some actions taken on the endpoint may fail during the policy application but are not recognized as a critical failure - meaning there may be a failure, but the endpoints are still protected. In this case, the policy status will display as "Partially Applied."
+* `Failure`: The policy did not apply correctly, and endpoints are not protected.
 
-* `Failure`: The policy did not apply correctly. As such, endpoints are not protected.
+* `Unknown`: The user interface is waiting for the API response to return, or, in rare cases, the API returned an undefined error or value.
 
-* `Unknown`: The user interface is waiting for the API response to return, or, in rare cases, the API returns an undefined error or value.
+For more details on what's causing a policy status, click the link in the *Policy status* column and review the details flyout. Expand each section and subsection to display individual responses from the agent.
 
-To view policy status details, click the link and review the data in the flyout that displays.
+TIP: If you need help troubleshooting a configuration failure, refer to <<ts-unhealthy-agent,Endpoint management troubleshooting>> and {fleet-guide}/fleet-troubleshooting.html[{fleet} troubleshooting].
 
 [role="screenshot"]
-image::images/config-status.png[Config status details,width=75%]
-
-Expand each section and subsection to view individual responses from the agent.
-
-TIP: If you need help troubleshooting a configuration failure, see the {fleet-guide}/fleet-troubleshooting.html[{fleet} troubleshooting topic].
+image::images/config-status.png[Config status details,width=65%]
 
 [discrete]
 === Filter endpoints
