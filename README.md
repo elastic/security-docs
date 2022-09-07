@@ -22,10 +22,10 @@ If you are an Elastic employee and would like to contribute to Elastic Security 
 
 ### Preview documentation changes
 
-Once the PR is opened, and the build complete, the changes can be previewed via this URL (replace `<YOUR_PR_NUMBER_HERE>` with the PR number):
+When you open a pull request, preview links are automatically added as a comment in the PR. Once the CI check builds successfully, the links will be live and you can click them to preview your changes.
+
+You also might want to add targeted links to help reviewers find specific pages related to your PR. Preview URLs include the following pattern (replace `<YOUR_PR_NUMBER_HERE>` with the PR number):
 
 ```
-https://security-docs_<YOUR_PR_NUMBER_HERE>.docs-preview.app.elstc.co/guide/en/security/master
+https://security-docs_<YOUR_PR_NUMBER_HERE>.docs-preview.app.elstc.co/guide/en/security/master/
 ```
-
-
