@@ -33,11 +33,11 @@ Identifies a suspicious parent child process relationship with cmd.exe descendin
 * Threat Detection
 * Execution
 
-*Version*: 14 (<<svchost-spawning-cmd-history, version history>>)
+*Version*: 100 (<<svchost-spawning-cmd-history, version history>>)
 
 *Added ({stack} release)*: 7.6.0
 
-*Last modified ({stack} release)*: 8.4.0
+*Last modified ({stack} release)*: 8.5.0
 
 *Rule authors*: Elastic
 
@@ -106,13 +106,20 @@ mean time to respond (MTTR).
 [source,js]
 ----------------------------------
 process where event.type == "start" and process.parent.name :
-"svchost.exe" and process.name : "cmd.exe" and not
-(process.pe.original_file_name : "cmd.exe" and process.args : (
-"??:\\Program Files\\Npcap\\CheckStatus.bat?", "?:\\Program
+"svchost.exe" and process.name : "cmd.exe" and not process.args :
+("??:\\Program Files\\Npcap\\CheckStatus.bat?", "?:\\Program
 Files\\Npcap\\CheckStatus.bat", "\\system32\\cleanmgr.exe",
 "?:\\Windows\\system32\\silcollector.cmd",
 "\\system32\\AppHostRegistrationVerifier.exe",
-"\\system32\\ServerManagerLauncher.exe"))
+"\\system32\\ServerManagerLauncher.exe", "dir",
+"?:\\Program Files\\*", "?:\\Program Files (x86)\\*",
+"?:\\Windows\\LSDeployment\\Lspush.exe",
+"(x86)\\FMAuditOnsite\\watchdog.bat",
+"?:\\ProgramData\\chocolatey\\bin\\choco-upgrade-all.bat",
+"Files\\Npcap\\CheckStatus.bat") and /* very noisy pattern - bat
+or cmd script executed via scheduled tasks */ not
+(process.parent.args : "netsvcs" and process.args : ("?:\\*.bat",
+"?:\\*.cmd"))
 ----------------------------------
 
 ==== Threat mapping
@@ -130,6 +137,21 @@ Files\\Npcap\\CheckStatus.bat", "\\system32\\cleanmgr.exe",
 
 [[svchost-spawning-cmd-history]]
 ==== Rule version history
+
+Version 100 (8.5.0 release)::
+* Updated query, changed from:
++
+[source, js]
+----------------------------------
+process where event.type == "start" and process.parent.name :
+"svchost.exe" and process.name : "cmd.exe" and not
+(process.pe.original_file_name : "cmd.exe" and process.args : (
+"??:\\Program Files\\Npcap\\CheckStatus.bat?", "?:\\Program
+Files\\Npcap\\CheckStatus.bat", "\\system32\\cleanmgr.exe",
+"?:\\Windows\\system32\\silcollector.cmd",
+"\\system32\\AppHostRegistrationVerifier.exe",
+"\\system32\\ServerManagerLauncher.exe"))
+----------------------------------
 
 Version 14 (8.4.0 release)::
 * Updated query, changed from:

@@ -29,11 +29,11 @@ Identifies a suspicious file that was written by a PDF reader application and su
 * Threat Detection
 * Execution
 
-*Version*: 6 (<<execution-of-file-written-or-modified-by-pdf-reader-history, version history>>)
+*Version*: 101 (<<execution-of-file-written-or-modified-by-pdf-reader-history, version history>>)
 
 *Added ({stack} release)*: 7.10.0
 
-*Last modified ({stack} release)*: 8.4.0
+*Last modified ({stack} release)*: 8.5.0
 
 *Rule authors*: Elastic
 
@@ -48,7 +48,7 @@ Identifies a suspicious file that was written by a PDF reader application and su
 
 ### Investigating Execution of File Written or Modified by PDF Reader
 
-PDF is a common file type used in corporate environments and most machines have software to 
+PDF is a common file type used in corporate environments and most machines have software to
 handle these files. This creates a vector where attackers can exploit the engines and technology behind this class of
 software for initial access or privilege escalation.
 
@@ -93,7 +93,7 @@ systems, and web services.
 - Remove and block malicious artifacts identified during triage.
 - Run a full scan using the antimalware tool in place. This scan can reveal additional artifacts left in the system,
 persistence mechanisms, and malware components.
-- Determine the initial vector abused by the attacker and take action to prevent reinfection through the same vector. 
+- Determine the initial vector abused by the attacker and take action to prevent reinfection through the same vector.
   - If the malicious file was delivered via phishing:
     - Block the email sender from sending future emails.
     - Block the malicious web pages.
@@ -118,8 +118,8 @@ not (file.name : "FoxitPhantomPDF.exe" or file.name :
 "FoxitPhantomPDFUpdater.exe" or file.name :
 "FoxitReader.exe" or file.name : "FoxitReaderUpdater.exe" or
 file.name : "AcroRd32.exe" or file.name : "rdrcef.exe") ]
-by host.id, file.path [process where event.type in ("start",
-"process_started")] by host.id, process.executable
+by host.id, file.path [process where event.type == "start"] by
+host.id, process.executable
 ----------------------------------
 
 ==== Threat mapping
@@ -143,6 +143,23 @@ by host.id, file.path [process where event.type in ("start",
 
 [[execution-of-file-written-or-modified-by-pdf-reader-history]]
 ==== Rule version history
+
+Version 101 (8.5.0 release)::
+* Updated query, changed from:
++
+[source, js]
+----------------------------------
+sequence with maxspan=2h [file where event.type != "deletion" and
+file.extension : "exe" and (process.name : "AcroRd32.exe" or
+process.name : "rdrcef.exe" or process.name :
+"FoxitPhantomPDF.exe" or process.name : "FoxitReader.exe") and
+not (file.name : "FoxitPhantomPDF.exe" or file.name :
+"FoxitPhantomPDFUpdater.exe" or file.name :
+"FoxitReader.exe" or file.name : "FoxitReaderUpdater.exe" or
+file.name : "AcroRd32.exe" or file.name : "rdrcef.exe") ]
+by host.id, file.path [process where event.type in ("start",
+"process_started")] by host.id, process.executable
+----------------------------------
 
 Version 6 (8.4.0 release)::
 * Formatting only

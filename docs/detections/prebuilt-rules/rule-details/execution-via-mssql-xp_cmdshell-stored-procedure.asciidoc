@@ -29,11 +29,11 @@ Identifies execution via MSSQL xp_cmdshell stored procedure. Malicious users may
 * Threat Detection
 * Execution
 
-*Version*: 7 (<<execution-via-mssql-xp_cmdshell-stored-procedure-history, version history>>)
+*Version*: 101 (<<execution-via-mssql-xp_cmdshell-stored-procedure-history, version history>>)
 
 *Added ({stack} release)*: 7.10.0
 
-*Last modified ({stack} release)*: 8.4.0
+*Last modified ({stack} release)*: 8.5.0
 
 *Rule authors*: Elastic
 
@@ -53,8 +53,12 @@ Identifies execution via MSSQL xp_cmdshell stored procedure. Malicious users may
 
 [source,js]
 ----------------------------------
-process where event.type in ("start", "process_started") and
-process.name : "cmd.exe" and process.parent.name : "sqlservr.exe"
+process where event.type == "start" and process.name : "cmd.exe" and
+process.parent.name : "sqlservr.exe" and not process.args :
+("\\\\*", "diskfree", "rmdir", "mkdir", "dir", "del", "rename", "bcp",
+"*XMLNAMESPACES*",
+"?:\\MSSQL\\Backup\\Jobs\\sql_agent_backup_job.ps1",
+"K:\\MSSQL\\Backup\\msdb", "K:\\MSSQL\\Backup\\Logins")
 ----------------------------------
 
 ==== Threat mapping
@@ -72,6 +76,15 @@ process.name : "cmd.exe" and process.parent.name : "sqlservr.exe"
 
 [[execution-via-mssql-xp_cmdshell-stored-procedure-history]]
 ==== Rule version history
+
+Version 101 (8.5.0 release)::
+* Updated query, changed from:
++
+[source, js]
+----------------------------------
+process where event.type in ("start", "process_started") and
+process.name : "cmd.exe" and process.parent.name : "sqlservr.exe"
+----------------------------------
 
 Version 7 (8.4.0 release)::
 * Formatting only
