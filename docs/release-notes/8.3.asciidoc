@@ -1,0 +1,234 @@
+[[release-notes-header-8.3.0]]
+== 8.3
+
+[discrete]
+[[release-notes-8.3.3]]
+=== 8.3.3
+
+[discrete]
+[[known-issue-8.3.3]]
+==== Known issues
+* An {endpoint-cloud-sec} bug on macOS and Linux can cause CPU spikes if malware protection is enabled on an {endpoint-cloud-sec} integration policy. When this happens, {endpoint-cloud-sec} may experience system coverage gaps. To avoid this, we recommend using {agent} version 8.3.2 or earlier. If you are using {agent} version 8.3.3 and have encountered this issue, you can temporarily resolve it by rebooting your computer and disabling <<malware-protection, malware protection>> on your {endpoint-cloud-sec} integration policy (https://github.com/elastic/endpoint/issues/22[#22]).
+* A new Lucene 9 validation change may cause event correlation rule (EQL) errors whenever rule queries contain regular expressions using wildcard fields and predefined character classes (for example, `\w`, `\s`, `\d`).
+
+[discrete]
+[[bug-fixes-8.3.3]]
+==== Bug fixes and enhancements
+* Fixes a bug that prevented the *Create field* button from appearing in the Fields browser when you accessed it from a Timeline created using the Alerts page's *Open in timeline* button ({pull}135842[#135842]).
+* Removes the unsupported `matches` operator from the *Add Rule Exception* flyout ({pull}136340[#136340]).
+* Prevents rule execution log events from being wrongly ordered when the maximum number of events are reached and events are filtered by status ({pull}131675[#131675]).
+
+[discrete]
+[[release-notes-8.3.2]]
+=== 8.3.2
+
+[discrete]
+[[known-issue-8.3.2]]
+==== Known issue
+* The `matches` operator in the *Add Rule Exception* flyout does not work because wildcard matches are not supported for rule exceptions. Using the `matches` operator will cause rule exceptions and their associated rules to fail. You can restore failed rules by deleting unsupported exceptions and refreshing the rules ({issue}136340[#136340]).
+* A new Lucene 9 validation change may cause event correlation (EQL) rule errors whenever rule queries contain regular expressions using wildcard fields and predefined character classes (for example, `\w`, `\s`, `\d`).
+
+[discrete]
+[[bug-fixes-8.3.2]]
+==== Bug fixes and enhancements
+* Allows indices created from value lists to be used with indicator match rules ({pull}135128[#135128]).
+* Fixes an issue where detection rules that were created or edited in 8.2.x failed to execute after you upgraded to {stack} 8.3.0 or 8.3.1 ({pull}135663[#135663]).
+
+====
+
+[IMPORTANT]
+
+If you already upgraded to 8.3.0 or 8.3.1 and noticed that rules created or updated in 8.2.x were failing with an error similar to the message below, complete the appropriate steps to restore your rules after you upgrade to 8.3.2. Refer to the <<known-issue-8.3.1, known issue section>> of the 8.3.1 release notes for more information.
+
+[source,text]
+----
+<rule-type>:<UUID>: execution failed - security_exception: [security_exception] Reason: missing authentication credentials for REST request [/_security/user/_has_privileges], caused by: ""
+----
+
+====
+
+[discrete]
+[[release-notes-8.3.1]]
+=== 8.3.1
+
+[discrete]
+[[known-issue-8.3.1]]
+==== Known issue
+
+*Detection rules stop running after upgrade*
+
+8.3.1 has a bug where detection rules that were created or edited in 8.2.x will stop running after you upgrade. Because of this, we advise against upgrading from 8.2.x to 8.3.1.
+
+If you already upgraded from 8.2.x to 8.3.1, detection rules affected by the bug will have stopped running with an error that is similar to the following example:
+
+[source,text]
+----
+<rule-type>:<UUID>: execution failed - security_exception: [security_exception] Reason: missing authentication credentials for REST request [/_security/user/_has_privileges], caused by: ""
+----
+
+To restore the affected rules and reset their statuses, complete the following.
+
+IMPORTANT: To restore custom and prebuilt rules, you need privileges to <<enable-detections-ui, manage rules>>.
+
+
+*Restore affected custom and prebuilt rules*
+
+. Go to the Rules page (*Detect -> Rules*).
+. Click the *Rows per page* menu under the rules table and select *100 rows*.
+. In the rules table, click the *Rule* column to sort by rule name.
+. Identify affected rules. They will have a `Failed` status in the *Last response* column.
+. Select the affected rules, then click *Bulk actions -> Disable*.
+. Select the same rules, then click *Bulk actions -> Enable*.
++
+NOTE: After you've re-enabled the affected rules, the rules' *Last Response* values will change to `Pending` and then update to `Active` or `OK`.
++
+. Go to the next page of results in the rules table and repeat steps 1 through 6.
+
+*Restore affected custom rules only (optional)*
+
+NOTE: This is an alternative option for users who have only enabled custom rules and/or duplicated and enabled prebuilt rules.
+
+. Go to the *Rules* page (*Detect -> Rules*) and click *Elastic rules*.
+. Switch on the *Technical preview* toggle above the table.
+. In the rules table, click *Custom rules*.
+. Sort the rules table by the *Last Response* column to show the latest rule statuses.
+. Select rules with the `Failed` status, then click *Bulk actions -> Tags -> Add Tags*.
+. Add a new tag, for example `rules_to_fix`. This will generate new API keys and resolve the bug.
++
+On the next scheduled rule execution, the *Last Response* value for the rule will change to `Pending`, and then to `Active` or `OK`.
+
+*The `matches` operator is not supported for rule exceptions*
+
+The `matches` operator in the *Add Rule Exception* flyout does not work because wildcard matches are not supported for rule exceptions. Using the `matches` operator will cause rule exceptions and their associated rules to fail. You can restore failed rules by deleting the unsupported exceptions and refreshing the rules ({issue}136340[#136340]).
+
+*Lucene 9 validation change might affect event correlation rules*
+
+A new Lucene 9 validation change may cause event correlation rule (EQL) errors whenever rule queries contain regular expressions using wildcard fields and predefined character classes (for example, `\w`, `\s`, `\d`).
+
+[discrete]
+[[bug-fixes-8.3.1]]
+==== Bug fixes and enhancements
+* Fixes a bug that prevented the Cases widget in the Detection & Response dashboard from updating ({pull}135128[#135128]).
+
+[discrete]
+[[release-notes-8.3.0]]
+=== 8.3.0
+
+[discrete]
+[[known-issue-8.3.0]]
+==== Known issue
+
+*Detection rules stop running after upgrade*
+
+8.3.0 has a bug where detection rules that were created or edited in 8.2.x will stop running after you upgrade. Because of this, we advise against upgrading from 8.2.x to 8.3.0.
+
+If you already upgraded from 8.2.x to 8.3.0, detection rules affected by the bug will have stopped running with an error that is similar to the following example:
+
+[source,text]
+----
+<rule-type>:<UUID>: execution failed - security_exception: [security_exception] Reason: missing authentication credentials for REST request [/_security/user/_has_privileges], caused by: ""
+----
+
+To restore the affected rules and reset their statuses, complete the following.
+
+IMPORTANT: To restore custom and prebuilt rules, you need privileges to <<enable-detections-ui, manage rules>>.
+
+*Restore affected custom and prebuilt rules*
+
+. Go to the Rules page (*Detect -> Rules*).
+. Click the *Rows per page* menu under the rules table and select *100 rows*.
+. In the rules table, click the *Rule* column to sort by rule name.
+. Identify affected rules. They will have a `Failed` status in the *Last response* column.
+. Select the affected rules, then click *Bulk actions -> Disable*.
+. Select the same rules, then click *Bulk actions -> Enable*.
++
+NOTE: After you've re-enabled the affected rules, the rules' *Last Response* values will change to `Pending` and then update to `Active` or `OK`.
+
+. Go to the next page of results in the rules table and repeat steps 1 through 6.
+
+*Restore affected custom rules only (optional)*
+
+NOTE: This is an alternative option for users who have only enabled custom rules and/or duplicated and enabled prebuilt rules.
+
+. Go to the *Rules* page (*Detect -> Rules*) and click *Elastic rules*.
+. Switch on the *Technical preview* toggle above the table.
+. In the rules table, click *Custom rules*.
+. Sort the rules table by the *Last Response* column to show the latest rule statuses.
+. Select rules with the `Failed` status, then click *Bulk actions -> Tags -> Add Tags*.
+. Add a new tag, for example `rules_to_fix`. This will generate new API keys and resolve the bug.
+
+On the next scheduled rule execution, the *Last Response* value for the rule will change to `Pending`, and then to `Active` or `OK`.
+
+*The `matches` operator is not supported for rule exceptions*
+
+The `matches` operator in the *Add Rule Exception* flyout does not work because wildcard matches are not supported for rule exceptions. Using the `matches` operator will cause rule exceptions and their associated rules to fail. You can restore failed rules by deleting the unsupported exceptions and refreshing the rules ({issue}136340[#136340]).
+
+*Lucene 9 validation change might affect event correlation rules*
+
+A new Lucene 9 validation change may cause event correlation rule (EQL) errors whenever rule queries contain regular expressions using wildcard fields and predefined character classes (for example, `\w`, `\s`, `\d`).
+
+[discrete]
+[[breaking-changes-8.3.0]]
+==== Breaking changes
+// tag::breaking-changes[]
+// NOTE: The breaking-changes tagged regions are reused in the Elastic Installation and Upgrade Guide. The pull attribute is defined within this snippet so it properly resolves in the output.
+:pull: https://github.com/elastic/kibana/pull/
+* Updates Elastic prebuilt {ml} detection rules for some Windows and Linux anomalies with new `v3` {ml} jobs. A confirmation modal is displayed when updating rules if `v1`/`v2` jobs are installed. If you're using 8.2 or earlier versions of {beats} or {agent}, you may need to duplicate prebuilt rules or create new custom rules _before_ you update the prebuilt rules. Once you update the prebuilt rules, they will only use `v3` {ml} jobs. Refer to {security-guide}/alerts-ui-monitor.html#ml-job-compatibility[Troubleshoot missing alerts for machine learning jobs] for more information ({pull}128334[#128334]).
+// end::breaking-changes[]
+
+[discrete]
+[[features-8.3.0]]
+==== Features
+* Renames Endpoint Security integration to "{endpoint-cloud-sec}" ({pull}132752[#132752]).
+* Adds a new {security-guide}/detection-response-dashboard.html[Detection & Response dashboard], which provides focused visibility into the day-to-day operations of your security environment ({pull}130670[#130670], {pull}128335[#128335], {pull}129021[#129021], {pull}128087[#128087], {pull}131828[#131828], {pull}131029[#131029]).
+* Introduces a new optional design for the main navigation menu ({pull}132210[#132210], {pull}131437[#131437], {pull}133719[#133719]).
+* Adds a *User risk* tab to the User details flyout ({pull}130256[#130256]).
+* Adds an *Authentications* tab to the User details flyout ({pull}129456[#129456]).
+* Adds the ability to investigate Osquery results in Timeline ({pull}128596[#128596]).
+* Allows multiple alerts to be added to a case ({pull}130958[#130958]).
+* Adds the option to delete case comments from a case ({pull}130254[#130254]).
+* Provides an option to select a severity level for a case ({pull}131626[#131626]).
+* Adds the experimental *Alerts* tab to cases, which allows users to inspect attached alerts ({pull}131883[#131883]).
+* Adds the *Average time to close* metric to the Cases page ({pull}131909[#131909]).
+* Adds new fields to prebuilt detection rules' schemas: `related_integrations`, `required_fields`, and `setup` ({pull}132409[#132409]).
+* Adds the *Related integrations*, *Required fields*, and *Setup guide* sections to the rule details page to help users identify and meet a rule's prerequisites. Also adds the related integrations badge to the Rules table ({pull}131475[#131475]). Content for these new sections is delivered in a prebuilt rules update, independent of {stack} release versioning.
+
+[discrete]
+[[bug-fixes-8.3.0]]
+==== Bug fixes and enhancements
+* Separates array values with commas in the Alerts table ({pull}133297[#133297]).
+* Exposes the EQL search settings `event_category_field`, `tiebreaker_field`, and `timestamp_field` through the rules API and UI for event correlation rules ({pull}132247[#132247]).
+* Adds the *Session ID* field to the *Highlighted fields* section of the Alert details flyout ({pull}132219[#132219]).
+* Adds Dashboards and Threat Hunting Landing pages ({pull}130905[#130905]).
+* Allows highlighted fields to be investigated in Timeline ({pull}131255[#131255]).
+* Adds the *Run Osquery* option to the *More actions* menu (*...*) in the Alerts table ({pull}131790[#131790]).
+* Improves the performance of these actions on the bulk rule actions endpoint ({pull}130924[#130924]).
+** `add_tags`
+** `delete_tags`
+** `set_tags`
+** `add_index_patterns`
+** `delete_index_patterns`
+** `set_index_patterns`
+** `set_timeline`
+* Fixes a bug that caused the rule details page to crash when users opened a deleted or non-existent rule ({pull}133867[#133867]).
+* Allows threshold alerts to be investigated in Timeline if filters are not provided ({pull}133733[#133733]).
+* Prevents events from being added to cases from Timeline ({pull}133410[#133410]).
+* Fixes a bug that prevented the Users and Hosts pages from resetting after being sorted ({pull}133111[#133111]).
+* Removes the filter and investigate in Timeline options from the {agent} status in highlighted fields ({pull}132829[#132829], {pull}132586[#132586]).
+* Improves the copy of Timeline tooltips ({pull}132756[#132756]).
+* Fixes a validation bug that occurred when users were building a rule exception and changed the exception statement’s operator ({pull}131989[#131989]).
+* Adds a checkmark to the pagination selection on the *Exceptions lists* page ({pull}131979[#131979]).
+* Re-adds the success message that displays when users export an exceptions list ({pull}131952[#131952]).
+* Updates import toast logic to accurately report the total number of failures ({pull}131873[#131873]).
+* Ensures an error is not generated when the `agent.version` provided by an alert is in an unexpected format ({pull}131272[#131272]).
+* Improves error checks for threshold rules ({pull}131088[#131088]).
+* Expands support for migrating legacy rule actions ({pull}130511[#130511]).
+* Fixes a bug that caused the *Add Rule Exception* flyout to unexpectedly close when users create the first exception for the rule from an alert ({pull}130187[#130187]).
+* Corrects Rule name sorting so detection rules are ordered alphabetically, regardless of their casing ({pull}130105[#130105]).
+* Improves the *Reporter* column in the Cases table ({pull}132200[#132200]).
+* Adds the option to create a new case to the Select case pane ({pull}128882[#128882]).
+* Allows {kibana-ref}/pre-configured-connectors.html[preconfigured connectors] to be used with cases ({pull}130372[#130372]).
+* Inserts the deprecated icon next to deprecated preconfigured connectors ({pull}132237[#132237]).
+* Updates the Case table so that all tags assigned to the case are displayed when users go to the case and hover over the *Tags* column ({pull}132023[#132023]).
+* Adds Oauth support to the {sn} ITSM, SecOps, and ITOM connectors ({pull}131248[#131248]).
+* Adds a setting to specify a list of allowed email domains, which can be used with the email connector ({pull}129001[#129001]).
