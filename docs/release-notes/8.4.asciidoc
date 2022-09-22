@@ -9,6 +9,33 @@
 [[known-issue-8.4.2]]
 ==== Known issues
 * A new Lucene 9 validation change may cause event correlation rule (EQL) errors whenever rule queries contain regular expressions using wildcard fields and predefined character classes (for example, `\w`, `\s`, `\d`).
+* In some situations, {elastic-endpoint} might change to a non-running state on Windows endpoints and then can't be restarted. This failure might be also missed by {agent}, which would automatically re-install {elastic-endpoint}. To determine whether {elastic-endpoint} has stopped running, run the following PowerShell command as an administrator:
+
++
+[source,console]
+--------------------------------------------------
+PS C:\Users\user> Get-WinEvent Microsoft-Windows-CodeIntegrity/Operational | where Id -eq 3004 | where Message -match "elastic-endpoint.exe"
+
+
+   ProviderName: Microsoft-Windows-CodeIntegrity
+
+TimeCreated                      Id LevelDisplayName Message
+-----------                      -- ---------------- -------
+9/22/2022 10:47:35 AM          3004 Error            Windows is unable to verify the image integrity of the file \Device\HarddiskVolume3\Program Files\Elastic\Endpoint\elastic-endpo...
+9/19/2022 2:10:14 PM           3004 Error            Windows is unable to verify the image integrity of the file \Device\HarddiskVolume3\Program Files\Elastic\Endpoint\elastic-endpo...
+--------------------------------------------------
+
++
+
+If {elastic-endpoint} is not running on your Windows endpoint, there are several workarounds you can take:
+
+** **Manually invoke {elastic-endpoint} uninstall command**: When you manually invoke {elastic-endpoint}'s' uninstall command on the host, this clears out the invalid {elastic-endpoint} install so that {elastic-endpoint} can be installed again. Once the uninstallation has finished,  restart {agent} so it can with the command: `c:\Program Files\Elastic\Agent\elastic-agent.exe restart`. {agent} will then automatically reinstall {elastic-endpoint}.
+** **Uninstall the {endpoint-cloud-sec} integration from affected hosts, then re-install it**: Uninstalling and re-installing the {endpoint-cloud-sec} integration will also trigger an uninstall and re-install of {elastic-endpoint} on affected hosts.
++
+NOTE: Uninstalling the {endpoint-cloud-sec} integration may put {agent}  into an `Unhealthy` state. This is temporary and the state will change to `Healthy` once the integration is re-installed.
+
+** **Downgrade {agent} and {elastic-endpoint} versions**: Downgrading to unaffected {agent} and {elastic-endpoint} versions resolves this issue.
+
 
 [discrete]
 [[bug-fixes-8.4.2]]
@@ -28,6 +55,7 @@
 [[known-issue-8.4.1]]
 ==== Known issues
 * A new Lucene 9 validation change may cause event correlation (EQL) rule errors whenever rule queries contain regular expressions using wildcard fields and predefined character classes (for example, `\w`, `\s`, `\d`).
+* TBD
 
 [discrete]
 [[bug-fixes-8.4.1]]
@@ -44,6 +72,7 @@
 * If additional look-back time is set for the advanced query rule preview, alerts from source documents that are outside the preview time frame may not appear in the preview ({pull}137422[#137422]).
 * A new Lucene 9 validation change may cause event correlation (EQL) rule errors whenever rule queries contain regular expressions using wildcard fields and predefined character classes (for example, `\w`, `\s`, `\d`).
 * The Rules page incorrectly displays a notification that an update for prebuilt rules is available even if the rules have been fully updated. Currently, there is no way to remove or hide the notification ({pull}139095[#139095]).
+* TBD
 
 [discrete]
 [[breaking-changes-8.4.0]]
