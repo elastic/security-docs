@@ -306,6 +306,36 @@ IMPORTANT: Dry run mode is not supported for the `export` bulk action. A `400` e
 | `delete_index_patterns` | String[] | Delete rules' index patterns
 | `set_index_patterns` | String[] | Overwrite rules' index patterns
 | `set_timeline` | { `timeline_id`: String; `timeline_title`: String } | Overwrite rules' Timeline template
+| `set_schedule` 
+
+| { `interval`: String; `lookback`: String }
+| Overwrite rules' schedule
+
+
+Both `interval` and `lookback` have a format of {integer}{time_unit}, with the accepted time units being `"s"` for
+seconds, `"m"` for minutes and `"h"` for hours. The integer must be positive and larger than 0.
+
+Examples: `"45s"`, `"30m"`, `"6h"` 
+
+| `add_rule_actions` | {
+        `actions`: <<actions-object-schema, actions[]>> ,
+        `throttle`: String
+      } | Add actions to rules
+| `set_rule_actions` | {
+        `actions`: <<actions-object-schema, actions[]>> ,
+        `throttle`: String
+      } | Overwrite existing actions to rules
+
+`throttle` accepts the following values:
+
+- `"rule"`: Execute actions on each rule execution
+
+- `"1h"`: Execute actions once per hour
+
+- `"1d"`: Execute actions once per day
+
+- `"7d"`: Execute actions once per week
+
 |==============================================
 
 <<bulk-edit-object-schema, Actions>> are shown in order of oldest to newest in the `edit` array payload's property.
@@ -688,3 +718,56 @@ Notice that there are no arrays in `attributes.results`. In dry run mode, rule u
     }
 }
 --------------------------------------------------
+
+
+[[actions-object-schema-update]]
+===== `actions` schema
+
+These fields are required when calling `PUT` to modify the `actions` object:
+
+[width="100%",options="header"]
+|==============================================
+|Name |Type |Description
+
+|action_type_id |String a|The action type used for sending notifications, can
+be:
+
+* `.slack`
+* `.email`
+* `.pagerduty`
+* `.webhook`
+
+|group |String |Optionally groups actions by use cases. Use `default` for alert
+notifications.
+
+|id |String |The connector ID.
+
+|params |Object a|Object containing the allowed connector fields, which varies according to the connector type:
+
+* For Slack:
+** `message` (string, required): The notification message.
+* For email:
+** `to`, `cc`, `bcc` (string): Email addresses to which the notifications are
+sent. At least one field must have a value.
+** `subject` (string, optional): Email subject line.
+** `message` (string, required): Email body text.
+* For Webhook:
+** `body` (string, required): JSON payload.
+* For PagerDuty:
+** `severity` (string, required): Severity of on the alert notification, can
+be: `Critical`, `Error`, `Warning` or `Info`.
+** `eventAction` (string, required):  Event https://v2.developer.pagerduty.com/docs/events-api-v2#event-action[action type], which can be `trigger`,
+`resolve`, or `acknowledge`.
+** `dedupKey` (string, optional): Groups alert notifications with the same
+PagerDuty alert.
+** `timestamp` (DateTime, optional): https://v2.developer.pagerduty.com/v2/docs/types#datetime[ISO-8601 format timestamp].
+** `component` (string, optional): Source machine component responsible for the
+event, for example `security-solution`.
+** `group` (string, optional): Enables logical grouping of service components.
+** `source` (string, optional): The affected system. Defaults to the {kib}
+saved object ID of the action.
+** `summary` (string, options): Summary of the event. Defaults to
+`No summary provided`. Maximum length is 1024 characters.
+** `class` (string, optional): Value indicating the class/type of the event.
+
+|==============================================
