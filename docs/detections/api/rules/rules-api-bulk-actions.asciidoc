@@ -306,9 +306,101 @@ IMPORTANT: Dry run mode is not supported for the `export` bulk action. A `400` e
 | `delete_index_patterns` | String[] | Delete rules' index patterns
 | `set_index_patterns` | String[] | Overwrite rules' index patterns
 | `set_timeline` | { `timeline_id`: String; `timeline_title`: String } | Overwrite rules' Timeline template
+| `set_schedule` 
+
+| { `interval`: String; `lookback`: String }
+| Overwrite rules' schedule
+
+`interval`: Frequency of rule execution. For example, `"1h"` means the rule runs every hour. 
+
+`lookback`: Additional look-back time that the rule analyzes. For example, `"10m"` means the rule analyzes the last 10 minutes of data in addition to the frequency interval.
+
+If `interval` is set to `"10m"` and `lookback` to `"1m"`, then the rule runs every 5 minutes but analyzes the documents added to indices during the last 11 minutes.
+
+Both `interval` and `lookback` have a format of `"{integer}{time_unit}"`, where accepted time units are `s` for seconds, `m` for minutes, and `h` for hours. The integer must be positive and larger than 0. Examples: `"45s"`, `"30m"`, `"6h"` 
+
+| `add_rule_actions` | {
+        `actions`: <<actions-object-schema-bulk, actions[]>> ,
+        `throttle`: <<throttle-schema-bulk, throttle>> 
+      } | Add actions to rules
+| `set_rule_actions` | {
+        `actions`: <<actions-object-schema-bulk, actions[]>> ,
+        `throttle`: <<throttle-schema-bulk, throttle>> 
+      } | Overwrite rules' existing actions
+
+
 |==============================================
 
 <<bulk-edit-object-schema, Actions>> are shown in order of oldest to newest in the `edit` array payload's property.
+
+
+[discrete]
+[[actions-object-schema-bulk]]
+===== `actions` schema
+
+These fields are required when calling `PUT` to modify the `actions` object:
+
+[width="100%",options="header"]
+|==============================================
+|Name |Type |Description
+
+|action_type_id |String a|The action type used for sending notifications, can
+be:
+
+* `.slack`
+* `.email`
+* `.pagerduty`
+* `.webhook`
+
+|group |String |Optionally groups actions by use cases. Use `default` for alert
+notifications.
+
+|id |String |The connector ID.
+
+|params |Object a|Object containing the allowed connector fields, which varies according to the connector type:
+
+* For Slack:
+** `message` (string, required): The notification message.
+* For email:
+** `to`, `cc`, `bcc` (string): Email addresses to which the notifications are
+sent. At least one field must have a value.
+** `subject` (string, optional): Email subject line.
+** `message` (string, required): Email body text.
+* For Webhook:
+** `body` (string, required): JSON payload.
+* For PagerDuty:
+** `severity` (string, required): Severity of on the alert notification, can
+be: `Critical`, `Error`, `Warning` or `Info`.
+** `eventAction` (string, required):  Event https://v2.developer.pagerduty.com/docs/events-api-v2#event-action[action type], which can be `trigger`,
+`resolve`, or `acknowledge`.
+** `dedupKey` (string, optional): Groups alert notifications with the same
+PagerDuty alert.
+** `timestamp` (DateTime, optional): https://v2.developer.pagerduty.com/v2/docs/types#datetime[ISO-8601 format timestamp].
+** `component` (string, optional): Source machine component responsible for the
+event, for example `security-solution`.
+** `group` (string, optional): Enables logical grouping of service components.
+** `source` (string, optional): The affected system. Defaults to the {kib}
+saved object ID of the action.
+** `summary` (string, options): Summary of the event. Defaults to
+`No summary provided`. Maximum length is 1024 characters.
+** `class` (string, optional): Value indicating the class/type of the event.
+
+|==============================================
+
+[discrete]
+[[throttle-schema-bulk]]
+===== `throttle` schema
+
+
+`throttle` defines the maximum interval in which a rule's actions are executed. It accepts the following values:
+
+- `"rule"`: Execute actions on each rule execution
+
+- `"1h"`: Execute actions once per hour
+
+- `"1d"`: Execute actions once per day
+
+- `"7d"`: Execute actions once per week
 
 [discrete]
 ===== Example requests
