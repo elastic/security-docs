@@ -29,11 +29,11 @@ Identifies processes executed via Windows Management Instrumentation (WMI) on a 
 * Threat Detection
 * Lateral Movement
 
-*Version*: 5 (<<wmi-incoming-lateral-movement-history, version history>>)
+*Version*: 101 (<<wmi-incoming-lateral-movement-history, version history>>)
 
 *Added ({stack} release)*: 7.11.0
 
-*Last modified ({stack} release)*: 8.4.0
+*Last modified ({stack} release)*: 8.5.0
 
 *Rule authors*: Elastic
 
@@ -49,9 +49,9 @@ connection by Winmgmt service */ [network where process.name :
 "svchost.exe" and network.direction : ("incoming", "ingress") and
 source.ip != "127.0.0.1" and source.ip != "::1" and source.port >=
 49152 and destination.port >= 49152 ] /* Excluding Common FPs
-Nessus and SCCM */ [process where event.type in ("start",
-"process_started") and process.parent.name : "WmiPrvSE.exe" and not
-process.args : ("C:\\windows\\temp\\nessus_*.txt",
+Nessus and SCCM */ [process where event.type == "start" and
+process.parent.name : "WmiPrvSE.exe" and not process.args :
+("C:\\windows\\temp\\nessus_*.txt",
 "C:\\windows\\TEMP\\nessus_*.TMP",
 "C:\\Windows\\CCM\\SystemTemp\\*",
 "C:\\Windows\\CCMCache\\*",
@@ -79,6 +79,25 @@ process.args : ("C:\\windows\\temp\\nessus_*.txt",
 
 [[wmi-incoming-lateral-movement-history]]
 ==== Rule version history
+
+Version 101 (8.5.0 release)::
+* Updated query, changed from:
++
+[source, js]
+----------------------------------
+sequence by host.id with maxspan = 2s /* Accepted Incoming RPC
+connection by Winmgmt service */ [network where process.name :
+"svchost.exe" and network.direction : ("incoming", "ingress") and
+source.ip != "127.0.0.1" and source.ip != "::1" and source.port >=
+49152 and destination.port >= 49152 ] /* Excluding Common FPs
+Nessus and SCCM */ [process where event.type in ("start",
+"process_started") and process.parent.name : "WmiPrvSE.exe" and not
+process.args : ("C:\\windows\\temp\\nessus_*.txt",
+"C:\\windows\\TEMP\\nessus_*.TMP",
+"C:\\Windows\\CCM\\SystemTemp\\*",
+"C:\\Windows\\CCMCache\\*",
+"C:\\CCM\\Cache\\*") ]
+----------------------------------
 
 Version 5 (8.4.0 release)::
 * Formatting only

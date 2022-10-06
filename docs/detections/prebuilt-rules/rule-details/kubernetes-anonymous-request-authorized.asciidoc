@@ -1,0 +1,79 @@
+[[kubernetes-anonymous-request-authorized]]
+=== Kubernetes Anonymous Request Authorized
+
+This rule detects when an unauthenticated user request is authorized within the cluster. Attackers may attempt to use anonymous accounts to gain initial access to the cluster or to avoid attribution of their activities within the cluster. This rule excludes the /healthz, /livez and /readyz endpoints which are commonly accessed anonymously.
+
+*Rule type*: query
+
+*Rule indices*:
+
+* logs-kubernetes.*
+
+*Severity*: medium
+
+*Risk score*: 47
+
+*Runs every*: 5 minutes
+
+*Searches indices from*: now-6m ({ref}/common-options.html#date-math[Date Math format], see also <<rule-schedule, `Additional look-back time`>>)
+
+*Maximum alerts per execution*: 100
+
+*References*:
+
+* https://media.defense.gov/2022/Aug/29/2003066362/-1/-1/0/CTR_KUBERNETES_HARDENING_GUIDANCE_1.2_20220829.PDF
+
+*Tags*:
+
+* Elastic
+* Kubernetes
+* Continuous Monitoring
+* Execution
+* Initial Access
+* Defense Evasion
+
+*Version*: 1
+
+*Added ({stack} release)*: 8.5.0
+
+*Rule authors*: Elastic
+
+*Rule license*: Elastic License v2
+
+==== Potential false positives
+
+Anonymous access to the API server is a dangerous setting enabled by default. Common anonymous connections (e.g., health checks) have been excluded from this rule. All other instances of authorized anonymous requests should be investigated.
+
+==== Investigation guide
+
+
+[source,markdown]
+----------------------------------
+
+----------------------------------
+
+
+==== Rule query
+
+
+[source,js]
+----------------------------------
+kubernetes.audit.annotations.authorization_k8s_io/decision:"allow"
+and (kubernetes.audit.user.username:("system:anonymous" or
+"system:unauthenticated") or not kubernetes.audit.user.username:*)
+and not kubernetes.audit.objectRef.resource:("healthz" or "livez" or
+"readyz")
+----------------------------------
+
+==== Threat mapping
+
+*Framework*: MITRE ATT&CK^TM^
+
+* Tactic:
+** Name: Initial Access
+** ID: TA0001
+** Reference URL: https://attack.mitre.org/tactics/TA0001/
+* Technique:
+** Name: Valid Accounts
+** ID: T1078
+** Reference URL: https://attack.mitre.org/techniques/T1078/

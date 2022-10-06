@@ -1,7 +1,7 @@
 [[google-workspace-admin-role-assigned-to-a-user]]
 === Google Workspace Admin Role Assigned to a User
 
-Detects when an admin role is assigned to a Google Workspace user. An adversary may assign an admin role to a user in order to elevate the permissions of another user account and persist in their target’s environment.
+Assigning the administrative role to a user will grant them access to the Google Admin console and grant them administrator privileges which allow them to access and manage various resources and applications. An adversary may create a new administrator account for persistence or apply the admin role to an existing user to carry out further intrusion efforts. Users with super-admin privileges can bypass single-sign on if enabled in Google Workspace.
 
 *Rule type*: query
 
@@ -10,9 +10,9 @@ Detects when an admin role is assigned to a Google Workspace user. An adversary 
 * filebeat-*
 * logs-google_workspace*
 
-*Severity*: medium
+*Severity*: high
 
-*Risk score*: 47
+*Risk score*: 73
 
 *Runs every*: 10 minutes
 
@@ -32,12 +32,13 @@ Detects when an admin role is assigned to a Google Workspace user. An adversary 
 * Continuous Monitoring
 * SecOps
 * Identity and Access
+* Persistence
 
-*Version*: 14 (<<google-workspace-admin-role-assigned-to-a-user-history, version history>>)
+*Version*: 101 (<<google-workspace-admin-role-assigned-to-a-user-history, version history>>)
 
 *Added ({stack} release)*: 7.11.0
 
-*Last modified ({stack} release)*: 8.4.0
+*Last modified ({stack} release)*: 8.5.0
 
 *Rule authors*: Elastic
 
@@ -68,8 +69,10 @@ Google Workspace admin role assignments may be modified by system administrators
 
 [source,js]
 ----------------------------------
-event.dataset:google_workspace.admin and event.provider:admin and
-event.category:iam and event.action:ASSIGN_ROLE
+event.dataset:"google_workspace.admin" and event.category:"iam" and
+event.action:"ASSIGN_ROLE" and
+google_workspace.event.type:"DELEGATED_ADMIN_SETTINGS" and
+google_workspace.admin.role.name : *_ADMIN_ROLE
 ----------------------------------
 
 ==== Threat mapping
@@ -87,6 +90,15 @@ event.category:iam and event.action:ASSIGN_ROLE
 
 [[google-workspace-admin-role-assigned-to-a-user-history]]
 ==== Rule version history
+
+Version 101 (8.5.0 release)::
+* Updated query, changed from:
++
+[source, js]
+----------------------------------
+event.dataset:google_workspace.admin and event.provider:admin and
+event.category:iam and event.action:ASSIGN_ROLE
+----------------------------------
 
 Version 14 (8.4.0 release)::
 * Formatting only
