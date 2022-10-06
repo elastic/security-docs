@@ -32,12 +32,13 @@ Detects when the Console Window Host (conhost.exe) process is spawned by a suspi
 * Windows
 * Threat Detection
 * Execution
+* has_guide
 
-*Version*: 8 (<<conhost-spawned-by-suspicious-parent-process-history, version history>>)
+*Version*: 101 (<<conhost-spawned-by-suspicious-parent-process-history, version history>>)
 
 *Added ({stack} release)*: 7.10.0
 
-*Last modified ({stack} release)*: 8.4.0
+*Last modified ({stack} release)*: 8.5.0
 
 *Rule authors*: Elastic
 
@@ -66,14 +67,14 @@ for prevalence, whether they are located in expected locations, and if they are 
 - Investigate abnormal behaviors observed by the subject process, such as network connections, registry or file
 modifications, and any spawned child processes.
 - Investigate other alerts associated with the user/host during the past 48 hours.
-- Inspect the host for suspicious or abnormal behaviors in the alert timeframe.
+- Inspect the host for suspicious or abnormal behavior in the alert timeframe.
 - Retrieve the parent process executable and determine if it is malicious:
   - Use a private sandboxed malware analysis system to perform analysis.
     - Observe and collect information about the following activities:
       - Attempts to contact external domains and addresses.
       - File and registry access, modification, and creation activities.
       - Service creation and launch activities.
-      - Scheduled tasks creation.
+      - Scheduled task creation.
   - Use the PowerShell `Get-FileHash` cmdlet to get the files' SHA-256 hash values.
     - Search for the existence and reputation of the hashes in resources like VirusTotal, Hybrid-Analysis, CISCO Talos, Any.run, etc.
 
@@ -113,13 +114,15 @@ mean time to respond (MTTR).
 
 [source,js]
 ----------------------------------
-process where event.type in ("start", "process_started") and
-process.name : "conhost.exe" and process.parent.name :
-("svchost.exe", "lsass.exe", "services.exe", "smss.exe",
-"winlogon.exe", "explorer.exe",
-"dllhost.exe", "rundll32.exe", "regsvr32.exe", "userinit.exe",
-"wininit.exe", "spoolsv.exe", "wermgr.exe",
-"csrss.exe", "ctfmon.exe")
+process where event.type == "start" and process.name : "conhost.exe"
+and process.parent.name : ("lsass.exe", "services.exe", "smss.exe",
+"winlogon.exe", "explorer.exe", "dllhost.exe", "rundll32.exe",
+"regsvr32.exe", "userinit.exe", "wininit.exe", "spoolsv.exe",
+"ctfmon.exe") and not (process.parent.name : "rundll32.exe" and
+process.parent.args : ("?:\\Windows\\Installer\\MSI*.tmp,zzzzInvokeMan
+agedCustomActionOutOfProc",
+"?:\\WINDOWS\\system32\\PcaSvc.dll,PcaPatchSdbTask",
+"?:\\WINDOWS\\system32\\davclnt.dll,DavSetCookie"))
 ----------------------------------
 
 ==== Threat mapping
@@ -137,6 +140,20 @@ process.name : "conhost.exe" and process.parent.name :
 
 [[conhost-spawned-by-suspicious-parent-process-history]]
 ==== Rule version history
+
+Version 101 (8.5.0 release)::
+* Updated query, changed from:
++
+[source, js]
+----------------------------------
+process where event.type in ("start", "process_started") and
+process.name : "conhost.exe" and process.parent.name :
+("svchost.exe", "lsass.exe", "services.exe", "smss.exe",
+"winlogon.exe", "explorer.exe",
+"dllhost.exe", "rundll32.exe", "regsvr32.exe", "userinit.exe",
+"wininit.exe", "spoolsv.exe", "wermgr.exe",
+"csrss.exe", "ctfmon.exe")
+----------------------------------
 
 Version 8 (8.4.0 release)::
 * Formatting only

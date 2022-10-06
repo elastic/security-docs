@@ -30,12 +30,13 @@ The malware known as SUNBURST targets the SolarWind's Orion business software fo
 * Windows
 * Threat Detection
 * Command and Control
+* has_guide
 
-*Version*: 7 (<<sunburst-command-and-control-activity-history, version history>>)
+*Version*: 101 (<<sunburst-command-and-control-activity-history, version history>>)
 
 *Added ({stack} release)*: 7.11.0
 
-*Last modified ({stack} release)*: 8.4.0
+*Last modified ({stack} release)*: 8.5.0
 
 *Rule authors*: Elastic
 
@@ -74,7 +75,7 @@ for prevalence, whether they are located in expected locations, and if they are 
       - Attempts to contact external domains and addresses.
       - File and registry access, modification, and creation activities.
       - Service creation and launch activities.
-      - Scheduled tasks creation.
+      - Scheduled task creation.
   - Use the PowerShell Get-FileHash cmdlet to get the files' SHA-256 hash values.
     - Search for the existence and reputation of the hashes in resources like VirusTotal, Hybrid-Analysis, CISCO Talos, Any.run, etc.
 - Investigate whether the potential malware ran successfully, is active on the host, or was stopped by defenses.
@@ -120,12 +121,12 @@ and process.name : ("ConfigurationWizard.exe",
 "SolarWinds.BusinessLayerHost.exe",
 "SolarWinds.BusinessLayerHostx64.exe",
 "SolarWinds.Collector.Service.exe",
-"SolarwindsDiagnostics.exe") and (http.request.body.content :
-"*/swip/Upload.ashx*" and http.request.body.content : ("POST*",
-"PUT*")) or (http.request.body.content :
-("*/swip/SystemDescription*", "*/swip/Events*") and
-http.request.body.content : ("GET*", "HEAD*")) and not
-http.request.body.content : "*solarwinds.com*"
+"SolarwindsDiagnostics.exe") and ( (
+(http.request.body.content : "*/swip/Upload.ashx*" and
+http.request.body.content : ("POST*", "PUT*")) or
+(http.request.body.content : ("*/swip/SystemDescription*",
+"*/swip/Events*") and http.request.body.content : ("GET*", "HEAD*"))
+) and not http.request.body.content : "*solarwinds.com*" )
 ----------------------------------
 
 ==== Threat mapping
@@ -153,6 +154,27 @@ http.request.body.content : "*solarwinds.com*"
 
 [[sunburst-command-and-control-activity-history]]
 ==== Rule version history
+
+Version 101 (8.5.0 release)::
+* Updated query, changed from:
++
+[source, js]
+----------------------------------
+network where event.type == "protocol" and network.protocol == "http"
+and process.name : ("ConfigurationWizard.exe",
+"NetFlowService.exe",
+"NetflowDatabaseMaintenance.exe",
+"SolarWinds.Administration.exe",
+"SolarWinds.BusinessLayerHost.exe",
+"SolarWinds.BusinessLayerHostx64.exe",
+"SolarWinds.Collector.Service.exe",
+"SolarwindsDiagnostics.exe") and (http.request.body.content :
+"*/swip/Upload.ashx*" and http.request.body.content : ("POST*",
+"PUT*")) or (http.request.body.content :
+("*/swip/SystemDescription*", "*/swip/Events*") and
+http.request.body.content : ("GET*", "HEAD*")) and not
+http.request.body.content : "*solarwinds.com*"
+----------------------------------
 
 Version 7 (8.4.0 release)::
 * Formatting only

@@ -30,11 +30,11 @@ Identifies unusual child processes of Service Host (svchost.exe) that traditiona
 * Defense Evasion
 * Privilege Escalation
 
-*Version*: 6 (<<unusual-service-host-child-process-childless-service-history, version history>>)
+*Version*: 101 (<<unusual-service-host-child-process-childless-service-history, version history>>)
 
 *Added ({stack} release)*: 7.11.0
 
-*Last modified ({stack} release)*: 8.4.0
+*Last modified ({stack} release)*: 8.5.0
 
 *Rule authors*: Elastic
 
@@ -58,11 +58,10 @@ Changes to Windows services or a rarely executed child process.
 
 [source,js]
 ----------------------------------
-process where event.type in ("start", "process_started") and
-process.parent.name : "svchost.exe" and /* based on svchost
-service arguments -s svcname where the service is known to be
-childless */ process.parent.args :
-("WdiSystemHost","LicenseManager",
+process where event.type == "start" and process.parent.name :
+"svchost.exe" and /* based on svchost service arguments -s
+svcname where the service is known to be childless */
+process.parent.args : ("WdiSystemHost","LicenseManager",
 "StorSvc","CDPSvc","cdbhsvc","BthAvctpSvc","SstpSvc","WdiServiceHost",
 "imgsvc","TrkWks","WpnService","IKEEXT","PolicyAgent","CryptSvc",
 "netprofm","ProfSvc","StateRepository","camsvc","LanmanWorkstation",
@@ -105,6 +104,33 @@ and process.parent.args : "imgsvc")
 
 [[unusual-service-host-child-process-childless-service-history]]
 ==== Rule version history
+
+Version 101 (8.5.0 release)::
+* Updated query, changed from:
++
+[source, js]
+----------------------------------
+process where event.type in ("start", "process_started") and
+process.parent.name : "svchost.exe" and /* based on svchost
+service arguments -s svcname where the service is known to be
+childless */ process.parent.args :
+("WdiSystemHost","LicenseManager",
+"StorSvc","CDPSvc","cdbhsvc","BthAvctpSvc","SstpSvc","WdiServiceHost",
+"imgsvc","TrkWks","WpnService","IKEEXT","PolicyAgent","CryptSvc",
+"netprofm","ProfSvc","StateRepository","camsvc","LanmanWorkstation",
+"NlaSvc","EventLog","hidserv","DisplayEnhancementService","ShellHWDete
+ction", "AppHostSvc","fhsvc","CscService","PushToInstall") and
+/* unknown FPs can be added here */ not process.name :
+("WerFault.exe","WerFaultSecure.exe","wermgr.exe") and not
+(process.executable : "?:\\Windows\\System32\\RelPost.exe" and
+process.parent.args : "WdiSystemHost") and not (process.name :
+"rundll32.exe" and process.args :
+"?:\\WINDOWS\\System32\\winethc.dll,ForceProxyDetectionOnNextRun" and
+process.parent.args : "WdiServiceHost") and not
+(process.executable : ("?:\\Program Files\\*", "?:\\Program Files
+(x86)\\*", "?:\\Windows\\System32\\Kodak\\kds_i4x50\\lib\\lexexe.exe")
+and process.parent.args : "imgsvc")
+----------------------------------
 
 Version 6 (8.4.0 release)::
 * Updated query, changed from:

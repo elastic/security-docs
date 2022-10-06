@@ -13,7 +13,7 @@ Identifies an executable created by a Microsoft Office application and subsequen
 
 *Severity*: high
 
-*Risk score*: 21
+*Risk score*: 73
 
 *Runs every*: 60 minutes
 
@@ -28,12 +28,13 @@ Identifies an executable created by a Microsoft Office application and subsequen
 * Windows
 * Threat Detection
 * Execution
+* has_guide
 
-*Version*: 7 (<<execution-of-file-written-or-modified-by-microsoft-office-history, version history>>)
+*Version*: 101 (<<execution-of-file-written-or-modified-by-microsoft-office-history, version history>>)
 
 *Added ({stack} release)*: 7.10.0
 
-*Last modified ({stack} release)*: 8.4.0
+*Last modified ({stack} release)*: 8.5.0
 
 *Rule authors*: Elastic
 
@@ -70,7 +71,7 @@ but are not limited to, the Downloads and Document folders and the folder config
       - Attempts to contact external domains and addresses.
       - File and registry access, modification, and creation activities.
       - Service creation and launch activities.
-      - Scheduled tasks creation.
+      - Scheduled task creation.
   - Use the PowerShell `Get-FileHash` cmdlet to get the files' SHA-256 hash values.
     - Search for the existence and reputation of the hashes in resources like VirusTotal, Hybrid-Analysis, CISCO Talos, Any.run, etc.
 
@@ -94,7 +95,7 @@ systems, and web services.
 - Remove and block malicious artifacts identified during triage.
 - Run a full scan using the antimalware tool in place. This scan can reveal additional artifacts left in the system,
 persistence mechanisms, and malware components.
-- Determine the initial vector abused by the attacker and take action to prevent reinfection through the same vector. 
+- Determine the initial vector abused by the attacker and take action to prevent reinfection through the same vector.
   - If the malicious file was delivered via phishing:
     - Block the email sender from sending future emails.
     - Block the malicious web pages.
@@ -117,8 +118,8 @@ process.name : "EXCEL.EXE" or process.name : "OUTLOOK.EXE" or
 process.name : "POWERPNT.EXE" or process.name : "eqnedt32.exe"
 or process.name : "fltldr.exe" or process.name :
 "MSPUB.EXE" or process.name : "MSACCESS.EXE") ] by host.id,
-file.path [process where event.type in ("start", "process_started")]
-by host.id, process.executable
+file.path [process where event.type == "start"] by host.id,
+process.executable
 ----------------------------------
 
 ==== Threat mapping
@@ -142,6 +143,21 @@ by host.id, process.executable
 
 [[execution-of-file-written-or-modified-by-microsoft-office-history]]
 ==== Rule version history
+
+Version 101 (8.5.0 release)::
+* Updated query, changed from:
++
+[source, js]
+----------------------------------
+sequence with maxspan=2h [file where event.type != "deletion" and
+file.extension : "exe" and (process.name : "WINWORD.EXE" or
+process.name : "EXCEL.EXE" or process.name : "OUTLOOK.EXE" or
+process.name : "POWERPNT.EXE" or process.name : "eqnedt32.exe"
+or process.name : "fltldr.exe" or process.name :
+"MSPUB.EXE" or process.name : "MSACCESS.EXE") ] by host.id,
+file.path [process where event.type in ("start", "process_started")]
+by host.id, process.executable
+----------------------------------
 
 Version 7 (8.4.0 release)::
 * Formatting only
