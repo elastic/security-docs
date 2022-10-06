@@ -13,7 +13,7 @@ Identifies the use of net.exe to mount a WebDav or hidden remote share. This may
 
 *Severity*: medium
 
-*Risk score*: 21
+*Risk score*: 47
 
 *Runs every*: 5 minutes
 
@@ -29,11 +29,11 @@ Identifies the use of net.exe to mount a WebDav or hidden remote share. This may
 * Threat Detection
 * Lateral Movement
 
-*Version*: 6 (<<mounting-hidden-or-webdav-remote-shares-history, version history>>)
+*Version*: 101 (<<mounting-hidden-or-webdav-remote-shares-history, version history>>)
 
 *Added ({stack} release)*: 7.11.0
 
-*Last modified ({stack} release)*: 8.4.0
+*Last modified ({stack} release)*: 8.5.0
 
 *Rule authors*: Elastic
 
@@ -53,10 +53,9 @@ Identifies the use of net.exe to mount a WebDav or hidden remote share. This may
 
 [source,js]
 ----------------------------------
-process where event.type in ("start", "process_started") and
-((process.name : "net.exe" or process.pe.original_file_name ==
-"net.exe") or ((process.name : "net1.exe" or
-process.pe.original_file_name == "net1.exe") and not
+process where event.type == "start" and ((process.name : "net.exe" or
+process.pe.original_file_name == "net.exe") or ((process.name :
+"net1.exe" or process.pe.original_file_name == "net1.exe") and not
 process.parent.name : "net.exe")) and process.args : "use" and /*
 including hidden and webdav based online shares such as onedrive */
 process.args : ("\\\\*\\*$*", "\\\\*@SSL\\*", "http*") and /*
@@ -78,6 +77,21 @@ excluding shares deletion operation */ not process.args : "/d*"
 
 [[mounting-hidden-or-webdav-remote-shares-history]]
 ==== Rule version history
+
+Version 101 (8.5.0 release)::
+* Updated query, changed from:
++
+[source, js]
+----------------------------------
+process where event.type in ("start", "process_started") and
+((process.name : "net.exe" or process.pe.original_file_name ==
+"net.exe") or ((process.name : "net1.exe" or
+process.pe.original_file_name == "net1.exe") and not
+process.parent.name : "net.exe")) and process.args : "use" and /*
+including hidden and webdav based online shares such as onedrive */
+process.args : ("\\\\*\\*$*", "\\\\*@SSL\\*", "http*") and /*
+excluding shares deletion operation */ not process.args : "/d*"
+----------------------------------
 
 Version 6 (8.4.0 release)::
 * Formatting only
