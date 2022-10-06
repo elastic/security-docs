@@ -1,0 +1,92 @@
+[[powershell-script-with-token-impersonation-capabilities]]
+=== PowerShell Script with Token Impersonation Capabilities
+
+Detects scripts that contain PowerShell functions, structures, or Windows API functions related to token impersonation/theft. Attackers may duplicate then impersonate another user's token to escalate privileges and bypass access controls.
+
+*Rule type*: query
+
+*Rule indices*:
+
+* winlogbeat-*
+* logs-windows.*
+
+*Severity*: medium
+
+*Risk score*: 47
+
+*Runs every*: 5 minutes
+
+*Searches indices from*: now-9m ({ref}/common-options.html#date-math[Date Math format], see also <<rule-schedule, `Additional look-back time`>>)
+
+*Maximum alerts per execution*: 100
+
+*References*:
+
+* https://github.com/decoder-it/psgetsystem
+* https://github.com/PowerShellMafia/PowerSploit/blob/master/Privesc/Get-System.ps1
+* https://github.com/EmpireProject/Empire/blob/master/data/module_source/privesc/Invoke-MS16032.ps1
+* https://github.com/atc-project/atc-data/blob/master/docs/Logging_Policies/LP_0109_windows_powershell_script_block_log.md
+
+*Tags*:
+
+* Elastic
+* Host
+* Windows
+* Threat Detection
+* Privilege Escalation
+
+*Version*: 1
+
+*Added ({stack} release)*: 8.5.0
+
+*Rule authors*: Elastic
+
+*Rule license*: Elastic License v2
+
+==== Investigation guide
+
+
+[source,markdown]
+----------------------------------
+
+----------------------------------
+
+
+==== Rule query
+
+
+[source,js]
+----------------------------------
+event.category:process and powershell.file.script_block_text:(
+"Invoke-TokenManipulation" or "ImpersonateNamedPipeClient" or
+"NtImpersonateThread" or ( "STARTUPINFOEX" and
+"UpdateProcThreadAttribute" ) or (
+"AdjustTokenPrivileges" and "SeDebugPrivilege" ) or (
+("DuplicateToken" or "DuplicateTokenEx") and
+("SetThreadToken" or "ImpersonateLoggedOnUser" or
+"CreateProcessWithTokenW" or "CreatePRocessAsUserW" or
+"CreateProcessAsUserA") ) )
+----------------------------------
+
+==== Threat mapping
+
+*Framework*: MITRE ATT&CK^TM^
+
+* Tactic:
+** Name: Privilege Escalation
+** ID: TA0004
+** Reference URL: https://attack.mitre.org/tactics/TA0004/
+* Technique:
+** Name: Access Token Manipulation
+** ID: T1134
+** Reference URL: https://attack.mitre.org/techniques/T1134/
+
+
+* Tactic:
+** Name: Execution
+** ID: TA0002
+** Reference URL: https://attack.mitre.org/tactics/TA0002/
+* Technique:
+** Name: Command and Scripting Interpreter
+** ID: T1059
+** Reference URL: https://attack.mitre.org/techniques/T1059/
