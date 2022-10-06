@@ -29,11 +29,11 @@ Identifies execution of a suspicious program via scheduled tasks by looking at p
 * Threat Detection
 * Persistence
 
-*Version*: 7 (<<suspicious-execution-via-scheduled-task-history, version history>>)
+*Version*: 100 (<<suspicious-execution-via-scheduled-task-history, version history>>)
 
 *Added ({stack} release)*: 7.11.0
 
-*Last modified ({stack} release)*: 8.4.0
+*Last modified ({stack} release)*: 8.5.0
 
 *Rule authors*: Elastic
 
@@ -75,6 +75,13 @@ suspicious paths here */ process.args : ( "C:\\Users\\*",
 "C:\\ProgramData\\*", "C:\\Windows\\Temp\\*",
 "C:\\Windows\\Tasks\\*", "C:\\PerfLogs\\*",
 "C:\\Intel\\*", "C:\\Windows\\Debug\\*", "C:\\HP\\*")
+and not (process.name : "cmd.exe" and process.args : "?:\\*.bat"
+and process.working_directory : "?:\\Windows\\System32\\") and
+not (process.name : "cscript.exe" and process.args :
+"?:\\Windows\\system32\\calluxxprovider.vbs") and not
+(process.name : "powershell.exe" and process.args : ("-File",
+"-PSConsoleFile") and user.id : "S-1-5-18") and not (process.name
+: "msiexec.exe" and user.id : "S-1-5-18")
 ----------------------------------
 
 ==== Threat mapping
@@ -92,6 +99,31 @@ suspicious paths here */ process.args : ( "C:\\Users\\*",
 
 [[suspicious-execution-via-scheduled-task-history]]
 ==== Rule version history
+
+Version 100 (8.5.0 release)::
+* Updated query, changed from:
++
+[source, js]
+----------------------------------
+process where event.type == "start" and /* Schedule service
+cmdline on Win10+ */ process.parent.name : "svchost.exe" and
+process.parent.args : "Schedule" and /* add suspicious programs
+here */ process.pe.original_file_name in
+( "cscript.exe",
+"wscript.exe", "PowerShell.EXE",
+"Cmd.Exe", "MSHTA.EXE",
+"RUNDLL32.EXE", "REGSVR32.EXE",
+"MSBuild.exe", "InstallUtil.exe",
+"RegAsm.exe", "RegSvcs.exe",
+"msxsl.exe", "CONTROL.EXE",
+"EXPLORER.EXE",
+"Microsoft.Workflow.Compiler.exe",
+"msiexec.exe" ) and /* add
+suspicious paths here */ process.args : ( "C:\\Users\\*",
+"C:\\ProgramData\\*", "C:\\Windows\\Temp\\*",
+"C:\\Windows\\Tasks\\*", "C:\\PerfLogs\\*",
+"C:\\Intel\\*", "C:\\Windows\\Debug\\*", "C:\\HP\\*")
+----------------------------------
 
 Version 7 (8.4.0 release)::
 * Updated query, changed from:

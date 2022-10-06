@@ -32,11 +32,11 @@ Identifies potential behavior of SharpRDP, which is a tool that can be used to p
 * Threat Detection
 * Lateral Movement
 
-*Version*: 7 (<<potential-sharprdp-behavior-history, version history>>)
+*Version*: 101 (<<potential-sharprdp-behavior-history, version history>>)
 
 *Added ({stack} release)*: 7.11.0
 
-*Last modified ({stack} release)*: 8.4.0
+*Last modified ({stack} release)*: 8.5.0
 
 *Rule authors*: Elastic
 
@@ -54,13 +54,13 @@ powershell, taskmgr or tsclient, followed by process execution within
 3389 and network.direction : ("incoming", "ingress") and
 network.transport == "tcp" and source.ip != "127.0.0.1" and
 source.ip != "::1" ] [registry where process.name :
-"explorer.exe" and registry.path : ("HKEY_USERS\\*\\Software\\Micr
-osoft\\Windows\\CurrentVersion\\Explorer\\RunMRU\\*") and
+"explorer.exe" and registry.path : ("HKEY_USERS\\*\\Software\\Micro
+soft\\Windows\\CurrentVersion\\Explorer\\RunMRU\\*") and
 registry.data.strings : ("cmd.exe*", "powershell.exe*", "taskmgr*",
-"\\\\tsclient\\*.exe\\*") ] [process where event.type in
-("start", "process_started") and (process.parent.name : ("cmd.exe",
-"powershell.exe", "taskmgr.exe") or process.args :
-("\\\\tsclient\\*.exe")) and not process.name : "conhost.exe" ]
+"\\\\tsclient\\*.exe\\*") ] [process where event.type == "start"
+and (process.parent.name : ("cmd.exe", "powershell.exe",
+"taskmgr.exe") or process.args : ("\\\\tsclient\\*.exe")) and not
+process.name : "conhost.exe" ]
 ----------------------------------
 
 ==== Threat mapping
@@ -78,6 +78,27 @@ registry.data.strings : ("cmd.exe*", "powershell.exe*", "taskmgr*",
 
 [[potential-sharprdp-behavior-history]]
 ==== Rule version history
+
+Version 101 (8.5.0 release)::
+* Updated query, changed from:
++
+[source, js]
+----------------------------------
+/* Incoming RDP followed by a new RunMRU string value set to cmd,
+powershell, taskmgr or tsclient, followed by process execution within
+1m */ sequence by host.id with maxspan=1m [network where event.type
+== "start" and process.name : "svchost.exe" and destination.port ==
+3389 and network.direction : ("incoming", "ingress") and
+network.transport == "tcp" and source.ip != "127.0.0.1" and
+source.ip != "::1" ] [registry where process.name :
+"explorer.exe" and registry.path : ("HKEY_USERS\\*\\Software\\Micr
+osoft\\Windows\\CurrentVersion\\Explorer\\RunMRU\\*") and
+registry.data.strings : ("cmd.exe*", "powershell.exe*", "taskmgr*",
+"\\\\tsclient\\*.exe\\*") ] [process where event.type in
+("start", "process_started") and (process.parent.name : ("cmd.exe",
+"powershell.exe", "taskmgr.exe") or process.args :
+("\\\\tsclient\\*.exe")) and not process.name : "conhost.exe" ]
+----------------------------------
 
 Version 7 (8.4.0 release)::
 * Formatting only
