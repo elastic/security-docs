@@ -32,12 +32,13 @@ Identifies an attempt to bypass User Account Control (UAC) by masquerading as a 
 * Windows
 * Threat Detection
 * Privilege Escalation
+* has_guide
 
-*Version*: 7 (<<uac-bypass-attempt-via-windows-directory-masquerading-history, version history>>)
+*Version*: 101 (<<uac-bypass-attempt-via-windows-directory-masquerading-history, version history>>)
 
 *Added ({stack} release)*: 7.11.0
 
-*Last modified ({stack} release)*: 8.4.0
+*Last modified ({stack} release)*: 8.5.0
 
 *Rule authors*: Elastic
 
@@ -52,9 +53,9 @@ Identifies an attempt to bypass User Account Control (UAC) by masquerading as a 
 
 ### Investigating UAC Bypass Attempt via Windows Directory Masquerading
 
-Windows User Account Control (UAC) allows a program to elevate its privileges (tracked as low to high integrity levels) 
+Windows User Account Control (UAC) allows a program to elevate its privileges (tracked as low to high integrity levels)
 to perform a task under administrator-level permissions, possibly by prompting the user for confirmation.
-UAC can deny an operation under high-integrity enforcement, or allow the user to perform the action if they are in the 
+UAC can deny an operation under high-integrity enforcement, or allow the user to perform the action if they are in the
 local administrators group and enter an administrator password when prompted.
 
 For more information about the UAC and how it works, check the [official Microsoft docs page](https://docs.microsoft.com/en-us/windows/security/identity-protection/user-account-control/how-user-account-control-works).
@@ -67,16 +68,16 @@ directory. Attackers may bypass UAC to stealthily execute code with elevated per
 - Investigate the process execution chain (parent process tree) for unknown processes. Examine their executable files
 for prevalence, whether they are located in expected locations, and if they are signed with valid digital signatures.
 - Investigate other alerts associated with the user/host during the past 48 hours.
-- Inspect the host for suspicious or abnormal behaviors in the alert timeframe.
-- Investigate abnormal behaviors observed by the subject process such as network connections, registry or file
-modifications, and any spawned child processes.
+- Inspect the host for suspicious or abnormal behavior in the alert timeframe.
+- Investigate any abnormal behavior by the subject process such as network connections, registry or file modifications,
+and any spawned child processes.
 - If any of the spawned processes are suspicious, retrieve them and determine if it is malicious:
   - Use a private sandboxed malware analysis system to perform analysis.
     - Observe and collect information about the following activities:
       - Attempts to contact external domains and addresses.
       - File and registry access, modification, and creation activities.
       - Service creation and launch activities.
-      - Scheduled tasks creation.
+      - Scheduled task creation.
   - Use the PowerShell `Get-FileHash` cmdlet to get the files' SHA-256 hash values.
     - Search for the existence and reputation of the hashes in resources like VirusTotal, Hybrid-Analysis, CISCO Talos, Any.run, etc.
 
@@ -111,9 +112,8 @@ mean time to respond (MTTR).
 
 [source,js]
 ----------------------------------
-process where event.type in ("start", "process_started") and
-process.args : ("C:\\Windows \\system32\\*.exe", "C:\\Windows
-\\SysWOW64\\*.exe")
+process where event.type == "start" and process.args : ("C:\\Windows
+\\system32\\*.exe", "C:\\Windows \\SysWOW64\\*.exe")
 ----------------------------------
 
 ==== Threat mapping
@@ -131,6 +131,16 @@ process.args : ("C:\\Windows \\system32\\*.exe", "C:\\Windows
 
 [[uac-bypass-attempt-via-windows-directory-masquerading-history]]
 ==== Rule version history
+
+Version 101 (8.5.0 release)::
+* Updated query, changed from:
++
+[source, js]
+----------------------------------
+process where event.type in ("start", "process_started") and
+process.args : ("C:\\Windows \\system32\\*.exe", "C:\\Windows
+\\SysWOW64\\*.exe")
+----------------------------------
 
 Version 7 (8.4.0 release)::
 * Formatting only
