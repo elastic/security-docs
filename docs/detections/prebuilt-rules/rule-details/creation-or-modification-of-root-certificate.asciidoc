@@ -33,12 +33,13 @@ Identifies the creation or modification of a local trusted root certificate in W
 * Windows
 * Threat Detection
 * Defense Evasion
+* has_guide
 
-*Version*: 4 (<<creation-or-modification-of-root-certificate-history, version history>>)
+*Version*: 101 (<<creation-or-modification-of-root-certificate-history, version history>>)
 
 *Added ({stack} release)*: 7.12.0
 
-*Last modified ({stack} release)*: 8.4.0
+*Last modified ({stack} release)*: 8.5.0
 
 *Rule authors*: Elastic
 
@@ -80,7 +81,7 @@ modifications, and any spawned child processes.
       - Attempts to contact external domains and addresses.
       - File and registry access, modification, and creation activities.
       - Service creation and launch activities.
-      - Scheduled tasks creation.
+      - Scheduled task creation.
   - Use the PowerShell `Get-FileHash` cmdlet to get the files' SHA-256 hash values.
     - Search for the existence and reputation of the hashes in resources like VirusTotal, Hybrid-Analysis, CISCO Talos, Any.run, etc.
 
@@ -123,7 +124,16 @@ ates\\Root\\Certificates\\*\\Blob", "HKLM\\Software\\Microsoft\\
 SystemCertificates\\AuthRoot\\Certificates\\*\\Blob", "HKLM\\Sof
 tware\\Policies\\Microsoft\\SystemCertificates\\Root\\Certificates\\*\
 \Blob", "HKLM\\Software\\Policies\\Microsoft\\SystemCertificates
-\\AuthRoot\\Certificates\\*\\Blob" )
+\\AuthRoot\\Certificates\\*\\Blob" ) and not process.executable
+: ("?:\\Program Files\\*.exe",
+"?:\\Program Files (x86)\\*.exe",
+"?:\\Windows\\System32\\*.exe",
+"?:\\Windows\\SysWOW64\\*.exe",
+"?:\\Windows\\Sysmon64.exe", "?:\\Windows\\Sysmon.exe",
+"?:\\ProgramData\\Microsoft\\Windows
+Defender\\Platform\\*\\MsMpEng.exe",
+"?:\\Windows\\WinSxS\\*.exe",
+"?:\\Windows\\UUS\\amd64\\MoUsoCoreWorker.exe")
 ----------------------------------
 
 ==== Threat mapping
@@ -141,6 +151,20 @@ tware\\Policies\\Microsoft\\SystemCertificates\\Root\\Certificates\\*\
 
 [[creation-or-modification-of-root-certificate-history]]
 ==== Rule version history
+
+Version 101 (8.5.0 release)::
+* Updated query, changed from:
++
+[source, js]
+----------------------------------
+registry where event.type in ("creation", "change") and
+registry.path : ( "HKLM\\Software\\Microsoft\\SystemCertific
+ates\\Root\\Certificates\\*\\Blob", "HKLM\\Software\\Microsoft\\
+SystemCertificates\\AuthRoot\\Certificates\\*\\Blob", "HKLM\\Sof
+tware\\Policies\\Microsoft\\SystemCertificates\\Root\\Certificates\\*\
+\Blob", "HKLM\\Software\\Policies\\Microsoft\\SystemCertificates
+\\AuthRoot\\Certificates\\*\\Blob" )
+----------------------------------
 
 Version 4 (8.4.0 release)::
 * Formatting only
