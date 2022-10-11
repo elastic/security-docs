@@ -7,7 +7,8 @@ The instructions differ depending on whether you're installing on EKS or on unma
 1. Install on EKS-managed clusters:
   * <<kspm-setup-eks,Configure the KSPM integration>>
   * <<kspm-setup-eks-step-2,Authenticate to AWS>>
-  * <<kspm-setup-eks-step-3,>>
+  * <<kspm-setup-eks-step-3,Finish configuring the integration>>
+  * <<kspm-setup-eks-step-4,Modify and deploy the DaemonSet>>
 
 
 2. Install on unmanaged clusters:
@@ -24,11 +25,18 @@ The instructions differ depending on whether you're installing on EKS or on unma
 4. Name your integration. Use a name that matches the purpose or team of the cluster(s) you want to monitor, for example, `IT-dev-k8s-clusters`.
 5. Select *EKS* from the *Kubernetes Deployment* menu. A new section for AWS credentials will appear.
 
+[discrete]
 [[kspm-setup-eks-step-2]]
+=== Authenticate to AWS
 
-To get the necessary credentials, follow Amazon's instructions to https://docs.aws.amazon.com/IAM/latest/UserGuide/id_users_create.html[create an IAM user], and define its permissions using the JSON permissions policy below.
+There are several options for how to provide AWS credentials, detailed below:
 
-IMPORTANT: You must select "Programmatic access" when creating the IAM user.
+* <<kspm-use-keys-directly,Use access keys directly>>
+* <<kspm-use-temp-credentials,Use temporary security credentials>>
+* <<kspm-use-a-shared-credentials-file,Use a shared credentials file>>
+* <<kspm-use-iam-arn,Use an IAM role ARN>>
+
+Regardless of which option you use, you'll need to grant the following permissions:
 
 ```
 {
@@ -64,13 +72,82 @@ IMPORTANT: You must select "Programmatic access" when creating the IAM user.
 }
 ```
 
-IMPORTANT: If you choose to use the AWS Shared credential file to provide credentials, make sure the associated role has the permissions listed above.
+[discrete]
+[[kspm-use-keys-directly]]
+==== Option 1 - Use access keys directly:
+Access keys are long-term credentials for an IAM user or the AWS account root user. To use access keys as credentials, you need to provide:
 
-* If you want to monitor Kubernetes clusters that aren’t yet enrolled in fleet, select *New Hosts* under “where to add this integration”.
-* Name the {agent} policy. Use a name that matches the purpose or team of the cluster(s) you want to monitor, for example, `IT-dev-k8s-clusters`.
-* Click *Save and continue*, then *Add agent to your hosts*. The *Add agent* wizard appears and provides a DaemonSet manifest `.yaml` file with pre-populated configuration information, such as the `Fleet ID` and `Fleet URL`.
+  * `Access key ID`: The first part of the access key.
+  * `Secret Access Key`: The second part of the access key.
+
+For more details refer to https://docs.aws.amazon.com/general/latest/gr/aws-sec-cred-types.html#access-keys-and-secret-access-keys[AWS Access Keys and Secret Access Keys].
+
+IMPORTANT: You must select "Programmatic access" when creating the IAM user.
+
+[discrete]
+[[kspm-use-temp-credentials]]
+==== Option 2 - Use temporary security credentials:
+Temporary security credentials can be configured in AWS to last for some period of time. They consist of an access key ID, a secret access key, and a security token, which is typically found using `GetSessionToken`.
+
+NOTE: IAM users with multi-factor authentication (MFA) enabled need to submit an MFA code when calling `GetSessionToken`. For more details refer to https://docs.aws.amazon.com/IAM/latest/UserGuide/id_credentials_temp.html[AWS Temporary Security Credentials].
+
+You can use the AWS CLI to generate temporary credentials. For example, you could use the following command if you have MFA enabled: `sts get-session-token --serial-number arn:aws:iam::1234:mfa/your-email@example.com --duration-seconds 129600 --token-code 123456`
+
+The output from this command should include the following fields, which you should supply to the KSPM integration:
+
+`Access key ID`: The first part of the access key.
+`Secret Access Key`: The second part of the access key.
+`Session Token`: A token required when using temporary security credentials.
+
+Because temporary security credentials are short term, once they expire you will need to generate new ones and manually update the integration's configuration to continue collecting cloud posture data. Update the credentials before they expire to avoid data loss.
+
+[discrete]
+[[kspm-use-a-shared-credentials-file]]
+==== Option 3 - Use a shared credentials file:
+If you use different AWS credentials for different tools or applications, you can use profiles to define multiple access keys in the same configuration file. For more details refer to https://docs.aws.amazon.com/sdkref/latest/guide/file-format.html#file-format-creds[Create Shared Credentials File]
+
+Instead of providing the `Access key ID` and `Secret Access Key` to the integration, you will provide the information required to locate the access keys within the shared credentials file:
+
+`Credential Profile Name`: The profile name in the shared credentials file.
+`Shared Credential File`: The directory of the shared credentials file.
+
+If you don't provide values for all configuration fields, the integration will use these defaults:
+- If none of `Access key ID`, `Secret Access Key` and `ARN Role` are provided, then the integration will check for `Credential Profile Name`.
+- If there is no `Credential Profile Name`, the default profile will be used.
+- If `Shared Credential File` is empty, the default directory will be used.
+  - For Linux or Unix, the shared credentials file is located at `~/.aws/credentials`.
+
+IMPORTANT: If you choose this option, make sure the associated role has the permissions listed above.
+
+[discrete]
+[[kspm-use-iam-arn]]
+==== Option 4 - Use an IAM role Amazon Resource Name (ARN):
+An IAM role ARN is an IAM identity that you can create in your AWS account. You define the role's permissions.
+Roles do not have standard long-term credentials such as passwords or access keys.
+Instead, when you assume a role it provides you with temporary security credentials for your session.
+An IAM role's ARN can be used to specify which AWS IAM role to use to generate temporary credentials.
+For more details see the https://docs.aws.amazon.com/STS/latest/APIReference/API_AssumeRole.html[AssumeRole API documentation].
+Follow Amazon's instructions to https://docs.aws.amazon.com/IAM/latest/UserGuide/id_users_create.html[create an IAM user], and define its permissions using the JSON permissions policy above.
+To use an IAM role's ARN, you need to provide either a <<kspm-use-a-shared-credentials-file,credential profile>> or <<kspm-use-keys-directly,access keys>> along with the `ARN role`.
+The `ARN Role` value specifies which AWS IAM role to use for generating temporary credentials.
+
+NOTE: If `ARN Role` is present, the integration will check if `Access key ID` and `Secret Access Key` are present.
+If not, the package will check for a `Credential Profile Name`.
+If a `Credential Profile Name` is not present, the default credential profile will be used.
+
 
 [[kspm-setup-eks-step-3]]
+[discrete]
+==== Finish configuring the integration
+Once you've provided AWS credentials, finish configuring the KSPM integration:
+
+1. If you want to monitor Kubernetes clusters that aren’t yet enrolled in fleet, select *New Hosts* under “where to add this integration”.
+2. Name the {agent} policy. Use a name that matches the purpose or team of the cluster(s) you want to monitor, for example, `IT-dev-k8s-clusters`.
+3. Click *Save and continue*, then *Add agent to your hosts*. The *Add agent* wizard appears and provides a DaemonSet manifest `.yaml` file with pre-populated configuration information, such as the `Fleet ID` and `Fleet URL`.
+
+[[kspm-setup-eks-step-4]]
+[discrete]
+==== Modify and deploy the DaemonSet
 The *Add agent* wizard helps you deploy a DaemonSet on the Kubernetes clusters you wish to monitor. To do this, for each cluster:
 
 1. Download the manifest and make any necessary revisions to its configuration to suit the needs of your environment.
