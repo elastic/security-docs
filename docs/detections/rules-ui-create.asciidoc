@@ -38,7 +38,7 @@ TIP: You can also use value lists as the indicator match index. See <<indicator-
 
 * <<create-new-terms-rule, *New terms*>>: Generates an alert for each new term detected in source documents within a specified time range.
 
-When modifying rules or managing detection alerts, you can add exceptions that prevent a rule from generating an alert even when its criteria are met. This is useful for reducing noise, such as preventing alerts from trusted processes and internal IP addresses. <<detections-ui-exceptions>> describes how to add exceptions to a rule.
+When modifying rules or managing detection alerts, you can <<detections-ui-exceptions,add exceptions>> that prevent a rule from generating an alert even when its criteria are met. This is useful for reducing noise, such as preventing alerts from trusted processes and internal IP addresses.
 
 NOTE: You can add exceptions to custom query, machine learning, event correlation, and indicator match rule types.
 
@@ -60,7 +60,7 @@ After you activate a rule, you can check if it is running as expected
 using the <<alerts-ui-monitor, Monitoring tab>> on the Rules page. If you see
 values in the `Gap` column, you can <<troubleshoot-signals>>.
 
-When a rule fails to run, the {es-sec-app} tries to rerun it at its next
+When a rule fails to run, the {security-app} tries to rerun it at its next
 scheduled run time.
 ==============
 
@@ -124,7 +124,7 @@ then select:
 .. Turn on the **Run job** switch for the required {ml} job.
 +
 [role="screenshot"]
-image::images/rule-start-ml-job.png[]
+image::images/rule-start-ml-job.png[Turning on a machine learning job in the ML job settings menu,75%]
 +
 . Click **Continue** to <<rule-ui-basic-params, configure basic rule settings>>.
 
@@ -137,27 +137,30 @@ then:
 .. Use the filter and query fields to create the criteria used for detecting
 alerts.
 +
-NOTE: You can use {kib} saved queries (image:images/saved-query-menu.png[Saved query menu,17,17]) and queries from saved Timelines (*Import query from saved Timeline*) as rule conditions.
-+
-For example, the following rule detects when the `vssadmin delete shadows`
+The following example (based on the prebuilt rule <<prebuilt-rule-0-14-2-volume-shadow-copy-deleted-or-resized-via-vssadmin, Volume Shadow Copy Deleted or Resized via VssAdmin>>) detects when the `vssadmin delete shadows`
 Windows command is executed:
 
 ** *Index patterns*: `winlogbeat-*`
 +
-> Winlogbeat ships Windows event logs to {es-sec}.
+Winlogbeat ships Windows event logs to {elastic-sec}.
 
 ** *Custom query*: `event.action:"Process Create (rule: ProcessCreate)" and process.name:"vssadmin.exe" and process.args:("delete" and "shadows")`
 +
-> Searches the `winlogbeat-*` indices for `vssadmin.exe` executions with
+Searches the `winlogbeat-*` indices for `vssadmin.exe` executions with
 the `delete` and `shadow` arguments, which are used to delete a volume's shadow
 copies.
 +
 [role="screenshot"]
-image::images/rule-query-example.png[]
+image::images/rule-query-example.png[Rule query example]
+
+.. You can use {kib} saved queries (image:images/saved-query-menu.png[Saved query menu,18,18]) and queries from saved Timelines (*Import query from saved Timeline*) as rule conditions.
 +
-TIP: This example is based on the
-<<prebuilt-rule-0-14-2-volume-shadow-copy-deleted-or-resized-via-vssadmin, Volume Shadow Copy Deleted or Resized via VssAdmin>> prebuilt rule.
-+
+When you use a saved query, the *Load saved query "_rule name_" dynamically on each rule execution* check box appears:
+
+* Select this to use the saved query every time the rule runs. You won't be able to modify the rule's *Custom query* field or filters, because the rule will only use the saved query's settings. To make changes, modify the saved query itself.
+
+* Deselect this to load the saved query as a one-time way of populating the rule's *Custom query* field and filters. You can then make further adjustments to the rule's query and filters as needed. If the saved query is later changed, the rule will not inherit those changes.
+
 . Click **Continue** to <<rule-ui-basic-params, configure basic rule settings>>.
 
 [discrete]
@@ -167,6 +170,9 @@ TIP: This example is based on the
 .. Define which {es} indices the rule analyzes for alerts.
 .. Use the filter and query fields to create the criteria used for detecting
 alerts.
++
+NOTE: You can use {kib} saved queries (image:images/saved-query-menu.png[Saved query menu,18,18]) and queries from saved Timelines (*Import query from saved Timeline*) as rule conditions.
+
 .. Use the `Group by` and `Threshold` fields to determine which source event field is used as a threshold and the threshold's value.
 .. Use the `Count` field to limit alerts by cardinality of a certain field.
 +
@@ -235,6 +241,9 @@ the {elastic-sec} event indices. For example, if you want to match documents tha
 +
 TIP: If you want the rule to check every field in the indices, use this
 wildcard expression: `*:*`.
++
+NOTE: You can use {kib} saved queries (image:images/saved-query-menu.png[Saved query menu,18,18]) and queries from saved Timelines (*Import query from saved Timeline*) as rule conditions.
+
 .. *Indicator index patterns*: The indicator index patterns containing field values for which you want to generate alerts. This field is automatically populated with indices specified in the `securitySolution:defaultThreatIndex` advanced setting. For more information, see <<update-threat-intel-indices, Update default Elastic Security threat intelligence indices>>.
 +
 IMPORTANT: Data in indicator indices must be <<ecs-compliant-reqs, ECS compatible>>, and so it must contain a `@timestamp` field.
@@ -244,14 +253,14 @@ the indicator index patterns. The default query `@timestamp > "now-30d/d"` searc
 .. *Indicator mapping*: Compares the values of the specified event and indicator field
 values. When the field values are identical, an alert is generated. To define
 which field values are compared from the indices add the following:
-** *Field*: The field used for comparing values in the {es-sec} event
+** *Field*: The field used for comparing values in the {elastic-sec} event
 indices.
 ** *Indicator index field*: The field used for comparing values in the indicator
 indices.
 .. You can add `AND` and `OR` clauses to define when alerts are generated.
 +
 For example, to create a rule that generates alerts when `host.name` *and*
-`destination.ip` field values in the `logs-*` or `packetbeat-*` {es-sec} indices
+`destination.ip` field values in the `logs-*` or `packetbeat-*` {elastic-sec} indices
 are identical to the corresponding field values in the `mock-threat-list` indicator
 index, enter the rule parameters seen in the following image:
 +
