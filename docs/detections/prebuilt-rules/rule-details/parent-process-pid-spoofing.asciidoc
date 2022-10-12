@@ -31,11 +31,11 @@ Identifies parent process spoofing used to thwart detection. Adversaries may spo
 * Threat Detection
 * Defense Evasion
 
-*Version*: 2 (<<parent-process-pid-spoofing-history, version history>>)
+*Version*: 100 (<<parent-process-pid-spoofing-history, version history>>)
 
 *Added ({stack} release)*: 7.14.0
 
-*Last modified ({stack} release)*: 8.4.0
+*Last modified ({stack} release)*: 8.5.0
 
 *Rule authors*: Elastic
 
@@ -82,6 +82,32 @@ is only populated if the parent process pid doesn't match */ not
 
 [[parent-process-pid-spoofing-history]]
 ==== Rule version history
+
+Version 100 (8.5.0 release)::
+* Updated query, changed from:
++
+[source, js]
+----------------------------------
+/* This rule is compatible with Elastic Endpoint only */ sequence by
+host.id, user.id with maxspan=5m [process where event.type == "start"
+and process.Ext.token.integrity_level_name != "system" and (
+process.pe.original_file_name : ("winword.exe", "excel.exe",
+"outlook.exe", "powerpnt.exe", "eqnedt32.exe",
+"fltldr.exe", "mspub.exe", "msaccess.exe", "powershell.exe",
+"pwsh.exe", "cscript.exe",
+"wscript.exe", "rundll32.exe", "regsvr32.exe", "msbuild.exe",
+"mshta.exe", "wmic.exe", "cmstp.exe", "msxsl.exe") or
+process.executable : ("?:\\Users\\*.exe",
+"?:\\ProgramData\\*.exe",
+"?:\\Windows\\Microsoft.NET\\*.exe",
+"?:\\Windows\\Temp\\*.exe",
+"?:\\Windows\\Tasks\\*") or process.code_signature.trusted != true
+) ] by process.pid [process where event.type == "start" and
+process.parent.Ext.real.pid > 0 and /* process.parent.Ext.real.pid
+is only populated if the parent process pid doesn't match */ not
+(process.name : "msedge.exe" and process.parent.name : "sihost.exe")
+] by process.parent.Ext.real.pid
+----------------------------------
 
 Version 2 (8.4.0 release)::
 * Formatting only
