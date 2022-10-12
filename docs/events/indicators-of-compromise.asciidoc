@@ -1,7 +1,7 @@
 [[indicators-of-compromise]]
 = Indicators of compromise
 
-The Intelligence page makes it easy to access and analyze your threat intelligence data by centralizing Indicators of Compromise (IoCs) from enabled threat intelligence feeds and providers. This guide defines threat intelligence and IoCs, helps you get started using the Intelligence page, and explains how to work with indicators.
+The Intelligence page collects data from enabled threat intelligence feeds and provides a centralized view of indicators. This guide defines threat intelligence and indicators, helps you get started using the Intelligence page, and explains how to work with indicators.
 
 [role="screenshot"]
 image::images/indicators-table.png[Shows the Indicators table on the Intelligence page]
@@ -12,7 +12,7 @@ image::images/indicators-table.png[Shows the Indicators table on the Intelligenc
 You must have _one_ of the following installed on the hosts you want to monitor:
 
 * *{agent}* - Install a {fleet-guide}/install-fleet-managed-elastic-agent.html[{fleet}-managed {agent}] and ensure the agent's {fleet-guide}/view-elastic-agent-status.html[status] must be `Healthy`. Refer to {fleet-guide}/fleet-troubleshooting.html[{fleet} Troubleshooting] if it isn't.
-* *{filebeat}* - Install {filebeat-ref}/filebeat-installation-configuration.html[{filebeat}] version 8.x. Earlier versions are incompatible with ECS and will prevent indicator data from displaying in the Indicators table.
+* *{filebeat}* - Install {filebeat-ref}/filebeat-installation-configuration.html[{filebeat}] version 8.x. Earlier {filebeat} versions are incompatible with ECS and will prevent indicator data from displaying in the Indicators table.
 --
 
 [discrete]
@@ -44,10 +44,9 @@ NOTE: For more information about available fields, go to the https://docs.elasti
 === Troubleshooting
 If indicator data is not appearing in the Indicators table after you installed threat intelligence integrations:
 
-* Verify that the index holding indicator documents is included in the <<<<update-sec-indices,default {elastic-sec} indices>> (`securitySolution:defaultIndex`). The index holding indicator documents will differ based the way you're collecting indicator data:
-** *{agent} threat intelligence integrations* - Indicator documents are stored in the `logs_ti*` index.
-** *{filebeat} threat intelligence integrations* -
-Indicator documents are stored in the `filebeat-*` index.
+* Verify that the index holding indicator documents is included in the <<update-sec-indices,default {elastic-sec} indices>> (`securitySolution:defaultIndex`). The index holding indicator documents will differ based the way you're collecting indicator data:
+** *{agent} integrations* - If you are collecting indicator data from {agent} threat intelligence integrations, indicator documents are stored in the `logs_ti*` index pattern.
+** *{filebeat} integrations* - If you are collecting indicator data from {filebeat} threat intelligence integrations, indicator documents are stored in the `filebeat-*` index pattern.
 * Make sure indicator data you're ingesting is mapped to {ecs-ref}[Elastic Common Schema (ECS)].
 
 [discrete]
@@ -66,7 +65,7 @@ Learn more about an indicator by clicking *View details* and opening the Indicat
 
 * *Overview*: A summary of the indicator. Provides the indicator's name, the threat intelligence feed it came from, the indicator type, and additional relevant data.
 +
-NOTE: Some threat intelligence feeds provide  https://www.cisa.gov/tlp#:~:text=Introduction,shared%20with%20the%20appropriate%20audience[Traffic Light Protocol (TLP) markings]. The *TLP Marking* field will be empty if the data is not available.
+NOTE: Some threat intelligence feeds provide  https://www.cisa.gov/tlp#:~:text=Introduction,shared%20with%20the%20appropriate%20audience[Traffic Light Protocol (TLP) markings]. The *TLP Marking* field will be empty if the data is not available. The *Confidence* field will also be empty if the data is not available.
 
 * *Table*: The indicator data in table format.
 * *JSON*: The indicator data in JSON format.
@@ -78,7 +77,11 @@ image::images/indicator-details-flyout.png[Shows the Indicator details flyout, 6
 [[find-related-sec-events]]
 == Find related security events
 
-Investigating an indicator in Timeline helps you find related security events in your environment. You can add an indicator to Timeline from the Indicators table or the Indicator details flyout.
+Investigating an indicator in <<timelines-ui,Timeline>> helps you find related security events in your environment. You can add an indicator to Timeline from the Indicators table or the Indicator details flyout.
 
 [role="screenshot"]
 image::images/indicator-in-timeline.png[Shows the results of an indicator being investigated in Timeline]
+
+When you add an indicator to Timeline, a new Timeline opens with a pre-populated KQL query. The query contains the indicator field and value pair that you selected. Timeline also automatically includes the field and value pair of the mapped source event.
+
+For example, if you added the file hash indicator `threat.indicator.file.hash.sha256 : c207213257a63589b1e1bd2f459b47becd000c1af8ea7983dd9541aff145c3ba` to Timeline, Timeline automatically updates the KQL query to include the mapped source event field and value `file.hash.sha256 : c207213257a63589b1e1bd2f459b47becd000c1af8ea7983dd9541aff145c3ba`. Using a KQL query that includes both the indicator and source event allows Timeline to find all events and alerts that have matching field and value pairs. 
