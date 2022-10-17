@@ -5,22 +5,22 @@ This page explains how to configure the Kubernetes Security Posture Management i
 The instructions differ depending on whether you're installing on EKS or on unmanaged clusters.
 
 * Install on EKS-managed clusters:
-  1. <<kspm-setup-eks-start,Start configuring the KSPM integration>>
+  1. <<kspm-setup-eks-start,Name your integration and select a Kubernetes deployment type>>
   2. <<kspm-setup-eks-auth,Authenticate to AWS>>
   3. <<kspm-setup-eks-finish,Finish configuring the KSPM integration>>
-  4. <<kspm-setup-eks-modify-deploy,Modify and deploy the DaemonSet to your clusters>>
+  4. <<kspm-setup-eks-modify-deploy,Deploy the DaemonSet to your clusters>>
 
 
 * Install on unmanaged clusters:
   1. <<kspm-setup-unmanaged,Configure the KSPM integration>>
-  2. <<kspm-setup-unmanaged-modify-deploy,Modify and deploy the DaemonSet manifest to your clusters>>
+  2. <<kspm-setup-unmanaged-modify-deploy,Deploy the DaemonSet manifest to your clusters>>
 
 [discrete]
 [[kspm-setup-eks-start]]
 === Set up KSPM for Amazon EKS clusters
 
 [discrete]
-==== Start configuring the KSPM integration
+==== Name your integration and select a Kubernetes Deployment type
 
 1. Go to *Dashboards -> Cloud Posture*.
 2. Click *Add a KSPM integration*.
@@ -41,7 +41,36 @@ There are several options for how to provide AWS credentials:
 
 Regardless of which option you use, you'll need to grant the following permissions:
 
-```
+
+
+[source,console]
+----------------------------------
+ecr:GetRegistryPolicy,
+eks:ListTagsForResource
+elasticloadbalancing:DescribeTags
+ecr-public:DescribeRegistries
+ecr:DescribeRegistry
+elasticloadbalancing:DescribeLoadBalancerPolicyTypes
+ecr:ListImages
+ecr-public:GetRepositoryPolicy
+elasticloadbalancing:DescribeLoadBalancerAttributes
+elasticloadbalancing:DescribeLoadBalancers
+ecr-public:DescribeRepositories
+eks:DescribeNodegroup
+ecr:DescribeImages
+elasticloadbalancing:DescribeLoadBalancerPolicies
+ecr:DescribeRepositories
+eks:DescribeCluster
+eks:ListClusters
+elasticloadbalancing:DescribeInstanceHealth
+ecr:GetRepositoryPolicy
+----------------------------------
+
+If you are using the AWS visual editor to create and modify your IAM Policies, you can copy and paste this IAM policy JSON object:
+
+.Click to view JSON object
+[%collapsible]
+====
 {
     "Version": "2012-10-17",
     "Statement": [
@@ -73,29 +102,34 @@ Regardless of which option you use, you'll need to grant the following permissio
         }
     ]
 }
-```
+====
 
 [discrete]
 [[kspm-use-keys-directly]]
 ===== Option 1 - Use access keys directly
 Access keys are long-term credentials for an IAM user or the AWS account root user. To use access keys as credentials, you need to provide the `Access key ID` and the `Secret Access Key`.
 
-For more details refer to AWS's documentation for https://docs.aws.amazon.com/general/latest/gr/aws-sec-cred-types.html[Access Keys and Secret Access Keys].
+For more details, refer to AWS' https://docs.aws.amazon.com/general/latest/gr/aws-sec-cred-types.html[Access Keys and Secret Access Keys] documentation.
 
 IMPORTANT: You must select "Programmatic access" when creating the IAM user.
 
 [discrete]
 [[kspm-use-temp-credentials]]
 ===== Option 2 - Use temporary security credentials
-Temporary security credentials can be configured in AWS to last for a specified period of time. They consist of an access key ID, a secret access key, and a security token, which is typically found using `GetSessionToken`.
+You can configure temporary security credentials in AWS to last for a specified duration. They consist of an access key ID, a secret access key, and a security token, which is typically found using `GetSessionToken`.
 
-Because temporary security credentials are short term, once they expire you will need to generate new ones and manually update the integration's configuration to continue collecting cloud posture data. Update the credentials before they expire to avoid data loss.
+Because temporary security credentials are short term, once they expire, you will need to generate new ones and manually update the integration's configuration to continue collecting cloud posture data. Update the credentials before they expire to avoid data loss.
 
-NOTE: IAM users with multi-factor authentication (MFA) enabled need to submit an MFA code when calling `GetSessionToken`. For more details refer to AWS's documentation for https://docs.aws.amazon.com/IAM/latest/UserGuide/id_credentials_temp.html[Temporary Security Credentials].
+NOTE: IAM users with multi-factor authentication (MFA) enabled need to submit an MFA code when calling `GetSessionToken`. For more details, refer to AWS' https://docs.aws.amazon.com/IAM/latest/UserGuide/id_credentials_temp.html[Temporary Security Credentials] documentation.
 
-You can use the AWS CLI to generate temporary credentials. For example, you could use the following command if you have MFA enabled: `sts get-session-token --serial-number arn:aws:iam::1234:mfa/your-email@example.com --duration-seconds 129600 --token-code 123456`
+You can use the AWS CLI to generate temporary credentials. For example, you could use the following command if you have MFA enabled:
 
-The output from this command includes the following fields, which you should supply to the KSPM integration:
+[source,console]
+----------------------------------
+`sts get-session-token --serial-number arn:aws:iam::1234:mfa/your-email@example.com --duration-seconds 129600 --token-code 123456`
+----------------------------------
+
+The output from this command includes the following fields, which you should provide when configuring the KSPM integration:
 
 * `Access key ID`: The first part of the access key.
 * `Secret Access Key`: The second part of the access key.
@@ -104,7 +138,7 @@ The output from this command includes the following fields, which you should sup
 [discrete]
 [[kspm-use-a-shared-credentials-file]]
 ===== Option 3 - Use a shared credentials file
-If you use different AWS credentials for different tools or applications, you can use profiles to define multiple access keys in the same configuration file. For more details refer to AWS's documentation for https://docs.aws.amazon.com/sdkref/latest/guide/file-format.html[Shared Credentials Files]
+If you use different AWS credentials for different tools or applications, you can use profiles to define multiple access keys in the same configuration file. For more details refer to AWS' https://docs.aws.amazon.com/sdkref/latest/guide/file-format.html[Shared Credentials Files] documentation.
 
 Instead of providing the `Access key ID` and `Secret Access Key` to the integration, provide the information required to locate the access keys within the shared credentials file:
 
@@ -123,11 +157,11 @@ If you don't provide values for all configuration fields, the integration will u
 ===== Option 4 - Use an IAM role Amazon Resource Name (ARN)
 An IAM role Amazon Resource Name (ARN) is an IAM identity that you can create in your AWS account. You define the role's permissions.
 Roles do not have standard long-term credentials such as passwords or access keys.
-Instead, when you assume a role it provides you with temporary security credentials for your session.
+Instead, when you assume a role, it provides you with temporary security credentials for your session.
 An IAM role's ARN can be used to specify which AWS IAM role to use to generate temporary credentials.
 
-For more details refer to AWS's https://docs.aws.amazon.com/STS/latest/APIReference/API_AssumeRole.html[AssumeRole API documentation].
-Follow AWS's instructions to https://docs.aws.amazon.com/IAM/latest/UserGuide/id_users_create.html[create an IAM user], and define its permissions using the JSON permissions policy above.
+For more details, refer to AWS' https://docs.aws.amazon.com/STS/latest/APIReference/API_AssumeRole.html[AssumeRole API] documentation.
+Follow AWS' instructions to https://docs.aws.amazon.com/IAM/latest/UserGuide/id_users_create.html[create an IAM user], and define its permissions using the JSON permissions policy above.
 
 To use an IAM role's ARN, you need to provide either a <<kspm-use-a-shared-credentials-file,credential profile>> or <<kspm-use-keys-directly,access keys>> along with the `ARN role`.
 The `ARN Role` value specifies which AWS IAM role to use for generating temporary credentials.
@@ -143,13 +177,13 @@ If a `Credential Profile Name` is not present, the default credential profile wi
 Once you've provided AWS credentials, finish configuring the KSPM integration:
 
 1. If you want to monitor Kubernetes clusters that aren’t yet enrolled in {fleet}, select *New Hosts* under “where to add this integration”.
-2. Name the {agent} policy. Use a name that matches the purpose or team of the cluster(s) you want to monitor; for example, `IT-dev-k8s-clusters`.
+2. Name the {agent} policy. Use a name that matches the purpose or team of the cluster(s) you want to monitor. For example, `IT-dev-k8s-clusters`.
 3. Click *Save and continue*, then *Add agent to your hosts*. The *Add agent* wizard appears and provides a DaemonSet manifest `.yaml` file with pre-populated configuration information, such as the `Fleet ID` and `Fleet URL`.
 
 [[kspm-setup-eks-modify-deploy]]
 [discrete]
-==== Modify and deploy the DaemonSet to your clusters
-The *Add agent* wizard helps you deploy a DaemonSet on the Kubernetes clusters you wish to monitor. For each cluster:
+==== Deploy the KSPM integration to EKS clusters
+The *Add agent* wizard helps you deploy the KSPM integration on the Kubernetes clusters you wish to monitor. For each cluster:
 
 1. Download the manifest and make any necessary revisions to its configuration to suit the needs of your environment.
 2. Apply the manifest using the `kubectl apply -f` command. For example: `kubectl apply -f elastic-agent-managed-kubernetes.yaml`
@@ -160,6 +194,8 @@ After a few minutes, a message confirming the {agent} enrollment appears, follow
 [discrete]
 [[kspm-setup-unmanaged]]
 === Set up KSPM for unmanaged Kubernetes clusters
+
+Follow these steps to deploy the KSPM integration to unmanaged clusters. Keep in mind credentials are NOT required for unmanaged deployments.
 
 [discrete]
 ==== Configure the KSPM integration
@@ -179,9 +215,9 @@ image::images/kspm-add-agent-wizard.png[The KSPM integration's Add agent wizard]
 
 [[kspm-setup-unmanaged-modify-deploy]]
 [discrete]
-==== Modify and deploy the DaemonSet to unmanaged clusters
+==== Deploy the KSPM integration to unmanaged clusters
 
-The *Add agent* wizard helps you deploy a DaemonSet on the Kubernetes clusters you wish to monitor. To do this, for each cluster:
+The *Add agent* wizard helps you deploy the KSPM integration on the Kubernetes clusters you wish to monitor. To do this, for each cluster:
 
 1. Download the manifest and make any necessary revisions to its configuration to suit the needs of your environment.
 2. Apply the manifest using the `kubectl apply -f` command. For example: `kubectl apply -f elastic-agent-managed-kubernetes.yaml`
