@@ -1,7 +1,7 @@
 [[host-risk-score]]
 == Host risk score
 
-NOTE: This feature is available for {stack} versions 7.16.0 and newer.
+NOTE: This feature is available for {stack} versions 7.16.0 and newer and requires a www.elastic.co/pricing[Platinum subscription] or higher.
 
 The host risk score feature highlights risky hosts from within your environment. It utilizes a transform with a scripted metric aggregation to calculate host risk scores based on alerts that were generated within the past five days. The transform runs hourly to update the score as new alerts are generated.
 
@@ -24,46 +24,90 @@ The following table shows how risk levels are applied to a host, based on the no
 
 |==============================================
 
+[[enable-host-risk-score]]
 [discrete]
-=== Deploy host risk score
+=== Enable host risk score
 
-NOTE: To enable the host risk score feature, you must have alerts in your environment. If you have none, the *Enable via Dev Tools* button will be greyed out.
+NOTE: To enable the host risk score feature, you must have alerts in your environment. If you have previously enabled host risk score in {stack} versions 7.16 to 8.4 and are upgrading to version 8.5 or later, 
 
-To deploy the host risk score framework in your environment:
+You can enable host risk score from the following places in the  {security-app}:
 
-. https://github.com/elastic/detection-rules/blob/main/docs/experimental-machine-learning/host-risk-score.md#8-enable-kibana-features[Enable the `riskyHostsEnabled` feature flag].
-. In the {security-app}, go to *Dashboards* -> *Overview*, then locate the *Current host risk scores* card in the lower-right corner.
-+
+* The Entity Analytics dashboard 
+* The *Host risk* tab on the Hosts page
+* The *Host risk* tab on a host's details page
+
+Or, in {kib}, you can enable host risk score from Dev Tools. 
+
+TIP: You can also enable import host risk score dashboards in {kib} to analyze host risk score data. To learn how, refer to <<import-host-risk-score-dashboard>> in this topic. 
+
+To enable host risk score from the Entity Analytics dashboard: 
+
+. In the {security-app}, go to *Dashboards* -> *Entity Analytics*. 
+. In the Host Risk Scores section, click *Enable* to install the module. 
+
+To enable host risk score from the Hosts page: 
+
+. Go to *Explore* -> *Hosts*. 
+. Select the *Host risk* tab, then click *Enable* to install the module. 
+
 [role="screenshot"]
-image::images/host-risk-score-enable-dev-tools.png[]
-. Click *Enable via Dev Tools*. This will open the Dev Tools Console in {kib}, which will be pre-populated with the scripts required to enable the host risk score feature.
-. Click the *Play* button to run each of the scripts, in their numbered order from 1 to 11.
-+
+image::images/enable-hrs.png[Enable Host Risk Score button]
+
+To enable host risk score from a host's details page: 
+
+. Go to *Explore* -> *Hosts*. 
+. Select the *All hosts* tab, then click a host name. 
+. On the details page, scroll down to the data tables, then select the *Host risk* tab. 
+. Click *Enable* to install the module. 
+
 [role="screenshot"]
-image::images/host-risk-score-dev-tools-console.png[]
+image::images/enable-hrs-details-pg.gif[Shows how to enable host risk score from the host's details page]
+
+To enable host risk score from Dev Tools in {kib}, open a browser window and enter the following URL:
+
+[source,console]
+----------------------------------
+{KibanaURL}/s/{spaceID}/app/dev_tools#/console?load_from={KibanaURL}/s/{spaceID}/internal/risk_score/prebuilt_content/dev_tool/enable_user_risk_score
+----------------------------------
+
+
+NOTE: After enabling host risk score, you may get a message that says, "No host risk score data available to display." You may need to wait about an hour for data to be generated, or you can click *Restart* to force host risk score calculations to run immediately. 
+
+[[upgrade-host-risk-score]]
+[discrete]
+=== Upgrade host risk score 
+
+If you previously enabled host risk score in {stack} versions 8.4 and earlier and are upgrading to version 8.5 or later, there'll be an option to "upgrade" host risk score instead of enabling it. 
+
+Before upgrading, be mindful of the following: 
+
+* Previous host risk scores are deleted since the older data is not preserved, and new scores are created. However, if you want to retain the old host risk scores, you'll need to reindex the data _before_ upgrading the feature. Your data will then be stored in the `ml_{host|user}_risk_score_{spaceId}` and `ml_${host|user}_risk_score_latest_{spaceID}` indices. To learn how to do this, refer to {ref}/docs-reindex.html[Reindex API]. 
+
+* You must edit your {cloud}/ec-manage-kibana-settings.html#ec-manage-kibana-settings[{kib} user settings] and remove the `xpack.securitySolution.enableExperimental:['riskyHostsEnabled']` feature flag. 
+
+After this is done, you can proceed with upgrading the host risk score feature from any of the following places in the {security-app}:
+
+* The Entity Analytics dashboard 
+* The *Host risk* tab on the Hosts page
+* The *Host risk* tab on a host's details page
 
 [[import-host-risk-score-dashboard]]
 [discrete]
-=== Import the host risk score dashboard
+=== Import the host risk score dashboard (Optional)
 
-After you have set up the framework for the host risk score feature, import pre-built dashboards to analyze risky hosts in your environment:
+After you have enabled the host risk score feature, you can import pre-built dashboards to analyze risky hosts in your environment by doing the following:
 
-. Navigate to the *Current host risk scores* card (*Dashboards -> Overview*).
-. Click *Import dashboard*.
-+
+. In {kib}, go to *Analytics* -> *Dashboard*. 
+. In the search bar, type "host risk score", then select *Drilldown of Host Risk Score*. 
+
 [role="screenshot"]
-image::images/host-risk-score-import-dashboard.png[]
+image::images/select-hrs-dashboard.png[Select host risk score dashboard]
 
-[[view-host-risk-score]]
+[[analyze-host-risk-score]]
 [discrete]
-=== View host risk score data
+=== Analyze host risk score data from the dashboard
 
-From the *Current host risk scores* card, click *View dashboard*.
-
-[role="screenshot"]
-image::images/host-score-overview.png[]
-
-TIP: It is recommended you analyze hosts with the highest risk scores -- or those in the `Critical` and `Moderate` categories first.
+It is recommended you analyze hosts with the highest risk scores -- or those in the `Critical` and `Moderate` categories first.
 
 [role="screenshot"]
 image::images/full-dashboard.png[]
@@ -84,9 +128,9 @@ The data tables beneath the histogram display associated rules, users, and MITRE
 image::images/data-tables.png[]
 
 [discrete]
-==== Additional places to visualize host risk score data
+==== Visualize host risk score data in {elastic-sec}
 
-You can also visualize host risk score data in the following places in the {security-app}:
+Host risk score data appears in the following places in the {security-app}:
 
 The *Overview* tab on the Alert details flyout:
 
