@@ -103,7 +103,9 @@ image::images/session-view-output-badge.png[The Output badge,width=80%,height=80
 
 beta::[]
 
-Terminal output view provide a more complete understanding of commands executed by users or adversaries, and assists with auditing and compliance. It allows you to review a session's terminal output in the context of the original commands. It includes both terminal output and shell commands (if the shell was in echo mode).
+In general, terminal output is the text that appears in interactive Linux shell sessions. This generally includes user-entered text (terminal input), which appears as output to facilitate editing commands, as well as the text output of executed programs. In certain cases such as password entry, terminal input is not captured as output.
+
+From a security perspective, terminal output is important because it offers a means of exfiltrating data. For example, a command like `cat tls-private-key.pem` could output a web server's private key. Thus, terminal output view can improve your understanding of commands executed by users or adversaries, and assist with auditing and compliance.
 
 To enable terminal output data capture:
 
@@ -127,3 +129,13 @@ The left and right arrows allow you to navigate through search results.
 4. *Fit screen*, *Zoom in*, and *Zoom out* buttons. Use to adjust the text size.
 
 TIP: Use Session view's *Fullscreen* button (located next to the *Close session viewer* button) to better fit output with long lines, such as for graphical programs like `vim`.
+
+[discrete]
+[[terminal-output-limitations]]
+==== Terminal output limitations for search and alerting
+You should understand several current limitations before building rules based on terminal output data:
+
+* Terminal output that appears in the `process.io.text` field includes https://gist.github.com/fnky/458719343aabd01cfb17a3a4f7296797[ANSI codes] that represent, among other things, text color, text weight, and escape sequences. For maximum reliability, you should post-process this data before using it for alert generation. Additionally, rule queries using this data should include leading and trailing wildcards (for example `process where process.io.text : "*hello world*"`), since output events typically include multiple lines of output.
+* Most ANSI codes are stripped out of the data when it appears in terminal output view, but some codes remain, such as `\b`, the escape code for a backspace. For example, if a user accidentally entered `sdo` instead of `sudo`, then pressed backspace twice to fix the typo, the output appearing in terminal output view would be `sdo\b\budo`.
+* Output that seems like it should be continuous may be split into multiple events due to the advanced settings described above, which may prevent a query from matching.
+* Rules based on output data will identify which `process.io.text` value matched the alert query, without identifying which part of that value matched.
