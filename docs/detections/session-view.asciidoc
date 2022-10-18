@@ -92,7 +92,7 @@ Session View includes additional badges not pictured above:
 [role="screenshot"]
 image::images/session-view-exec-user-change-badge.png[The Exec user change badge,width=80%,height=80%]
 
-* The *Output* badge appears next to commands that generated terminal output. Click it to open the terminal output view.
+* The *Output* badge appears next to commands that generated terminal output. Click it to view that command's output in terminal output view.
 +
 [role="screenshot"]
 image::images/session-view-output-badge.png[The Output badge,width=80%,height=80%]
@@ -135,7 +135,8 @@ TIP: Use Session view's *Fullscreen* button (located next to the *Close session 
 ==== Terminal output limitations for search and alerting
 You should understand several current limitations before building rules based on terminal output data:
 
-* Terminal output that appears in the `process.io.text` field includes https://gist.github.com/fnky/458719343aabd01cfb17a3a4f7296797[ANSI codes] that represent, among other things, text color, text weight, and escape sequences. For maximum reliability, you should post-process this data before using it for alert generation. Additionally, rule queries using this data should include leading and trailing wildcards (for example `process where process.io.text : "*hello world*"`), since output events typically include multiple lines of output.
-* Most ANSI codes are stripped out of the data when it appears in terminal output view, but some codes remain, such as `\b`, the escape code for a backspace. For example, if a user accidentally entered `sdo` instead of `sudo`, then pressed backspace twice to fix the typo, the output appearing in terminal output view would be `sdo\b\budo`.
+* Terminal output that appears in the `process.io.text` field includes https://gist.github.com/fnky/458719343aabd01cfb17a3a4f7296797[ANSI codes] that represent, among other things, text color, text weight, and escape sequences. This can prevent EKS queries from matching as expected. Queries of this data will have more success matching single words than more complex strings.
+* Queries of this data should include leading and trailing wildcards (for example `process where process.io.text : "*sudo*"`), since output events typically include multiple lines of output.
+* The search functionality built in to terminal output view is subject to similar limitations. For example, if a user accidentally entered `sdo` instead of `sudo`, then pressed backspace twice to fix the typo, the recorded output would be `sdo\b\budo`. This would appear in the terminal output view as `sudo`, but searching terminal output view for `sudo` would not result in a match.
 * Output that seems like it should be continuous may be split into multiple events due to the advanced settings described above, which may prevent a query from matching.
-* Rules based on output data will identify which `process.io.text` value matched the alert query, without identifying which specific part of that value matched.
+* Rules based on output data will identify which event's `process.io.text` value matched the alert query, without identifying which specific part of that value matched. For example, the rule query `process.io.text: "*test*"` could match a large, multi-line log file due to a single instance of `test`, without identifying where in the file the instance occurred.
