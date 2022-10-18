@@ -1,7 +1,7 @@
 [[user-risk-score]]
 == User risk score
 
-NOTE: This feature is available for {stack} versions 8.3.0 and newer.
+NOTE: This feature is available for {stack} versions 8.3.0 and newer and requires a www.elastic.co/pricing[Platinum subscription] or higher.
 
 The user risk score feature highlights risky usernames in your environment. It utilizes a transform with a scripted metric aggregation to calculate user risk scores based on alerts generated within the past 90 days. The transform runs hourly to update scores as new alerts are generated.
 
@@ -23,39 +23,105 @@ The following table shows how risk levels are applied to a username, based on th
 
 [discrete]
 [[deploy-user-risk-score]]
-=== Deploy the user risk score package
+=== Enable user risk score
 
-To deploy the user risk score framework in your environment, follow https://github.com/elastic/detection-rules/blob/main/docs/experimental-machine-learning/user-risk-score.md[these steps]. To view user risk score data in the {security-app}, you must https://github.com/elastic/detection-rules/blob/main/docs/experimental-machine-learning/user-risk-score.md#8-enable-kibana-features[enable the `riskyUsersEnabled` feature flag]. However, enabling the feature flag is *not* required to view the Lens dashboards.
+You can enable user risk score from the following places in the  {security-app}:
 
-NOTE: Update user risk score artifacts after you upgrade the {stack}. To do this, download a release bundle that's compatible with the new {stack} version and repeat all the steps referenced above. Failure to do so might cause views in the {security-app} to break.
+* The Entity Analytics dashboard 
+* The *User risk* tab on the Users page
+* The *User risk* tab on a user's details page
+
+Or, in {kib}, you can enable user risk score in Console. 
+
+To enable user risk score from the Entity Analytics dashboard: 
+
+. In the {security-app}, go to *Dashboards* -> *Entity Analytics*. 
+. In the User Risk Scores section, click *Enable* to install the module. 
+
+
+To enable user risk score from the Users page: 
+
+. Go to *Explore* -> *Users*. 
+. Select the *User risk* tab, then click *Enable* to install the module. 
+
+[role="screenshot"]
+image::images/enable-urs.png[Enable User Risk score button]
+
+To enable user risk score from a user's details page: 
+
+. Go to *Explore* -> *Users*. 
+. Select the *All users* tab, then click a user name. 
+. On the details page, scroll down to the data tables, then select the *User risk* tab. 
+. Click *Enable* to install the module. 
+
+To enable user risk score from Console in {kib}, open a browser window and enter the following URL:
+
+[source,console]
+----------------------------------
+{KibanaURL}/s/{spaceID}/app/dev_tools#/console?load_from={KibanaURL}/s/{spaceID}/internal/risk_score/prebuilt_content/dev_tool/enable_user_risk_score
+----------------------------------
+
+NOTE: If you have existing content in Console, scroll to the bottom, then paste the content. 
+
+[[upgrade-user-risk-score]]
+[discrete]
+=== Upgrade user risk score 
+
+If you previously enabled user risk score and are upgrading to {stack} version 8.5 or later, there'll be an option to "upgrade" user risk score instead of enabling it. 
+
+Before upgrading, be mindful of the following: 
+
+* Previous user risk scores are deleted since the older data is not preserved, and new scores are created. However, if you want to retain the old user risk scores, you'll need to reindex the data _before_ upgrading the feature. Your data will then be stored in the `ml_user_risk_score_{spaceID}` and `ml_$user_risk_score_latest_{spaceID}` indices. To learn how to do this, refer to {ref}/docs-reindex.html[Reindex API]. 
+
+* You must edit your {cloud}/ec-manage-kibana-settings.html#ec-manage-kibana-settings[{kib} user settings] and remove the `xpack.securitySolution.enableExperimental:['riskyUsersEnabled']` feature flag. 
+
+After this is done, you can proceed with upgrading the user risk score feature from any of the following places in the {security-app}:
+
+* The Entity Analytics dashboard 
+* The *User risk* tab on the User page
+* The *User risk* tab on a user's details page
+
+NOTE: After enabling or upgrading user risk score, you may get a message that says, "No user risk score data available to display." There are additional steps you can take to verify that the transform, which is used to install the user risk score module, is picking up data. To learn how, refer to <<verify-user-risk-score, Verify user risk score data installed successfully>>. 
 
 [[view-user-risk-score]]
 [discrete]
-=== View user risk score data
+=== Analyze user risk score data
 
-If the `riskyUsersEnabled` feature flag is enabled:
+It is recommended you analyze users with the highest risk scores -- or those in the `Critical` and `Moderate` categories first. User risk score data appears in the following places in the {security-app}:
 
-. In the {security-app}, go to *Explore* -> *Users*.
-. On the *Users* page, select the *User risk* tab.
-
-The User risk table shows a list of usernames, their assigned risk scores, and user risk classifications. The table appears in reverse chronological order, with the most recently authenticated user at the top. Select the *User risk classification* menu to filter the table by the classification type.
-
-NOTE: The User risk table is *not* affected by the KQL time range.
+The `user.risk.calculated_level` column in the Alerts table:
 
 [role="screenshot"]
-image::images/urs-table.png[User risk score table]
+image::images/urs-alerts-table.png[User risk score in Alerts table]
 
-Click a username to view the user risk details page, which shows how the risk score for that user has changed over time. The *Top risk score contributors* table shows rules with the highest user risk score. Click a rule name to view the rule details page.
-
-NOTE: The data on this page *is* affected by the KQL time range; therefore, modify the date and time picker to filter your results.
+The *Overview* tab on the Alert details flyout:
 
 [role="screenshot"]
-image::images/urs-details-page.png[User risk score details page]
+image::images/urs-score-flyout.png[User risk score in Alert details flyout]
 
-If the `riskyUsersEnabled` feature flag is *not* enabled:
+The *Users by risk* tab on the Users page:
 
-. In {kib}, go to *Analytics -> Dashboard*, then search for "risk score".
-. Select the *Drilldown of User Risk Score* dashboard.
+[role="screenshot"]
+image::images/users-by-risk-details-page.png[User risk score on Users by risk tab]
+
+The Overview section on the user details page:
+
+[role="screenshot"]
+image::images/urs-overview-section.png[User risk score in Overview section]
+
+The *Users by risk* tab on the user details page:
+
+[role="screenshot"]
+image::images/users-by-risk-details-page.png[User risk score on the user details page]
+
+You can also visualize user risk score data using prebuilt dashboards that are automatically imported once the feature is enabled. 
+
+To access the dashboards:
+
+. In {kib}, go to *Analytics -> Dashboard*, then search for `risk score`.
+. Select *Drilldown of User Risk Score* to drill down further into risk components of a particular user, or *Current Risk Score for Users* to display a list of current risky users in your environment.
+
+In this example, we'll explore the *Drilldown of User Risk Score* dashboard.
 
 [role="screenshot"]
 image::images/select-urs-dashboard.png[Select dashboard]
@@ -69,3 +135,115 @@ The data tables beneath the histogram display alert counts by users, alert count
 
 [role="screenshot"]
 image::images/dashboard.gif[User risk score dashboard]
+
+
+[[verify-user-risk-score]]
+=== Verify user risk score data installed successfully (Optional)
+
+After enabling or upgrading user risk score, you may get a message in the UI that says, "No user risk score data available to display."
+
+If so, it's recommended you verify that user risk score data has been generated by doing the following:
+
+In {kib}, run the following commands in Console to query the user risk score index: 
+
+[source,console]
+----------------------------------
+GET ml_user_risk_score_{{spaceID}}/_search
+GET ml_user_risk_score_latest_{{spaceID}}/_search
+----------------------------------
+
+If no data returns, you'll need to check if the source index (.`alerts-security.alerts-{{spaceID}}`) is generating alerts data:
+
+[source,console]
+----------------------------------
+GET _transform/<transform_id>/_stats?human=true
+----------------------------------
+
+Here's an example response: 
+
+[source,console]
+----------------------------------
+{
+  "count": 1,
+  "transforms": [
+    {
+      "id": "ml_userriskscore_pivot_transform_default",
+      "state": "started",
+      "node": {
+        "id": "H1tlwfTyRkWls-C0sarmHw",
+        "name": "instance-0000000000",
+        "ephemeral_id": "SBqlp5ywRuuop2gtcdCljA",
+        "transport_address": "10.43.255.164:19635",
+        "attributes": {}
+      },
+      "stats": {
+        "pages_processed": 29,
+        "documents_processed": 11805,
+        "documents_indexed": 8,
+        "documents_deleted": 0,
+        "trigger_count": 9,
+        "index_time_in_ms": 52,
+        "index_total": 7,
+        "index_failures": 0,
+        "search_time_in_ms": 201,
+        "search_total": 29,
+        "search_failures": 0,
+        "processing_time_in_ms": 14,
+        "processing_total": 29,
+        "delete_time_in_ms": 0,
+        "exponential_avg_checkpoint_duration_ms": 59.02353261024906,
+        "exponential_avg_documents_indexed": 0.8762710605864747,
+        "exponential_avg_documents_processed": 1664.7724779548555
+      },
+      "checkpointing": {
+        "last": {
+          "checkpoint": 8,
+          "timestamp": "2022-10-17T14:49:50.315Z",
+          "timestamp_millis": 1666018190315,
+          "time_upper_bound": "2022-10-17T14:47:50.315Z",
+          "time_upper_bound_millis": 1666018070315
+        },
+        "operations_behind": 380,
+        "changes_last_detected_at_string": "2022-10-17T14:49:50.113Z",
+        "changes_last_detected_at": 1666018190113,
+        "last_search_time_string": "2022-10-17T14:49:50.113Z",
+        "last_search_time": 1666018190113
+      }
+    }
+  ]
+}
+----------------------------------
+
+Take note of the value from `time_upper_bound_millis` and enter it as a range query for the alerts index:
+
+[source,console]
+----------------------------------
+GET .alerts-security.alerts-default/_search
+{
+  "query": {
+    "range": {
+      "@timestamp": {
+        "lt": <time_upper_bound_millis>
+      }
+    }
+  }
+}
+----------------------------------
+
+Example: 
+
+[source,console]
+----------------------------------
+GET .alerts-security.alerts-default/_search
+{
+  "query": {
+    "range": {
+      "@timestamp": {
+        "lt": 1666018070315
+      }
+    }
+  }
+}
+----------------------------------
+
+If there's no response, install the user risk module again. 

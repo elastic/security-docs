@@ -28,7 +28,7 @@ The following table shows how risk levels are applied to a host, based on the no
 [discrete]
 === Enable host risk score
 
-NOTE: To enable the host risk score feature, you must have alerts in your environment. If you have previously enabled host risk score in {stack} versions 7.16 to 8.4 and are upgrading to version 8.5 or later, 
+NOTE: To enable the host risk score feature, you must have alerts in your environment. If you previously enabled host risk score and are upgrading the {stack} to 8.5 or newer, refer to <<upgrade-host-risk-score>> in this topic. 
 
 You can enable host risk score from the following places in the  {security-app}:
 
@@ -36,9 +36,7 @@ You can enable host risk score from the following places in the  {security-app}:
 * The *Host risk* tab on the Hosts page
 * The *Host risk* tab on a host's details page
 
-Or, in {kib}, you can enable host risk score from Dev Tools. 
-
-TIP: You can also enable import host risk score dashboards in {kib} to analyze host risk score data. To learn how, refer to <<import-host-risk-score-dashboard>> in this topic. 
+Or, in {kib}, you can enable host risk score in Console. 
 
 To enable host risk score from the Entity Analytics dashboard: 
 
@@ -61,27 +59,26 @@ To enable host risk score from a host's details page:
 . Click *Enable* to install the module. 
 
 [role="screenshot"]
-image::images/enable-hrs-details-pg.gif[Shows how to enable host risk score from the host's details page]
+image::images/enable-hrs-details-pg.gif[Enable host risk score from the host's details page]
 
-To enable host risk score from Dev Tools in {kib}, open a browser window and enter the following URL:
+To enable host risk score from Console in {kib}, open a browser window and enter the following URL:
 
 [source,console]
 ----------------------------------
-{KibanaURL}/s/{spaceID}/app/dev_tools#/console?load_from={KibanaURL}/s/{spaceID}/internal/risk_score/prebuilt_content/dev_tool/enable_user_risk_score
+{KibanaURL}/s/{spaceID}/app/dev_tools#/console?load_from={KibanaURL}/s/{spaceID}/internal/risk_score/prebuilt_content/dev_tool/enable_host_risk_score
 ----------------------------------
 
-
-NOTE: After enabling host risk score, you may get a message that says, "No host risk score data available to display." You may need to wait about an hour for data to be generated, or you can click *Restart* to force host risk score calculations to run immediately. 
+NOTE: If you have existing content in Console, scroll to the bottom, then paste the content. 
 
 [[upgrade-host-risk-score]]
 [discrete]
 === Upgrade host risk score 
 
-If you previously enabled host risk score in {stack} versions 8.4 and earlier and are upgrading to version 8.5 or later, there'll be an option to "upgrade" host risk score instead of enabling it. 
+If you previously enabled host risk score and are upgrading to {stack} version 8.5 or later, there'll be an option to "upgrade" host risk score instead of enabling it. 
 
 Before upgrading, be mindful of the following: 
 
-* Previous host risk scores are deleted since the older data is not preserved, and new scores are created. However, if you want to retain the old host risk scores, you'll need to reindex the data _before_ upgrading the feature. Your data will then be stored in the `ml_{host|user}_risk_score_{spaceId}` and `ml_${host|user}_risk_score_latest_{spaceID}` indices. To learn how to do this, refer to {ref}/docs-reindex.html[Reindex API]. 
+* Previous host risk scores are deleted since the older data is not preserved, and new scores are created. However, if you want to retain the old host risk scores, you'll need to reindex the data _before_ upgrading the feature. Your data will then be stored in the `ml_host_risk_score_{spaceID}` and `ml_$host_risk_score_latest_{spaceID}` indices. To learn how to do this, refer to {ref}/docs-reindex.html[Reindex API]. 
 
 * You must edit your {cloud}/ec-manage-kibana-settings.html#ec-manage-kibana-settings[{kib} user settings] and remove the `xpack.securitySolution.enableExperimental:['riskyHostsEnabled']` feature flag. 
 
@@ -91,33 +88,65 @@ After this is done, you can proceed with upgrading the host risk score feature f
 * The *Host risk* tab on the Hosts page
 * The *Host risk* tab on a host's details page
 
-[[import-host-risk-score-dashboard]]
+NOTE: After enabling or upgrading host risk score, you may get a message that says, "No host risk score data available to display." There are additional steps you can take to verify that the transform, which is used to install the host risk score module, is picking up data. To learn how, refer to <<verify-host-risk-score, Verify host risk score data installed successfully>>. 
+
+[[analyze-host-risk-score]]
 [discrete]
-=== Import the host risk score dashboard (Optional)
+=== Analyze host risk score data
 
-After you have enabled the host risk score feature, you can import pre-built dashboards to analyze risky hosts in your environment by doing the following:
+It is recommended you analyze hosts with the highest risk scores -- or those in the `Critical` and `Moderate` categories first. Host risk score data appears in the following places in the {security-app}:
 
-. In {kib}, go to *Analytics* -> *Dashboard*. 
-. In the search bar, type "host risk score", then select *Drilldown of Host Risk Score*. 
+The `host.risk.calculated_level` column in the Alerts table:
+
+[role="screenshot"]
+image::images/hrs-alerts-table.png[Host risk score in the Alerts table]
+
+The *Overview* tab on the Alert details flyout:
+
+[role="screenshot"]
+image::images/score-in-flyout.png[Host risk score in Alert details flyout]
+
+The *Host risk classification* column in the All hosts table on the Hosts page:
+
+[role="screenshot"]
+image::images/hrs-all-hosts.png[Host risk score on the Hosts page]
+
+The *Hosts by risk* tab on the Hosts page:
+
+[role="screenshot"]
+image::images/hosts-by-risk-tab.png[Host risk score on the host details page]
+
+The Overview section on the host details page:
+
+[role="screenshot"]
+image::images/hrs-overview-section.png[Host risk score in Overview section]
+
+The *Hosts by risk* tab on the host details page:
+
+[role="screenshot"]
+image::images/hosts-by-risk-details-page.png[Host risk score on the Hosts by risk tab]
+
+You can also visualize host risk score data using prebuilt dashboards that are automatically imported once the feature is enabled. 
+
+To access the dashboards:
+
+. In {kib}, go to *Analytics* -> *Dashboard*, then search for `risk score`.
+. Select *Drilldown of Host Risk Score* to drill down further into risk components of a particular host, or *Current Risk Score for Hosts* to display a list of current risky hosts in your environment.
 
 [role="screenshot"]
 image::images/select-hrs-dashboard.png[Select host risk score dashboard]
 
-[[analyze-host-risk-score]]
-[discrete]
-=== Analyze host risk score data from the dashboard
-
-It is recommended you analyze hosts with the highest risk scores -- or those in the `Critical` and `Moderate` categories first.
+In this example, we'll explore the *Drilldown of Host Risk Score* dashboard.
 
 [role="screenshot"]
-image::images/full-dashboard.png[]
+image::images/full-dashboard.png[Shows dashboard]
 
 Use the histogram to track how the risk score for a particular host has changed over time. To specify a date range, use the date and time picker, or drag and select a time range within the histogram.
 
 [role="screenshot"]
 image::images/histogram.png[]
 
-To go to the host's detail page, left-click any host's corresponding bar in the histogram, then select *Go to Host View*.
+To go to the host's details page, left-click any host's corresponding bar in the histogram, then select *Go to Host View*.
 
 [role="screenshot"]
 image::images/go-to-host-view.png[]
@@ -127,32 +156,116 @@ The data tables beneath the histogram display associated rules, users, and MITRE
 [role="screenshot"]
 image::images/data-tables.png[]
 
-[discrete]
-==== Visualize host risk score data in {elastic-sec}
+[[verify-host-risk-score]]
+=== Verify host risk score data installed successfully (Optional)
 
-Host risk score data appears in the following places in the {security-app}:
-
-The *Overview* tab on the Alert details flyout:
+After enabling or upgrading host risk score, you may get the following message in the UI: 
 
 [role="screenshot"]
-image::images/score-in-flyout.png[]
+image::images/restart-hrs.png[Restart host risk score]
 
-The *Host risk classification* column in the All hosts table on the Hosts page:
+If so, it's recommended you verify that host risk score data has been generated by doing the following:
 
-[role="screenshot"]
-image::images/hrs-all-hosts.png[]
+In {kib}, run the following commands in Console to query the host risk score index: 
 
-The *Hosts by risk* tab on the Hosts page:
+[source,console]
+----------------------------------
+GET ml_host_risk_score_{{spaceID}}/_search
+GET ml_host_risk_score_latest_{{spaceID}}/_search
+----------------------------------
 
-[role="screenshot"]
-image::images/hosts-by-risk-tab.png[]
+If no data returns, you'll need to check if the source index (.`alerts-security.alerts-{{spaceID}}`) is generating alerts data:
 
-The *Overview* section on the Host details page:
+[source,console]
+----------------------------------
+GET _transform/<transform_id>/_stats?human=true
+----------------------------------
 
-[role="screenshot"]
-image::images/hrs-overview-section.png[]
+Here's an example response: 
 
-The *Hosts by risk* tab on the Host details page:
+[source,console]
+----------------------------------
+{
+  "count": 1,
+  "transforms": [
+    {
+      "id": "ml_hostriskscore_pivot_transform_default",
+      "state": "started",
+      "node": {
+        "id": "H1tlwfTyRkWls-C0sarmHw",
+        "name": "instance-0000000000",
+        "ephemeral_id": "SBqlp5ywRuuop2gtcdCljA",
+        "transport_address": "10.43.255.164:19635",
+        "attributes": {}
+      },
+      "stats": {
+        "pages_processed": 29,
+        "documents_processed": 11805,
+        "documents_indexed": 8,
+        "documents_deleted": 0,
+        "trigger_count": 9,
+        "index_time_in_ms": 52,
+        "index_total": 7,
+        "index_failures": 0,
+        "search_time_in_ms": 201,
+        "search_total": 29,
+        "search_failures": 0,
+        "processing_time_in_ms": 14,
+        "processing_total": 29,
+        "delete_time_in_ms": 0,
+        "exponential_avg_checkpoint_duration_ms": 59.02353261024906,
+        "exponential_avg_documents_indexed": 0.8762710605864747,
+        "exponential_avg_documents_processed": 1664.7724779548555
+      },
+      "checkpointing": {
+        "last": {
+          "checkpoint": 8,
+          "timestamp": "2022-10-17T14:49:50.315Z",
+          "timestamp_millis": 1666018190315,
+          "time_upper_bound": "2022-10-17T14:47:50.315Z",
+          "time_upper_bound_millis": 1666018070315
+        },
+        "operations_behind": 380,
+        "changes_last_detected_at_string": "2022-10-17T14:49:50.113Z",
+        "changes_last_detected_at": 1666018190113,
+        "last_search_time_string": "2022-10-17T14:49:50.113Z",
+        "last_search_time": 1666018190113
+      }
+    }
+  ]
+}
+----------------------------------
 
-[role="screenshot"]
-image::images/hosts-by-risk-details-page.png[]
+Take note of the value from `time_upper_bound_millis` and enter it as a range query for the alerts index:
+
+[source,console]
+----------------------------------
+GET .alerts-security.alerts-default/_search
+{
+  "query": {
+    "range": {
+      "@timestamp": {
+        "lt": <time_upper_bound_millis>
+      }
+    }
+  }
+}
+----------------------------------
+
+Example: 
+
+[source,console]
+----------------------------------
+GET .alerts-security.alerts-default/_search
+{
+  "query": {
+    "range": {
+      "@timestamp": {
+        "lt": 1666018070315
+      }
+    }
+  }
+}
+----------------------------------
+
+If there's no response, install the user risk module again.
