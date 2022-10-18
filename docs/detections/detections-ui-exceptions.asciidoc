@@ -6,7 +6,7 @@ To prevent the creation of unwanted alerts, you can add exceptions to any rule. 
 alerts are not generated. They provide a convenient way of allowing trusted
 processes and network activity to function without producing unnecessary noise.
 
-You can add multiple exceptions to one rule.
+You can add multiple exceptions to a single rule. An exception can also apply to multiple rules.
 
 In addition to defining exception queries for source event values, you can use rule
 exceptions with value lists. Value lists are lists of items with
@@ -21,14 +21,17 @@ with these types:
 After creating value lists, you can use `is in list` and `is not in list`
 operators to define exceptions.
 
-IMPORTANT: Operators `is in list` and `is not in list` are not available for
-threshold and event correlation rules.
-
 TIP: You can also use value lists as the <<indicator-value-lists,indicator match index>> when creating an indicator match rule.
 
 [float]
 [[manage-value-lists]]
 == Create value lists
+
+When creating a value list for a rule exception, be mindful of the list's size and data type. In general, all rule types support value list exceptions, but there are some limitations for especially large lists or certain data types. The following value list types can _only_ be used with custom query, machine learning, and indicator match rule types:
+
+* Keyword or IP address lists with more than 65,536 values
+* IP range lists with more than 200 dash notation values (for example, `127.0.0.1-127.0.0.4` is one value) or more than 65,536 CIDR notation values
+* Text data type lists of any size
 
 To create a value list:
 
@@ -102,11 +105,10 @@ specific event in the sequence, update the rule's EQL statement. For example:
 * To add an exception from the rule details page:
 .. Go to the rule details page of the rule to which you want to add an
 exception (*Manage* -> *Rules* -> *_<Rule name>_*).
-.. Scroll down below the rule details and select the *Exceptions* tab.
+.. Scroll down the rule details page, select the *Rule exceptions* tab, then click *Add rule exception*.
 +
 [role="screenshot"]
-image::images/exception-histogram.png[Detail of Exceptions tab, 75%]
-.. Click *Add new exception* -> *Add rule exception*.
+image::images/rule-exception-tab.png[Detail of rule exceptions tab]
 
 * To add an exception from the Alerts table:
 .. Go to *Alerts*.
@@ -130,8 +132,9 @@ image::images/add-exception-ui.png[]
 +
 [NOTE]
 =======
-*  An exception defined by a value list must use `is in list` or `is not in list` in all conditions.
+* An exception defined by a value list must use `is in list` or `is not in list` in all conditions.
 * Wildcards are not supported in value lists.
+* If a value list can't be used due to <<manage-value-lists,size or data type>>, it'll be unavailable in the *Value* menu.
 =======
     * `matches` | `does not match` — Allows you to use wildcards in *Value*, such as `C:\path\*\app.exe`. Available wildcards are `?` (match one character) and `*` (match zero or more characters). The selected *Field* data type must be {ref}/keyword.html#keyword-field-type[keyword], {ref}/text.html#text-field-type[text], or {ref}/keyword.html#wildcard-field-type[wildcard].
 +
@@ -166,15 +169,8 @@ Like detection rule exceptions, you can add Endpoint agent exceptions either by 
 
 You can also add Endpoint exceptions to rules that are associated with {elastic-endpoint} rule exceptions. To associate rules, when creating or editing a rule, select the <<rule-ui-advanced-params, *{elastic-endpoint} exceptions*>> option.
 
-[IMPORTANT]
-=====
-When you add an exception to the
-<<endpoint-rule-exceptions, Elastic Endpoint Security>> rule, you can select to
-add the exception to the endpoint. When selected, the exception is added to
+Endpoint exceptions are added to
 both the detection rule *and* the {elastic-endpoint} agent on your hosts.
-
-{ref}/binary.html[Binary fields] are not supported in detection rule exceptions.
-=====
 
 [IMPORTANT]
 =============
@@ -185,13 +181,17 @@ alerts.
 Additionally, to add an Endpoint exception to the Elastic Endpoint Security rule, there must be at least one Endpoint Security alert generated in the system. For non-production use, if no alerts exist, you can trigger a test alert using malware emulation techniques or tools such as the Anti Malware Testfile from the https://www.eicar.org/[European Institute for Computer Anti-Virus Research (EICAR)].
 =============
 
+[IMPORTANT]
+=====
+{ref}/binary.html[Binary fields] are not supported in detection rule exceptions.
+=====
+
 . Do one of the following:
 +
 --
 * To add an Endpoint exception from the rule details page:
 .. Go to the rule details page (*Manage* -> *Rules*), and then search for and  select the Elastic *Endpoint Security* rule.
-.. Scroll down to the *Trend* histogram and select the *Exceptions* tab.
-.. Click *Add new exception* -> *Add Endpoint exception*.
+.. Scroll down the rule details page, select the *Endpoint exceptions* tab, then click *Add endpoint exception*.
 * To add an Endpoint exception from the Alerts table:
 .. Go to *Alerts*.
 .. Scroll down to the Alerts table, and from an {elastic-endpoint}
@@ -277,6 +277,14 @@ Creates an exception that excludes all LFC-signed trusted processes:
 
 [role="screenshot"]
 image::images/nested-exp.png[]
+
+[float]
+[[rules-using-same-exception]]
+=== Find rules using the same exception
+To find out if an exception is used by other rules, select the *Rule exceptions* or *Endpoint exceptions* tab, navigate to an exception list item, then click *Affects _X_ rules*. 
+
+[role="screenshot"]
+image::images/exception-affects-multiple-rules.png[]
 
 [float]
 [[manage-exceptions]]
