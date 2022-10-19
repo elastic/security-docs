@@ -33,28 +33,27 @@ the rule's search results.
 {ref}/getting-started-index.html[Index some documents],
 {ref}/indices-create-index.html[Create index API], and
 {ref}/mapping-types.html[Field data types]. If you have indicators in a standard file format, such as CSV or JSON, you can also use the Machine Learning Data Visualizer to import your indicators into an indicator index. See {ml-docs}/ml-getting-started.html#sample-data-visualizer[Explore the data in {kib}] and use the *Import Data* option to import your indicators.
-
++
 TIP: You can also use value lists as the indicator match index. See <<indicator-value-lists>> at the end of this topic for more information.
 
 * <<create-new-terms-rule, *New terms*>>: Generates an alert for each new term detected in source documents within a specified time range.
 
-When modifying rules or managing detection alerts, you can add exceptions that prevent a rule from generating an alert even when its criteria are met. This is useful for reducing noise, such as preventing alerts from trusted processes and internal IP addresses. <<detections-ui-exceptions>> describes how to add exceptions to a rule.
+When modifying rules or managing detection alerts, you can <<detections-ui-exceptions,add exceptions>> that prevent a rule from generating alerts even when its criteria are met. This is useful for reducing noise, such as preventing alerts from trusted processes and internal IP addresses.
 
 NOTE: You can add exceptions to custom query, machine learning, event correlation, and indicator match rule types.
-
-If you are creating a custom query, threshold, or event correlation rule, you can preview the rule beforehand to see what kind of results you can expect. See <<preview-rules, Preview your rule>> in this topic for more information.
 
 For both prebuilt and custom rules, you can send notifications when alerts are created. Notifications can be sent via {jira}, Microsoft Teams, PagerDuty, Slack, and others, and can be configured when you create or edit a rule.
 
 Creating a new rule requires the following steps:
 
 . <<create-rule-ui>>
-. <<preview-rules>>
 . <<rule-ui-basic-params>>
 . <<rule-ui-advanced-params>>
 . <<rule-schedule>>
 . <<rule-notifications>>
 . <<rule-response-action>>
+
+At any step, you can <<preview-rules,preview the rule>> before saving it to see what kind of results you can expect.
 
 [IMPORTANT]
 ==============
@@ -62,7 +61,7 @@ After you activate a rule, you can check if it is running as expected
 using the <<alerts-ui-monitor, Monitoring tab>> on the Rules page. If you see
 values in the `Gap` column, you can <<troubleshoot-signals>>.
 
-When a rule fails to run, the {es-sec-app} tries to rerun it at its next
+When a rule fails to run, the {security-app} tries to rerun it at its next
 scheduled run time.
 ==============
 
@@ -95,7 +94,7 @@ NOTE: To access data views, ensure you have the {kibana-ref}/data-views.html#dat
 . Go to *Manage* -> *Rules* -> *Create new rule*. The *Create new rule* page displays.
 +
 [role="screenshot"]
-image::images/create-new-rule.png[]
+image::images/create-new-rule.png[Create new rule page,85%]
 +
 . Select the type of rule you want to create, then follow the steps outlined in that section:
 
@@ -126,9 +125,9 @@ then select:
 .. Turn on the **Run job** switch for the required {ml} job.
 +
 [role="screenshot"]
-image::images/rule-start-ml-job.png[]
+image::images/rule-start-ml-job.png[Turning on a machine learning job in the ML job settings menu,75%]
 +
-. Click **Continue**, then proceed with <<rule-ui-basic-params, configuring basic rule settings>>.
+. Click **Continue** to <<rule-ui-basic-params, configure basic rule settings>>.
 
 [discrete]
 [[create-custom-rule]]
@@ -139,28 +138,31 @@ then:
 .. Use the filter and query fields to create the criteria used for detecting
 alerts.
 +
-NOTE: You can use {kib} saved queries (image:images/saved-query-menu.png[Saved query menu,17,17]) and queries from saved Timelines (*Import query from saved Timeline*) as rule conditions.
-+
-For example, the following rule detects when the `vssadmin delete shadows`
+The following example (based on the prebuilt rule <<prebuilt-rule-0-14-2-volume-shadow-copy-deleted-or-resized-via-vssadmin, Volume Shadow Copy Deleted or Resized via VssAdmin>>) detects when the `vssadmin delete shadows`
 Windows command is executed:
 
 ** *Index patterns*: `winlogbeat-*`
 +
-> Winlogbeat ships Windows event logs to {es-sec}.
+Winlogbeat ships Windows event logs to {elastic-sec}.
 
 ** *Custom query*: `event.action:"Process Create (rule: ProcessCreate)" and process.name:"vssadmin.exe" and process.args:("delete" and "shadows")`
 +
-> Searches the `winlogbeat-*` indices for `vssadmin.exe` executions with
+Searches the `winlogbeat-*` indices for `vssadmin.exe` executions with
 the `delete` and `shadow` arguments, which are used to delete a volume's shadow
 copies.
 +
 [role="screenshot"]
-image::images/rule-query-example.png[]
+image::images/rule-query-example.png[Rule query example]
+
+.. You can use {kib} saved queries (image:images/saved-query-menu.png[Saved query menu,18,18]) and queries from saved Timelines (*Import query from saved Timeline*) as rule conditions.
 +
-TIP: This example is based on the
-<<prebuilt-rule-0-14-2-volume-shadow-copy-deleted-or-resized-via-vssadmin, Volume Shadow Copy Deleted or Resized via VssAdmin>> prebuilt rule.
-+
-. Continue with <<preview-rules, previewing the rule>> (optional) or click **Continue** to <<rule-ui-basic-params, configure basic rule settings>>.
+When you use a saved query, the *Load saved query "_query name_" dynamically on each rule execution* check box appears:
+
+* Select this to use the saved query every time the rule runs. This links the rule to the saved query, and you won't be able to modify the rule's *Custom query* field or filters because the rule will only use settings from the saved query. To make changes, modify the saved query itself.
+
+* Deselect this to load the saved query as a one-time way of populating the rule's *Custom query* field and filters. This copies the settings from the saved query to the rule, so you can then further adjust the rule's query and filters as needed. If the saved query is later changed, the rule will not inherit those changes.
+
+. Click **Continue** to <<rule-ui-basic-params, configure basic rule settings>>.
 
 [discrete]
 [[create-threshold-rule]]
@@ -169,6 +171,9 @@ TIP: This example is based on the
 .. Define which {es} indices the rule analyzes for alerts.
 .. Use the filter and query fields to create the criteria used for detecting
 alerts.
++
+NOTE: You can use {kib} saved queries (image:images/saved-query-menu.png[Saved query menu,18,18]) and queries from saved Timelines (*Import query from saved Timeline*) as rule conditions.
+
 .. Use the `Group by` and `Threshold` fields to determine which source event field is used as a threshold and the threshold's value.
 .. Use the `Count` field to limit alerts by cardinality of a certain field.
 +
@@ -178,7 +183,7 @@ You can also leave the `Group by` field undefined. The rule then creates an aler
 +
 IMPORTANT: Alerts created by threshold rules are synthetic alerts that do not resemble the source documents. The alert itself only contains data about the fields that were aggregated over (the `Group by` fields). Other fields are omitted, because they can vary across all source documents that were counted toward the threshold. Additionally, you can reference the actual count of documents that exceeded the threshold from the `kibana.alert.threshold_result.count` field.
 
-. Continue with <<preview-rules, previewing the rule>> (optional) or click *Continue* to <<rule-ui-basic-params, configure basic rule settings>>.
+. Click *Continue* to <<rule-ui-basic-params, configure basic rule settings>>.
 
 [discrete]
 [[create-eql-rule]]
@@ -222,7 +227,7 @@ NOTE: For sequence events, the {security-app} generates a single alert when all 
   * *Tiebreaker field*: Sets a secondary field for sorting events (in ascending, lexicographic order) if they have the same timestamp.
   * *Timestamp field*: Contains the event timestamp used for sorting a sequence of events. This is different from the *Timestamp override* advanced setting, which is used for querying events within a range. Defaults to the `@timestamp` ECS field.
 +
-. Continue with <<preview-rules, previewing the rule>> (optional) or click *Continue* to <<rule-ui-basic-params, configure basic rule settings>>.
+. Click *Continue* to <<rule-ui-basic-params, configure basic rule settings>>.
 
 [discrete]
 [[create-indicator-rule]]
@@ -237,6 +242,9 @@ the {elastic-sec} event indices. For example, if you want to match documents tha
 +
 TIP: If you want the rule to check every field in the indices, use this
 wildcard expression: `*:*`.
++
+NOTE: You can use {kib} saved queries (image:images/saved-query-menu.png[Saved query menu,18,18]) and queries from saved Timelines (*Import query from saved Timeline*) as rule conditions.
+
 .. *Indicator index patterns*: The indicator index patterns containing field values for which you want to generate alerts. This field is automatically populated with indices specified in the `securitySolution:defaultThreatIndex` advanced setting. For more information, see <<update-threat-intel-indices, Update default Elastic Security threat intelligence indices>>.
 +
 IMPORTANT: Data in indicator indices must be <<ecs-compliant-reqs, ECS compatible>>, and so it must contain a `@timestamp` field.
@@ -246,26 +254,26 @@ the indicator index patterns. The default query `@timestamp > "now-30d/d"` searc
 .. *Indicator mapping*: Compares the values of the specified event and indicator field
 values. When the field values are identical, an alert is generated. To define
 which field values are compared from the indices add the following:
-** *Field*: The field used for comparing values in the {es-sec} event
+** *Field*: The field used for comparing values in the {elastic-sec} event
 indices.
 ** *Indicator index field*: The field used for comparing values in the indicator
 indices.
 .. You can add `AND` and `OR` clauses to define when alerts are generated.
 +
 For example, to create a rule that generates alerts when `host.name` *and*
-`destination.ip` field values in the `logs-*` or `packetbeat-*` {es-sec} indices
+`destination.ip` field values in the `logs-*` or `packetbeat-*` {elastic-sec} indices
 are identical to the corresponding field values in the `mock-threat-list` indicator
 index, enter the rule parameters seen in the following image:
 +
 [role="screenshot"]
-image::images/indicator-rule-example.png[]
+image::images/indicator-rule-example.png[Indicator match rule settings]
 +
 TIP: Before you create rules, create <<timelines-ui, Timeline templates>> so
 they can be selected here. When alerts generated by the rule are investigated
 in the Timeline, Timeline query values are replaced with their corresponding alert
 field values.
 +
-. Continue with <<preview-rules, previewing the rule>> (optional) or click *Continue* to <<rule-ui-basic-params, configure basic rule settings>>.
+. Click *Continue* to <<rule-ui-basic-params, configure basic rule settings>>.
 
 [discrete]
 [[create-new-terms-rule]]
@@ -276,38 +284,40 @@ field values.
 .. Use the filter and query fields to create the criteria used for detecting
 alerts.
 +
-NOTE: You can use {kib} saved queries (image:images/saved-query-menu.png[Saved query menu,17,17]) and queries from saved Timelines (*Import query from saved Timeline*) as rule conditions.
+NOTE: You can use {kib} saved queries (image:images/saved-query-menu.png[Saved query menu,18,18]) and queries from saved Timelines (*Import query from saved Timeline*) as rule conditions.
 +
 .. Use the *Fields* menu to select a field to check for new terms.
 .. Use the *History Window Size* menu to specify the time range to search in minutes, hours, or days to determine if a term is new. The history window size must be larger than the rule interval plus additional look-back time, because the rule will look for terms where the only time(s) the term appears within the history window is _also_ within the rule interval and additional look-back time.
 +
 For example, if a rule has an interval of 5 minutes, no additional look-back time, and a history window size of 7 days, a term will be considered new only if the time it appears within the last 7 days is also within the last 5 minutes. Configure the rule interval and additional look-back time when you <<rule-schedule, set the rule's schedule>>.
-.. Continue with <<preview-rules, previewing the rule>> (optional) or click *Continue* to <<rule-ui-basic-params, configure basic rule settings>>.
+. Click *Continue* to <<rule-ui-basic-params, configure basic rule settings>>.
 
 [discrete]
 [[preview-rules]]
 === Preview your rule (optional)
 
-You can preview any rule to learn how noisy it will be before saving it. If necessary, you can then adjust the rule's query.
+You can preview any custom or prebuilt rule to find out how noisy it will be. For a custom rule, you can then adjust the rule's query or other settings.
 
 NOTE: To preview rules, you need the `read` privilege to the `.preview.alerts-security.alerts-<space-id>` index and `All` privileges for the Security feature. Refer to <<detections-permissions-section>> for more information.
 
-To preview a rule:
+Click the *Rule preview* button while creating or editing a rule. The preview opens in a side panel, showing a histogram and table with the alerts you can expect, based on the defined rule settings and past events in your indices. 
 
-. Write the rule query.
-. Choose how you want to preview the query results:
-
-** *Quick query preview*: Select from pre-defined time frames -- *Last hour*, *Last day*, or *Last month* -- when previewing rule results. Note that threshold and event correlation rules have limited time frame options. The rule interval and look-back time are also pre-defined for the preview and differ by rule type. These settings cannot be modified.
-** *Advanced query preview*: Choose a custom time frame for the rule preview, schedule how often the rule should run, and specify a look-back time.
-+
-TIP: Avoid setting long time frames with short rule intervals. This might cause the rule preview to timeout.
-
-. Click *Preview results*. The rule preview shows a histogram and alerts table with the alerts you can expect, based on the defined rule parameters and historical events in your indices. You can view the details of a particular alert by clicking the *View details* button in the alerts table.
-+
-NOTE: The preview excludes the effects of rule exceptions and timestamp overrides. In the preview histogram, alerts are stacked by `event.category` (or `host.name` for machine learning rules), and events with multiple values are counted more than once.
-+
 [role="screenshot"]
-image::images/preview-rule.png[]
+image::images/preview-rule.png[Rule preview]
+
+The preview also includes the effects of rule exceptions and override fields. In the histogram, alerts are stacked by `event.category` (or `host.name` for machine learning rules), and alerts with multiple values are counted more than once.
+
+To interact with the rule preview:
+
+* Use the date and time picker to define the preview's time range.
++
+TIP: Avoid setting long time ranges with short rule intervals, or the rule preview might time out.
+
+* Click *Refresh* to update the preview. 
+** When you edit the rule's settings or the preview's time range, the button changes from blue (image:images/rule-preview-refresh-circle.png[Blue circular refresh icon,16,17]) to green (image:images/rule-preview-refresh-arrow.png[Green right-pointing arrow refresh icon,17,17]) to indicate that the rule has been edited since the last preview.
+** For a relative time range (such as `Last 1 hour`), refresh the preview to check for the latest results. (Previews don't automatically refresh with new incoming data.)
+
+* Click the *View details* icon (image:images/view-details-icon.png[View details icon,16,15]) in the alerts table to view the details of a particular alert.
 
 [float]
 [[rule-ui-basic-params]]
