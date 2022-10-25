@@ -1,6 +1,81 @@
 [[kspm]]
 = Kubernetes security posture management
 
-The Kubernetes Security Posture Management (KSPM) integration allows you to identify security and compliance issues in the configuration of various Kubernetes components.
+[discrete]
+[[kspm-overview]]
+== Overview
+The Kubernetes Security Posture Management (KSPM) integration allows you to identify configuration risks in the various components that make up your Kubernetes cluster.
+It does this by evaluating your Kubernetes clusters against secure configuration guidelines defined by the Center for Internet Security (CIS) and generating findings with step-by-step instructions for remediating potential security risks.
 
-This integration is currently supported for use with unmanaged Kubernetes clusters, as well as clusters managed by Amazon EKS. To set it up, you'll need to first add it to an {fleet-guide}/agent-policy.html[{agent} policy], then deploy the KSPM DaemonSet to the Kubernetes clusters you want to monitor. This process differs slightly depending on whether you intend to monitor unmanaged clusters or EKS-managed clusters.
+This integration supports Amazon EKS and unmanaged Kubernetes clusters. For setup instructions, refer to <<get-started-with-kspm,Get started with KSPM>>.
+
+.Requirements
+[sidebar]
+--
+* The KSPM integration is available to all Elastic Cloud users. For on-prem deployments, it requires an https://www.elastic.co/pricing[Enterprise subscription].
+--
+
+[discrete]
+[[kspm-how-kspm-works]]
+== How KSPM works
+. When you add a KSPM integration, it generates a Kubernetes manifest. When applied to a cluster, the manifest deploys an {agent} as a https://kubernetes.io/docs/concepts/workloads/controllers/daemonset[DaemonSet] to ensure all nodes are evaluated.
+. Upon deployment, the integration immediately assesses the security posture of your Kubernetes resources. The evaluation process repeats every four hours.
+. After each evaluation, the integration sends findings to {es}. Findings appear on the <<cloud-nat-sec-posture-dashboard,Cloud posture dashboard>> and the <<findings-page,findings>> page.
+
+[discrete]
+[[kspm-use-cases]]
+== Use cases
+
+The KSPM integration helps you to:
+
+* Identify and remediate `failed` findings
+* Identify the most misconfigured resources
+* Identify risks in particular CIS benchmark sections
+
+[discrete]
+[[kspm-remediate-failed-findings]]
+=== Identify and remediate failed findings
+
+To identify and remediate failed failed findings:
+
+. Go to the <<cloud-nat-sec-posture-dashboard,Cloud posture dashboard>>.
+. Click *View all failed findings*, either for an individual cluster or for all monitored clusters.
+. Click a failed finding. The findings flyout opens.
+. Follow the steps under *Remediation* to correct the misconfiguration.
++
+NOTE: Remediation steps typically include commands for you to execute. These sometimes contain placeholder values that you must replace before execution.
+
+[discrete]
+[[kspm-identify-misconfigured-resources]]
+=== Identify the most misconfigured Kubernetes resources
+
+To identify the Kubernetes resources generating the most failed findings:
+
+. Go to the <<findings-page,Findings>> page.
+. Click the *Group by* menu near the search box and select *Resource* to view a list of resources sorted by their total number of failed findings.
+. Click a resource ID to view the findings associated with that resource.
+
+[discrete]
+[[kspm-identify-config-risks-by-section]]
+=== Identify configuration risks by CIS section
+
+To identify risks in particular CIS sections:
+
+. Go to the <<cloud-nat-sec-posture-dashboard,Cloud posture dashboard>> (*Dashboards -> Cloud Posture*).
+. In the Failed findings by CIS section widget, click the name of a CIS section to view all failed findings for that section.
+
+Alternatively:
+
+. Go to the Findings page.
+. Filter by the `rule.section` field. For example, search for `rule.section : API Server` to view findings for benchmark rules in the API Server category.
+
+[discrete]
+[[kspm-faq]]
+== FAQ
+
+*Can I evaluate the security posture of my Amazon EKS clusters?*
+Yes. KSPM currently supports the security posture evaluation of Amazon EKS and unmanaged Kubernetes clusters.
+
+
+*How often is my cluster’s security posture evaluated?*
+Clusters are evaluated upon deployment of a KSPM integration, and every four hours after that.
