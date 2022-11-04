@@ -3,104 +3,70 @@
 
 = Upgrade {elastic-sec}
 
-We highly recommend that all {elastic-sec} users keep their deployments up to date with the latest available {stack} version to access new features, security updates, and performance enhancements. This topic describes updates in 8.0 that require changes to your agents, existing data, user privileges, or system preferences.
+To upgrade from 7.16.0 or earlier to {version},
+**you must first upgrade to {prev-major-last}**, which enables you to use the *Upgrade Assistant* to
+{stack-ref}/upgrading-elastic-stack.html#prepare-to-upgrade[prepare for the upgrade].
+Before you upgrade, you must resolve all critical issues identified by the *Upgrade Assistant*.
 
-For upgrading to the latest {stack} version, we recommend using the {kibana-ref}/upgrade-assistant.html[Kibana Upgrade Assistant].
+Rolling upgrades are unsupported in {elastic-sec}, which runs within the {kib} application. To upgrade,
+you must shut down all {kib} instances, install the new software, and restart {kib}.
+Upgrading while older {kib} instances are running can cause data loss or upgrade failures.
 
-NOTE: For detailed information about the 8.0 release, check out the <<release-notes, Release notes>>.
+[WARNING]
+====
+When required, {kib} automatically migrates {kibana-ref}/saved-object-migrations.html[saved objects].
+In case of an upgrade failure, you can roll back to an
+earlier version of {kib}. To roll back, you **must** have a
+{ref}/snapshot-restore.html[backup snapshot] that includes the `kibana` feature
+state. By default, snapshots include the `kibana` feature state.
+====
 
-[discrete]
-[[upgrade-8.1.1]]
-== Upgrade to 8.1.1
+For more information about upgrading,
+refer to {stack-ref}/upgrading-elastic-stack.html[Upgrading to Elastic {version}.]
 
-IMPORTANT: There is a known issue that significantly impacts UI responsiveness. Therefore, we recommend to skip upgrading to this version.
-
-[discrete]
-[[upgrade-reqs]]
-== Upgrade to an earlier 8.x version
-
-[float]
-[[upgrade-agents]]
-=== Upgrade {agent}s
-
-Upgrade your {stack} and {agent}s to 7.17 first (refer to {fleet-guide}/upgrade-elastic-agent.html[Upgrade Fleet-managed Elastic Agents]). Afterwards, you can {stack-ref}/upgrading-elastic-stack.html[upgrade the {stack}] to 8.x. Initially, {agent}s will be version 7.17; this is fine because {elastic-sec} 8.x supports the last minor release in 7.x (7.17) and any subsequent {elastic-endpoint} versions in 8.x. After the {stack} upgrade, you can decide whether to upgrade {agent}s to 8.0, which is recommended to ensure you get the latest features.
-
-NOTE: You do not need to shut down your {agent}s or endpoints to upgrade the {stack}.
-
-[float]
-[[track-rules-upgrade]]
-=== Track rules that are automatically disabled when upgrading
-
-IMPORTANT: The following applies to customers who are upgrading from 7.17 to 8.0 only. If you are upgrading to 8.0.1 or newer, refer to the instructions below for <<reenable-rules-upgrade, re-enabling disabled rules>>.
-
-Upon upgrading to 8.0, rules are automatically disabled. Once the upgrade completes, you should re-enable them again to avoid gaps in rule coverage. _We highly recommend that you track your active rules before upgrading so you can easily find and re-enable them after upgrading to 8.0_.
-
-Before upgrading, use the <<rules-api-find, Find rules API>> to capture a list of enabled rules.
-
-NOTE: Use curl or another HTTP tool to run {elastic-sec} API commands.
-
-Here is a curl command that you can run to find enabled rules:
-
-[source,console]
---------------------------------------------------
-GET /api/detection_engine/rules/_find?per_page=10000&filter=alert.attributes.enabled:true
---------------------------------------------------
-
-To re-enable your rules from the Rules page:
-
-. Go to the Rules page (*Detect -> Rules*).
-. Select the rules that you want to enable.
-. Click *Bulk actions -> Enable* to re-enable the rules.
+IMPORTANT: You can upgrade to pre-release versions for testing,
+but upgrading from a pre-release to the General Available version is unsupported.
+You should use pre-release versions only for testing in a temporary environment.
 
 [float]
-[[reenable-rules-upgrade]]
-=== Re-enable disabled rules
+=== Upgrading multiple {kib} instances
+When upgrading several {kib} instances connected to the same {es} cluster,
+ensure that all outdated instances are shut down before starting the upgrade.
 
-IMPORTANT: The following applies to customers who are upgrading from 7.17 to 8.0.1 and newer only. If you are upgrading to 8.0., refer to the instructions above for <<track-rules-upgrade, tracking rules prior to upgrading to 8.0>>.
+Rolling upgrades are unsupported in {kib}. However, when outdated instances are shut down, you can start all upgraded instances in parallel,
+which allows all instances to participate in the upgrade migration in parallel.
 
-Any rules that are active when you upgrade from 7.17 to 8.0.1 or newer are automatically disabled, and a tag named `auto_disabled_8.0` is added to those rules for tracking purposes. Once the upgrade is complete, you can filter rules by the newly added tag, then use bulk actions to re-enable them:
-
-. Go to the Rules page (*Detect -> Rules*).
-. From the *Tags* dropdown, search for `auto_disabled_8.0`.
-. Click *Select all _x_ rules*, or individually select the rules you want to re-enable.
-. Click *Bulk actions -> Enable* to re-enable the rules.
-
-Alternatively, you can use the <<bulk-actions-rules-api, Bulk rule actions>> API to re-enable rules.
+For large deployments with more than 10 {kib} instances, and more than 10,000 saved objects,
+you can reduce the upgrade downtime by bringing up a single {kib} instance and waiting for it to
+complete the upgrade migration before bringing up the remaining instances.
 
 [float]
-[[fda-upgrade]]
-=== Full Disk Access (FDA) approval for {elastic-endpoint}
+[[preventing-migration-failures]]
+=== Preparing for migration
 
-When you manually install {elastic-endpoint}, you must approve a system extension, kernel extension, and enable Full Disk Access (FDA). There is a new FDA requirement in 8.0. Refer to <<deploy-elastic-endpoint>> to review the required permissions.
-
-[float]
-[[data-views-upgrade]]
-=== Requirements to display Data views in the {es-sec-app}
-
-To make the *Data view* option appear in an environment with legacy alerts, a user with elevated role privileges must visit the {es-sec-app}, open a page that displays alert data (such as the Overview page), then refresh the page. The user's role privileges must allow them to enable the detections feature in a Kibana space. Refer to <<enable-detections-ui, Enable and access detections>> for more information.
-
-NOTE: If new alerts are generated in an upgraded environment without legacy alerts, refreshing any page with alert data in {elastic-sec} will make the *Data view* option appear in the {es-sec-ui}.
+Take these extra steps to ensure you are ready for migration.
 
 [float]
-[[alert-schema-upgrade]]
-=== New alert schema
+==== Ensure your {es} cluster is healthy
+Problems with your {es} cluster can prevent {kib} upgrades from succeeding.
 
-The system index for detection alerts has been renamed from `.siem-signals-<space-id>` to `.alerts-security.alerts-<space-id>` and is now a hidden index. Therefore, the schema used for alert documents in {elastic-sec} has changed. Users that access documents in the `.siem-signals` indices using the {elastic-sec} API must modify their API queries and scripts to operate properly on the new 8.0 alert documents. Refer to <<query-alert-indices, how to query alert indices>> and review the new <<alert-schema, Alert schema>>.
+During the upgrade process, {kib} creates new indices into which updated documents are written. If a cluster is approaching the low watermark, there's a high risk of {kib} not being able to create these. Reading, transforming and writing updated documents can be memory intensive, using more available heap than during routine operation. You must make sure that enough heap is available to prevent requests from timing out or throwing errors from circuit breaker exceptions. You should also ensure that all shards are replicated and assigned.
 
-[float]
-[[preview-upgrade]]
-=== New privileges required to view alerts and preview rules
+A healthy cluster has:
 
-* To view alerts, users need `manage`, `write`, `read`, and `view_index_metadata` privileges to two new indices, `.alerts-security.alerts` and `.internal.alerts-security.alerts`. Existing users who are upgrading to 8.0 can retain their privileges to the `.siem-signals` index.
-
-* To <<preview-rules, preview rules>>, users need `read` access to the new `.preview.alerts-security.alerts` index. Refer to <<detections-permissions-section>> for more information.
+ * Enough free disk space, at least twice the amount of storage taken up by the `.kibana` and `.kibana_task_manager` indices
+ * Sufficient heap size
+ * A "green" cluster status
 
 [float]
-[[im-rules-upgrade]]
-=== Updates to indictor match rules
+==== Ensure that all {kib} instances are the same
+When you perform an upgrade migration of different {kib} versions, the migration can fail.
+Ensure that all {kib} instances are running the same version, configuration, and plugins.
 
-Changes to the indicator match rule's <<rule-ui-advanced-params, default threat indicator path>> might require you to update existing rules, or create new ones, after upgrading to 8.0. Be mindful of the following:
+[float]
+==== Back up your data
+Be sure to have a {ref}/snapshot-restore.html[snapshot] of all your data before attempting a migration.
+If something goes wrong during migration, you can restore from the snapshot and try again.
 
-* If an indicator match rule's default threat indicator path was not defined before the upgrade, it will default to `threatintel.indicator` after the upgrade. This allows the rule to continue using indicator data ingested by {filebeat} version 7.x. If a custom value was defined before the upgrade, the value will not change.
-* If an existing indicator match rule was configured to use threat indicator indices generated from {filebeat} version 7.x, updating the default threat indicator path to `threat.indicator` after you upgrade to {stack} version 8.0 and {agent} or {filebeat} version 8.0 configures the rule to use threat indicator indices generated by those later versions.
-* You must create separate rules to query threat intelligence indices created by {filebeat} version 7.x and version 8.0 because each version requires a different default threat indicator path value. Review the recommendations for <<query-alert-indices, querying alert indices>>.
+Review the {kibana-ref}/resolve-migrations-failures.html[common causes of {kib} upgrade failures] and how to prevent them.
+
