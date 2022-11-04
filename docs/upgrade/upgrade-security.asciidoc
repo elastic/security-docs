@@ -22,10 +22,10 @@ state. By default, snapshots include the `kibana` feature state.
 ====
 
 For more information about upgrading,
-refer to {stack-ref}/upgrading-elastic-stack.html[Upgrading to Elastic {version}.]
+refer to {stack-ref}/upgrading-elastic-stack.html[Upgrade to Elastic {version}.]
 
 IMPORTANT: You can upgrade to pre-release versions for testing,
-but upgrading from a pre-release to the General Available version is unsupported.
+but upgrading from a pre-release to the Generally Available version is unsupported.
 You should use pre-release versions only for testing in a temporary environment.
 
 [float]
@@ -50,7 +50,7 @@ Take these extra steps to ensure you are ready for migration.
 ==== Ensure your {es} cluster is healthy
 Problems with your {es} cluster can prevent {kib} upgrades from succeeding.
 
-During the upgrade process, {kib} creates new indices into which updated documents are written. If a cluster is approaching the low watermark, there's a high risk of {kib} not being able to create these. Reading, transforming and writing updated documents can be memory intensive, using more available heap than during routine operation. You must make sure that enough heap is available to prevent requests from timing out or throwing errors from circuit breaker exceptions. You should also ensure that all shards are replicated and assigned.
+During the upgrade process, {kib} creates new indices into which updated documents are written. If a cluster is approaching the low watermark, there's a high risk of {kib} not being able to create these. Reading, transforming, and writing updated documents can be memory intensive, using more available heap than during routine operation. You must make sure that enough heap is available to prevent requests from timing out or throwing errors from circuit breaker exceptions. You should also ensure that all shards are replicated and assigned.
 
 A healthy cluster has:
 
@@ -69,4 +69,55 @@ Be sure to have a {ref}/snapshot-restore.html[snapshot] of all your data before 
 If something goes wrong during migration, you can restore from the snapshot and try again.
 
 Review the {kibana-ref}/resolve-migrations-failures.html[common causes of {kib} upgrade failures] and how to prevent them.
+
+
+[discrete]
+[[upgrade-reqs]]
+== Upgrade to an earlier 8.x version
+
+[float]
+[[upgrade-agents]]
+=== Upgrade {agent}s
+
+Upgrade your {stack} and {agent}s to 7.17 first (refer to {fleet-guide}/upgrade-elastic-agent.html[Upgrade Fleet-managed Elastic Agents]). Afterwards, you can {stack-ref}/upgrading-elastic-stack.html[upgrade the {stack}] to 8.x. Initially, {agent}s will be version 7.17; this is fine because {elastic-sec} 8.x supports the last minor release in 7.x (7.17) and any subsequent {elastic-endpoint} versions in 8.x. After the {stack} upgrade, you can decide whether to upgrade {agent}s to 8.x, which is recommended to ensure you get the latest features.
+
+NOTE: You do not need to shut down your {agent}s or endpoints to upgrade the {stack}.
+
+[float]
+[[fda-upgrade]]
+=== Full Disk Access (FDA) approval for {elastic-endpoint}
+
+When you manually install {elastic-endpoint}, you must approve a system extension, kernel extension, and enable Full Disk Access (FDA). There is a new FDA requirement in 8.x. Refer to <<deploy-elastic-endpoint>> to review the required permissions.
+
+[float]
+[[data-views-upgrade]]
+=== Requirements to display Data views in the {es-sec-app}
+
+To make the *Data view* option appear in an environment with legacy alerts, a user with elevated role privileges must visit the {es-sec-app}, open a page that displays alert data (such as the Overview page), then refresh the page. The user's role privileges must allow them to enable the detections feature in a Kibana space. Refer to <<enable-detections-ui, Enable and access detections>> for more information.
+
+NOTE: If new alerts are generated in an upgraded environment without legacy alerts, refreshing any page with alert data in {elastic-sec} will make the *Data view* option appear in the {es-sec-ui}.
+
+[float]
+[[alert-schema-upgrade]]
+=== New alert schema
+
+The system index for detection alerts has been renamed from `.siem-signals-<space-id>` to `.alerts-security.alerts-<space-id>` and is now a hidden index. Therefore, the schema used for alert documents in {elastic-sec} has changed. Users that access documents in the `.siem-signals` indices using the {elastic-sec} API must modify their API queries and scripts to operate properly on the new 8.x alert documents. Refer to <<query-alert-indices, how to query alert indices>> and review the new <<alert-schema, Alert schema>>.
+
+[float]
+[[preview-upgrade]]
+=== New privileges required to view alerts and preview rules
+
+* To view alerts, users need `manage`, `write`, `read`, and `view_index_metadata` privileges to two new indices, `.alerts-security.alerts` and `.internal.alerts-security.alerts`. Existing users who are upgrading to 8.x can retain their privileges to the `.siem-signals` index.
+
+* To <<preview-rules, preview rules>>, users need `read` access to the new `.preview.alerts-security.alerts` index. Refer to <<detections-permissions-section>> for more information.
+
+[float]
+[[im-rules-upgrade]]
+=== Updates to indictor match rules
+
+Changes to the indicator match rule's <<rule-ui-advanced-params, default threat indicator path>> might require you to update existing rules, or create new ones, after upgrading to 8.x. Be mindful of the following:
+
+* If an indicator match rule's default threat indicator path was not defined before the upgrade, it will default to `threatintel.indicator` after the upgrade. This allows the rule to continue using indicator data ingested by {filebeat} version 7.x. If a custom value was defined before the upgrade, the value will not change.
+* If an existing indicator match rule was configured to use threat indicator indices generated from {filebeat} version 7.x, updating the default threat indicator path to `threat.indicator` after you upgrade to {stack} version 8.x and {agent} or {filebeat} version 8.x configures the rule to use threat indicator indices generated by those later versions.
+* You must create separate rules to query threat intelligence indices created by {filebeat} version 7.x and version 8.x because each version requires a different default threat indicator path value. Review the recommendations for <<query-alert-indices, querying alert indices>>.
 
