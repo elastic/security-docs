@@ -427,7 +427,9 @@ POST api/detection_engine/rules/_bulk_action
 [discrete]
 ===== Response payload
 
-For `enable`, `disable`, `delete`, `edit`, and `duplicate` actions, a JSON object containing the action's outcome: number of failed and successful outcomes, number of rules, and number of rule objects created, deleted or updated (depending on the action).
+For `enable`, `disable`, `delete`, `edit`, and `duplicate` actions, a JSON object containing the action's outcome: number of failed and successful outcomes, number of rules, and number of rule objects created, deleted, skipped or updated (depending on the action).
+
+Rules are only `skipped` when performing an  `edit` action, when all the operations to be performed on any specific rule results in a no-op. For example, if the `edit` action is to add a tag to a rule that already has that tag, or to delete an index pattern that doesn't exist. Skipped rules objects will only return their `id`, `name`, and `skip_reason`.
 
 [source,json]
 --------------------------------------------------
@@ -516,12 +518,16 @@ For `enable`, `disable`, `delete`, `edit`, and `duplicate` actions, a JSON objec
          ],
          "deleted":[
 
+         ],
+         "skipped":[
+            { "id": "51658332-a15e-4c9e-912a-67214e2e2359", "name": "Skipped rule", "skip_reason": "RULE_NOT_MODIFIED" }
          ]
       },
       "summary":{
-         "failed":0,
-         "succeeded":1,
-         "total":1
+         "failed": 0,
+         "skipped": 1,
+         "succeeded": 1,
+         "total": 2
       }
    }
 }
@@ -687,11 +693,13 @@ If processing of any rule fails, a partial error outputs the ID and/or name of t
                 }
             ],
             "created": [],
-            "deleted": []
+            "deleted": [],
+            "skipped": [],
         },
         "summary": {
             "failed": 1,
             "succeeded": 1,
+            "skipped": 0,
             "total": 2
         }
     }
@@ -770,11 +778,13 @@ Notice that there are no arrays in `attributes.results`. In dry run mode, rule u
         "results": {
             "updated": [],
             "created": [],
-            "deleted": []
+            "deleted": [],
+            "skipped": [],
         },
         "summary": {
             "failed": 2,
             "succeeded": 1,
+            "skipped": 0,
             "total": 3
         }
     }
