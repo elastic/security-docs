@@ -1,0 +1,80 @@
+[[aws-kms-customer-managed-key-disabled-or-scheduled-for-deletion]]
+=== AWS KMS Customer Managed Key Disabled or Scheduled for Deletion
+
+Identifies attempts to disable or schedule the deletion of an AWS KMS Customer Managed Key (CMK). Deleting an AWS KMS key is destructive and potentially dangerous. It deletes the key material and all metadata associated with the KMS key and is irreversible. After a KMS key is deleted, the data that was encrypted under that KMS key can no longer be decrypted, which means that data becomes unrecoverable.
+
+*Rule type*: query
+
+*Rule indices*:
+
+* filebeat-*
+* logs-aws*
+
+*Severity*: medium
+
+*Risk score*: 47
+
+*Runs every*: 10 minutes
+
+*Searches indices from*: now-60m ({ref}/common-options.html#date-math[Date Math format], see also <<rule-schedule, `Additional look-back time`>>)
+
+*Maximum alerts per execution*: 100
+
+*References*:
+
+* https://docs.aws.amazon.com/cli/latest/reference/kms/disable-key.html
+* https://docs.aws.amazon.com/cli/latest/reference/kms/schedule-key-deletion.html
+
+*Tags*:
+
+* Elastic
+* Cloud
+* AWS
+* Continuous Monitoring
+* SecOps
+* Log Auditing
+* Impact
+
+*Version*: 1
+
+*Added ({stack} release)*: 8.6.0
+
+*Rule authors*: Xavier Pich
+
+*Rule license*: Elastic License v2
+
+==== Potential false positives
+
+A KMS customer managed key may be disabled or scheduled for deletion by a system administrator. Verify whether the user identity, user agent, and/or hostname should be making changes in your environment. Key deletions by unfamiliar users should be investigated. If known behavior is causing false positives, it can be exempted from the rule.
+
+==== Investigation guide
+
+
+[source,markdown]
+----------------------------------
+
+----------------------------------
+
+
+==== Rule query
+
+
+[source,js]
+----------------------------------
+event.dataset:aws.cloudtrail and event.provider:kms.amazonaws.com and
+event.action:("DisableKey" or "ScheduleKeyDeletion") and
+event.outcome:success
+----------------------------------
+
+==== Threat mapping
+
+*Framework*: MITRE ATT&CK^TM^
+
+* Tactic:
+** Name: Impact
+** ID: TA0040
+** Reference URL: https://attack.mitre.org/tactics/TA0040/
+* Technique:
+** Name: Data Destruction
+** ID: T1485
+** Reference URL: https://attack.mitre.org/techniques/T1485/
