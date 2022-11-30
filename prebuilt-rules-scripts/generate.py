@@ -15,7 +15,7 @@ ROOT = Path(__file__).resolve().parent.parent
 PREBUILT_RULES = ROOT.joinpath('prebuilt-rules-scripts')
 GENERATED_ASCII = ROOT.joinpath('generated-ascii-files')
 DEFAULT_KIBANA_RULES_DIR = str(Path().joinpath('x-pack', 'plugins', 'security_solution', 'server', 'lib',
-                                               'detection_engine', 'rules', 'prepackaged_rules'))
+                                               'detection_engine', 'prebuilt_rules', 'content', 'prepackaged_rules'))
 DEFAULT_LOCAL_KIBANA = ROOT.joinpath('..', 'kibana')
 
 

@@ -32,11 +32,11 @@ This rule detects when a user creates a pod/container running in privileged mode
 * Execution
 * Privilege Escalation
 
-*Version*: 100 (<<kubernetes-privileged-pod-created-history, version history>>)
+*Version*: 200 (<<kubernetes-privileged-pod-created-history, version history>>)
 
 *Added ({stack} release)*: 8.4.0
 
-*Last modified ({stack} release)*: 8.5.0
+*Last modified ({stack} release)*: 8.6.0
 
 *Rule authors*: Elastic
 
@@ -44,7 +44,7 @@ This rule detects when a user creates a pod/container running in privileged mode
 
 ==== Potential false positives
 
-By default a container is not allowed to access any devices on the host, but a "privileged" container is given access to all devices on the host. This allows the container nearly all the same access as processes running on the host. An administrator may want to run a privileged container to use operating system administrative capabilities such as manipulating the network stack or accessing hardware devices from within the cluster.
+By default a container is not allowed to access any devices on the host, but a "privileged" container is given access to all devices on the host. This allows the container nearly all the same access as processes running on the host. An administrator may want to run a privileged container to use operating system administrative capabilities such as manipulating the network stack or accessing hardware devices from within the cluster. Add exceptions for trusted container images using the query field "kubernetes.audit.requestObject.spec.container.image"
 
 ==== Investigation guide
 
@@ -60,9 +60,13 @@ By default a container is not allowed to access any devices on the host, but a "
 
 [source,js]
 ----------------------------------
-kubernetes.audit.objectRef.resource:pods and
-kubernetes.audit.verb:create and kubernetes.audit.requestObject.spec
-.containers.securityContext.privileged:true
+event.dataset : "kubernetes.audit_logs" and
+kubernetes.audit.annotations.authorization_k8s_io/decision:"allow"
+and kubernetes.audit.objectRef.resource:pods and
+kubernetes.audit.verb:create and kubernetes.audit.requestObject.spe
+c.containers.securityContext.privileged:true and not
+kubernetes.audit.requestObject.spec.containers.image:
+("docker.elastic.co/beats/elastic-agent:8.4.0")
 ----------------------------------
 
 ==== Threat mapping
@@ -78,8 +82,28 @@ kubernetes.audit.verb:create and kubernetes.audit.requestObject.spec
 ** ID: T1611
 ** Reference URL: https://attack.mitre.org/techniques/T1611/
 
+
+* Tactic:
+** Name: Execution
+** ID: TA0002
+** Reference URL: https://attack.mitre.org/tactics/TA0002/
+* Technique:
+** Name: Deploy Container
+** ID: T1610
+** Reference URL: https://attack.mitre.org/techniques/T1610/
+
 [[kubernetes-privileged-pod-created-history]]
 ==== Rule version history
+
+Version 200 (8.6.0 release)::
+* Updated query, changed from:
++
+[source, js]
+----------------------------------
+kubernetes.audit.objectRef.resource:pods and
+kubernetes.audit.verb:create and kubernetes.audit.requestObject.spec
+.containers.securityContext.privileged:true
+----------------------------------
 
 Version 100 (8.5.0 release)::
 * Formatting only
