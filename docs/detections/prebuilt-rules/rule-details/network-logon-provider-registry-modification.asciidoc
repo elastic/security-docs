@@ -8,6 +8,7 @@ Identifies the modification of the network logon provider registry. Adversaries 
 *Rule indices*:
 
 * logs-endpoint.events.*
+* endgame-*
 
 *Severity*: medium
 
@@ -32,12 +33,13 @@ Identifies the modification of the network logon provider registry. Adversaries 
 * Threat Detection
 * Persistence
 * Credential Access
+* Elastic Endgame
 
-*Version*: 100 (<<network-logon-provider-registry-modification-history, version history>>)
+*Version*: 101 (<<network-logon-provider-registry-modification-history, version history>>)
 
 *Added ({stack} release)*: 7.13.0
 
-*Last modified ({stack} release)*: 8.5.0
+*Last modified ({stack} release)*: 8.6.0
 
 *Rule authors*: Elastic
 
@@ -52,11 +54,12 @@ Authorized third party network logon providers.
 
 [source,js]
 ----------------------------------
-registry where registry.data.strings != null and registry.path : "HKL
-M\\SYSTEM\\*ControlSet*\\Services\\*\\NetworkProvider\\ProviderPath"
-and /* Excluding default NetworkProviders RDPNP, LanmanWorkstation
-and webclient. */ not ( user.id : "S-1-5-18" and
-registry.data.strings in
+registry where registry.data.strings != null and registry.path : (
+"HKLM\\SYSTEM\\*ControlSet*\\Services\\*\\NetworkProvider\\ProviderPat
+h", "\\REGISTRY\\MACHINE\\SYSTEM\\*ControlSet*\\Services\\*\\Netwo
+rkProvider\\ProviderPath" ) and /* Excluding default
+NetworkProviders RDPNP, LanmanWorkstation and webclient. */ not (
+user.id : "S-1-5-18" and registry.data.strings in
 ("%SystemRoot%\\System32\\ntlanman.dll",
 "%SystemRoot%\\System32\\drprov.dll",
 "%SystemRoot%\\System32\\davclnt.dll") )
@@ -87,6 +90,21 @@ registry.data.strings in
 
 [[network-logon-provider-registry-modification-history]]
 ==== Rule version history
+
+Version 101 (8.6.0 release)::
+* Updated query, changed from:
++
+[source, js]
+----------------------------------
+registry where registry.data.strings != null and registry.path : "HKL
+M\\SYSTEM\\*ControlSet*\\Services\\*\\NetworkProvider\\ProviderPath"
+and /* Excluding default NetworkProviders RDPNP, LanmanWorkstation
+and webclient. */ not ( user.id : "S-1-5-18" and
+registry.data.strings in
+("%SystemRoot%\\System32\\ntlanman.dll",
+"%SystemRoot%\\System32\\drprov.dll",
+"%SystemRoot%\\System32\\davclnt.dll") )
+----------------------------------
 
 Version 100 (8.5.0 release)::
 * Formatting only
