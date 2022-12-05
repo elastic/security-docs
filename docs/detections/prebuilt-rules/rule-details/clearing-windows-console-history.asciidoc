@@ -10,6 +10,7 @@ Identifies when a user attempts to clear console history. An adversary may clear
 * winlogbeat-*
 * logs-endpoint.events.*
 * logs-windows.*
+* endgame-*
 
 *Severity*: medium
 
@@ -34,13 +35,14 @@ Identifies when a user attempts to clear console history. An adversary may clear
 * Windows
 * Threat Detection
 * Defense Evasion
-* has_guide
+* Investigation Guide
+* Elastic Endgame
 
-*Version*: 101 (<<clearing-windows-console-history-history, version history>>)
+*Version*: 102 (<<clearing-windows-console-history-history, version history>>)
 
 *Added ({stack} release)*: 8.0.0
 
-*Last modified ({stack} release)*: 8.5.0
+*Last modified ({stack} release)*: 8.6.0
 
 *Rule authors*: Austin Songer
 
@@ -98,7 +100,7 @@ mean time to respond (MTTR).
 
 [source,js]
 ----------------------------------
-process where event.action == "start" and (process.name :
+process where event.type == "start" and (process.name :
 ("powershell.exe", "pwsh.exe", "powershell_ise.exe") or
 process.pe.original_file_name == "PowerShell.EXE") and
 (process.args : "*Clear-History*" or (process.args : ("*Remove-
@@ -122,6 +124,20 @@ PSReadlineOption*" and process.args : "*SaveNothing*"))
 
 [[clearing-windows-console-history-history]]
 ==== Rule version history
+
+Version 102 (8.6.0 release)::
+* Updated query, changed from:
++
+[source, js]
+----------------------------------
+process where event.action == "start" and (process.name :
+("powershell.exe", "pwsh.exe", "powershell_ise.exe") or
+process.pe.original_file_name == "PowerShell.EXE") and
+(process.args : "*Clear-History*" or (process.args : ("*Remove-
+Item*", "rm") and process.args : ("*ConsoleHost_history.txt*", "*(Get-
+PSReadlineOption).HistorySavePath*")) or (process.args : "*Set-
+PSReadlineOption*" and process.args : "*SaveNothing*"))
+----------------------------------
 
 Version 101 (8.5.0 release)::
 * Formatting only
