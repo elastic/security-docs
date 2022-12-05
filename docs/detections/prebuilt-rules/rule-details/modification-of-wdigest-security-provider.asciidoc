@@ -10,6 +10,7 @@ Identifies attempts to modify the WDigest security provider in the registry to f
 * winlogbeat-*
 * logs-endpoint.events.*
 * logs-windows.*
+* endgame-*
 
 *Severity*: high
 
@@ -26,6 +27,7 @@ Identifies attempts to modify the WDigest security provider in the registry to f
 * https://www.csoonline.com/article/3438824/how-to-detect-and-halt-credential-theft-via-windows-wdigest.html
 * https://www.praetorian.com/blog/mitigating-mimikatz-wdigest-cleartext-credential-theft?edition=2019
 * https://frsecure.com/compromised-credentials-response-playbook
+* https://www.elastic.co/security-labs/detect-credential-access
 
 *Tags*:
 
@@ -34,13 +36,14 @@ Identifies attempts to modify the WDigest security provider in the registry to f
 * Windows
 * Threat Detection
 * Credential Access
-* has_guide
+* Investigation Guide
+* Elastic Endgame
 
-*Version*: 101 (<<modification-of-wdigest-security-provider-history, version history>>)
+*Version*: 102 (<<modification-of-wdigest-security-provider-history, version history>>)
 
 *Added ({stack} release)*: 7.12.0
 
-*Last modified ({stack} release)*: 8.5.0
+*Last modified ({stack} release)*: 8.6.0
 
 *Rule authors*: Elastic
 
@@ -116,10 +119,12 @@ mean time to respond (MTTR).
 [source,js]
 ----------------------------------
 registry where event.type : ("creation", "change") and
-registry.path : "HKLM\\SYSTEM\\*ControlSet*\\Control\\Security
-Providers\\WDigest\\UseLogonCredential" and registry.data.strings
-: ("1", "0x00000001") and not (process.executable :
-"?:\\Windows\\System32\\svchost.exe" and user.id : "S-1-5-18")
+registry.path : ( "HKLM\\SYSTEM\\*ControlSet*\\Control\\Securi
+tyProviders\\WDigest\\UseLogonCredential", "\\REGISTRY\\MACHIN
+E\\SYSTEM\\*ControlSet*\\Control\\SecurityProviders\\WDigest\\UseLogon
+Credential" ) and registry.data.strings : ("1", "0x00000001") and
+not (process.executable : "?:\\Windows\\System32\\svchost.exe" and
+user.id : "S-1-5-18")
 ----------------------------------
 
 ==== Threat mapping
@@ -137,6 +142,18 @@ Providers\\WDigest\\UseLogonCredential" and registry.data.strings
 
 [[modification-of-wdigest-security-provider-history]]
 ==== Rule version history
+
+Version 102 (8.6.0 release)::
+* Updated query, changed from:
++
+[source, js]
+----------------------------------
+registry where event.type : ("creation", "change") and
+registry.path : "HKLM\\SYSTEM\\*ControlSet*\\Control\\Security
+Providers\\WDigest\\UseLogonCredential" and registry.data.strings
+: ("1", "0x00000001") and not (process.executable :
+"?:\\Windows\\System32\\svchost.exe" and user.id : "S-1-5-18")
+----------------------------------
 
 Version 101 (8.5.0 release)::
 * Formatting only

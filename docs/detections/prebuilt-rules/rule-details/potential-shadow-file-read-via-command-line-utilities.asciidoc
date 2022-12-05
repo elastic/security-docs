@@ -1,0 +1,103 @@
+[[potential-shadow-file-read-via-command-line-utilities]]
+=== Potential Shadow File Read via Command Line Utilities
+
+Identifies access to the /etc/shadow file via the commandline using standard system utilities. After elevating privileges to root, threat actors may attempt to read or dump this file in order to gain valid credentials. They may utilize these to move laterally undetected and access additional resources.
+
+*Rule type*: eql
+
+*Rule indices*:
+
+* auditbeat-*
+* logs-endpoint.events.*
+
+*Severity*: medium
+
+*Risk score*: 47
+
+*Runs every*: 5 minutes
+
+*Searches indices from*: now-9m ({ref}/common-options.html#date-math[Date Math format], see also <<rule-schedule, `Additional look-back time`>>)
+
+*Maximum alerts per execution*: 100
+
+*References*:
+
+* https://www.cyberciti.biz/faq/unix-linux-password-cracking-john-the-ripper/
+
+*Tags*:
+
+* Elastic
+* Host
+* Linux
+* Threat Detection
+* Privilege Escalation
+* Credential Access
+
+*Version*: 2 (<<potential-shadow-file-read-via-command-line-utilities-history, version history>>)
+
+*Added ({stack} release)*: 8.5.0
+
+*Last modified ({stack} release)*: 8.6.0
+
+*Rule authors*: Elastic
+
+*Rule license*: Elastic License v2
+
+==== Rule query
+
+
+[source,js]
+----------------------------------
+process where event.type == "start" and event.action == "exec" and
+user.name == "root" and (process.args : "/etc/shadow" or
+(process.working_directory: "/etc" and process.args: "shadow")) and
+not process.executable: ("/usr/bin/tar", "/bin/tar",
+"/usr/bin/gzip", "/bin/gzip", "/usr/bin/zip",
+"/bin/zip", "/usr/bin/stat", "/bin/stat",
+"/usr/bin/cmp", "/bin/cmp", "/usr/bin/sudo",
+"/bin/sudo", "/usr/bin/find", "/bin/find",
+"/usr/bin/ls", "/bin/ls", "/usr/bin/uniq", "/bin/uniq",
+"/usr/bin/unzip", "/bin/unzip") and not
+process.parent.executable: "/bin/dracut"
+----------------------------------
+
+==== Threat mapping
+
+*Framework*: MITRE ATT&CK^TM^
+
+* Tactic:
+** Name: Privilege Escalation
+** ID: TA0004
+** Reference URL: https://attack.mitre.org/tactics/TA0004/
+* Technique:
+** Name: Exploitation for Privilege Escalation
+** ID: T1068
+** Reference URL: https://attack.mitre.org/techniques/T1068/
+
+
+* Tactic:
+** Name: Credential Access
+** ID: TA0006
+** Reference URL: https://attack.mitre.org/tactics/TA0006/
+* Technique:
+** Name: OS Credential Dumping
+** ID: T1003
+** Reference URL: https://attack.mitre.org/techniques/T1003/
+
+[[potential-shadow-file-read-via-command-line-utilities-history]]
+==== Rule version history
+
+Version 2 (8.6.0 release)::
+* Rule name changed from: Shadow File Read via Command Line Utilities
++
+* Updated query, changed from:
++
+[source, js]
+----------------------------------
+process where event.type == "start" and event.action == "exec" and
+user.name == "root" and process.args : "/etc/shadow" and not
+process.executable: ("/usr/bin/find", "/usr/bin/cmp", "/bin/ls",
+"/usr/sbin/restorecon", "/usr/bin/uniq") and not
+process.parent.executable: "/bin/dracut"
+----------------------------------
+
