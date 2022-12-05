@@ -32,9 +32,11 @@ Identifies process creation with alternate credentials. Adversaries may create a
 * Threat Detection
 * Privilege Escalation
 
-*Version*: 1
+*Version*: 2 (<<process-creation-via-secondary-logon-history, version history>>)
 
 *Added ({stack} release)*: 8.5.0
+
+*Last modified ({stack} release)*: 8.6.0
 
 *Rule authors*: Elastic
 
@@ -55,11 +57,12 @@ Identifies process creation with alternate credentials. Adversaries may create a
 [source,js]
 ----------------------------------
 sequence by host.id with maxspan=1m [authentication where
-event.action:"logged-in" and event.outcome == "success" and
-user.id:"S-1-5-21-*" and /* seclogon service */ process.name ==
-"svchost.exe" and winlog.event_data.LogonProcessName : "seclogo*"
-and source.ip == "::1" ] by winlog.event_data.TargetLogonId [process
-where event.type == "start"] by winlog.event_data.TargetLogonId
+event.action:"logged-in" and event.outcome == "success" and user.id :
+("S-1-5-21-*", "S-1-12-1-*") and /* seclogon service */
+process.name == "svchost.exe" and winlog.event_data.LogonProcessName
+: "seclogo*" and source.ip == "::1" ] by
+winlog.event_data.TargetLogonId [process where event.type == "start"]
+by winlog.event_data.TargetLogonId
 ----------------------------------
 
 ==== Threat mapping
@@ -74,3 +77,20 @@ where event.type == "start"] by winlog.event_data.TargetLogonId
 ** Name: Access Token Manipulation
 ** ID: T1134
 ** Reference URL: https://attack.mitre.org/techniques/T1134/
+
+[[process-creation-via-secondary-logon-history]]
+==== Rule version history
+
+Version 2 (8.6.0 release)::
+* Updated query, changed from:
++
+[source, js]
+----------------------------------
+sequence by host.id with maxspan=1m [authentication where
+event.action:"logged-in" and event.outcome == "success" and
+user.id:"S-1-5-21-*" and /* seclogon service */ process.name ==
+"svchost.exe" and winlog.event_data.LogonProcessName : "seclogo*"
+and source.ip == "::1" ] by winlog.event_data.TargetLogonId [process
+where event.type == "start"] by winlog.event_data.TargetLogonId
+----------------------------------
+

@@ -33,11 +33,11 @@ Identifies process execution followed by a file overwrite of an executable by th
 * Threat Detection
 * Defense Evasion
 
-*Version*: 100 (<<potential-process-herpaderping-attempt-history, version history>>)
+*Version*: 101 (<<potential-process-herpaderping-attempt-history, version history>>)
 
 *Added ({stack} release)*: 7.11.0
 
-*Last modified ({stack} release)*: 8.5.0
+*Last modified ({stack} release)*: 8.6.0
 
 *Rule authors*: Elastic
 
@@ -49,8 +49,10 @@ Identifies process execution followed by a file overwrite of an executable by th
 [source,js]
 ----------------------------------
 sequence with maxspan=5s [process where event.type == "start" and
-not process.parent.executable :
-"C:\\Windows\\SoftwareDistribution\\*.exe"] by host.id,
+not process.parent.executable : (
+"?:\\Windows\\SoftwareDistribution\\*.exe", "?:\\Program
+Files\\Elastic\\Agent\\data\\*.exe", "?:\\Program Files
+(x86)\\Trend Micro\\*.exe" ) ] by host.id,
 process.executable, process.parent.entity_id [file where event.type
 == "change" and event.action == "overwrite" and file.extension ==
 "exe"] by host.id, file.path, process.entity_id
@@ -71,6 +73,19 @@ process.executable, process.parent.entity_id [file where event.type
 
 [[potential-process-herpaderping-attempt-history]]
 ==== Rule version history
+
+Version 101 (8.6.0 release)::
+* Updated query, changed from:
++
+[source, js]
+----------------------------------
+sequence with maxspan=5s [process where event.type == "start" and
+not process.parent.executable :
+"C:\\Windows\\SoftwareDistribution\\*.exe"] by host.id,
+process.executable, process.parent.entity_id [file where event.type
+== "change" and event.action == "overwrite" and file.extension ==
+"exe"] by host.id, file.path, process.entity_id
+----------------------------------
 
 Version 100 (8.5.0 release)::
 * Formatting only
