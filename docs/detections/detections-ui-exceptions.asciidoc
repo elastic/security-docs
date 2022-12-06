@@ -1,319 +1,35 @@
 [[detections-ui-exceptions]]
-[role="xpack"]
-== Rule exceptions and value lists
+== Rule exceptions
 
-To prevent the creation of unwanted alerts, you can add exceptions to any rule. Exceptions contain the source event conditions that determine when
-alerts are not generated. They provide a convenient way of allowing trusted
-processes and network activity to function without producing unnecessary noise.
-
-You can add multiple exceptions to a single rule. An exception can also apply to multiple rules.
-
-In addition to defining exception queries for source event values, you can use rule
-exceptions with value lists. Value lists are lists of items with
-the same {es} {ref}/mapping-types.html[data type]. You can create value lists
-with these types:
-
-* `Keywords` (many {ecs-ref}/ecs-field-reference.html[ECS fields] are keywords)
-* `IP Addresses`
-* `IP Ranges`
-* `Text`
-
-After creating value lists, you can use `is in list` and `is not in list`
-operators to define exceptions.
-
-TIP: You can also use value lists as the <<indicator-value-lists,indicator match index>> when creating an indicator match rule.
+Rule exceptions can be associated with detection and endpoint rules to prevent those rules from generating alerts under specific circumstances. Exceptions are made up of three main components: exception items, default rule lists, and shared exception lists.
 
 [float]
-[[manage-value-lists]]
-== Create value lists
+[[exception-item-intro]]
+=== Exception items
 
-When creating a value list for a rule exception, be mindful of the list's size and data type. In general, all rule types support value list exceptions, but there are some limitations for especially large lists or certain data types. The following value list types can _only_ be used with custom query, machine learning, and indicator match rule types:
+Exception items, also referred to as _exceptions_, contain the source event conditions that determine when alerts are not generated. You can use exceptions to reduce the number of false positives, and to prevent trusted processes and network activity from generating unnecessary alerts. 
 
-* Keyword or IP address lists with more than 65,536 values
-* IP range lists with more than 200 dash notation values (for example, `127.0.0.1-127.0.0.4` is one value) or more than 65,536 CIDR notation values
-* Text data type lists of any size
+Rules can have multiple exceptions and exceptions can apply to multiple rules. Refer to <<add-exceptions>> to learn more about adding exceptions to rules. 
 
-To create a value list:
-
-. Prepare a `txt` or `csv` file with all the values you want to use for
-determining exceptions from a single list. If you use a `txt` file, new lines
-act as value delimiters.
-+
-[IMPORTANT]
-=========================
-* All values in the file must be of the same {es} type.
-
-* Wildcards are not supported in value lists. Values must be literal values.
-=========================
-
-. Go to *Manage* -> *Rules*.
-. Click *Import value lists*. The *Import value lists* window opens.
-+
 [role="screenshot"]
-image::images/upload-lists-ui.png[Import value lists flyout,75%]
+image::images/exception-item-example.png[An exception item,90%]
 
-. Select the list type (*Keywords*, *IP addresses*, *IP ranges*, or *Text*) from the *Type of value list* drop-down.
-. Drag or select the `csv` or `txt` file that contains the values.
-. Click *Import list*.
-
-NOTE: When the name of the file you are importing already exists, the values in
-the new file are appended to the previously imported values.
-
-[[edit-value-lists]]
-[discrete]
-=== Manage value lists
-
-To view, delete, or export existing value lists:
-
-. Go to *Manage* -> *Rules*.
-. Click *Import value lists*. The *Import value lists* window opens.
-. In the *Value lists* table, click the required action button.
-+
-[role="screenshot"]
-image::images/manage-value-list.png[Import value list flyout with action buttons highlighted,75%]
+NOTE: You can also use <<value-lists-exceptions,value lists>> to define exceptions for detection rules. Value lists allow you to match an exception against a list of possible values.
 
 [float]
-[[detection-rule-exceptions]]
-=== Add exceptions to a rule
+[[default-rule-list-intro]]
+=== Default rule lists
 
-You can add exceptions to a rule from the rule details page or the Alerts table.
-When you add an exception, you can also close all alerts that meet the
-exception's criteria.
+A default rule list is a group of exceptions that belong to a single rule. Exceptions within a rule's default rule list cannot be used by other rules. Refer to <<add-exceptions>> to learn more. 
 
-[IMPORTANT]
-==============
-* To ensure an exception is successfully applied, make sure that the fields you've defined for the exception query are correctly and consistently mapped in their respective indices. Refer to {ecs-ref}[ECS] to learn more about supported mappings.
-
-* Be careful when adding exceptions to <<create-eql-rule,event correlation>> rules. Exceptions are evaluated against every event in the sequence, and when the exception matches _all_ event(s) in the sequence, alerts _are not_ generated. If the exception only matches _some_ of the events in the sequence, alerts _are_ generated.
-+
-To exclude values from a
-specific event in the sequence, update the rule's EQL statement. For example:
-+
-[source,eql]
-----
-`sequence
-  [file where file.extension == "exe"
-  and file.name != "app-name.exe"]
-  [process where true
-  and process.name != "process-name.exe"]`
-----
-==============
-
-. Do one of the following:
-+
---
-* To add an exception from the rule details page:
-.. Go to the rule details page of the rule to which you want to add an
-exception (*Manage* -> *Rules* -> *_<Rule name>_*).
-.. Scroll down the rule details page, select the *Rule exceptions* tab, then click *Add rule exception*.
-+
 [role="screenshot"]
-image::images/rule-exception-tab.png[Detail of rule exceptions tab]
-
-* To add an exception from the Alerts table:
-.. Go to *Alerts*.
-.. Scroll down to the Alerts table, go to the alert you want to create an exception for, click the *More Actions* menu (*...*), then select *Add rule exception*.
-
-The *Add Rule Exception* flyout opens (the example below was opened from the Alerts table):
---
-+
-[role="screenshot"]
-image::images/add-exception-ui.png[]
-. Use the following settings to add conditions that define when the exception prevents alerts. In the example above, the exception prevents the rule from generating alerts when the
-`svchost.exe` process runs on agent hostname `siem-kibana`.
-
-  .. *Field*: Select a field to identify the event being filtered.
-
-  .. *Operator*: Select an operator to define the condition:
-    * `is` | `is not` — Must be an exact match of the defined value.
-    * `is one of` | `is not one of` — Matches any of the defined values.
-    * `exists` | `does not exist` — The field exists.
-    * `is in list` | `is not in list` — Matches values in a value list.
-+
-[NOTE]
-=======
-* An exception defined by a value list must use `is in list` or `is not in list` in all conditions.
-* Wildcards are not supported in value lists.
-* If a value list can't be used due to <<manage-value-lists,size or data type>>, it'll be unavailable in the *Value* menu.
-=======
-    * `matches` | `does not match` — Allows you to use wildcards in *Value*, such as `C:\path\*\app.exe`. Available wildcards are `?` (match one character) and `*` (match zero or more characters). The selected *Field* data type must be {ref}/keyword.html#keyword-field-type[keyword], {ref}/text.html#text-field-type[text], or {ref}/keyword.html#wildcard-field-type[wildcard].
-+
-IMPORTANT: Using wildcards can impact performance. To create a more efficient exception using wildcards, use multiple conditions and make them as specific as possible. For example, adding conditions using `process.name` or `file.name` can help limit the scope of wildcard matching.
-
-  .. *Value*: Enter the value associated with the *Field*. To enter multiple values (when using `is one of` or `is not one of`), enter each value, then press **Return**.
-
-. Click *AND* or *OR* to create multiple conditions and define their relationships.
-
-. Click *Add nested condition* to create conditions using nested fields. This is only required for
-<<nested-field-list, these nested fields>>. For all other fields, nested conditions should not be used.
-
-. (Optional) Enter a comment describing the exception.
-
-. Select one of the following alert actions:
-
-* *Close this alert*: Closes the alert when the exception is added. This option
-is only available when adding exceptions from the Alerts table.
-* *Close all alerts that match this exception and were generated by this rule*:
-Closes all alerts that match the exception's conditions and were generated only by the current rule.
-+
-. Click *Add Rule Exception*.
+image::images/default-rule-list.png[A default rule list]
 
 [float]
-[[endpoint-rule-exceptions]]
-=== Add {elastic-endpoint} exceptions
+[[shared-exception-list-intro]]
+=== Shared exception lists
 
-Like detection rule exceptions, you can add Endpoint agent exceptions either by editing the Elastic Endpoint Security rule or by adding them as an action on alerts generated by the Endpoint Security rule. {elastic-endpoint} alerts have the following fields:
-
-* `kibana.alert.original_event.module determined:endpoint`
-* `kibana.alert.original_event.kind:alert`
-
-You can also add Endpoint exceptions to rules that are associated with {elastic-endpoint} rule exceptions. To associate rules, when creating or editing a rule, select the <<rule-ui-advanced-params, *{elastic-endpoint} exceptions*>> option.
-
-Endpoint exceptions are added to
-both the detection rule *and* the {elastic-endpoint} agent on your hosts.
-
-[IMPORTANT]
-=============
-Exceptions added to the Elastic Endpoint Security rule affect all alerts sent
-from the Endpoint agent. Be careful not to unintentionally prevent some Endpoint
-alerts.
-
-Additionally, to add an Endpoint exception to the Elastic Endpoint Security rule, there must be at least one Endpoint Security alert generated in the system. For non-production use, if no alerts exist, you can trigger a test alert using malware emulation techniques or tools such as the Anti Malware Testfile from the https://www.eicar.org/[European Institute for Computer Anti-Virus Research (EICAR)].
-=============
-
-[IMPORTANT]
-=====
-{ref}/binary.html[Binary fields] are not supported in detection rule exceptions.
-=====
-
-. Do one of the following:
-+
---
-* To add an Endpoint exception from the rule details page:
-.. Go to the rule details page (*Manage* -> *Rules*), and then search for and  select the Elastic *Endpoint Security* rule.
-.. Scroll down the rule details page, select the *Endpoint exceptions* tab, then click *Add endpoint exception*.
-* To add an Endpoint exception from the Alerts table:
-.. Go to *Alerts*.
-.. Scroll down to the Alerts table, and from an {elastic-endpoint}
-alert, click the *More actions* menu (*...*), then select *Add Endpoint exception*.
---
-+
-The *Add Endpoint Exception* flyout opens, from either the rule details page or the Alerts table.
-+
-[role="screenshot"]
-image::images/endpoint-add-exp.png[]
-. If required, modify the conditions.
-+
-NOTE: Refer to <<ex-nested-conditions>> for more information on when nested conditions are required.
-
-. You can select any of the following:
-
-* *Close this alert*: Closes the alert when the exception is added. This option
-is only available when adding exceptions from the Alerts table.
-* *Close all alerts that match this exception and were generated by this rule*:
-Closes all alerts that match the exception's conditions.
-
-. Click *Add Endpoint Exception*. An exception is created for both the detection rule and the {elastic-endpoint}.
-
-[float]
-[[ex-nested-conditions]]
-=== Exceptions with nested conditions
-
-Some Endpoint objects contain nested fields, and the only way to ensure you are
-excluding the correct fields is with nested conditions. One example is the
-`process.Ext` object:
-
-[source, json]
---------------------------------------------------
-{
-  "ancestry": [],
-  "code_signature": {
-    "trusted": true,
-    "subject_name": "LFC",
-    "exists": true,
-    "status": "trusted"
-  },
-  "user": "WDAGUtilityAccount",
-  "token": {
-    "elevation": true,
-    "integrity_level_name": "high",
-    "domain": "27FB305D-3838-4",
-    "user": "WDAGUtilityAccount",
-    "elevation_type": "default",
-    "sid": "S-1-5-21-2047949552-857980807-821054962-504"
-  }
-}
---------------------------------------------------
-
-
-TIP: `code_signature.subject_name` refers to the process signature not the
-process name.
-
-[[nested-field-list]]
-Only these objects require nested conditions to ensure the exception functions
-correctly:
-
-* `Endpoint.policy.applied.artifacts.global.identifiers`
-* `Endpoint.policy.applied.artifacts.user.identifiers`
-* `Target.dll.Ext.code_signature`
-* `Target.process.Ext.code_signature`
-* `Target.process.Ext.token.privileges`
-* `Target.process.parent.Ext.code_signature`
-* `Target.process.thread.Ext.token.privileges`
-* `dll.Ext.code_signature`
-* `file.Ext.code_signature`
-* `file.Ext.macro.errors`
-* `file.Ext.macro.stream`
-* `process.Ext.code_signature`
-* `process.Ext.token.privileges`
-* `process.parent.Ext.code_signature`
-* `process.thread.Ext.token.privileges`
-
-
-[discrete]
-==== Nested condition example
-
-Creates an exception that excludes all LFC-signed trusted processes:
+Shared exception lists allow you to group exceptions together and then apply them to multiple rules. Use the Rule Exceptions page to set up a shared exception list with exception items, and then associate the list with multiple detection rules. Refer to <<shared-exception-lists>> to learn more.
 
 [role="screenshot"]
-image::images/nested-exp.png[]
-
-[float]
-[[rules-using-same-exception]]
-=== Find rules using the same exception
-To find out if an exception is used by other rules, select the *Rule exceptions* or *Endpoint exceptions* tab, navigate to an exception list item, then click *Affects _X_ rules*. 
-
-[role="screenshot"]
-image::images/exception-affects-multiple-rules.png[]
-
-[float]
-[[manage-exceptions]]
-=== View and manage exception lists
-
-The Exception lists table enables you to view and manage all exceptions that have been assigned to rules. To view the Exception lists table, go to *Manage* -> *Exception lists*.
-
-[role="screenshot"]
-image::images/exceptions-page.png[]
-
-Exceptions are automatically grouped into exception lists. The table displays each exception list on an individual row, with the most recently created list at the top. Each row contains information such as the name of the rule to which the exception list is assigned, the dates when the list was created and last edited, and options to export or delete it.
-
-TIP: To view details of the rule the exception list is assigned to, click the link in the `Rules assigned to` column.
-
-To filter exception lists by a specific value, enter a query in the https://elastic.github.io/eui/#/forms/search-bar[Search bar]. You can search the following attributes:
-
-* `name`
-* `list_id`
-* `created_by`
-* `type`
-* `tags`
-
-If no attribute is selected, the app searches the list name by default.
-
-To export or delete an exception list, select the required action button on the appropriate list. Note that:
-
-* Exception lists are exported to `.ndjson` files.
-* Exception lists are also exported as part of any exported detection rules configured with exceptions. Refer to <<import-export-rules-ui>>.
-* If an exception list is linked to any rules, you'll get a warning asking you to confirm the deletion. If no rules are linked, the list is deleted without confirmation.
-
-[role="screenshot"]
-image::images/actions-exception-list.png[Detail of Exception lists table with export and delete buttons highlighted,400]
+image::images/rule-exceptions-page.png[Rule exceptions page]
