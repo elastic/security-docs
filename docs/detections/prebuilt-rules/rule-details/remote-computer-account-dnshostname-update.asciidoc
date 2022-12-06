@@ -34,11 +34,11 @@ Identifies the remote update to a computer account's DnsHostName attribute. If t
 * Privilege Escalation
 * Active Directory
 
-*Version*: 100 (<<remote-computer-account-dnshostname-update-history, version history>>)
+*Version*: 101 (<<remote-computer-account-dnshostname-update-history, version history>>)
 
 *Added ({stack} release)*: 8.3.0
 
-*Last modified ({stack} release)*: 8.5.0
+*Last modified ({stack} release)*: 8.6.0
 
 *Rule authors*: Elastic
 
@@ -57,7 +57,11 @@ user.domain == "NT AUTHORITY" and source.ip != "127.0.0.1" and
 source.ip !="::1"] by winlog.event_data.TargetLogonId [iam where
 event.action == "changed-computer-account" and /* if DnsHostName
 value equal a DC DNS hostname then it's highly suspicious */
-winlog.event_data.DnsHostName : "??*"] by
+winlog.event_data.DnsHostName : "??*" and /* exclude FPs
+where DnsHostName starts with the ComputerName that was changed */
+not startswith~(winlog.event_data.DnsHostName,
+substring(winlog.event_data.TargetUserName, 0,
+length(winlog.event_data.TargetUserName) - 1)) ] by
 winlog.event_data.SubjectLogonId
 ----------------------------------
 
@@ -76,6 +80,23 @@ winlog.event_data.SubjectLogonId
 
 [[remote-computer-account-dnshostname-update-history]]
 ==== Rule version history
+
+Version 101 (8.6.0 release)::
+* Updated query, changed from:
++
+[source, js]
+----------------------------------
+sequence by host.id with maxspan=5m [authentication where
+event.action == "logged-in" and winlog.logon.type == "Network" and
+event.outcome == "success" and not user.name == "ANONYMOUS LOGON"
+and not winlog.event_data.SubjectUserName : "*$" and not
+user.domain == "NT AUTHORITY" and source.ip != "127.0.0.1" and
+source.ip !="::1"] by winlog.event_data.TargetLogonId [iam where
+event.action == "changed-computer-account" and /* if DnsHostName
+value equal a DC DNS hostname then it's highly suspicious */
+winlog.event_data.DnsHostName : "??*"] by
+winlog.event_data.SubjectLogonId
+----------------------------------
 
 Version 100 (8.5.0 release)::
 * Formatting only

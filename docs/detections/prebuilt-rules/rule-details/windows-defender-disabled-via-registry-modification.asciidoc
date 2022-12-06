@@ -10,6 +10,7 @@ Identifies modifications to the Windows Defender registry settings to disable th
 * winlogbeat-*
 * logs-endpoint.events.*
 * logs-windows.*
+* endgame-*
 
 *Severity*: low
 
@@ -32,13 +33,14 @@ Identifies modifications to the Windows Defender registry settings to disable th
 * Windows
 * Threat Detection
 * Defense Evasion
-* has_guide
+* Investigation Guide
+* Elastic Endgame
 
-*Version*: 101 (<<windows-defender-disabled-via-registry-modification-history, version history>>)
+*Version*: 102 (<<windows-defender-disabled-via-registry-modification-history, version history>>)
 
 *Added ({stack} release)*: 7.12.0
 
-*Last modified ({stack} release)*: 8.5.0
+*Last modified ({stack} release)*: 8.6.0
 
 *Rule authors*: Elastic
 
@@ -103,11 +105,14 @@ mean time to respond (MTTR).
 [source,js]
 ----------------------------------
 registry where event.type in ("creation", "change") and ( (
-registry.path:"HKLM\\SOFTWARE\\Policies\\Microsoft\\Windows
-Defender\\DisableAntiSpyware" and registry.data.strings: ("1",
-"0x00000001") ) or (
-registry.path:"HKLM\\System\\*ControlSet*\\Services\\WinDefend\\Start"
-and registry.data.strings in ("3", "4", "0x00000003",
+registry.path: ( "HKLM\\SOFTWARE\\Policies\\Microsoft\\Windows
+Defender\\DisableAntiSpyware",
+"\\REGISTRY\\MACHINE\\SOFTWARE\\Policies\\Microsoft\\Windows
+Defender\\DisableAntiSpyware" ) and registry.data.strings:
+("1", "0x00000001") ) or ( registry.path: (
+"HKLM\\System\\*ControlSet*\\Services\\WinDefend\\Start", "\\R
+EGISTRY\\MACHINE\\System\\*ControlSet*\\Services\\WinDefend\\Start"
+) and registry.data.strings in ("3", "4", "0x00000003",
 "0x00000004") ) ) and not process.executable :
 ("?:\\WINDOWS\\system32\\services.exe",
 "?:\\Windows\\System32\\svchost.exe", "?:\\Program Files
@@ -129,6 +134,23 @@ and registry.data.strings in ("3", "4", "0x00000003",
 
 [[windows-defender-disabled-via-registry-modification-history]]
 ==== Rule version history
+
+Version 102 (8.6.0 release)::
+* Updated query, changed from:
++
+[source, js]
+----------------------------------
+registry where event.type in ("creation", "change") and ( (
+registry.path:"HKLM\\SOFTWARE\\Policies\\Microsoft\\Windows
+Defender\\DisableAntiSpyware" and registry.data.strings: ("1",
+"0x00000001") ) or (
+registry.path:"HKLM\\System\\*ControlSet*\\Services\\WinDefend\\Start"
+and registry.data.strings in ("3", "4", "0x00000003",
+"0x00000004") ) ) and not process.executable :
+("?:\\WINDOWS\\system32\\services.exe",
+"?:\\Windows\\System32\\svchost.exe", "?:\\Program Files
+(x86)\\Trend Micro\\Security Agent\\NTRmv.exe")
+----------------------------------
 
 Version 101 (8.5.0 release)::
 * Updated query, changed from:
