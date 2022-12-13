@@ -32,11 +32,11 @@ This rule detects when a pod is created with a sensitive volume of type hostPath
 * Execution
 * Privilege Escalation
 
-*Version*: 100 (<<kubernetes-pod-created-with-a-sensitive-hostpath-volume-history, version history>>)
+*Version*: 200 (<<kubernetes-pod-created-with-a-sensitive-hostpath-volume-history, version history>>)
 
 *Added ({stack} release)*: 8.4.0
 
-*Last modified ({stack} release)*: 8.5.0
+*Last modified ({stack} release)*: 8.6.0
 
 *Rule authors*: Elastic
 
@@ -44,7 +44,7 @@ This rule detects when a pod is created with a sensitive volume of type hostPath
 
 ==== Potential false positives
 
-An administrator may need to attach a hostPath volume for a legitimate reason. This alert should be investigated for legitimacy by determining if the kuberenetes.audit.requestObject.spec.volumes.hostPath.path triggered is one needed by its target container/pod. For example, when the fleet managed elastic agent is deployed as a daemonset it creates several hostPath volume mounts, some of which are sensitive host directories like /proc, /etc/kubernetes, and /var/log.
+An administrator may need to attach a hostPath volume for a legitimate reason. This alert should be investigated for legitimacy by determining if the kuberenetes.audit.requestObject.spec.volumes.hostPath.path triggered is one needed by its target container/pod. For example, when the fleet managed elastic agent is deployed as a daemonset it creates several hostPath volume mounts, some of which are sensitive host directories like /proc, /etc/kubernetes, and /var/log. Add exceptions for trusted container images using the query field "kubernetes.audit.requestObject.spec.container.image"
 
 ==== Investigation guide
 
@@ -60,14 +60,19 @@ An administrator may need to attach a hostPath volume for a legitimate reason. T
 
 [source,js]
 ----------------------------------
-kubernetes.audit.objectRef.resource:"pods" and
+event.dataset : "kubernetes.audit_logs" and
+kubernetes.audit.annotations.authorization_k8s_io/decision:"allow"
+and kubernetes.audit.objectRef.resource:"pods" and
 kubernetes.audit.verb:("create" or "update" or "patch") and
-kubernetes.audit.requestObject.spec.volumes.hostPath.path:("/" or
-"/proc" or "/root" or "/var" or "/var/run/docker.sock" or
-"/var/run/crio/crio.sock" or "/var/run/cri-dockerd.sock" or
-"/var/lib/kubelet" or "/var/lib/kubelet/pki" or
-"/var/lib/docker/overlay2" or "/etc" or "/etc/kubernetes" or
-"/etc/kubernetes/manifests" or "/home/admin")
+kubernetes.audit.requestObject.spec.volumes.hostPath.path: ("/" or
+"/proc" or "/root" or "/var" or "/var/run" or
+"/var/run/docker.sock" or "/var/run/crio/crio.sock" or
+"/var/run/cri-dockerd.sock" or "/var/lib/kubelet" or
+"/var/lib/kubelet/pki" or "/var/lib/docker/overlay2" or "/etc"
+or "/etc/kubernetes" or "/etc/kubernetes/manifests" or
+"/etc/kubernetes/pki" or "/home/admin") and not
+kubernetes.audit.requestObject.spec.containers.image:
+("docker.elastic.co/beats/elastic-agent:8.4.0")
 ----------------------------------
 
 ==== Threat mapping
@@ -83,8 +88,33 @@ kubernetes.audit.requestObject.spec.volumes.hostPath.path:("/" or
 ** ID: T1611
 ** Reference URL: https://attack.mitre.org/techniques/T1611/
 
+
+* Tactic:
+** Name: Execution
+** ID: TA0002
+** Reference URL: https://attack.mitre.org/tactics/TA0002/
+* Technique:
+** Name: Deploy Container
+** ID: T1610
+** Reference URL: https://attack.mitre.org/techniques/T1610/
+
 [[kubernetes-pod-created-with-a-sensitive-hostpath-volume-history]]
 ==== Rule version history
+
+Version 200 (8.6.0 release)::
+* Updated query, changed from:
++
+[source, js]
+----------------------------------
+kubernetes.audit.objectRef.resource:"pods" and
+kubernetes.audit.verb:("create" or "update" or "patch") and
+kubernetes.audit.requestObject.spec.volumes.hostPath.path:("/" or
+"/proc" or "/root" or "/var" or "/var/run/docker.sock" or
+"/var/run/crio/crio.sock" or "/var/run/cri-dockerd.sock" or
+"/var/lib/kubelet" or "/var/lib/kubelet/pki" or
+"/var/lib/docker/overlay2" or "/etc" or "/etc/kubernetes" or
+"/etc/kubernetes/manifests" or "/home/admin")
+----------------------------------
 
 Version 100 (8.5.0 release)::
 * Updated query, changed from:

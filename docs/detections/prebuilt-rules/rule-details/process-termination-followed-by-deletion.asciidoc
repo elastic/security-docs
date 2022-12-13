@@ -8,6 +8,7 @@ Identifies a process termination event quickly followed by the deletion of its e
 *Rule indices*:
 
 * logs-endpoint.events.*
+* endgame-*
 
 *Severity*: medium
 
@@ -26,12 +27,13 @@ Identifies a process termination event quickly followed by the deletion of its e
 * Windows
 * Threat Detection
 * Defense Evasion
+* Elastic Endgame
 
-*Version*: 100 (<<process-termination-followed-by-deletion-history, version history>>)
+*Version*: 101 (<<process-termination-followed-by-deletion-history, version history>>)
 
 *Added ({stack} release)*: 7.11.0
 
-*Last modified ({stack} release)*: 8.5.0
+*Last modified ({stack} release)*: 8.6.0
 
 *Rule authors*: Elastic
 
@@ -43,7 +45,7 @@ Identifies a process termination event quickly followed by the deletion of its e
 [source,js]
 ----------------------------------
 sequence by host.id with maxspan=5s [process where event.type ==
-"end" and process.code_signature.trusted == false and not
+"end" and process.code_signature.trusted != true and not
 process.executable : ("C:\\Windows\\SoftwareDistribution\\*.exe",
 "C:\\Windows\\WinSxS\\*.exe") ] by process.executable [file
 where event.type == "deletion" and file.extension : ("exe", "scr",
@@ -70,6 +72,24 @@ file.path
 
 [[process-termination-followed-by-deletion-history]]
 ==== Rule version history
+
+Version 101 (8.6.0 release)::
+* Updated query, changed from:
++
+[source, js]
+----------------------------------
+sequence by host.id with maxspan=5s [process where event.type ==
+"end" and process.code_signature.trusted == false and not
+process.executable : ("C:\\Windows\\SoftwareDistribution\\*.exe",
+"C:\\Windows\\WinSxS\\*.exe") ] by process.executable [file
+where event.type == "deletion" and file.extension : ("exe", "scr",
+"com") and not process.executable : ("?:\\Program
+Files\\*.exe", "?:\\Program Files (x86)\\*.exe",
+"?:\\Windows\\System32\\svchost.exe",
+"?:\\Windows\\System32\\drvinst.exe") and not file.path :
+("?:\\Program Files\\*.exe", "?:\\Program Files (x86)\\*.exe") ] by
+file.path
+----------------------------------
 
 Version 100 (8.5.0 release)::
 * Updated query, changed from:
