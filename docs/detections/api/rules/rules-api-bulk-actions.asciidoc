@@ -427,9 +427,18 @@ POST api/detection_engine/rules/_bulk_action
 [discrete]
 ===== Response payload
 
-For `enable`, `disable`, `delete`, `edit`, and `duplicate` actions, a JSON object containing the action's outcome: number of failed and successful outcomes, number of rules, and number of rule objects created, deleted, skipped or updated (depending on the action).
+For `enable`, `disable`, `delete`, `edit`, and `duplicate` actions, a JSON object containing the action's outcome:
 
-Rules can only be `skipped` when performing an  `edit` action, when all the operations to be performed on any one rule result in a no-op. For example, if the `edit` action is to add a tag to a rule that already has that tag, and to delete an index pattern that doesn't exist. Skipped rules objects will only return their `id`, `name`, and `skip_reason`.
+- `attributes.summary.total`: total number of rules matching the bulk action
+- `attributes.summary.succeeded`: number of successful outcomes (number of rules that were enabled or deleted or updated - depending on the type of action)
+- `attributes.summary.failed`: number of failed outcomes
+- `attributes.summary.skipped`: number of rules that were skipped due to various reasons (see below)
+- `attributes.results.created`: rule objects that were created during the action's execution
+- `attributes.results.updated`: rule objects that were updated during the action's execution
+- `attributes.results.deleted`: rule objects that were deleted during the action's execution
+- `attributes.results.skipped`: rules that were skipped during the action's execution
+
+A rule can only be `skipped` when the bulk action to be performed on it results in nothing being done. For example, if the `edit` action is used to add a tag to a rule that already has that tag, or to delete an index pattern that is not specified in a rule. Objects returned in `attributes.results.skipped` will only include rules' `id`, `name`, and `skip_reason`.
 
 [source,json]
 --------------------------------------------------
