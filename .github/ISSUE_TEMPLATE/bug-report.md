@@ -2,11 +2,11 @@
 name: Bug report
 about: Report documentation bugs or fixes.
 title: "[BUG]"
-labels: TEAM:Docs, bug
+labels: bug
 assignees: ''
 
 ---
 
-**Description**: Summarize the problem and what text needs to be omitted, changed, or replaced. 
+**Description**: Summarize the problem and what needs to be omitted, edited, or replaced. 
 
-**URL link or topic name**:
+**Doc URL link or topic name**:

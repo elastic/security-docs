@@ -1,7 +1,8 @@
 ---
 name: Documentation Issue
 about: Describe your Elastic security documentation issue.
-title: '[DOCS]'
+title: ''
+labels: ''
 assignees: ''
 
 ---
