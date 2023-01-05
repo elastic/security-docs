@@ -427,7 +427,18 @@ POST api/detection_engine/rules/_bulk_action
 [discrete]
 ===== Response payload
 
-For `enable`, `disable`, `delete`, `edit`, and `duplicate` actions, a JSON object containing the action's outcome: number of failed and successful outcomes, number of rules, and number of rule objects created, deleted or updated (depending on the action).
+For `enable`, `disable`, `delete`, `edit`, and `duplicate` actions, a JSON object containing the action's outcome:
+
+- `attributes.summary.total`: Total number of rules matching the bulk action
+- `attributes.summary.succeeded`: Number of successful outcomes (number of rules that were enabled, deleted, or updated)
+- `attributes.summary.failed`: Number of failed outcomes
+- `attributes.summary.skipped`: Number of rules that were skipped due to various reasons (explained below)
+- `attributes.results.created`: Rule objects that were created during the action's execution
+- `attributes.results.updated`: Rule objects that were updated during the action's execution
+- `attributes.results.deleted`: Rule objects that were deleted during the action's execution
+- `attributes.results.skipped`: Rules that were skipped during the action's execution
+
+A rule can only be `skipped` when the bulk action to be performed on it results in nothing being done. For example, if the `edit` action is used to add a tag to a rule that already has that tag, or to delete an index pattern that is not specified in a rule. Objects returned in `attributes.results.skipped` will only include rules' `id`, `name`, and `skip_reason`.
 
 [source,json]
 --------------------------------------------------
@@ -516,12 +527,16 @@ For `enable`, `disable`, `delete`, `edit`, and `duplicate` actions, a JSON objec
          ],
          "deleted":[
 
+         ],
+         "skipped":[
+            { "id": "51658332-a15e-4c9e-912a-67214e2e2359", "name": "Skipped rule", "skip_reason": "RULE_NOT_MODIFIED" }
          ]
       },
       "summary":{
-         "failed":0,
-         "succeeded":1,
-         "total":1
+         "failed": 0,
+         "skipped": 1,
+         "succeeded": 1,
+         "total": 2
       }
    }
 }
@@ -687,11 +702,13 @@ If processing of any rule fails, a partial error outputs the ID and/or name of t
                 }
             ],
             "created": [],
-            "deleted": []
+            "deleted": [],
+            "skipped": [],
         },
         "summary": {
             "failed": 1,
             "succeeded": 1,
+            "skipped": 0,
             "total": 2
         }
     }
@@ -770,11 +787,13 @@ Notice that there are no arrays in `attributes.results`. In dry run mode, rule u
         "results": {
             "updated": [],
             "created": [],
-            "deleted": []
+            "deleted": [],
+            "skipped": [],
         },
         "summary": {
             "failed": 2,
             "succeeded": 1,
+            "skipped": 0,
             "total": 3
         }
     }
