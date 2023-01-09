@@ -6,7 +6,12 @@ in a tree-like structure according to the Linux logical event model, with proces
 It displays events in a highly readable format that is inspired by the terminal. This makes it a powerful tool for monitoring
 and investigating session activity on your Linux infrastructure and understanding user and service behavior.
 
-NOTE: Session View requires an https://www.elastic.co/pricing[Enterprise subscription].
+.Requirements
+[sidebar]
+--
+
+* Session View requires an https://www.elastic.co/pricing[Enterprise subscription].
+--
 
 [float]
 [[session-view-data]]
@@ -15,7 +20,7 @@ NOTE: Session View requires an https://www.elastic.co/pricing[Enterprise subscri
 * *User information:* The Linux user that executed each session or process, and any exec user changes.
 * *Process and event telemetry:* Process information included in the Linux logical event model.
 * *Nested sessions:* Sessions started by processes descended from the entry session.
-* *Alerts:* Alerts in the context of the processes which caused them.
+* *Alerts:* Process, file, and network alerts in the context of the events which caused them.
 * *Terminal output:* Terminal output associated with each process in the session.
 
 NOTE: To view Linux session data from your Kubernetes infrastructure, you'll need to set up the <<kubernetes-dashboard,Kubernetes dashboard>>.
@@ -27,13 +32,14 @@ Session View uses process data collected by the {elastic-defend} integration,
 but this data is not always collected by default. To confirm that Session View data is enabled:
 
 . Go to *Manage* -> *Policies*, and edit one or more of your {elastic-defend} integration policies.
-. Select the *Policy settings* tab, then
-scroll down to the Linux event collection section near the bottom.
-Turn on the *Include session data* toggle if it isn't on already.
-. To enable terminal output capture, turn on the *Capture terminal output* toggle.
+. Select the *Policy settings* tab, then scroll down to the Linux event collection section near the bottom.
+. Check the box for *Process* events, and turn on the *Include session data* toggle.
+. If you want to include file and network alerts in Session View, check the boxes for *Network* and *File* events.
+. If you want to enable terminal output capture, turn on the *Capture terminal output* toggle.
 
-Session View can only display data that was collected by {elastic-defend} when *Include session data* was enabled. For more information about the additional
-fields collected by {elastic-defend} when this setting is enabled, refer to the https://github.com/elastic/ecs/blob/main/rfcs/text/0030-linux-event-model.md[Linux event model RFC].
+Session View can only display data that was collected by {elastic-defend} when *Include session data* was enabled. When this setting is enabled, {elastic-defend} includes additional process context data in captured process, file, and network events. For more information about the additional
+fields collected when this setting is enabled, refer to the https://github.com/elastic/ecs/blob/main/rfcs/text/0030-linux-event-model.md[Linux event model RFC].
+
 
 
 
@@ -75,8 +81,7 @@ It also shows the Linux user "Ubuntu" started the session.
 6. The *Child processes* button. Click to expand or collapse a process’s children.
 You can also expand collapsed alerts and scripts where they appear.
 Collapsed processes will automatically expand when their contents match a search.
-7. The *Alerts* button. Click to show alerts caused by the parent process. Note the red line to the left
-of the process that caused the alert.
+7. The *Alerts* button. Click to show alerts caused by the parent process. In this example, the `(2)` indicates that there are two alerts. Note the red line to the left of the event that caused the alert. Both alerts caused by this event are `process` alerts, as indicated by the gear icon.
 8. The *Terminal output* button. Hover to see how much output data has been captured from the session. Click to open the terminal output view, which is described in detail below.
 9. The *Refresh session* button. Click to check for any new data from the current session.
 
@@ -86,6 +91,11 @@ Session View includes additional badges not pictured above:
 //
 //[role="screenshot"]
 //image::images/session-view-script-button.png[The Script button]
+
+* The alert badge for multiple alerts appears when a single event causes alerts of multiple types (image:images/sess-view-process-alert-icon.png[Gear icon,17,17] for `process` alerts, image:images/sess-view-file-alert-icon.png[Page icon,17,17] for `file` alerts, and image:images/sess-view-network-alert-icon.png[Page icon,17,17] for `network` alerts):
++
+[role="screenshot"]
+image::images/session-view-alert-types-badge.png[The alert badge for a command with all three alert types,width=35%,height=35%]
 
 * The *Exec user change* badge highlights exec user changes, such as when a user escalates to root:
 +
@@ -102,6 +112,14 @@ image::images/session-view-output-badge.png[The Output badge,width=80%,height=80
 === Terminal output view UI
 
 beta::[]
+
+.Requirements
+[sidebar]
+--
+
+* Session output can only be collected from Linux OSes with eBPF-enabled kernels versions 5.10.16 or higher.
+--
+
 
 In general, terminal output is the text that appears in interactive Linux shell sessions. This generally includes user-entered text (terminal input), which appears as output to facilitate editing commands, as well as the text output of executed programs. In certain cases such as password entry, terminal input is not captured as output.
 
