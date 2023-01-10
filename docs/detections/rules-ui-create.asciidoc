@@ -13,7 +13,7 @@ creates an alert when one or more documents match the rule's query.
 * <<create-ml-rule, *Machine learning>>*: {ml-cap} rule, which creates an alert when a {ml} job
 discovers an anomaly above the defined threshold (see <<machine-learning>>).
 +
-For {ml} rules, the associated {ml} job must be running. If the {ml} job is not
+For {ml} rules, the associated {ml} job must be running. If the {ml} job isn't
 running, the rule will:
 
 ** Run and create alerts if existing anomaly results with scores above the defined threshold
@@ -36,7 +36,7 @@ the rule's search results.
 +
 TIP: You can also use value lists as the indicator match index. See <<indicator-value-lists>> at the end of this topic for more information.
 
-* <<create-new-terms-rule, *New terms*>>: Generates an alert for each new term detected in source documents within a specified time range.
+* <<create-new-terms-rule, *New terms*>>: Generates an alert for each new term detected in source documents within a specified time range. You can also detect a combination of up to three new terms (for example, a `host.ip` and `host.id` that have never been observed together before).
 
 When modifying rules or managing detection alerts, you can <<add-exceptions,add exceptions>> that prevent a rule from generating alerts even when its criteria are met. This is useful for reducing noise, such as preventing alerts from trusted processes and internal IP addresses.
 
@@ -118,15 +118,10 @@ role, and the selected {ml} job must be running for the rule to function correct
 
 . To create a rule based on a {ml} anomaly threshold, select *Machine Learning*,
 then select:
-.. The required {ml} job(s).
+.. The required {ml} jobs. 
++
+NOTE: If a required job isn't currently running, it will automatically start when you finish configuring and enable the rule.
 .. The anomaly score threshold above which alerts are created.
-. Make sure that the {ml} jobs required for the rule are running. If a required {ml} job is not running, an alert is displayed.
-.. Select **ML job settings** in the upper-right corner of the page, then search for the required {ml} job.
-.. Turn on the **Run job** switch for the required {ml} job.
-+
-[role="screenshot"]
-image::images/rule-start-ml-job.png[Turning on a machine learning job in the ML job settings menu,75%]
-+
 . Click **Continue** to <<rule-ui-basic-params, configure basic rule settings>>.
 
 [discrete]
@@ -161,6 +156,10 @@ When you use a saved query, the *Load saved query "_query name_" dynamically on 
 * Select this to use the saved query every time the rule runs. This links the rule to the saved query, and you won't be able to modify the rule's *Custom query* field or filters because the rule will only use settings from the saved query. To make changes, modify the saved query itself.
 
 * Deselect this to load the saved query as a one-time way of populating the rule's *Custom query* field and filters. This copies the settings from the saved query to the rule, so you can then further adjust the rule's query and filters as needed. If the saved query is later changed, the rule will not inherit those changes.
+
+. preview:[] (Optional, https://www.elastic.co/pricing[Platinum or higher subscription] required) Use *Suppress Alerts By* to reduce the number of repeated or duplicate alerts created each time the rule runs. Enter a field name to group matching source events by the field's unique values, and only one alert will be created for each group of events per rule execution. You can also enter multiple fields to group events by unique combinations of values.
++
+You'll still be able to view the original events associated with suppressed alerts by investigating the alert in Timeline. Refer to <<alert-suppression>> for more information.
 
 . Click **Continue** to <<rule-ui-basic-params, configure basic rule settings>>.
 
@@ -286,7 +285,9 @@ alerts.
 +
 NOTE: You can use {kib} saved queries (image:images/saved-query-menu.png[Saved query menu,18,18]) and queries from saved Timelines (*Import query from saved Timeline*) as rule conditions.
 +
-.. Use the *Fields* menu to select a field to check for new terms.
+.. Use the *Fields* menu to select a field to check for new terms. You can also select up to three fields to detect a combination of new terms (for example, a `host.ip` and `host.id` that have never been observed together before).
++
+IMPORTANT: When checking multiple fields, full results can be produced only for documents with no more than 100 unique combinations of values in these fields. If you expect your data to produce more than 100 unique new terms combinations per document, consider checking other fields to narrow down the search.
 .. Use the *History Window Size* menu to specify the time range to search in minutes, hours, or days to determine if a term is new. The history window size must be larger than the rule interval plus additional look-back time, because the rule will look for terms where the only time(s) the term appears within the history window is _also_ within the rule interval and additional look-back time.
 +
 For example, if a rule has an interval of 5 minutes, no additional look-back time, and a history window size of 7 days, a term will be considered new only if the time it appears within the last 7 days is also within the last 5 minutes. Configure the rule interval and additional look-back time when you <<rule-schedule, set the rule's schedule>>.
