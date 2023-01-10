@@ -1,0 +1,86 @@
+[[exceptions-api-create-shared-exception-list]]
+=== Create shared exception list
+
+Creates a shared exception list.
+
+An exception list groups <<exceptions-api-create-exception-item, exception items>>
+and can be associated with rules. When an exception item's query evaluates to
+`true`, associated rules do *not* issue alerts even when their other criteria are met.
+
+A shared exception list can apply to multiple detection rules. 
+For more information, refer to <<rules-api-create>> and <<rules-api-update>>.
+
+IMPORTANT: All exception items added to the same list are evaluated using
+`OR` logic. This means that if any of the items in a list evaluate to `true`, this
+prevents the rule from generating an alert. Likewise, `OR` logic is
+used for evaluating exceptions when more than one exception list is
+assigned to a rule. To use the `AND` operator, you can define multiple clauses
+(`entries`) in a single exception item.
+
+==== Request URL
+
+`POST <kibana host>:<port>/api/exceptions/shared`
+
+For example, using cURL:
+
+[source,console]
+--------------------------------------------------
+curl -X POST "<KibanaURL>/api/exceptions/shared"
+-u <username>:<password> -H 'kbn-xsrf: true' -H "Content-Type: application/json"
+--data "@<link to file>" <1>
+--------------------------------------------------
+<1> The relative link to the `.ndjson` file containing the exception list.
+
+===== Example request
+
+Creates the exception list in the `exception_lists.ndjson` file and overwrites
+existing lists with the same `list_id` values:
+
+[source,console]
+--------------------------------------------------
+curl -X POST "<KibanaURL>/api/exceptions/shared"
+-u <username>:<password> -H 'kbn-xsrf: true' -H "Content-Type: application/json"
+--data "@<link to file>" <1>
+--------------------------------------------------
+<1> The relative link to the `.ndjson` file containing the exception list.
+
+
+==== Response code
+
+`200`::
+    Indicates a successful call.
+
+
+==== Response payload
+
+[source,json]
+--------------------------------------------------
+{
+    "_version":"WzM2NDAsMV0=",
+    "created_at":"2022-12-08T18:24:11.678Z",
+    "created_by":"elastic",
+    "description":"I want to share this list with other rules",
+    "id":"832fb2f0-7725-11ed-aec7-81feddf7ae2b",
+    "immutable":false,
+    "list_id":"dc9e6f28-cedb-4dbb-985b-008956e49fd6",
+    "name":"my shared exception list",
+    "namespace_type":"single",
+    "os_types":[],
+    "tags":[],
+    "tie_breaker_id":"8c041278-7a1c-4d8c-bb70-f84987fb2c63",
+    "type":"detection",
+    "updated_at":"2022-12-08T18:24:11.679Z",
+    "updated_by":"elastic",
+    "version":1
+}
+--------------------------------------------------
+
+
+==== Sample ndjson file
+[source,json]
+-------------------------------------------------
+{
+    "name": "my shared exception list",
+    "description": "I want to share this list with other rules"
+}
+-------------------------------------------------
