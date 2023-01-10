@@ -1,0 +1,91 @@
+[[exceptions-api-import-exception-list]]
+=== Import exception list
+
+Imports an exception list and associated items.
+
+An exception list groups <<exceptions-api-create-exception-item, exception items>>
+and can be associated with rules. When an exception item's query evaluates to
+`true`, associated rules do *not* issue alerts even when their other criteria are met.
+
+You can assign multiple exception lists to a detection rule. For more information, refer to <<rules-api-create>> and <<rules-api-update>>.
+
+IMPORTANT: All exception items added to the same list are evaluated using
+`OR` logic. This means that if any of the items in a list evaluate to `true`, this
+prevents the rule from generating an alert. Likewise, `OR` logic is
+used for evaluating exceptions when more than one exception list is
+assigned to a rule. To use the `AND` operator, you can define multiple clauses
+(`entries`) in a single exception item.
+
+==== Request URL
+
+`POST <kibana host>:<port>/api/exception_lists/_import`
+
+The request must include:
+
+* A link to the `.ndjson` file containing the exception list.
+
+For example, using cURL:
+
+[source,console]
+--------------------------------------------------
+curl -X POST "<KibanaURL>/api/exception_lists/_import"
+-u <username>:<password> -H 'kbn-xsrf: true'
+--form "file=@<link to file>" <1>
+--------------------------------------------------
+<1> The relative link to the `.ndjson` file containing the exception list.
+
+===== URL query parameters
+
+[width="100%",options="header"]
+|==============================================
+|Name |Type |Description |Required
+
+|`overwrite` |Boolean |Determines whether existing exception lists with the same
+`list_id` are overwritten. If any exception items have the same `item_id`, those are also overwritten. |No, defaults to `false`.
+|`as_new_list` |Boolean |Determines whether the list being imported will have a new `list_id` generated. Additional `item_id`'s are generated for each exception item. Both the exception list container and
+its items are overwritten. |No, defaults to `false`.
+|==============================================
+
+
+===== Example request
+
+Imports the exception lists in the `exception_lists.ndjson` file and overwrites
+existing lists with the same `list_id` values:
+
+[source,console]
+--------------------------------------------------
+curl -X POST "<KibanaURL>/api/exception_lists/_import?overwrite=true"
+-u <username>:<password> -H 'kbn-xsrf: true'
+--form "file=@<link to file>" <1>
+--------------------------------------------------
+<1> The relative link to the `.ndjson` file containing the exception list.
+
+
+==== Response code
+
+`200`::
+    Indicates a successful call.
+
+
+==== Response payload
+
+[source,json]
+--------------------------------------------------
+{
+  "errors": [],
+  "success": true;
+  "success_count": 1;
+  "success_exception_lists": 1;
+  "success_count_exception_lists": 1;
+  "success_exception_list_items": true;
+  "success_count_exception_list_items": 1;
+}
+--------------------------------------------------
+
+
+==== Sample ndjson file
+[source,json]
+-------------------------------------------------
+{"_version":"WzEyOTcxLDFd","created_at":"2021-10-19T22:16:22.426Z","created_by":"elastic","description":"Query with a rule_id that acts like an external id","id":"3120bfa0-312a-11ec-9af9-ebd1fe0a2379","immutable":false,"list_id":"7d7cccb8-db72-4667-b1f3-648efad7c1ee","name":"Query with a rule id Number 1","namespace_type":"single","os_types":[],"tags":[],"tie_breaker_id":"e4daafa2-a60b-4e97-8eb4-2ed54356308f","type":"detection","updated_at":"2021-10-19T22:16:22.491Z","updated_by":"elastic","version":1}
+{"_version":"WzEyOTc1LDFd","comments":[],"created_at":"2021-10-19T22:16:36.567Z","created_by":"elastic","description":"Query with a rule id Number 1 - exception list item","entries":[{"field":"@timestamp","operator":"included","type":"exists"}],"id":"398ea580-312a-11ec-9af9-ebd1fe0a2379","item_id":"f7fd00bb-dba8-4c93-9d59-6cbd427b6330","list_id":"7d7cccb8-db72-4667-b1f3-648efad7c1ee","name":"Query with a rule id Number 1 - exception list item","namespace_type":"single","os_types":[],"tags":[],"tie_breaker_id":"54fecdba-1b36-467a-867c-a49aaaa84dcc","type":"simple","updated_at":"2021-10-19T22:16:36.634Z","updated_by":"elastic"}
+-------------------------------------------------
