@@ -1,0 +1,68 @@
+[[prebuilt-rule-8-3-3-msbuild-making-network-connections]]
+=== MsBuild Making Network Connections
+
+Identifies MsBuild.exe making outbound network connections. This may indicate adversarial activity as MsBuild is often leveraged by adversaries to execute code and evade detection.
+
+*Rule type*: eql
+
+*Rule indices*: 
+
+* winlogbeat-*
+* logs-endpoint.events.*
+* logs-windows.*
+
+*Severity*: medium
+
+*Risk score*: 47
+
+*Runs every*: 5m
+
+*Searches indices from*: now-9m ({ref}/common-options.html#date-math[Date Math format], see also <<rule-schedule, `Additional look-back time`>>)
+
+*Maximum alerts per execution*: 100
+
+*References*: None
+
+*Tags*: 
+
+* Elastic
+* Host
+* Windows
+* Threat Detection
+* Defense Evasion
+
+*Version*: 101
+
+*Rule authors*: 
+
+* Elastic
+
+*Rule license*: Elastic License v2
+
+
+==== Rule query
+
+
+[source, js]
+----------------------------------
+sequence by process.entity_id
+  [process where process.name : "MSBuild.exe" and event.type == "start"]
+  [network where process.name : "MSBuild.exe" and
+     not cidrmatch(destination.ip, "127.0.0.1", "::1")]
+
+----------------------------------
+
+*Framework*: MITRE ATT&CK^TM^
+
+* Tactic:
+** Name: Defense Evasion
+** ID: TA0005
+** Reference URL: https://attack.mitre.org/tactics/TA0005/
+* Technique:
+** Name: Trusted Developer Utilities Proxy Execution
+** ID: T1127
+** Reference URL: https://attack.mitre.org/techniques/T1127/
+* Sub-technique:
+** Name: MSBuild
+** ID: T1127.001
+** Reference URL: https://attack.mitre.org/techniques/T1127/001/
