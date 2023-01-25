@@ -1,0 +1,83 @@
+[[prebuilt-rule-8-4-2-potential-persistence-via-login-hook]]
+=== Potential Persistence via Login Hook
+
+Identifies the creation or modification of the login window property list (plist). Adversaries may modify plist files to run a program during system boot or user login for persistence.
+
+*Rule type*: query
+
+*Rule indices*: 
+
+* auditbeat-*
+* logs-endpoint.events.*
+
+*Severity*: medium
+
+*Risk score*: 47
+
+*Runs every*: 5m
+
+*Searches indices from*: now-9m ({ref}/common-options.html#date-math[Date Math format], see also <<rule-schedule, `Additional look-back time`>>)
+
+*Maximum alerts per execution*: 100
+
+*References*: 
+
+* https://github.com/D00MFist/PersistentJXA/blob/master/LoginScript.js
+
+*Tags*: 
+
+* Elastic
+* Host
+* macOS
+* Threat Detection
+* Persistence
+
+*Version*: 102
+
+*Rule authors*: 
+
+* Elastic
+
+*Rule license*: Elastic License v2
+
+
+==== Investigation guide
+
+
+[source, markdown]
+----------------------------------
+## Triage and analysis
+
+Starting in Mac OS X 10.7 (Lion), users can specify certain applications to be re-opened when a user reboots their machine. This can be abused to establish or maintain persistence on a compromised system.
+----------------------------------
+
+==== Rule query
+
+
+[source, js]
+----------------------------------
+event.category:"file" and not event.type:"deletion" and
+ file.name:"com.apple.loginwindow.plist" and
+ process.name:(* and not (systemmigrationd or DesktopServicesHelper or diskmanagementd or rsync or launchd or cfprefsd or xpcproxy or ManagedClient or MCXCompositor or backupd or "iMazing Profile Editor"
+))
+
+----------------------------------
+
+*Framework*: MITRE ATT&CK^TM^
+
+* Tactic:
+** Name: Persistence
+** ID: TA0003
+** Reference URL: https://attack.mitre.org/tactics/TA0003/
+* Technique:
+** Name: Boot or Logon Autostart Execution
+** ID: T1547
+** Reference URL: https://attack.mitre.org/techniques/T1547/
+* Tactic:
+** Name: Defense Evasion
+** ID: TA0005
+** Reference URL: https://attack.mitre.org/tactics/TA0005/
+* Technique:
+** Name: Plist File Modification
+** ID: T1647
+** Reference URL: https://attack.mitre.org/techniques/T1647/
