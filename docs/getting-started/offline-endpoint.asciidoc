@@ -105,10 +105,16 @@ This example script starts an Nginx Docker image and configures it as a file ser
 
 [source,sh]
 ----
-cat > nginx.conf << EOF
+cat > nginx.conf << 'EOF'
+# set compatible etag format
+map $sent_http_etag $elastic_etag {
+  "~(.*)-(.*)" "$1$2";
+}
 server {
   root /app/static;
-  location / {}
+  location / {
+    add_header ETag "$elastic_etag";
+  }
 }
 EOF
 docker run -v "$PWD"/nginx.conf:/etc/nginx/conf.d/default.conf:ro -v "$PWD"/static:/app/static:ro -p 80:80 nginx
@@ -125,7 +131,12 @@ This example script starts an Apache httpd Docker image and configures it as a f
 
 [source,sh]
 ----
-docker run -p 80:80 -v "$PWD":/usr/local/apache2/htdocs/ httpd
+docker run --rm httpd cat /usr/local/apache2/conf/httpd.conf > my-httpd.conf
+cat >> my-httpd.conf << 'EOF'
+# set compatible etag format
+FileETag MTime
+EOF
+docker run -p 80:80 -v "$PWD/static":/usr/local/apache2/htdocs/ -v "$PWD"/my-httpd.conf:/usr/local/apache2/conf/httpd.conf:ro httpd
 ----
 
 IMPORTANT: This example script is not appropriate for production environments. We recommend configuring httpd to use https://httpd.apache.org/docs/trunk/ssl/ssl_howto.html[TLS] according to your IT policies. Refer to https://httpd.apache.org[Apache documentation] for more information on downloading and configuring Apache httpd.
@@ -152,7 +163,7 @@ Below is an example script that downloads all the global artifact updates. There
 
 [source,sh,subs="attributes"]
 ----
-export ENDPOINT_VERSION={version} && wget -P downloads/endpoint/manifest https://artifacts.security.elastic.co/downloads/endpoint/manifest/artifacts-$ENDPOINT_VERSION.zip && zcat -q downloads/endpoint/manifest/artifacts-$ENDPOINT_VERSION.zip | jq -r --arg root "https://artifacts.security.elastic.co" '.artifacts | to_entries[] | $root + .value.relative_url' | xargs wget -P downloads/endpoint -c
+export ENDPOINT_VERSION={version} && wget -P downloads/endpoint/manifest https://artifacts.security.elastic.co/downloads/endpoint/manifest/artifacts-$ENDPOINT_VERSION.zip && zcat -q downloads/endpoint/manifest/artifacts-$ENDPOINT_VERSION.zip | jq -r '.artifacts | to_entries[] | .value.relative_url' | xargs -I@ curl "https://artifacts.security.elastic.co@" --create-dirs -o ".@"
 ----
 
 This command will download files and directory structure that should be directly copied to the file server.
