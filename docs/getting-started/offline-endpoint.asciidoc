@@ -131,7 +131,12 @@ This example script starts an Apache httpd Docker image and configures it as a f
 
 [source,sh]
 ----
-docker run -p 80:80 -v "$PWD":/usr/local/apache2/htdocs/ httpd
+docker run --rm httpd cat /usr/local/apache2/conf/httpd.conf > my-httpd.conf
+cat >> my-httpd.conf << 'EOF'
+# set compatible etag format
+FileETag MTime
+EOF
+docker run -p 80:80 -v "$PWD/static":/usr/local/apache2/htdocs/ -v "$PWD"/my-httpd.conf:/usr/local/apache2/conf/httpd.conf:ro httpd
 ----
 
 IMPORTANT: This example script is not appropriate for production environments. We recommend configuring httpd to use https://httpd.apache.org/docs/trunk/ssl/ssl_howto.html[TLS] according to your IT policies. Refer to https://httpd.apache.org[Apache documentation] for more information on downloading and configuring Apache httpd.
