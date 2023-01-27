@@ -106,9 +106,15 @@ This example script starts an Nginx Docker image and configures it as a file ser
 [source,sh]
 ----
 cat > nginx.conf << EOF
+# set compatible etag format
+map $sent_http_etag $elastic_etag {
+  "~(.*)-(.*)" "$1$2";
+}
 server {
   root /app/static;
-  location / {}
+  location / {
+    add_header ETag "$elastic_etag";
+  }
 }
 EOF
 docker run -v "$PWD"/nginx.conf:/etc/nginx/conf.d/default.conf:ro -v "$PWD"/static:/app/static:ro -p 80:80 nginx
