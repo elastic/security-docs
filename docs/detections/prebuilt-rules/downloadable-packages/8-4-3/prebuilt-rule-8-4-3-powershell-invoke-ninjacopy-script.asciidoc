@@ -1,0 +1,93 @@
+[[prebuilt-rule-8-4-3-powershell-invoke-ninjacopy-script]]
+=== PowerShell Invoke-NinjaCopy script
+
+Detects PowerShell scripts that contain the default exported functions used on Invoke-NinjaCopy. Attackers can use Invoke-NinjaCopy to read SYSTEM files that are normally locked, such as the NTDS.dit file or registry hives.
+
+*Rule type*: query
+
+*Rule indices*: 
+
+* winlogbeat-*
+* logs-windows.*
+
+*Severity*: medium
+
+*Risk score*: 47
+
+*Runs every*: 5m
+
+*Searches indices from*: now-9m ({ref}/common-options.html#date-math[Date Math format], see also <<rule-schedule, `Additional look-back time`>>)
+
+*Maximum alerts per execution*: 100
+
+*References*: 
+
+* https://github.com/BC-SECURITY/Empire/blob/main/empire/server/data/module_source/collection/Invoke-NinjaCopy.ps1
+
+*Tags*: 
+
+* Elastic
+* Host
+* Windows
+* Threat Detection
+* Credential Access
+* PowerShell
+
+*Version*: 1
+
+*Rule authors*: 
+
+* Elastic
+
+*Rule license*: Elastic License v2
+
+
+==== Rule query
+
+
+[source, js]
+----------------------------------
+event.category:process and
+  powershell.file.script_block_text : (
+    "StealthReadFile" or
+    "StealthReadFileAddr" or
+    "StealthCloseFileDelegate" or
+    "StealthOpenFile" or
+    "StealthCloseFile" or
+    "StealthReadFile" or
+    "Invoke-NinjaCopy"
+   )
+  and not user.id : "S-1-5-18"
+
+----------------------------------
+
+*Framework*: MITRE ATT&CK^TM^
+
+* Tactic:
+** Name: Credential Access
+** ID: TA0006
+** Reference URL: https://attack.mitre.org/tactics/TA0006/
+* Technique:
+** Name: OS Credential Dumping
+** ID: T1003
+** Reference URL: https://attack.mitre.org/techniques/T1003/
+* Sub-technique:
+** Name: Security Account Manager
+** ID: T1003.002
+** Reference URL: https://attack.mitre.org/techniques/T1003/002/
+* Sub-technique:
+** Name: NTDS
+** ID: T1003.003
+** Reference URL: https://attack.mitre.org/techniques/T1003/003/
+* Tactic:
+** Name: Execution
+** ID: TA0002
+** Reference URL: https://attack.mitre.org/tactics/TA0002/
+* Technique:
+** Name: Command and Scripting Interpreter
+** ID: T1059
+** Reference URL: https://attack.mitre.org/techniques/T1059/
+* Sub-technique:
+** Name: PowerShell
+** ID: T1059.001
+** Reference URL: https://attack.mitre.org/techniques/T1059/001/
