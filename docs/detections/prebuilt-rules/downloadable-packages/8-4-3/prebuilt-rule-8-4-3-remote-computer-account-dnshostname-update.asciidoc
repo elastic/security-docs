@@ -1,0 +1,87 @@
+[[prebuilt-rule-8-4-3-remote-computer-account-dnshostname-update]]
+=== Remote Computer Account DnsHostName Update
+
+Identifies the remote update to a computer account's DnsHostName attribute. If the new value set is a valid domain controller DNS hostname and the subject computer name is not a domain controller, then it's highly likely a preparation step to exploit CVE-2022-26923 in an attempt to elevate privileges from a standard domain user to domain admin privileges.
+
+*Rule type*: eql
+
+*Rule indices*: 
+
+* winlogbeat-*
+* logs-system.*
+* logs-windows.*
+
+*Severity*: high
+
+*Risk score*: 73
+
+*Runs every*: 5m
+
+*Searches indices from*: now-9m ({ref}/common-options.html#date-math[Date Math format], see also <<rule-schedule, `Additional look-back time`>>)
+
+*Maximum alerts per execution*: 100
+
+*References*: 
+
+* https://research.ifcr.dk/certifried-active-directory-domain-privilege-escalation-cve-2022-26923-9e098fe298f4
+* https://portal.msrc.microsoft.com/en-US/security-guidance/advisory/CVE-2022-26923
+
+*Tags*: 
+
+* Elastic
+* Host
+* Windows
+* Threat Detection
+* Privilege Escalation
+* Active Directory
+
+*Version*: 103
+
+*Rule authors*: 
+
+* Elastic
+
+*Rule license*: Elastic License v2
+
+
+==== Rule query
+
+
+[source, js]
+----------------------------------
+sequence by winlog.computer_name with maxspan=5m
+
+  [authentication where event.action == "logged-in" and
+   winlog.logon.type == "Network" and event.outcome == "success" and
+   not user.name == "ANONYMOUS LOGON" and not winlog.event_data.SubjectUserName : "*$" and
+   not user.domain == "NT AUTHORITY" and source.ip != "127.0.0.1" and source.ip !="::1"] by winlog.event_data.TargetLogonId
+
+  [iam where event.action == "changed-computer-account" and
+
+    /* if DnsHostName value equal a DC DNS hostname then it's highly suspicious */
+    winlog.event_data.DnsHostName : "??*" and
+
+    /* exclude FPs where DnsHostName starts with the ComputerName that was changed */
+    not startswith~(winlog.event_data.DnsHostName, substring(winlog.event_data.TargetUserName, 0, length(winlog.event_data.TargetUserName) - 1))
+    ] by winlog.event_data.SubjectLogonId
+
+----------------------------------
+
+*Framework*: MITRE ATT&CK^TM^
+
+* Tactic:
+** Name: Privilege Escalation
+** ID: TA0004
+** Reference URL: https://attack.mitre.org/tactics/TA0004/
+* Technique:
+** Name: Exploitation for Privilege Escalation
+** ID: T1068
+** Reference URL: https://attack.mitre.org/techniques/T1068/
+* Technique:
+** Name: Valid Accounts
+** ID: T1078
+** Reference URL: https://attack.mitre.org/techniques/T1078/
+* Sub-technique:
+** Name: Domain Accounts
+** ID: T1078.002
+** Reference URL: https://attack.mitre.org/techniques/T1078/002/
