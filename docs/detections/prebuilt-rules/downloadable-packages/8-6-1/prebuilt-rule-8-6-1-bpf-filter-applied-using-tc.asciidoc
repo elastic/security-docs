@@ -1,0 +1,69 @@
+[[prebuilt-rule-8-6-1-bpf-filter-applied-using-tc]]
+=== BPF filter applied using TC
+
+Detects when the tc (transmission control) binary is utilized to set a BPF (Berkeley Packet Filter) on a network interface. Tc is used to configure Traffic Control in the Linux kernel. It can shape, schedule, police and drop traffic. A threat actor can utilize tc to set a bpf filter on an interface for the purpose of manipulating the incoming traffic. This technique is not at all common and should indicate abnormal, suspicious or malicious activity.
+
+*Rule type*: eql
+
+*Rule indices*: 
+
+* logs-endpoint.events.*
+* endgame-*
+
+*Severity*: high
+
+*Risk score*: 73
+
+*Runs every*: 5m
+
+*Searches indices from*: now-9m ({ref}/common-options.html#date-math[Date Math format], see also <<rule-schedule, `Additional look-back time`>>)
+
+*Maximum alerts per execution*: 100
+
+*References*: 
+
+* https://github.com/h3xduck/TripleCross/blob/master/src/helpers/deployer.sh
+* https://man7.org/linux/man-pages/man8/tc.8.html
+
+*Tags*: 
+
+* Elastic
+* Host
+* Linux
+* Threat Detection
+* Execution
+* TripleCross
+* Elastic Endgame
+
+*Version*: 102
+
+*Rule authors*: 
+
+* Elastic
+
+*Rule license*: Elastic License v2
+
+
+==== Rule query
+
+
+[source, js]
+----------------------------------
+process where event.type != "end" and process.executable : "/usr/sbin/tc" and process.args : "filter" and process.args : "add" and process.args : "bpf" and not process.parent.executable: "/usr/sbin/libvirtd"
+
+----------------------------------
+
+*Framework*: MITRE ATT&CK^TM^
+
+* Tactic:
+** Name: Execution
+** ID: TA0002
+** Reference URL: https://attack.mitre.org/tactics/TA0002/
+* Technique:
+** Name: Command and Scripting Interpreter
+** ID: T1059
+** Reference URL: https://attack.mitre.org/techniques/T1059/
+* Sub-technique:
+** Name: Unix Shell
+** ID: T1059.004
+** Reference URL: https://attack.mitre.org/techniques/T1059/004/
