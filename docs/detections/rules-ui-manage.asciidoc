@@ -168,13 +168,15 @@ You cannot export Elastic prebuilt rules, but you can duplicate a prebuilt rule,
 If you try to export with both prebuilt and custom rules selected, only the custom rules are exported.
 ====
 
-The `.ndjson` file also includes any actions and exception lists related to the exported rules. However, other configuration items require additional handling when exporting and importing rules:
+The `.ndjson` file also includes any actions, action and exception lists related to the exported rules. However, other configuration items require additional handling when exporting and importing rules:
 
 - *Data views*: For rules that use a {kib} data view as a data source, the exported file contains the associated `data_view_id`, but does _not_ include any other data view configuration. To export/import between {kib} spaces, first use the {kibana-ref}/managing-saved-objects.html#managing-saved-objects-share-to-space[Saved Objects] UI (*Stack Management* -> *Kibana* -> *Saved Objects*) to share the data view with the destination space.
 +
 To import into a different {stack} deployment, the destination cluster must include a data view with a matching data view ID (configured in the {kibana-ref}/data-views.html[data view's advanced settings]). Alternatively, after importing, you can manually reconfigure the rule to use an appropriate data view in the destination system.
 
-- *Actions and connectors*: Rule actions are included in the exported file, but the connectors used by the actions are _not_ included. Use {kib}'s {kibana-ref}/managing-saved-objects.html#managing-saved-objects-export-objects[Saved Objects] UI (*Stack Management* -> *Kibana* -> *Saved Objects*) to export and import any necessary connectors _before_ you export and import the detection rules.
+- *Actions and connectors*: Rule actions and the connectors used by the actions are included in the exported file, but sensitive information about the connector (such as authentication credentials) is _not_ included. During the rule import process, you are prompted to re-add missing connector details.
++
+TIP: You can still use {kib}'s {kibana-ref}/managing-saved-objects.html#managing-saved-objects-export-objects[Saved Objects] UI (*Stack Management* -> *Kibana* -> *Saved Objects*) to export and import any necessary connectors before you export and import the detection rules.
 
 - *Value lists*: Any value lists used for rule exceptions are _not_ included in rule exports or imports. Use the <<edit-value-lists, Import value lists>> UI (*Manage* -> *Rules* -> *Import value lists*) to export and import value lists separately.
 
@@ -186,7 +188,7 @@ To export and import detection rules:
 .. Select *Bulk actions* -> *Export*, then save the exported file.
 . To import rules:
 +
-NOTE: You need at least `Read` privileges for the `Action and Connectors` feature to import rules with actions. If you're importing rules without actions, `Action and Connectors` feature privileges are not required. Refer to <<enable-detections-ui>> for more information.
+NOTE: To import rules with actions, you need at least `Read` privileges for the `Action and Connectors` feature. To import rules with actions and overwrite an existing connector, you need at least `All` privileges for the `Action and Connectors` feature. If you're importing rules without actions, `Action and Connectors` feature privileges are not required. Refer to <<enable-detections-ui>> for more information.
 
 .. Click *Import rules*.
 .. Drag and drop the file that contains the detection rules.
@@ -196,7 +198,7 @@ NOTE: Imported rules must be in an `.ndjson` file.
 .. (Optional) Select *Overwrite existing exception lists with conflicting "list_id"* to replace existing exception lists with exception lists from the import file if they have a matching `list_id` value.
 .. (Optional) Select *Overwrite existing connectors with conflicting action "id"* to update existing connectors if they match the `action id` value of any rule actions in the import file. Configuration data included with the actions is also overwritten.
 .. Click *Import rule*.
-
+.. (Optional) If a connector is missing sensitive information after the import, a warning displays and you're prompted to fix the connector. In the warning, click *Go to connector*. On the Connectors page, find the connector that needs to be updated, click *Fix*, then add the necessary details.  
 
 [float]
 [[enable-detection-rules]]
