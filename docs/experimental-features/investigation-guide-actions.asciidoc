@@ -1,14 +1,14 @@
 [[interactive-investigation-guides]]
 == Interactive investigation guides
 
-NOTE: This feature is available for {stack} versions 8.6.0 and newer.
+IMPORTANT: This feature is available for {stack} versions 8.6.0 and newer. Additionally, interactive investigation guides are not compatible between release versions, so query buttons created in 8.6.0 won't render correctly in {version} and vice versa.
 
 Detection rule investigation guides suggest steps for triaging, analyzing, and responding to potential security issues. For custom rules, you can create an interactive investigation guide that includes buttons for launching runtime queries in <<timelines-ui,Timeline>>, using alert data and hard-coded literal values. This allows you to start detailed Timeline investigations directly from an alert using relevant data. 
 
 [role="screenshot"]
 image::images/ig-alert-flyout.png[Alert details flyout with interactive investigation guide,550]
 
-Each query button displays in parentheses the number of documents found. Click the button to automatically create the query in Timeline based on settings specified in the investigation guide.
+Each query button displays (in parentheses) the number of event documents found. Click the button to automatically load the query in Timeline based on settings specified in the investigation guide.
 
 [role="screenshot"]
 image::images/ig-timeline.png[Timeline with query pre-loaded from investigation guide action]
@@ -30,16 +30,19 @@ Add the following syntax to the *Investigation guide* Markdown editor to configu
 |===
 |Field |Description
 
-|`!{insight{ }}` |The container object holding all the configuration attributes for the button and the query.
-|`label` |Text to identify the button.
-|`description` |Additional text to include on the button.
+|`!{investigate{ }}` |The container object holding all the configuration attributes for the button and the query.
+|`label` |Identifying text on the button.
+|`description` |Additional text to include with the button.
 |`providers` a|A two-level nested array that defines the query you want to run in Timeline. Similar to the structure of queries in Timeline, items in the outer level are joined by an `OR` relationship, and items in the inner level are joined by an `AND` relationship.
 
-Each item in `providers` is defined by these attributes:
+Each item in `providers` corresponds to a filter created in the query builder UI and is defined by these attributes:
 
 * `field`: The name of a field to query.
-* `value`: The value to search for. Either a hard-coded literal value, or the name of the field on the alert whose value you want to use as a query parameter.
-* `type`: Either `literal` or `parameter`.
+* `excluded`: Whether the query result is excluded (such as *is not one of*) or included (*is one of*).
+* `queryType`: The query type used to filter events, based on the filter's operator. For example, `phrase` or `range`.
+* `value`: The value to search for. Either a hard-coded literal value, or the name of an alert field (in double braces) whose value you want to use as a query parameter.
+* `valueType`: The data type of `value`, such as `string` or `boolean`.
+|`relativeFrom`, `relativeTo` |(Optional) The beginning and ending, respectively, of the relative time range for the query. Times are relative to `now` in {ref}/common-options.html#date-math[date math] format. For example, selecting *Last 15 minutes* in the query builder form creates the syntax `"relativeFrom": "now-15m", "relativeTo": "now"`.
 |===
 
 NOTE: Some characters must be escaped with a backslash, such as `\"` for a quotation mark and `\\` for a literal backslash. Windows paths must be divided with double backslashes (for example, `C:\\Windows\\explorer.exe`), and paths that already include double backslashes might require four backslashes for each divider. A clickable error icon (image:images/ig-error-icon.png[Error icon,19,18]) displays below the Markdown editor if there are any syntax errors.
@@ -49,18 +52,20 @@ NOTE: Some characters must be escaped with a backslash, such as `\"` for a quota
 
 [source,json]
 ----
-!{insight{
-    "label": "Test action",
-    "description": "Click to investigate",
-    "providers": [
-      [     
-        {"field": "event.id", "value": "kibana.alert.original_event.id", "type": "parameter"}
-      ],
-      [  
-        {"field": "event.action", "value": "rename", "type": "literal"},
-        {"field": "process.pid", "value": "process.pid", "type": "parameter"}
-      ]
+!{investigate{
+  "label": "Test action",
+  "description": "Click to investigate.",
+  "providers": [
+    [
+      {"field": "event.id", "excluded": false, "queryType": "phrase", "value": "{{event.id}}", "valueType": "string"}
+    ],
+    [
+      {"field": "event.action", "excluded": false, "queryType": "phrase", "value": "rename", "valueType": "string"},
+      {"field": "process.pid", "excluded": false, "queryType": "phrase", "value": "{{process.pid}}", "valueType": "string"}
     ]
+  ],
+  "relativeFrom": "now-15m",
+  "relativeTo": "now"
 }}
 ----
 
