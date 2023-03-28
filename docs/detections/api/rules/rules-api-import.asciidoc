@@ -8,11 +8,13 @@ Imports rules from an `.ndjson` file. The following configuration items are also
 
 NOTE: This API supports {kibana-ref}/api.html#token-api-authentication[Token-based authentication] only.
 
-NOTE: You need at least `Read` privileges for the `Action and Connectors` feature to import rules with actions. If you're importing rules without actions, `Action and Connectors` feature privileges are not required. Refer to <<enable-detections-ui>> for more information.
+NOTE: To import rules with actions, you need at least `Read` privileges for the `Action and Connectors` feature. To overwrite or add new connectors, you need `All` privileges for the `Actions and Connectors` feature. To import rules without actions,  you don't need `Actions and Connectors` privileges. Refer to <<enable-detections-ui>> for more information.
 
 [IMPORTANT]
 =================
-Although detection rule actions are included in the exported file, the connectors used by the actions are not included. Use the {kibana-ref}/managing-saved-objects.html#managing-saved-objects-export-objects[Saved Objects] UI in Kibana (*Stack Management* -> *Kibana* -> *Saved Objects*) or the Saved Objects APIs (experimental) to {kibana-ref}/saved-objects-api-export.html[export] and {kibana-ref}/saved-objects-api-import.html[import] any necessary connectors _before_ you export and import the detection rules.
+Rule actions and connectors are included in the exported file, but sensitive information about the connector (such as authentication credentials) _is not_ included. You must re-add missing connector details after importing detection rules.
+
+You can use {kib}'s {kibana-ref}/managing-saved-objects.html#managing-saved-objects-export-objects[Saved Objects] UI (*Stack Management* -> *Kibana* -> *Saved Objects*) or the Saved Objects APIs (experimental) to {kibana-ref}/saved-objects-api-export.html[export] and {kibana-ref}/saved-objects-api-import.html[import] any necessary connectors before importing detection rules.
 
 Similarly, any value lists used for rule exceptions are not included in rule exports or imports. Use the <<edit-value-lists, Import value lists>> UI (*Manage* -> *Rules* -> *Import value lists*) to export and import value lists separately.
 =================
@@ -48,6 +50,8 @@ curl -X POST "<KibanaURL>/api/detection_engine/rules/_import"
 |`overwrite_exceptions` |Boolean |Determines whether existing exception lists
 with the same `list_id` are overwritten. Both the exception list container and
 its items are overwritten. |No, defaults to `false`.
+|`overwrite_action_connectors` |Boolean |Determines whether existing actions with the same
+`kibana.alert.rule.actions.id` are overwritten. |No, defaults to `false`.
 |==============================================
 
 ===== Example request
