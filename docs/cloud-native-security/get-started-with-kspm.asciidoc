@@ -46,6 +46,8 @@ The instructions differ depending on whether you're installing on EKS or on unma
 
 There are several options for how to provide AWS credentials:
 
+* <<kspm-use-irsa,Use Kubernetes Service Account to assume IAM role>>
+* <<kspm-use-instance-role,Use default instance role>>
 * <<kspm-use-keys-directly,Use access keys directly>>
 * <<kspm-use-temp-credentials,Use temporary security credentials>>
 * <<kspm-use-a-shared-credentials-file,Use a shared credentials file>>
@@ -118,9 +120,30 @@ If you are using the AWS visual editor to create and modify your IAM Policies, y
 ```
 ====
 
+
+[discrete]
+[[kspm-use-irsa]]
+===== Option 1 - [Recommended] Use Kubernetes Service Account to assume IAM role
+
+Leverage IRSA (IAM role to Kubernetes service-account) feature to get temporary credentials and scoped permission.
+From https://aws.github.io/aws-eks-best-practices/security/docs/iam/#iam-roles-for-service-accounts-irsa[EKS Best Practices]:
+
+> IRSA is a feature that allows you to assign an IAM role to a Kubernetes service account. It works by leveraging a Kubernetes feature known as Service Account Token Volume Projection. When pods are configured with a Service Account that references an IAM Role, the Kubernetes API server will call the public OIDC discovery endpoint for the cluster on startup. The endpoint cryptographically signs the OIDC token issued by Kubernetes and the resulting token is mounted as a volume. This signed token allows the pod to call the AWS API's associated IAM role. When an AWS API is invoked, the AWS SDK calls `sts:AssumeRoleWithWebIdentity`. After validating the token's signature, IAM exchanges the Kubernetes issued token for a temporary AWS role credential.
+
+To use this, do not fill in any part of the "Setup Access" section. Click *Save and continue*, and follow the https://docs.aws.amazon.com/eks/latest/userguide/iam-roles-for-service-accounts.html[IRSA] guide.
+
+[discrete]
+[[kspm-use-instance-role]]
+===== Option 2 - Use default instance role
+https://docs.aws.amazon.com/AWSEC2/latest/UserGuide/iam-roles-for-amazon-ec2.html[IAM roles for Amazon EC2]
+
+> When you create an IAM role using the IAM console, the console creates an instance profile automatically and gives it the same name as the role to which it corresponds.
+
+To use this, do not fill in any part of the "Setup Access" section. Click *Save and continue*.
+
 [discrete]
 [[kspm-use-keys-directly]]
-===== Option 1 - Use access keys directly
+===== Option 3 - Use access keys directly
 Access keys are long-term credentials for an IAM user or the AWS account root user. To use access keys as credentials, you need to provide the `Access key ID` and the `Secret Access Key`.
 
 For more details, refer to AWS' https://docs.aws.amazon.com/general/latest/gr/aws-sec-cred-types.html[Access Keys and Secret Access Keys] documentation.
@@ -129,7 +152,7 @@ IMPORTANT: You must select "Programmatic access" when creating the IAM user.
 
 [discrete]
 [[kspm-use-temp-credentials]]
-===== Option 2 - Use temporary security credentials
+===== Option 4 - Use temporary security credentials
 You can configure temporary security credentials in AWS to last for a specified duration. They consist of an access key ID, a secret access key, and a security token, which is typically found using `GetSessionToken`.
 
 Because temporary security credentials are short term, once they expire, you will need to generate new ones and manually update the integration's configuration to continue collecting cloud posture data. Update the credentials before they expire to avoid data loss.
@@ -151,7 +174,7 @@ The output from this command includes the following fields, which you should pro
 
 [discrete]
 [[kspm-use-a-shared-credentials-file]]
-===== Option 3 - Use a shared credentials file
+===== Option 5 - Use a shared credentials file
 If you use different AWS credentials for different tools or applications, you can use profiles to define multiple access keys in the same configuration file. For more details refer to AWS' https://docs.aws.amazon.com/sdkref/latest/guide/file-format.html[Shared Credentials Files] documentation.
 
 Instead of providing the `Access key ID` and `Secret Access Key` to the integration, provide the information required to locate the access keys within the shared credentials file:
@@ -168,7 +191,7 @@ If you don't provide values for all configuration fields, the integration will u
 
 [discrete]
 [[kspm-use-iam-arn]]
-===== Option 4 - Use an IAM role Amazon Resource Name (ARN)
+===== Option 6 - Use an IAM role Amazon Resource Name (ARN)
 An IAM role Amazon Resource Name (ARN) is an IAM identity that you can create in your AWS account. You define the role's permissions.
 Roles do not have standard long-term credentials such as passwords or access keys.
 Instead, when you assume a role, it provides you with temporary security credentials for your session.
