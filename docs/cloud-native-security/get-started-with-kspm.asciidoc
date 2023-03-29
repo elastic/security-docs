@@ -237,3 +237,161 @@ The *Add agent* wizard helps you deploy the KSPM integration on the Kubernetes c
 2. Apply the manifest using the `kubectl apply -f` command. For example: `kubectl apply -f elastic-agent-managed-kubernetes.yaml`
 
 After a few minutes, a message confirming the {agent} enrollment appears, followed by a message confirming that data is incoming. You can then click *View assets* to see where the newly-collected configuration information appears throughout {kib}, including the <<findings-page,Findings page>> and the <<cloud-posture-dashboard, Cloud Posture dashboard>>.
+
+[discrete]
+[[kspm-eck]]
+=== Set up KSPM on ECK deployments
+To run KSPM on an https://www.elastic.co/guide/en/cloud-on-k8s/current/k8s-quickstart.html[ECK] deployment,
+you must edit the https://www.elastic.co/guide/en/cloud-on-k8s/current/k8s-elastic-agent-configuration.html[Elastic Agent CRD] and https://www.elastic.co/guide/en/cloud-on-k8s/current/k8s-elastic-agent-configuration.html#k8s-elastic-agent-role-based-access-control[Elastic Agent Cluster-Role] `.yaml` files.
+
+.Patch Elastic Agent
+[%collapsible]
+====
+Add `volumes` and `volumeMounts` to `podTemplate`:
+```yaml
+podTemplate:
+  spec:
+    containers:
+    - name: agent
+      volumeMounts:
+      - name: proc
+        mountPath: /hostfs/proc
+        readOnly: true
+      - name: cgroup
+        mountPath: /hostfs/sys/fs/cgroup
+        readOnly: true
+      - name: varlibdockercontainers
+        mountPath: /var/lib/docker/containers
+        readOnly: true
+      - name: varlog
+        mountPath: /var/log
+        readOnly: true
+      - name: etc-full
+        mountPath: /hostfs/etc
+        readOnly: true
+      - name: var-lib
+        mountPath: /hostfs/var/lib
+        readOnly: true
+      - name: etc-mid
+        mountPath: /etc/machine-id
+        readOnly: true
+    volumes:
+    - name: proc
+      hostPath:
+        path: /proc
+    - name: cgroup
+      hostPath:
+      path: /sys/fs/cgroup
+    - name: varlibdockercontainers
+      hostPath:
+        path: /var/lib/docker/containers
+    - name: varlog
+      hostPath:
+        path: /var/log
+    - name: etc-full
+      hostPath:
+        path: /etc
+    - name: var-lib
+      hostPath:
+        path: /var/lib
+    # Mount /etc/machine-id from the host to determine host ID
+    # Needed for Elastic Security integration
+    - name: etc-mid
+      hostPath:
+        path: /etc/machine-id
+        type: File
+```
+====
+
+.Patch RBAC
+[%collapsible]
+====
+Make sure that the `elastic-agent` service-account has the following Role and ClusterRole:
+```yaml
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  namespace: default
+  name: elastic-agent
+subjects:
+- kind: ServiceAccount
+  name: elastic-agent
+  namespace: default
+roleRef:
+  kind: Role
+  name: elastic-agent
+  apiGroup: rbac.authorization.k8s.io
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: elastic-agent
+  labels:
+    k8s-app: elastic-agent
+rules:
+- apiGroups: [""]
+  resources:
+  - nodes
+  - namespaces
+  - events
+  - pods
+  - services
+  - configmaps
+  - serviceaccounts
+  - persistentvolumes
+  - persistentvolumeclaims
+  verbs: ["get", "list", "watch"]
+- apiGroups: ["extensions"]
+  resources:
+  - replicasets
+  verbs: ["get", "list", "watch"]
+- apiGroups: ["apps"]
+  resources:
+  - statefulsets
+  - deployments
+  - replicasets
+  - daemonsets
+  verbs: ["get", "list", "watch"]
+- apiGroups:
+  - ""
+  resources:
+  - nodes/stats
+  verbs:
+  - get
+- apiGroups: [ "batch" ]
+  resources:
+  - jobs
+  - cronjobs
+  verbs: [ "get", "list", "watch" ]
+- nonResourceURLs:
+  - "/metrics"
+  verbs:
+  - get
+- apiGroups: ["rbac.authorization.k8s.io"]
+  resources:
+  - clusterrolebindings
+  - clusterroles
+  - rolebindings
+  - roles
+  verbs: ["get", "list", "watch"]
+- apiGroups: ["policy"]
+  resources:
+  - podsecuritypolicies
+  verbs: ["get", "list", "watch"]
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: Role
+metadata:
+  name: elastic-agent
+  namespace: default
+  labels:
+    k8s-app: elastic-agent
+rules:
+  - apiGroups:
+    - coordination.k8s.io
+    resources:
+    - leases
+    verbs: ["get", "create", "update"]
+
+```
+====
