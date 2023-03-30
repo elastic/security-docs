@@ -1,0 +1,120 @@
+[[cspm-get-started]]
+= Get started with CSPM
+
+[discrete]
+[[cspm-overview]]
+== Overview
+
+This page explains how to get started monitoring the security posture of your cloud assets using the Cloud Security Posture Management (CSPM) feature.
+
+NOTE: The CSPM feature currently only supports posture evaluations for Amazon Web Service (AWS).
+
+.Requirements
+[sidebar]
+--
+* The CSPM integration is available to all {ecloud} users. On-premise deployments require an https://www.elastic.co/pricing[Enterprise subscription].
+* To view posture data, you need `read` privileges for the following {es} indices:
+** `logs-cloud_security_posture.findings_latest-*`
+** `logs-cloud_security_posture.scores-*`
+** `Logs-cloud_security_posture.findings`
+* The user who gives the CSPM integration AWS permissions needs to be an AWS account `admin` user.
+--
+
+[discrete]
+[[cspm-setup]]
+== Set up CSPM for AWS
+
+To set up CSPM for AWS, add the CSPM integration and then enable cloud account access.
+
+
+[discrete]
+[[cspm-add-and-name-integration]]
+=== Add your CSPM integration
+. From the Elastic Security *Get started* page, click *Add integrations*.
+. Search for `CSPM`, then click on the result.
+. Click *Add Cloud Security Posture Management (CSPM)*.
+. Give your integration a name that matches the purpose or team of the AWS account you want to monitor, for example, `dev-aws-account`.
+
+[discrete]
+[[cspm-set-up-cloud-access-section]]
+=== Set up cloud account access
+The CSPM integration requires access to AWS’s built-in https://docs.aws.amazon.com/IAM/latest/UserGuide/access_policies_job-functions.html#jf_security-auditor[`SecurityAudit` IAM policy] in order to discover and evaluate resources in your cloud account. There are several ways to provide access:
+
+* <<cspm-use-instance-role,Default instance role>>
+* <<cspm-use-keys-directly,Direct access keys>>
+* <<cspm-use-temp-credentials,Temporary security credentials>>
+* <<cspm-use-a-shared-credentials-file,Shared credentials file>>
+* <<cspm-use-iam-arn, IAM role Amazon Resource Name (ARN)>>
+
+Regardless of which option you use, you’ll need to attach AWS’s built-in https://docs.aws.amazon.com/IAM/latest/UserGuide/access_policies_job-functions.html#jf_security-auditor[`SecurityAudit` IAM policy].
+
+[discrete]
+[[cspm-use-instance-role]]
+==== Option 1 - Use default instance role
+Follow AWS's https://docs.aws.amazon.com/AWSEC2/latest/UserGuide/iam-roles-for-amazon-ec2.html[IAM roles for Amazon EC2] documentation to create an IAM role using the IAM console, which automatically generates an instance profile.
+
+During setup, do not fill in any option in the "Setup Access" section. Click *Save and continue*.
+
+[discrete]
+[[cspm-use-keys-directly]]
+==== Option 2 - Use access keys directly
+Access keys are long-term credentials for an IAM user or the AWS account root user. To use access keys as credentials, you need to provide the `Access key ID` and the `Secret Access Key`.
+
+For more details, refer to https://docs.aws.amazon.com/general/latest/gr/aws-sec-cred-types.html[Access Keys and Secret Access Keys].
+
+IMPORTANT: You must select *Programmatic access* when creating the IAM user.
+
+[discrete]
+[[cspm-use-temp-credentials]]
+==== Option 3 - Use temporary security credentials
+You can configure temporary security credentials in AWS to last for a specified duration. They consist of an access key ID, a secret access key, and a security token, which is typically found using `GetSessionToken`.
+
+Because temporary security credentials are short term, once they expire, you will need to generate new ones and manually update the integration's configuration to continue collecting cloud posture data. Update the credentials before they expire to avoid data loss.
+
+NOTE: IAM users with multi-factor authentication (MFA) enabled need to submit an MFA code when calling `GetSessionToken`. For more details, refer to AWS's https://docs.aws.amazon.com/IAM/latest/UserGuide/id_credentials_temp.html[Temporary Security Credentials] documentation.
+
+You can use the AWS CLI to generate temporary credentials. For example, you could use the following command if you have MFA enabled:
+
+[source,console]
+----------------------------------
+sts get-session-token --serial-number arn:aws:iam::1234:mfa/your-email@example.com --duration-seconds 129600 --token-code 123456
+----------------------------------
+
+The output from this command includes the following fields, which you should provide when configuring the KSPM integration:
+
+* `Access key ID`: The first part of the access key.
+* `Secret Access Key`: The second part of the access key.
+* `Session Token`: A token required when using temporary security credentials.
+
+[discrete]
+[[cspm-use-a-shared-credentials-file]]
+==== Option 4 - Use a shared credentials file
+If you use different AWS credentials for different tools or applications, you can use profiles to define multiple access keys in the same configuration file. For more details refer to AWS's https://docs.aws.amazon.com/sdkref/latest/guide/file-format.html[Shared Credentials Files] documentation.
+
+Instead of providing the `Access key ID` and `Secret Access Key` to the integration, provide the information required to locate the access keys within the shared credentials file:
+
+* `Credential Profile Name`: The profile name in the shared credentials file.
+* `Shared Credential File`: The directory of the shared credentials file.
+
+If you don't provide values for all configuration fields, the integration will use these defaults:
+
+- If `Access key ID`, `Secret Access Key`, and `ARN Role` are not provided, then the integration will check for `Credential Profile Name`.
+- If there is no `Credential Profile Name`, the default profile will be used.
+- If `Shared Credential File` is empty, the default directory will be used.
+  - For Linux or Unix, the shared credentials file is located at `~/.aws/credentials`.
+
+[discrete]
+[[cspm-use-iam-arn]]
+===== Option 5 - Use an IAM role Amazon Resource Name (ARN)
+An IAM role Amazon Resource Name (ARN) is an IAM identity that you can create in your AWS account. You define the role's permissions.
+Roles do not have standard long-term credentials such as passwords or access keys.
+Instead, when you assume a role, it provides you with temporary security credentials for your session.
+
+[discrete]
+[[cspm-finish-setup]]
+=== Finish CSPM setup
+Once you’ve provided AWS credentials:
+
+* If you want to monitor an AWS account where you have not yet deployed {agent}, select *New Hosts* under *Where to add this integration*.
+* Name the {agent} policy. Use a name that matches the purpose or team of the cloud account or accounts you want to monitor. For example, `dev-aws-account`.
+* Click *Save and continue*, then *Add {agent} to your hosts*. The *Add agent* wizard appears and provides {agent} binaries, which you can download and deploy to your AWS account.
