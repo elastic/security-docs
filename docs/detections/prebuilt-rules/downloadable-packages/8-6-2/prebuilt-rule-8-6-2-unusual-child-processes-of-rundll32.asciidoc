@@ -1,0 +1,71 @@
+[[prebuilt-rule-8-6-2-unusual-child-processes-of-rundll32]]
+=== Unusual Child Processes of RunDLL32
+
+Identifies child processes of unusual instances of RunDLL32 where the command line parameters were suspicious. Misuse of RunDLL32 could indicate malicious activity.
+
+*Rule type*: eql
+
+*Rule indices*: 
+
+* logs-endpoint.events.*
+* winlogbeat-*
+* logs-windows.*
+
+*Severity*: high
+
+*Risk score*: 73
+
+*Runs every*: 30m
+
+*Searches indices from*: now-60m ({ref}/common-options.html#date-math[Date Math format], see also <<rule-schedule, `Additional look-back time`>>)
+
+*Maximum alerts per execution*: 100
+
+*References*: None
+
+*Tags*: 
+
+* Elastic
+* Host
+* Windows
+* Threat Detection
+* Defense Evasion
+
+*Version*: 103
+
+*Rule authors*: 
+
+* Elastic
+
+*Rule license*: Elastic License v2
+
+
+==== Rule query
+
+
+[source, js]
+----------------------------------
+sequence with maxspan=1h
+  [process where host.os.type == "windows" and event.type == "start" and
+     (process.name : "rundll32.exe" or process.pe.original_file_name == "RUNDLL32.EXE") and
+      process.args_count == 1
+  ] by process.entity_id
+  [process where host.os.type == "windows" and event.type == "start" and process.parent.name : "rundll32.exe"
+  ] by process.parent.entity_id
+
+----------------------------------
+
+*Framework*: MITRE ATT&CK^TM^
+
+* Tactic:
+** Name: Defense Evasion
+** ID: TA0005
+** Reference URL: https://attack.mitre.org/tactics/TA0005/
+* Technique:
+** Name: System Binary Proxy Execution
+** ID: T1218
+** Reference URL: https://attack.mitre.org/techniques/T1218/
+* Sub-technique:
+** Name: Rundll32
+** ID: T1218.011
+** Reference URL: https://attack.mitre.org/techniques/T1218/011/
