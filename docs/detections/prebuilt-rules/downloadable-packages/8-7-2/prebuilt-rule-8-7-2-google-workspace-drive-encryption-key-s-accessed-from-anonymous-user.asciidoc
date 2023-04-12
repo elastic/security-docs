@@ -1,0 +1,88 @@
+[[prebuilt-rule-8-7-2-google-workspace-drive-encryption-key-s-accessed-from-anonymous-user]]
+=== Google Workspace Drive Encryption Key(s) Accessed from Anonymous User
+
+Detects when an external (anonymous) user has viewed, copied or downloaded an encryption key file from a Google Workspace drive. Adversaries may gain access to encryption keys stored in private drives from rogue access links that do not have an expiration. Access to encryption keys may allow adversaries to access sensitive data or authenticate on behalf of users.
+
+*Rule type*: eql
+
+*Rule indices*: 
+
+* filebeat-*
+* logs-google_workspace*
+
+*Severity*: high
+
+*Risk score*: 73
+
+*Runs every*: 10m
+
+*Searches indices from*: now-130m ({ref}/common-options.html#date-math[Date Math format], see also <<rule-schedule, `Additional look-back time`>>)
+
+*Maximum alerts per execution*: 100
+
+*References*: 
+
+* https://support.google.com/drive/answer/2494822
+
+*Tags*: 
+
+* Elastic
+* Cloud
+* Google Workspace
+* Continuous Monitoring
+* SecOps
+* Configuration Audit
+* Credential Access
+
+*Version*: 1
+
+*Rule authors*: 
+
+* Elastic
+
+*Rule license*: Elastic License v2
+
+
+==== Investigation guide
+
+
+[source, markdown]
+----------------------------------
+### Important Information Regarding Google Workspace Event Lag Times
+- As per Google's documentation, Google Workspace administrators may observe lag times ranging from minutes up to 3 days between the time of an event's occurrence and the event being visible in the Google Workspace admin/audit logs.
+- This rule is configured to run every 10 minutes with a lookback time of 130 minutes.
+- To reduce the risk of false negatives, consider reducing the interval that the Google Workspace (formerly G Suite) Filebeat module polls Google's reporting API for new events.
+- By default, `var.interval` is set to 2 hours (2h). Consider changing this interval to a lower value, such as 10 minutes (10m).
+- See the following references for further information:
+  - https://support.google.com/a/answer/7061566
+  - https://www.elastic.co/guide/en/beats/filebeat/current/filebeat-module-google_workspace.html
+----------------------------------
+
+==== Rule query
+
+
+[source, js]
+----------------------------------
+file where event.dataset == "google_workspace.drive" and event.action : ("copy", "view", "download") and
+    google_workspace.drive.visibility: "people_with_link" and source.user.email == "" and
+    file.extension: (
+        "token","assig", "pssc", "keystore", "pub", "pgp.asc", "ps1xml", "pem", "gpg.sig", "der", "key",
+        "p7r", "p12", "asc", "jks", "p7b", "signature", "gpg", "pgp.sig", "sst", "pgp", "gpgz", "pfx", "crt",
+        "p8", "sig", "pkcs7", "jceks", "pkcs8", "psc1", "p7c", "csr", "cer", "spc", "ps2xml")
+
+----------------------------------
+
+*Framework*: MITRE ATT&CK^TM^
+
+* Tactic:
+** Name: Credential Access
+** ID: TA0006
+** Reference URL: https://attack.mitre.org/tactics/TA0006/
+* Technique:
+** Name: Unsecured Credentials
+** ID: T1552
+** Reference URL: https://attack.mitre.org/techniques/T1552/
+* Sub-technique:
+** Name: Private Keys
+** ID: T1552.004
+** Reference URL: https://attack.mitre.org/techniques/T1552/004/

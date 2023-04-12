@@ -1,0 +1,135 @@
+[[prebuilt-rule-8-7-2-lsass-memory-dump-creation]]
+=== LSASS Memory Dump Creation
+
+Identifies the creation of a Local Security Authority Subsystem Service (lsass.exe) default memory dump. This may indicate a credential access attempt via trusted system utilities such as Task Manager (taskmgr.exe) and SQL Dumper (sqldumper.exe) or known pentesting tools such as Dumpert and AndrewSpecial.
+
+*Rule type*: eql
+
+*Rule indices*: 
+
+* winlogbeat-*
+* logs-endpoint.events.*
+* logs-windows.*
+* endgame-*
+
+*Severity*: high
+
+*Risk score*: 73
+
+*Runs every*: 5m
+
+*Searches indices from*: now-9m ({ref}/common-options.html#date-math[Date Math format], see also <<rule-schedule, `Additional look-back time`>>)
+
+*Maximum alerts per execution*: 100
+
+*References*: 
+
+* https://github.com/outflanknl/Dumpert
+* https://github.com/hoangprod/AndrewSpecial
+
+*Tags*: 
+
+* Elastic
+* Host
+* Windows
+* Threat Detection
+* Credential Access
+* Elastic Endgame
+* Investigation Guide
+
+*Version*: 103
+
+*Rule authors*: 
+
+* Elastic
+
+*Rule license*: Elastic License v2
+
+
+==== Investigation guide
+
+
+[source, markdown]
+----------------------------------
+## Triage and analysis
+
+### Investigating LSASS Memory Dump Creation
+
+Local Security Authority Server Service (LSASS) is a process in Microsoft Windows operating systems that is responsible for enforcing security policy on the system. It verifies users logging on to a Windows computer or server, handles password changes, and creates access tokens.
+
+This rule looks for the creation of memory dump files with file names compatible with credential dumping tools or that start with `lsass`.
+
+> **Note**:
+> This investigation guide uses the [Osquery Markdown Plugin](https://www.elastic.co/guide/en/security/master/invest-guide-run-osquery.html) introduced in Elastic Stack version 8.5.0. Older Elastic Stack versions will display unrendered Markdown in this guide.
+
+#### Possible investigation steps
+
+- Identify the process responsible for creating the dump file.
+- Investigate the process execution chain (parent process tree) for unknown processes. Examine their executable files for prevalence, whether they are located in expected locations, and if they are signed with valid digital signatures.
+- Identify the user account that performed the action and whether it should perform this kind of action.
+- Investigate other alerts associated with the user/host during the past 48 hours.
+- Examine the host for derived artifacts that indicate suspicious activities:
+  - Analyze the process executable using a private sandboxed analysis system.
+  - Observe and collect information about the following activities in both the sandbox and the alert subject host:
+    - Attempts to contact external domains and addresses.
+      - Use the Elastic Defend network events to determine domains and addresses contacted by the subject process by filtering by the process' `process.entity_id`.
+      - Examine the DNS cache for suspicious or anomalous entries.
+        - $osquery_0
+    - Use the Elastic Defend registry events to examine registry keys accessed, modified, or created by the related processes in the process tree.
+    - Examine the host services for suspicious or anomalous entries.
+      - $osquery_1
+      - $osquery_2
+      - $osquery_3
+  - Retrieve the files' SHA-256 hash values using the PowerShell `Get-FileHash` cmdlet and search for the existence and reputation of the hashes in resources like VirusTotal, Hybrid-Analysis, CISCO Talos, Any.run, etc.
+- Investigate potentially compromised accounts. Analysts can do this by searching for login events (for example, 4624) to the target host after the registry modification.
+
+### False positive analysis
+
+- This activity is unlikely to happen legitimately. Any activity that triggered the alert and is not inherently malicious must be monitored by the security team.
+
+### Response and remediation
+
+- Initiate the incident response process based on the outcome of the triage.
+- Isolate the involved host to prevent further post-compromise behavior.
+- If the triage identified malware, search the environment for additional compromised hosts.
+  - Implement temporary network rules, procedures, and segmentation to contain the malware.
+  - Stop suspicious processes.
+  - Immediately block the identified indicators of compromise (IoCs).
+  - Inspect the affected systems for additional malware backdoors like reverse shells, reverse proxies, or droppers that attackers could use to reinfect the system.
+- Remove and block malicious artifacts identified during triage.
+- Investigate credential exposure on systems compromised or used by the attacker to ensure all compromised accounts are identified. Reset passwords for these accounts and other potentially compromised credentials, such as email, business systems, and web services.
+- Run a full antimalware scan. This may reveal additional artifacts left in the system, persistence mechanisms, and malware components.
+- Determine the initial vector abused by the attacker and take action to prevent reinfection through the same vector.
+- Using the incident response data, update logging and audit policies to improve the mean time to detect (MTTD) and the mean time to respond (MTTR).
+----------------------------------
+
+==== Rule query
+
+
+[source, js]
+----------------------------------
+file where host.os.type == "windows" and file.name : ("lsass*.dmp", "dumpert.dmp", "Andrew.dmp", "SQLDmpr*.mdmp", "Coredump.dmp") and
+
+ not (process.executable : ("?:\\Program Files\\Microsoft SQL Server\\*\\Shared\\SqlDumper.exe", "?:\\Windows\\System32\\dllhost.exe") and
+      file.path : ("?:\\Program Files\\Microsoft SQL Server\\*\\Shared\\ErrorDumps\\SQLDmpr*.mdmp",
+                   "?:\\*\\Reporting Services\\Logfiles\\SQLDmpr*.mdmp")) and
+
+ not (process.executable : "?:\\WINDOWS\\system32\\WerFault.exe" and
+      file.path : "?:\\Windows\\System32\\config\\systemprofile\\AppData\\Local\\CrashDumps\\lsass.exe.*.dmp")
+
+----------------------------------
+
+*Framework*: MITRE ATT&CK^TM^
+
+* Tactic:
+** Name: Credential Access
+** ID: TA0006
+** Reference URL: https://attack.mitre.org/tactics/TA0006/
+* Technique:
+** Name: OS Credential Dumping
+** ID: T1003
+** Reference URL: https://attack.mitre.org/techniques/T1003/
+* Sub-technique:
+** Name: LSASS Memory
+** ID: T1003.001
+** Reference URL: https://attack.mitre.org/techniques/T1003/001/

@@ -1,0 +1,90 @@
+[[prebuilt-rule-8-7-2-google-workspace-resource-copied-from-external-drive]]
+=== Google Workspace Resource Copied from External Drive
+
+Detects when a user copies a Google spreadsheet, form, document or script from an external drive. An adversary may send a phishing email to the victim with a Drive object link where "copy" is included in the URI, thus copying the object to the victim's drive.
+
+*Rule type*: eql
+
+*Rule indices*: 
+
+* filebeat-*
+* logs-google_workspace*
+
+*Severity*: medium
+
+*Risk score*: 47
+
+*Runs every*: 10m
+
+*Searches indices from*: now-130m ({ref}/common-options.html#date-math[Date Math format], see also <<rule-schedule, `Additional look-back time`>>)
+
+*Maximum alerts per execution*: 100
+
+*References*: 
+
+* https://www.elastic.co/security-labs/google-workspace-attack-surface-part-one
+* https://developers.google.com/apps-script/guides/bound
+* https://support.google.com/a/users/answer/13004165#share_make_a_copy_links
+
+*Tags*: 
+
+* Elastic
+* Cloud
+* Google Workspace
+* Continuous Monitoring
+* SecOps
+* Initial Access
+
+*Version*: 1
+
+*Rule authors*: 
+
+* Elastic
+
+*Rule license*: Elastic License v2
+
+
+==== Investigation guide
+
+
+[source, markdown]
+----------------------------------
+### Important Information Regarding Google Workspace Event Lag Times
+- As per Google's documentation, Google Workspace administrators may observe lag times ranging from minutes up to 3 days between the time of an event's occurrence and the event being visible in the Google Workspace admin/audit logs.
+- This rule is configured to run every 10 minutes with a lookback time of 130 minutes.
+- To reduce the risk of false negatives, consider reducing the interval that the Google Workspace (formerly G Suite) Filebeat module polls Google's reporting API for new events.
+- By default, `var.interval` is set to 2 hours (2h). Consider changing this interval to a lower value, such as 10 minutes (10m).
+- See the following references for further information:
+  - https://support.google.com/a/answer/7061566
+  - https://www.elastic.co/guide/en/beats/filebeat/current/filebeat-module-google_workspace.html
+----------------------------------
+
+==== Rule query
+
+
+[source, js]
+----------------------------------
+file where event.dataset == "google_workspace.drive" and event.action == "copy" and
+
+    /* Should only match if the object lives in a Drive that is external to the user's GWS organization */
+    google_workspace.drive.owner_is_team_drive == "false" and google_workspace.drive.copy_type == "external" and
+
+    /* Google Script, Forms, Sheets and Document can have container-bound scripts */
+    google_workspace.drive.file.type: ("script", "form", "spreadsheet", "document")
+
+----------------------------------
+
+*Framework*: MITRE ATT&CK^TM^
+
+* Tactic:
+** Name: Initial Access
+** ID: TA0001
+** Reference URL: https://attack.mitre.org/tactics/TA0001/
+* Technique:
+** Name: Phishing
+** ID: T1566
+** Reference URL: https://attack.mitre.org/techniques/T1566/
+* Sub-technique:
+** Name: Spearphishing Link
+** ID: T1566.002
+** Reference URL: https://attack.mitre.org/techniques/T1566/002/

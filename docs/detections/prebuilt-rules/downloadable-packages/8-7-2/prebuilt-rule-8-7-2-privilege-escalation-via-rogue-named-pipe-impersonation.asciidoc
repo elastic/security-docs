@@ -1,0 +1,78 @@
+[[prebuilt-rule-8-7-2-privilege-escalation-via-rogue-named-pipe-impersonation]]
+=== Privilege Escalation via Rogue Named Pipe Impersonation
+
+Identifies a privilege escalation attempt via rogue named pipe impersonation. An adversary may abuse this technique by masquerading as a known named pipe and manipulating a privileged process to connect to it.
+
+*Rule type*: eql
+
+*Rule indices*: 
+
+* winlogbeat-*
+* logs-windows.*
+
+*Severity*: high
+
+*Risk score*: 73
+
+*Runs every*: 5m
+
+*Searches indices from*: now-9m ({ref}/common-options.html#date-math[Date Math format], see also <<rule-schedule, `Additional look-back time`>>)
+
+*Maximum alerts per execution*: 100
+
+*References*: 
+
+* https://itm4n.github.io/printspoofer-abusing-impersonate-privileges/
+* https://github.com/zcgonvh/EfsPotato
+* https://twitter.com/SBousseaden/status/1429530155291193354
+
+*Tags*: 
+
+* Elastic
+* Host
+* Windows
+* Threat Detection
+* Privilege Escalation
+* Sysmon Only
+
+*Version*: 103
+
+*Rule authors*: 
+
+* Elastic
+
+*Rule license*: Elastic License v2
+
+
+==== Investigation guide
+
+
+[source, markdown]
+----------------------------------
+Named Pipe Creation Events need to be enabled within the Sysmon configuration by including the following settings:
+`condition equal "contains" and keyword equal "pipe"`
+
+If enabling an EQL rule on a non-elastic-agent index (such as beats) for versions <8.2, events will not define `event.ingested` and default fallback for EQL rules was not added until 8.2, so you will need to add a custom pipeline to populate `event.ingested` to @timestamp for this rule to work.
+----------------------------------
+
+==== Rule query
+
+
+[source, js]
+----------------------------------
+file where host.os.type == "windows" and event.action : "Pipe Created*" and
+ /* normal sysmon named pipe creation events truncate the pipe keyword */
+  file.name : "\\*\\Pipe\\*"
+
+----------------------------------
+
+*Framework*: MITRE ATT&CK^TM^
+
+* Tactic:
+** Name: Privilege Escalation
+** ID: TA0004
+** Reference URL: https://attack.mitre.org/tactics/TA0004/
+* Technique:
+** Name: Access Token Manipulation
+** ID: T1134
+** Reference URL: https://attack.mitre.org/techniques/T1134/
