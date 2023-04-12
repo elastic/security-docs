@@ -1,0 +1,85 @@
+[[prebuilt-rule-8-5-2-unusual-persistence-via-services-registry]]
+=== Unusual Persistence via Services Registry
+
+Identifies processes modifying the services registry key directly, instead of through the expected Windows APIs. This could be an indication of an adversary attempting to stealthily persist through abnormal service creation or modification of an existing service.
+
+*Rule type*: eql
+
+*Rule indices*: 
+
+* logs-endpoint.events.*
+* endgame-*
+
+*Severity*: low
+
+*Risk score*: 21
+
+*Runs every*: 5m
+
+*Searches indices from*: now-9m ({ref}/common-options.html#date-math[Date Math format], see also <<rule-schedule, `Additional look-back time`>>)
+
+*Maximum alerts per execution*: 100
+
+*References*: None
+
+*Tags*: 
+
+* Elastic
+* Host
+* Windows
+* Threat Detection
+* Persistence
+* Elastic Endgame
+
+*Version*: 102
+
+*Rule authors*: 
+
+* Elastic
+
+*Rule license*: Elastic License v2
+
+
+==== Rule query
+
+
+[source, js]
+----------------------------------
+registry where host.os.type == "windows" and
+  registry.path : (
+      "HKLM\\SYSTEM\\ControlSet*\\Services\\*\\ServiceDLL",
+      "HKLM\\SYSTEM\\ControlSet*\\Services\\*\\ImagePath",
+      "\\REGISTRY\\MACHINE\\SYSTEM\\ControlSet*\\Services\\*\\ServiceDLL",
+      "\\REGISTRY\\MACHINE\\SYSTEM\\ControlSet*\\Services\\*\\ImagePath"
+  ) and not registry.data.strings : (
+      "?:\\windows\\system32\\Drivers\\*.sys",
+      "\\SystemRoot\\System32\\drivers\\*.sys",
+      "\\??\\?:\\Windows\\system32\\Drivers\\*.SYS",
+      "system32\\DRIVERS\\USBSTOR") and
+  not (process.name : "procexp??.exe" and registry.data.strings : "?:\\*\\procexp*.sys") and
+  not process.executable : (
+      "?:\\Program Files\\*.exe",
+      "?:\\Program Files (x86)\\*.exe",
+      "?:\\Windows\\System32\\svchost.exe",
+      "?:\\Windows\\winsxs\\*\\TiWorker.exe",
+      "?:\\Windows\\System32\\drvinst.exe",
+      "?:\\Windows\\System32\\services.exe",
+      "?:\\Windows\\System32\\msiexec.exe",
+      "?:\\Windows\\System32\\regsvr32.exe")
+
+----------------------------------
+
+*Framework*: MITRE ATT&CK^TM^
+
+* Tactic:
+** Name: Persistence
+** ID: TA0003
+** Reference URL: https://attack.mitre.org/tactics/TA0003/
+* Technique:
+** Name: Create or Modify System Process
+** ID: T1543
+** Reference URL: https://attack.mitre.org/techniques/T1543/
+* Sub-technique:
+** Name: Windows Service
+** ID: T1543.003
+** Reference URL: https://attack.mitre.org/techniques/T1543/003/

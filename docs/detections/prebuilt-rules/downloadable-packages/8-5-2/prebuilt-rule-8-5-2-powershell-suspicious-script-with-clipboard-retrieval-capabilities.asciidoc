@@ -1,0 +1,131 @@
+[[prebuilt-rule-8-5-2-powershell-suspicious-script-with-clipboard-retrieval-capabilities]]
+=== PowerShell Suspicious Script with Clipboard Retrieval Capabilities
+
+Detects PowerShell scripts that can get the contents of the clipboard, which attackers can abuse to retrieve sensitive information like credentials, messages, etc.
+
+*Rule type*: query
+
+*Rule indices*: 
+
+* winlogbeat-*
+* logs-windows.*
+
+*Severity*: medium
+
+*Risk score*: 47
+
+*Runs every*: 5m
+
+*Searches indices from*: now-9m ({ref}/common-options.html#date-math[Date Math format], see also <<rule-schedule, `Additional look-back time`>>)
+
+*Maximum alerts per execution*: 100
+
+*References*: 
+
+* https://learn.microsoft.com/en-us/powershell/module/microsoft.powershell.management/get-clipboard
+* https://github.com/EmpireProject/Empire/blob/master/data/module_source/collection/Get-ClipboardContents.ps1
+
+*Tags*: 
+
+* Elastic
+* Host
+* Windows
+* Threat Detection
+* Collection
+* PowerShell
+* Investigation Guide
+
+*Version*: 2
+
+*Rule authors*: 
+
+* Elastic
+
+*Rule license*: Elastic License v2
+
+
+==== Investigation guide
+
+
+[source, markdown]
+----------------------------------
+## Triage and analysis
+
+### Investigating PowerShell Suspicious Script with Clipboard Retrieval Capabilities
+
+PowerShell is one of the main tools system administrators use for automation, report routines, and other tasks. This makes it available for use in various environments, and creates an attractive way for attackers to execute code.
+
+Attackers can abuse PowerShell capabilities to get the contents of the clipboard with the goal of stealing credentials and other valuable information, such as credit card data and confidential conversations.
+
+#### Possible investigation steps
+
+- Examine the script content that triggered the detection; look for suspicious DLL imports, collection or exfiltration capabilities, suspicious functions, encoded or compressed data, and other potentially malicious characteristics.
+- Investigate the script execution chain (parent process tree) for unknown processes. Examine their executable files for prevalence, whether they are located in expected locations, and if they are signed with valid digital signatures.
+- Examine file or network events from the involved PowerShell process for suspicious behavior.
+- Investigate other alerts associated with the user/host during the past 48 hours.
+- Evaluate whether the user needs to use PowerShell to complete tasks.
+- Determine whether the script stores the captured data locally.
+- Investigate whether the script contains exfiltration capabilities and identify the exfiltration server.
+- Assess network data to determine if the host communicated with the exfiltration server.
+
+### False positive analysis
+
+- Regular users are unlikely to use scripting utilities to capture contents of the clipboard, making false positives unlikely. In the case of authorized benign true positives (B-TPs), exceptions can be added.
+
+### Related rules
+
+- PowerShell Keylogging Script - bd2c86a0-8b61-4457-ab38-96943984e889
+
+### Response and remediation
+
+- Initiate the incident response process based on the outcome of the triage.
+- Isolate the involved hosts to prevent further post-compromise behavior.
+- Prioritize the response if this alert involves key executives or potentially valuable targets for espionage.
+- Restrict PowerShell usage outside of IT and engineering business units using GPOs, AppLocker, Intune, or similar software.
+- Investigate credential exposure on systems compromised or used by the attacker to ensure all compromised accounts are identified. Reset passwords for these accounts and other potentially compromised credentials, such as email, business systems, and web services.
+- Run a full antimalware scan. This may reveal additional artifacts left in the system, persistence mechanisms, and malware components.
+- Determine the initial vector abused by the attacker and take action to prevent reinfection through the same vector.
+- Using the incident response data, update logging and audit policies to improve the mean time to detect (MTTD) and the mean time to respond (MTTR).
+----------------------------------
+
+==== Rule query
+
+
+[source, js]
+----------------------------------
+event.category:process and host.os.type:windows and
+  (powershell.file.script_block_text : (
+    "Windows.Clipboard" or
+    "Windows.Forms.Clipboard" or
+    "Windows.Forms.TextBox"
+   ) and
+   powershell.file.script_block_text : (
+    "]::GetText" or
+    ".Paste()"
+  )) or powershell.file.script_block_text : "Get-Clipboard"
+  and not user.id : "S-1-5-18"
+
+----------------------------------
+
+*Framework*: MITRE ATT&CK^TM^
+
+* Tactic:
+** Name: Collection
+** ID: TA0009
+** Reference URL: https://attack.mitre.org/tactics/TA0009/
+* Technique:
+** Name: Clipboard Data
+** ID: T1115
+** Reference URL: https://attack.mitre.org/techniques/T1115/
+* Tactic:
+** Name: Execution
+** ID: TA0002
+** Reference URL: https://attack.mitre.org/tactics/TA0002/
+* Technique:
+** Name: Command and Scripting Interpreter
+** ID: T1059
+** Reference URL: https://attack.mitre.org/techniques/T1059/
+* Sub-technique:
+** Name: PowerShell
+** ID: T1059.001
+** Reference URL: https://attack.mitre.org/techniques/T1059/001/
