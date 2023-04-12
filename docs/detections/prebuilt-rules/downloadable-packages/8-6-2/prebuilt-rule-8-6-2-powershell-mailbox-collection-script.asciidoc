@@ -1,0 +1,141 @@
+[[prebuilt-rule-8-6-2-powershell-mailbox-collection-script]]
+=== PowerShell Mailbox Collection Script
+
+Detects PowerShell scripts that can be used to collect data from mailboxes. Adversaries may target user email to collect sensitive information.
+
+*Rule type*: query
+
+*Rule indices*: 
+
+* winlogbeat-*
+* logs-windows.*
+
+*Severity*: medium
+
+*Risk score*: 47
+
+*Runs every*: 5m
+
+*Searches indices from*: now-9m ({ref}/common-options.html#date-math[Date Math format], see also <<rule-schedule, `Additional look-back time`>>)
+
+*Maximum alerts per execution*: 100
+
+*References*: 
+
+* https://github.com/dafthack/MailSniper/blob/master/MailSniper.ps1
+* https://github.com/center-for-threat-informed-defense/adversary_emulation_library/blob/master/apt29/Archive/CALDERA_DIY/evals/payloads/stepSeventeen_email.ps1
+
+*Tags*: 
+
+* Elastic
+* Host
+* Windows
+* Threat Detection
+* Collection
+* PowerShell
+* Investigation Guide
+
+*Version*: 2
+
+*Rule authors*: 
+
+* Elastic
+
+*Rule license*: Elastic License v2
+
+
+==== Investigation guide
+
+
+[source, markdown]
+----------------------------------
+## Triage and analysis
+
+### Investigating PowerShell Mailbox Collection Script
+
+PowerShell is one of the main tools system administrators use for automation, report routines, and other tasks. This makes it available for use in various environments, and creates an attractive way for attackers to execute code.
+
+Email mailboxes and their information can be valuable assets for attackers. Company mailboxes often contain sensitive information such as login credentials, intellectual property, financial data, and personal information, making them high-value targets for malicious actors.
+
+This rule identifies scripts that contains methods and classes that can be abused to collect emails from local and remote mailboxes.
+
+#### Possible investigation steps
+
+- Examine the script content that triggered the detection; look for suspicious DLL imports, collection or exfiltration capabilities, suspicious functions, encoded or compressed data, and other potentially malicious characteristics.
+- Investigate the script execution chain (parent process tree) for unknown processes. Examine their executable files for prevalence, whether they are located in expected locations, and if they are signed with valid digital signatures.
+- Determine whether the script was executed and capture relevant information, such as arguments that reveal intent or are indicators of compromise (IoCs).
+- Investigate other alerts associated with the user/host during the past 48 hours.
+- Evaluate whether the user needs to use PowerShell to complete tasks.
+- Determine whether the script stores the captured data locally.
+- Investigate whether the script contains exfiltration capabilities and identify the exfiltration server.
+  - Assess network data to determine if the host communicated with the exfiltration server.
+
+### False positive analysis
+
+- This mechanism can be used legitimately. Analysts can dismiss the alert if the administrator is aware of the activity and it is done with proper approval.
+
+### Related rules
+
+- Exporting Exchange Mailbox via PowerShell - 6aace640-e631-4870-ba8e-5fdda09325db
+
+### Response and remediation
+
+- Initiate the incident response process based on the outcome of the triage.
+- If the involved host is not the Exchange server, isolate the host to prevent further post-compromise behavior.
+- Prioritize cases that involve personally identifiable information (PII) or other classified data.
+- Investigate credential exposure on systems compromised or used by the attacker to ensure all compromised accounts are identified. Reset passwords for these accounts and other potentially compromised credentials, such as email, business systems, and web services.
+- Run a full antimalware scan. This may reveal additional artifacts left in the system, persistence mechanisms, and malware components.
+- Determine the initial vector abused by the attacker and take action to prevent reinfection through the same vector.
+- Using the incident response data, update logging and audit policies to improve the mean time to detect (MTTD) and the mean time to respond (MTTR).
+----------------------------------
+
+==== Rule query
+
+
+[source, js]
+----------------------------------
+event.category:process and host.os.type:windows and
+  (
+   powershell.file.script_block_text : (
+      "Microsoft.Office.Interop.Outlook" or
+      "Interop.Outlook.olDefaultFolders" or
+      "::olFolderInBox"
+   ) or
+   powershell.file.script_block_text : (
+      "Microsoft.Exchange.WebServices.Data.Folder" or
+      "Microsoft.Exchange.WebServices.Data.FileAttachment"
+   )
+   )
+
+----------------------------------
+
+*Framework*: MITRE ATT&CK^TM^
+
+* Tactic:
+** Name: Collection
+** ID: TA0009
+** Reference URL: https://attack.mitre.org/tactics/TA0009/
+* Technique:
+** Name: Email Collection
+** ID: T1114
+** Reference URL: https://attack.mitre.org/techniques/T1114/
+* Sub-technique:
+** Name: Local Email Collection
+** ID: T1114.001
+** Reference URL: https://attack.mitre.org/techniques/T1114/001/
+* Sub-technique:
+** Name: Remote Email Collection
+** ID: T1114.002
+** Reference URL: https://attack.mitre.org/techniques/T1114/002/
+* Tactic:
+** Name: Execution
+** ID: TA0002
+** Reference URL: https://attack.mitre.org/tactics/TA0002/
+* Technique:
+** Name: Command and Scripting Interpreter
+** ID: T1059
+** Reference URL: https://attack.mitre.org/techniques/T1059/
+* Sub-technique:
+** Name: PowerShell
+** ID: T1059.001
+** Reference URL: https://attack.mitre.org/techniques/T1059/001/
