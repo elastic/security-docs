@@ -1,0 +1,84 @@
+[[prebuilt-rule-8-7-2-persistence-via-telemetrycontroller-scheduled-task-hijack]]
+=== Persistence via TelemetryController Scheduled Task Hijack
+
+Detects the successful hijack of Microsoft Compatibility Appraiser scheduled task to establish persistence with an integrity level of system.
+
+*Rule type*: eql
+
+*Rule indices*: 
+
+* winlogbeat-*
+* logs-endpoint.events.*
+* logs-windows.*
+* endgame-*
+
+*Severity*: high
+
+*Risk score*: 73
+
+*Runs every*: 5m
+
+*Searches indices from*: now-9m ({ref}/common-options.html#date-math[Date Math format], see also <<rule-schedule, `Additional look-back time`>>)
+
+*Maximum alerts per execution*: 100
+
+*References*: 
+
+* https://www.trustedsec.com/blog/abusing-windows-telemetry-for-persistence
+
+*Tags*: 
+
+* Elastic
+* Host
+* Windows
+* Threat Detection
+* Persistence
+* Elastic Endgame
+
+*Version*: 103
+
+*Rule authors*: 
+
+* Elastic
+
+*Rule license*: Elastic License v2
+
+
+==== Investigation guide
+
+
+[source, markdown]
+----------------------------------
+
+----------------------------------
+
+==== Rule query
+
+
+[source, js]
+----------------------------------
+process where host.os.type == "windows" and event.type == "start" and
+  process.parent.name : "CompatTelRunner.exe" and process.args : "-cv*" and
+  not process.name : ("conhost.exe",
+                      "DeviceCensus.exe",
+                      "CompatTelRunner.exe",
+                      "DismHost.exe",
+                      "rundll32.exe",
+                      "powershell.exe")
+
+----------------------------------
+
+*Framework*: MITRE ATT&CK^TM^
+
+* Tactic:
+** Name: Persistence
+** ID: TA0003
+** Reference URL: https://attack.mitre.org/tactics/TA0003/
+* Technique:
+** Name: Scheduled Task/Job
+** ID: T1053
+** Reference URL: https://attack.mitre.org/techniques/T1053/
+* Sub-technique:
+** Name: Scheduled Task
+** ID: T1053.005
+** Reference URL: https://attack.mitre.org/techniques/T1053/005/

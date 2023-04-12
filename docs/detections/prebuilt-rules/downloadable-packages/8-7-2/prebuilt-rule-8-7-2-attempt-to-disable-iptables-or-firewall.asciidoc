@@ -1,0 +1,78 @@
+[[prebuilt-rule-8-7-2-attempt-to-disable-iptables-or-firewall]]
+=== Attempt to Disable IPTables or Firewall
+
+Adversaries may attempt to disable the iptables or firewall service in an attempt to affect how a host is allowed to receive or send network traffic.
+
+*Rule type*: eql
+
+*Rule indices*: 
+
+* logs-endpoint.events.*
+
+*Severity*: low
+
+*Risk score*: 21
+
+*Runs every*: 5m
+
+*Searches indices from*: now-9m ({ref}/common-options.html#date-math[Date Math format], see also <<rule-schedule, `Additional look-back time`>>)
+
+*Maximum alerts per execution*: 100
+
+*References*: None
+
+*Tags*: 
+
+* Elastic
+* Host
+* Linux
+* Threat Detection
+* Defense Evasion
+
+*Version*: 1
+
+*Rule authors*: 
+
+* Elastic
+
+*Rule license*: Elastic License v2
+
+
+==== Rule query
+
+
+[source, js]
+----------------------------------
+process where host.os.type == "linux" and event.type == "start" and event.action == "exec" and
+ (
+   /* disable FW */
+   (
+     (process.name == "ufw" and process.args == "disable") or
+     (process.name == "iptables" and process.args == "-F" and process.args_count == 2)
+   ) or
+
+   /* stop FW service */
+   (
+     ((process.name == "service" and process.args == "stop") or
+       (process.name == "chkconfig" and process.args == "off") or
+       (process.name == "systemctl" and process.args in ("disable", "stop", "kill"))) and
+    process.args in ("firewalld", "ip6tables", "iptables")
+    )
+  )
+
+----------------------------------
+
+*Framework*: MITRE ATT&CK^TM^
+
+* Tactic:
+** Name: Defense Evasion
+** ID: TA0005
+** Reference URL: https://attack.mitre.org/tactics/TA0005/
+* Technique:
+** Name: Impair Defenses
+** ID: T1562
+** Reference URL: https://attack.mitre.org/techniques/T1562/
+* Sub-technique:
+** Name: Disable or Modify Tools
+** ID: T1562.001
+** Reference URL: https://attack.mitre.org/techniques/T1562/001/
