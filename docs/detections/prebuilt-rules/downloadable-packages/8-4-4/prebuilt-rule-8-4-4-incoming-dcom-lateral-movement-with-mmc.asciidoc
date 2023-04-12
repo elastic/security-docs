@@ -1,0 +1,73 @@
+[[prebuilt-rule-8-4-4-incoming-dcom-lateral-movement-with-mmc]]
+=== Incoming DCOM Lateral Movement with MMC
+
+Identifies the use of Distributed Component Object Model (DCOM) to run commands from a remote host, which are launched via the MMC20 Application COM Object. This behavior may indicate an attacker abusing a DCOM application to move laterally.
+
+*Rule type*: eql
+
+*Rule indices*: 
+
+* winlogbeat-*
+* logs-endpoint.events.*
+* logs-windows.*
+
+*Severity*: high
+
+*Risk score*: 73
+
+*Runs every*: 5m
+
+*Searches indices from*: now-9m ({ref}/common-options.html#date-math[Date Math format], see also <<rule-schedule, `Additional look-back time`>>)
+
+*Maximum alerts per execution*: 100
+
+*References*: 
+
+* https://enigma0x3.net/2017/01/05/lateral-movement-using-the-mmc20-application-com-object/
+
+*Tags*: 
+
+* Elastic
+* Host
+* Windows
+* Threat Detection
+* Lateral Movement
+
+*Version*: 103
+
+*Rule authors*: 
+
+* Elastic
+
+*Rule license*: Elastic License v2
+
+
+==== Rule query
+
+
+[source, js]
+----------------------------------
+sequence by host.id with maxspan=1m
+ [network where host.os.type == "windows" and event.type == "start" and process.name : "mmc.exe" and source.port >= 49152 and
+ destination.port >= 49152 and source.ip != "127.0.0.1" and source.ip != "::1" and
+  network.direction : ("incoming", "ingress") and network.transport == "tcp"
+ ] by process.entity_id
+ [process where host.os.type == "windows" and event.type == "start" and process.parent.name : "mmc.exe"
+ ] by process.parent.entity_id
+
+----------------------------------
+
+*Framework*: MITRE ATT&CK^TM^
+
+* Tactic:
+** Name: Lateral Movement
+** ID: TA0008
+** Reference URL: https://attack.mitre.org/tactics/TA0008/
+* Technique:
+** Name: Remote Services
+** ID: T1021
+** Reference URL: https://attack.mitre.org/techniques/T1021/
+* Sub-technique:
+** Name: Distributed Component Object Model
+** ID: T1021.003
+** Reference URL: https://attack.mitre.org/techniques/T1021/003/

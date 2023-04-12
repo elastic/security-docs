@@ -1,0 +1,73 @@
+[[prebuilt-rule-8-4-4-privilege-escalation-via-windir-environment-variable]]
+=== Privilege Escalation via Windir Environment Variable
+
+Identifies a privilege escalation attempt via a rogue Windows directory (Windir) environment variable. This is a known primitive that is often combined with other vulnerabilities to elevate privileges.
+
+*Rule type*: eql
+
+*Rule indices*: 
+
+* logs-endpoint.events.*
+* endgame-*
+
+*Severity*: high
+
+*Risk score*: 73
+
+*Runs every*: 5m
+
+*Searches indices from*: now-9m ({ref}/common-options.html#date-math[Date Math format], see also <<rule-schedule, `Additional look-back time`>>)
+
+*Maximum alerts per execution*: 100
+
+*References*: 
+
+* https://www.tiraniddo.dev/2017/05/exploiting-environment-variables-in.html
+
+*Tags*: 
+
+* Elastic
+* Host
+* Windows
+* Threat Detection
+* Privilege Escalation
+* Elastic Endgame
+
+*Version*: 102
+
+*Rule authors*: 
+
+* Elastic
+
+*Rule license*: Elastic License v2
+
+
+==== Rule query
+
+
+[source, js]
+----------------------------------
+registry where host.os.type == "windows" and registry.path : (
+    "HKEY_USERS\\*\\Environment\\windir",
+    "HKEY_USERS\\*\\Environment\\systemroot",
+    "\\REGISTRY\\USER\\*\\Environment\\windir",
+    "\\REGISTRY\\USER\\*\\Environment\\systemroot"
+    ) and
+ not registry.data.strings : ("C:\\windows", "%SystemRoot%")
+
+----------------------------------
+
+*Framework*: MITRE ATT&CK^TM^
+
+* Tactic:
+** Name: Privilege Escalation
+** ID: TA0004
+** Reference URL: https://attack.mitre.org/tactics/TA0004/
+* Technique:
+** Name: Hijack Execution Flow
+** ID: T1574
+** Reference URL: https://attack.mitre.org/techniques/T1574/
+* Sub-technique:
+** Name: Path Interception by PATH Environment Variable
+** ID: T1574.007
+** Reference URL: https://attack.mitre.org/techniques/T1574/007/
