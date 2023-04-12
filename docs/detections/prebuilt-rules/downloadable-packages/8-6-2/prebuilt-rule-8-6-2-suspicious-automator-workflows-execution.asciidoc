@@ -1,0 +1,64 @@
+[[prebuilt-rule-8-6-2-suspicious-automator-workflows-execution]]
+=== Suspicious Automator Workflows Execution
+
+Identifies the execution of the Automator Workflows process followed by a network connection from it's XPC service. Adversaries may drop a custom workflow template that hosts malicious JavaScript for Automation (JXA) code as an alternative to using osascript.
+
+*Rule type*: eql
+
+*Rule indices*: 
+
+* auditbeat-*
+* logs-endpoint.events.*
+
+*Severity*: medium
+
+*Risk score*: 47
+
+*Runs every*: 5m
+
+*Searches indices from*: now-9m ({ref}/common-options.html#date-math[Date Math format], see also <<rule-schedule, `Additional look-back time`>>)
+
+*Maximum alerts per execution*: 100
+
+*References*: 
+
+* https://posts.specterops.io/persistent-jxa-66e1c3cd1cf5
+
+*Tags*: 
+
+* Elastic
+* Host
+* macOS
+* Threat Detection
+* Execution
+
+*Version*: 102
+
+*Rule authors*: 
+
+* Elastic
+
+*Rule license*: Elastic License v2
+
+
+==== Rule query
+
+
+[source, js]
+----------------------------------
+sequence by host.id with maxspan=30s
+ [process where host.os.type == "macos" and event.type in ("start", "process_started") and process.name == "automator"]
+ [network where host.os.type == "macos" and process.name:"com.apple.automator.runner"]
+
+----------------------------------
+
+*Framework*: MITRE ATT&CK^TM^
+
+* Tactic:
+** Name: Execution
+** ID: TA0002
+** Reference URL: https://attack.mitre.org/tactics/TA0002/
+* Technique:
+** Name: Command and Scripting Interpreter
+** ID: T1059
+** Reference URL: https://attack.mitre.org/techniques/T1059/
