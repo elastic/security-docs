@@ -1,0 +1,89 @@
+[[prebuilt-rule-8-5-2-suspicious-rdp-activex-client-loaded]]
+=== Suspicious RDP ActiveX Client Loaded
+
+Identifies suspicious Image Loading of the Remote Desktop Services ActiveX Client (mstscax), this may indicate the presence of RDP lateral movement capability.
+
+*Rule type*: eql
+
+*Rule indices*: 
+
+* logs-endpoint.events.*
+* winlogbeat-*
+* logs-windows.*
+* endgame-*
+
+*Severity*: medium
+
+*Risk score*: 47
+
+*Runs every*: 5m
+
+*Searches indices from*: now-9m ({ref}/common-options.html#date-math[Date Math format], see also <<rule-schedule, `Additional look-back time`>>)
+
+*Maximum alerts per execution*: 100
+
+*References*: 
+
+* https://posts.specterops.io/revisiting-remote-desktop-lateral-movement-8fb905cb46c3
+
+*Tags*: 
+
+* Elastic
+* Host
+* Windows
+* Threat Detection
+* Lateral Movement
+* Elastic Endgame
+
+*Version*: 102
+
+*Rule authors*: 
+
+* Elastic
+
+*Rule license*: Elastic License v2
+
+
+==== Investigation guide
+
+
+[source, markdown]
+----------------------------------
+
+----------------------------------
+
+==== Rule query
+
+
+[source, js]
+----------------------------------
+any where host.os.type == "windows" and
+ (event.category : ("library", "driver") or (event.category == "process" and event.action : "Image loaded*")) and
+ (dll.name : "mstscax.dll" or file.name : "mstscax.dll") and
+   /* depending on noise in your env add here extra paths  */
+  process.executable :
+    (
+    "C:\\Windows\\*",
+    "C:\\Users\\Public\\*",
+    "C:\\Users\\Default\\*",
+    "C:\\Intel\\*",
+    "C:\\PerfLogs\\*",
+    "C:\\ProgramData\\*",
+    "\\Device\\Mup\\*",
+    "\\\\*"
+    ) and
+    /* add here FPs */
+  not process.executable : ("C:\\Windows\\System32\\mstsc.exe", "C:\\Windows\\SysWOW64\\mstsc.exe")
+
+----------------------------------
+
+*Framework*: MITRE ATT&CK^TM^
+
+* Tactic:
+** Name: Lateral Movement
+** ID: TA0008
+** Reference URL: https://attack.mitre.org/tactics/TA0008/
+* Technique:
+** Name: Remote Services
+** ID: T1021
+** Reference URL: https://attack.mitre.org/techniques/T1021/
