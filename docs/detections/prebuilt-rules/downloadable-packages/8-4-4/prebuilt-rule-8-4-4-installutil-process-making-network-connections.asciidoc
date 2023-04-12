@@ -1,0 +1,69 @@
+[[prebuilt-rule-8-4-4-installutil-process-making-network-connections]]
+=== InstallUtil Process Making Network Connections
+
+Identifies InstallUtil.exe making outbound network connections. This may indicate adversarial activity as InstallUtil is often leveraged by adversaries to execute code and evade detection.
+
+*Rule type*: eql
+
+*Rule indices*: 
+
+* logs-endpoint.events.*
+* winlogbeat-*
+* logs-windows.*
+
+*Severity*: medium
+
+*Risk score*: 47
+
+*Runs every*: 5m
+
+*Searches indices from*: now-9m ({ref}/common-options.html#date-math[Date Math format], see also <<rule-schedule, `Additional look-back time`>>)
+
+*Maximum alerts per execution*: 100
+
+*References*: None
+
+*Tags*: 
+
+* Elastic
+* Host
+* Windows
+* Threat Detection
+* Defense Evasion
+
+*Version*: 103
+
+*Rule authors*: 
+
+* Elastic
+
+*Rule license*: Elastic License v2
+
+
+==== Rule query
+
+
+[source, js]
+----------------------------------
+/* the benefit of doing this as an eql sequence vs kql is this will limit to alerting only on the first network connection */
+
+sequence by process.entity_id
+  [process where host.os.type == "windows" and event.type == "start" and process.name : "installutil.exe"]
+  [network where host.os.type == "windows" and process.name : "installutil.exe" and network.direction : ("outgoing", "egress")]
+
+----------------------------------
+
+*Framework*: MITRE ATT&CK^TM^
+
+* Tactic:
+** Name: Defense Evasion
+** ID: TA0005
+** Reference URL: https://attack.mitre.org/tactics/TA0005/
+* Technique:
+** Name: System Binary Proxy Execution
+** ID: T1218
+** Reference URL: https://attack.mitre.org/techniques/T1218/
+* Sub-technique:
+** Name: InstallUtil
+** ID: T1218.004
+** Reference URL: https://attack.mitre.org/techniques/T1218/004/

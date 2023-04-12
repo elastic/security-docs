@@ -1,0 +1,67 @@
+[[prebuilt-rule-8-4-4-suspicious-crontab-creation-or-modification]]
+=== Suspicious CronTab Creation or Modification
+
+Identifies attempts to create or modify a crontab via a process that is not crontab (i.e python, osascript, etc.). This activity should not be highly prevalent and could indicate the use of cron as a persistence mechanism by a threat actor.
+
+*Rule type*: eql
+
+*Rule indices*: 
+
+* logs-endpoint.events.*
+
+*Severity*: medium
+
+*Risk score*: 47
+
+*Runs every*: 5m
+
+*Searches indices from*: now-9m ({ref}/common-options.html#date-math[Date Math format], see also <<rule-schedule, `Additional look-back time`>>)
+
+*Maximum alerts per execution*: 100
+
+*References*: 
+
+* https://taomm.org/PDFs/vol1/CH%200x02%20Persistence.pdf
+* https://theevilbit.github.io/beyond/beyond_0004/
+
+*Tags*: 
+
+* Elastic
+* Host
+* macOS
+* Threat Detection
+* Persistence
+
+*Version*: 102
+
+*Rule authors*: 
+
+* Elastic
+
+*Rule license*: Elastic License v2
+
+
+==== Rule query
+
+
+[source, js]
+----------------------------------
+file where host.os.type == "macos" and event.type != "deletion" and process.name != null and
+  file.path : "/private/var/at/tabs/*" and not process.executable == "/usr/bin/crontab"
+
+----------------------------------
+
+*Framework*: MITRE ATT&CK^TM^
+
+* Tactic:
+** Name: Persistence
+** ID: TA0003
+** Reference URL: https://attack.mitre.org/tactics/TA0003/
+* Technique:
+** Name: Scheduled Task/Job
+** ID: T1053
+** Reference URL: https://attack.mitre.org/techniques/T1053/
+* Sub-technique:
+** Name: Cron
+** ID: T1053.003
+** Reference URL: https://attack.mitre.org/techniques/T1053/003/
