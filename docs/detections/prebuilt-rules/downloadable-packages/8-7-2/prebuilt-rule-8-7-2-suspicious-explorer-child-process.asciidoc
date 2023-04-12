@@ -1,0 +1,91 @@
+[[prebuilt-rule-8-7-2-suspicious-explorer-child-process]]
+=== Suspicious Explorer Child Process
+
+Identifies a suspicious Windows explorer child process. Explorer.exe can be abused to launch malicious scripts or executables from a trusted parent process.
+
+*Rule type*: eql
+
+*Rule indices*: 
+
+* logs-endpoint.events.*
+* winlogbeat-*
+* logs-windows.*
+* endgame-*
+
+*Severity*: medium
+
+*Risk score*: 47
+
+*Runs every*: 5m
+
+*Searches indices from*: now-9m ({ref}/common-options.html#date-math[Date Math format], see also <<rule-schedule, `Additional look-back time`>>)
+
+*Maximum alerts per execution*: 100
+
+*References*: None
+
+*Tags*: 
+
+* Elastic
+* Host
+* Windows
+* Threat Detection
+* Initial Access
+* Elastic Endgame
+
+*Version*: 103
+
+*Rule authors*: 
+
+* Elastic
+
+*Rule license*: Elastic License v2
+
+
+==== Investigation guide
+
+
+[source, markdown]
+----------------------------------
+
+----------------------------------
+
+==== Rule query
+
+
+[source, js]
+----------------------------------
+process where host.os.type == "windows" and event.type == "start" and
+  (
+   process.name : ("cscript.exe", "wscript.exe", "powershell.exe", "rundll32.exe", "cmd.exe", "mshta.exe", "regsvr32.exe") or
+   process.pe.original_file_name in ("cscript.exe", "wscript.exe", "PowerShell.EXE", "RUNDLL32.EXE", "Cmd.Exe", "MSHTA.EXE", "REGSVR32.EXE")
+  ) and
+  /* Explorer started via DCOM */
+  process.parent.name : "explorer.exe" and process.parent.args : "-Embedding" and
+  not process.parent.args:
+          (
+            /* Noisy CLSID_SeparateSingleProcessExplorerHost Explorer COM Class IDs   */
+            "/factory,{5BD95610-9434-43C2-886C-57852CC8A120}",
+            "/factory,{ceff45ee-c862-41de-aee2-a022c81eda92}"
+          )
+
+----------------------------------
+
+*Framework*: MITRE ATT&CK^TM^
+
+* Tactic:
+** Name: Initial Access
+** ID: TA0001
+** Reference URL: https://attack.mitre.org/tactics/TA0001/
+* Technique:
+** Name: Phishing
+** ID: T1566
+** Reference URL: https://attack.mitre.org/techniques/T1566/
+* Sub-technique:
+** Name: Spearphishing Attachment
+** ID: T1566.001
+** Reference URL: https://attack.mitre.org/techniques/T1566/001/
+* Sub-technique:
+** Name: Spearphishing Link
+** ID: T1566.002
+** Reference URL: https://attack.mitre.org/techniques/T1566/002/
