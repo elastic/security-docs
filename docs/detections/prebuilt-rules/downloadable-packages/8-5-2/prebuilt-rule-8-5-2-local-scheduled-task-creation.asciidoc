@@ -1,0 +1,81 @@
+[[prebuilt-rule-8-5-2-local-scheduled-task-creation]]
+=== Local Scheduled Task Creation
+
+Indicates the creation of a scheduled task. Adversaries can use these to establish persistence, move laterally, and/or escalate privileges.
+
+*Rule type*: eql
+
+*Rule indices*: 
+
+* winlogbeat-*
+* logs-endpoint.events.*
+* logs-windows.*
+
+*Severity*: low
+
+*Risk score*: 21
+
+*Runs every*: 5m
+
+*Searches indices from*: now-9m ({ref}/common-options.html#date-math[Date Math format], see also <<rule-schedule, `Additional look-back time`>>)
+
+*Maximum alerts per execution*: 100
+
+*References*: 
+
+* https://www.elastic.co/security-labs/hunting-for-persistence-using-elastic-security-part-1
+* https://www.elastic.co/security-labs/hunting-for-persistence-using-elastic-security-part-2
+
+*Tags*: 
+
+* Elastic
+* Host
+* Windows
+* Threat Detection
+* Persistence
+
+*Version*: 103
+
+*Rule authors*: 
+
+* Elastic
+
+*Rule license*: Elastic License v2
+
+
+==== Rule query
+
+
+[source, js]
+----------------------------------
+sequence with maxspan=1m
+  [process where host.os.type == "windows" and event.type != "end" and
+    ((process.name : ("cmd.exe", "wscript.exe", "rundll32.exe", "regsvr32.exe", "wmic.exe", "mshta.exe",
+                      "powershell.exe", "pwsh.exe", "powershell_ise.exe", "WmiPrvSe.exe", "wsmprovhost.exe", "winrshost.exe") or
+    process.pe.original_file_name : ("cmd.exe", "wscript.exe", "rundll32.exe", "regsvr32.exe", "wmic.exe", "mshta.exe",
+                                     "powershell.exe", "pwsh.dll", "powershell_ise.exe", "WmiPrvSe.exe", "wsmprovhost.exe",
+                                     "winrshost.exe")) or
+    process.code_signature.trusted == false)] by process.entity_id
+  [process where host.os.type == "windows" and event.type == "start" and
+    (process.name : "schtasks.exe" or process.pe.original_file_name == "schtasks.exe") and
+    process.args : ("/create", "-create") and process.args : ("/RU", "/SC", "/TN", "/TR", "/F", "/XML") and
+    /* exclude SYSTEM Integrity Level - look for task creations by non-SYSTEM user */
+    not (?process.Ext.token.integrity_level_name : "System" or ?winlog.event_data.IntegrityLevel : "System")
+  ] by process.parent.entity_id
+
+----------------------------------
+
+*Framework*: MITRE ATT&CK^TM^
+
+* Tactic:
+** Name: Persistence
+** ID: TA0003
+** Reference URL: https://attack.mitre.org/tactics/TA0003/
+* Technique:
+** Name: Scheduled Task/Job
+** ID: T1053
+** Reference URL: https://attack.mitre.org/techniques/T1053/
+* Sub-technique:
+** Name: Scheduled Task
+** ID: T1053.005
+** Reference URL: https://attack.mitre.org/techniques/T1053/005/
