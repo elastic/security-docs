@@ -1,0 +1,65 @@
+[[prebuilt-rule-8-4-4-shell-execution-via-apple-scripting]]
+=== Shell Execution via Apple Scripting
+
+Identifies the execution of the shell process (sh) via scripting (JXA or AppleScript). Adversaries may use the doShellScript functionality in JXA or do shell script in AppleScript to execute system commands.
+
+*Rule type*: eql
+
+*Rule indices*: 
+
+* auditbeat-*
+* logs-endpoint.events.*
+
+*Severity*: medium
+
+*Risk score*: 47
+
+*Runs every*: 5m
+
+*Searches indices from*: now-9m ({ref}/common-options.html#date-math[Date Math format], see also <<rule-schedule, `Additional look-back time`>>)
+
+*Maximum alerts per execution*: 100
+
+*References*: 
+
+* https://developer.apple.com/library/archive/technotes/tn2065/_index.html
+* https://objectivebythesea.com/v2/talks/OBTS_v2_Thomas.pdf
+
+*Tags*: 
+
+* Elastic
+* Host
+* macOS
+* Threat Detection
+* Execution
+
+*Version*: 102
+
+*Rule authors*: 
+
+* Elastic
+
+*Rule license*: Elastic License v2
+
+
+==== Rule query
+
+
+[source, js]
+----------------------------------
+sequence by host.id with maxspan=5s
+ [process where host.os.type == "macos" and event.type in ("start", "process_started", "info") and process.name == "osascript"] by process.pid
+ [process where host.os.type == "macos" and event.type in ("start", "process_started") and process.name == "sh" and process.args == "-c"] by process.parent.pid
+
+----------------------------------
+
+*Framework*: MITRE ATT&CK^TM^
+
+* Tactic:
+** Name: Execution
+** ID: TA0002
+** Reference URL: https://attack.mitre.org/tactics/TA0002/
+* Technique:
+** Name: Command and Scripting Interpreter
+** ID: T1059
+** Reference URL: https://attack.mitre.org/techniques/T1059/
