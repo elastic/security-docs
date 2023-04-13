@@ -1,0 +1,67 @@
+// tag::cloud[]
+* {ess} deployment that includes an {integrations-server} (included by
+default in every {ess} deployment). {ess-leadin-short}
+
+* {kib} user with `All` privileges on {fleet} and {integrations}. Since many
+Integrations assets are shared across spaces, users need the {kib} privileges in
+all spaces.
+// end::cloud[]
+
+// tag::self-managed[]
+
+* {es} cluster and {kib} (version {minor-version}) with a basic license or
+higher. {stack-ref}/installing-elastic-stack.html[Learn how to install the
+{stack} on your own hardware].
+
+* Secure, encrypted connection between {kib} and {es}. For more information,
+see {ref}/configuring-stack-security.html[Start the {stack} with security enabled].
+
+* Internet connection for {kib} to download integration packages from the
+{package-registry}. Make sure the {kib} server can connect to
+`https://epr.elastic.co` on port `443`. If your environment has network traffic
+restrictions, there are ways to work around this requirement.
+See {fleet-guide}/air-gapped.html[Air-gapped environments] for more information.
+
+* {kib} user with `All` privileges on {fleet} and {integrations}. Since many
+Integrations assets are shared across spaces, users need the {kib} privileges in
+all spaces.
+
+* In the {es} configuration, the
+{ref}/security-settings.html#api-key-service-settings[built-in API key
+service] must be enabled.
+(`xpack.security.authc.api_key.enabled: true`)
+
+* In the {kib} configuration, the saved objects encryption key
+must be set. {fleet} requires this setting in order to save API keys and encrypt
+them in {kib}. You can either set `xpack.encryptedSavedObjects.encryptionKey` to
+an alphanumeric value of at least 32 characters, or run the
+{kibana-ref}/kibana-encryption-keys.html[`kibana-encryption-keys` command] to
+generate the key.
+
+//TO DO: We need to test these recommendations to see which are still valid
+//when users run security by default. I suspect the setup is easier than we
+//are conveying here.
+
+**Example security settings**
+
+For testing purposes, you can use the following settings to get started quickly,
+but make sure you properly secure the {stack} before sending real data.
+
+elasticsearch.yml example:
+
+[source,yaml]
+----
+xpack.security.enabled: true
+xpack.security.authc.api_key.enabled: true
+----
+
+kibana.yml example:
+
+[source,yaml]
+----
+elasticsearch.username: "kibana_system" <1>
+xpack.encryptedSavedObjects.encryptionKey: "something_at_least_32_characters"
+----
+<1> The password should be stored in the {kib} keystore as described in the
+{ref}/security-minimal-setup.html[{es} security documentation].
+// end::self-managed[]
