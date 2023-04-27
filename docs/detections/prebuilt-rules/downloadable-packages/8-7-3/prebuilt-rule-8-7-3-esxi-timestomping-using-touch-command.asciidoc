@@ -1,0 +1,66 @@
+[[prebuilt-rule-8-7-3-esxi-timestomping-using-touch-command]]
+=== ESXI Timestomping using Touch Command
+
+Identifies instances where the 'touch' command is executed on a Linux system with the "-r" flag, which is used to modify the timestamp of a file based on another file's timestamp. The rule targets specific VM-related paths, such as "/etc/vmware/", "/usr/lib/vmware/", or "/vmfs/*". These paths are associated with VMware virtualization software, and their presence in the touch command arguments may indicate that a threat actor is attempting to tamper with timestamps of VM-related files and configurations on the system.
+
+*Rule type*: eql
+
+*Rule indices*: 
+
+* logs-endpoint.events.*
+
+*Severity*: medium
+
+*Risk score*: 47
+
+*Runs every*: 5m
+
+*Searches indices from*: now-9m ({ref}/common-options.html#date-math[Date Math format], see also <<rule-schedule, `Additional look-back time`>>)
+
+*Maximum alerts per execution*: 100
+
+*References*: 
+
+* https://www.bleepingcomputer.com/news/security/massive-esxiargs-ransomware-attack-targets-vmware-esxi-servers-worldwide/
+
+*Tags*: 
+
+* Elastic
+* Host
+* Linux
+* Threat Detection
+* Defense Evasion
+
+*Version*: 1
+
+*Rule authors*: 
+
+* Elastic
+
+*Rule license*: Elastic License v2
+
+
+==== Rule query
+
+
+[source, js]
+----------------------------------
+process where host.os.type == "linux" and event.type == "start" and event.action == "exec" and
+process.name : "touch" and process.args : "-r" and process.args : ("/etc/vmware/*", "/usr/lib/vmware/*", "/vmfs/*")
+
+----------------------------------
+
+*Framework*: MITRE ATT&CK^TM^
+
+* Tactic:
+** Name: Defense Evasion
+** ID: TA0005
+** Reference URL: https://attack.mitre.org/tactics/TA0005/
+* Technique:
+** Name: Indicator Removal
+** ID: T1070
+** Reference URL: https://attack.mitre.org/techniques/T1070/
+* Sub-technique:
+** Name: Timestomp
+** ID: T1070.006
+** Reference URL: https://attack.mitre.org/techniques/T1070/006/
