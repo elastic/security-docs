@@ -1,0 +1,62 @@
+[[prebuilt-rule-8-8-1-suspicious-termination-of-esxi-process]]
+=== Suspicious Termination of ESXI Process
+
+Identifies instances where VMware processes, such as "vmware-vmx" or "vmx," are terminated on a Linux system by a "kill" command. The rule monitors for the "end" event type, which signifies the termination of a process. The presence of a "kill" command as the parent process for terminating VMware processes may indicate that a threat actor is attempting to interfere with the virtualized environment on the targeted system.
+
+*Rule type*: eql
+
+*Rule indices*: 
+
+* logs-endpoint.events.*
+
+*Severity*: medium
+
+*Risk score*: 47
+
+*Runs every*: 5m
+
+*Searches indices from*: now-9m ({ref}/common-options.html#date-math[Date Math format], see also <<rule-schedule, `Additional look-back time`>>)
+
+*Maximum alerts per execution*: 100
+
+*References*: 
+
+* https://www.bleepingcomputer.com/news/security/massive-esxiargs-ransomware-attack-targets-vmware-esxi-servers-worldwide/
+
+*Tags*: 
+
+* Elastic
+* Host
+* Linux
+* Threat Detection
+* Impact
+
+*Version*: 1
+
+*Rule authors*: 
+
+* Elastic
+
+*Rule license*: Elastic License v2
+
+
+==== Rule query
+
+
+[source, js]
+----------------------------------
+process where host.os.type == "linux" and event.type == "end" and process.name : ("vmware-vmx", "vmx")
+and process.parent.name : "kill"
+
+----------------------------------
+
+*Framework*: MITRE ATT&CK^TM^
+
+* Tactic:
+** Name: Impact
+** ID: TA0040
+** Reference URL: https://attack.mitre.org/tactics/TA0040/
+* Technique:
+** Name: Service Stop
+** ID: T1489
+** Reference URL: https://attack.mitre.org/techniques/T1489/
