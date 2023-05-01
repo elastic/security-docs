@@ -1,0 +1,65 @@
+[[rules-cross-cluster-search]]
+== Cross-cluster search and detection rules
+
+{ref}/modules-cross-cluster-search.html[Cross-cluster search] is an {es} feature that allows one cluster (the _local_ cluster) to query data in a separate cluster (the _remote_ cluster). {elastic-sec}'s detection rules can perform a cross-cluster search to query data in remote clusters.
+
+[discrete]
+[[set-up-ccs-rules]]
+=== Set up cross-cluster search in detection rules
+
+This section explains the general process for setting up cross-cluster search in detection rules. For specific instructions on each part of the process, refer to the linked documentation.
+
+. On the local cluster, {ref}/remote-clusters-connect.html[set up a connection] to the remote cluster. Note the unique name that you give to the remote cluster, because you'll need to use it throughout this process.
+
+. On both the local and remote clusters, {ref}/remote-clusters-privileges.html#clusters-privileges-ccs-kibana[create a role for cross-cluster search privileges], and make sure the two roles have _identical_ names. Assign each role the following privileges:
+
+.. *Local cluster role*: Assign the `read` privilege to the indices you want to search, using _both_ the local and remote index patterns for each index. To specify a remote index, use the pattern `<remote_cluster_name>:<index_name>`.
++
+For example, if the remote cluster's name is `remote-security-data` and you want to query the `logs-*` indices, include both the `logs-*` and `remote-security-data:logs-*` index patterns and assign them the `read` privilege.
++
+[role="screenshot"]
+image::images/ccs-local-role.png[Local cluster role configuration]
+
+.. *Remote cluster role*: Assign the `read` and `read_cross_cluster` privileges to the indices you want to search. You don't need to include the remote cluster's name here.
++
+[role="screenshot"]
+image::images/ccs-remote-role.png[Remote cluster role configuration]
+
+. On the local cluster:
+
+.. Assign the role you just created to a user who you want to configure your cross-cluster detection rules.
++
+[IMPORTANT]
+====
+* This step ensures that the privileges to read remote indices are applied from the user to the rule itself. When a user creates a new rule or saves edits to an existing rule, their current privileges are saved to the rule's API key. If that user’s privileges change in the future, the rule's API key will not update until you manually update it. Refer to <<update-api-key>> for details.
+* This user must also have the <<enable-detections-ui,appropriate privileges>> to manage and preview rules.
+====
+
+.. As this user, <<rules-ui-create,configure a rule>> that searches the remote indices: create or edit a rule, then enter the `<remote_cluster_name>:<index_name>` pattern in the *Source* section.
++
+[role="screenshot"]
+image::images/ccs-rule-source.png[Rule source configuration]
++
+NOTE: If the rule's *Source* uses a data view instead of index patterns, you must define the data view for cross-cluster search separately, using the `<remote_cluster_name>:<index_name>` pattern. Refer to {kibana-ref}/data-views.html#management-cross-cluster-search[Use data views with cross-cluster search] for more on defining a data view.
+
+.. (Optional) <<preview-rules,Preview the rule>> to test its expected results.
++
+IMPORTANT: The rule preview uses the current user's cross-cluster search privileges, while the rule itself runs using the privileges snapshot saved in its API key the moment the key is created. The preview results could be different from the rule's actual behavior if the user performing the preview has different privileges than what's saved in the rule's API key.
+
+.. Save and enable the rule.
+
+[discrete]
+[[update-api-key]]
+=== Update a rule's API key
+
+When a user creates a new rule or saves edits to an existing rule, their current privileges are saved to {kibana-ref}/alerting-setup.html#alerting-authorization[the rule's API key]. If that user's privileges change in the future, the rule *_does not_* automatically update with the user's latest privileges — you must update the rule's API key to update its privileges.
+
+To update a rule's API key, log into the local cluster as a user with the privileges you want to apply to the rule, then do either of the following:
+
+* Edit and save the rule.
+* Update the rule's API key manually:
+. Go to {kib} -> *Stack Management* -> *Rules*.
+. Use the search box and filters to find the rules you want to update. For example, use the *Type* filter to find rules under the *Security* category.
+. Select the rule's actions menu (*...*), then *Update API key*.
++
+TIP: To update multiple rules, select their checkboxes, then click *Selected _x_ rules* -> *Update API keys*.
