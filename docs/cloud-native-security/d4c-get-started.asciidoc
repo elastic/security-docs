@@ -1,0 +1,59 @@
+[[d4c-get-started]]
+= Get started with CWP
+
+This page describes how to set up Container Workload Protection (CWP) for various use-cases.
+
+[discrete]
+== Initial setup (all use-cases)
+
+First, you'll need to deploy Elastic's Defend for Containers integration to the Kubernetes clusters you wish to monitor.
+
+. Go to *Manage > Container Workload Security > Add Defend for Containers*.
+. Name the integration.
+. Optional — make any desired changes to the integration's policy by adjusting the *Selectors* and *Responses* sections. (For more information, refer to the <<d4c-policy-guide, Defend for Containers policy guide>>). You can also change these later.
+. Under *Where to add this integration*, select an existing or new agent policy.
+. Click *Save & Continue*, then *Add {agent} to your hosts*.
+. On the *Add agent* menu, select the *Kubernetes* tab.
+. Download or copy the manifest.
+. From the directory where you saved the manifest, run the command `kubectl apply -f elastic-agent-managed-kubernetes.yml`.
+. Wait for the *Confirm agent enrollment* dialogue to show that data has started flowing from your newly-installed agent, then click *Close*.
+
+[[d4c-get-started-threat]]
+[discrete]
+== Get started with threat detection
+
+One of the <<d4c-default-policies, default D4C policies>> sends process telemetry events (`fork` and `exec`) to {es}.
+
+In order to detect threats using this data, you'll need active <<detection-engine-overview, detection rules>>. Elastic has prebuilt detection rules designed for this data. (You can also create your own <<rules-ui-create, custom rules>>.)
+
+To install Elastic's prebuilt rules:
+
+. Go to *Security > Manage > Rules*, and click *Load Elastic prebuilt rules and timeline templates* (this may take a few minutes).
+. Once the rules have loaded, you will see the Rules management page. Use the *Tags* selector to search for `container`. Select the `Container Workload Protection` tag.
+. Select all the rules with the tag, and then click *Bulk actions > Enable*.
+
+Your CWP rules are now enabled.
+
+[[d4c-get-started-drift]]
+[discrete]
+== Get started with drift detection and prevention
+
+{elastic-sec} defines container drift as the creation of a new executable or the modification of an existing executable within a container. Blocking drift greatly restricts the number of attack vectors available to bad actors by prohibiting them from using external tools.
+
+One of the <<d4c-default-policies, default D4C policies>> creates alerts in the Elastic SIEM when container drift is detected. Before you enable blocking, we strongly recommend that you observe a production workload using the default policy to ensure that the workload does not create or modify executables as part of its normal operation.
+
+To enable blocking:
+
+. Add a new selector called `blockDrift`
+. Go to *Security > Manage > Container Workload Protection > Your integration name*.
+. Under *Selectors*, click *Add selector > File Selector*. By default it will select the operations `createExecutable` and `modifyExecutable`.
+. Name the selector, for example: `blockDrift`.
+. Scroll down to the *Responses* section and click *Add response > File Response*.
+. Under *Match selectors*, add the name of your new selector, for example: `blockDrift`.
+. Select the *Alert* and *Block* actions.
+. Click *Save integration*.
+
+[[d4c-get-started-validation]]
+[discrete]
+== Policy validation
+To ensure the stability of your production workloads, you should test policy changes before implementing them on production workloads. If possible, you should test policy changes on a simulated environment with workloads similar to production. This approach allows you to test that policy changes prevent undesirable behavior without disrupting your production workloads. 
