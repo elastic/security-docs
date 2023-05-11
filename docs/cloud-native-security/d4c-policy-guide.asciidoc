@@ -1,22 +1,92 @@
 [[d4c-policy-guide]]
-= Guide to D4C policies
+= Guide to container workload protection policies
 
-To unlock the full functionality of D4C, you'll need to understand its policy syntax, which enables you to construct policies that precisely allow expected container behaviors and prevent unexpected behaviors – thereby hardening the security posture of your container workloads.
+To unlock the full functionality of the Defend for Containers (D4C integration), you'll need to understand its policy syntax. This will enable you to construct policies that precisely allow expected container behaviors and prevent unexpected behaviors – thereby hardening the security posture of your container workloads.
 
-Policies consist of _Selectors_ and responses. A given policy must contain at least one selector and one response. Currently, the system supports two types of selectors and responses: `file` and `process`.
+Policies consist of _Selectors_ and _Responses_. A given policy must contain at least one selector and one response. Currently, the system supports two types of selectors and responses: `file` and `process`.
 Selectors define which system operations to match, and can include multiple conditions (grouped using a logical `AND`) to precisely select events. Responses define which actions to take when a system operation matches the conditions specified in the associated selector.
+
+The default policies described on this page serve as examples for understanding D4C policies. Below that description, you will find an exhaustive glossary of selector conditions, and of response fields and actions.
 
 [[d4c-default-policies]]
 [discrete]
 == Default policies:
-By default, the D4C integration includes two policies. They are designed to implement core CWP capabilities:
+By default, the D4C integration includes two policies. They are designed to implement core container workload protection capabilities:
 
 - *Threat Detection:* The first default policy is designed to stream process telemetry events to your {es} cluster, so that the {elastic-sec} SIEM can evaluate it to detect threats. It is called `allProcesses`, and selects all fork and exec events. It is mapped to a response called `allProcesses`, which specifies that the selected events should be logged.
 - *Drift Detection & Prevention:* The second default policy is designed to create alerts when container drift is detected. It is called `executableChanges`, and selects all `createExecutable` and `modifyExecutable` events. It is mapped to a response called `executableChanges`, which specifies that the selected events should create alerts, which will be sent to your {es} cluster. This policy can also be modified to block drift operations by changing the response action to block.
 
+image::images/d4c-policy-editor.png[The defend for containers policy editor with the default policies]
 
 
-*Selectors in policy*
-Selectors define which system operations will be matched on. To enable this, the system has a number of conditions that can be grouped together (using a logical AND operation) to provide precise control.
+[[d4c-selectors-glossary]]
+[discrete]
+== Selectors
+A selector requires a name and at least one operation. It will select all events of the specified operation types, unless you also include _conditions_ to narrow down the selection. Some conditions are available for both `file` and `process` selectors, while some are only available for one type of selector.
 
-A selector MUST contain a name and at least one of the conditions. Conditions define which operations to match. If an operation condition is not specified, all operations will be matched.
+[discrete]
+=== Common conditions
+These conditions are available for both `file` and `process` selectors.
+
+[cols="1,1", options="header"]
+|===
+| Name | Description
+| containerImageFullName | A list of container full image names to match on, for example: `docker.io/nginx`.
+| containerImageName | A list of container image names to match on. For example: `nginx`.
+| containerImageTag | A list of container image tags to match on. For example: `latest`.
+| kubernetesClusterId | A list of Kubernetes cluster IDs to match on. For consistency with KSPM, the `kube-system` namespace's UID is used as a cluster ID.
+| kubernetesClusterName | A list of Kubernetes cluster names to match on.
+| kubernetesNamespace | A list of Kubernetes namespaces to match on.
+| kubernetesPodName | A list of Kubernetes pod names to match on. Trailing wildcards supported.
+| kubernetesPodLabel | A list of resource labels. Trailing wildcards supported (value only), for example: `key1:val*`.
+|===
+
+[discrete]
+=== File-selector conditions
+These conditions are available only for `file` selectors.
+
+[cols="1,1", options="header"]
+|===
+| Name | Description
+| operation | The list of system operations to match on. Options include `createExecutable`, `modifyExecutable`, `createFile`, `modifyFile`, `deleteFile`.
+| ignoreVolumeMounts | If set, ignores file operations on ALL volume mounts.
+| ignoreVolumeFiles | If set, ignores operations on file mounts only. For example: mounted files, `configMaps`, and secrets.
+| targetFilePath | A list of file paths to include. Paths are absolute and wildcards are supported. The * wildcard matches any sequence of characters within a single directory, while the ** wildcard matches any sequence of characters across multiple directories and subdirectories.
+|===
+
+[discrete]
+=== Process-selector conditions
+These conditions are available only for `process` selectors.
+
+[cols="1,1", options="header"]
+|===
+| Name | Description
+| operation | The list of system operations to match on. Options include `fork` and `exec`.
+| processExecutable | A list of executables (full path included) to match on. For example: `/usr/bin/cat`. Wildcard support is same as targetFilePath above.
+| processName | A list of process names (executable basename) to match on. For example: `bash`, `vi`, `cat`.
+| sessionLeaderInteractive | If set to true, will only match on interactive sessions (i.e. sessions with a controlling TTY).
+|===
+
+[discrete]
+=== Response fields
+A policy can include one or more responses. Each response is comprised of the following fields:
+
+[cols="1,1", options="header"]
+|===
+| Field | Description
+| match | An array of one or more selectors of the same type (`file` or `process`).
+| exclude | Optional. An array of one or more selectors to use as exclusions to everything in `match`.
+| actions | An array of actions to perform when at least one `match` selector matches and none of the `exclude` selectors match. Options include `log`, `alert`, and `block`. See *Response actions*, below.
+|===
+
+[discrete]
+=== Response actions
+D4C responses can include the following actions:
+
+[cols="1,1", options="header"]
+|===
+| Action | Description
+| log | Sends events to the logs-cloud_defend.file-* data stream for file responses, and the logs-cloud_defend.process-* data stream for process responses.
+| alert | Writes events (file or process) to the logs-cloud_defend.alerts-* data stream.
+| block | Prevents the system operation from proceeding. This blocking action happens prior to the execution of the event. It is required that the alert action be set if block is enabled. Note: Currently block is only supported on file operations. Process blocking coming soon!
+|===
