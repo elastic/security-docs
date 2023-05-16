@@ -1,15 +1,14 @@
 [chapter]
 [[upgrade-intro]]
 
-= Upgrade {elastic-sec}
+= Upgrade {elastic-sec} to {version}
 
-To upgrade from 7.16.0 or earlier to {version},
-**you must first upgrade to {prev-major-last}**, which enables you to use the *Upgrade Assistant* to
-{stack-ref}/upgrading-elastic-stack.html#prepare-to-upgrade[prepare for the upgrade].
-Before you upgrade, you must resolve all critical issues identified by the *Upgrade Assistant*.
+Before you upgrade {elastic-sec}, take the necessary <<preventing-migration-failures, preparation steps>>, which will vary depending on what version you are upgrading to:
 
-Rolling upgrades are unsupported in {elastic-sec}, which runs within the {kib} application. To upgrade,
-you must shut down all {kib} instances, install the new software, and restart {kib}.
+* <<upgrade-8.x, Upgrade from an earlier 8.x version>>
+* <<upgrade-from-7.17-8x, Upgrade from 7.17 to an 8.x version>>
+
+Rolling upgrades are unsupported in {elastic-sec}, which runs within the {kib} application. To upgrade, you must shut down all {kib} instances, install the new software, and restart {kib}.
 Upgrading while older {kib} instances are running can cause data loss or upgrade failures.
 
 [WARNING]
@@ -20,13 +19,6 @@ earlier version of {kib}. To roll back, you **must** have a
 {ref}/snapshot-restore.html[backup snapshot] that includes the `kibana` feature
 state. By default, snapshots include the `kibana` feature state.
 ====
-
-For more information about upgrading,
-refer to {stack-ref}/upgrading-elastic-stack.html[Upgrade to Elastic {version}.]
-
-IMPORTANT: You can upgrade to pre-release versions for testing,
-but upgrading from a pre-release to the Generally Available version is unsupported.
-You should use pre-release versions only for testing in a temporary environment.
 
 [float]
 === Upgrading multiple {kib} instances
@@ -40,6 +32,11 @@ For large deployments with more than 10 {kib} instances, and more than 10,000 sa
 you can reduce the upgrade downtime by bringing up a single {kib} instance and waiting for it to
 complete the upgrade migration before bringing up the remaining instances.
 
+IMPORTANT: You can upgrade to pre-release versions for testing,
+but upgrading from a pre-release to the Generally Available version is unsupported.
+You should use pre-release versions only for testing in a temporary environment.
+
+
 [float]
 [[preventing-migration-failures]]
 === Preparing for migration
@@ -50,7 +47,7 @@ Take these extra steps to ensure you are ready for migration.
 ==== Ensure your {es} cluster is healthy
 Problems with your {es} cluster can prevent {kib} upgrades from succeeding.
 
-During the upgrade process, {kib} creates new indices into which updated documents are written. If a cluster is approaching the low watermark, there's a high risk of {kib} not being able to create these. Reading, transforming, and writing updated documents can be memory intensive, using more available heap than during routine operation. You must make sure that enough heap is available to prevent requests from timing out or throwing errors from circuit breaker exceptions. You should also ensure that all shards are replicated and assigned.
+During the upgrade process, {kib} creates new indices into which updated documents are written. If a cluster is approaching the low watermark, there's a high risk of {kib} not being able to create these. Reading, transforming, and writing updated documents can be memory intensive, using more available heap than during routine operation. You must ensure that enough heap is available to prevent requests from timing out or throwing errors from circuit breaker exceptions. You should also ensure that all shards are replicated and assigned.
 
 A healthy cluster has:
 
@@ -72,23 +69,42 @@ If something goes wrong during migration, you can restore from the snapshot and 
 Review the {kibana-ref}/resolve-migrations-failures.html[common causes of {kib} upgrade failures] and how to prevent them.
 
 
-[discrete]
-[[upgrade-reqs]]
-== Upgrade from a 7.x version
+[float]
+[[upgrade-8.x]]
+== Upgrade from an earlier 8.x version 
+
+. Review the breaking changes for each product you use and make the necessary changes so your code is compatible with {version}.
+
+** {stack-ref}/apm-breaking-changes.html[APM {version} breaking changes]
+** {stack-ref}/beats-breaking-changes.html[Beats {version} breaking changes]
+** {stack-ref}/elasticsearch-breaking-changes.html[{es} {version} breaking changes]
+** {stack-ref}/security-breaking-changes.html[{elastic-sec} {version} breaking changes]
+** {stack-ref}/kibana-breaking-changes.html[{kib} {version} breaking changes]
+** {stack-ref}/logstash-breaking-changes.html[{ls} {version} breaking changes]
++
+. If you use any {es} plugins, make sure each plugin has a version compatible with {es} version {version}.
+
+. Test the upgrade in an isolated environment before upgrading your production
+cluster.
+
+. Ensure you have a current snapshot before you start the upgrade.
++
+IMPORTANT: You cannot downgrade {es} nodes after upgrading. 
+If you cannot complete the upgrade process, 
+you will need to restore from the snapshot.
+
+. If you use a separate {ref}/monitoring-production.html[monitoring cluster], you should upgrade the monitoring cluster before the production cluster. Generally, the monitoring cluster and the clusters being monitored should be running the same {stack} version. A monitoring cluster cannot monitor production clusters running newer versions of the stack. If necessary, the monitoring cluster can monitor production clusters running the latest release of the previous major version.
 
 [float]
-[[upgrade-agents]]
-=== Upgrade {agent}s
+[[upgrade-from-7.17-8x]]
+== Upgrade from 7.17 to an 8.x version
 
-Upgrade your {stack} and {agent}s to 7.17 first (refer to {fleet-guide}/upgrade-elastic-agent.html[Upgrade Fleet-managed Elastic Agents]). Afterwards, you can {stack-ref}/upgrading-elastic-stack.html[upgrade the {stack}] to 8.x. Initially, {agent}s will be version 7.17; this is fine because {elastic-sec} 8.x supports the last minor release in 7.x (7.17) and any subsequent {elastic-endpoint} versions in 8.x. After the {stack} upgrade, you can decide whether to upgrade {agent}s to 8.x, which is recommended to ensure you get the latest features.
-
-NOTE: You do not need to shut down your {agent}s or endpoints to upgrade the {stack}.
 
 [float]
 [[reenable-rules-upgrade]]
 === Re-enable disabled rules
 
-Any rules that are active when you upgrade from 7.17 to 8.0.1 or newer are automatically disabled, and a tag named `auto_disabled_8.0` is added to those rules for tracking purposes. Once the upgrade is complete, you can filter rules by the newly added tag, then use bulk actions to re-enable them:
+Any active rules when you upgrade from 7.17 to 8.0.1 or newer are automatically disabled, and a tag named `auto_disabled_8.0` is added to those rules for tracking purposes. Once the upgrade is complete, you can filter rules by the newly added tag, then use bulk actions to re-enable them:
 
 . Go to the Rules page (*Detect -> Rules*).
 . From the *Tags* dropdown, search for `auto_disabled_8.0`.
@@ -135,3 +151,13 @@ Changes to the indicator match rule's <<rule-ui-advanced-params, default threat 
 * If an existing indicator match rule was configured to use threat indicator indices generated from {filebeat} version 7.x, updating the default threat indicator path to `threat.indicator` after you upgrade to {stack} version 8.x and {agent} or {filebeat} version 8.x configures the rule to use threat indicator indices generated by those later versions.
 * You must create separate rules to query threat intelligence indices created by {filebeat} version 7.x and version 8.x because each version requires a different default threat indicator path value. Review the recommendations for <<query-alert-indices, querying alert indices>>.
 
+
+[float]
+[[upgrade-7.16-8.x]]
+== Upgrade from 7.16 or earlier to an 8.x version
+
+To upgrade from 7.16.0 or earlier to {version}, you must first upgrade your {stack} and {agent}s to 7.17 (refer to {fleet-guide}/upgrade-elastic-agent.html[Upgrade Fleet-managed Elastic Agents]). This enables you to use the {kibana-ref}/upgrade-assistant.html[Upgrade Assistant] to prepare for the upgrade. Before you upgrade, you must resolve all critical issues identified by the Upgrade Assistant. Afterwards, you can <<upgrade-from-7.17-8x, upgrade to 8.x>>. 
+
+Initially, {agent}s will be version 7.17. This is fine because {elastic-sec} 8.x supports the last minor release in 7.x (7.17) and any subsequent {elastic-endpoint} versions in 8.x. After the {stack} upgrade, you can decide whether to upgrade {agent}s to 8.x, which is recommended to ensure you get the latest features.
+
+NOTE: You do not need to shut down your {agent}s or endpoints to upgrade the {stack}.
