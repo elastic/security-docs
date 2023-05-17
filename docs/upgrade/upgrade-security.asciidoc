@@ -6,7 +6,8 @@
 Before you upgrade {elastic-sec}, take the necessary <<preventing-migration-failures, preparation steps>>, which will vary depending on what version you are upgrading to:
 
 * <<upgrade-8.x, Upgrade from an earlier 8.x version>>
-* <<upgrade-from-7.17-8x, Upgrade from 7.17 to an 8.x version>>
+* <<upgrade-7.17-8x, Upgrade from 7.17 to an 8.x version>>
+* <<upgrade-7.16-8.x, Upgrade from 7.16 or earlier to an 8.x version>>
 
 Rolling upgrades are unsupported in {elastic-sec}, which runs within the {kib} application. To upgrade, you must shut down all {kib} instances, install the new software, and restart {kib}.
 Upgrading while older {kib} instances are running can cause data loss or upgrade failures.
@@ -28,7 +29,7 @@ ensure that all outdated instances are shut down before starting the upgrade.
 Rolling upgrades are unsupported in {kib}. However, when outdated instances are shut down, you can start all upgraded instances in parallel,
 which allows all instances to participate in the upgrade migration in parallel.
 
-For large deployments with more than 10 {kib} instances, and more than 10,000 saved objects,
+For large deployments with more than 10 {kib} instances and more than 10,000 saved objects,
 you can reduce the upgrade downtime by bringing up a single {kib} instance and waiting for it to
 complete the upgrade migration before bringing up the remaining instances.
 
@@ -63,8 +64,7 @@ Ensure that all {kib} instances are running the same version, configuration, and
 [float]
 ==== Back up your data
 
-Be sure to have a {ref}/snapshot-restore.html[snapshot] of all your data before attempting a migration.
-If something goes wrong during migration, you can restore from the snapshot and try again.
+Be sure to have a {ref}/snapshot-restore.html[snapshot] of all your data before migrating, so that if something goes wrong during migration, you can restore from the snapshot and try again.
 
 Review the {kibana-ref}/resolve-migrations-failures.html[common causes of {kib} upgrade failures] and how to prevent them.
 
@@ -82,7 +82,7 @@ Review the {kibana-ref}/resolve-migrations-failures.html[common causes of {kib} 
 ** {stack-ref}/kibana-breaking-changes.html[{kib} {version} breaking changes]
 ** {stack-ref}/logstash-breaking-changes.html[{ls} {version} breaking changes]
 +
-. If you use any {es} plugins, make sure each plugin has a version compatible with {es} version {version}.
+. If you use any {es} plugins, ensure each plugin has a version compatible with {es} version {version}.
 
 . Test the upgrade in an isolated environment before upgrading your production
 cluster.
@@ -93,12 +93,13 @@ IMPORTANT: You cannot downgrade {es} nodes after upgrading.
 If you cannot complete the upgrade process, 
 you will need to restore from the snapshot.
 
-. If you use a separate {ref}/monitoring-production.html[monitoring cluster], you should upgrade the monitoring cluster before the production cluster. Generally, the monitoring cluster and the clusters being monitored should be running the same {stack} version. A monitoring cluster cannot monitor production clusters running newer versions of the stack. If necessary, the monitoring cluster can monitor production clusters running the latest release of the previous major version.
+. If you use a separate {ref}/monitoring-production.html[monitoring cluster], you should upgrade the monitoring cluster before the production cluster. Generally, the monitoring cluster and the clusters being monitored should be running the same {stack} version. A monitoring cluster cannot monitor production clusters running newer stack versions. If necessary, the monitoring cluster can monitor production clusters running the latest release of the previous major version.
 
 [float]
-[[upgrade-from-7.17-8x]]
+[[upgrade-7.17-8x]]
 == Upgrade from 7.17 to an 8.x version
 
+This section provides the necessary steps you need to take before upgrading to 8.x. It also contains new requirements and other pertinent info that affect various features in the {security-app}.  
 
 [float]
 [[reenable-rules-upgrade]]
@@ -145,7 +146,7 @@ The system index for detection alerts has been renamed from `.siem-signals-<spac
 [[im-rules-upgrade]]
 === Updates to indictor match rules
 
-Changes to the indicator match rule's <<rule-ui-advanced-params, default threat indicator path>> might require you to update existing rules, or create new ones, after upgrading to 8.x. Be mindful of the following:
+Changes to the indicator match rule's <<rule-ui-advanced-params, default threat indicator path>> might require you to update existing rules or create new ones after upgrading to 8.x. Be mindful of the following:
 
 * If an indicator match rule's default threat indicator path was not defined before the upgrade, it will default to `threatintel.indicator` after the upgrade. This allows the rule to continue using indicator data ingested by {filebeat} version 7.x. If a custom value was defined before the upgrade, the value will not change.
 * If an existing indicator match rule was configured to use threat indicator indices generated from {filebeat} version 7.x, updating the default threat indicator path to `threat.indicator` after you upgrade to {stack} version 8.x and {agent} or {filebeat} version 8.x configures the rule to use threat indicator indices generated by those later versions.
@@ -156,7 +157,7 @@ Changes to the indicator match rule's <<rule-ui-advanced-params, default threat 
 [[upgrade-7.16-8.x]]
 == Upgrade from 7.16 or earlier to an 8.x version
 
-To upgrade from 7.16.0 or earlier to {version}, you must first upgrade your {stack} and {agent}s to 7.17 (refer to {fleet-guide}/upgrade-elastic-agent.html[Upgrade Fleet-managed Elastic Agents]). This enables you to use the {kibana-ref}/upgrade-assistant.html[Upgrade Assistant] to prepare for the upgrade. Before you upgrade, you must resolve all critical issues identified by the Upgrade Assistant. Afterwards, you can <<upgrade-from-7.17-8x, upgrade to 8.x>>. 
+To upgrade from 7.16.0 or earlier to {version}, you must first upgrade your {stack} and {agent}s to 7.17 (refer to {fleet-guide}/upgrade-elastic-agent.html[Upgrade Fleet-managed Elastic Agents]). This enables you to use the {kibana-ref}/upgrade-assistant.html[Upgrade Assistant] to prepare for the upgrade. Before you upgrade, you must resolve all critical issues identified by the Upgrade Assistant. Afterwards, you can <<upgrade-7.17-8x, upgrade to 8.x>>. 
 
 Initially, {agent}s will be version 7.17. This is fine because {elastic-sec} 8.x supports the last minor release in 7.x (7.17) and any subsequent {elastic-endpoint} versions in 8.x. After the {stack} upgrade, you can decide whether to upgrade {agent}s to 8.x, which is recommended to ensure you get the latest features.
 
