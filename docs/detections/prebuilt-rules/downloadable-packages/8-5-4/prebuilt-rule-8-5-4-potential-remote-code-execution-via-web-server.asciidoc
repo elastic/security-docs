@@ -1,0 +1,90 @@
+[[prebuilt-rule-8-5-4-potential-remote-code-execution-via-web-server]]
+=== Potential Remote Code Execution via Web Server
+
+Identifies suspicious commands executed via a web server, which may suggest a vulnerability and remote shell access.
+
+*Rule type*: eql
+
+*Rule indices*: 
+
+* logs-endpoint.events.*
+* endgame-*
+
+*Severity*: high
+
+*Risk score*: 73
+
+*Runs every*: 5m
+
+*Searches indices from*: now-9m ({ref}/common-options.html#date-math[Date Math format], see also <<rule-schedule, `Additional look-back time`>>)
+
+*Maximum alerts per execution*: 100
+
+*References*: 
+
+* https://pentestlab.blog/tag/web-shell/
+* https://www.elastic.co/security-labs/elastic-response-to-the-the-spring4shell-vulnerability-cve-2022-22965
+
+*Tags*: 
+
+* Elastic
+* Host
+* Linux
+* Threat Detection
+* Persistence
+* Initial Access
+* Elastic Endgame
+
+*Version*: 1
+
+*Rule authors*: 
+
+* Elastic
+
+*Rule license*: Elastic License v2
+
+
+==== Rule query
+
+
+[source, js]
+----------------------------------
+process where host.os.type == "linux" and event.type == "start" and
+event.action in ("exec", "exec_event") and process.parent.executable : (
+  "/usr/sbin/nginx", "/usr/local/sbin/nginx",
+  "/usr/sbin/apache", "/usr/local/sbin/apache",
+  "/usr/sbin/apache2", "/usr/local/sbin/apache2",
+  "/usr/sbin/php*", "/usr/local/sbin/php*",
+  "/usr/sbin/lighttpd", "/usr/local/sbin/lighttpd",
+  "/usr/sbin/hiawatha", "/usr/local/sbin/hiawatha",
+  "/usr/local/bin/caddy", 
+  "/usr/local/lsws/bin/lswsctrl",
+  "*/bin/catalina.sh"
+) and
+process.name : ("*sh", "python*", "perl", "php*", "tmux") and
+process.args : ("whoami", "id", "uname", "cat", "hostname", "ip", "curl", "wget", "pwd")
+
+----------------------------------
+
+*Framework*: MITRE ATT&CK^TM^
+
+* Tactic:
+** Name: Persistence
+** ID: TA0003
+** Reference URL: https://attack.mitre.org/tactics/TA0003/
+* Technique:
+** Name: Server Software Component
+** ID: T1505
+** Reference URL: https://attack.mitre.org/techniques/T1505/
+* Sub-technique:
+** Name: Web Shell
+** ID: T1505.003
+** Reference URL: https://attack.mitre.org/techniques/T1505/003/
+* Tactic:
+** Name: Initial Access
+** ID: TA0001
+** Reference URL: https://attack.mitre.org/tactics/TA0001/
+* Technique:
+** Name: Exploit Public-Facing Application
+** ID: T1190
+** Reference URL: https://attack.mitre.org/techniques/T1190/
