@@ -1,0 +1,66 @@
+[[prebuilt-rule-8-6-4-suspicious-process-spawned-from-motd-detected]]
+=== Suspicious Process Spawned from MOTD Detected
+
+Message of the day (MOTD) is the message that is presented to the user when a user connects to a Linux server via SSH or a serial connection. Linux systems contain several default MOTD files located in the "/etc/update-motd.d/" and "/usr/lib/update-notifier/" directories. These scripts run as the root user every time a user connects over SSH or a serial connection. Adversaries may create malicious MOTD files that grant them persistence onto the target every time a user connects to the system by executing a backdoor script or command. This rule detects the execution of potentially malicious processes through the MOTD utility.
+
+*Rule type*: eql
+
+*Rule indices*: 
+
+* logs-endpoint.events.*
+* endgame-*
+
+*Severity*: high
+
+*Risk score*: 73
+
+*Runs every*: 5m
+
+*Searches indices from*: now-9m ({ref}/common-options.html#date-math[Date Math format], see also <<rule-schedule, `Additional look-back time`>>)
+
+*Maximum alerts per execution*: 100
+
+*References*: 
+
+* https://pberba.github.io/security/2022/02/06/linux-threat-hunting-for-persistence-initialization-scripts-and-shell-configuration/#10-boot-or-logon-initialization-scripts-motd
+
+*Tags*: 
+
+* Elastic
+* Host
+* Linux
+* Threat Detection
+* Persistence
+* Elastic Endgame
+
+*Version*: 1
+
+*Rule authors*: 
+
+* Elastic
+
+*Rule license*: Elastic License v2
+
+
+==== Rule query
+
+
+[source, js]
+----------------------------------
+process where host.os.type == "linux" and 
+event.type == "start" and event.action : ("exec", "exec_event") and
+process.parent.executable : ("/etc/update-motd.d/*", "/usr/lib/update-notifier/*") and
+process.executable : ("*sh", "python*", "perl", "php*")
+
+----------------------------------
+
+*Framework*: MITRE ATT&CK^TM^
+
+* Tactic:
+** Name: Persistence
+** ID: TA0003
+** Reference URL: https://attack.mitre.org/tactics/TA0003/
+* Technique:
+** Name: Boot or Logon Initialization Scripts
+** ID: T1037
+** Reference URL: https://attack.mitre.org/techniques/T1037/
