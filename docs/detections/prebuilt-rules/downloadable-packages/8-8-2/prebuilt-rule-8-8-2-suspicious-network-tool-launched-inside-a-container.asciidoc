@@ -1,0 +1,83 @@
+[[prebuilt-rule-8-8-2-suspicious-network-tool-launched-inside-a-container]]
+=== Suspicious Network Tool Launched Inside A Container
+
+This rule detects commonly abused network utilities running inside a container. Network utilities like nc, nmap, dig, tcpdump, ngrep, telnet, mitmproxy, zmap can be used for malicious purposes such as network reconnaissance, monitoring, or exploitation, and should be monitored closely within a container.
+
+*Rule type*: eql
+
+*Rule indices*: 
+
+* logs-cloud_defend*
+
+*Severity*: medium
+
+*Risk score*: 47
+
+*Runs every*: 5m
+
+*Searches indices from*: now-6m ({ref}/common-options.html#date-math[Date Math format], see also <<rule-schedule, `Additional look-back time`>>)
+
+*Maximum alerts per execution*: 100
+
+*References*: None
+
+*Tags*: 
+
+* Elastic
+* Host
+* Linux
+* Threat Detection
+* Discovery
+* Command and Control
+* Reconnaissance
+* Container
+
+*Version*: 1
+
+*Rule authors*: 
+
+* Elastic
+
+*Rule license*: Elastic License v2
+
+
+==== Rule query
+
+
+[source, js]
+----------------------------------
+process where container.id: "*" and event.type== "start" and 
+(
+(process.name: ("nc", "ncat", "nmap", "dig", "nslookup", "tcpdump", "tshark", "ngrep", "telnet", "mitmproxy", "socat", "zmap", "masscan", "zgrab")) or 
+/*account for tools that execute utilities as a subprocess, in this case the target utility name will appear as a process arg*/
+(process.args: ("nc", "ncat", "nmap", "dig", "nslookup", "tcpdump", "tshark", "ngrep", "telnet", "mitmproxy", "socat", "zmap", "masscan", "zgrab"))
+)
+
+----------------------------------
+
+*Framework*: MITRE ATT&CK^TM^
+
+* Tactic:
+** Name: Discovery
+** ID: TA0007
+** Reference URL: https://attack.mitre.org/tactics/TA0007/
+* Technique:
+** Name: Network Service Discovery
+** ID: T1046
+** Reference URL: https://attack.mitre.org/techniques/T1046/
+* Tactic:
+** Name: Command and Control
+** ID: TA0011
+** Reference URL: https://attack.mitre.org/tactics/TA0011/
+* Technique:
+** Name: Ingress Tool Transfer
+** ID: T1105
+** Reference URL: https://attack.mitre.org/techniques/T1105/
+* Tactic:
+** Name: Reconnaissance
+** ID: TA0043
+** Reference URL: https://attack.mitre.org/tactics/TA0043/
+* Technique:
+** Name: Active Scanning
+** ID: T1595
+** Reference URL: https://attack.mitre.org/techniques/T1595/

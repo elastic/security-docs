@@ -1,0 +1,84 @@
+[[prebuilt-rule-8-8-2-adding-hidden-file-attribute-via-attrib]]
+=== Adding Hidden File Attribute via Attrib
+
+Adversaries can add the 'hidden' attribute to files to hide them from the user in an attempt to evade detection.
+
+*Rule type*: eql
+
+*Rule indices*: 
+
+* winlogbeat-*
+* logs-endpoint.events.*
+* logs-windows.*
+* endgame-*
+
+*Severity*: low
+
+*Risk score*: 21
+
+*Runs every*: 5m
+
+*Searches indices from*: now-9m ({ref}/common-options.html#date-math[Date Math format], see also <<rule-schedule, `Additional look-back time`>>)
+
+*Maximum alerts per execution*: 100
+
+*References*: None
+
+*Tags*: 
+
+* Elastic
+* Host
+* Windows
+* Threat Detection
+* Defense Evasion
+* Elastic Endgame
+
+*Version*: 105
+
+*Rule authors*: 
+
+* Elastic
+
+*Rule license*: Elastic License v2
+
+
+==== Investigation guide
+
+
+[source, markdown]
+----------------------------------
+
+----------------------------------
+
+==== Rule query
+
+
+[source, js]
+----------------------------------
+process where host.os.type == "windows" and event.type == "start" and
+  (process.name : "attrib.exe" or process.pe.original_file_name == "ATTRIB.EXE") and process.args : "+h" and
+  not
+  (process.parent.name: "cmd.exe" and
+    process.command_line: "attrib  +R +H +S +A *.cui" and
+    process.parent.command_line: "?:\\WINDOWS\\system32\\cmd.exe /c \"?:\\WINDOWS\\system32\\*.bat\"")
+
+----------------------------------
+
+*Framework*: MITRE ATT&CK^TM^
+
+* Tactic:
+** Name: Defense Evasion
+** ID: TA0005
+** Reference URL: https://attack.mitre.org/tactics/TA0005/
+* Technique:
+** Name: Hide Artifacts
+** ID: T1564
+** Reference URL: https://attack.mitre.org/techniques/T1564/
+* Sub-technique:
+** Name: Hidden Files and Directories
+** ID: T1564.001
+** Reference URL: https://attack.mitre.org/techniques/T1564/001/
+* Tactic:
+** Name: Persistence
+** ID: TA0003
+** Reference URL: https://attack.mitre.org/tactics/TA0003/

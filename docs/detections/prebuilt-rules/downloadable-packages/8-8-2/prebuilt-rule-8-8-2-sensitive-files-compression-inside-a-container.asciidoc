@@ -1,0 +1,108 @@
+[[prebuilt-rule-8-8-2-sensitive-files-compression-inside-a-container]]
+=== Sensitive Files Compression Inside A Container
+
+Identifies the use of a compression utility to collect known files containing sensitive information, such as credentials and system configurations inside a container.
+
+*Rule type*: eql
+
+*Rule indices*: 
+
+* logs-cloud_defend*
+
+*Severity*: medium
+
+*Risk score*: 47
+
+*Runs every*: 5m
+
+*Searches indices from*: now-6m ({ref}/common-options.html#date-math[Date Math format], see also <<rule-schedule, `Additional look-back time`>>)
+
+*Maximum alerts per execution*: 100
+
+*References*: None
+
+*Tags*: 
+
+* Elastic
+* Host
+* Linux
+* Container
+* Threat Detection
+* Collection
+* Credential Access
+
+*Version*: 1
+
+*Rule authors*: 
+
+* Elastic
+
+*Rule license*: Elastic License v2
+
+
+==== Rule query
+
+
+[source, js]
+----------------------------------
+process where container.id: "*" and event.type== "start" and 
+
+/*account for tools that execute utilities as a subprocess, in this case the target utility name will appear as a process arg*/  
+(process.name: ("zip", "tar", "gzip", "hdiutil", "7z") or process.args: ("zip", "tar", "gzip", "hdiutil", "7z"))
+and process.args: ( 
+"/root/.ssh/id_rsa", 
+"/root/.ssh/id_rsa.pub", 
+"/root/.ssh/id_ed25519", 
+"/root/.ssh/id_ed25519.pub", 
+"/root/.ssh/authorized_keys", 
+"/root/.ssh/authorized_keys2", 
+"/root/.ssh/known_hosts", 
+"/root/.bash_history", 
+"/etc/hosts", 
+"/home/*/.ssh/id_rsa", 
+"/home/*/.ssh/id_rsa.pub", 
+"/home/*/.ssh/id_ed25519",
+"/home/*/.ssh/id_ed25519.pub",
+"/home/*/.ssh/authorized_keys",
+"/home/*/.ssh/authorized_keys2",
+"/home/*/.ssh/known_hosts",
+"/home/*/.bash_history",
+"/root/.aws/credentials",
+"/root/.aws/config",
+"/home/*/.aws/credentials",
+"/home/*/.aws/config",
+"/root/.docker/config.json",
+"/home/*/.docker/config.json",
+"/etc/group",
+"/etc/passwd",
+"/etc/shadow",
+"/etc/gshadow")
+
+----------------------------------
+
+*Framework*: MITRE ATT&CK^TM^
+
+* Tactic:
+** Name: Credential Access
+** ID: TA0006
+** Reference URL: https://attack.mitre.org/tactics/TA0006/
+* Technique:
+** Name: Unsecured Credentials
+** ID: T1552
+** Reference URL: https://attack.mitre.org/techniques/T1552/
+* Sub-technique:
+** Name: Credentials In Files
+** ID: T1552.001
+** Reference URL: https://attack.mitre.org/techniques/T1552/001/
+* Tactic:
+** Name: Collection
+** ID: TA0009
+** Reference URL: https://attack.mitre.org/tactics/TA0009/
+* Technique:
+** Name: Archive Collected Data
+** ID: T1560
+** Reference URL: https://attack.mitre.org/techniques/T1560/
+* Sub-technique:
+** Name: Archive via Utility
+** ID: T1560.001
+** Reference URL: https://attack.mitre.org/techniques/T1560/001/

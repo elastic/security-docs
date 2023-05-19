@@ -1,0 +1,78 @@
+[[prebuilt-rule-8-8-2-ssh-process-launched-from-inside-a-container]]
+=== SSH Process Launched From Inside A Container
+
+This rule detects an SSH or SSHD process executed from inside a container. This includes both the client ssh binary and server ssh daemon process. SSH usage inside a container should be avoided and monitored closely when necessary. With valid credentials an attacker may move laterally to other containers or to the underlying host through container breakout. They may also use valid SSH credentials as a persistence mechanism.
+
+*Rule type*: eql
+
+*Rule indices*: 
+
+* logs-cloud_defend*
+
+*Severity*: high
+
+*Risk score*: 73
+
+*Runs every*: 5m
+
+*Searches indices from*: now-6m ({ref}/common-options.html#date-math[Date Math format], see also <<rule-schedule, `Additional look-back time`>>)
+
+*Maximum alerts per execution*: 100
+
+*References*: 
+
+* https://microsoft.github.io/Threat-Matrix-for-Kubernetes/techniques/SSH%20server%20running%20inside%20container/
+* https://www.blackhillsinfosec.com/sshazam-hide-your-c2-inside-of-ssh/
+
+*Tags*: 
+
+* Elastic
+* Host
+* Linux
+* Threat Detection
+* Lateral Movement
+* Persistence
+* Container
+
+*Version*: 1
+
+*Rule authors*: 
+
+* Elastic
+
+*Rule license*: Elastic License v2
+
+
+==== Rule query
+
+
+[source, js]
+----------------------------------
+process where container.id: "*" and event.type== "start" and
+event.action in ("fork", "exec") and event.action != "end" and 
+process.name: ("sshd", "ssh", "autossh")
+
+----------------------------------
+
+*Framework*: MITRE ATT&CK^TM^
+
+* Tactic:
+** Name: Lateral Movement
+** ID: TA0008
+** Reference URL: https://attack.mitre.org/tactics/TA0008/
+* Technique:
+** Name: Remote Services
+** ID: T1021
+** Reference URL: https://attack.mitre.org/techniques/T1021/
+* Sub-technique:
+** Name: SSH
+** ID: T1021.004
+** Reference URL: https://attack.mitre.org/techniques/T1021/004/
+* Tactic:
+** Name: Persistence
+** ID: TA0003
+** Reference URL: https://attack.mitre.org/tactics/TA0003/
+* Technique:
+** Name: External Remote Services
+** ID: T1133
+** Reference URL: https://attack.mitre.org/techniques/T1133/
