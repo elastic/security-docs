@@ -1,0 +1,77 @@
+[[prebuilt-rule-8-8-2-file-made-executable-via-chmod-inside-a-container]]
+=== File Made Executable via Chmod Inside A Container
+
+This rule detects when chmod is used to add the execute permission to a file inside a container. Modifying file permissions to make a file executable could indicate malicious activity, as an attacker may attempt to run unauthorized or malicious code inside the container.
+
+*Rule type*: eql
+
+*Rule indices*: 
+
+* logs-cloud_defend*
+
+*Severity*: medium
+
+*Risk score*: 47
+
+*Runs every*: 5m
+
+*Searches indices from*: now-6m ({ref}/common-options.html#date-math[Date Math format], see also <<rule-schedule, `Additional look-back time`>>)
+
+*Maximum alerts per execution*: 100
+
+*References*: None
+
+*Tags*: 
+
+* Elastic
+* Host
+* Linux
+* Threat Detection
+* Execution
+* Defense Evasion
+* Container
+
+*Version*: 1
+
+*Rule authors*: 
+
+* Elastic
+
+*Rule license*: Elastic License v2
+
+
+==== Rule query
+
+
+[source, js]
+----------------------------------
+file where container.id: "*" and event.type in ("change", "creation") and
+
+/*account for tools that execute utilities as a subprocess, in this case the target utility name will appear as a process arg*/
+(process.name : "chmod" or process.args : "chmod") and 
+process.args : ("*x*", "777", "755", "754", "700") and not process.args: "-x"
+
+----------------------------------
+
+*Framework*: MITRE ATT&CK^TM^
+
+* Tactic:
+** Name: Execution
+** ID: TA0002
+** Reference URL: https://attack.mitre.org/tactics/TA0002/
+* Technique:
+** Name: Command and Scripting Interpreter
+** ID: T1059
+** Reference URL: https://attack.mitre.org/techniques/T1059/
+* Tactic:
+** Name: Defense Evasion
+** ID: TA0005
+** Reference URL: https://attack.mitre.org/tactics/TA0005/
+* Technique:
+** Name: File and Directory Permissions Modification
+** ID: T1222
+** Reference URL: https://attack.mitre.org/techniques/T1222/
+* Sub-technique:
+** Name: Linux and Mac File and Directory Permissions Modification
+** ID: T1222.002
+** Reference URL: https://attack.mitre.org/techniques/T1222/002/
