@@ -406,29 +406,29 @@ Optional fields:
 
 |frequency |String a|Object containing action’s frequency:
 
-* summary (`boolean, required`): Defines whether notification will be sent for summary of alerts or for each generated alert individually.
+* `summary` (`Boolean, required`): Defines whether notification will be sent for summary of alerts or for each generated alert individually.
 
-* notifyWhen (`string, required`): Defines how often alerts generate actions. Valid values are:
+* `notifyWhen` (`String, required`): Defines how often alerts generate actions. Valid values are:
 
-** onActiveAlert: Actions run when the alert becomes active and at each check interval while the rule conditions are met.
-** onThrottleInterval: Actions run when the alert becomes active and at the interval specified in the throttle property while the rule conditions are met.
+** `onActiveAlert`: Actions run when the alert becomes active and at each check interval while the rule conditions are met.
+** `onThrottleInterval`: Actions run when the alert becomes active and at the interval specified in the throttle property while the rule conditions are met.
 
-* throttle (`string, optional`): Defines how often an alert generates repeated actions. This custom action interval must be specified in seconds, minutes, hours, or days. For example, `10m` or `1h`. This property is used only if notifyWhen is `onThrottleInterval`.
+* `throttle` (`String, optional`): Defines how often an alert generates repeated actions. This custom action interval must be specified in seconds, minutes, hours, or days. For example, `10m` or `1h`. This property is used only if notifyWhen is `onThrottleInterval`.
 
 |alerts_filter |Object a|Object containing action’s conditional filters:
 
-* timeframe  (`Object, optional`): Object containing the time frame during which this action can be fired
+* `timeframe` (`Object, optional`): Object containing the time frame during which this action can be fired.
 
-** days  (`Array<number>, required`): List of days of the week on which this action can fire, expressed as numbers between `1-7`, where `1` is Monday and `7` is Sunday. An empty array is equivalent to all days of the week being selected.
-** hours  (`Object, required`): The hours of the day during which this action can fire. Expressed as two strings in the format `hh:mm` in `24` hour time. A start of `00:00` and an end of `24:00` means the action can fire all day.
-start  (`string, required`)
-end  (`string, required`)
+** `days` (`Array of integers, required`): List of days of the week on which this action can fire, expressed as numbers between `1-7`, where `1` is Monday and `7` is Sunday. An empty array is equivalent to all days of the week being selected.
+** `hours` (`Object, required`): The hours of the day during which this action can fire. Expressed as two strings in the format `hh:mm` in `24` hour time. A start of `00:00` and an end of `24:00` means the action can fire all day.
+*** `start` (`String, required`)
+*** `end` (`String, required`)
 
-** timezone  (string, required): An ISO timezone name, such as Europe/Madrid or America/New_York. Specific offsets such as UTC or UTC+1 will also work, but lack built-in DST.
+** `timezone` (string, required): An ISO timezone name, such as Europe/Madrid or America/New_York. Specific offsets such as UTC or UTC+1 will also work, but lack built-in DST.
 
-* query  (Object, optional): Object containing a query filter to apply to the action to determine whether or not it should fire.
-** kql  (string, required): A KQL string
-** filters  (Array<Filter>, required): A list of `kbn-es-query` filters
+* `query` (`Object, optional`): Object containing a query filter to apply to the action to determine whether or not it should fire.
+** `kql` (`string, required`): A KQL string.
+** `filters` (`Array of objects, required`): A filter object, as defined in the `kbn-es-query` package.
 
 |==============================================
 
@@ -438,6 +438,8 @@ end  (`string, required`)
 
 
 `throttle` defines the maximum interval in which a rule's actions are executed. It accepts the following values:
+
+**NOTE**: In {elastic-sec} 8.8 and later, we don't recommend using this field as actions are now set on an individual action level using `frequency` field`.  If some of the actions don’t have frequency attribute set then the `throttle` field will be converted into an action level frequency and set to any action without a frequency.
 
 - `"rule"`: Execute actions on each rule execution
 
@@ -546,10 +548,6 @@ A rule can only be `skipped` when the bulk action to be performed on it results 
                "anomaly_threshold":50,
                "machine_learning_job_id":[
                   "packetbeat_dns_tunneling"
-               ],
-               "throttle":"no_actions",
-               "actions":[
-
                ],
                "execution_summary": {                 <1>
                  "last_execution": {
@@ -727,8 +725,6 @@ If processing of any rule fails, a partial error outputs the ID and/or name of t
                         "added-by-id-*"
                     ],
                     "query": "event.kind:alert and not event.module:(endgame or endpoint)\n",
-                    "throttle": "no_actions",
-                    "actions": [],
                     "execution_summary": {                 <1>
                     "last_execution": {
                       "date": "2022-03-23T16:06:12.787Z",

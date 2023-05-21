@@ -305,6 +305,8 @@ information about the type of threat the rule monitors, see
 
 |throttle |String a|Determines how often actions are taken:
 
+**NOTE**: In {elastic-sec} 8.8 and later, we don't recommend using this field as actions are now set on an individual action level using `frequency` field`.  If some of the actions don’t have frequency attribute set then the `throttle` field will be converted into an action level frequency and set to any action without a frequency.
+
 * `no_actions`: Never
 * `rule`: Every time new alerts are detected
 * `1h`: Every hour
@@ -487,29 +489,29 @@ Optional fields:
 
 |frequency |String a|Object containing action’s frequency:
 
-* summary (`boolean, required`): Defines whether notification will be sent for summary of alerts or for each generated alert individually.
+* `summary` (`Boolean, required`): Defines whether notification will be sent for summary of alerts or for each generated alert individually.
 
-* notifyWhen (`string, required`): Defines how often alerts generate actions. Valid values are:
+* `notifyWhen` (`String, required`): Defines how often alerts generate actions. Valid values are:
 
-** onActiveAlert: Actions run when the alert becomes active and at each check interval while the rule conditions are met.
-** onThrottleInterval: Actions run when the alert becomes active and at the interval specified in the throttle property while the rule conditions are met.
+** `onActiveAlert`: Actions run when the alert becomes active and at each check interval while the rule conditions are met.
+** `onThrottleInterval`: Actions run when the alert becomes active and at the interval specified in the throttle property while the rule conditions are met.
 
-* throttle (`string, optional`): Defines how often an alert generates repeated actions. This custom action interval must be specified in seconds, minutes, hours, or days. For example, `10m` or `1h`. This property is used only if notifyWhen is `onThrottleInterval`.
+* `throttle` (`String, optional`): Defines how often an alert generates repeated actions. This custom action interval must be specified in seconds, minutes, hours, or days. For example, `10m` or `1h`. This property is used only if notifyWhen is `onThrottleInterval`.
 
 |alerts_filter |Object a|Object containing action’s conditional filters:
 
-* timeframe  (`Object, optional`): Object containing the time frame during which this action can be fired
+* `timeframe` (`Object, optional`): Object containing the time frame during which this action can be fired.
 
-** days  (`Array<number>, required`): List of days of the week on which this action can fire, expressed as numbers between `1-7`, where `1` is Monday and `7` is Sunday. An empty array is equivalent to all days of the week being selected.
-** hours  (`Object, required`): The hours of the day during which this action can fire. Expressed as two strings in the format `hh:mm` in `24` hour time. A start of `00:00` and an end of `24:00` means the action can fire all day.
-start  (`string, required`)
-end  (`string, required`)
+** `days` (`Array of integers, required`): List of days of the week on which this action can fire, expressed as numbers between `1-7`, where `1` is Monday and `7` is Sunday. An empty array is equivalent to all days of the week being selected.
+** `hours` (`Object, required`): The hours of the day during which this action can fire. Expressed as two strings in the format `hh:mm` in `24` hour time. A start of `00:00` and an end of `24:00` means the action can fire all day.
+*** `start` (`String, required`)
+*** `end` (`String, required`)
 
-** timezone  (string, required): An ISO timezone name, such as Europe/Madrid or America/New_York. Specific offsets such as UTC or UTC+1 will also work, but lack built-in DST.
+** `timezone` (string, required): An ISO timezone name, such as Europe/Madrid or America/New_York. Specific offsets such as UTC or UTC+1 will also work, but lack built-in DST.
 
-* query  (Object, optional): Object containing a query filter to apply to the action to determine whether or not it should fire.
-** kql  (string, required): A KQL string
-** filters  (Array<Filter>, required): A list of `kbn-es-query` filters
+* `query` (`Object, optional`): Object containing a query filter to apply to the action to determine whether or not it should fire.
+** `kql` (`string, required`): A KQL string.
+** `filters` (`Array of objects, required`): A filter object, as defined in the `kbn-es-query` package.
 
 |==============================================
 
@@ -726,7 +728,6 @@ POST api/detection_engine/rules
   "type": "machine_learning",
   "from": "now-6m",
   "enabled": true,
-  "throttle": "rule",
   "actions": [
     {
       "action_type_id": ".slack",
@@ -874,7 +875,6 @@ Example response for a query rule:
   "type": "query",
   "threat": [],
   "version": 1,
-  "actions": [],
   "filters": [
     {
       "query": {
@@ -934,10 +934,14 @@ Example response for a {ml} job rule:
       "id": "5ad22cd5-5e6e-4c6c-a81a-54b626a4cec5",
       "params": {
         "message": "Urgent: {{context.rule.description}}"
+      },
+      "frequency": {
+        "summary": true,
+        "notifyWhen": "onActiveAlert",
+        "throttle": null
       }
     }
   ],
-  "throttle": "rule",
   "note": "Shut down the internet.",
   "status": "going to run",
   "status_date": "2020-04-07T14:45:21.685Z",
@@ -1014,7 +1018,6 @@ Example response for a threshold rule:
       "type": "detection"
     }
   ],
-  "actions": [],
   "index": [
     "winlogbeat-*"
   ],
@@ -1066,7 +1069,6 @@ Example response for an EQL rule:
   "threat": [],
   "version": 1,
   "exceptions_list": [],
-  "actions": [],
   "query": "sequence by process.entity_id with maxspan=2h [process where event.type in (\"start\", \"process_started\") and (process.name == \"rundll32.exe\" or process.pe.original_file_name == \"rundll32.exe\") and ((process.args == \"rundll32.exe\" and process.args_count == 1) or (process.args != \"rundll32.exe\" and process.args_count == 0))] [network where event.type == \"connection\" and (process.name == \"rundll32.exe\" or process.pe.original_file_name == \"rundll32.exe\")]",
   "language": "eql",
   "related_integrations": [],       <1>
@@ -1107,7 +1109,6 @@ Example response for an indicator match rule:
   "threat": [],
   "version": 1,
   "exceptions_list": [],
-  "actions": [],
   "index": [
     "packetbeat-*"
   ],
