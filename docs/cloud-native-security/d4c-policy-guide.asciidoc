@@ -1,20 +1,20 @@
 [[d4c-policy-guide]]
-= Guide to container workload protection policies
+= Container workload protection policies
 
-To unlock the full functionality of the Defend for Containers (D4C integration), you'll need to understand its policy syntax. This will enable you to construct policies that precisely allow expected container behaviors and prevent unexpected behaviors – thereby hardening the security posture of your container workloads.
+To unlock the full functionality of the Defend for Containers (D4C) integration, you'll need to understand its policy syntax. This will enable you to construct policies that precisely allow expected container behaviors and prevent unexpected behaviors — thereby hardening the security posture of your container workloads.
 
-Policies consist of _Selectors_ and _Responses_. A given policy must contain at least one selector and one response. Currently, the system supports two types of selectors and responses: `file` and `process`.
-Selectors define which system operations to match, and can include multiple conditions (grouped using a logical `AND`) to precisely select events. Responses define which actions to take when a system operation matches the conditions specified in the associated selector.
+D4C integration policies consist of _selectors_ and _responses_. Each policy must contain at least one selector and one response. Currently, the system supports two types of selectors and responses: `file` and `process`.
+Selectors define which system operations to match, and can include multiple conditions (grouped using a logical `AND`) to precisely select events. Responses define which actions to take when a system operation matches the conditions specified in an associated selector.
 
-The default policies described on this page serve as examples for understanding D4C policies. Below that description, you will find an exhaustive glossary of selector conditions, and of response fields and actions.
+The default policy described on this page provides an example useful for understanding D4C policies in general. Below that description, you will find an exhaustive glossary of selector conditions, and of response fields and actions.
 
 [[d4c-default-policies]]
 [discrete]
 == Default policies:
-By default, the D4C integration includes two policies. They are designed to implement core container workload protection capabilities:
+The default D4C integration policy includes two selector-response pairs. It is designed to implement core container workload protection capabilities:
 
-- *Threat Detection:* The first default policy is designed to stream process telemetry events to your {es} cluster, so that the {elastic-sec} SIEM can evaluate it to detect threats. It is called `allProcesses`, and selects all fork and exec events. It is mapped to a response called `allProcesses`, which specifies that the selected events should be logged.
-- *Drift Detection & Prevention:* The second default policy is designed to create alerts when container drift is detected. It is called `executableChanges`, and selects all `createExecutable` and `modifyExecutable` events. It is mapped to a response called `executableChanges`, which specifies that the selected events should create alerts, which will be sent to your {es} cluster. This policy can also be modified to block drift operations by changing the response action to block.
+- *Threat Detection:* The first selector-response pair is designed to stream process telemetry events to your {es} cluster, so that {elastic-sec} can evaluate it to detect threats. Both the selector and response are named `allProcesses`. The selector selects all fork and exec events. The associated response specifies that the selected events should be logged.
+- *Drift Detection & Prevention:* The second selector-response pair is designed to create alerts when container drift is detected. Both the selector and response are named `executableChanges`. The selector selects all `createExecutable` and `modifyExecutable` events. The associated response specifies that the selected events should create alerts, which will be sent to your {es} cluster. You can modify the response to block drift operations by setting it to block.
 
 image::images/d4c-policy-editor.png[The defend for containers policy editor with the default policies]
 
@@ -51,10 +51,10 @@ These conditions are available only for `file` selectors.
 | operation | The list of system operations to match on. Options include `createExecutable`, `modifyExecutable`, `createFile`, `modifyFile`, `deleteFile`.
 | ignoreVolumeMounts | If set, ignores file operations on ALL volume mounts.
 | ignoreVolumeFiles | If set, ignores operations on file mounts only. For example: mounted files, `configMaps`, and secrets.
-| targetFilePath | A list of file paths to include. Paths are absolute and wildcards are supported. The * wildcard matches any sequence of characters within a single directory, while the ** wildcard matches any sequence of characters across multiple directories and subdirectories. Note: In order to ensure precise targeting of file integrity monitoring operations, a `TargetFilePath` is required whenever the `deleteFile`, `modifyFile`, or `createFile` operations are used within a selector.
+| targetFilePath | A list of file paths to include. Paths are absolute and wildcards are supported. The `*` wildcard matches any sequence of characters within a single directory, while the `**` wildcard matches any sequence of characters across multiple directories and subdirectories.
 |===
 
-NOTE:
+NOTE: In order to ensure precise targeting of file integrity monitoring operations, a `TargetFilePath` is required whenever the `deleteFile`, `modifyFile`, or `createFile` operations are used within a selector.
 
 [discrete]
 === Process-selector conditions
@@ -78,7 +78,7 @@ A policy can include one or more responses. Each response is comprised of the fo
 | Field | Description
 | match | An array of one or more selectors of the same type (`file` or `process`).
 | exclude | Optional. An array of one or more selectors to use as exclusions to everything in `match`.
-| actions | An array of actions to perform when at least one `match` selector matches and none of the `exclude` selectors match. Options include `log`, `alert`, and `block`. See *Response actions*, below.
+| actions | An array of actions to perform when at least one `match` selector matches and none of the `exclude` selectors match. Options include `log`, `alert`, and `block`.
 |===
 
 [discrete]
