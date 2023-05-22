@@ -459,7 +459,7 @@ run exactly at its scheduled time.
 . Click *Continue*. The *Rule actions* pane is displayed.
 +
 [role="screenshot"]
-image::images/rule-actions.png[]
+image::images/available-action-types.png[Available connector types]
 
 . Do either of the following:
 
@@ -476,21 +476,7 @@ are generated.
 NOTE: To use {kib} Actions for alert notifications, you need the
 https://www.elastic.co/subscriptions[appropriate license] and your role needs *All* privileges for the *Action and Connectors* feature. For more information, see <<case-permissions>>.
 
-. Set when to send notifications:
-
-* *On each rule execution*: Sends a notification every time new alerts are
-generated.
-* *Hourly*: Sends a notification every hour.
-* *Daily*: Sends a notification every day.
-* *Weekly*: Sends a notification every week.
-+
-NOTE: Notifications are sent only when new alerts are generated.
-+
-The available connector types are displayed.
-[role="screenshot"]
-image::images/available-action-types.png[Shows available connector types]
-
-. Select the required connector type, which determines how notifications are sent. For example, if you select the {jira} connector, notifications are sent to your {jira} system.
+. Select a connector type to determine how notifications are sent. For example, if you select the {jira} connector, notifications are sent to your {jira} system.
 +
 NOTE: Each action type requires a connector. Connectors store the
 information required to send the notification from the external system. You can
@@ -498,15 +484,32 @@ configure connectors while creating the rule or on the {kib} Rules and Connector
 page (*Stack Management* -> *Rules and Connectors* -> *Connectors*). For more
 information, see {kibana-ref}/action-types.html[Action and connector types].
 +
-The selected connector type fields are displayed ({jira} example).
+[role="screenshot"]
+image::images/available-action-types.png[Available connector types]
+
+. After you select a connector, set its action frequency to define when notifications are sent:
+
+** *Summary of alerts*: Select this option to get a report that summarizes generated alerts, which you can review at your convenience. Alert summaries will be sent at the specified time intervals. 
++
+NOTE: When setting a custom notification frequency, do not choose a time that is shorter than the rule's execution schedule. 
+
+** *For each alert*: Select this option to ensure notifications are sent every time new alerts are generated.  
+
+. (Optional) Specify additional conditions that need to be met for notifications to send. Click the toggle to enable a setting, then add the required details:
+
+** *If alert matches query*: Enter a KQL query that defines field-value pairs or query conditions that must be met for notifications to send. The query only searches alert documents in the indices specified for the rule.
+** *If alert is generated during timeframe*: Set timeframe details. Notifications are only sent if alerts are generated within the timeframe you define.
+
+. Complete the required connector type fields. Here is an example with {jira}:
+
++
 [role="screenshot"]
 image::images/selected-action-type.png[]
-+
-. Fill in the fields for the selected connector types. For all connector types, click
-the icon above the `Message` field to add
-<<rule-action-variables, placeholders>> for rule and alert details to the
-notifications.
-+
+
+
+. Use the default notification message or customize it. You can add more context to the message by clicking the icon above the message text box and selecting from a list of available <<rule-action-variables, alert notification variables>>.
+
+
 . Create the rule with or without activation.
 +
 NOTE: When you activate a rule, it is queued, and its schedule is determined by
@@ -517,12 +520,12 @@ minutes at 14:03 but it does not run until 14:04, it will run again at 14:09.
 [[rule-action-variables]]
 ==== Alert notification placeholders
 
-You can use http://mustache.github.io/[mustache syntax] to add the following placeholders to <<rule-notifications, rule action>> fields:
+You can use http://mustache.github.io/[mustache syntax] to add variables to notification messages. The action frequency you choose determines the variables you can select from.   
 
-* `{{alert.actionGroup}}`: Action group of the alert that scheduled actions for the rule
-* `{{alert.actionGroupName}}`: Human readable name of the action group of the alert that scheduled actions for the rule
-* `{{alert.actionSubgroup}}`: Action subgroup of the alert that scheduled actions for the rule
-* `{{alert.id}}`: ID of the alert that scheduled actions for the rule
+The following variables can be passed for all rules: 
+
+NOTE: Refer to {kibana-ref}/rule-action-variables.html#alert-summary-action-variables[Action frequency: Summary of alerts] to learn about additional variables that can be passed if the rule's action frequency is **Summary of alerts**. 
+
 * `{{context.alerts}}`: Array of detected alerts
 * `{{{context.results_link}}}`: URL to the alerts in {kib}
 * `{{context.rule.anomaly_threshold}}`: Anomaly threshold score above which
@@ -541,10 +544,14 @@ execution
 * `{{context.rule.query}}`: Rule query (query rules only)
 * `{{context.rule.references}}`: Rule references
 * `{{context.rule.risk_score}}`: Default rule risk score
++
+NOTE: This placeholder contains the rule's default values even when the *Risk score override* option is used.
 * `{{context.rule.rule_id}}`: Generated or user-defined rule ID that can be
 used as an identifier across systems
 * `{{context.rule.saved_id}}`: Saved search ID
 * `{{context.rule.severity}}`: Default rule severity
++
+NOTE: This placeholder contains the rule's default values even when the *Severity override* option is used.
 * `{{context.rule.threat}}`: Rule threat framework
 * `{{context.rule.threshold}}`: Rule threshold values (threshold rules only)
 * `{{context.rule.timeline_id}}`: Associated Timeline ID
@@ -560,9 +567,13 @@ used as an identifier across systems
 * `{{rule.type}}`: Type of rule
 * `{{state.signals_count}}`: Number of alerts detected
 
-NOTE: The `{{context.rule.severity}}` and `{{context.rule.risk_score}}`
-placeholders contain the rule's default values even when the *Severity override*
-and *Risk score override* options are used.
+The following variables can only be passed if the rule’s action frequency is for each alert: 
+
+* `{{alert.actionGroup}}`: Action group of the alert that scheduled actions for the rule
+* `{{alert.actionGroupName}}`: Human-readable name of the action group of the alert that scheduled actions for the rule
+* `{{alert.actionSubgroup}}`: Action subgroup of the alert that scheduled actions for the rule
+* `{{alert.id}}`: ID of the alert that scheduled actions for the rule
+* `{{alert.flapping}}`: A flag on the alert that indicates whether the alert status is changing repeatedly
 
 [float]
 [[placeholder-examples]]
