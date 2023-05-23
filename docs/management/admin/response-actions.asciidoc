@@ -94,7 +94,7 @@ Example: `suspend-process --pid 123 --comment "Suspend suspicious process"`
 
 === `get-file`
 
-Retrieve a file from a host. Files are downloaded in a password-protected .zip archive to prevent the file from running. Use passcode `elastic` to open the .zip in a safe environment.
+Retrieve a file from a host. Files are downloaded in a password-protected `.zip` archive to prevent the file from running. Use password `elastic` to open the `.zip` in a safe environment.
 
 You must include the following parameter to specify the file's location on the host:
 
@@ -110,6 +110,29 @@ TIP: You can use the <<use-osquery,Osquery manager integration>> to query a host
 ====
 When {elastic-defend} prevents file activity due to <<malware-protection,malware prevention>>, the file is quarantined on the host and a malware prevention alert is created. To retrieve this file with `get-file`, copy the path from the alert's *Quarantined file path* field (`file.Ext.quarantine_path`), which appears under *Highlighted fields* in the alert details flyout. Then paste the value into the `--path` parameter. 
 ====
+
+=== `execute`
+
+Run a shell command on the host. The command's output and any errors appear in the response console, up to 2000 characters. The complete output (stdout and stderr) are also saved to a downloadable `.zip` archive (password: `elastic`). Use these parameters:
+
+* `--command` : (Required) A shell command to run on the host. The command must be supported by `bash` for Linux and macOS hosts, and `cmd.exe` for Windows.
++
+[NOTE]
+====
+* Multiple consecutive dashes in the value must be escaped; single dashes do not need to be escaped. For example, to represent a directory named `/opt/directory--name`, use the following: `/opt/directory\-\-name`.
+
+* You can use quotation marks without escaping. For example: +
+`execute --command "cd "C:\Program Files\directory""`
+
+====
+
+* `--timeout` : (Optional) How long the host should wait for the command to complete. Use `h` for hours, `m` for minutes, `s` for seconds (for example, `2s` is two seconds). If no timeout is specified, it defaults to four hours.
+
+Required privilege: *Execute Operations*
+
+Example: `execute --command "ls -al" --timeout 2s --comment "Get list of all files"`
+
+WARNING: This response action runs commands on the host using the same user account running the {elastic-defend} integration, which normally has full control over the system. Be careful with any commands that could cause irrevocable changes.
 
 [[supporting-commands-parameters]]
 == Supporting commands and parameters
