@@ -221,7 +221,7 @@ information about the type of threat the rule monitors, see
 
 |throttle |String a|Determines how often actions are taken:
 
-**NOTE**: In {elastic-sec} 8.8 and later, we don't recommend using this field as actions are now set on an individual action level using `frequency` field`.  If some of the actions don’t have frequency attribute set then the `throttle` field will be converted into an action level frequency and set to any action without a frequency.
+**NOTE**: In {elastic-sec} 8.8 and later, the rule level `throttle` setting is applied to any actions missing action level frequency settings. In the response, the updated action frequencies are shown in the `frequency` field for individual actions. For more information about action level frequency settings, refer <<optional-actions-fields>>.
 
 * `no_actions`: Never
 * `rule`: Every time new alerts are detected
@@ -397,35 +397,37 @@ saved object ID of the action.
 
 |==============================================
 
-Optional fields:
+[discrete]
+[[optional-actions-fields]]
+===== Optional `action` fields
 
 [width="100%",options="header"]
 |==============================================
 |Name |Type |Description
 
-|frequency |String a|Object containing action’s frequency:
+|frequency |String a|Object containing an action’s frequency:
 
-* `summary` (Boolean, required): Defines whether notification will be sent for summary of alerts or for each generated alert individually.
+* `summary` (Boolean, required): Defines whether to send notifications as a summary of alerts or for each generated alert.
 
-* `notifyWhen` (String, required): Defines how often alerts generate actions. Valid values are:
+* `notifyWhen` (String, required`): Defines how often alerts generate actions. Valid values are:
 
-** `onActiveAlert`: Actions run when the alert becomes active and at each check interval while the rule conditions are met.
+** `onActiveAlert`: Actions run when the alert is generated.
 ** `onThrottleInterval`: Actions run when the alert becomes active and at the interval specified in the throttle property while the rule conditions are met.
 
 * `throttle` (String, optional): Defines how often an alert generates repeated actions. This custom action interval must be specified in seconds, minutes, hours, or days. For example, `10m` or `1h`. This property is used only if `notifyWhen` is `onThrottleInterval`.
 
-|alerts_filter |Object a|Object containing action’s conditional filters:
+|alerts_filter |Object a|Object containing an action’s conditional filters:
 
-* `timeframe` (Object, optional): Object containing the time frame during which this action can be fired.
+* `timeframe` (Object, optional): Object containing the time frame for when this action can be run.
 
-** `days` (Array of integers, required): List of days of the week on which this action can fire, expressed as numbers between `1-7`, where `1` is Monday and `7` is Sunday. An empty array is equivalent to all days of the week being selected.
-** `hours` (Object, required): The hours of the day during which this action can fire. Expressed as two strings in the format `hh:mm` in `24` hour time. A start of `00:00` and an end of `24:00` means the action can fire all day.
+** `days` (Array of integers, required): List of days of the week on which this action can be run. Days of the week are expressed as numbers between `1-7`, where `1` is Monday and `7` is Sunday. To select all days of the week, enter an empty array.
+** `hours` (Object, required): The hours of the day during which this action can run. Hours of the day are expressed as two strings in the format `hh:mm` in `24` hour time. A start of `00:00` and an end of `24:00` means the action can run all day.
 *** `start` (String, required)
 *** `end` (String, required)
 
 ** `timezone` (String, required): An ISO timezone name, such as `Europe/Madrid` or `America/New_York`. Specific offsets such as UTC or UTC+1 will also work, but lack built-in DST.
 
-* `query` (Object, optional): Object containing a query filter to apply to the action to determine whether or not it should fire.
+* `query` (Object, optional): Object containing a query filter which gets applied to an action and determines whether the action should run. 
 ** `kql` (String, required): A KQL string.
 ** `filters` (Array of objects, required): A filter object, as defined in the `kbn-es-query` package.
 
