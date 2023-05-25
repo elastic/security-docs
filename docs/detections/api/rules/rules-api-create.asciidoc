@@ -307,6 +307,13 @@ information about the type of threat the rule monitors, see
 
 |throttle |String a|Determines how often actions are taken:
 
+[NOTE] 
+=====
+The rule level `throttle` field is deprecated in {elastic-sec} 8.8 and will remain active for at least the next 12 months.
+
+In {elastic-sec} 8.8 and later, you can use the (<<optional-actions-fields-bulk-update,`frequency`>>) field to define frequencies for individual actions. Actions without frequencies will acquire a converted version of the rule's `throttle` field. In the response, the converted `throttle` setting appears in the individual actions' `frequency` field.
+=====
+
 * `no_actions`: Never
 * `rule`: Every time new alerts are detected
 * `1h`: Every hour
@@ -481,10 +488,52 @@ saved object ID of the action.
 
 |==============================================
 
-All text fields (such as `message` fields) can contain placeholders for rule
-and alert details:
+[discrete]
+[[optional-actions-fields-rule-create]]
+===== Optional `action` fields
 
-* `{{state.signals_count}}`: Number of alerts detected
+[width="100%",options="header"]
+|==============================================
+|Name |Type |Description
+
+|frequency |String a|Object containing an action’s frequency:
+
+* `summary` (Boolean, required): Defines whether to send notifications as a summary of alerts or for each generated alert.
+
+* `notifyWhen` (String, required`): Defines how often alerts generate actions. Valid values are:
+
+** `onActiveAlert`: Actions run when the alert is generated.
+** `onThrottleInterval`: Actions run on the specified throttle interval and summarize new alerts generated during that interval.
+
+* `throttle` (String, optional): Defines how often an alert generates repeated actions. This custom action interval must be specified in seconds, minutes, hours, or days. For example, `10m` or `1h`. This property is used only if `notifyWhen` is `onThrottleInterval`.
+
+|alerts_filter |Object a|Object containing an action’s conditional filters:
+
+* `timeframe` (Object, optional): Object containing the time frame for when this action can be run.
+
+** `days` (Array of integers, required): List of days of the week on which this action can be run. Days of the week are expressed as numbers between `1-7`, where `1` is Monday and `7` is Sunday. To select all days of the week, enter an empty array.
+** `hours` (Object, required): The hours of the day during which this action can run. Hours of the day are expressed as two strings in the format `hh:mm` in `24` hour time. A start of `00:00` and an end of `24:00` means the action can run all day.
+*** `start` (String, required)
+*** `end` (String, required)
+
+** `timezone` (String, required): An ISO timezone name, such as `Europe/Madrid` or `America/New_York`. Specific offsets such as UTC or UTC+1 will also work, but lack built-in DST.
+
+* `query` (Object, optional): Object containing a query filter which gets applied to an action and determines whether the action should run. 
+** `kql` (String, required): A KQL string.
+** `filters` (Array of objects, required): A filter object, as defined in the `kbn-es-query` package.
+
+|==============================================
+
+[discrete]
+[[action-variables-rule-create]]
+===== Alert notification placeholders  
+
+You can use http://mustache.github.io/[mustache syntax] to add variables to notification messages. The action frequency you choose determines the variables you can select from.   
+
+The following variables can be passed for all rules: 
+
+NOTE: Refer to {kibana-ref}/rule-action-variables.html#alert-summary-action-variables[Action frequency: Summary of alerts] to learn about additional variables that can be passed if the rule's action frequency is **Summary of alerts**. 
+
 * `{{context.alerts}}`: Array of detected alerts
 * `{{{context.results_link}}}`: URL to the alerts in {kib}
 * `{{context.rule.anomaly_threshold}}`: Anomaly threshold score above which
@@ -502,17 +551,37 @@ execution
 * `{{context.rule.name}}`: Rule name
 * `{{context.rule.query}}`: Rule query (query rules only)
 * `{{context.rule.references}}`: Rule references
-* `{{context.rule.risk_score}}`: Rule risk score
+* `{{context.rule.risk_score}}`: Default rule risk score
++
+NOTE: This placeholder contains the rule's default values even when the *Risk score override* option is used.
 * `{{context.rule.rule_id}}`: Generated or user-defined rule ID that can be
 used as an identifier across systems
 * `{{context.rule.saved_id}}`: Saved search ID
-* `{{context.rule.severity}}`: Rule severity
+* `{{context.rule.severity}}`: Default rule severity
++
+NOTE: This placeholder contains the rule's default values even when the *Severity override* option is used.
 * `{{context.rule.threat}}`: Rule threat framework
 * `{{context.rule.threshold}}`: Rule threshold values (threshold rules only)
-* `{{context.rule.timeline_id}}`: Associated timeline ID
-* `{{context.rule.timeline_title}}`: Associated timeline name
+* `{{context.rule.timeline_id}}`: Associated Timeline ID
+* `{{context.rule.timeline_title}}`: Associated Timeline name
 * `{{context.rule.type}}`: Rule type
 * `{{context.rule.version}}`: Rule version
+* `{{date}}``: Date the rule scheduled the action
+* `{{kibanaBaseUrl}}`: Configured `server.publicBaseUrl` value, or empty string if not configured
+* `{{rule.id}}`: ID of the rule
+* `{{rule.name}}`: Name of the rule
+* `{{rule.spaceId}}`: Space ID of the rule
+* `{{rule.tags}}`: Tags of the rule
+* `{{rule.type}}`: Type of rule
+* `{{state.signals_count}}`: Number of alerts detected
+
+The following variables can only be passed if the rule’s action frequency is for each alert: 
+
+* `{{alert.actionGroup}}`: Action group of the alert that scheduled actions for the rule
+* `{{alert.actionGroupName}}`: Human-readable name of the action group of the alert that scheduled actions for the rule
+* `{{alert.actionSubgroup}}`: Action subgroup of the alert that scheduled actions for the rule
+* `{{alert.id}}`: ID of the alert that scheduled actions for the rule
+* `{{alert.flapping}}`: A flag on the alert that indicates whether the alert status is changing repeatedly
 
 [[threats-object-create]]
 ===== `threat` schema
@@ -694,7 +763,6 @@ POST api/detection_engine/rules
   "type": "machine_learning",
   "from": "now-6m",
   "enabled": true,
-  "throttle": "rule",
   "actions": [
     {
       "action_type_id": ".slack",
@@ -750,6 +818,7 @@ Indicator match rule that creates an alert when one of the following is true:
 POST api/detection_engine/rules
 {
     "type": "threat_match",
+    "actions": [],
     "index": [
         "packetbeat-*"
     ],
@@ -855,7 +924,6 @@ Example response for a query rule:
       }
     }
   ],
-  "throttle": "no_actions",
   "query": "process.parent.name:EXCEL.EXE or process.parent.name:MSPUB.EXE or process.parent.name:OUTLOOK.EXE or process.parent.name:POWERPNT.EXE or process.parent.name:VISIO.EXE or process.parent.name:WINWORD.EXE",
   "language": "kuery",
   "related_integrations": [],       <1>
@@ -903,10 +971,14 @@ Example response for a {ml} job rule:
       "id": "5ad22cd5-5e6e-4c6c-a81a-54b626a4cec5",
       "params": {
         "message": "Urgent: {{context.rule.description}}"
+      },
+      "frequency": {
+        "summary": true,
+        "notifyWhen": "onActiveAlert",
+        "throttle": null
       }
     }
   ],
-  "throttle": "rule",
   "note": "Shut down the internet.",
   "status": "going to run",
   "status_date": "2020-04-07T14:45:21.685Z",
@@ -983,11 +1055,10 @@ Example response for a threshold rule:
       "type": "detection"
     }
   ],
-  "actions": [],
+  "actions": [], 
   "index": [
     "winlogbeat-*"
   ],
-  "throttle": "no_actions",
   "query": "host.name:prml-19 and event.category:authentication and event.outcome:failure",
   "language": "kuery",
   "threshold": {
@@ -1036,7 +1107,6 @@ Example response for an EQL rule:
   "threat": [],
   "version": 1,
   "exceptions_list": [],
-  "actions": [],
   "throttle": "no_actions",
   "query": "sequence by process.entity_id with maxspan=2h [process where event.type in (\"start\", \"process_started\") and (process.name == \"rundll32.exe\" or process.pe.original_file_name == \"rundll32.exe\") and ((process.args == \"rundll32.exe\" and process.args_count == 1) or (process.args != \"rundll32.exe\" and process.args_count == 0))] [network where event.type == \"connection\" and (process.name == \"rundll32.exe\" or process.pe.original_file_name == \"rundll32.exe\")]",
   "language": "eql",
@@ -1078,11 +1148,9 @@ Example response for an indicator match rule:
   "threat": [],
   "version": 1,
   "exceptions_list": [],
-  "actions": [],
   "index": [
     "packetbeat-*"
   ],
-  "throttle": "no_actions",
   "query": "destination.ip:* or host.ip:*",
   "language": "kuery",
   "threat_query": "*:*",
