@@ -399,11 +399,56 @@ saved object ID of the action.
 |==============================================
 
 [discrete]
+[[optional-actions-fields-bulk-update]]
+===== Optional `action` fields
+
+[width="100%",options="header"]
+|==============================================
+|Name |Type |Description
+
+|frequency |String a|Object containing an action’s frequency:
+
+* `summary` (Boolean, required): Defines whether to send notifications alert summaries or for individual alerts. 
+
+* `notifyWhen` (String, required`): Defines how often rules run actions. Valid values are:
+
+** `onActiveAlert`: Actions run when an alert is generated.
+** `onThrottleInterval`: Actions run on the specified throttle interval and summarize new alerts generated during that interval.
+
+* `throttle` (String, optional): Defines the minimum time that must elapse before a rule's actions can repeat, in seconds, minutes, hours, or days. For example, `10m` or `1h`. This property is used only if `notifyWhen` is `onThrottleInterval`.
+
+|alerts_filter |Object a|Object containing an action’s conditional filters:
+
+* `timeframe` (Object, optional): Defines the time frame when this action can run.
+
+** `days` (Array of integers, required): Days of the week when this action will run, expressed as numbers between `1-7`, where `1` is Monday and `7` is Sunday. To select all days of the week, enter an empty array.
+** `hours` (Object, required): The hours of the day during which this action can run. Hours of the day are expressed as two strings in the format `hh:mm` in 24-hour time. A start of `00:00` and an end of `24:00` means the action can run all day.
+*** `start` (String, required)
+*** `end` (String, required)
+
+** `timezone` (String, required): An ISO timezone name, such as `Europe/Madrid` or `America/New_York`. Specific offsets such as `UTC` or `UTC+1` will also work, but lack built-in DST.
+
+* `query` (Object, optional): Object containing a query filter that gets applied to an action to determine whether the action should run. 
+** `kql` (String, required): A KQL string.
+** `filters` (Array of objects, required): A filter object, as defined in the `kbn-es-query` package.
+
+|==============================================
+
+[discrete]
 [[throttle-schema-bulk]]
 ===== `throttle` schema
 
-
 `throttle` defines the maximum interval in which a rule's actions are executed. It accepts the following values:
+
+[NOTE]
+
+=========
+
+The rule-level `throttle` field is deprecated in {elastic-sec} 8.8 and is scheduled for end of life in Q4 of 2024.
+
+In {elastic-sec} 8.8 and later, you can use the (<<optional-actions-fields-bulk-update,`frequency`>>) field to define frequencies for individual actions. Actions without frequencies will acquire a converted version of the rule's `throttle` field. In the response, the converted `throttle` setting appears in the individual actions' `frequency` field.
+
+=========
 
 - `"rule"`: Execute actions on each rule execution
 
@@ -512,10 +557,6 @@ A rule can only be `skipped` when the bulk action to be performed on it results 
                "anomaly_threshold":50,
                "machine_learning_job_id":[
                   "packetbeat_dns_tunneling"
-               ],
-               "throttle":"no_actions",
-               "actions":[
-
                ],
                "execution_summary": {                 <1>
                  "last_execution": {
@@ -693,7 +734,6 @@ If processing of any rule fails, a partial error outputs the ID and/or name of t
                         "added-by-id-*"
                     ],
                     "query": "event.kind:alert and not event.module:(endgame or endpoint)\n",
-                    "throttle": "no_actions",
                     "actions": [],
                     "execution_summary": {                 <1>
                     "last_execution": {
