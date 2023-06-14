@@ -11,6 +11,90 @@
 
 * Setting the `max_signals` value higher than the {kibana-ref}/alert-action-settings-kb.html#alert-settings[`xpack.alerting.rules.run.alerts.max`] value will lead to rule failure.
 
+* If you modify an exception item using the <<exceptions-api-update-item,update exception item>> API and _only_ specify its `item_id`, the exception item is erroneously duplicated. To avoid this issue, you can:
+
+** <<manage-exception,Update exception items>> through the {security-app} UI. 
+** Specify an exception item's `item_id` _and_ its `id` when modifying an exception through the <<exceptions-api-update-item,update exception item>> API. 
+** Only specify an exception item's `id` when updating an exception through the update exception item API. 
++
+====
+[NOTE]
+In the response, the value for the `item_id` field will be `unknown`. 
+====
+
+
++
+If you've already encountered this issue and want find erroneously duplicated exceptions, use the queries provided below.
+
+** **Query for finding exception documents that were duplicated from only specifying the `item_id`:**
++
+=======
+```
+// retrieve exception documents grouped by `item_id`. 
+// Each bucket contains all duplicates of that document
+GET .kibana*/_search
+{
+  "query": {
+    "bool": {
+      "filter": [
+        {
+          "match": {
+            "type": "exception-list"
+          }
+        }
+      ]
+    }
+  },
+  "aggs": {
+    "item_id_duplicates": {
+      "terms": {
+        "field": "exception-list.item_id",
+        "min_doc_count": 2
+      },
+      "aggs": {
+        "ids": {
+          "top_hits": {
+            "size": 100, // increase this if you may have more duplicates
+            "_source": false
+          }
+        }
+      }
+    }
+  },
+  "size": 0
+}
+```
+=======
+
+** **Query for finding exception documents that were duplicated and have lost their `item_id` because their `id` was used to update them:**
++
+=======
+```
+// Each item returned lost its `item_id`, which is expected to be present and unique
+GET .kibana*/_search
+{
+  "query": {
+    "bool": {
+      "filter": [
+        {
+          "term": {
+            "exception-list.list_type": "item"
+          }
+        }
+      ],
+      "must_not": [
+        {
+          "exists": {
+            "field": "exception-list.item_id"
+          }
+        }
+      ]
+    }
+  }
+}
+```
+=======
+
 [discrete]
 [[breaking-changes-8.8.1]]
 ==== Breaking changes
@@ -67,6 +151,90 @@ To view a detailed summary of the latest features and enhancements, check out ou
 ** https://www.elastic.co/guide/en/security/8.8/rules-api-create.html#optional-actions-fields-rule-create[Create rule]
 ** https://www.elastic.co/guide/en/security/8.8/rules-api-update.html#optional-actions-fields-rule-update[Update rule]
 ** https://www.elastic.co/guide/en/security/8.8/bulk-actions-rules-api.html#optional-actions-fields-bulk-update[Bulk rule actions]
+
+* If you modify an exception item using the <<exceptions-api-update-item,update exception item>> API and _only_ specify its `item_id`, the exception item is erroneously duplicated. To avoid this issue, you can:
+
+** <<manage-exception,Update exception items>> through the {security-app} UI. 
+** Specify an exception item's `item_id` _and_ its `id` when modifying an exception through the <<exceptions-api-update-item,update exception item>> API. 
+** Only specify an exception item's `id` when updating an exception through the update exception item API. 
++
+====
+[NOTE]
+In the response, the value for the `item_id` field will be `unknown`. 
+====
+
+
++
+If you've already encountered this issue and want find erroneously duplicated exceptions, use the queries provided below.
+
+** **Query for finding exception documents that were duplicated from only specifying the `item_id`:**
++
+=======
+```
+// retrieve exception documents grouped by `item_id`. 
+// Each bucket contains all duplicates of that document
+GET .kibana*/_search
+{
+  "query": {
+    "bool": {
+      "filter": [
+        {
+          "match": {
+            "type": "exception-list"
+          }
+        }
+      ]
+    }
+  },
+  "aggs": {
+    "item_id_duplicates": {
+      "terms": {
+        "field": "exception-list.item_id",
+        "min_doc_count": 2
+      },
+      "aggs": {
+        "ids": {
+          "top_hits": {
+            "size": 100, // increase this if you may have more duplicates
+            "_source": false
+          }
+        }
+      }
+    }
+  },
+  "size": 0
+}
+```
+=======
+
+** **Query for finding exception documents that were duplicated and have lost their `item_id` because their `id` was used to update them:**
++
+=======
+```
+// Each item returned lost its `item_id`, which is expected to be present and unique
+GET .kibana*/_search
+{
+  "query": {
+    "bool": {
+      "filter": [
+        {
+          "term": {
+            "exception-list.list_type": "item"
+          }
+        }
+      ],
+      "must_not": [
+        {
+          "exists": {
+            "field": "exception-list.item_id"
+          }
+        }
+      ]
+    }
+  }
+}
+```
+=======
 
 [discrete]
 [[deprecations-8.8.0]]
