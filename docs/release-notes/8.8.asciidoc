@@ -51,7 +51,7 @@ NOTE: If you've already encountered this issue and want to find erroneously dupl
 [source,kibana]
 ----------------------------------
 // Retrieve exception documents grouped by `item_id`. 
-// Each bucket contains all duplicates of that document
+// Each bucket contains all duplicates of that document.
 GET .kibana*/_search
 {
   "query": {
@@ -74,7 +74,7 @@ GET .kibana*/_search
       "aggs": {
         "ids": {
           "top_hits": {
-            "size": 100, // increase this if you may have more duplicates
+            "size": 100, // Increase this if you may have more duplicates.
             "_source": false
           }
         }
@@ -89,7 +89,7 @@ GET .kibana*/_search
 +
 [source,kibana]
 ----------------------------------
-// Each item returned lost its `item_id`, which is expected to be present and unique
+// Each item returned lost its `item_id`, which is expected to be present and unique.
 GET .kibana*/_search
 {
   "query": {
@@ -123,6 +123,81 @@ GET .kibana*/_search
 ==== Known issues
 
 * Setting the `max_signals` value higher than the {kibana-ref}/alert-action-settings-kb.html#alert-settings[`xpack.alerting.rules.run.alerts.max`] value will lead to rule failure.
+
+* If you modify an exception item using the <<exceptions-api-update-item,update exception item>> API and _only_ specify its `item_id`, the exception item is erroneously duplicated. To avoid this issue, you can either:
+
+** <<manage-exception,Update exception items>> through the {security-app} UI. 
+** Specify an exception item's `item_id` _and_ its `id` when modifying an exception through the <<exceptions-api-update-item,update exception item>> API. 
+
++
+If you've already encountered this issue and want to find erroneously duplicated exceptions, use the queries provided below.
+
+** **Query for finding exception documents that were duplicated from only specifying the `item_id`:**
++
+[source,kibana]
+----------------------------------
+// Retrieve exception documents grouped by `item_id`. 
+// Each bucket contains all duplicates of that document.
+GET .kibana*/_search
+{
+  "query": {
+    "bool": {
+      "filter": [
+        {
+          "match": {
+            "type": "exception-list"
+          }
+        }
+      ]
+    }
+  },
+  "aggs": {
+    "item_id_duplicates": {
+      "terms": {
+        "field": "exception-list.item_id",
+        "min_doc_count": 2
+      },
+      "aggs": {
+        "ids": {
+          "top_hits": {
+            "size": 100, // Increase this if you may have more duplicates.
+            "_source": false
+          }
+        }
+      }
+    }
+  },
+  "size": 0
+}
+----------------------------------
+
+** **Query for finding exception documents that were duplicated and have lost their `item_id` because their `id` was used to update them:**
++
+[source,kibana]
+----------------------------------
+// Each item returned lost its `item_id`, which is expected to be present and unique.
+GET .kibana*/_search
+{
+  "query": {
+    "bool": {
+      "filter": [
+        {
+          "term": {
+            "exception-list.list_type": "item"
+          }
+        }
+      ],
+      "must_not": [
+        {
+          "exists": {
+            "field": "exception-list.item_id"
+          }
+        }
+      ]
+    }
+  }
+}
+----------------------------------
 
 [discrete]
 [[breaking-changes-8.8.1]]
@@ -159,6 +234,81 @@ To view a detailed summary of the latest features and enhancements, check out ou
 
 * Setting the `max_signals` value higher than the {kibana-ref}/alert-action-settings-kb.html#alert-settings[`xpack.alerting.rules.run.alerts.max`] value will lead to rule failure.
 * {elastic-sec} 8.8 contains a bug that makes field types appear as `unknown` within the **Fields** browser and when examining alert or event details. This bug also causes timestamps to be incorrectly formatted in the Alerts table. To resolve this issue, upgrade to 8.8.1.
+* All field types in the **Fields** browser appear as `unknown`.
+* If you modify an exception item using the <<exceptions-api-update-item,update exception item>> API and _only_ specify its `item_id`, the exception item is erroneously duplicated. To avoid this issue, you can either:
+
+** <<manage-exception,Update exception items>> through the {security-app} UI. 
+** Specify an exception item's `item_id` _and_ its `id` when modifying an exception through the <<exceptions-api-update-item,update exception item>> API. 
+
++
+If you've already encountered this issue and want to find erroneously duplicated exceptions, use the queries provided below.
+
+** **Query for finding exception documents that were duplicated from only specifying the `item_id`:**
++
+[source,kibana]
+----------------------------------
+// Retrieve exception documents grouped by `item_id`. 
+// Each bucket contains all duplicates of that document.
+GET .kibana*/_search
+{
+  "query": {
+    "bool": {
+      "filter": [
+        {
+          "match": {
+            "type": "exception-list"
+          }
+        }
+      ]
+    }
+  },
+  "aggs": {
+    "item_id_duplicates": {
+      "terms": {
+        "field": "exception-list.item_id",
+        "min_doc_count": 2
+      },
+      "aggs": {
+        "ids": {
+          "top_hits": {
+            "size": 100, // Increase this if you may have more duplicates.
+            "_source": false
+          }
+        }
+      }
+    }
+  },
+  "size": 0
+}
+----------------------------------
+
+** **Query for finding exception documents that were duplicated and have lost their `item_id` because their `id` was used to update them:**
++
+[source,kibana]
+----------------------------------
+// Each item returned lost its `item_id`, which is expected to be present and unique.
+GET .kibana*/_search
+{
+  "query": {
+    "bool": {
+      "filter": [
+        {
+          "term": {
+            "exception-list.list_type": "item"
+          }
+        }
+      ],
+      "must_not": [
+        {
+          "exists": {
+            "field": "exception-list.item_id"
+          }
+        }
+      ]
+    }
+  }
+}
+----------------------------------
 
 [discrete]
 [[breaking-changes-8.8.0]]
