@@ -2,9 +2,9 @@
 
 Elastic Security Docs home page: https://www.elastic.co/guide/en/security/current/index.html
 
-Documentation Manager: Janeen Mikell-Straughn (Github: `@jmikell821`)
+Documentation Manager: Janeen Roberts (Github: `@jmikell821`)
 
-Please view this template for guidance on creating issues: https://github.com/elastic/security-docs/blob/master/.github/ISSUE_TEMPLATE/documentation-issue.md
+Please view [this template](https://github.com/elastic/security-docs/blob/master/.github/ISSUE_TEMPLATE/documentation-issue.md) for guidance on creating issues. 
 
 ## Contributing to Elastic Security docs
 
@@ -15,7 +15,7 @@ If you are an Elastic employee and would like to contribute to Elastic Security 
 3. Check out the `main` branch and fetch the latest changes. 
 4. Check out a new branch and make your changes. 
 5. Save your changes and open a pull request. 
-6. Add the `[@elastic/security-docs](https://github.com/orgs/elastic/teams/security-docs)` team and any other appropriate members as reviewers. 
+6. Add the [@elastic/security-docs](https://github.com/orgs/elastic/teams/security-docs) team and any other appropriate members as reviewers. 
 7. Add the appropriate release version label, backport version label if appropriate, and team label to the PR. 
 8. Once the docs team approves all changes, you can merge it. If a backport version label was added to a PR for stack versions 7.14.0 and newer, mergify will automatically open a backport PR. 
 9. Merge the backport PR once it passes all CI checks. 
