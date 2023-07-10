@@ -284,48 +284,18 @@ Adds tags to alerts:
 
 [source,console]
 --------------------------------------------------
-POST api/detection_engine/signals/status
+POST api/detection_engine/signals/tags
 {
-  "signal_ids": [
+  "tags": {
+    "tags_to_add": ["False Positive"],
+    "tags_to_remove": ["Further Investigation Required"]
+  },
+  "ids": [
     "694156bbe6a487e06d049bd6019bd49fec4172cfb33f5d81c3b4a977f0026fba",
     "f4d1c62c4e8946c835cb497329127803c09b955de49a8fa186be3899522667b0"
-  ],
-  "status": "closed"
+  ]
 }
 --------------------------------------------------
-// KIBANA
-
-Closes alerts that are over a month old and have a risk score less than or
-equal to 20:
-
-[source,json]
---------------------------------------------------
-POST api/detection_engine/signals/status
-{
-  "query": {
-    "bool": {
-      "filter": [
-        {
-          "range": {
-            "signal.rule.risk_score": {
-              "lte": 20
-            }
-          }
-        },
-        {
-          "range": {
-            "@timestamp": {
-              "lte": "now-M"
-            }
-          }
-        }
-      ]
-    }
-  },
-  "status": "closed"
-}
---------------------------------------------------
-// KIBANA
 
 ===== Response code
 
@@ -334,28 +304,48 @@ POST api/detection_engine/signals/status
 
 ====== Response payload
 
-A JSON object containing the number of updated alerts.
+A JSON object containing tagged alerts.
 
 Example response:
 
 [source,json]
 --------------------------------------------------
 {
-  "took": 9594,
-  "timed_out": false,
-  "total": 8794,
-  "updated": 8794,
-  "deleted": 0,
-  "batches": 9,
-  "version_conflicts": 0,
-  "noops": 0,
-  "retries": {
-    "bulk": 0,
-    "search": 0
-  },
-  "throttled_millis": 0,
-  "requests_per_second": -1,
-  "throttled_until_millis": 0,
-  "failures": []
+    "took": 699,
+    "errors": false,
+    "items": [
+        {
+            "update": {
+                "_index": ".internal.alerts-security.alerts-default-000001",
+                "_id": "694156bbe6a487e06d049bd6019bd49fec4172cfb33f5d81c3b4a977f0026fba",
+                "_version": 2,
+                "result": "updated",
+                "_shards": {
+                    "total": 1,
+                    "successful": 1,
+                    "failed": 0
+                },
+                "_seq_no": 137,
+                "_primary_term": 1,
+                "status": 200
+            }
+        },
+        {
+            "update": {
+                "_index": ".internal.alerts-security.alerts-default-000001",
+                "_id": "f4d1c62c4e8946c835cb497329127803c09b955de49a8fa186be3899522667b0",
+                "_version": 2,
+                "result": "updated",
+                "_shards": {
+                    "total": 1,
+                    "successful": 1,
+                    "failed": 0
+                },
+                "_seq_no": 138,
+                "_primary_term": 1,
+                "status": 200
+            }
+        }
+    ]
 }
 --------------------------------------------------
