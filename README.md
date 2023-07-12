@@ -1,2 +1,2 @@
-# serverless-general-docs
-Staging location for Serverless general docs
+# staging-serverless-security-docs
+Staging location for Serverless security docs
