@@ -1,18 +1,17 @@
-[[potential-ssh-brute-force-detected-on-privileged-account]]
-=== Potential SSH Brute Force Detected on Privileged Account
+[[potential-internal-linux-ssh-brute-force-detected]]
+=== Potential Internal Linux SSH Brute Force Detected
 
-Identifies multiple consecutive login failures targeting a root user account from the same source address and within a short time interval. Adversaries will often brute force login attempts on privileged accounts with a common or known password, in an attempt to gain privileged access to systems.
+Identifies multiple internal consecutive login failures targeting a user account from the same source address within a short time interval. Adversaries will often brute force login attempts across multiple users with a common or known password, in an attempt to gain access to these accounts.
 
 *Rule type*: eql
 
 *Rule indices*: 
 
-* auditbeat-*
 * logs-system.auth-*
 
-*Severity*: high
+*Severity*: medium
 
-*Risk score*: 73
+*Risk score*: 47
 
 *Runs every*: 5m
 
@@ -27,10 +26,9 @@ Identifies multiple consecutive login failures targeting a root user account fro
 * Domain: Endpoint
 * OS: Linux
 * Use Case: Threat Detection
-* Tactic: Lateral Movement
 * Tactic: Credential Access
 
-*Version*: 6
+*Version*: 7
 
 *Rule authors*: 
 
@@ -46,13 +44,13 @@ Identifies multiple consecutive login failures targeting a root user account fro
 ----------------------------------
 ## Triage and analysis
 
-### Investigating Potential SSH Brute Force Attack on Privileged Account
+### Investigating Potential Internal Linux SSH Brute Force Detected
 
-The rule identifies consecutive SSH login failures targeting a privileged (root) account from the same source IP address to the same target host indicating brute force login attempts.
+The rule identifies consecutive internal SSH login failures targeting a user account from the same source IP address to the same target host indicating brute force login attempts.
 
 #### Possible investigation steps
 
-- Investigate the login failure on privileged account(s).
+- Investigate the login failure user name(s).
 - Investigate the source IP address of the failed ssh login attempt(s).
 - Investigate other alerts associated with the user/host during the past 48 hours.
 - Identify the source and the target computer and their roles in the IT environment.
@@ -62,6 +60,11 @@ The rule identifies consecutive SSH login failures targeting a privileged (root)
 - Authentication misconfiguration or obsolete credentials.
 - Service account password expired.
 - Infrastructure or availability issue.
+
+### Related Rules
+
+- Potential External Linux SSH Brute Force Detected - fa210b61-b627-4e5e-86f4-17e8270656ab
+- Potential SSH Password Guessing - 8cb84371-d053-4f4f-bce0-c74990e28f28
 
 ### Response and remediation
 
@@ -80,10 +83,14 @@ The rule identifies consecutive SSH login failures targeting a privileged (root)
 
 [source, js]
 ----------------------------------
-sequence by host.id, source.ip with maxspan=10s
-  [authentication where host.os.type == "linux" and event.action  in ("ssh_login", "user_login") and
-   event.outcome == "failure" and source.ip != null and source.ip != "0.0.0.0" and
-   source.ip != "::" and  user.name : ("*root*" , "*admin*")] with runs=3
+sequence by host.id, source.ip, user.name with maxspan=5s
+  [ authentication where host.os.type == "linux" and 
+   event.action in ("ssh_login", "user_login") and event.outcome == "failure" and
+   cidrmatch(source.ip, "10.0.0.0/8", "127.0.0.0/8", "169.254.0.0/16", "172.16.0.0/12", "192.0.0.0/24",
+       "192.0.0.0/29", "192.0.0.8/32", "192.0.0.9/32", "192.0.0.10/32", "192.0.0.170/32", "192.0.0.171/32",
+       "192.0.2.0/24", "192.31.196.0/24", "192.52.193.0/24", "192.168.0.0/16", "192.88.99.0/24", "224.0.0.0/4",
+       "100.64.0.0/10", "192.175.48.0/24","198.18.0.0/15", "198.51.100.0/24", "203.0.113.0/24", "240.0.0.0/4", 
+       "::1", "FE80::/10", "FF00::/8") ] with runs = 10
 
 ----------------------------------
 
@@ -105,15 +112,3 @@ sequence by host.id, source.ip with maxspan=10s
 ** Name: Password Spraying
 ** ID: T1110.003
 ** Reference URL: https://attack.mitre.org/techniques/T1110/003/
-* Tactic:
-** Name: Lateral Movement
-** ID: TA0008
-** Reference URL: https://attack.mitre.org/tactics/TA0008/
-* Technique:
-** Name: Remote Services
-** ID: T1021
-** Reference URL: https://attack.mitre.org/techniques/T1021/
-* Sub-technique:
-** Name: SSH
-** ID: T1021.004
-** Reference URL: https://attack.mitre.org/techniques/T1021/004/
