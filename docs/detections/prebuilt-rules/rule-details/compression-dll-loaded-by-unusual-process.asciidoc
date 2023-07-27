@@ -1,0 +1,68 @@
+[[compression-dll-loaded-by-unusual-process]]
+=== Compression DLL Loaded by Unusual Process
+
+Identifies the image load of a compression DLL. Adversaries will often compress and encrypt data in preparation for exfiltration.
+
+*Rule type*: eql
+
+*Rule indices*: 
+
+* logs-endpoint.events.*
+
+*Severity*: low
+
+*Risk score*: 21
+
+*Runs every*: 60m
+
+*Searches indices from*: now-119m ({ref}/common-options.html#date-math[Date Math format], see also <<rule-schedule, `Additional look-back time`>>)
+
+*Maximum alerts per execution*: 100
+
+*References*: None
+
+*Tags*: 
+
+* Domain: Endpoint
+* OS: Windows
+* Use Case: Threat Detection
+* Tactic: Collection
+* Data Source: Elastic Endgame
+* Rule Type: BBR
+
+*Version*: 1
+
+*Rule authors*: 
+
+* Elastic
+
+*Rule license*: Elastic License v2
+
+
+==== Rule query
+
+
+[source, js]
+----------------------------------
+library where 
+  dll.name : ("System.IO.Compression.FileSystem.ni.dll", "System.IO.Compression.ni.dll") and
+  
+  /* FP Patterns */
+  not process.executable :
+      ("?:\\Program Files\\*",
+       "?:\\Program Files (x86)\\*",
+       "?:\\Windows\\Microsoft.NET\\Framework*\\mscorsvw.exe",
+       "?:\\Windows\\System32\\sdiagnhost.exe")
+
+----------------------------------
+
+*Framework*: MITRE ATT&CK^TM^
+
+* Tactic:
+** Name: Collection
+** ID: TA0009
+** Reference URL: https://attack.mitre.org/tactics/TA0009/
+* Technique:
+** Name: Archive Collected Data
+** ID: T1560
+** Reference URL: https://attack.mitre.org/techniques/T1560/
