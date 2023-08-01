@@ -1,0 +1,166 @@
+---
+id: enSecurityViewAlertDetails
+slug: /en/security/view-alert-details
+title: View detection alert details
+description: Create detection rules to monitor your environment for suspicious and malicious behavior.
+tags: ["security","defend","reference","manage"]
+---
+
+<div id="view-alert-details"></div>
+
+To inspect a detection alert, click the **View details** button from the Alerts table. The alert details flyout appears with several options to view alert data.
+
+<DocImage flatImage alt="View details button, 200" url="../images/view-alert-details/-detections-view-alert-details.png" /> 
+
+The alert details flyout contains these informational tabs:
+
+* **Overview**: A summary of the alert, including relevant fields and selected threat intelligence details. <DocLink id="enSecurityViewAlertDetails" section="overview-tab">Learn more.</DocLink>
+* **Threat Intel**: A list of individual threats matching the alert. <DocLink id="enSecurityViewAlertDetails" section="threat-intel-tab">Learn more.</DocLink>
+* **Table**: The alert data in table format. Data is organized into field-value pairs.
+* **JSON**: The alert data in JSON format.
+* **Response Results**: Logged results from response actions. <DocLink id="enSecurityRulesUiCreate" section="set-up-response-actions-optional">Learn more.</DocLink>
+
+The **Share alert** link allows you to share alert details. Click it to copy a URL that you can paste into browsers, cases, messages, and more. We recommend doing this instead of copying the URL from your browser's address bar, which can cause inconsistent results if the Alerts page has filters or relative time ranges. 
+
+<DocCallOut title="Important" color="warning">
+If you've enabled grouping on the Alerts page, the alert details flyout won't open until you expand the collapsed group. 
+</DocCallOut>
+
+<DocCallOut title="Note">
+If you've configured the [`server.publicBaseUrl`](((kibana-ref))/settings.html#server-publicBaseUrl) setting in the `kibana.yml` file, the shareable URL is also in the `kibana.alert.url` field. You can find the field by searching for `kibana.alert.url` on the **Table** tab.
+</DocCallOut>
+
+![Alert details flyout, 90%](../images/view-alert-details/-detections-alert-details-flyout.png)
+
+Hover over fields on the **Overview** and **Table** tabs to display available <DocLink id="enSecurityEsUiOverview" section="inline-actions-for-fields-and-values">inline actions</DocLink>. 
+
+![Alert details flyout, 75%](../images/view-alert-details/-detections-alert-details-flyout-inline-actions.png)
+
+<div id="alert-details-overview"></div>
+
+## Overview tab
+
+The **Overview** tab summarizes the alert and shows relevant threat intelligence details. Use this information to understand what generated the alert so you can triage and resolve it.
+
+The **Overview** tab contains these features:
+
+* **Summary**: Displays general details such as the alert's status, severity, risk score, and a link to the detection rule that produced the alert.
+
+* **MITRE ATT&CK**: Provides relevant [MITRE ATT&CK](https://attack.mitre.org/) framework tactics, techniques, and subtechniques.
+
+* **Alert reason**: Provides alert details in a logical arrangement. Shows high-level details, including the alert severity (`kibana.alert.severity`) and the rule that generated the alert (`kibana.alert.rule.name`). Fields are interactive; hover over one to access the available actions.
+
+* **Event renderer**: Displays relevant event details to provide context for the alert, such as file paths or process arguments. Shows alert details in a human-readable format. Fields are interactive; hover over to access the available actions.
+
+    <DocCallOut title="Note">
+    The event renderer only displays if an event renderer exists for the alert type.
+    </DocCallOut>
+
+* **Highlighted fields**: Surfaces the most relevant fields for the alert type. Use this to inform your triage efforts as you investigate the alert.
+
+* **Alert prevalence**: Shows the total number of alerts within the selected time frame that have identical values. For example, an alert prevalence of 3 for `host.name` means three alerts with the same `host.name` value exist within the time frame.
+
+    Alert prevalence data can help you investigate relationships with other alerts and gain context about the events producing alerts. You can also click the alert prevalence count to explore the alerts in Timeline.
+
+    <DocCallOut title="Important" color="warning">
+    Before investigating alert prevalence data in Timeline, save any Timelines you're working on to ensure you can access them later.
+    </DocCallOut>
+
+* **Insights**: Shows relationships with associated alerts to help you quickly identify patterns. Refer to <DocLink id="enSecurityViewAlertDetails" section="insights-on-alerts">Insights on alerts</DocLink> for more information.
+
+* **Enriched data**: Displays risk scores for users and hosts, as well as available threat intelligence. Refer to <DocLink id="enSecurityViewAlertDetails" section="alerts-enriched-with-user-and-host-risk-scores">Alerts enriched with user and host risk scores</DocLink> and <DocLink id="enSecurityViewAlertDetails" section="alerts-enriched-with-threat-intelligence">Alerts enriched with threat intelligence</DocLink> to learn more.
+
+    ![Informational message on enriched data, 600](../images/view-alert-details/-detections-enriched-data-info-icon.png)
+
+<div id="alert-details-insights"></div>
+
+### Insights on alerts
+
+The Insights section shows you how an alert is related to other alerts and offers ways to investigate related alerts. You can use this information to quickly find patterns between alerts and then take action.
+
+Within the Insights section, you can click on the title for each insight to expand or collapse it.
+
+![Insights section in Alert details flyout, 600](../images/view-alert-details/-detections-insights-section.png)
+
+The Insights section provides the following details:
+
+* **Suppressed alerts** - Indicates that the alert was created with <DocLink id="enSecurityAlertSuppression">alert suppression</DocLink>, and shows how many duplicate alerts were suppressed. This section only appears if alert suppression is enabled for the rule.
+* **Cases related to the alert** - Shows the total number and names of cases to which the alert has been added. Click a case's name to open its details.
+* **Alerts related by source event** - Shows the ten most recent alerts created by the same source event. This can help you find alerts with a shared origin and provide more context about the source event. Click the **Investigate in timeline** button to examine related alerts in Timeline.
+
+If you have a [Platinum or higher subscription](https://www.elastic.co/pricing), these details are also included:
+
+* **Alerts related by session ID** - Shows the ten most recent alerts generated during the same <DocLink id="enSecuritySessionView">session</DocLink>. These alerts share the same session ID, which is a unique ID for tracking a given Linux session. To use this feature, you must enable the **Include session data** setting in your ((elastic-defend)) integration policy. Refer to <DocLink id="enSecuritySessionView" section="enable-session-view-data">Enable Session View data</DocLink> for more information.
+* **Alerts related by process ancestry** - Shows alerts that are related by process events on the same linear branch. Note that alerts generated from processes on child or related branches are not shown. To further examine alerts, click **Investigate in timeline**.
+
+<div id="alerts-enrich-host-user-risk-score"></div>
+
+### Alerts enriched with user and host risk scores
+Alerts can be enriched with user and host risk scores, which convey the level of risk associated with a specific user and host. Risk levels are `Unknown`, `Low`, `Moderate`, `High`, or `Critical`. Refer to <DocLink id="enSecurityHostRiskScore">Host risk score</DocLink> and <DocLink id="enSecurityUserRiskScore">User risk score</DocLink> to learn how risk scores are calculated.
+
+<DocCallOut title="Note">
+User and host risk scores are technical preview features and require a [Platinum subscription](https://www.elastic.co/pricing) or higher. You must enable user and host risk score features to access risk scores data. Refer to <DocLink id="enSecurityHostRiskScore">Host risk score</DocLink> and <DocLink id="enSecurityUserRiskScore">User risk score</DocLink> to learn more.
+</DocCallOut>
+
+![Host and user risk score subsections with risk scores, 600](../images/view-alert-details/-detections-enriched-host-user-rs.png)
+
+Two types of user and host risk scores can appear in the Enriched data section:
+
+* **Current user/host risk classification:** The current risk score of the user or host associated with the alert.
+* **Original user/host risk classification:** The first risk score that was calculated for the user or host associated with the alert.
+
+    The **Original user/host risk classification** field only displays if the current risk score no longer matches the original risk score. In this situation, both the current and original risk scores appear, showing how the risk changed.
+
+<div id="alerts-enrich-ti"></div>
+
+### Alerts enriched with threat intelligence
+Alerts can be enriched with contextually relevant threat intelligence that you can use for triaging and investigating alerts. If available, this information appears in the Enriched data section.
+
+When gathering threat intelligence data for an alert, ((elastic-sec)) queries the alert for indicator matches from the past 30 days. The query looks for the following fields:
+
+- `file.hash.md5`: The MD5 hash
+- `file.hash.sha1`: The SHA1 hash
+- `file.hash.sha256`: The SHA256 hash
+- `file.pe.imphash`: Imports in a PE file
+- `file.elf.telfhash`: Imports in an ELF file
+- `file.hash.ssdeep`: The SSDEEP hash
+- `source.ip`: The IP address of the source (IPv4 or IPv6)
+- `destination.ip`: The event's destination IP address
+- `url.full`: The full URL of the event source
+- `registry.path`: The full registry path, including the hive, key, and value
+
+If these fields aren't available, ((elastic-sec)) does not perform the query and does not display threat intelligence data for the alert.
+
+Available threat indicator match data appears in the **Threat Match Detected** subsection.
+
+![Threat Match Detected subsection with matched file hash, 600](../images/view-alert-details/-detections-matched-indicator-sub-sec.png)
+
+All other available threat intelligence data appears in the **Enriched with Threat Intelligence** subsection.
+
+![Enriched with Threat Intelligence subsection with matched file hash, 700](../images/view-alert-details/-detections-threat-intel-sub-sec.png)
+
+<DocCallOut title="Tip">
+To learn more about the query, select the **Threat Intel** tab, then click the **Inspect** button next to the threat you want to inspect.
+</DocCallOut>
+
+Additional threat intelligence data is generated for indicator match alerts when indicators are matched with source events, as outlined by the conditions in the relevant indicator match rule. Indicator match alerts always populate the **Threat Matched Detected** section under the **Threat Intel** tab with additional threat match data.
+
+<DocCallOut title="Important" color="warning">
+After upgrading to ((stack)) version 7.15.0 or newer from release versions 7.12.0 through 7.14.2, you need to migrate detection alerts enriched with threat intelligence data to ensure threat intelligence properly displays in ((elastic-sec)). For more information, refer to instructions for <DocLink id="enSecurityPostUpgradeReqCtiAlerts">migrating detection alerts enriched with threat intelligence data</DocLink>.
+</DocCallOut>
+
+<div id="alert-details-threat-intel"></div>
+
+## Threat Intel tab
+
+The **Threat Intel** tab shows the number of individual threats matching the alert. You can expand and collapse threat details by clicking the arrow button at the end of the threat label. Each threat is labelled with values from the `matched.field` and `matched.atomic` fields and displays the threat intelligence provider. If the alert does not contain threat intelligence data, the **Threat Intel** tab displays a message that none is available.
+
+Matched threats are organized into several sections, described below. Within each section, matched threats are shown in reverse chronological order, with the most recent at the top. All mapped fields are displayed for each matched threat.
+
+* **Threat Matched Detected**: This section is solely reserved for threat indicator matches identified by an indicator match rule. Threat indicator matches are produced whenever event data matches a threat indicator field value in your indicator index. If indicator threat matches are not discovered, the section displays a message that none are available.
+* **Enriched with Threat Intelligence**: This section shows indicator matches that ((elastic-sec)) found when querying the alert for fields with threat intelligence. You can use the date time picker to modify the query time frame, which looks at the past 30 days by default. Click the **Inspect** button, located on the far right of the threat label, to view more information on the query. If threat matches are not discovered within the selected time frame, the section displays a message that none are available.
+
+<DocCallOut title="Note">
+The event enrichment query uses the indices specified in the `securitySolution:defaultThreatIndex` advanced setting. For more information, refer to <DocLink id="enSecurityAdvancedSettings" section="update-default-elastic-security-threat-intelligence-indices">Update default Elastic Security threat intelligence indices</DocLink>.
+</DocCallOut>
+
