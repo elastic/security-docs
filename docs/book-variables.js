@@ -1,4 +1,4 @@
-import { variables } from '../../docs-staging.elastic.dev/config/variables.js'
+import { variables } from '../config/variables.js'
 
 const book = {
   "doctype": "book",
