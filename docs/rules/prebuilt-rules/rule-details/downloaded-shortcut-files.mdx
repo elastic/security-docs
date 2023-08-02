@@ -1,0 +1,93 @@
+---
+id: enSecurityDownloadedShortcutFiles
+slug: /en/security/downloaded-shortcut-files
+title: Downloaded Shortcut Files
+description: Description to be written
+tags: []
+---
+
+<div id="downloaded-shortcut-files"></div>
+
+Identifies .lnk shortcut file downloaded from outside the local network. These shortcut files are commonly used in phishing campaigns.
+
+**Rule type**: eql
+
+**Rule indices**: 
+
+* logs-endpoint.events.*
+* winlogbeat-*
+* logs-windows.*
+
+**Severity**: low
+
+**Risk score**: 21
+
+**Runs every**: 5m
+
+**Searches indices from**: now-9m ([Date Math format](((ref))/common-options.html#date-math), see also <DocLink id="enSecurityRulesUiCreate" section="set-the-rules-schedule">`Additional look-back time`</DocLink>)
+
+**Maximum alerts per execution**: 100
+
+**References**: None
+
+**Tags**: 
+
+* Domain: Endpoint
+* OS: Windows
+* Use Case: Threat Detection
+* Tactic: Execution
+
+**Version**: 1
+
+**Rule authors**: 
+
+* Elastic
+
+**Rule license**: Elastic License v2
+
+## Rule query
+
+```js
+/* leaving in development pending `file.Ext.windows.zone_identifier` landing in ECS then endpoint */
+
+sequence by process.entity_id with maxspan=2s
+                                           /* file.extension added to endpoint fields for 7.10 */
+  [file where host.os.type == "windows" and event.type == "creation" and file.extension == "lnk"]
+                                           /* not sure yet how the update will capture ADS */
+  [file where host.os.type == "windows" and event.type == "creation" and file.extension == "lnk:Zone.Identifier" and
+     /* non-ECS field - may disqualify conversion */
+     file.Ext.windows.zone_identifier > 1]
+
+```
+
+**Framework**: MITRE ATT&CK<sup>TM</sup>
+
+* Tactic:
+    * Name: Execution
+    * ID: TA0002
+    * Reference URL: https://attack.mitre.org/tactics/TA0002/
+* Technique:
+    * Name: User Execution
+    * ID: T1204
+    * Reference URL: https://attack.mitre.org/techniques/T1204/
+* Sub-technique:
+    * Name: Malicious File
+    * ID: T1204.002
+    * Reference URL: https://attack.mitre.org/techniques/T1204/002/
+* Tactic:
+    * Name: Initial Access
+    * ID: TA0001
+    * Reference URL: https://attack.mitre.org/tactics/TA0001/
+* Technique:
+    * Name: Phishing
+    * ID: T1566
+    * Reference URL: https://attack.mitre.org/techniques/T1566/
+* Sub-technique:
+    * Name: Spearphishing Attachment
+    * ID: T1566.001
+    * Reference URL: https://attack.mitre.org/techniques/T1566/001/
+* Sub-technique:
+    * Name: Spearphishing Link
+    * ID: T1566.002
+    * Reference URL: https://attack.mitre.org/techniques/T1566/002/
+

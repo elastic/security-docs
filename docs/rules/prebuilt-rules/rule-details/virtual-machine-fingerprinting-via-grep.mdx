@@ -1,0 +1,76 @@
+---
+id: enSecurityVirtualMachineFingerprintingViaGrep
+slug: /en/security/virtual-machine-fingerprinting-via-grep
+title: Virtual Machine Fingerprinting via Grep
+description: Description to be written
+tags: []
+---
+
+<div id="virtual-machine-fingerprinting-via-grep"></div>
+
+An adversary may attempt to get detailed information about the operating system and hardware. This rule identifies common locations used to discover virtual machine hardware by a non-root user. This technique has been used by the Pupy RAT and other malware.
+
+**Rule type**: eql
+
+**Rule indices**: 
+
+* auditbeat-*
+* logs-endpoint.events.*
+
+**Severity**: medium
+
+**Risk score**: 47
+
+**Runs every**: 5m
+
+**Searches indices from**: now-9m ([Date Math format](((ref))/common-options.html#date-math), see also <DocLink id="enSecurityRulesUiCreate" section="set-the-rules-schedule">`Additional look-back time`</DocLink>)
+
+**Maximum alerts per execution**: 100
+
+**References**: 
+
+* https://objective-see.com/blog/blog_0x4F.html
+
+**Tags**: 
+
+* Domain: Endpoint
+* OS: macOS
+* OS: Linux
+* Use Case: Threat Detection
+* Tactic: Discovery
+
+**Version**: 102
+
+**Rule authors**: 
+
+* Elastic
+
+**Rule license**: Elastic License v2
+
+## Investigation guide
+
+```markdown
+
+```
+
+## Rule query
+
+```js
+process where event.type == "start" and
+ process.name in ("grep", "egrep") and user.id != "0" and
+ process.args : ("parallels*", "vmware*", "virtualbox*") and process.args : "Manufacturer*" and
+ not process.parent.executable in ("/Applications/Docker.app/Contents/MacOS/Docker", "/usr/libexec/kcare/virt-what")
+
+```
+
+**Framework**: MITRE ATT&CK<sup>TM</sup>
+
+* Tactic:
+    * Name: Discovery
+    * ID: TA0007
+    * Reference URL: https://attack.mitre.org/tactics/TA0007/
+* Technique:
+    * Name: System Information Discovery
+    * ID: T1082
+    * Reference URL: https://attack.mitre.org/techniques/T1082/
+

@@ -1,0 +1,68 @@
+---
+id: enSecurityLaunchdaemonCreationOrModificationAndImmediateLoading
+slug: /en/security/launchdaemon-creation-or-modification-and-immediate-loading
+title: LaunchDaemon Creation or Modification and Immediate Loading
+description: Description to be written
+tags: []
+---
+
+<div id="launchdaemon-creation-or-modification-and-immediate-loading"></div>
+
+Indicates the creation or modification of a launch daemon, which adversaries may use to repeatedly execute malicious payloads as part of persistence.
+
+**Rule type**: eql
+
+**Rule indices**: 
+
+* auditbeat-*
+* logs-endpoint.events.*
+
+**Severity**: low
+
+**Risk score**: 21
+
+**Runs every**: 5m
+
+**Searches indices from**: now-9m ([Date Math format](((ref))/common-options.html#date-math), see also <DocLink id="enSecurityRulesUiCreate" section="set-the-rules-schedule">`Additional look-back time`</DocLink>)
+
+**Maximum alerts per execution**: 100
+
+**References**: 
+
+* https://developer.apple.com/library/archive/documentation/MacOSX/Conceptual/BPSystemStartup/Chapters/CreatingLaunchdJobs.html
+
+**Tags**: 
+
+* Domain: Endpoint
+* OS: macOS
+* Use Case: Threat Detection
+* Tactic: Persistence
+
+**Version**: 103
+
+**Rule authors**: 
+
+* Elastic
+
+**Rule license**: Elastic License v2
+
+## Rule query
+
+```js
+sequence by host.id with maxspan=1m
+ [file where host.os.type == "macos" and event.type != "deletion" and file.path : ("/System/Library/LaunchDaemons/*", "/Library/LaunchDaemons/*")]
+ [process where host.os.type == "macos" and event.type in ("start", "process_started") and process.name == "launchctl" and process.args == "load"]
+
+```
+
+**Framework**: MITRE ATT&CK<sup>TM</sup>
+
+* Tactic:
+    * Name: Persistence
+    * ID: TA0003
+    * Reference URL: https://attack.mitre.org/tactics/TA0003/
+* Technique:
+    * Name: Create or Modify System Process
+    * ID: T1543
+    * Reference URL: https://attack.mitre.org/techniques/T1543/
+
