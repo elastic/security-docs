@@ -1,0 +1,70 @@
+[[query-registry-using-built-in-tools]]
+=== Query Registry using Built-in Tools
+
+This rule identifies the execution of commands that can be used to query the Windows Registry. Adversaries may query the registry to gain situational awareness about the host, like installed security software, programs and settings.
+
+*Rule type*: eql
+
+*Rule indices*: 
+
+* logs-endpoint.events.*
+
+*Severity*: low
+
+*Risk score*: 21
+
+*Runs every*: 60m
+
+*Searches indices from*: now-119m ({ref}/common-options.html#date-math[Date Math format], see also <<rule-schedule, `Additional look-back time`>>)
+
+*Maximum alerts per execution*: 100
+
+*References*: None
+
+*Tags*: 
+
+* Domain: Endpoint
+* OS: Windows
+* Use Case: Threat Detection
+* Tactic: Discovery
+* Rule Type: BBR
+
+*Version*: 1
+
+*Rule authors*: 
+
+* Elastic
+
+*Rule license*: Elastic License v2
+
+
+==== Rule query
+
+
+[source, js]
+----------------------------------
+process where host.os.type == "windows" and event.type == "start" and
+(
+  (
+    process.name == "reg.exe" and process.args : "query" and
+    not process.parent.executable : ("?:\\Program Files\\*", "?:\\Program Files (x86)\\*")
+  ) or
+  (
+    process.name: ("powershell.exe", "pwsh.exe", "powershell_ise.exe") and
+     (process.args: ("*Get-ChildItem*", "*Get-Item*", "*Get-ItemProperty*") and
+      process.args : ("*HKLM*", "*HKCU*", "*HKEY_LOCAL_MACHINE*", "*HKEY_CURRENT_USER*", "*Registry::*"))
+  )
+) and not user.id : "S-1-5-18"
+
+----------------------------------
+
+*Framework*: MITRE ATT&CK^TM^
+
+* Tactic:
+** Name: Discovery
+** ID: TA0007
+** Reference URL: https://attack.mitre.org/tactics/TA0007/
+* Technique:
+** Name: Query Registry
+** ID: T1012
+** Reference URL: https://attack.mitre.org/techniques/T1012/
