@@ -5,7 +5,7 @@ Detects the creation of a systemd timer within any of the default systemd timer 
 
 *Rule type*: new_terms
 
-*Rule indices*: 
+*Rule indices*:
 
 * logs-endpoint.events.*
 * endgame-*
@@ -20,12 +20,12 @@ Detects the creation of a systemd timer within any of the default systemd timer 
 
 *Maximum alerts per execution*: 100
 
-*References*: 
+*References*:
 
 * https://opensource.com/article/20/7/systemd-timers
 * https://pberba.github.io/security/2022/01/30/linux-threat-hunting-for-persistence-systemd-timers-cron/
 
-*Tags*: 
+*Tags*:
 
 * Domain: Endpoint
 * OS: Linux
@@ -36,7 +36,7 @@ Detects the creation of a systemd timer within any of the default systemd timer 
 
 *Version*: 3
 
-*Rule authors*: 
+*Rule authors*:
 
 * Elastic
 
@@ -52,14 +52,14 @@ Detects the creation of a systemd timer within any of the default systemd timer 
 
 ### Investigating New Systemd Timer Created
 
-Systemd timers are used for scheduling and automating recurring tasks or services on Linux systems. 
+Systemd timers are used for scheduling and automating recurring tasks or services on Linux systems.
 
-Attackers can leverage systemd timers to run scripts, commands, or malicious software at system boot or on a set time interval by creating a systemd timer and a corresponding systemd service file. 
+Attackers can leverage systemd timers to run scripts, commands, or malicious software at system boot or on a set time interval by creating a systemd timer and a corresponding systemd service file.
 
 This rule monitors the creation of new systemd timer files, potentially indicating the creation of a persistence mechanism.
 
 > **Note**:
-> This investigation guide uses the [Osquery Markdown Plugin](https://www.elastic.co/guide/en/security/master/invest-guide-run-osquery.html) introduced in Elastic Stack version 8.5.0. Older Elastic Stack versions will display unrendered Markdown in this guide.
+> This investigation guide uses the [Osquery Markdown Plugin]({security-guide}/invest-guide-run-osquery.html) introduced in Elastic Stack version 8.5.0. Older Elastic Stack versions will display unrendered Markdown in this guide.
 > This investigation guide uses [placeholder fields](https://www.elastic.co/guide/en/security/current/osquery-placeholder-fields.html) to dynamically pass alert data into Osquery queries. Placeholder fields were introduced in Elastic Stack version 8.7.0. If you're using Elastic Stack version 8.6.0 or earlier, you'll need to manually adjust this investigation guide's queries to ensure they properly run.
 
 #### Possible Investigation Steps
@@ -75,7 +75,7 @@ This rule monitors the creation of new systemd timer files, potentially indicati
   - !{osquery{"label":"Osquery - Retrieve Running Processes by User","query":"SELECT pid, username, name FROM processes p JOIN users u ON u.uid = p.uid ORDER BY username"}}
 - Investigate other alerts associated with the user/host during the past 48 hours.
 - Validate the activity is not related to planned patches, updates, network administrator activity, or legitimate software installations.
-- Investigate whether the altered scripts call other malicious scripts elsewhere on the file system. 
+- Investigate whether the altered scripts call other malicious scripts elsewhere on the file system.
   - If scripts or executables were dropped, retrieve the files and determine if they are malicious:
     - Use a private sandboxed malware analysis system to perform analysis.
       - Observe and collect information about the following activities:
@@ -89,7 +89,7 @@ This rule monitors the creation of new systemd timer files, potentially indicati
 ### False Positive Analysis
 
 - If this activity is related to new benign software installation activity, consider adding exceptions — preferably with a combination of user and command line conditions.
-- If this activity is related to a system administrator who uses systemd timers for administrative purposes, consider adding exceptions for this specific administrator user account. 
+- If this activity is related to a system administrator who uses systemd timers for administrative purposes, consider adding exceptions for this specific administrator user account.
 - Try to understand the context of the execution by thinking about the user, machine, or business purpose. A small number of endpoints, such as servers with unique software, might appear unusual but satisfy a specific business need.
 
 ### Response and remediation
@@ -115,8 +115,8 @@ This rule monitors the creation of new systemd timer files, potentially indicati
 [source, js]
 ----------------------------------
 host.os.type : "linux" and event.action : ("creation" or "file_create_event") and file.extension : "timer" and
-file.path : (/etc/systemd/system/* or /usr/local/lib/systemd/system/* or /lib/systemd/system/* or 
-/usr/lib/systemd/system/* or /home/*/.config/systemd/user/*) and not 
+file.path : (/etc/systemd/system/* or /usr/local/lib/systemd/system/* or /lib/systemd/system/* or
+/usr/lib/systemd/system/* or /home/*/.config/systemd/user/*) and not
 process.executable : ("/usr/bin/dpkg" or "/usr/bin/dockerd" or "/bin/rpm")
 
 ----------------------------------
