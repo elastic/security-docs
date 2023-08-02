@@ -1,0 +1,84 @@
+---
+id: enSecurityTsManagement
+slug: /en/security/ts-management
+title: Endpoint management
+description: Description to be written
+tags: []
+---
+
+<div id="ts-management"></div>
+
+This topic covers common troubleshooting issues when using ((elastic-sec)) <DocLink id="enSecuritySecManageIntro">endpoint management tools</DocLink>.
+
+<div id="ts-endpoints"></div>
+
+## Endpoints
+
+<DocAccordion id="ts-unhealthy-agent" buttonContent="Unhealthy ((agent)) status">
+
+In some cases, an `Unhealthy` ((agent)) status may be caused by a failure in the ((elastic-defend)) integration policy. In this situation, the integration and any failing features are flagged on the agent details page in ((fleet)). Expand each section and subsection to display individual responses from the agent.
+
+<DocCallOut title="Tip">
+Integration policy response information is also available from the **Endpoints** page in the ((security-app)) (*Manage* -> **Endpoints**, then click the link in the **Policy status** column).
+</DocCallOut>
+
+![Agent details page in ((fleet)) with Unhealthy status and integration failures](../images/ts-management/-troubleshooting-unhealthy-agent-fleet.png)
+
+Common causes of failure in the ((elastic-defend)) integration policy include missing prerequisites or unexpected system configuration. Consult the following topics to resolve a specific error:
+
+- <DocLink id="enSecurityDeployElasticEndpoint" section="approve-the-system-extension-for-((elastic-endpoint))">Approve the system extension for ((elastic-endpoint))</DocLink> (macOS)
+- <DocLink id="enSecurityDeployElasticEndpoint" section="enable-full-disk-access-for-((elastic-endpoint))">Enable Full Disk Access for ((elastic-endpoint))</DocLink> (macOS)
+- <DocLink id="enSecurityTsManagement" section="linux-deadlock">Resolve a potential system deadlock</DocLink> (Linux)
+
+<DocCallOut title="Tip">
+If the ((elastic-defend)) integration policy is not the cause of the `Unhealthy` agent status, refer to [((fleet)) troubleshooting](((fleet-guide))/fleet-troubleshooting.html) for help with the ((agent)).
+</DocCallOut>
+
+</DocAccordion>
+
+<DocAccordion id="linux-deadlock" buttonContent="Disabled to avoid potential system deadlock (Linux)">
+
+If you have an `Unhealthy` ((agent)) status with the message `Disabled due to potential system deadlock`, that means malware protection was disabled on the ((elastic-defend)) integration policy due to errors while monitoring a Linux host.
+
+You can resolve the issue by configuring the policy's <DocLink id="enSecurityLinuxFileMonitoring">advanced settings</DocLink> related to **fanotify**, a Linux feature that monitors file system events. By default, ((elastic-defend)) works with fanotify to monitor specific file system types that Elastic has tested for compatibility, and ignores other unknown file system types.
+
+If your network includes nonstandard, proprietary, or otherwise unrecognized Linux file systems that cause errors while being monitored, you can configure ((elastic-defend)) to ignore those file systems. This allows ((elastic-defend)) to resume monitoring and protecting the hosts on the integration policy.
+
+<DocCallOut title="Caution" color="warning">
+Ignoring file systems can create gaps in your security coverage. Use additional security layers for any file systems ignored by ((elastic-defend)).
+</DocCallOut>
+
+To resolve the potential system deadlock error:
+
+1. Go to **Manage** -> **Policies**, then click a policy's name.
+
+1. Scroll to the bottom of the policy and click **Show advanced settings**.
+
+1. In the setting `linux.advanced.fanotify.ignored_filesystems`, enter a comma-separated list of file system names to ignore, as they appear in `/proc/filesystems` (for example: `ext4,tmpfs`). Refer to <DocLink id="enSecurityLinuxFileMonitoring" section="find-file-system-names">Find file system names</DocLink> for more on determining the file system names.
+
+1. Click **Save**. 
+
+    Once you save the policy, malware protection is re-enabled.
+
+</DocAccordion>
+
+<DocAccordion id="ts-transform-failed" buttonContent="Required transform failed">
+
+If you encounter a `“Required transform failed”` notice on the Endpoints page, you can usually resolve the issue by restarting the transform. Refer to [Transforming data](((ref))/transforms.html) for more information about transforms.
+
+![Endpoints page with Required transform failed notice](../images/ts-management/-troubleshooting-endpoints-transform-failed.png)
+
+To restart a transform that’s not running:
+
+1. Go to **Kibana** -> **Stack Management** -> **Data** -> **Transforms**.
+1. Enter `endpoint.metadata` in the search box to find the transforms for ((elastic-defend)).
+1. Click the **Actions** menu (*...*) and do one of the following for each transform, depending on the value in the **Status** column:
+* `stopped`: Select **Start** to restart the transform. 
+* `failed`: Select **Stop** to first stop the transform, and then select **Start** to restart it.
+
+    ![Transforms page with Start option selected](../images/ts-management/-troubleshooting-transforms-start.png)
+
+1. On the confirmation message that displays, click **Start** to restart the transform.
+1. The transform’s status changes to `started`. If it doesn't change, refresh the page.
+
+</DocAccordion>
