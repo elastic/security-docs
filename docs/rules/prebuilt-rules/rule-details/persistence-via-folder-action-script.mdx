@@ -1,0 +1,79 @@
+---
+id: enSecurityPersistenceViaFolderActionScript
+slug: /en/security/persistence-via-folder-action-script
+title: Persistence via Folder Action Script
+description: Description to be written
+tags: []
+---
+
+<div id="persistence-via-folder-action-script"></div>
+
+Detects modification of a Folder Action script. A Folder Action script is executed when the folder to which it is attached has items added or removed, or when its window is opened, closed, moved, or resized. Adversaries may abuse this feature to establish persistence by utilizing a malicious script.
+
+**Rule type**: eql
+
+**Rule indices**: 
+
+* auditbeat-*
+* logs-endpoint.events.*
+
+**Severity**: medium
+
+**Risk score**: 47
+
+**Runs every**: 5m
+
+**Searches indices from**: now-9m ([Date Math format](((ref))/common-options.html#date-math), see also <DocLink id="enSecurityRulesUiCreate" section="set-the-rules-schedule">`Additional look-back time`</DocLink>)
+
+**Maximum alerts per execution**: 100
+
+**References**: 
+
+* https://posts.specterops.io/folder-actions-for-persistence-on-macos-8923f222343d
+
+**Tags**: 
+
+* Domain: Endpoint
+* OS: macOS
+* Use Case: Threat Detection
+* Tactic: Execution
+* Tactic: Persistence
+
+**Version**: 103
+
+**Rule authors**: 
+
+* Elastic
+
+**Rule license**: Elastic License v2
+
+## Rule query
+
+```js
+sequence by host.id with maxspan=5s
+ [process where host.os.type == "macos" and event.type in ("start", "process_started", "info") and process.name == "com.apple.foundation.UserScriptService"] by process.pid
+ [process where host.os.type == "macos" and event.type in ("start", "process_started") and process.name in ("osascript", "python", "tcl", "node", "perl", "ruby", "php", "bash", "csh", "zsh", "sh") and
+  not process.args : "/Users/*/Library/Application Support/iTerm2/Scripts/AutoLaunch/*.scpt"
+ ] by process.parent.pid
+
+```
+
+**Framework**: MITRE ATT&CK<sup>TM</sup>
+
+* Tactic:
+    * Name: Persistence
+    * ID: TA0003
+    * Reference URL: https://attack.mitre.org/tactics/TA0003/
+* Technique:
+    * Name: Boot or Logon Initialization Scripts
+    * ID: T1037
+    * Reference URL: https://attack.mitre.org/techniques/T1037/
+* Tactic:
+    * Name: Execution
+    * ID: TA0002
+    * Reference URL: https://attack.mitre.org/tactics/TA0002/
+* Technique:
+    * Name: Command and Scripting Interpreter
+    * ID: T1059
+    * Reference URL: https://attack.mitre.org/techniques/T1059/
+
