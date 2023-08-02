@@ -1,0 +1,101 @@
+[[potential-masquerading-as-communication-apps]]
+=== Potential Masquerading as Communication Apps
+
+Identifies suspicious instances of communications apps, both unsigned and renamed ones, that can indicate an attempt to conceal malicious activity, bypass security features such as allowlists, or trick users into executing malware.
+
+*Rule type*: eql
+
+*Rule indices*: 
+
+* logs-endpoint.events.*
+
+*Severity*: low
+
+*Risk score*: 21
+
+*Runs every*: 5m
+
+*Searches indices from*: now-9m ({ref}/common-options.html#date-math[Date Math format], see also <<rule-schedule, `Additional look-back time`>>)
+
+*Maximum alerts per execution*: 100
+
+*References*: None
+
+*Tags*: 
+
+* Domain: Endpoint
+* OS: Windows
+* Use Case: Threat Detection
+* Tactic: Defense Evasion
+* Rule Type: BBR
+
+*Version*: 1
+
+*Rule authors*: 
+
+* Elastic
+
+*Rule license*: Elastic License v2
+
+
+==== Rule query
+
+
+[source, js]
+----------------------------------
+process where host.os.type == "windows" and
+  event.type == "start" and
+  (
+    /* Slack */
+    (process.name : "slack.exe" and not
+      (process.code_signature.subject_name : "Slack Technologies, Inc." and process.code_signature.trusted == true)
+    ) or
+
+    /* WebEx */
+    (process.name : "WebexHost.exe" and not
+      (process.code_signature.subject_name : ("Cisco WebEx LLC", "Cisco Systems, Inc.") and process.code_signature.trusted == true)
+    ) or
+
+    /* Teams */
+    (process.name : "Teams.exe" and not
+      (process.code_signature.subject_name : "Microsoft Corporation" and process.code_signature.trusted == true)
+    ) or
+
+    /* Discord */
+    (process.name : "Discord.exe" and not
+      (process.code_signature.subject_name : "Discord Inc." and process.code_signature.trusted == true)
+    ) or
+
+    /* RocketChat */
+    (process.name : "Rocket.Chat.exe" and not
+      (process.code_signature.subject_name : "Rocket.Chat Technologies Corp." and process.code_signature.trusted == true)
+    ) or
+
+    /* Mattermost */
+    (process.name : "Mattermost.exe" and not
+      (process.code_signature.subject_name : "Mattermost, Inc." and process.code_signature.trusted == true)
+    ) or
+
+    /* WhatsApp */
+    (process.name : "WhatsApp.exe" and not
+      (process.code_signature.subject_name : "WhatsApp LLC" and process.code_signature.trusted == true)
+    ) or
+
+    /* Zoom */
+    (process.name : "Zoom.exe" and not
+      (process.code_signature.subject_name : "Zoom Video Communications, Inc." and process.code_signature.trusted == true)
+    )
+  )
+
+----------------------------------
+
+*Framework*: MITRE ATT&CK^TM^
+
+* Tactic:
+** Name: Defense Evasion
+** ID: TA0005
+** Reference URL: https://attack.mitre.org/tactics/TA0005/
+* Technique:
+** Name: Masquerading
+** ID: T1036
+** Reference URL: https://attack.mitre.org/techniques/T1036/
