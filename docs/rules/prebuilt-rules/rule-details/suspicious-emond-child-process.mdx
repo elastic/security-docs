@@ -1,0 +1,93 @@
+---
+id: enSecuritySuspiciousEmondChildProcess
+slug: /en/security/suspicious-emond-child-process
+title: Suspicious Emond Child Process
+description: Description to be written
+tags: []
+---
+
+<div id="suspicious-emond-child-process"></div>
+
+Identifies the execution of a suspicious child process of the Event Monitor Daemon (emond). Adversaries may abuse this service by writing a rule to execute commands when a defined event occurs, such as system start up or user authentication.
+
+**Rule type**: eql
+
+**Rule indices**: 
+
+* logs-endpoint.events.*
+
+**Severity**: medium
+
+**Risk score**: 47
+
+**Runs every**: 5m
+
+**Searches indices from**: now-9m ([Date Math format](((ref))/common-options.html#date-math), see also <DocLink id="enSecurityRulesUiCreate" section="set-the-rules-schedule">`Additional look-back time`</DocLink>)
+
+**Maximum alerts per execution**: 100
+
+**References**: 
+
+* https://www.xorrior.com/emond-persistence/
+
+**Tags**: 
+
+* Domain: Endpoint
+* OS: macOS
+* Use Case: Threat Detection
+* Tactic: Persistence
+
+**Version**: 103
+
+**Rule authors**: 
+
+* Elastic
+
+**Rule license**: Elastic License v2
+
+## Rule query
+
+```js
+process where host.os.type == "macos" and event.type in ("start", "process_started") and
+ process.parent.name : "emond" and
+ process.name : (
+   "bash",
+   "dash",
+   "sh",
+   "tcsh",
+   "csh",
+   "zsh",
+   "ksh",
+   "fish",
+   "Python",
+   "python*",
+   "perl*",
+   "php*",
+   "osascript",
+   "pwsh",
+   "curl",
+   "wget",
+   "cp",
+   "mv",
+   "touch",
+   "echo",
+   "base64",
+   "launchctl")
+
+```
+
+**Framework**: MITRE ATT&CK<sup>TM</sup>
+
+* Tactic:
+    * Name: Persistence
+    * ID: TA0003
+    * Reference URL: https://attack.mitre.org/tactics/TA0003/
+* Technique:
+    * Name: Event Triggered Execution
+    * ID: T1546
+    * Reference URL: https://attack.mitre.org/techniques/T1546/
+* Sub-technique:
+    * Name: Emond
+    * ID: T1546.014
+    * Reference URL: https://attack.mitre.org/techniques/T1546/014/
+
