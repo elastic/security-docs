@@ -460,7 +460,7 @@ def create_documentation(package_release):
         #    print(rule_link)
         if rule['version'] > 1 and rule.get('changelog'):
             file_text = file_text + "\n*Version*: " + str(
-                rule['version']) + " (<<" + rule_link + "-history, version history>>)" + "\n\n"
+                rule['version']) + "" + "\n\n"
 
         file_text = file_text + "*Added ({stack} release)*: " + rule['added'] + "\n\n"
         if rule['version'] > 1:
