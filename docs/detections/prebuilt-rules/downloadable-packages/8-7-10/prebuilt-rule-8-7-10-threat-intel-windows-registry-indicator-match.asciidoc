@@ -1,7 +1,7 @@
-[[threat-intel-url-indicator-match]]
-=== Threat Intel URL Indicator Match
+[[prebuilt-rule-8-7-10-threat-intel-windows-registry-indicator-match]]
+=== Threat Intel Windows Registry Indicator Match
 
-This rule is triggered when a URL indicator from the Threat Intel Filebeat module or integrations has a match against an event that contains URL data, like DNS events, network logs, etc.
+This rule is triggered when a Windows registry indicator from the Threat Intel Filebeat module or integrations has a match against an event that contains registry data.
 
 *Rule type*: threat_match
 
@@ -11,7 +11,6 @@ This rule is triggered when a URL indicator from the Threat Intel Filebeat modul
 * endgame-*
 * filebeat-*
 * logs-*
-* packetbeat-*
 * winlogbeat-*
 
 *Severity*: critical
@@ -52,25 +51,21 @@ This rule is triggered when a URL indicator from the Threat Intel Filebeat modul
 ----------------------------------
 ## Triage and Analysis
 
-### Investigating Threat Intel URL Indicator Match
+### Investigating Threat Intel Windows Registry Indicator Match
 
 Threat Intel indicator match rules allow matching from a local observation, such as an endpoint event that records a file hash with an entry of a file hash stored within the Threat Intel integrations index.
 
 Matches are based on threat intelligence data that's been ingested during the last 30 days. Some integrations don't place expiration dates on their threat indicators, so we strongly recommend validating ingested threat indicators and reviewing match results. When reviewing match results, check associated activity to determine whether the event requires additional investigation.
 
-This rule is triggered when a URL indicator from the Threat Intel Filebeat module or a threat intelligence integration matches against an event that contains URL data, like DNS events, network logs, etc.
+This rule is triggered when a Windows registry indicator from the Threat Intel Filebeat module or a threat intelligence integration matches against an event that contains registry data.
+
+> **Note**:
+> This investigation guide uses the [Osquery Markdown Plugin]({security-guide}/invest-guide-run-osquery.html) introduced in Elastic Stack version 8.5.0. Older Elastic Stack versions will display unrendered Markdown in this guide.
 
 #### Possible investigation steps
 
-- Investigate the URL, which can be found in the `threat.indicator.matched.atomic` field:
-  - Identify the type of malicious activity related to the URL (phishing, malware, etc.).
-  - Check the reputation of the IP address in resources like VirusTotal, Hybrid-Analysis, CISCO Talos, Any.run, etc.
-  - Execute a WHOIS lookup to retrieve information about the domain registration and contacts to report abuse.
-  - If dealing with a phishing incident:
-    - Contact the user to gain more information around the delivery method, information sent, etc.
-    - Analyze whether the URL is trying to impersonate a legitimate address. Look for typosquatting, extra or unusual subdomains, or other anomalies that could lure the user.
-    - Investigate the phishing page to identify which information may have been sent to the attacker by the user.
-- Identify the process responsible for the connection, and investigate the process execution chain (parent process tree) for unknown processes. Examine their executable files for prevalence, whether they are located in expected locations, and if they are signed with valid digital signatures.
+- Check related threat reports to gain context about the registry indicator of compromise (IoC) and to understand if it's a system-native mechanism abused for persistence, to store data, to disable security mechanisms, etc. Use this information to define the appropriate triage and respond steps.
+- Identify the process responsible for the registry operation and investigate the process execution chain (parent process tree) for unknown processes. Examine their executable files for prevalence, whether they are located in expected locations, and if they are signed with valid digital signatures.
 - Retrieve the involved process executable and examine the host for derived artifacts that indicate suspicious activities:
   - Analyze the process executable using a private sandboxed analysis system.
   - Observe and collect information about the following activities in both the sandbox and the alert subject host:
@@ -87,8 +82,7 @@ This rule is triggered when a URL indicator from the Threat Intel Filebeat modul
 
 ### False Positive Analysis
 
-- False positives might occur after large and publicly written campaigns if curious employees interact with attacker infrastructure.
-- Some feeds may include internal or known benign addresses by mistake (e.g., 8.8.8.8, google.com, 127.0.0.1, etc.). Make sure you understand how blocking a specific domain or address might impact the organization or normal system functioning.
+- Adversaries can leverage dual-use registry mechanisms that are commonly used by normal applications. These registry keys can be added into indicator lists creating the potential for false positives.
 
 ### Response and Remediation
 
@@ -99,7 +93,6 @@ This rule is triggered when a URL indicator from the Threat Intel Filebeat modul
   - Stop suspicious processes.
   - Immediately block the identified indicators of compromise (IoCs).
   - Inspect the affected systems for additional malware backdoors like reverse shells, reverse proxies, or droppers that attackers could use to reinfect the system.
-- Consider reporting the address for abuse using the provided contact information.
 - Remove and block malicious artifacts identified during triage.
 - Run a full antimalware scan. This may reveal additional artifacts left in the system, persistence mechanisms, and malware components.
 - Determine the initial vector abused by the attacker and take action to prevent reinfection through the same vector.
@@ -116,6 +109,6 @@ More information can be found {security-guide}/es-threat-intel-integrations.html
 
 [source, js]
 ----------------------------------
-url.full:*
+registry.path:*
 
 ----------------------------------
