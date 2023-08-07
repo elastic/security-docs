@@ -29,7 +29,7 @@ def translate_interval_period(interval):
     runtime = re.match(r"([0-9]+)([a-z]+)", interval, re.I)
     if runtime:
         runtime = runtime.groups()
-    if len(runtime) == 2:  
+    if len(runtime) == 2:
         if runtime[1] == 'm':
             units = "minutes"
         elif runtime[1] == 's':
@@ -114,8 +114,8 @@ GENERATED_ASCII.mkdir(exist_ok=True)
 file_write = str(GENERATED_ASCII.joinpath('prebuilt-rules-reference.asciidoc'))
 with open(file_write, "w+") as writeFile:
     writeFile.write(newText)
-    
-        
+
+
 # End overview table
 
 # Create files for each rule and the index (ToC) file
@@ -170,7 +170,7 @@ for rule in sorted_rules:
     if rule['version'] == 1:
         fileText = fileText + "\n*Version*: " + str(rule['version']) + "\n\n"
     if rule['version'] > 1:
-        fileText = fileText + "\n*Version*: " + str(rule['version']) + " (<<" + rule_link + "-history, version history>>)" + "\n\n"
+        fileText = fileText + "\n*Version*: " + str(rule['version']) + "" + "\n\n"
     fileText = fileText + "*Added ({stack} release)*: " + rule['added'] + "\n\n"
     if rule['version'] > 1:
         fileText = fileText + "*Last modified ({stack} release)*: " + rule['last_update'] + "\n\n"
@@ -330,7 +330,7 @@ addVersionUpdates("7.9.0")
 addVersionUpdates("7.8.0")
 addVersionUpdates("7.7.0")
 addVersionUpdates("7.6.2")
-addVersionUpdates("7.6.1")       
+addVersionUpdates("7.6.1")
 
 file_write = str(GENERATED_ASCII.joinpath('prebuilt-rules-changelog.asciidoc'))
 with open(file_write, "w+") as writeFile:
