@@ -10,9 +10,9 @@ Loadable Kernel Modules (or LKMs) are pieces of code that can be loaded and unlo
 * auditbeat-*
 * logs-auditd_manager.auditd-*
 
-*Severity*: medium
+*Severity*: low
 
-*Risk score*: 47
+*Risk score*: 21
 
 *Runs every*: 5m
 
@@ -29,7 +29,7 @@ Loadable Kernel Modules (or LKMs) are pieces of code that can be loaded and unlo
 * Use Case: Threat Detection
 * Tactic: Discovery
 
-*Version*: 1
+*Version*: 2
 
 *Rule authors*: 
 
@@ -65,8 +65,11 @@ Add the newly installed `auditd manager` to an agent policy, and deploy the agen
 
 [source, js]
 ----------------------------------
-file where host.os.type == "linux" and event.action == "opened-file" and 
-file.path == "/proc/modules" and not process.parent.pid == 1
+file where host.os.type == "linux" and event.action == "opened-file" and file.path == "/proc/modules" and not 
+(
+  process.name in ("auditbeat", "kmod", "modprobe", "lsmod", "insmod", "modinfo", "rmmod", "SchedulerRunner", "grep") or 
+  process.parent.pid == 1 or process.title : "*grep*"
+)
 
 ----------------------------------
 
