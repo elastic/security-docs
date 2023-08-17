@@ -10,9 +10,9 @@ This rule monitors for suspicious activities that may indicate an attacker attem
 * logs-endpoint.events.*
 * endgame-*
 
-*Severity*: high
+*Severity*: medium
 
-*Risk score*: 73
+*Risk score*: 47
 
 *Runs every*: 5m
 
@@ -30,7 +30,7 @@ This rule monitors for suspicious activities that may indicate an attacker attem
 * Tactic: Execution
 * Data Source: Elastic Endgame
 
-*Version*: 1
+*Version*: 2
 
 *Rule authors*: 
 
@@ -45,7 +45,10 @@ This rule monitors for suspicious activities that may indicate an attacker attem
 [source, js]
 ----------------------------------
 process where host.os.type == "linux" and event.action in ("exec", "exec_event", "fork", "fork_event") and 
-event.type == "start" and user.name == "postgres" and (process.parent.args : "*sh" or process.args : "*sh")
+event.type == "start" and user.name == "postgres" and (
+  (process.parent.args : "*sh" and process.parent.args : "echo*") or 
+  (process.args : "*sh" and process.args : "echo*")
+) and not process.parent.name : "puppet"
 
 ----------------------------------
 
