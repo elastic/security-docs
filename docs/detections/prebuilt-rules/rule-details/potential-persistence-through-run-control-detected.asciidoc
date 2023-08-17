@@ -5,7 +5,7 @@ This rule monitors the creation/alteration of the rc.local file by a previously 
 
 *Rule type*: new_terms
 
-*Rule indices*: 
+*Rule indices*:
 
 * logs-endpoint.events.*
 * endgame-*
@@ -20,13 +20,13 @@ This rule monitors the creation/alteration of the rc.local file by a previously 
 
 *Maximum alerts per execution*: 100
 
-*References*: 
+*References*:
 
 * https://www.intezer.com/blog/malware-analysis/hiddenwasp-malware-targeting-linux-systems/
 * https://pberba.github.io/security/2022/02/06/linux-threat-hunting-for-persistence-initialization-scripts-and-shell-configuration/#8-boot-or-logon-initialization-scripts-rc-scripts
 * https://www.cyberciti.biz/faq/how-to-enable-rc-local-shell-script-on-systemd-while-booting-linux-system/
 
-*Tags*: 
+*Tags*:
 
 * Domain: Endpoint
 * OS: Linux
@@ -37,7 +37,7 @@ This rule monitors the creation/alteration of the rc.local file by a previously 
 
 *Version*: 105
 
-*Rule authors*: 
+*Rule authors*:
 
 * Elastic
 
@@ -53,15 +53,15 @@ This rule monitors the creation/alteration of the rc.local file by a previously 
 
 ### Investigating Potential Persistence Through Run Control Detected
 
-The `rc.local` file executes custom commands or scripts during system startup on Linux systems. `rc.local` has been deprecated in favor of the use of `systemd services`, and more recent Unix distributions no longer leverage this method of on-boot script execution. 
+The `rc.local` file executes custom commands or scripts during system startup on Linux systems. `rc.local` has been deprecated in favor of the use of `systemd services`, and more recent Unix distributions no longer leverage this method of on-boot script execution.
 
-There might still be users that use `rc.local` in a benign matter, so investigation to see whether the file is malicious is vital. 
+There might still be users that use `rc.local` in a benign matter, so investigation to see whether the file is malicious is vital.
 
-Detection alerts from this rule indicate the creation of a new `/etc/rc.local` file. 
+Detection alerts from this rule indicate the creation of a new `/etc/rc.local` file.
 
 > **Note**:
-> This investigation guide uses the [Osquery Markdown Plugin](https://www.elastic.co/guide/en/security/master/invest-guide-run-osquery.html) introduced in Elastic Stack version 8.5.0. Older Elastic Stack versions will display unrendered Markdown in this guide.
-> This investigation guide uses [placeholder fields](https://www.elastic.co/guide/en/security/current/osquery-placeholder-fields.html) to dynamically pass alert data into Osquery queries. Placeholder fields were introduced in Elastic Stack version 8.7.0. If you're using Elastic Stack version 8.6.0 or earlier, you'll need to manually adjust this investigation guide's queries to ensure they properly run.
+> This investigation guide uses the {security-guide}/invest-guide-run-osquery.html[Osquery Markdown Plugin] introduced in Elastic Stack version 8.5.0. Older Elastic Stack versions will display unrendered Markdown in this guide.
+> This investigation guide uses {security-guide}current/osquery-placeholder-fields.html to dynamically pass alert data into Osquery queries. Placeholder fields were introduced in Elastic Stack version 8.7.0. If you're using Elastic Stack version 8.6.0 or earlier, you'll need to manually adjust this investigation guide's queries to ensure they properly run.
 
 #### Possible Investigation Steps
 
@@ -77,7 +77,7 @@ Detection alerts from this rule indicate the creation of a new `/etc/rc.local` f
     - If logs are found, it's likely that the contents of the `rc.local` file have been executed. Analyze the logs. In case several syslog log files are available, use a wildcard to search through all of the available logs.
 - Investigate other alerts associated with the user/host during the past 48 hours.
 - Validate whether this activity is related to planned patches, updates, network administrator activity, or legitimate software installations.
-- Investigate whether the altered scripts call other malicious scripts elsewhere on the file system. 
+- Investigate whether the altered scripts call other malicious scripts elsewhere on the file system.
   - If scripts or executables were dropped, retrieve the files and determine if they are malicious:
     - Use a private sandboxed malware analysis system to perform analysis.
       - Observe and collect information about the following activities:
@@ -91,7 +91,7 @@ Detection alerts from this rule indicate the creation of a new `/etc/rc.local` f
 ### False Positive Analysis
 
 - If this activity is related to new benign software installation activity, consider adding exceptions — preferably with a combination of user and command line conditions.
-- If this activity is related to a system administrator who uses `rc.local` for administrative purposes, consider adding exceptions for this specific administrator user account. 
+- If this activity is related to a system administrator who uses `rc.local` for administrative purposes, consider adding exceptions for this specific administrator user account.
 - Try to understand the context of the execution by thinking about the user, machine, or business purpose. A small number of endpoints, such as servers with unique software, might appear unusual but satisfy a specific business need.
 
 ### Response and remediation
@@ -115,7 +115,7 @@ Detection alerts from this rule indicate the creation of a new `/etc/rc.local` f
 
 [source, js]
 ----------------------------------
-host.os.type : "linux" and event.category : "file" and 
+host.os.type : "linux" and event.category : "file" and
 event.type : ("change" or "file_modify_event" or "creation" or "file_create_event") and
 file.path : "/etc/rc.local" and not process.name : ("dockerd" or "yum" or "rpm" or "dpkg") and not file.extension : ("swp" or "swx")
 
