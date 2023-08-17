@@ -3,7 +3,7 @@
 
 Loadable Kernel Modules (or LKMs) are pieces of code that can be loaded and unloaded into the kernel upon demand. They extend the functionality of the kernel without the need to reboot the system. This identifies attempts to enumerate information about a kernel module.
 
-*Rule type*: eql
+*Rule type*: new_terms
 
 *Rule indices*: 
 
@@ -28,7 +28,7 @@ Loadable Kernel Modules (or LKMs) are pieces of code that can be loaded and unlo
 * Use Case: Threat Detection
 * Tactic: Discovery
 
-*Version*: 104
+*Version*: 204
 
 *Rule authors*: 
 
@@ -42,11 +42,11 @@ Loadable Kernel Modules (or LKMs) are pieces of code that can be loaded and unlo
 
 [source, js]
 ----------------------------------
-process where host.os.type == "linux" and event.type == "start" and 
-((process.name == "kmod" and process.args == "list") or (process.name == "modinfo" and process.parent.user.id != "0") or 
-(process.name == "depmod" and process.args in ("--all", "-a") and process.parent.user.id != "0") 
-or process.name == "lsmod") and not process.parent.name : ("vboxmanage", "virtualbox", "prime-offload", "vboxdrv.sh") and not 
-process.group_leader.name : "qualys-cloud-agent"
+event.category:process and host.os.type:linux and event.type:start and (
+ (process.name:(lsmod or modinfo)) or 
+ (process.name:kmod and process.args:list) or 
+ (process.name:depmod and process.args:(--all or -a))
+) and not process.parent.user.id:0
 
 ----------------------------------
 
