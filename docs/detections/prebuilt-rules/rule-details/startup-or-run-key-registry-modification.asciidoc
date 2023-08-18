@@ -30,7 +30,7 @@ Identifies run key or startup key registry modifications. In order to survive re
 * Resources: Investigation Guide
 * Data Source: Elastic Endgame
 
-*Version*: 107
+*Version*: 108
 
 *Rule authors*:
 
@@ -51,7 +51,7 @@ Identifies run key or startup key registry modifications. In order to survive re
 Adversaries may achieve persistence by referencing a program with a registry run key. Adding an entry to the run keys in the registry will cause the program referenced to be executed when a user logs in. These programs will executed under the context of the user and will have the account's permissions. This rule looks for this behavior by monitoring a range of registry run keys.
 
 > **Note**:
-> This investigation guide uses the [Osquery Markdown Plugin]({security-guide}/invest-guide-run-osquery.html) introduced in Elastic Stack version 8.5.0. Older Elastic Stack versions will display unrendered Markdown in this guide.
+> This investigation guide uses the {security-guide}/invest-guide-run-osquery.html[Osquery Markdown Plugin] introduced in Elastic Stack version 8.5.0. Older Elastic Stack versions will display unrendered Markdown in this guide.
 
 #### Possible investigation steps
 
@@ -132,7 +132,7 @@ registry where host.os.type == "windows" and registry.data.strings != null and
   not (
     /* Logitech G Hub */
     (
-      process.code_signature.trusted == true and process.code_signature.subject_name : "Logitech Inc" and
+      process.code_signature.trusted == true and process.code_signature.subject_name == "Logitech Inc" and
       process.name : "lghub_agent.exe" and registry.data.strings : (
         "\"?:\\Program Files\\LGHUB\\lghub.exe\" --background"
       )
@@ -140,7 +140,7 @@ registry where host.os.type == "windows" and registry.data.strings != null and
 
     /* Google Drive File Stream, Chrome, and Google Update */
     (
-      process.code_signature.trusted == true and process.code_signature.subject_name : "Google LLC" and
+      process.code_signature.trusted == true and process.code_signature.subject_name == "Google LLC" and
       (
         process.name : "GoogleDriveFS.exe" and registry.data.strings : (
         "\"?:\\Program Files\\Google\\Drive File Stream\\*\\GoogleDriveFS.exe\" --startup_mode"
@@ -159,7 +159,7 @@ registry where host.os.type == "windows" and registry.data.strings != null and
 
     /* MS Programs */
     (
-      process.code_signature.trusted == true and process.code_signature.subject_name : ("Microsoft Windows", "Microsoft Corporation") and
+      process.code_signature.trusted == true and process.code_signature.subject_name in ("Microsoft Windows", "Microsoft Corporation") and
       (
         process.name : "msedge.exe" and registry.data.strings : (
           "\"?:\\Program Files (x86)\\Microsoft\\Edge\\Application\\msedge.exe\" --no-startup-window --win-session-start /prefetch:5"
@@ -188,15 +188,16 @@ registry where host.os.type == "windows" and registry.data.strings != null and
 
     /* Slack */
     (
-      process.code_signature.trusted == true and process.code_signature.subject_name : "Slack Technologies, Inc." and
-      process.name : "slack.exe" and registry.data.strings : (
+      process.code_signature.trusted == true and process.code_signature.subject_name in (
+       "Slack Technologies, Inc.", "Slack Technologies, LLC"
+      ) and process.name : "slack.exe" and registry.data.strings : (
         "\"?:\\Users\\*\\AppData\\Local\\slack\\slack.exe\" --process-start-args --startup"
       )
     ) or
 
     /* WebEx */
     (
-      process.code_signature.trusted == true and process.code_signature.subject_name : ("Cisco WebEx LLC", "Cisco Systems, Inc.") and
+      process.code_signature.trusted == true and process.code_signature.subject_name in ("Cisco WebEx LLC", "Cisco Systems, Inc.") and
       process.name : "WebexHost.exe" and registry.data.strings : (
         "\"?:\\Users\\*\\AppData\\Local\\WebEx\\WebexHost.exe\" /daemon /runFrom=autorun"
       )
