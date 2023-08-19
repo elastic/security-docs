@@ -9,7 +9,7 @@ assignees: ''
 
 ## Description
 
-Please describe what the known issue is. 
+Please describe what the known issue is, and the severity of its impact to customers.
 
 ## Area/Engineering team
 
