@@ -2,6 +2,76 @@
 == 8.9
 
 [discrete]
+[[release-notes-8.9.1]]
+=== 8.9.1
+
+[discrete]
+[[known-issue-8.9.1]]
+==== Known issues
+
+* A UI bug can affect the Alerts table height, making it difficult to view alerts. To view alerts, do one of the following:
+
+** Open alerts in Timeline. 
+** Adjust the Alerts table size. Do one of the following:
+
+*** Use the **Fields** browser to remove fields from the Alerts table until the table's width is smaller than its container. 
+*** Adjust your OS zoom settings and refresh the page.
+*** Zoom your browser in and out, then refresh the page. (Row height issues can occur at some zoom levels.)
+
+* Alert table rendering issues occur when threat indicator match alerts contain nested `file.name` values, and the Alerts table displays the `file.name` column. The rendering issues stem from a known bug that occurs when the Alerts table sends a request to the Elasticsearch Fields API (https://github.com/elastic/elasticsearch/issues/97684[#97684]).
++
+NOTE: When customizing the Alerts table, avoid adding or displaying fields that also exist as nested properties within any alert documents.
+
++
+The workaround for this issue depends on the types of alerts you want to display. Choose the case that's most relevant to you:
+
++
+**Case #1:** You want to display threat indicator match alerts with nested `file.name` fields but the Alerts table won't render. To fix this, manually edit your browser's local storage and refresh the Alerts page:
+
++
+NOTE: These instructions only apply to the Google Chrome browser. Modify the steps based on of browser you're using.
++
+
+. Right-click anywhere on the Alerts page, then select *Inspect* to open Chrome's Developer Tools.
+. Go to *Application -> Storage*, then expand *Local Storage*. 
+. Click on the name of your Kibana instance, for example, http://localhost:1234. 
+. Search for the `detection-engine-alert-table-securitySolution-rule-details-gridView` key and copy its value. The value you copied is the JSON blob that's used to persist the Alert table's state, including the table's selected columns. 
+. Paste the JSON blob into a text file and edit it as follows: 
+.. Remove the `id:file.name` string from the `columns` array.  
+.. Remove the `file.name` string from the `visibleColumns` array. 
+. Go back to Chrome's Developer Tools, and paste the edited JSON into the value for the `detection-engine-alert-table-securitySolution-rule-details-gridView` key.
+. Click the *Enter* or *Return* key on your keyboard, and refresh the Alerts page. The Alerts table re-renders without the `file.name` column.
++
+NOTE: To avoid further issues, _do not_ re-add the `file.name` field to the table.   
+
++
+**Case #2:** You want to display threat indicator match alerts with nested `file.name` fields and other types of alerts, but the Alerts table is rendering with empty rows. To resolve this issue: 
+
+. Go to the toolbar in the upper-left of the Alerts table, and click *Fields*. 
+. Search for the `file.name` field, de-select it, and click *Close*.
+. Refresh the Alerts page. 
+
+[discrete]
+[[breaking-changes-8.9.1]]
+==== Breaking changes
+
+There are no breaking changes in 8.9.1.
+
+[discrete]
+[[enhancements-8.9.1]]
+==== Enhancements
+* Event correlation queries and rules can now detect {ref}/eql-syntax.html#eql-missing-events[missing events] in EQL sequences.
+
+[discrete]
+[[bug-fixes-8.9.1]]
+==== Bug fixes 
+
+* Fixes a copy to clipboard bug that affected non-ECS fields ({pull}162883[#162883]).
+* Fixes number rounding issues in the *Top alerts by* table on the Alerts page ({pull}162647[#162647]).
+* Fixes bug that prevented controls from being rendered on {elastic-sec} dashboards ({pull}162514[#162514]).
+* Fixes a bug that prevented rule changes from being saved if a rule's action frequency was shorter than the rule run interval ({pull}160798[#160798]).
+
+[discrete]
 [[release-notes-8.9.0]]
 === 8.9.0
 
@@ -10,8 +80,8 @@
 ==== Known issues
 
 * On the new Detection rule monitoring dashboard, total `Rule executions` will not always equal the sum of `Succeeded`, `Warning`, and `Failed` executions. This is expected because rules can write multiple statuses per execution. One typical example is gap detection: if a rule detects a gap in rule execution it will write an intermediate `Failed` status, then continue to run, and write a final status (such as `Warning`) before finishing its execution.
-* Rule changes can't be saved if the rule's action frequency is shorter than the rule's run interval.
-* The `upload` response action does not report the correct amount of available disk space. The correct amount is approximately four 
+* Rule changes can't be saved and existing rule actions are removed if the action's frequency is shorter than the rule's run interval.
+* The `upload` response action does not report the correct amount of available disk space. The correct amount is approximately four.
 * A UI bug can affect the Alerts table height, making it difficult to view alerts. To view alerts, do one of the following:
 
 ** Open alerts in Timeline. 
