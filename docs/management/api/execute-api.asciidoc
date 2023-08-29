@@ -1,0 +1,96 @@
+[[execute-api]]
+=== Execute a command on a host
+
+Execute a command on a host running {elastic-defend}.
+
+You must have the `Execute Operations` {kib} privilege in the Security feature as part of your role and at least an Enterprise license to perform this action.
+
+==== Request URL
+
+`POST <kibana host>:<port>/api/endpoint/action/execute`
+
+==== Request body
+
+A JSON object with these fields:
+
+[width="100%",options="header"]
+|==============================================
+|Name |Type |Description |Required
+
+|`endpoint_ids` |Array (String) |The IDs of endpoints where you want to issue this action. |Yes
+|`alert_ids` |Array (String) |If this action is associated with any alerts, they can be specified here. The action will be logged in any cases associated with the specified alerts. |No
+|`case_ids` |Array (String) |The IDs of cases where the action taken will be logged. |No
+|`comment` |String |Attach a comment to this action's log. The comment text will appear in associated cases. |No
+|`parameters.command` |String |A shell command to run on the host. The command must be supported by `bash` for Linux and macOS hosts, and `cmd.exe` for Windows. |Yes
+|`parameters.timeout` |String |How long the host should wait for the command to complete. Use `h` for hours, `m` for minutes, `s` for seconds (for example, `2s` is two seconds). If no timeout is specified, it defaults to four hours. |No
+|==============================================
+
+
+===== Example requests
+
+Runs the command `ls -al` on a host with an `endpoint_id` value of `ed518850-681a-4d60-bb98-e22640cae2a8` with a timeout of `5m` and comments `Get list of all files`:
+
+[source,sh]
+--------------------------------------------------
+POST /api/endpoint/action/execute
+{
+  "endpoint_ids": ["ed518850-681a-4d60-bb98-e22640cae2a8"],
+  "parameters": {
+    "command": "ls -al",
+    "timeout": "5m"
+  },
+  "comment": "Get list of all files"
+}
+--------------------------------------------------
+
+
+===== Response code
+
+`200`::
+   Indicates a successful call.
+
+`403`::
+	Indicates insufficient privileges, or unsupported license level (minimum Enterprise license required).
+
+==== Response payload
+
+A JSON object with the details of the response action created.
+
+===== Example response
+
+[source,json]
+--------------------------------------------------
+{
+  "data": {
+    "id": "9f934028-2300-4927-b531-b26376793dc4",
+    "agents": [
+      "ed518850-681a-4d60-bb98-e22640cae2a8"
+    ],
+    "hosts": {
+      "ed518850-681a-4d60-bb98-e22640cae2a8": {
+        "name": "gke-endpoint-gke-clu-endpoint-node-po-e1a3ab89-4c4r"
+      }
+    },
+    "command": "execute",
+    "startedAt": "2023-07-28T18:43:27.362Z",
+    "isCompleted": false,
+    "wasSuccessful": false,
+    "isExpired": false,
+    "status": "pending",
+    "outputs": {},
+    "agentState": {
+      "ed518850-681a-4d60-bb98-e22640cae2a8": {
+        "isCompleted": false,
+        "wasSuccessful": false
+      }
+    },
+    "createdBy": "myuser",
+    "comment": "Get list of all files",
+    "parameters": {
+      "command": "ls -al",
+      "timeout": 300
+    }
+  }
+}
+
+--------------------------------------------------
