@@ -54,8 +54,9 @@ Identifies the abuse of a Linux binary to break out of a restricted shell or env
 * Use Case: Threat Detection
 * Tactic: Execution
 * Data Source: Elastic Endgame
+* Data Source: Elastic Defend
 
-*Version*: 107
+*Version*: 108
 
 *Rule authors*: 
 
@@ -127,7 +128,10 @@ process where host.os.type == "linux" and event.type == "start" and
   
   /* launching shells from unusual parents or parent+arg combos */
   (process.name : "*sh" and (
-    (process.parent.name : ("byebug", "ftp", "strace", "zip", "*awk", "git", "tar") and 
+    (process.parent.name : "*awk" and process.parent.args : "BEGIN {system(*)}") or
+    (process.parent.name == "git" and process.parent.args : ("*PAGER*", "!*sh", "exec *sh") or 
+     process.args : ("*PAGER*", "!*sh", "exec *sh") and not process.name == "ssh" ) or
+    (process.parent.name : ("byebug", "ftp", "strace", "zip", "tar") and 
     (
       process.parent.args : "BEGIN {system(*)}" or
       (process.parent.args : ("*PAGER*", "!*sh", "exec *sh") or process.args : ("*PAGER*", "!*sh", "exec *sh")) or
@@ -144,7 +148,8 @@ process where host.os.type == "linux" and event.type == "start" and
       (
         (process.parent.name == "nice") or
         (process.parent.name == "cpulimit" and process.parent.args == "-f") or
-        (process.parent.name == "find" and process.parent.args == "-exec" and process.parent.args == ";" and process.parent.args == "-p") or
+        (process.parent.name == "find" and process.parent.args == "." and process.parent.args == "-exec" and 
+         process.parent.args == ";" and process.parent.args : "/bin/*sh") or
         (process.parent.name == "flock" and process.parent.args == "-u" and process.parent.args == "/")
       )
     )
@@ -159,7 +164,7 @@ process where host.os.type == "linux" and event.type == "start" and
   )) or
   (process.name == "busybox" and event.action == "exec" and process.args_count == 2 and process.args : "*sh" and not 
    process.executable : "/var/lib/docker/overlay2/*/merged/bin/busybox" and not (process.parent.args == "init" and
-   process.parent.args == "runc") and not process.parent.args in ("ls-remote", "push", "fetch")) or
+   process.parent.args == "runc") and not process.parent.args in ("ls-remote", "push", "fetch") and not process.parent.name == "mkinitramfs") or
   (process.name == "env" and process.args_count == 2 and process.args : "*sh") or
   (process.parent.name in ("vi", "vim") and process.parent.args == "-c" and process.parent.args : ":!*sh") or
   (process.parent.name in ("c89", "c99", "gcc") and process.parent.args : "*sh,-s" and process.parent.args == "-wrapper") or
