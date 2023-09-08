@@ -27,8 +27,9 @@ Identifies multiple consecutive login attempts executed by one process targeting
 * OS: Linux
 * Use Case: Threat Detection
 * Tactic: Credential Access
+* Data Source: Elastic Defend
 
-*Version*: 1
+*Version*: 2
 
 *Rule authors*: 
 
@@ -42,9 +43,11 @@ Identifies multiple consecutive login attempts executed by one process targeting
 
 [source, js]
 ----------------------------------
-sequence by host.id, process.parent.executable, user.name with maxspan=1s
-[ process where host.os.type == "linux" and event.type == "start" and 
-  event.action == "exec" and process.name == "su" ] with runs=10
+sequence by host.id, process.parent.executable, user.id with maxspan=1s
+ [process where host.os.type == "linux" and event.type == "start" and event.action == "exec" and process.name == "su" and 
+  not process.parent.name in (
+   "bash", "dash", "ash", "sh", "tcsh", "csh", "zsh", "ksh", "fish", "clickhouse-server"
+  )] with runs=10
 
 ----------------------------------
 
