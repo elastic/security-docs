@@ -7,114 +7,30 @@
 :frontmatter-tags-content-type: [how-to]
 :frontmatter-tags-user-goals: [manage, secure]
 
-Rules run periodically and search for source events, matches, sequences, or {ml} job anomaly results
-that meet their criteria. When a rule's criteria are met, a detection alert is
-created.
+To create a new detection rule, follow these steps:
 
-You can create the following types of rules:
+. Define the <<rule-types, *rule type*>>. The configuration for this step varies depending on the rule type. 
+. Configure basic rule settings.
+. Configure advanced rule settings (optional).
+. Set the rule's schedule.
+. Set up alert notifications (optional).
+. Set up response actions (optional).
 
-* <<create-custom-rule, *Custom query*>>: Query-based rule, which searches the defined indices and
-creates an alert when one or more documents match the rule's query.
-* <<create-ml-rule, *Machine learning>>*: {ml-cap} rule, which creates an alert when a {ml} job
-discovers an anomaly above the defined threshold (see <<machine-learning>>).
-+
-For {ml} rules, the associated {ml} job must be running. If the {ml} job isn't
-running, the rule will:
+.Requirements
+[sidebar]
+--
+* To create detection rules, you must have access to data views, which requires the {kibana-ref}/kibana-role-management.html[{kib} privilege] `Data View Management`.
 
-** Run and create alerts if existing anomaly results with scores above the defined threshold
-are discovered.
-** Issue an error stating the {ml} job was not running when the rule executed.
-* <<create-threshold-rule, *Threshold*>>: Searches the defined indices and creates a detections alert
-when the number of times the specified field's value is present and meets the threshold during
-a single execution. When multiple values meet the threshold, an alert is
-generated for each value.
-+
-For example, if the threshold `field` is `source.ip` and its `value` is `10`, an
-alert is generated for every source IP address that appears in at least 10 of
-the rule's search results.
-* <<create-eql-rule, *Event correlation*>>: Searches the defined indices and creates an alert when results match an
-{ref}/eql.html[Event Query Language (EQL)] query.
-* <<create-indicator-rule, *Indicator match*>>: Creates an alert when {elastic-sec} index field values match field values defined in the specified indicator index patterns. For example, you can create an indicator index for IP addresses and use this index to create an alert whenever an event's `destination.ip` equals a value in the index. Indicator index field mappings should be {ecs-ref}[ECS-compliant]. For information on creating {es} indices and field types, see
-{ref}/getting-started-index.html[Index some documents],
-{ref}/indices-create-index.html[Create index API], and
-{ref}/mapping-types.html[Field data types]. If you have indicators in a standard file format, such as CSV or JSON, you can also use the Machine Learning Data Visualizer to import your indicators into an indicator index. See {ml-docs}/ml-getting-started.html#sample-data-visualizer[Explore the data in {kib}] and use the *Import Data* option to import your indicators.
-+
-TIP: You can also use value lists as the indicator match index. See <<indicator-value-lists>> at the end of this topic for more information.
+* You'll also need permissions to enable and view detections, manage rules, manage alerts, and preview rules. These permissions depend on the user role. Refer to <<detections-permissions-section>> for more information.
+--
 
-* <<create-new-terms-rule, *New terms*>>: Generates an alert for each new term detected in source documents within a specified time range. You can also detect a combination of up to three new terms (for example, a `host.ip` and `host.id` that have never been observed together before).
-
-When modifying rules or managing detection alerts, you can <<add-exceptions,add exceptions>> that prevent a rule from generating alerts even when its criteria are met. This is useful for reducing noise, such as preventing alerts from trusted processes and internal IP addresses.
-
-NOTE: You can add exceptions to custom query, machine learning, event correlation, and indicator match rule types.
-
-For both prebuilt and custom rules, you can send notifications when alerts are created. Notifications can be sent via {jira}, Microsoft Teams, PagerDuty, Slack, and others, and can be configured when you create or edit a rule.
-
-Creating a new rule requires the following steps:
-
-. <<create-rule-ui>>
-. <<rule-ui-basic-params>>
-. <<rule-ui-advanced-params>>
-. <<rule-schedule>>
-. <<rule-notifications>>
-. <<rule-response-action>>
+TIP: At any step, you can <<preview-rules,preview the rule>> before saving it to see what kind of results you can expect.
 
 NOTE: Additional configuration is required for detection rules using cross-cluster search. Refer to <<rules-cross-cluster-search>>.
 
-At any step, you can <<preview-rules,preview the rule>> before saving it to see what kind of results you can expect.
-
-[IMPORTANT]
-==============
-After you activate a rule, you can check if it is running as expected
-using the <<alerts-ui-monitor, Monitoring tab>> on the Rules page. If you see
-values in the `Gap` column, you can <<troubleshoot-signals>>.
-
-When a rule fails to run, the {security-app} tries to rerun it at its next
-scheduled run time.
-==============
-
-[role="screenshot"]
-image::images/all-rules.png[Shows the Rules page]
-
-[float]
-[[alerting-authorization-model]]
-=== Authorization
-
-Rules, including all background detection and the actions they generate, are authorized using an {kibana-ref}/api-keys.html[API key] associated with the last user to edit the rule. Upon creating or modifying a rule, an API key is generated for that user, capturing a snapshot of their privileges. The API key is then used to run all background tasks associated with the rule including detection checks and executing actions.
-
-[IMPORTANT]
-==============================================
-If a rule requires certain privileges to run, such as index privileges, keep in mind that if a user without those privileges updates the rule, the rule will no longer function.
-==============================================
-
-[float]
-[[views-index-patterns]]
-=== Data views and index patterns
-
-When you create a rule, you must either specify the {es} index pattens for which you'd like the rule to run, or select a {kibana-ref}/data-views.html[data view] as the data source. If you select a data view, you can select <<runtime-fields, runtime fields>> associated with that data view to create a query for the rule (with the exception of {ml} rules, which do not use queries).
-
-NOTE: To access data views, ensure you have the {kibana-ref}/data-views.html#data-views-read-only-access[required permissions].
-
-[float]
-[[create-rule-ui]]
-=== Select rule type and scope
-
-. Go to *Manage* -> *Rules* -> *Create new rule*. The *Create new rule* page displays.
-+
-[role="screenshot"]
-image::images/create-new-rule.png[Create new rule page,85%]
-+
-. Select the type of rule you want to create, then follow the steps outlined in that section:
-
-* <<create-ml-rule, Machine learning>>
-* <<create-custom-rule, Custom query>>
-* <<create-threshold-rule, Threshold>>
-* <<create-eql-rule, Event correlation>>
-* <<create-indicator-rule, Indicator match>>
-* <<create-new-terms-rule, New terms>>
-
 [discrete]
 [[create-ml-rule]]
-==== Create a machine learning rule
+=== Create a machine learning rule
 
 [IMPORTANT]
 ==============
@@ -122,7 +38,7 @@ To create or edit {ml} rules, you must have the https://www.elastic.co/subscript
 {ess-trial}[cloud deployment]. Additionally, you must have the {ref}/built-in-roles.html[`machine_learning_admin`] user
 role, and the selected {ml} job must be running for the rule to function correctly.
 ==============
-
+. Go to *Rules* -> *Detection rules (SIEM)* -> *Create new rule*. The *Create new rule* page displays.
 . To create a rule based on a {ml} anomaly threshold, select *Machine Learning*,
 then select:
 .. The required {ml} jobs. 
@@ -133,7 +49,8 @@ NOTE: If a required job isn't currently running, it will automatically start whe
 
 [discrete]
 [[create-custom-rule]]
-==== Create a custom query rule
+=== Create a custom query rule
+. Go to *Rules* -> *Detection rules (SIEM)* -> *Create new rule*. The *Create new rule* page displays.
 . To create a rule based on a KQL or Lucene query, select *Custom query*,
 then:
 .. Define which {es} indices or data view the rule searches for alerts.
@@ -183,7 +100,8 @@ With either option, you can view all events associated with suppressed alerts by
 
 [discrete]
 [[create-threshold-rule]]
-==== Create a threshold rule
+=== Create a threshold rule
+. Go to *Rules* -> *Detection rules (SIEM)* -> *Create new rule*. The *Create new rule* page displays.
 . To create a rule based on a source event field threshold, select *Threshold*, then:
 .. Define which {es} indices the rule analyzes for alerts.
 .. Use the filter and query fields to create the criteria used for detecting
@@ -204,7 +122,8 @@ IMPORTANT: Alerts created by threshold rules are synthetic alerts that do not re
 
 [discrete]
 [[create-eql-rule]]
-==== Create an event correlation rule
+=== Create an event correlation rule
+. Go to *Rules* -> *Detection rules (SIEM)* -> *Create new rule*. The *Create new rule* page displays.
 . To create an event correlation rule using EQL, select *Event Correlation*, then:
 .. Define which {es} indices or data view the rule searches when querying for events.
 .. Write an {ref}/eql-syntax.html[EQL query] that searches for matching events or a series of matching events.
@@ -250,10 +169,11 @@ NOTE: For sequence events, the {security-app} generates a single alert when all 
 
 [discrete]
 [[create-indicator-rule]]
-==== Create an indicator match rule
+=== Create an indicator match rule
 
 NOTE: {elastic-sec} provides limited support for indicator match rules. See <<support-indicator-rules>> for more information.
 
+. Go to *Rules* -> *Detection rules (SIEM)* -> *Create new rule*. The *Create new rule* page displays.
 . To create a rule that searches for events whose specified field value matches the specified indicator field value in the indicator index patterns, select *Indicator Match*, then fill in the following fields:
 .. *Source*: The individual index patterns or data view that specifies what data to search.
 .. *Custom query*: The query and filters used to retrieve the required results from
@@ -294,10 +214,34 @@ field values.
 +
 . Click *Continue* to <<rule-ui-basic-params, configure basic rule settings>>.
 
+[float]
+[[indicator-value-lists]]
+==== Use value lists with indicator match rules
+
+While there are numerous ways you can add data into indicator indices, you can use value lists as the indicator match index in an indicator match rule. Take the following scenario, for example:
+
+You uploaded a value list of known ransomware domains, and you want to be notified if any of those domains matches a value contained in a domain field in your security event index pattern.
+
+. Upload a value list of indicators.
+. Create an indicator match rule and fill in the following fields:
+.. *Index patterns*: The Elastic Security event indices on which the rule runs.
+.. *Custom query*: The query and filters used to retrieve the required results from the Elastic Security event indices (e.g., `host.domain :*`).
+.. *Indicator index patterns*: Value lists are stored in a hidden index called `.items-<Kibana space>`. Enter the name of the {kib} space in which this rule will run in this field.
+.. *Indicator index query*: Enter the value `list_id :`, followed by the name of the value list you want to use as your indicator index (uploaded in Step 1 above).
+.. *Indicator mapping*
+* *Field*: Enter the field from the Elastic Security event indices to be used for comparing values.
+* *Indicator index field*: Enter the type of value list you created (i.e., `keyword`, `text`, or `IP`).
++
+TIP: If you don't remember this information, go to *Rules* -> *Detection rules (SIEM)* -> *Import value lists*. Locate the appropriate value list and note the field in the corresponding `Type` column. (Examples include keyword, text, and IP.)
+
+[role="screenshot"]
+image::images/indicator_value_list.png[]
+
 [discrete]
 [[create-new-terms-rule]]
-==== Create a new terms rule
+=== Create a new terms rule
 
+. Go to *Rules* -> *Detection rules (SIEM)* -> *Create new rule*. The *Create new rule* page displays.
 . To create a rule that searches for each new term detected in source documents, select *New Terms*, then:
 .. Specify what data to search by entering individual {es} index patterns or selecting an existing data view.
 .. Use the filter and query fields to create the criteria used for detecting
@@ -313,36 +257,6 @@ IMPORTANT: When checking multiple fields, full results can be produced only for 
 For example, if a rule has an interval of 5 minutes, no additional look-back time, and a history window size of 7 days, a term will be considered new only if the time it appears within the last 7 days is also within the last 5 minutes. Configure the rule interval and additional look-back time when you <<rule-schedule, set the rule's schedule>>.
 . Click *Continue* to <<rule-ui-basic-params, configure basic rule settings>>.
 
-[discrete]
-[[preview-rules]]
-=== Preview your rule (optional)
-
-You can preview any custom or prebuilt rule to find out how noisy it will be. For a custom rule, you can then adjust the rule's query or other settings.
-
-NOTE: To preview rules, you need the `read` privilege for the `.preview.alerts-security.alerts-<space-id>` and `.internal.preview.alerts-security.alerts-<space-id>-*` indices, plus `All` privileges for the Security feature. Refer to <<detections-permissions-section>> for more information.
-
-Click the *Rule preview* button while creating or editing a rule. The preview opens in a side panel, showing a histogram and table with the alerts you can expect, based on the defined rule settings and past events in your indices. 
-
-[role="screenshot"]
-image::images/preview-rule.png[Rule preview]
-
-The preview also includes the effects of rule exceptions and override fields. In the histogram, alerts are stacked by `event.category` (or `host.name` for machine learning rules), and alerts with multiple values are counted more than once.
-
-To interact with the rule preview:
-
-* Use the date and time picker to define the preview's time range.
-+
-TIP: Avoid setting long time ranges with short rule intervals, or the rule preview might time out.
-
-* Click *Refresh* to update the preview. 
-** When you edit the rule's settings or the preview's time range, the button changes from blue (image:images/rule-preview-refresh-circle.png[Blue circular refresh icon,16,17]) to green (image:images/rule-preview-refresh-arrow.png[Green right-pointing arrow refresh icon,17,17]) to indicate that the rule has been edited since the last preview.
-** For a relative time range (such as `Last 1 hour`), refresh the preview to check for the latest results. (Previews don't automatically refresh with new incoming data.)
-
-* Click the *View details* icon (image:images/view-details-icon.png[View details icon,16,15]) in the alerts table to view the details of a particular alert.
-
-* To resize the preview, hover between the rule settings and preview, then click and drag the border. You can also click the border, then the collapse icon (image:images/collapse-right-icon.png[Collapse icon,16,17]) to collapse and expand the preview.
-
-* To close the preview, click the *Rule preview* button again.
 
 [float]
 [[rule-ui-basic-params]]
@@ -402,6 +316,9 @@ the rule. For example, links to background information.
 .. *False positive examples* (optional): List of common scenarios that may produce
 false-positive alerts.
 .. *MITRE ATT&CK^TM^ threats* (optional): Add relevant https://attack.mitre.org/[MITRE] framework tactics, techniques, and subtechniques.
+.. *Custom highlighted fields* (optional): Specify highlighted fields for personalized alert investigation flows. Fields with values are added to the <<investigation-section,Highlighted fields>> section within the alert details flyout. Fields without values aren't added. After you create the rule, you can find all custom highlighted fields in the About section of the rule details page.
++
+NOTE: There's no limit to the number of custom highlighted fields you can add.  
 .. *Investigation guide* (optional): Information for analysts investigating
 alerts created by the rule. You can also add action buttons to <<invest-guide-run-osquery, run Osquery>> or <<interactive-investigation-guides, launch Timeline investigations>> using alert data.
 .. *Author* (optional): The rule's authors.
@@ -487,8 +404,7 @@ https://www.elastic.co/subscriptions[appropriate license] and your role needs *A
 +
 NOTE: Each action type requires a connector. Connectors store the
 information required to send the notification from the external system. You can
-configure connectors while creating the rule or on the {kib} Rules and Connectors
-page (*Stack Management* -> *Rules and Connectors* -> *Connectors*). For more
+configure connectors while creating the rule or in *{stack-manage-app}* -> *{connectors-ui}*. For more
 information, see {kibana-ref}/action-types.html[Action and connector types].
 +
 [role="screenshot"]
@@ -516,12 +432,21 @@ image::images/selected-action-type.png[]
 
 . Use the default notification message or customize it. You can add more context to the message by clicking the icon above the message text box and selecting from a list of available <<rule-action-variables, alert notification variables>>.
 
-
 . Create the rule with or without activation.
 +
 NOTE: When you activate a rule, it is queued, and its schedule is determined by
 its initial run time. For example, if you activate a rule that runs every 5
 minutes at 14:03 but it does not run until 14:04, it will run again at 14:09.
+
+[IMPORTANT]
+==============
+After you activate a rule, you can check if it is running as expected
+using the <<alerts-ui-monitor, Monitoring tab>> on the Rules page. If you see
+values in the `Gap` column, you can <<troubleshoot-signals>>.
+
+When a rule fails to run, the {security-app} tries to rerun it at its next
+scheduled run time.
+==============
 
 [float]
 [[rule-action-variables]]
@@ -627,25 +552,35 @@ IMPORTANT: Host isolation involves quarantining a host from the network to preve
 [role="screenshot"]
 image::images/available-response-actions.png[Shows available response actions]
 
-[float]
-[[indicator-value-lists]]
-=== Use value lists with indicator match rules
+[discrete]
+[[preview-rules]]
+=== Preview your rule (optional)
 
-While there are numerous ways you can add data into indicator indices, you can use value lists as the indicator match index in an indicator match rule. Take the following scenario, for example:
+You can preview any custom or prebuilt rule to find out how noisy it will be. For a custom rule, you can then adjust the rule's query or other settings.
 
-You uploaded a value list of known ransomware domains, and you want to be notified if any of those domains matches a value contained in a domain field in your security event index pattern.
+NOTE: To preview rules, you need the `read` privilege for the `.preview.alerts-security.alerts-<space-id>` and `.internal.preview.alerts-security.alerts-<space-id>-*` indices, plus `All` privileges for the Security feature. Refer to <<detections-permissions-section>> for more information.
 
-. Upload a value list of indicators.
-. Create an indicator match rule and fill in the following fields:
-.. *Index patterns*: The Elastic Security event indices on which the rule runs.
-.. *Custom query*: The query and filters used to retrieve the required results from the Elastic Security event indices (e.g., `host.domain :*`).
-.. *Indicator index patterns*: Value lists are stored in a hidden index called `.items-<Kibana space>`. Enter the name of the {kib} space in which this rule will run in this field.
-.. *Indicator index query*: Enter the value `list_id :`, followed by the name of the value list you want to use as your indicator index (uploaded in Step 1 above).
-.. *Indicator mapping*
-* *Field*: Enter the field from the Elastic Security event indices to be used for comparing values.
-* *Indicator index field*: Enter the type of value list you created (i.e., `keyword`, `text`, or `IP`).
-+
-TIP: If you don't remember this information, go to *Manage* -> *Rules* -> *Import value lists*. Locate the appropriate value list and note the field in the corresponding `Type` column. (Examples include keyword, text, and IP.)
+
+Click the *Rule preview* button while creating or editing a rule. The preview opens in a side panel, showing a histogram and table with the alerts you can expect, based on the defined rule settings and past events in your indices. 
 
 [role="screenshot"]
-image::images/indicator_value_list.png[]
+image::images/preview-rule.png[Rule preview]
+
+The preview also includes the effects of rule exceptions and override fields. In the histogram, alerts are stacked by `event.category` (or `host.name` for machine learning rules), and alerts with multiple values are counted more than once.
+
+To interact with the rule preview:
+
+* Use the date and time picker to define the preview's time range.
++
+TIP: Avoid setting long time ranges with short rule intervals, or the rule preview might time out.
+
+* Click *Refresh* to update the preview. 
+** When you edit the rule's settings or the preview's time range, the button changes from blue (image:images/rule-preview-refresh-circle.png[Blue circular refresh icon,16,17]) to green (image:images/rule-preview-refresh-arrow.png[Green right-pointing arrow refresh icon,17,17]) to indicate that the rule has been edited since the last preview.
+** For a relative time range (such as `Last 1 hour`), refresh the preview to check for the latest results. (Previews don't automatically refresh with new incoming data.)
+
+* Click the *View details* icon (image:images/view-details-icon.png[View details icon,16,15]) in the alerts table to view the details of a particular alert.
+
+* To resize the preview, hover between the rule settings and preview, then click and drag the border. You can also click the border, then the collapse icon (image:images/collapse-right-icon.png[Collapse icon,16,17]) to collapse and expand the preview.
+
+* To close the preview, click the *Rule preview* button again.
+
