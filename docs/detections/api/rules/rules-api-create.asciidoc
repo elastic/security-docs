@@ -33,6 +33,7 @@ an event's `destination.ip` equals a value in the index. The index's field
 mappings should be {ecs-ref}[ECS-compliant].
 * *{ml-cap} rules*: Creates an alert when a {ml} job discovers an anomaly above
 the defined threshold (see <<machine-learning>>).
+* *New terms*: Generates an alert for each new term detected in source documents within a specified time range.
 
 IMPORTANT: To create {ml} rules, you must have the
 https://www.elastic.co/subscriptions[appropriate license] or use a
@@ -941,6 +942,29 @@ logic. In this example, both the event's `destination.ip` and
 <4> Sibling `entries` are evaluated using `or` logic. An alert is generated when
 at least one `entries` object evaluates to `true`.
 
+*Example 6*
+
+New terms rule that creates alerts when the Windows `rundll32.exe` process makes
+unusual network connections:
+
+[source,console]
+--------------------------------------------------
+POST api/detection_engine/rules
+{
+  "risk_score": 21,
+  "description": "Detects a user associated with a new IP address",
+  "name": "New User IP Detected",
+  "severity": "medium",
+  "type": "new_terms",
+  "language": "kuery",
+  "query": "*",
+  "new_terms_fields": ["user.id", "source.ip"],
+  "history_window_start": "now-30d",
+  "index": ["auditbeat*"]
+}
+--------------------------------------------------
+// KIBANA
+
 ==== Response code
 
 `200`::
@@ -1253,6 +1277,51 @@ Example response for an indicator match rule:
       ]
     }
   ],
+  "related_integrations": [],       <1>
+  "required_fields": [],            <1>
+  "setup": ""                       <1>
+}
+--------------------------------------------------
+<1> dev:[] These fields are under development and their usage may change: `related_integrations`, `required_fields`, and `setup`.
+
+Example response for a new terms rule:
+
+[source,json]
+--------------------------------------------------
+{
+  "author": [],
+  "created_at": "2020-10-06T07:07:58.227Z",
+  "updated_at": "2020-10-06T07:07:58.237Z",
+  "created_by": "elastic",
+  "description": "Detects a user associated with a new IP address",
+  "enabled": true,
+  "false_positives": [],
+  "from": "now-6m",
+  "id": "eb7225c0-566b-11ee-8b4f-bbf3afdeb9f4",
+  "immutable": false,
+  "interval": "5m",
+  "rule_id": "c6f5d0bc-7be9-47d4-b2f3-073d22641e30",
+  "max_signals": 100,
+  "risk_score": 50,
+  "risk_score_mapping": [],
+  "name": "New User IP Detected",
+  "references": [],
+  "severity": "medium",
+  "severity_mapping": [],
+  "updated_by": "elastic",
+  "tags": [],
+  "to": "now",
+  "type": "threat_match",
+  "threat": [],
+  "version": 1,
+  "exceptions_list": [],
+  "index": [
+    "auditbeat*"
+  ],
+  "query": "*",
+  "language": "kuery",
+  "new_terms_fields": ["user.id", "source.ip"],
+  "history_window_start": "now-30d",
   "related_integrations": [],       <1>
   "required_fields": [],            <1>
   "setup": ""                       <1>
