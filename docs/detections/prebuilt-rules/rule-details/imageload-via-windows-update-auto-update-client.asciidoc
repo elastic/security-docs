@@ -5,7 +5,7 @@ Identifies abuse of the Windows Update Auto Update Client (wuauclt.exe) to load 
 
 *Rule type*: eql
 
-*Rule indices*:
+*Rule indices*: 
 
 * logs-endpoint.events.*
 * winlogbeat-*
@@ -16,60 +16,55 @@ Identifies abuse of the Windows Update Auto Update Client (wuauclt.exe) to load 
 
 *Risk score*: 47
 
-*Runs every*: 5 minutes
+*Runs every*: 5m
 
 *Searches indices from*: now-9m ({ref}/common-options.html#date-math[Date Math format], see also <<rule-schedule, `Additional look-back time`>>)
 
 *Maximum alerts per execution*: 100
 
-*References*:
+*References*: 
 
 * https://dtm.uk/wuauclt/
 
-*Tags*:
+*Tags*: 
+
+* Domain: Endpoint
+* OS: Windows
+* Use Case: Threat Detection
+* Tactic: Defense Evasion
+* Data Source: Elastic Endgame
+* Data Source: Elastic Defend
+
+*Version*: 106
+
+*Rule authors*: 
 
 * Elastic
-* Host
-* Windows
-* Threat Detection
-* Defense Evasion
-* Elastic Endgame
-
-*Version*: 102 (<<imageload-via-windows-update-auto-update-client-history, version history>>)
-
-*Added ({stack} release)*: 7.11.0
-
-*Last modified ({stack} release)*: 8.6.0
-
-*Rule authors*: Elastic
 
 *Rule license*: Elastic License v2
+
 
 ==== Investigation guide
 
 
-[source,markdown]
+[source, markdown]
 ----------------------------------
 
 ----------------------------------
-
 
 ==== Rule query
 
 
-[source,js]
+[source, js]
 ----------------------------------
-process where event.type == "start" and
-(process.pe.original_file_name == "wuauclt.exe" or process.name :
-"wuauclt.exe") and /* necessary windows update client args to load
-a dll */ process.args : "/RunHandlerComServer" and process.args :
-"/UpdateDeploymentProvider" and /* common paths writeable by a
-standard user where the target DLL can be placed */ process.args :
-("C:\\Users\\*.dll", "C:\\ProgramData\\*.dll",
-"C:\\Windows\\Temp\\*.dll", "C:\\Windows\\Tasks\\*.dll")
-----------------------------------
+process where host.os.type == "windows" and event.type == "start" and
+  (process.pe.original_file_name == "wuauclt.exe" or process.name : "wuauclt.exe") and
+   /* necessary windows update client args to load a dll */
+   process.args : "/RunHandlerComServer" and process.args : "/UpdateDeploymentProvider" and
+   /* common paths writeable by a standard user where the target DLL can be placed */
+   process.args : ("C:\\Users\\*.dll", "C:\\ProgramData\\*.dll", "C:\\Windows\\Temp\\*.dll", "C:\\Windows\\Tasks\\*.dll")
 
-==== Threat mapping
+----------------------------------
 
 *Framework*: MITRE ATT&CK^TM^
 
@@ -81,40 +76,3 @@ standard user where the target DLL can be placed */ process.args :
 ** Name: System Binary Proxy Execution
 ** ID: T1218
 ** Reference URL: https://attack.mitre.org/techniques/T1218/
-
-[[imageload-via-windows-update-auto-update-client-history]]
-==== Rule version history
-
-Version 102 (8.6.0 release)::
-* Formatting only
-
-Version 101 (8.5.0 release)::
-* Updated query, changed from:
-+
-[source, js]
-----------------------------------
-process where event.type in ("start", "process_started") and
-(process.pe.original_file_name == "wuauclt.exe" or process.name :
-"wuauclt.exe") and /* necessary windows update client args to load
-a dll */ process.args : "/RunHandlerComServer" and process.args :
-"/UpdateDeploymentProvider" and /* common paths writeable by a
-standard user where the target DLL can be placed */ process.args :
-("C:\\Users\\*.dll", "C:\\ProgramData\\*.dll",
-"C:\\Windows\\Temp\\*.dll", "C:\\Windows\\Tasks\\*.dll")
-----------------------------------
-
-Version 9 (8.4.0 release)::
-* Formatting only
-
-Version 7 (8.3.0 release)::
-* Formatting only
-
-Version 5 (8.2.0 release)::
-* Formatting only
-
-Version 3 (7.12.0 release)::
-* Formatting only
-
-Version 2 (7.11.2 release)::
-* Formatting only
-
