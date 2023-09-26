@@ -13,126 +13,34 @@ import RoughContent from '../partials/rough-content-notice.mdx'
 
 <div id="rules-ui-create"></div>
 
-Rules run periodically and search for source events, matches, sequences, or ((ml)) job anomaly results
-that meet their criteria. When a rule's criteria are met, a detection alert is
-created.
+To create a new detection rule, follow these steps:
 
-You can create the following types of rules:
+1. Define the <DocLink id="serverlessSecurityAboutRules" section="rule-types">**rule type**</DocLink>. The configuration for this step varies depending on the rule type. 
+1. Configure basic rule settings.
+1. Configure advanced rule settings (optional).
+1. Set the rule's schedule.
+1. Set up alert notifications (optional).
+1. Set up response actions (optional).
 
-* <DocLink id="serverlessSecurityRulesUiCreate" section="create-a-custom-query-rule">**Custom query**</DocLink>: Query-based rule, which searches the defined indices and
-    creates an alert when one or more documents match the rule's query.
+<DocCallOut title="Requirements">
 
-* <DocLink id="serverlessSecurityRulesUiCreate" section="create-a-machine-learning-rule">**Machine learning**</DocLink>: ((ml-cap)) rule, which creates an alert when a ((ml)) job
-    discovers an anomaly above the defined threshold (see \<\<machine-learning>>).
+* To create detection rules, you must have access to data views, which requires the [((kib)) privilege](((kibana-ref))/kibana-role-management.html) `Data View Management`.
 
-    For ((ml)) rules, the associated ((ml)) job must be running. If the ((ml)) job isn't
-    running, the rule will:
+* You'll also need permissions to enable and view detections, manage rules, manage alerts, and preview rules. These permissions depend on the user role. Refer to <DocLink id="serverlessSecurityDetectionsPermissionsSection">Detections prerequisites and requirements</DocLink> for more information.
 
-    * Run and create alerts if existing anomaly results with scores above the defined threshold
-        are discovered.
-
-    * Issue an error stating the ((ml)) job was not running when the rule executed.
-* <DocLink id="serverlessSecurityRulesUiCreate" section="create-a-threshold-rule">**Threshold**</DocLink>: Searches the defined indices and creates a detections alert
-    when the number of times the specified field's value is present and meets the threshold during
-    a single execution. When multiple values meet the threshold, an alert is
-    generated for each value.
-
-    For example, if the threshold `field` is `source.ip` and its `value` is `10`, an
-    alert is generated for every source IP address that appears in at least 10 of
-    the rule's search results.
-
-* <DocLink id="serverlessSecurityRulesUiCreate" section="create-an-event-correlation-rule">**Event correlation**</DocLink>: Searches the defined indices and creates an alert when results match an
-    [Event Query Language (EQL)](((ref))/eql.html) query.
-
-* <DocLink id="serverlessSecurityRulesUiCreate" section="create-an-indicator-match-rule">**Indicator match**</DocLink>: Creates an alert when ((elastic-sec)) index field values match field values defined in the specified indicator index patterns. For example, you can create an indicator index for IP addresses and use this index to create an alert whenever an event's `destination.ip` equals a value in the index. Indicator index field mappings should be [ECS-compliant](((ecs-ref))). For information on creating ((es)) indices and field types, see
-    [Index some documents](((ref))/getting-started-index.html),
-    [Create index API](((ref))/indices-create-index.html), and
-    [Field data types](((ref))/mapping-types.html). If you have indicators in a standard file format, such as CSV or JSON, you can also use the Machine Learning Data Visualizer to import your indicators into an indicator index. See [Explore the data in ((kib))](((ml-docs))/ml-getting-started.html#sample-data-visualizer) and use the **Import Data** option to import your indicators.
+</DocCallOut>
 
 <DocCallOut title="Tip">
-You can also use value lists as the indicator match index. See <DocLink id="serverlessSecurityRulesUiCreate" section="use-value-lists-with-indicator-match-rules">Use value lists with indicator match rules</DocLink> at the end of this topic for more information.
+At any step, you can <DocLink id="serverlessSecurityRulesUiCreate" section="preview-your-rule-optional">preview the rule</DocLink> before saving it to see what kind of results you can expect.
 </DocCallOut>
-
-* <DocLink id="serverlessSecurityRulesUiCreate" section="create-a-new-terms-rule">**New terms**</DocLink>: Generates an alert for each new term detected in source documents within a specified time range. You can also detect a combination of up to three new terms (for example, a `host.ip` and `host.id` that have never been observed together before).
-
-When modifying rules or managing detection alerts, you can <DocLink id="serverlessSecurityAddExceptions">add exceptions</DocLink> that prevent a rule from generating alerts even when its criteria are met. This is useful for reducing noise, such as preventing alerts from trusted processes and internal IP addresses.
-
-<DocCallOut title="Note">
-You can add exceptions to custom query, machine learning, event correlation, and indicator match rule types.
-</DocCallOut>
-
-For both prebuilt and custom rules, you can send notifications when alerts are created. Notifications can be sent via ((jira)), Microsoft Teams, PagerDuty, Slack, and others, and can be configured when you create or edit a rule.
-
-Creating a new rule requires the following steps:
-
-1. <DocLink id="serverlessSecurityRulesUiCreate" section="select-rule-type-and-scope">Select rule type and scope</DocLink>
-1. <DocLink id="serverlessSecurityRulesUiCreate" section="configure-basic-rule-settings">Configure basic rule settings</DocLink>
-1. <DocLink id="serverlessSecurityRulesUiCreate" section="configure-advanced-rule-settings-optional">Configure advanced rule settings (optional)</DocLink>
-1. <DocLink id="serverlessSecurityRulesUiCreate" section="set-the-rules-schedule">Set the rule's schedule</DocLink>
-1. <DocLink id="serverlessSecurityRulesUiCreate" section="set-up-alert-notifications-optional">Set up alert notifications (optional)</DocLink>
-1. <DocLink id="serverlessSecurityRulesUiCreate" section="set-up-response-actions-optional">Set up response actions (optional)</DocLink>
 
 <DocCallOut title="Note">
 Additional configuration is required for detection rules using cross-cluster search. Refer to <DocLink id="serverlessSecurityRulesCrossClusterSearch">Cross-cluster search and detection rules</DocLink>.
 </DocCallOut>
 
-At any step, you can <DocLink id="serverlessSecurityRulesUiCreate" section="preview-your-rule-optional">preview the rule</DocLink> before saving it to see what kind of results you can expect.
-
-<DocCallOut title="Important" color="warning">
-
-After you activate a rule, you can check if it is running as expected
-using the <DocLink id="serverlessSecurityAlertsUiMonitor">Monitoring tab</DocLink> on the Rules page. If you see
-values in the `Gap` column, you can <DocLink id="serverlessSecurityAlertsUiMonitor" section="troubleshoot-missing-alerts">Troubleshoot missing alerts</DocLink>.
-
-When a rule fails to run, the ((security-app)) tries to rerun it at its next
-scheduled run time.
-
-</DocCallOut>
-
-![Shows the Rules page](../images/rules-ui-create/-detections-all-rules.png)
-
-<div id="alerting-authorization-model"></div>
-
-## Authorization
-
-Rules, including all background detection and the actions they generate, are authorized using an [API key](((kibana-ref))/api-keys.html) associated with the last user to edit the rule. Upon creating or modifying a rule, an API key is generated for that user, capturing a snapshot of their privileges. The API key is then used to run all background tasks associated with the rule including detection checks and executing actions.
-
-<DocCallOut title="Important" color="warning">
-
-If a rule requires certain privileges to run, such as index privileges, keep in mind that if a user without those privileges updates the rule, the rule will no longer function.
-
-</DocCallOut>
-
-<div id="views-index-patterns"></div>
-
-## Data views and index patterns
-
-When you create a rule, you must either specify the ((es)) index pattens for which you'd like the rule to run, or select a [data view](((kibana-ref))/data-views.html) as the data source. If you select a data view, you can select <DocLink id="serverlessSecurityRuntimeFields">runtime fields</DocLink> associated with that data view to create a query for the rule (with the exception of ((ml)) rules, which do not use queries).
-
-<DocCallOut title="Note">
-To access data views, ensure you have the [required permissions](((kibana-ref))/data-views.html#data-views-read-only-access).
-</DocCallOut>
-
-<div id="create-rule-ui"></div>
-
-## Select rule type and scope
-
-1. Go to **Manage** -> **Rules** -> **Create new rule**. The **Create new rule** page displays.
-
-    <DocImage size="xl" url="../images/rules-ui-create/-detections-create-new-rule.png" alt="Create new rule page" />
-
-1. Select the type of rule you want to create, then follow the steps outlined in that section:
-
-* <DocLink id="serverlessSecurityRulesUiCreate" section="create-a-machine-learning-rule">Machine learning</DocLink>
-* <DocLink id="serverlessSecurityRulesUiCreate" section="create-a-custom-query-rule">Custom query</DocLink>
-* <DocLink id="serverlessSecurityRulesUiCreate" section="create-a-threshold-rule">Threshold</DocLink>
-* <DocLink id="serverlessSecurityRulesUiCreate" section="create-an-event-correlation-rule">Event correlation</DocLink>
-* <DocLink id="serverlessSecurityRulesUiCreate" section="create-an-indicator-match-rule">Indicator match</DocLink>
-* <DocLink id="serverlessSecurityRulesUiCreate" section="create-a-new-terms-rule">New terms</DocLink>
-
 <div id="create-ml-rule"></div>
 
-### Create a machine learning rule
+## Create a machine learning rule
 
 <DocCallOut title="Important" color="warning">
 
@@ -141,7 +49,7 @@ To create or edit ((ml)) rules, you must have the [appropriate license](https://
 role, and the selected ((ml)) job must be running for the rule to function correctly.
 
 </DocCallOut>
-
+1. Go to **Rules** -> **Detection rules (SIEM)** -> **Create new rule**. The **Create new rule** page displays.
 1. To create a rule based on a ((ml)) anomaly threshold, select **Machine Learning**,
     then select:
 
@@ -156,7 +64,8 @@ role, and the selected ((ml)) job must be running for the rule to function corre
 
 <div id="create-custom-rule"></div>
 
-### Create a custom query rule
+## Create a custom query rule
+1. Go to **Rules** -> **Detection rules (SIEM)** -> **Create new rule**. The **Create new rule** page displays.
 1. To create a rule based on a KQL or Lucene query, select **Custom query**,
     then:
 
@@ -204,7 +113,8 @@ role, and the selected ((ml)) job must be running for the rule to function corre
 
 <div id="create-threshold-rule"></div>
 
-### Create a threshold rule
+## Create a threshold rule
+1. Go to **Rules** -> **Detection rules (SIEM)** -> **Create new rule**. The **Create new rule** page displays.
 1. To create a rule based on a source event field threshold, select **Threshold**, then:
     1. Define which ((es)) indices the rule analyzes for alerts.
     1. Use the filter and query fields to create the criteria used for detecting
@@ -229,15 +139,21 @@ role, and the selected ((ml)) job must be running for the rule to function corre
 
 <div id="create-eql-rule"></div>
 
-### Create an event correlation rule
+## Create an event correlation rule
+1. Go to **Rules** -> **Detection rules (SIEM)** -> **Create new rule**. The **Create new rule** page displays.
 1. To create an event correlation rule using EQL, select **Event Correlation**, then:
-    1. Define which ((es)) indices or data view the rule searches for alerts.
-    1. Add an [EQL statement](((ref))/eql-syntax.html) used to detect alerts.
+    1. Define which ((es)) indices or data view the rule searches when querying for events.
+    1. Write an [EQL query](((ref))/eql-syntax.html) that searches for matching events or a series of matching events.
+
+        <DocCallOut title="Tip">
+        To find events that are missing in a sequence, use the [missing events](((ref))/eql-syntax.html#eql-missing-events) syntax.  
 
         For example, the following rule detects when `msxsl.exe` makes an outbound
         network connection:
 
-            * **Index patterns**: `winlogbeat-*`
+        </DocCallOut>
+
+    * **Index patterns**: `winlogbeat-*`
 
         Winlogbeat ships Windows events to ((elastic-sec)).
 
@@ -274,12 +190,13 @@ role, and the selected ((ml)) job must be running for the rule to function corre
 
 <div id="create-indicator-rule"></div>
 
-### Create an indicator match rule
+## Create an indicator match rule
 
 <DocCallOut title="Note">
 ((elastic-sec)) provides limited support for indicator match rules. See <DocLink id="serverlessSecurityDetectionEngineOverview" section="limited-support-for-indicator-match-rules">Limited support for indicator match rules</DocLink> for more information.
 </DocCallOut>
 
+1. Go to **Rules** -> **Detection rules (SIEM)** -> **Create new rule**. The **Create new rule** page displays.
 1. To create a rule that searches for events whose specified field value matches the specified indicator field value in the indicator index patterns, select **Indicator Match**, then fill in the following fields:
     1. **Source**: The individual index patterns or data view that specifies what data to search.
     1. **Custom query**: The query and filters used to retrieve the required results from
@@ -295,7 +212,7 @@ role, and the selected ((ml)) job must be running for the rule to function corre
     1. **Indicator index patterns**: The indicator index patterns containing field values for which you want to generate alerts. This field is automatically populated with indices specified in the `securitySolution:defaultThreatIndex` advanced setting. For more information, see <DocLink id="serverlessSecurityAdvancedSettings" section="update-default-elastic-security-threat-intelligence-indices">Update default Elastic Security threat intelligence indices</DocLink>.
 
 <DocCallOut title="Important" color="warning">
-Data in indicator indices must be <DocLink id="serverlessSecurityOverview" section="ecs-compliant-reqs">ECS compatible</DocLink>, and so it must contain a `@timestamp` field.
+Data in indicator indices must be <DocLink id="serverlessSecurityOverview" section="ecs-compliance-data-requirements">ECS compatible</DocLink>, and so it must contain a `@timestamp` field.
 
 </DocCallOut>
 
@@ -331,10 +248,35 @@ field values.
 
 . Click **Continue** to <DocLink id="serverlessSecurityRulesUiCreate" section="configure-basic-rule-settings">configure basic rule settings</DocLink>.
 
+<div id="indicator-value-lists"></div>
+
+### Use value lists with indicator match rules
+
+While there are numerous ways you can add data into indicator indices, you can use value lists as the indicator match index in an indicator match rule. Take the following scenario, for example:
+
+You uploaded a value list of known ransomware domains, and you want to be notified if any of those domains matches a value contained in a domain field in your security event index pattern.
+
+1. Upload a value list of indicators.
+1. Create an indicator match rule and fill in the following fields:
+    1. **Index patterns**: The Elastic Security event indices on which the rule runs.
+    1. **Custom query**: The query and filters used to retrieve the required results from the Elastic Security event indices (e.g., `host.domain :*`).
+    1. **Indicator index patterns**: Value lists are stored in a hidden index called `.items-<Kibana space>`. Enter the name of the ((kib)) space in which this rule will run in this field.
+    1. **Indicator index query**: Enter the value `list_id :`, followed by the name of the value list you want to use as your indicator index (uploaded in Step 1 above).
+    1. **Indicator mapping**
+* **Field**: Enter the field from the Elastic Security event indices to be used for comparing values.
+* **Indicator index field**: Enter the type of value list you created (i.e., `keyword`, `text`, or `IP`).
+
+    <DocCallOut title="Tip">
+    If you don't remember this information, go to **Rules** -> **Detection rules (SIEM)** -> **Import value lists**. Locate the appropriate value list and note the field in the corresponding `Type` column. (Examples include keyword, text, and IP.)
+    </DocCallOut>
+
+![](../images/rules-ui-create/-detections-indicator_value_list.png)
+
 <div id="create-new-terms-rule"></div>
 
-### Create a new terms rule
+## Create a new terms rule
 
+1. Go to **Rules** -> **Detection rules (SIEM)** -> **Create new rule**. The **Create new rule** page displays.
 1. To create a rule that searches for each new term detected in source documents, select **New Terms**, then:
     1. Specify what data to search by entering individual ((es)) index patterns or selecting an existing data view.
     1. Use the filter and query fields to create the criteria used for detecting
@@ -356,40 +298,6 @@ field values.
         For example, if a rule has an interval of 5 minutes, no additional look-back time, and a history window size of 7 days, a term will be considered new only if the time it appears within the last 7 days is also within the last 5 minutes. Configure the rule interval and additional look-back time when you <DocLink id="serverlessSecurityRulesUiCreate" section="set-the-rules-schedule">set the rule's schedule</DocLink>.
 
 1. Click **Continue** to <DocLink id="serverlessSecurityRulesUiCreate" section="configure-basic-rule-settings">configure basic rule settings</DocLink>.
-
-<div id="preview-rules"></div>
-
-## Preview your rule (optional)
-
-You can preview any custom or prebuilt rule to find out how noisy it will be. For a custom rule, you can then adjust the rule's query or other settings.
-
-<DocCallOut title="Note">
-To preview rules, you need the `read` privilege for the `.preview.alerts-security.alerts-<space-id>` and `.internal.preview.alerts-security.alerts-<space-id>-*` indices, plus `All` privileges for the Security feature. Refer to <DocLink id="serverlessSecurityDetectionsPermissionsSection">Detections prerequisites and requirements</DocLink> for more information.
-</DocCallOut>
-
-Click the **Rule preview** button while creating or editing a rule. The preview opens in a side panel, showing a histogram and table with the alerts you can expect, based on the defined rule settings and past events in your indices. 
-
-![Rule preview](../images/rules-ui-create/-detections-preview-rule.png)
-
-The preview also includes the effects of rule exceptions and override fields. In the histogram, alerts are stacked by `event.category` (or `host.name` for machine learning rules), and alerts with multiple values are counted more than once.
-
-To interact with the rule preview:
-
-* Use the date and time picker to define the preview's time range.
-
-    <DocCallOut title="Tip">
-    Avoid setting long time ranges with short rule intervals, or the rule preview might time out.
-    </DocCallOut>
-
-* Click **Refresh** to update the preview. 
-    * When you edit the rule's settings or the preview's time range, the button changes from blue (<DocIcon type="refresh" title="Refresh" />) to green (<DocIcon type="kqlFunction" title="" />) to indicate that the rule has been edited since the last preview.
-    * For a relative time range (such as `Last 1 hour`), refresh the preview to check for the latest results. (Previews don't automatically refresh with new incoming data.)
-
-* Click the **View details** icon (<DocIcon type="expand" title="View details" />) in the alerts table to view the details of a particular alert.
-
-* To resize the preview, hover between the rule settings and preview, then click and drag the border. You can also click the border, then the collapse icon (<DocIcon type="menuRight" title="Move menu right" />) to collapse and expand the preview.
-
-* To close the preview, click the **Rule preview** button again.
 
 <div id="rule-ui-basic-params"></div>
 
@@ -457,6 +365,12 @@ To interact with the rule preview:
         false-positive alerts.
 
     1. **MITRE ATT&CK<sup>TM</sup> threats** (optional): Add relevant [MITRE](https://attack.mitre.org/) framework tactics, techniques, and subtechniques.
+    1. **Custom highlighted fields** (optional): Specify highlighted fields for personalized alert investigation flows. Fields with values are added to the <DocLink id="serverlessSecurityViewAlertDetails" section="investigation">Highlighted fields</DocLink> section within the alert details flyout. Fields without values aren't added. After you create the rule, you can find all custom highlighted fields in the About section of the rule details page.
+
+        <DocCallOut title="Note">
+        There's no limit to the number of custom highlighted fields you can add.  
+        </DocCallOut>
+
     1. **Investigation guide** (optional): Information for analysts investigating
         alerts created by the rule. You can also add action buttons to <DocLink id="serverlessSecurityInvestGuideRunOsquery">run Osquery</DocLink> or <DocLink id="serverlessSecurityInteractiveInvestigationGuides">launch Timeline investigations</DocLink> using alert data.
 
@@ -556,8 +470,7 @@ To use ((kib)) Actions for alert notifications, you need the
     <DocCallOut title="Note">
     Each action type requires a connector. Connectors store the
     information required to send the notification from the external system. You can
-    configure connectors while creating the rule or on the ((kib)) Rules and Connectors
-    page (*Stack Management* -> **Rules and Connectors** -> **Connectors**). For more
+    configure connectors while creating the rule or in **((stack-manage-app))** -> **((connectors-ui))**. For more
     information, see [Action and connector types](((kibana-ref))/action-types.html).
 
     ![Available connector types](../images/rules-ui-create/-detections-available-action-types.png)
@@ -591,6 +504,17 @@ To use ((kib)) Actions for alert notifications, you need the
     its initial run time. For example, if you activate a rule that runs every 5
     minutes at 14:03 but it does not run until 14:04, it will run again at 14:09.
     </DocCallOut>
+
+<DocCallOut title="Important" color="warning">
+
+After you activate a rule, you can check if it is running as expected
+using the <DocLink id="serverlessSecurityAlertsUiMonitor">Monitoring tab</DocLink> on the Rules page. If you see
+values in the `Gap` column, you can <DocLink id="serverlessSecurityAlertsUiMonitor" section="troubleshoot-missing-alerts">Troubleshoot missing alerts</DocLink>.
+
+When a rule fails to run, the ((security-app)) tries to rerun it at its next
+scheduled run time.
+
+</DocCallOut>
 
 <div id="rule-action-variables"></div>
 
@@ -706,26 +630,37 @@ Host isolation involves quarantining a host from the network to prevent further 
 
 ![Shows available response actions](../images/rules-ui-create/-detections-available-response-actions.png)
 
-<div id="indicator-value-lists"></div>
+<div id="preview-rules"></div>
 
-## Use value lists with indicator match rules
+## Preview your rule (optional)
 
-While there are numerous ways you can add data into indicator indices, you can use value lists as the indicator match index in an indicator match rule. Take the following scenario, for example:
+You can preview any custom or prebuilt rule to find out how noisy it will be. For a custom rule, you can then adjust the rule's query or other settings.
 
-You uploaded a value list of known ransomware domains, and you want to be notified if any of those domains matches a value contained in a domain field in your security event index pattern.
+<DocCallOut title="Note">
+To preview rules, you need the `read` privilege for the `.preview.alerts-security.alerts-<space-id>` and `.internal.preview.alerts-security.alerts-<space-id>-*` indices, plus `All` privileges for the Security feature. Refer to <DocLink id="serverlessSecurityDetectionsPermissionsSection">Detections prerequisites and requirements</DocLink> for more information.
+</DocCallOut>
 
-1. Upload a value list of indicators.
-1. Create an indicator match rule and fill in the following fields:
-    1. **Index patterns**: The Elastic Security event indices on which the rule runs.
-    1. **Custom query**: The query and filters used to retrieve the required results from the Elastic Security event indices (e.g., `host.domain :*`).
-    1. **Indicator index patterns**: Value lists are stored in a hidden index called `.items-<Kibana space>`. Enter the name of the ((kib)) space in which this rule will run in this field.
-    1. **Indicator index query**: Enter the value `list_id :`, followed by the name of the value list you want to use as your indicator index (uploaded in Step 1 above).
-    1. **Indicator mapping**
-* **Field**: Enter the field from the Elastic Security event indices to be used for comparing values.
-* **Indicator index field**: Enter the type of value list you created (i.e., `keyword`, `text`, or `IP`).
+Click the **Rule preview** button while creating or editing a rule. The preview opens in a side panel, showing a histogram and table with the alerts you can expect, based on the defined rule settings and past events in your indices. 
+
+![Rule preview](../images/rules-ui-create/-detections-preview-rule.png)
+
+The preview also includes the effects of rule exceptions and override fields. In the histogram, alerts are stacked by `event.category` (or `host.name` for machine learning rules), and alerts with multiple values are counted more than once.
+
+To interact with the rule preview:
+
+* Use the date and time picker to define the preview's time range.
 
     <DocCallOut title="Tip">
-    If you don't remember this information, go to **Manage** -> **Rules** -> **Import value lists**. Locate the appropriate value list and note the field in the corresponding `Type` column. (Examples include keyword, text, and IP.)
+    Avoid setting long time ranges with short rule intervals, or the rule preview might time out.
     </DocCallOut>
 
-![](../images/rules-ui-create/-detections-indicator_value_list.png)
+* Click **Refresh** to update the preview. 
+    * When you edit the rule's settings or the preview's time range, the button changes from blue (<DocImage flatImage alt="Green right-pointing arrow refresh icon,17,17" url="../images/rules-ui-create/-detections-rule-preview-refresh-arrow.png" />) to indicate that the rule has been edited since the last preview.
+    * For a relative time range (such as `Last 1 hour`), refresh the preview to check for the latest results. (Previews don't automatically refresh with new incoming data.)
+
+* Click the **View details** icon (<DocImage flatImage alt="View details icon,16,15" url="../images/rules-ui-create/-detections-view-details-icon.png" />) in the alerts table to view the details of a particular alert.
+
+* To resize the preview, hover between the rule settings and preview, then click and drag the border. You can also click the border, then the collapse icon (<DocImage flatImage alt="Collapse icon,16,17" url="../images/rules-ui-create/-detections-collapse-right-icon.png" />) to collapse and expand the preview.
+
+* To close the preview, click the **Rule preview** button again.
+
