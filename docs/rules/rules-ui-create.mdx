@@ -4,7 +4,7 @@ slug: /serverless/security/rules-create
 title: Create a detection rule
 description: Create detection rules to monitor your environment for suspicious and malicious behavior.
 tags: ["serverless","security","defend","how-to","manage","secure"]
-status: rough content
+status: in review
 ---
 
 <div id="rules-ui-create"></div>
@@ -20,9 +20,9 @@ To create a new detection rule, follow these steps:
 
 <DocCallOut title="Requirements">
 
-* To create detection rules, you must have access to data views, which requires the [((kib)) privilege](((kibana-ref))/kibana-role-management.html) `Data View Management`.
+* To create detection rules, you must have access to data views, which requires the appropriate user role.
 
-* You'll also need permissions to enable and view detections, manage rules, manage alerts, and preview rules. These permissions depend on the user role. Refer to <DocLink id="serverlessSecurityDetectionsPermissionsSection">Detections prerequisites and requirements</DocLink> for more information.
+* You'll also need permissions to enable and view detections, manage rules, manage alerts, and preview rules. These permissions depend on the user role. Refer to <DocLink id="serverlessSecurityDetectionsPermissionsSection">Detections requirements</DocLink> for more information.
 
 </DocCallOut>
 
@@ -35,11 +35,7 @@ At any step, you can <DocLink id="serverlessSecurityRulesUiCreate" section="prev
 ## Create a machine learning rule
 
 <DocCallOut title="Important" color="warning">
-
-To create or edit ((ml)) rules, you must have the [appropriate license](https://www.elastic.co/subscriptions) or use a
-[cloud deployment](((ess-trial))). Additionally, you must have the [`machine_learning_admin`](((ref))/built-in-roles.html) user
-role, and the selected ((ml)) job must be running for the rule to function correctly.
-
+To create or edit ((ml)) rules, you need an [appropriate license](https://www.elastic.co/subscriptions) and user role. Additionally, the selected ((ml)) job must be running for the rule to function correctly.
 </DocCallOut>
 1. Go to **Rules** -> **Detection rules (SIEM)** -> **Create new rule**. The **Create new rule** page displays.
 1. To create a rule based on a ((ml)) anomaly threshold, select **Machine Learning**,
@@ -52,7 +48,7 @@ role, and the selected ((ml)) job must be running for the rule to function corre
         </DocCallOut>
 
     1. The anomaly score threshold above which alerts are created.
-11. Click **Continue** to <DocLink id="serverlessSecurityRulesUiCreate" section="configure-basic-rule-settings">configure basic rule settings</DocLink>.
+1. Click **Continue** to <DocLink id="serverlessSecurityRulesUiCreate" section="configure-basic-rule-settings">configure basic rule settings</DocLink>.
 
 <div id="create-custom-rule"></div>
 
@@ -65,28 +61,28 @@ role, and the selected ((ml)) job must be running for the rule to function corre
     1. Use the filter and query fields to create the criteria used for detecting
         alerts.
 
-        The following example (based on the prebuilt rule \<\<prebuilt-rule-0-14-2-volume-shadow-copy-deleted-or-resized-via-vssadmin, Volume Shadow Copy Deleted or Resized via VssAdmin>>) detects when the `vssadmin delete shadows`
+        The following example (based on the prebuilt rule Volume Shadow Copy Deleted or Resized via VssAdmin) detects when the `vssadmin delete shadows`
         Windows command is executed:
 
-    * **Index patterns**: `winlogbeat-*`
+        * **Index patterns**: `winlogbeat-*`
 
-        Winlogbeat ships Windows event logs to ((elastic-sec)).
+            Winlogbeat ships Windows event logs to ((elastic-sec)).
 
-    * **Custom query**: `event.action:"Process Create (rule: ProcessCreate)" and process.name:"vssadmin.exe" and process.args:("delete" and "shadows")`
+        * **Custom query**: `event.action:"Process Create (rule: ProcessCreate)" and process.name:"vssadmin.exe" and process.args:("delete" and "shadows")`
 
-        Searches the `winlogbeat-*` indices for `vssadmin.exe` executions with
-        the `delete` and `shadow` arguments, which are used to delete a volume's shadow
-        copies.
+            Searches the `winlogbeat-*` indices for `vssadmin.exe` executions with
+            the `delete` and `shadow` arguments, which are used to delete a volume's shadow
+            copies.
 
-        ![Rule query example](../images/rules-ui-create/-detections-rule-query-example.png)
+            ![Rule query example](../images/rules-ui-create/-detections-rule-query-example.png)
 
-    1. You can use ((kib)) saved queries (<DocIcon type="filterInCircle" title="Filter" />) and queries from saved Timelines (*Import query from saved Timeline*) as rule conditions.
+    1. You can use saved queries (<DocIcon type="filterInCircle" title="Filter" />) and queries from saved Timelines (**Import query from saved Timeline**) as rule conditions.
 
         When you use a saved query, the **Load saved query "_query name_" dynamically on each rule execution** check box appears:
 
-* Select this to use the saved query every time the rule runs. This links the rule to the saved query, and you won't be able to modify the rule's **Custom query** field or filters because the rule will only use settings from the saved query. To make changes, modify the saved query itself.
+            * Select this to use the saved query every time the rule runs. This links the rule to the saved query, and you won't be able to modify the rule's **Custom query** field or filters because the rule will only use settings from the saved query. To make changes, modify the saved query itself.
 
-* Deselect this to load the saved query as a one-time way of populating the rule's **Custom query** field and filters. This copies the settings from the saved query to the rule, so you can then further adjust the rule's query and filters as needed. If the saved query is later changed, the rule will not inherit those changes.
+            * Deselect this to load the saved query as a one-time way of populating the rule's **Custom query** field and filters. This copies the settings from the saved query to the rule, so you can then further adjust the rule's query and filters as needed. If the saved query is later changed, the rule will not inherit those changes.
 
 1. <DocBadge template="technical preview" />  (Optional, [Platinum or higher subscription](https://www.elastic.co/pricing) required) Use **Suppress alerts by** to reduce the number of repeated or duplicate alerts created by the rule.
 
@@ -101,11 +97,11 @@ role, and the selected ((ml)) job must be running for the rule to function corre
         * **Per rule execution**: Create an alert each time the rule runs and matches duplicate events.
         * **Per time period**: Create one alert for all matching events within a specified time window, beginning when the rule first matches an event and creates the alert.
 
-        For example, if a rule runs every 5 minutes but you don't need alerts that frequently, you can set the suppression time period to a longer time, such as 1 hour. If the rule matches an event, it creates an alert at that time, and for the next hour any subsequent matches will be suppressed.
+            For example, if a rule runs every 5 minutes but you don't need alerts that frequently, you can set the suppression time period to a longer time, such as 1 hour. If the rule matches an event, it creates an alert at that time, and for the next hour any subsequent matches will be suppressed.
 
         With either option, you can view all events associated with suppressed alerts by investigating the alert in Timeline. Refer to <DocLink id="serverlessSecurityAlertSuppression">Suppress detection alerts</DocLink> for more information.
 
-. Click **Continue** to <DocLink id="serverlessSecurityRulesUiCreate" section="configure-basic-rule-settings">configure basic rule settings</DocLink>.
+1. Click **Continue** to <DocLink id="serverlessSecurityRulesUiCreate" section="configure-basic-rule-settings">configure basic rule settings</DocLink>.
 
 <div id="create-threshold-rule"></div>
 
@@ -117,7 +113,7 @@ role, and the selected ((ml)) job must be running for the rule to function corre
         alerts.
 
         <DocCallOut title="Note">
-        You can use ((kib)) saved queries (<DocIcon type="filterInCircle" title="Filter" />) and queries from saved Timelines (*Import query from saved Timeline*) as rule conditions.
+        You can use saved queries (<DocIcon type="filterInCircle" title="Filter" />) and queries from saved Timelines (**Import query from saved Timeline**) as rule conditions.
         </DocCallOut>
 
     1. Use the `Group by` and `Threshold` fields to determine which source event field is used as a threshold and the threshold's value.
@@ -125,7 +121,7 @@ role, and the selected ((ml)) job must be running for the rule to function corre
 
         For example, if `Group by` is `source.ip`, `destination.ip` and its `Threshold` is `10`, an alert is generated for every pair of source and destination IP addresses that appear in at least 10 of the rule's search results.
 
-        You can also leave the `Group by` field . The rule then creates an alert when the number of search results is equal to or greater than the threshold value. If you set `Count` to limit the results by `process.name` >= 2, an alert will only be generated for source/destination IP pairs that appear with at least 2 unique process names across all events.
+        You can also leave the `Group by` field undefined. The rule then creates an alert when the number of search results is equal to or greater than the threshold value. If you set `Count` to limit the results by `process.name` >= 2, an alert will only be generated for source/destination IP pairs that appear with at least 2 unique process names across all events.
 
         <DocCallOut title="Important" color="warning">
         Alerts created by threshold rules are synthetic alerts that do not resemble the source documents. The alert itself only contains data about the fields that were aggregated over (the `Group by` fields). Other fields are omitted, because they can vary across all source documents that were counted toward the threshold. Additionally, you can reference the actual count of documents that exceeded the threshold from the `kibana.alert.threshold_result.count` field.
@@ -142,45 +138,44 @@ role, and the selected ((ml)) job must be running for the rule to function corre
     1. Write an [EQL query](((ref))/eql-syntax.html) that searches for matching events or a series of matching events.
 
         <DocCallOut title="Tip">
-        To find events that are missing in a sequence, use the [missing events](((ref))/eql-syntax.html#eql-missing-events) syntax.  
+        To find events that are missing in a sequence, use the [missing events](((ref))/eql-syntax.html#eql-missing-events) syntax.
+        </DocCallOut>  
 
         For example, the following rule detects when `msxsl.exe` makes an outbound
-        network connection:
+        network connection:    
 
-        </DocCallOut>
+        * **Index patterns**: `winlogbeat-*`
 
-    * **Index patterns**: `winlogbeat-*`
+            Winlogbeat ships Windows events to ((elastic-sec)).
 
-        Winlogbeat ships Windows events to ((elastic-sec)).
+        * **EQL query**:
 
-    * **EQL query**:
+            ```eql
+            sequence by process.entity_id
+              [process
+                where event.type in ("start", "process_started")
+                and process.name == "msxsl.exe"]
+              [network
+                where event.type == "connection"
+                and process.name == "msxsl.exe"
+                and network.direction == "outgoing"]
+            ```
 
-        ```eql
-        sequence by process.entity_id
-        [process
-        where event.type in ("start", "process_started")
-        and process.name == "msxsl.exe"]
-        [network
-        where event.type == "connection"
-        and process.name == "msxsl.exe"
-        and network.direction == "outgoing"]
-        ```
+            Searches the `winlogbeat-*` indices for sequences of a `msxsl.exe` process start
+            event followed by an outbound network connection event that was started by the
+            `msxsl.exe` process.
 
-        Searches the `winlogbeat-*` indices for sequences of a `msxsl.exe` process start
-        event followed by an outbound network connection event that was started by the
-        `msxsl.exe` process.
+            ![](../images/rules-ui-create/-detections-eql-rule-query-example.png)
 
-        ![](../images/rules-ui-create/-detections-eql-rule-query-example.png)
+            <DocCallOut title="Note">
+            For sequence events, the ((security-app)) generates a single alert when all events listed in the sequence are detected. To see the matched sequence events in more detail, you can view the alert in the Timeline, and, if all events came from the same process, open the alert in Analyze Event view.
 
-        <DocCallOut title="Note">
-        For sequence events, the ((security-app)) generates a single alert when all events listed in the sequence are detected. To see the matched sequence events in more detail, you can view the alert in the Timeline, and, if all events came from the same process, open the alert in Analyze Event view.
-
-        </DocCallOut>
+            </DocCallOut>
 
 1. (Optional) Click the EQL settings icon (<DocIcon type="controlsVertical" title="EQL settings" />) to configure additional fields used by [EQL search](((ref))/eql.html#specify-a-timestamp-or-event-category-field):
-  * **Event category field**: Contains the event classification, such as `process`, `file`, or `network`. This field is typically mapped as a field type in the [keyword family](((ref))/keyword.html). Defaults to the `event.category` ECS field.
-  * **Tiebreaker field**: Sets a secondary field for sorting events (in ascending, lexicographic order) if they have the same timestamp.
-  * **Timestamp field**: Contains the event timestamp used for sorting a sequence of events. This is different from the **Timestamp override** advanced setting, which is used for querying events within a range. Defaults to the `@timestamp` ECS field.
+    * **Event category field**: Contains the event classification, such as `process`, `file`, or `network`. This field is typically mapped as a field type in the [keyword family](((ref))/keyword.html). Defaults to the `event.category` ECS field.
+    * **Tiebreaker field**: Sets a secondary field for sorting events (in ascending, lexicographic order) if they have the same timestamp.
+    * **Timestamp field**: Contains the event timestamp used for sorting a sequence of events. This is different from the **Timestamp override** advanced setting, which is used for querying events within a range. Defaults to the `@timestamp` ECS field.
 
 1. Click **Continue** to <DocLink id="serverlessSecurityRulesUiCreate" section="configure-basic-rule-settings">configure basic rule settings</DocLink>.
 
@@ -201,16 +196,17 @@ role, and the selected ((ml)) job must be running for the rule to function corre
         <DocCallOut title="Tip">
         If you want the rule to check every field in the indices, use this
         wildcard expression: `*:*`.
+        </DocCallOut>
 
-        NOTE: You can use ((kib)) saved queries (<DocIcon type="filterInCircle" title="Filter" />) and queries from saved Timelines (*Import query from saved Timeline*) as rule conditions.
+        <DocCallOut title="Note">
+        You can use saved queries (<DocIcon type="filterInCircle" title="Filter" />) and queries from saved Timelines (**Import query from saved Timeline**) as rule conditions.
         </DocCallOut>
 
     1. **Indicator index patterns**: The indicator index patterns containing field values for which you want to generate alerts. This field is automatically populated with indices specified in the `securitySolution:defaultThreatIndex` advanced setting. For more information, see <DocLink id="serverlessSecurityAdvancedSettings" section="update-default-elastic-security-threat-intelligence-indices">Update default Elastic Security threat intelligence indices</DocLink>.
 
-<DocCallOut title="Important" color="warning">
-Data in indicator indices must be <DocLink id="serverlessSecurityOverview" section="ecs-compliance-data-requirements">ECS compatible</DocLink>, and so it must contain a `@timestamp` field.
-
-</DocCallOut>
+        <DocCallOut title="Important" color="warning">
+        Data in indicator indices must be <DocLink id="serverlessSecurityOverview" section="ecs-compliance-data-requirements">ECS compatible</DocLink>, and so it must contain a `@timestamp` field.
+        </DocCallOut>
 
     1. **Indicator index query**: The query and filters used to filter the fields from
         the indicator index patterns. The default query `@timestamp > "now-30d/d"` searches specified indicator indices for indicators ingested during the past 30 days and rounds the start time down to the nearest day (resolves to UTC `00:00:00`).
@@ -219,11 +215,11 @@ Data in indicator indices must be <DocLink id="serverlessSecurityOverview" secti
         values. When the field values are identical, an alert is generated. To define
         which field values are compared from the indices add the following:
 
-    * **Field**: The field used for comparing values in the ((elastic-sec)) event
-        indices.
+        * **Field**: The field used for comparing values in the ((elastic-sec)) event
+            indices.
 
-    * **Indicator index field**: The field used for comparing values in the indicator
-        indices.
+        * **Indicator index field**: The field used for comparing values in the indicator
+            indices.
 
     1. You can add `AND` and `OR` clauses to define when alerts are generated.
 
@@ -234,15 +230,12 @@ Data in indicator indices must be <DocLink id="serverlessSecurityOverview" secti
 
         ![Indicator match rule settings](../images/rules-ui-create/-detections-indicator-rule-example.png)
 
-<DocCallOut title="Tip">
-Before you create rules, create <DocLink id="serverlessSecurityTimelinesUi">Timeline templates</DocLink> so
-they can be selected here. When alerts generated by the rule are investigated
-in the Timeline, Timeline query values are replaced with their corresponding alert
-field values.
+        <DocCallOut title="Tip">
+        Before you create rules, create <DocLink id="serverlessSecurityTimelinesUi">Timeline templates</DocLink> so
+        they can be selected here. When alerts generated by the rule are investigated in the Timeline, Timeline query values are replaced with their corresponding alert field values.
+        </DocCallOut>
 
-</DocCallOut>
-
-. Click **Continue** to <DocLink id="serverlessSecurityRulesUiCreate" section="configure-basic-rule-settings">configure basic rule settings</DocLink>.
+1. Click **Continue** to <DocLink id="serverlessSecurityRulesUiCreate" section="configure-basic-rule-settings">configure basic rule settings</DocLink>.
 
 <div id="indicator-value-lists"></div>
 
@@ -259,12 +252,12 @@ You uploaded a value list of known ransomware domains, and you want to be notifi
     1. **Indicator index patterns**: Value lists are stored in a hidden index called `.items-<Kibana space>`. Enter the name of the ((kib)) space in which this rule will run in this field.
     1. **Indicator index query**: Enter the value `list_id :`, followed by the name of the value list you want to use as your indicator index (uploaded in Step 1 above).
     1. **Indicator mapping**
-* **Field**: Enter the field from the Elastic Security event indices to be used for comparing values.
-* **Indicator index field**: Enter the type of value list you created (i.e., `keyword`, `text`, or `IP`).
+        * **Field**: Enter the field from the Elastic Security event indices to be used for comparing values.
+        * **Indicator index field**: Enter the type of value list you created (i.e., `keyword`, `text`, or `IP`).
 
-    <DocCallOut title="Tip">
-    If you don't remember this information, go to **Rules** -> **Detection rules (SIEM)** -> **Import value lists**. Locate the appropriate value list and note the field in the corresponding `Type` column. (Examples include keyword, text, and IP.)
-    </DocCallOut>
+        <DocCallOut title="Tip">
+        If you don't remember this information, go to **Rules** -> **Detection rules (SIEM)** -> **Import value lists**. Locate the appropriate value list and note the field in the corresponding `Type` column. (Examples include keyword, text, and IP.)
+        </DocCallOut>
 
 ![](../images/rules-ui-create/-detections-indicator_value_list.png)
 
@@ -279,16 +272,13 @@ You uploaded a value list of known ransomware domains, and you want to be notifi
         alerts.
 
         <DocCallOut title="Note">
-        You can use ((kib)) saved queries (<DocIcon type="filterInCircle" title="Filter" />) and queries from saved Timelines (*Import query from saved Timeline*) as rule conditions.
+        You can use saved queries (<DocIcon type="filterInCircle" title="Filter" />) and queries from saved Timelines (**Import query from saved Timeline**) as rule conditions.
 
         </DocCallOut>
 
     1. Use the **Fields** menu to select a field to check for new terms. You can also select up to three fields to detect a combination of new terms (for example, a `host.ip` and `host.id` that have never been observed together before).
 
         <DocCallOut title="Important" color="warning">
-        When checking multiple fields, full results can be produced only for documents with no more than 100 unique combinations of values in these fields. If you expect your data to produce more than 100 unique new terms combinations per document, consider checking other fields to narrow down the search.
-
-
         When checking multiple fields, each unique combination of values from those fields is evaluated separately. For example, a document with `host.name: ["host-1", "host-2", "host-3"]` and `user.name: ["user-1", "user-2", "user-3"]` has 9 (3x3) unique combinations of `host.name` and `user.name`. A document with 11 values in `host.name` and 10 values in `user.name` has 110 (11x10) unique combinations. The new terms rule only evaluates 100 unique combinations per document, so selecting fields with large arrays of values might cause incorrect results.
         </DocCallOut>
 
@@ -306,14 +296,11 @@ You uploaded a value list of known ransomware domains, and you want to be notifi
     1. **Name**: The rule's name.
     1. **Description**: A description of what the rule does.
     1. **Default severity**: Select the severity level of alerts created by the rule:
-* **Low**: Alerts that are of interest but generally are not considered to be
-    security incidents. Sometimes a combination of low severity alerts can
-    indicate suspicious activity.
+        * **Low**: Alerts that are of interest but generally are not considered to be security incidents. Sometimes a combination of low severity alerts can indicate suspicious activity.
 
-* **Medium**: Alerts that require investigation.
-* **High**: Alerts that require an immediate investigation.
-* **Critical**: Alerts that indicate it is highly likely a security incident has
-    occurred.
+        * **Medium**: Alerts that require investigation.
+        * **High**: Alerts that require an immediate investigation.
+        * **Critical**: Alerts that indicate it is highly likely a security  incident has occurred.
 
     1. **Severity override** (optional): Select to use source event values to
         override the **Default severity** in generated alerts. When selected, a UI
@@ -328,10 +315,10 @@ You uploaded a value list of known ransomware domains, and you want to be notifi
         </DocCallOut>
 
     1. **Default risk score**: A numerical value between 0 and 100 that indicates the risk of events detected by the rule. This setting changes to a default value when you change the **Severity** level, but you can adjust the risk score as needed. General guidelines are:
-* `0` - `21` represents low severity.
-* `22` - `47` represents medium severity.
-* `48` - `73` represents high severity.
-* `74` - `100` represents critical severity.
+        * `0` - `21` represents low severity.
+        * `22` - `47` represents medium severity.
+        * `48` - `73` represents high severity.
+        * `74` - `100` represents critical severity.
     1. **Risk score override** (optional): Select to use a source event value to
         override the **Default risk score** in generated alerts. When selected, a UI
         component is displayed to select the source field used for the risk
@@ -349,8 +336,8 @@ You uploaded a value list of known ransomware domains, and you want to be notifi
 
 1. Continue with **one** of the following:
 
-* <DocLink id="serverlessSecurityRulesUiCreate" section="configure-advanced-rule-settings-optional">Configure advanced rule settings (optional)</DocLink>
-* <DocLink id="serverlessSecurityRulesUiCreate" section="set-the-rules-schedule">Set the rule's schedule</DocLink>
+    * <DocLink id="serverlessSecurityRulesUiCreate" section="configure-advanced-rule-settings-optional">Configure advanced rule settings (optional)</DocLink>
+    * <DocLink id="serverlessSecurityRulesUiCreate" section="set-the-rules-schedule">Set the rule's schedule</DocLink>
 
 <div id="rule-ui-advanced-params"></div>
 
@@ -376,19 +363,13 @@ You uploaded a value list of known ransomware domains, and you want to be notifi
     1. **Author** (optional): The rule's authors.
     1. **License** (optional): The rule's license.
     1. **Elastic endpoint exceptions** (optional): Adds all Elastic Endpoint Security
-        rule exceptions to this rule (refer to <DocLink id="serverlessSecurityAddExceptions" section="add-((elastic-endpoint))-exceptions">Add ((elastic-endpoint)) exceptions</DocLink> to learn more about adding endpoint exceptions).
+        rule exceptions to this rule (refer to <DocLink id="serverlessSecurityAddExceptions" section="add-elastic-endpoint-exceptions">Add ((elastic-endpoint)) exceptions</DocLink> to learn more about adding endpoint exceptions).
 
-<DocCallOut title="Note">
-If you select this option, you can add
-<DocLink id="serverlessSecurityAddExceptions" section="add-((elastic-endpoint))-exceptions">Endpoint exceptions</DocLink> on the Rule details page.
-Additionally, all future exceptions added to the Endpoint Security rule
-also affect this rule.
+        <DocCallOut title="Note">
+        If you select this option, you can add <DocLink id="serverlessSecurityAddExceptions" section="add-elastic-endpoint-exceptions">Endpoint exceptions</DocLink> on the Rule details page. Additionally, all future exceptions added to the Endpoint Security rule also affect this rule.
+        </DocCallOut>
 
-</DocCallOut>
-
-    1. **Building block** (optional): Select to create a building-block rule. By
-        default, alerts generated from a building-block rule are not displayed in the
-        UI. See \<\<building-block-rule>> for more information.
+    1. **Building block** (optional): Select to create a building-block rule. By default, alerts generated from a building-block rule are not displayed in the UI. See <DocLink id="serverlessSecurityBuildingBlockRule">Use building block rules</DocLink> for more information.
 
     1. **Indicator prefix override**: Define the location of indicator data within the structure of indicator documents. When the indicator match rule executes, it queries specified indicator indices and references this setting to locate fields with indicator data. This data is used to enrich indicator match alerts with metadata about matched threat indicators. The default value for this setting is `threat.indicator`.
 
@@ -449,19 +430,18 @@ also affect this rule.
 
 1. Do either of the following:
 
-* Continue onto <DocLink id="serverlessSecurityRulesUiCreate" section="set-up-alert-notifications-optional">setting up alert notifications</DocLink> and <DocLink id="serverlessSecurityRulesUiCreate" section="set-up-response-actions-optional">Response Actions</DocLink> (optional).
-* Create the rule (with or without activation).
+    * Continue onto <DocLink id="serverlessSecurityRulesUiCreate" section="set-up-alert-notifications-optional">setting up alert notifications</DocLink> and <DocLink id="serverlessSecurityRulesUiCreate" section="set-up-response-actions-optional">Response Actions</DocLink> (optional).
+    * Create the rule (with or without activation).
 
 <div id="rule-notifications"></div>
 
 ## Set up alert notifications (optional)
 
-Use ((kib)) Actions to set up notifications sent via other systems when alerts
-are generated.
+Use Actions to set up notifications sent via other systems when alerts are generated.
 
 <DocCallOut title="Note">
-To use ((kib)) Actions for alert notifications, you need the
-[appropriate license](https://www.elastic.co/subscriptions) and your role needs **All** privileges for the **Action and Connectors** feature. For more information, see <DocLink id="serverlessSecurityCasePermissions">Cases prerequisites</DocLink>.
+To use Actions for alert notifications, you need the
+[appropriate license](https://www.elastic.co/subscriptions) and user role. For more information, see <DocLink id="serverlessSecurityCasePermissions">Cases requirements</DocLink>.
 </DocCallOut>
 
 1. Select a connector type to determine how notifications are sent. For example, if you select the ((jira)) connector, notifications are sent to your ((jira)) system.
@@ -469,11 +449,11 @@ To use ((kib)) Actions for alert notifications, you need the
     <DocCallOut title="Note">
     Each action type requires a connector. Connectors store the
     information required to send the notification from the external system. You can
-    configure connectors while creating the rule or in **((stack-manage-app))** -> **((connectors-ui))**. For more
+    configure connectors while creating the rule or in **Project settings** -> **Management** -> **((connectors-ui))**. For more
     information, see [Action and connector types](((kibana-ref))/action-types.html).
+    </DocCallOut>
 
     ![Available connector types](../images/rules-ui-create/-detections-available-action-types.png)
-    </DocCallOut>
 
 1. After you select a connector, set its action frequency to define when notifications are sent:
 
@@ -528,7 +508,7 @@ Refer to [Action frequency: Summary of alerts](((kibana-ref))/rule-action-variab
 </DocCallOut>
 
 * `{{context.alerts}}`: Array of detected alerts
-* `{{{context.results_link}}}`: URL to the alerts in ((kib))
+* `{{{context.results_link}}}`: URL to the alerts
 * `{{context.rule.anomaly_threshold}}`: Anomaly threshold score above which
     alerts are generated (((ml)) rules only)
 
@@ -590,7 +570,7 @@ The following variables can only be passed if the rule’s action frequency is f
 
 #### Alert placeholder examples
 
-To understand which fields to parse, see the \<\<rule-api-overview>> to view the JSON representation of rules.
+To understand which fields to parse, see the <DocLink id="serverlessSecurityRuleApiOverview">Detections API</DocLink> to view the JSON representation of rules.
 
 Example using `{{context.rule.filters}}` to output a list of filters:
 
@@ -636,7 +616,7 @@ Host isolation involves quarantining a host from the network to prevent further 
 You can preview any custom or prebuilt rule to find out how noisy it will be. For a custom rule, you can then adjust the rule's query or other settings.
 
 <DocCallOut title="Note">
-To preview rules, you need the `read` privilege for the `.preview.alerts-security.alerts-<space-id>` and `.internal.preview.alerts-security.alerts-<space-id>-*` indices, plus `All` privileges for the Security feature. Refer to <DocLink id="serverlessSecurityDetectionsPermissionsSection">Detections prerequisites and requirements</DocLink> for more information.
+To preview rules, you must have the appropriate user role. Refer to <DocLink id="serverlessSecurityDetectionsPermissionsSection">Detections requirements</DocLink> for more information.
 </DocCallOut>
 
 Click the **Rule preview** button while creating or editing a rule. The preview opens in a side panel, showing a histogram and table with the alerts you can expect, based on the defined rule settings and past events in your indices. 
@@ -654,12 +634,12 @@ To interact with the rule preview:
     </DocCallOut>
 
 * Click **Refresh** to update the preview. 
-    * When you edit the rule's settings or the preview's time range, the button changes from blue (<DocImage flatImage alt="Green right-pointing arrow refresh icon,17,17" url="../images/rules-ui-create/-detections-rule-preview-refresh-arrow.png" />) to indicate that the rule has been edited since the last preview.
+    * When you edit the rule's settings or the preview's time range, the button changes from blue to green to indicate that the rule has been edited since the last preview.
     * For a relative time range (such as `Last 1 hour`), refresh the preview to check for the latest results. (Previews don't automatically refresh with new incoming data.)
 
-* Click the **View details** icon (<DocImage flatImage alt="View details icon,16,15" url="../images/rules-ui-create/-detections-view-details-icon.png" />) in the alerts table to view the details of a particular alert.
+* Click the **View details** icon (<DocIcon type="expand" title="View details" />) in the alerts table to view the details of a particular alert.
 
-* To resize the preview, hover between the rule settings and preview, then click and drag the border. You can also click the border, then the collapse icon (<DocImage flatImage alt="Collapse icon,16,17" url="../images/rules-ui-create/-detections-collapse-right-icon.png" />) to collapse and expand the preview.
+* To resize the preview, hover between the rule settings and preview, then click and drag the border. You can also click the border, then the collapse icon (<DocIcon type="menuRight" title="Collapse menu" />) to collapse and expand the preview.
 
 * To close the preview, click the **Rule preview** button again.
 
