@@ -1,0 +1,34 @@
+[[esql-rule-queries]]
+== ES|QL rule queries 
+
+IMPORTANT: This is a placeholder for future documentation. The following content is incomplete.
+
+The Elasticsearch Query Language (ES|QL) is a query language that enables the iterative exploration of data. Here are two types of common ES|QL Security queries:
+
+**Aggregating query**
+
+This is a query that uses the STATS...BY grouping commands. Query results cannot be matched with a particular document in Elasticsearch. 
+
+Example:
+
+[esql]
+-----
+FROM logs*
+| STATS count = COUNT(host.name) BY host.name
+| SORT host.name
+-----
+
+**Non-aggregating query**
+
+This is a query that _does not_ use the STATS...BY grouping commands. Each row in the query results can be tracked to a source document in Elasticsearch. 
+
+For this type of query, use the operator `[metadata _id, _index, _version]` after defining the index source. This will allow for alerts to be deduplicated and linked to the source documents. 
+
+Example:
+
+[esql]
+-----
+FROM logs* [metadata _id, _index, _version]
+| WHERE event.id == "test"
+| LIMIT 10
+-----
