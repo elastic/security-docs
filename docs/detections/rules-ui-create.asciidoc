@@ -259,6 +259,39 @@ IMPORTANT: When checking multiple fields, each unique combination of values from
 For example, if a rule has an interval of 5 minutes, no additional look-back time, and a history window size of 7 days, a term will be considered new only if the time it appears within the last 7 days is also within the last 5 minutes. Configure the rule interval and additional look-back time when you <<rule-schedule, set the rule's schedule>>.
 . Click *Continue* to <<rule-ui-basic-params, configure basic rule settings>>.
 
+[discrete]
+[[create-esql-rule]]
+=== Create an ES|QL rule
+
+IMPORTANT: This is a placeholder for future documentation. The following content is incomplete.
+
+. Go to *Rules* -> *Detection rules (SIEM)* -> *Create new rule*. The *Create new rule* page displays.
+. To create a rule that uses ES|QL, select **ES|QL**, 
+then write a query. There are two types of ES|QL queries:
+
+.. **Aggregating query**: This is a query that uses the `STATS...BY` grouping commands. Query results cannot be matched with a particular document in Elasticsearch. For example:
++
+[esql]
+-----
+FROM logs*
+| STATS count = COUNT(host.name) BY host.name
+| SORT host.name
+-----
+
+.. **Non-aggregating query**: This is a query that _does not_ use the `STATS...BY` grouping commands. Each row in the query results can be tracked to a source document in Elasticsearch. 
++
+For this type of query, use the operator `[metadata _id, _index, _version]` after defining the index source. This will allow for alerts to be deduplicated and linked to the source documents. For example:
++
+[esql]
+-----
+FROM logs* [metadata _id, _index, _version]
+| WHERE event.id == "test"
+| LIMIT 10
+-----
++
+Ensure, metadata properties `id`, `_index`, `_version` are carried over through pipe operators.
+
+. Click *Continue* to <<rule-ui-basic-params, configure basic rule settings>>.
 
 [float]
 [[rule-ui-basic-params]]
