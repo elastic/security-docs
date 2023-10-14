@@ -34,7 +34,7 @@ Detects PowerShell scripts that can get the contents of the clipboard, which att
 * Data Source: PowerShell Logs
 * Resources: Investigation Guide
 
-*Version*: 5
+*Version*: 6
 
 *Rule authors*: 
 
@@ -101,14 +101,20 @@ event.category:process and host.os.type:windows and
    powershell.file.script_block_text : (
     "]::GetText" or
     ".Paste()"
-  )) or powershell.file.script_block_text : "Get-Clipboard"
-  and not powershell.file.script_block_text : (
+  )) or powershell.file.script_block_text : "Get-Clipboard" and
+  not powershell.file.script_block_text : (
     "sentinelbreakpoints" and "Set-PSBreakpoint" and "PowerSploitIndicators"
-  )
-  and not user.id : "S-1-5-18"
-  and not file.path : (*WindowsPowerShell*Modules*.psd1 or *WindowsPowerShell*Modules*.psm1)
-  and not (
-    file.path : *WindowsPowerShell*Modules*.ps1 and
+  ) and
+  not user.id : "S-1-5-18" and
+  not file.path : (
+        ?\:\\\\program?files\\\\powershell\\\\?\\\\Modules\\\\*.psd1 or
+        ?\:\\\\Windows\\\\system32\\\\WindowsPowerShell\\\\v1.0\\\\Modules\\\\*.psd1 or
+        ?\:\\\\WINDOWS\\\\system32\\\\WindowsPowerShell\\\\v1.0\\\\Modules\\\\*.psd1 or
+        ?\:\\\\Program?Files\\\\WindowsPowerShell\\\\Modules\\\\*.psd1 or
+        ?\:\\\\Program?Files\\\\WindowsPowerShell\\\\Modules\\\\*.psm1
+      ) and 
+  not (
+    file.path : ?\:\\\\Program?Files\\\\WindowsPowerShell\\\\*Modules*.ps1 and
     file.name : ("Convert-ExcelRangeToImage.ps1" or "Read-Clipboard.ps1")
   )
 
