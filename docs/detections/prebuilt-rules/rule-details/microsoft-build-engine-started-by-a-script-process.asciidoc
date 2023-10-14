@@ -3,14 +3,13 @@
 
 An instance of MSBuild, the Microsoft Build Engine, was started by a script or the Windows command interpreter. This behavior is unusual and is sometimes used by malicious payloads.
 
-*Rule type*: eql
+*Rule type*: new_terms
 
 *Rule indices*: 
 
 * winlogbeat-*
 * logs-endpoint.events.*
 * logs-windows.*
-* endgame-*
 
 *Severity*: low
 
@@ -30,10 +29,10 @@ An instance of MSBuild, the Microsoft Build Engine, was started by a script or t
 * OS: Windows
 * Use Case: Threat Detection
 * Tactic: Defense Evasion
-* Data Source: Elastic Endgame
+* Tactic: Execution
 * Data Source: Elastic Defend
 
-*Version*: 105
+*Version*: 205
 
 *Rule authors*: 
 
@@ -42,22 +41,15 @@ An instance of MSBuild, the Microsoft Build Engine, was started by a script or t
 *Rule license*: Elastic License v2
 
 
-==== Investigation guide
-
-
-[source, markdown]
-----------------------------------
-
-----------------------------------
-
 ==== Rule query
 
 
 [source, js]
 ----------------------------------
-process where host.os.type == "windows" and event.type == "start" and
-  (process.name : "MSBuild.exe" or process.pe.original_file_name == "MSBuild.exe") and
-  process.parent.name : ("cmd.exe", "powershell.exe", "pwsh.exe", "powershell_ise.exe", "cscript.exe", "wscript.exe", "mshta.exe")
+host.os.type:windows and event.category:process and event.type:start and (
+  process.name.caseless:"msbuild.exe" or process.pe.original_file_name:"MSBuild.exe") and 
+  process.parent.name:("cmd.exe" or "powershell.exe" or "pwsh.exe" or "powershell_ise.exe" or "cscript.exe" or
+    "wscript.exe" or "mshta.exe")
 
 ----------------------------------
 
