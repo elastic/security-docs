@@ -3,7 +3,7 @@
 
 This rule identifies the execution of commands that can be used to query the Windows Registry. Adversaries may query the registry to gain situational awareness about the host, like installed security software, programs and settings.
 
-*Rule type*: eql
+*Rule type*: new_terms
 
 *Rule indices*: 
 
@@ -13,9 +13,9 @@ This rule identifies the execution of commands that can be used to query the Win
 
 *Risk score*: 21
 
-*Runs every*: 60m
+*Runs every*: 5m
 
-*Searches indices from*: now-119m ({ref}/common-options.html#date-math[Date Math format], see also <<rule-schedule, `Additional look-back time`>>)
+*Searches indices from*: now-9m ({ref}/common-options.html#date-math[Date Math format], see also <<rule-schedule, `Additional look-back time`>>)
 
 *Maximum alerts per execution*: 100
 
@@ -30,7 +30,7 @@ This rule identifies the execution of commands that can be used to query the Win
 * Rule Type: BBR
 * Data Source: Elastic Defend
 
-*Version*: 2
+*Version*: 102
 
 *Rule authors*: 
 
@@ -44,18 +44,11 @@ This rule identifies the execution of commands that can be used to query the Win
 
 [source, js]
 ----------------------------------
-process where host.os.type == "windows" and event.type == "start" and
-(
-  (
-    process.name == "reg.exe" and process.args : "query" and
-    not process.parent.executable : ("?:\\Program Files\\*", "?:\\Program Files (x86)\\*")
-  ) or
-  (
-    process.name: ("powershell.exe", "pwsh.exe", "powershell_ise.exe") and
-     (process.args: ("*Get-ChildItem*", "*Get-Item*", "*Get-ItemProperty*") and
-      process.args : ("*HKLM*", "*HKCU*", "*HKEY_LOCAL_MACHINE*", "*HKEY_CURRENT_USER*", "*Registry::*"))
-  )
-) and not user.id : "S-1-5-18"
+host.os.type:windows and event.category:process and event.type:start and (
+  (process.name.caseless:"reg.exe" and process.args:"query") or 
+  (process.name.caseless:("powershell.exe" or "powershell_ise.exe" or "pwsh.exe") and 
+   process.command_line.caseless:((*Get-ChildItem* or *Get-Item* or *Get-ItemProperty*) and 
+   (*HKCU* or *HKEY_CURRENT_USER* or *HKEY_LOCAL_MACHINE* or *HKLM* or *Registry\:\:*))))
 
 ----------------------------------
 
