@@ -5,54 +5,56 @@ Detects the use of the chkconfig binary to manually add a service for management
 
 *Rule type*: eql
 
-*Rule indices*:
+*Rule indices*: 
 
-* logs-*
+* logs-endpoint.events.*
+* endgame-*
 
 *Severity*: medium
 
 *Risk score*: 47
 
-*Runs every*: 5 minutes
+*Runs every*: 5m
 
 *Searches indices from*: now-9m ({ref}/common-options.html#date-math[Date Math format], see also <<rule-schedule, `Additional look-back time`>>)
 
 *Maximum alerts per execution*: 100
 
-*References*:
+*References*: 
 
 * https://www.intezer.com/blog/research/lightning-framework-new-linux-threat/
 
-*Tags*:
+*Tags*: 
+
+* Domain: Endpoint
+* OS: Linux
+* Use Case: Threat Detection
+* Tactic: Persistence
+* Threat: Lightning Framework
+* Data Source: Elastic Endgame
+* Data Source: Elastic Defend
+
+*Version*: 106
+
+*Rule authors*: 
 
 * Elastic
-* Host
-* Linux
-* Threat Detection
-* Persistence
-* Lightning Framework
-
-*Version*: 100 (<<chkconfig-service-add-history, version history>>)
-
-*Added ({stack} release)*: 8.4.0
-
-*Last modified ({stack} release)*: 8.5.0
-
-*Rule authors*: Elastic
 
 *Rule license*: Elastic License v2
+
 
 ==== Rule query
 
 
-[source,js]
+[source, js]
 ----------------------------------
-process where event.type == "start" and (process.executable :
-"/usr/sbin/chkconfig" and process.args : "--add") or (process.args
-: "*chkconfig" and process.args : "--add")
-----------------------------------
+process where host.os.type == "linux" and event.action in ("exec", "exec_event") and
+( 
+  (process.executable : "/usr/sbin/chkconfig" and process.args : "--add") or
+  (process.args : "*chkconfig" and process.args : "--add")
+)
 
-==== Threat mapping
+----------------------------------
 
 *Framework*: MITRE ATT&CK^TM^
 
@@ -64,17 +66,7 @@ process where event.type == "start" and (process.executable :
 ** Name: Boot or Logon Initialization Scripts
 ** ID: T1037
 ** Reference URL: https://attack.mitre.org/techniques/T1037/
-
-[[chkconfig-service-add-history]]
-==== Rule version history
-
-Version 100 (8.5.0 release)::
-* Updated query, changed from:
-+
-[source, js]
-----------------------------------
-process where event.type == "start" and (process.executable :
-"/usr/sbin/chkconfig" and process.args : "--add") or (process.args
-: "*chkconfig" and process.args : "--add")
-----------------------------------
-
+* Sub-technique:
+** Name: RC Scripts
+** ID: T1037.004
+** Reference URL: https://attack.mitre.org/techniques/T1037/004/
