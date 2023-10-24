@@ -67,6 +67,8 @@ To enable host risk score from Console in {kib}, open a browser window and enter
 
 NOTE: If there's existing content in Console, scroll to the bottom to find the output loaded. 
 
+TIP: If you receive an error message during the installation process, delete the host risk score module manually, then re-enable it. Refer to <<troubleshoot-host-risk-score, Troubleshooting>> for more information. 
+
 [[upgrade-host-risk-score]]
 [discrete]
 === Upgrade host risk score 
@@ -85,7 +87,9 @@ After this is done, you can proceed with upgrading the host risk score feature f
 * The *Host risk* tab on the Hosts page
 * The *Host risk* tab on a host's details page
 
-NOTE: After you enable or upgrade host risk score, you might get a message that says, "No host risk score data available to display." To verify that the transform that installs the host risk score module is picking up data, refer to <<verify-host-risk-score, Verify that host risk score data installed successfully>>. 
+NOTE: After you enable or upgrade host risk score, you might get a message that says, "No host risk score data available to display." To verify that the transform that installs the host risk score module is picking up data, refer to <<verify-host-risk-score, Verify that host risk score data installed successfully>>.
+
+TIP: If you receive an error message during the upgrade process, delete the host risk score module manually, and then re-enable it. Refer to <<troubleshoot-host-risk-score, Troubleshooting>> for more information. 
 
 [[analyze-host-risk-score]]
 [discrete]
@@ -152,6 +156,71 @@ The histogram shows historical changes in a particular host's risk score(s). To 
 
 [role="screenshot"]
 image::images/data-tables.png[]
+
+[[troubleshoot-host-risk-score]]
+[discrete]
+=== Troubleshooting
+
+During the installation or upgrade process, you may receive the following error messages:
+
+* `Saved object already exists`
+* `Transform already exists`
+* `Ingest pipeline already exists`
+
+In this case, we recommend that you manually delete the host risk score module, then re-enable it. To manually delete the module:
+
+. Delete the host risk score saved objects:
+.. From the {kib} main menu, go to **Stack Management** -> **Kibana** -> **Saved Objects**.
+.. Delete the saved objects that have the `Host Risk Score - <space-id>` tag.
++
+[role="screenshot"]
+image::images/delete-hrs-saved-objects.png[Delete host risk score saved objects]
+.. Delete the `Host Risk Score - <space-id>` tag.
++
+[role="screenshot"]
+image::images/delete-hrs-tag.png[Delete host risk score tag]
+. Stop and delete the host risk score transforms. You can do this using the {kib} UI or the {ref}/stop-transform.html[Stop transform API] and {ref}/delete-transform.html[Delete transform API].
+** To delete the host risk score transforms using the {kib} UI:
+.. From the {kib} main menu, go to **Stack Management** -> **Data** -> **Transforms**.
+.. Stop the following transforms, then delete them:
+*** `ml_hostriskscore_latest_transform_<space-id>`
+*** `ml_hostriskscore_pivot_transform_<space-id>`
+** To delete the host risk score transforms using the API, run the following commands in Console:
+.. Stop and delete the latest transform:
++
+[source,console]
+----------------------------------
+POST _transform/ml_hostriskscore_latest_transform_<space-id>/_stop
+DELETE _transform/ml_hostriskscore_latest_transform_<space-id>
+----------------------------------
+.. Stop and delete the pivot transform:
++
+[source,console]
+----------------------------------
+POST _transform/ml_hostriskscore_pivot_transform_<space-id>/_stop
+DELETE _transform/ml_hostriskscore_pivot_transform_<space-id>
+----------------------------------
+. Delete the host risk score ingest pipeline. You can do this using the {kib} UI or the {ref}/delete-pipeline-api.html[Delete pipeline API].
+** To delete the host risk score ingest pipeline using the {kib} UI:
+.. From the {kib} main menu, go to **Stack Management** -> **Ingest** -> **Ingest Pipelines**.
+.. Delete the `ml_hostriskscore_ingest_pipeline_<space-id>` ingest pipeline.
+** To delete the host risk score ingest pipeline using the Delete pipeline API, run the following command in Console:
++
+[source,console]
+----------------------------------
+DELETE /_ingest/pipeline/ml_hostriskscore_ingest_pipeline_<space-id>
+----------------------------------
+. Delete the stored host risk score scripts using the {ref}/delete-stored-script-api.html[Delete stored script API]. In Console, run the following commands:
++
+[source,console]
+----------------------------------
+DELETE _scripts/ml_hostriskscore_levels_script_<space-id>
+DELETE _scripts/ml_hostriskscore_init_script_<space-id>
+DELETE _scripts/ml_hostriskscore_map_script_<space-id>
+DELETE _scripts/ml_hostriskscore_reduce_script_<space-id>
+----------------------------------
+
+After manually deleting the host risk score saved objects, transforms, ingest pipeline, and stored scripts, follow the steps to <<enable-host-risk-score, re-enable the host risk score module>>.
 
 [[verify-host-risk-score]]
 === Verify that host risk score data installed successfully (Optional)
