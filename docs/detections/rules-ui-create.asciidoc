@@ -271,7 +271,7 @@ preview::[]
 +
 TIP: Click the **ES|QL reference** button [book icon] for more information on ES|QL syntax. 
 +
-** **Aggregating query**: Uses {ref}/esql-functions-operators.html#esql-agg-functions[`STATS...BY`] functions to aggregate data. Results from each query row are not saved to an alert document within Elasticsearch. 
+** **Aggregating query**: Uses {ref}/esql-functions-operators.html#esql-agg-functions[`STATS...BY`] functions to aggregate alert data. An alert is generated for each segment of the query, but is not associated with a specific source event since aggregating queries process data from multiple alert documents. As a result, alerts from aggregating queries do not contain source event data.
 +
 Example aggregating query: 
 +
@@ -281,23 +281,19 @@ FROM logs*
 | STATS count = COUNT(host.name) BY host.name
 | SORT host.name
 -----
-+
-This query aggregates TBD.
 
-** **Non-aggregating query**: Does not use `STATS...BY` functions and doesn't aggregate data. To allow alert deduplication and save query row results, you must add the `[metadata _id, _index, _version]` operator after the query's data source. 
+** **Non-aggregating query**: Doesn't use `STATS...BY` functions and doesn't aggregate alert data. An alert is generated for each segment of the query, and each alert is associated with a source event. As a result, alerts from non-aggregating queries contain source event data.
 + 
-IMPORTANT: Do not drop or filter out the `id`, `_index`, `_version` metadata properties in any part the query. This turns off alert deduplication.
+IMPORTANT: To turn on alert deduplication and allow query results to be associated with source events, you must add the `[metadata _id, _index, _version]` operator after the query's data source. Do not drop or filter out the `id`, `_index`, `_version` metadata properties in any part the query. 
 +
 Example non-aggregating query:  
 +
 [esql]
 -----
 FROM logs* [metadata _id, _index, _version]
-| WHERE event.id == "test"
+| WHERE event.id == "8a4f500d"
 | LIMIT 10
 -----
-+
-This query, TBD
 
 . Click *Continue* to <<rule-ui-basic-params, configure basic rule settings>>.
 
