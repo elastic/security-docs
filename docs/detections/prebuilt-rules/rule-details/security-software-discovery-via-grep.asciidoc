@@ -32,7 +32,7 @@ Identifies the use of the grep command to discover known third-party macOS and L
 * Resources: Investigation Guide
 * Data Source: Elastic Defend
 
-*Version*: 105
+*Version*: 106
 
 *Rule authors*: 
 
@@ -116,7 +116,16 @@ process.name : "grep" and user.id != "0" and
           "osquery*",
           "elastic-endpoint*"
           ) and
-   not (process.args : "Avast" and process.args : "Passwords")
+   not (
+     (process.args : "Avast" and process.args : "Passwords") or
+     (process.parent.args : "/opt/McAfee/agent/scripts/ma" and process.parent.args : "checkhealth") or
+     (process.command_line : (
+       "grep ESET Command-line scanner, version %s -A2",
+       "grep -i McAfee Web Gateway Core version:",
+       "grep --color=auto ESET Command-line scanner, version %s -A2"
+       )
+      )
+    )
 
 ----------------------------------
 
