@@ -5,7 +5,7 @@ Message of the day (MOTD) is the message that is presented to the user when a us
 
 *Rule type*: eql
 
-*Rule indices*:
+*Rule indices*: 
 
 * logs-endpoint.events.*
 * endgame-*
@@ -20,11 +20,11 @@ Message of the day (MOTD) is the message that is presented to the user when a us
 
 *Maximum alerts per execution*: 100
 
-*References*:
+*References*: 
 
 * https://pberba.github.io/security/2022/02/06/linux-threat-hunting-for-persistence-initialization-scripts-and-shell-configuration/#10-boot-or-logon-initialization-scripts-motd
 
-*Tags*:
+*Tags*: 
 
 * Domain: Endpoint
 * OS: Linux
@@ -34,9 +34,9 @@ Message of the day (MOTD) is the message that is presented to the user when a us
 * Resources: Investigation Guide
 * Data Source: Elastic Defend
 
-*Version*: 5
+*Version*: 6
 
-*Rule authors*:
+*Rule authors*: 
 
 * Elastic
 
@@ -56,11 +56,11 @@ The message-of-the-day (MOTD) is used to display a customizable system-wide mess
 
 Attackers can abuse message-of-the-day (motd) files to run scripts, commands or malicious software every time a user connects to a system over SSH or a serial connection, by creating a new file within the `/etc/update-motd.d/` or `/usr/lib/update-notifier/` directory. Files in these directories will automatically run with root privileges when they are made executable.
 
-This rule identifies the execution of potentially malicious processes from a MOTD script, which is not likely to occur as default benign behavior.
+This rule identifies the execution of potentially malicious processes from a MOTD script, which is not likely to occur as default benign behavior. 
 
 > **Note**:
-> This investigation guide uses the {security-guide}/invest-guide-run-osquery.html[Osquery Markdown Plugin] introduced in Elastic Stack version 8.5.0. Older Elastic Stack versions will display unrendered Markdown in this guide.
-> This investigation guide uses {security-guide}/osquery-placeholder-fields.html[placeholder fields] to dynamically pass alert data into Osquery queries. Placeholder fields were introduced in Elastic Stack version 8.7.0. If you're using Elastic Stack version 8.6.0 or earlier, you'll need to manually adjust this investigation guide's queries to ensure they properly run.
+> This investigation guide uses the [Osquery Markdown Plugin](https://www.elastic.co/guide/en/security/master/invest-guide-run-osquery.html) introduced in Elastic Stack version 8.5.0. Older Elastic Stack versions will display unrendered Markdown in this guide.
+> This investigation guide uses [placeholder fields](https://www.elastic.co/guide/en/security/current/osquery-placeholder-fields.html) to dynamically pass alert data into Osquery queries. Placeholder fields were introduced in Elastic Stack version 8.7.0. If you're using Elastic Stack version 8.6.0 or earlier, you'll need to manually adjust this investigation guide's queries to ensure they properly run.
 
 #### Possible Investigation Steps
 
@@ -72,7 +72,7 @@ This rule identifies the execution of potentially malicious processes from a MOT
 - Investigate the script execution chain (parent process tree) for unknown processes. Examine their executable files for prevalence and whether they are located in expected locations.
   - !{osquery{"label":"Osquery - Retrieve Running Processes by User","query":"SELECT pid, username, name FROM processes p JOIN users u ON u.uid = p.uid ORDER BY username"}}
 - Investigate other alerts associated with the user/host during the past 48 hours.
-- Investigate whether the altered scripts call other malicious scripts elsewhere on the file system.
+- Investigate whether the altered scripts call other malicious scripts elsewhere on the file system. 
   - If scripts or executables were dropped, retrieve the files and determine if they are malicious:
     - Use a private sandboxed malware analysis system to perform analysis.
       - Observe and collect information about the following activities:
@@ -106,6 +106,7 @@ This rule identifies the execution of potentially malicious processes from a MOT
 - Determine the initial vector abused by the attacker and take action to prevent reinfection through the same vector.
 - Leverage the incident response data and logging to improve the mean time to detect (MTTD) and the mean time to respond (MTTR).
 
+
 ----------------------------------
 
 ==== Rule query
@@ -113,11 +114,29 @@ This rule identifies the execution of potentially malicious processes from a MOT
 
 [source, js]
 ----------------------------------
-process where host.os.type == "linux" and
-event.type == "start" and event.action : ("exec", "exec_event") and
-process.parent.executable : ("/etc/update-motd.d/*", "/usr/lib/update-notifier/*") and
-process.name : ("bash", "dash", "sh", "tcsh", "csh", "zsh", "ksh", "fish", "python*", "perl", "php*", "nc", "ncat",
-"netcat", "socat", "lua", "java", "openssl", "ruby", "telnet")
+process where event.type == "start" and event.action : ("exec", "exec_event") and
+process.parent.executable : ("/etc/update-motd.d/*", "/usr/lib/update-notifier/*") and (
+  (process.name in ("bash", "dash", "sh", "tcsh", "csh", "zsh", "ksh", "fish") and (
+    (process.args : ("-i", "-l")) or (process.parent.name == "socat" and process.parent.args : "*exec*"))) or
+  (process.name : ("nc", "ncat", "netcat", "nc.openbsd") and process.args_count >= 3 and 
+    not process.args : ("-*z*", "-*l*")) or
+  (process.name : "python*" and process.args : "-c" and process.args : (
+     "*import*pty*spawn*", "*import*subprocess*call*"
+  )) or
+  (process.name : "perl*" and process.args : "-e" and process.args : "*socket*" and process.args : (
+     "*exec*", "*system*"
+  )) or
+  (process.name : "ruby*" and process.args : ("-e", "-rsocket") and process.args : (
+     "*TCPSocket.new*", "*TCPSocket.open*"
+  )) or
+  (process.name : "lua*" and process.args : "-e" and process.args : "*socket.tcp*" and process.args : (
+     "*io.popen*", "*os.execute*"
+  )) or
+  (process.name : "php*" and process.args : "-r" and process.args : "*fsockopen*" and process.args : "*/bin/*sh*") or 
+  (process.name : ("awk", "gawk", "mawk", "nawk") and process.args : "*/inet/tcp/*") or 
+  (process.name in ("openssl", "telnet"))
+) and 
+not (process.parent.args : "--force" or process.args : ("/usr/games/lolcat", "/usr/bin/screenfetch"))
 
 ----------------------------------
 
