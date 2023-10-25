@@ -32,7 +32,7 @@ Identifies potentially malicious processes communicating via a port paring typic
 * OS: macOS
 * Data Source: Elastic Defend
 
-*Version*: 4
+*Version*: 5
 
 *Rule authors*: 
 
@@ -47,13 +47,14 @@ Identifies potentially malicious processes communicating via a port paring typic
 [source, js]
 ----------------------------------
 sequence by process.entity_id with maxspan=1m
-[process where event.action == "exec" and process.name:"ssh"]
-[network where process.name:"ssh"
- and event.action in ("connection_attempted", "connection_accepted")
- and destination.port != 22
- and destination.ip != "127.0.0.1"
- and network.transport: "tcp"
-]
+  [process where event.action == "exec" and process.name:"ssh" and not process.parent.name in (
+   "rsync", "pyznap", "git", "ansible-playbook", "scp", "pgbackrest", "git-lfs", "expect", "Sourcetree", "ssh-copy-id",
+   "run"
+   )
+  ]
+  [network where process.name:"ssh" and event.action in ("connection_attempted", "connection_accepted") and 
+   destination.port != 22 and destination.ip != "127.0.0.1" and network.transport: "tcp"
+  ]
 
 ----------------------------------
 
