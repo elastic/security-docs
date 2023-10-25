@@ -3,7 +3,7 @@
 
 Detects file events involving kernel modules in modprobe configuration files, which may indicate unauthorized access or manipulation of critical kernel modules. Attackers may tamper with the modprobe files to load malicious or unauthorized kernel modules, potentially bypassing security measures, escalating privileges, or hiding their activities within the system.
 
-*Rule type*: eql
+*Rule type*: new_terms
 
 *Rule indices*: 
 
@@ -29,7 +29,7 @@ Detects file events involving kernel modules in modprobe configuration files, wh
 * Tactic: Discovery
 * Rule Type: BBR
 
-*Version*: 3
+*Version*: 103
 
 *Rule authors*: 
 
@@ -70,12 +70,8 @@ Add the newly installed `auditd manager` to an agent policy, and deploy the agen
 
 [source, js]
 ----------------------------------
-file where host.os.type == "linux" and event.action == "opened-file" and
-file.path : ("/etc/modprobe.conf", "/etc/modprobe.d", "/etc/modprobe.d/*") and not 
-(
-  process.name in ("auditbeat", "kmod", "modprobe", "lsmod", "insmod", "modinfo", "rmmod", "dpkg", "cp", "mkinitramfs",
-  "readlink") or process.title : "*grep*" or process.parent.pid == 1
-)
+host.os.type:linux and event.category:file and event.action:"opened-file" and
+file.path : ("/etc/modprobe.conf" or "/etc/modprobe.d" or /etc/modprobe.d/*)
 
 ----------------------------------
 
