@@ -31,9 +31,12 @@ specified {ref}/indices-create-index.html[{es} index]. For example, you can
 create an index for IP addresses and use this index to create an alert whenever
 an event's `destination.ip` equals a value in the index. The index's field
 mappings should be {ecs-ref}[ECS-compliant].
+* *New terms*: Generates an alert for each new term detected in source documents within a specified time range.
+* *ES|QL*: Uses {ref}/esql.html[Elasticsearch Query Language (ES|QL)] to find events and aggregate search results.
++
+preview::[]
 * *{ml-cap} rules*: Creates an alert when a {ml} job discovers an anomaly above
 the defined threshold (see <<machine-learning>>).
-* *New terms*: Generates an alert for each new term detected in source documents within a specified time range.
 
 IMPORTANT: To create {ml} rules, you must have the
 https://www.elastic.co/subscriptions[appropriate license] or use a
@@ -102,8 +105,8 @@ A JSON object that defines the rule's values:
 * <<req-fields-ml>>
 * <<req-fields-threat-match>>
 * <<req-fields-new-terms>>
+* <<req-fields-esql>>
 * <<opt-fields-all>>
-* <<opt-fields-query-eql>>
 * <<opt-fields-threat-match>>
 * <<opt-fields-query-threshold>>
 * <<opt-fields-eql-query-threshold>>
@@ -140,6 +143,7 @@ occurred
 |type |String a|Data type on which the rule is based:
 
 * `eql`: EQL query (see {ref}/eql.html[Event Query Language]).
+* `esql`: ES\|QL query (see {ref}/esql.html[Elasticsearch Query Language]).
 * `query`: query with or without additional filters.
 * `saved_query`: saved search, identified in the `saved_id` field.
 * `machine_learning`: rule based on a {ml} job's anomaly scores.
@@ -152,15 +156,21 @@ specified field.
 |==============================================
 
 [[req-fields-query-threshold]]
-===== Required field for query, indicator match, threshold, and new terms rules
+===== Required fields for query, indicator match, threshold, new terms, event correlation, and ES|QL rules
 
 [width="100%",options="header"]
 |==============================================
 |Name |Type |Description
 
 |query |String a|{kibana-ref}/search.html[Query] used by the rule to create
-alerts. For indicator match rules, only the query's results are used to determine
-whether an alert is generated.
+alerts. 
+
+[NOTE]
+======
+* For indicator match rules, only the query's results are used to determine
+whether an alert is generated. 
+* ES\|QL rules have additional query requirements. Refer to <<create-esql-rule,Create ES\|QL rules>> for more information. 
+======
 
 |==============================================
 
@@ -206,6 +216,17 @@ generated.
 |Name |Type |Description
 
 |language |String |Must be `eql`.
+
+|==============================================
+
+[[req-fields-esql]]
+===== Required field for ES|QL rules
+
+[width="100%",options="header"]
+|==============================================
+|Name |Type |Description
+
+|language |String |Must be `esql`.
 
 |==============================================
 
@@ -350,29 +371,8 @@ Required when `actions` are used to send notifications.
 
 |investigation_fields |Object a| Specify highlighted fields for personalized alert investigation flows:
 
-* `field_names`: String, required
+* `field_names`: String[] , required
 
-|==============================================
-
-[[opt-fields-query-eql]]
-===== Optional fields for query, indicator match, event correlation, and new terms rules
-
-[width="100%",options="header"]
-|==============================================
-|Name |Type |Description
-
-|exceptions_list |Object[] a|Array of
-<<exceptions-api-overview, exception containers>>, which define
-exceptions that prevent the rule from generating alerts even when its other
-criteria are met. The object has these fields:
-
-* `id` (string, required): ID of the exception container.
-* `list_id` (string, required): List ID of the exception container.
-* `namespace_type` (string required): Determines whether the exceptions are
-valid in only the rule's {kib} space (`single`) or in all {kib} spaces
-(`agnostic`).
-* `type` (string, required): The exception type, which must be either
-a detection rule exception (`detection`) or an endpoint exception (`endpoint`).
 |==============================================
 
 [[opt-fields-threat-match]]
@@ -402,20 +402,24 @@ documents from the {es} index containing the threat values.
 |==============================================
 
 [[opt-fields-eql-query-threshold]]
-===== Optional fields for event correlation, query, threshold, and new terms rules
+===== Optional fields for event correlation, query, threshold, indicator match, new terms, and ES|QL rules
 
 [width="100%",options="header"]
 |==============================================
 |Name |Type |Description
 
-|filters |Object[] |The {ref}/query-filter-context.html[query and filter
+|filters |Object[] a|The {ref}/query-filter-context.html[query and filter
 context] array used to define the conditions for when alerts are created from
 events. Defaults to an empty array.
 
-|index |String[] |Indices on which the rule functions. Defaults to the
+NOTE: This field is not supported for ES\|QL rules.
+
+|index |String[] a|Indices on which the rule functions. Defaults to the
 Security Solution indices defined on the {kib} Advanced Settings page
 (*Kibana* → *Stack Management* → *Advanced Settings* →
 `securitySolution:defaultIndex`).
+
+NOTE: This field is not supported for ES\|QL rules.
 
 |risk_score_mapping |Object[] a|Overrides generated alerts' `risk_score` with
 a value from the source event:
@@ -443,6 +447,19 @@ values from the source event:
 |timestamp_override |String |Sets the time field used to query indices.
 When unspecified, rules query the `@timestamp` field. The source field
 must be an {es} date data type.
+
+|exceptions_list |Object[] a|Array of
+<<exceptions-api-overview, exception containers>>, which define
+exceptions that prevent the rule from generating alerts even when its other
+criteria are met. The object has these fields:
+
+* `id` (string, required): ID of the exception container.
+* `list_id` (string, required): List ID of the exception container.
+* `namespace_type` (string required): Determines whether the exceptions are
+valid in only the rule's {kib} space (`single`) or in all {kib} spaces
+(`agnostic`).
+* `type` (string, required): The exception type, which must be either
+a detection rule exception (`detection`) or an endpoint exception (`endpoint`).
 
 |==============================================
 
@@ -969,6 +986,29 @@ POST api/detection_engine/rules
 `200`::
     Indicates a successful call.
 
+*Example 7*
+
+ES|QL rule that creates alerts from events that match an Excel parent process:
+
+[source,json]
+--------------------------------------------------
+POST api/detection_engine/rules
+{
+  "type": "esql",
+  "language": "esql",
+  "query": "from auditbeat-8.10.2 [metadata _id, _version, _index] | where process.parent.name == \"EXCEL.EXE\"",
+  "name": "Find Excel events",
+  "description": "Find Excel events",
+  "tags": [],
+  "interval": "5m",
+  "from": "now-360s",
+  "to": "now",
+  "enabled": false,
+  "risk_score": 21,
+  "severity": "low"
+}
+--------------------------------------------------
+
 ==== Response payload
 
 A JSON object that includes a unique ID, the time the rule was created, and its
@@ -1324,6 +1364,49 @@ Example response for a new terms rule:
   "related_integrations": [],       <1>
   "required_fields": [],            <1>
   "setup": ""                       <1>
+}
+--------------------------------------------------
+<1> dev:[] These fields are under development and their usage may change: `related_integrations`, `required_fields`, and `setup`.
+
+Example response for an ES|QL rule:
+
+[source,json]
+--------------------------------------------------
+{
+  "name": "Find Excel events",
+  "description": "Find Excel events",
+  "risk_score": 21,
+  "severity": "low",
+  "output_index": "",
+  "tags": [],
+  "interval": "5m",
+  "enabled": false,
+  "author": [],
+  "false_positives": [],
+  "from": "now-360s",
+  "max_signals": 100,
+  "risk_score_mapping": [],
+  "severity_mapping": [],
+  "threat": [],
+  "to": "now",
+  "references": [],
+  "version": 1,
+  "exceptions_list": [],
+  "actions": [],
+  "id": "d0f20490-6da4-11ee-b85e-09e9b661f2e2",
+  "updated_at": "2023-10-18T10:55:14.269Z",
+  "updated_by": "elastic",
+  "created_at": "2023-10-18T10:55:14.269Z",
+  "created_by": "elastic",
+  "revision": 0,
+  "rule_id": "e4b53a89-debd-4a0d-a3e3-20606952e589",
+  "immutable": false,
+  "related_integrations": [],     <1>
+  "required_fields": [],          <1>
+  "setup": "",                    <1>
+  "type": "esql",
+  "language": "esql",
+  "query": "from auditbeat-8.10.2 [metadata _id] | where process.parent.name == \"EXCEL.EXE\""
 }
 --------------------------------------------------
 <1> dev:[] These fields are under development and their usage may change: `related_integrations`, `required_fields`, and `setup`.
