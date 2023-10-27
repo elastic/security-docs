@@ -265,16 +265,31 @@ For example, if a rule has an interval of 5 minutes, no additional look-back tim
 
 preview::[]
 
-Use {ref}/esql.html[ES|QL] to query source events and aggregate your event data. Query results are returned in a table that has rows and columns. Results of table rows are tracked in alerts.  
+Use {ref}/esql.html[ES|QL] to query your source events and aggregate event data. Query results are returned in a table with rows and columns. Each row becomes an alert.
 
-TIP: To learn about the basic structure of an ES|QL query, refer to {ref}/esql-getting-started.html[Getting started with ES|QL].
+To create an ES|QL rule:
 
-When creating an ES|QL rule, there are two types of queries that you can write: 
-
-* **Aggregating query**: Uses {ref}/esql-functions-operators.html#esql-agg-functions[`STATS...BY`] functions to aggregate source event data. Generated alerts only contain the fields returned by the query.
+. Go to *Rules* -> *Detection rules (SIEM)* -> *Create new rule*. The *Create new rule* page displays.
+. Select **ES|QL**, then write a <<esql-rule-query-types,query>>. 
 +
-In the following example of an aggregating query, the an alert is generated whenever `host.name` was encountered more than 20 times during a rule interval.
+TIP: Click the help icon (image:images/esql-ref-button.png[Click the ES|QL help icon,20,20]) to open the in-product reference documentation for all ES|QL commands and functions.
 +
+. Click *Continue* to <<rule-ui-basic-params, configure basic rule settings>>.
+
+[float]
+[[esql-rule-query-types]]
+==== ES|QL query types 
+
+ES|QL rule queries are loosely categorized into two types: <<esql-agg-query,aggregating>> and <<esql-non-agg-query,non-aggregating>>. 
+
+[float]
+[[esql-agg-query]]
+===== Aggregating query 
+
+An aggregating query uses {ref}/esql-functions-operators.html#esql-agg-functions[`STATS...BY`] functions to aggregate source event data. Generated alerts only contain the fields returned by the query.
+
+Here is an example aggregating query:
+
 [source,esql]
 ----
 FROM logs*
@@ -283,33 +298,14 @@ FROM logs*
 | WHERE host_count > 20
 ----
 
-* **Non-aggregating query**: Doesn't use `STATS...BY` functions and doesn't aggregate source data. Generated alerts contain both source event data and fields returned by the ES|QL query. 
-+
-IMPORTANT: To turn on alert deduplication and ensure source event data is returned in alert documents, you must add the `[metadata _id, _index, _version]` operator after the `FROM` source command. Refer to <<alert-dedupe-non-agg>> for more information. 
-+
-In the following example of a non-aggregating query, the `logs*` index is searched for events that contain `event.id: 8a4f500d` field-value pair. Only ten results are returned. 
-+
-[source,esql]
------
-FROM logs* [metadata _id, _index, _version]
-| WHERE event.id == "8a4f500d"
-| LIMIT 10
------
-
-To create an ES|QL rule:
-
-. Go to *Rules* -> *Detection rules (SIEM)* -> *Create new rule*. The *Create new rule* page displays.
-. Select **ES|QL**, then write a query. 
-+
-TIP: Click the help icon (image:images/esql-ref-button.png[Click the ES|QL help icon,20,20]) to open the in-product reference documentation for all ES|QL commands and functions.
-+
-. Click *Continue* to <<rule-ui-basic-params, configure basic rule settings>>.
+This query generates an alert whenever the `host.name` field is encountered more than 20 times during the specified rule interval.
 
 [float]
-[[alert-dedupe-non-agg]]
-==== Deduplicate alerts and link source events 
+[[esql-non-agg-query]]
+===== Non-aggregating query 
+A non-aggregating query doesn't use `STATS...BY` functions and doesn't aggregate source data. Generated alerts contain source event data and fields returned by the ES|QL query. 
 
-When you write a non-aggregating query, you must configure the query to manually turn on alert deduplication and ensure that source events get linked to alerts. To do this, add `[metadata _id, _index, _version]` after the `FROM` source command, for example:
+If you create a non-aggregating query, you also have to manually turn on alert deduplication and link source events to alerts. To do this, you must add the `[metadata _id, _index, _version]` operator after the `FROM` source command. For example:  
 
 [source,esql]
 -----
@@ -318,11 +314,7 @@ FROM logs* [metadata _id, _index, _version]
 | LIMIT 10
 -----
 
-After specifying these metadata properties, make sure you don't {ref}/[`DROP`] or filter them out in any part of the query. Continue reading for examples of invalid non-aggregating queries.
-
-**Example: Dropping the `_id` field**
-
-In the following example, the `DROP` command explicitly omits the `_id` property, so it won't be returned in the results table.
+After specifying these metadata properties, make sure you don't {ref}/esql-commands.html#esql-drop[`DROP`] or filter them out of the query. Here is an example of a query that's invalid because it uses the `DROP` command to omit the `_id` property from the results table:
 
 [source,esql]
 -----
@@ -332,9 +324,7 @@ FROM logs* [metadata _id, _index, _version]
 | LIMIT 10
 -----
 
-**Example: Filterng out the `_id` field**
-
-In the following example, the `KEEP` command omits the `_id` property, so it won't be returned in the results table.
+Here is another example of an invalid query where the `KEEP` command omits the `_id` property so it's not returned in the results table: 
 
 [source,esql]
 -----
@@ -343,8 +333,6 @@ FROM logs* [metadata _id, _index, _version]
 | KEEP event.*
 | LIMIT 10
 -----
-
-
 
 [float]
 [[rule-ui-basic-params]]
