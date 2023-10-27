@@ -309,7 +309,16 @@ NOTE: Aggregating queries might create duplicate alerts if events that occurred 
 [[esql-non-agg-query]]
 ===== Non-aggregating query 
 A non-aggregating query doesn't use `STATS...BY` functions and doesn't aggregate source data. Generated alerts contain source event data and fields returned by the ES|QL query. 
-
+Here is an example non-aggregating query:
+[source,esql]
+-----
+FROM logs* [metadata _id, _index, _version]
+| WHERE event.category == "process"  AND event.id == "8a4f500d"
+| LIMIT 10
+-----
+- This query starts by querying logs from indices that match the pattern `logs-*`. The `[metadata _id, _index, _version]` operator allows alert deduplication.  
+- Next, the query filters events where the `event.category` is a process and the `event.id` is `8a4f500d`. 
+- Then, it limits the output to the top 10 results.
 To deduplicates alerts, the query needs access to the `_id`, `_index`, and `_version` metadata fields within the queried source event documents. You can allow this by adding the `[metadata _id, _index, _version]` operator after the `FROM` source command, for example:
 
 [source,esql]
