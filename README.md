@@ -1,2 +1,2 @@
 # staging-serverless-security-docs
-Staging location for Serverless security docs
+Staging location for serverless Elastic Security docs
