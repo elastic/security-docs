@@ -40,7 +40,7 @@ To set up CSPM for Azure, first add the CSPM integration, then enable cloud acco
 1. Search for `CSPM`, then click on the result.
 1. Click **Add Cloud Security Posture Management (CSPM)**.
 1. Under **Configure integration**, select **Azure**.
-1. Give your integration a name that matches the purpose or team of the Azure subscription you want to monitor, for example, `azure-dev-policy`.
+1. Give your integration a name that matches the purpose or team of the Azure subscription you want to monitor, for example, `azure-CSPM-1`.
 
 <div id="cspm-set-up-cloud-access-section-azure"></div>
 
@@ -58,7 +58,7 @@ For most users, the simplest option is to use an Azure Resource Manager (ARM) te
     1. Select **New Hosts**.
     1. Name the ((agent)) policy. Use a name that matches the purpose or team of the cloud account or accounts you want to monitor. For example, `azure-dev-policy`. Click **Save and continue**. The *ARM Template deployment* window appears.
     1. In a new tab, log in to the Azure portal, then return to ((kib)) and click **Launch ARM Template**. This will open the ARM template in Azure.
-    1. (Optional) Change the `Resource Group Name` parameter. Otherwise, the name of the resource group defaults to `cloudbeat-` and a timestamp.
+    1. (Optional) Change the `Resource Group Name` parameter. Otherwise, the name of the resource group defaults to a timestamp prefixed with `cloudbeat-`.
     1. Copy the `Fleet URL` and `Enrollment Token` that appear in ((kib)) to the corresponding fields in the ARM Template, then click *Review + create*.
 1. Return to ((kib)) and wait for the confirmation of data received from your new integration. Then you can click **View Assets** to see your data.
 
@@ -66,7 +66,7 @@ For most users, the simplest option is to use an Azure Resource Manager (ARM) te
 
 ### Manual setup
 
-For manual setup, there are two authentication methods: using managed identities (recommended), or using environment variables with authentication secrets. The first method requires you to deploy ((agent)) to a VM in the Azure subscription you want to monitor with CSPM, the second method allows ((agent)) to be deployed anywhere, including a VM outside Azure or a personal laptop.
+For manual setup, there are two authentication methods: using managed identities (recommended), or using environment variables with authentication secrets. The first method requires you to deploy ((agent)) to a VM in the Azure subscription you want to monitor with CSPM; the second method allows ((agent)) to be deployed anywhere, including a VM outside Azure or a personal laptop.
 
 <div id="cspm-azure-managed-identity-setup"></div>
 
@@ -91,10 +91,12 @@ After assigning the role:
 
 #### Option 2: Environment variables
 
+Before using this method, you must have set up a [https://learn.microsoft.com/en-us/entra/identity-platform/howto-create-service-principal-portal#get-tenant-and-app-id-values-for-signing-in](Microsoft Entra application and service principal that can access resources). 
+
 For ((agent)) deployments outside of Azure:
 
 1. In the Azure portal, go to **Azure Active Directory** > **App registrations** > **New registration**. Register a new application.
-1. On the application page, go to **Certificates & secrets** > **New client secret**. Note down the **Value**; this is the only time it will be displayed.
+1. On the application page, go to **Certificates & secrets** > **New client secret**. Note down the **Value**; this is the only time it will appear.
 1. Go to your Azure subscription list and select the subscription you want to monitor with CSPM.
 1. Go to **Access control (IAM)**, and select **Add Role Assignment**.
 1. Select the `Reader` role and assign it to the application you just registered.
@@ -104,8 +106,23 @@ After assigning the role:
 1. Return to the **Add CSPM** page in ((kib)).
 1. Under **Configure integration**, select **Azure**. Under **Setup access**, select **Manual**.
 1. Under **Authentication**, select **Environment variables**.
-1. Install ((agent)) on your chosen host, then set the following environment variables with the application (client) ID, directory (tenant) ID, and client secret that you got from Azure AD:
+1. Install ((agent)) on your chosen host, then set the following environment variables with the application (client) ID, directory (tenant) ID, and client secret that you got from Azure:
     - `AZURE_CLIENT_ID`
     - `AZURE_TENANT_ID`
     - `AZURE_CLIENT_SECRET`
-1. Return to ((kib)) and wait for the confirmation of data received from your new integration.
+
+After creating the file:
+
+1. Return to the **Add CSPM** page in ((kib)). 
+1. Under **Configure integration**, select **Azure**. Under **Setup access**, select **Manual**.
+1. Under **Where to add this integration**, select **New hosts**.
+1. Click **Save and continue**, then follow the instructions to install ((agent)) on your Azure VM.
+
+If you created `/etc/sysconfig/elastic-agent` after installing ((agent)), you might need to restart it with the following commands:
+
+```shell
+systemctl daemon-reload 
+systemctl restart elastic-agent
+```
+
+Wait for the confirmation that ((kib)) received data from your new integration. Then you can click **View Assets** to see your data.
