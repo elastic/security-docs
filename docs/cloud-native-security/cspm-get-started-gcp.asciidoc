@@ -5,7 +5,7 @@
 [[cspm-overview-gcp]]
 == Overview
 
-This page explains how to get started monitoring the security posture of your cloud assets using the Cloud Security Posture Management (CSPM) feature.
+This page explains how to get started monitoring the security posture of your GCP cloud assets using the Cloud Security Posture Management (CSPM) feature.
 
 .Requirements
 [sidebar]
@@ -20,9 +20,9 @@ This page explains how to get started monitoring the security posture of your cl
 
 [discrete]
 [[cspm-setup-gcp]]
-== Set up CSPM for GCP
+== Initial setup
 
-To set up CSPM for GCP, first add the CSPM integration, then enable cloud account access.
+To set up CSPM for GCP, you need to first add the CSPM integration, then enable cloud account access.
 
 
 [discrete]
@@ -31,20 +31,23 @@ To set up CSPM for GCP, first add the CSPM integration, then enable cloud accoun
 . From the Elastic Security *Get started* page, click *Add integrations*.
 . Search for `CSPM`, then click on the result.
 . Click *Add Cloud Security Posture Management (CSPM)*.
+. Under *Configure integration*, select *GCP*, then either *GCP Organization* (recommended) or *Single Account*.
 . Give your integration a name that matches the purpose or team of the GCP account you want to monitor, for example, `dev-gcp-project`.
+
 
 [discrete]
 [[cspm-set-up-cloud-access-section-gcp]]
 === Set up cloud account access
-To setup CSPM for a GCP project, you will need to have admin privileges for the project.
+
+NOTE: To set up CSPM for a GCP project, you need admin privileges for the project.
 
 For most users, the simplest option is to use a Google Cloud Shell script to automatically provision the necessary resources and permissions in your GCP account. This method, as well as two manual options, are described below.
 
 [discrete]
 [[cspm-set-up-cloudshell]]
-=== Cloud Shell script setup (recommended)
+== Cloud Shell script setup (recommended)
 
-. Under **Setup Access**, select **Google Cloud Shell**.
+. Under **Setup Access**, select **Google Cloud Shell**. Enter your GCP Project ID, and for GCP Organization deployments, your GCP Organization ID.
 . Under **Where to add this integration**:
 .. Select **New Hosts**.
 .. Name the {agent} policy. Use a name that matches the purpose or team of the cloud account or accounts you want to monitor. For example, `dev-gcp-account`.
@@ -55,47 +58,102 @@ For most users, the simplest option is to use a Google Cloud Shell script to aut
 +
 image::images/cspm-cloudshell-trust.png[The cloud shell confirmation popup]
 +
-. In Google Cloud Shell, execute the command you copied earlier. Once it finishes, return to {kib} and wait for the confirmation of data received from your new integration. Then you can click **View Assets** to see your data.
+. In Google Cloud Shell, execute the command you copied. Once it finishes, return to {kib} and wait for the confirmation of data received from your new integration. Then you can click **View Assets** to see your data.
 
 NOTE: During Cloud Shell setup, the CSPM integration adds roles to Google's default service account, which enables custom role creation and attachment of the service account to a compute instance.
 After setup, these roles are removed from the service account. If you attempt to delete the deployment but find the deployment manager lacks necessary permissions, consider adding the missing roles to the service account:
 https://cloud.google.com/iam/docs/understanding-roles#resourcemanager.projectIamAdmin[Project IAM Admin], https://cloud.google.com/iam/docs/understanding-roles#iam.roleAdmin[Role Administrator].
 
 [discrete]
-[[cspm-set-up-manual-gcp]]
-=== Manual authentication
+[[cspm-set-up-manual-gcp-org]]
+== Manual authentication (GCP organization)
 
-To authenticate manually, you'll first need to generate credentials for a new GCP service account with the necessary roles, then provide those credentials to the CSPM integration.
+To authenticate manually to monitor a GCP organization, you'll need to create a new GCP service account, assign it the necessary roles, generate credentials, then provide those credentials to the CSPM integration. 
 
-Generate GCP credentials:
+Use the following commands, after replacing `<SA_NAME>` with the name of your new service account, `<ORG_ID>` with your GCP organization's ID, and `<PROJECT_ID>` with the GCP project ID of the project where you want to provision the compute instance that will run CSPM.
 
-. Access the GCP console and select your project.
-. Navigate to **IAM & Admin -> Service accounts**.
-. Click **Create Service Account**.
-. Provide an account name.
-. Enable the required roles:
-.. `Cloud Asset Viewer`: Grants read access to cloud asset metadata.
-.. `Browser`: Grants read access to the project hierarchy.
-. Click **Continue**, then click **Done**.
-. Select the new service account from the list.
-. Go to the **KEYS** tab, then click **ADD KEY**.
-. Select **JSON** as the key type, then click **CREATE**.
+Create a new service account:
+```
+gcloud iam service-accounts create <SA_NAME> \
+    --description="Elastic agent service account for CSPM" \
+    --display-name="Elastic agent service account for CSPM" \
+    --project=<PROJECT_ID>
+```
 
-The credentials JSON will download to your local machine. Keep it secure since it provides access to your GCP resources.
+Assign the necessary roles to the service account:
+```
+gcloud organizations add-iam-policy-binding <ORG_ID> \
+    --member=serviceAccount:<SA_NAME>@<PROJECT_ID>.iam.gserviceaccount.com \
+    --role=roles/cloudasset.viewer
+
+gcloud organizations add-iam-policy-binding <ORG_ID> \
+    --member=serviceAccount:<SA_NAME>@<PROJECT_ID>.iam.gserviceaccount.com \
+    --role=roles/browser
+```
+NOTE: The `Cloud Asset Viewer` role grants read access to cloud asset metadata. The `Browser` role grants read access to the project hierarchy.
+
+Download the credentials JSON (first, replace `<KEY_FILE>` with the location where you want to save it):
+```
+gcloud iam service-accounts keys create <KEY_FILE> \
+    --iam-account=<SA_NAME>@<PROJECT_ID>.iam.gserviceaccount.com
+```
+
+Keep the credentials JSON in a secure location; you will need it later.
+
+Provide credentials to the CSPM integration:
+
+. On the CSPM setup screen under **Setup Access**, select **Manual**.
+. Enter your GCP **Organization ID**. Enter the GCP **Project ID** of the project where you want to provision the compute instance that will run CSPM. 
+. Select **Credentials JSON**, and enter the value you generated earlier.
+. Under **Where to add this integration**, select **New Hosts**.
+. Name the {agent} policy. Use a name that matches the purpose or team of the cloud account or accounts you want to monitor. For example, `dev-gcp-account`.
+. Click **Save and continue**, then follow the instructions to install {agent} in your chosen GCP project.
+
+Wait for the confirmation that {kib} received data from your new integration. Then you can click **View Assets** to see your data.
+
+[discrete]
+[[cspm-set-up-manual-gcp-project]]
+== Manual authentication (GCP project)
+
+To authenticate manually to monitor an individual GCP project, you'll need to create a new GCP service account, assign it the necessary roles, generate credentials, then provide those credentials to the CSPM integration. 
+
+Use the following commands, after replacing `<SA_NAME>` with the name of your new service account, and `<PROJECT_ID>` with your GCP project ID.
+
+Create a new service account:
+```
+gcloud iam service-accounts create <SA_NAME> \
+    --description="Elastic agent service account for CSPM" \
+    --display-name="Elastic agent service account for CSPM" \
+    --project=<PROJECT_ID>
+```
+
+Assign the necessary roles to the service account:
+```
+gcloud projects add-iam-policy-binding <PROJECT_ID> \
+    --member=serviceAccount:<SA_NAME>@<PROJECT_ID>.iam.gserviceaccount.com \
+    --role=roles/cloudasset.viewer
+
+gcloud projects add-iam-policy-binding <PROJECT_ID> \
+    --member=serviceAccount:<SA_NAME>@<PROJECT_ID>.iam.gserviceaccount.com \
+    --role=roles/browser
+```
+NOTE: The `Cloud Asset Viewer` role grants read access to cloud asset metadata. The `Browser` role grants read access to the project hierarchy.
+
+Download the credentials JSON (first, replace `<KEY_FILE>` with the location where you want to save it):
+```
+gcloud iam service-accounts keys create <KEY_FILE> \
+    --iam-account=<SA_NAME>@<PROJECT_ID>.iam.gserviceaccount.com
+```
+
+Keep the credentials JSON in a secure location; you will need it later.
 
 Provide credentials to the CSPM integration:
 
 . On the CSPM setup screen under **Setup Access**, select **Manual**.
 . Enter your GCP **Project ID**.
-. Select either **Credentials File** or **Credentials JSON**, and enter the credentials information in your selected format.
-. Under **Where to add this integration**:
-.. If you want to monitor a GCP project where you have not yet deployed {agent}:
-... Select **New Hosts**.
-... Name the {agent} policy. Use a name that matches the purpose or team of the cloud account or accounts you want to monitor. For example, `dev-gcp-account`.
-... Click **Save and continue**, then **Add {agent} to your hosts**. The **Add agent** wizard appears and provides {agent} binaries, which you can download and deploy to a VM in your GCP account.
-.. If you want to monitor a GCP project where you have already deployed {agent}:
-... Select **Existing hosts**.
-... Select an agent policy that applies the GCP project you want to monitor.
-. Click **Save and continue**.
+. Select **Credentials JSON**, and enter the value you generated earlier.
+. Under **Where to add this integration**, select **New Hosts**.
+. Name the {agent} policy. Use a name that matches the purpose or team of the cloud account or accounts you want to monitor. For example, `dev-gcp-account`.
+. Click **Save and continue**, then follow the instructions to install {agent} in your chosen GCP project.
 
 Wait for the confirmation that {kib} received data from your new integration. Then you can click **View Assets** to see your data.
