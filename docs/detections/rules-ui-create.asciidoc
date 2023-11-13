@@ -364,11 +364,14 @@ FROM logs-* [metadata _id, _index, _version]
 
 When writing your query, consider the following:
 
-- The <<opt-fields-all,`max_signals`>> setting defines the maximum number of alerts that a rule can create during a single rule execution cycle. Similarly, the {ref}/esql-commands.html#esql-limit[`LIMIT`] command defines the number of rows an {esql} query returns, which determines the maximum number of alerts the rule generates per rule execution.  
+- The {ref}/esql-commands.html#esql-limit[`LIMIT`] command specifies the number of rows an {esql} query returns and the number of alerts created per rule execution. Similarly, the <<opt-fields-all,`max_signals`>> setting specifies how many alerts a rule can create every time it runs.
++ 
+If the `LIMIT` value is lower than the `max_signals` value, the rule uses the `LIMIT` value. If the `LIMIT` is higher than `max_signals`, the rule uses `max_signals`. 
 +
-In general, the rule respects the `max_signals` value if it's less than the `LIMIT` value. However, if the `max_signals` value is _greater_ than the `LIMIT` value, the rule uses the `LIMIT` value. 
+NOTE: The `max_signals` default value is 100. You can modify it using the <<rules-api-create,Create rule API>>. 
++
 
-- When writing an aggregating query, make sure to keep fields that you want to search and filter for once alerts are generated. For example, when writing your query, keep the `host.name`, `user.name`, and `process.name` fields to ensure you're able to filter for these fields from the Alerts table.
+- When writing an aggregating query, use the {ref}/esql-commands.html#esql-keep[`KEEP`] command to keep alert fields that you want to examine. For example, if you want to search and filter for the `host.name`, `user.name`, and `process.name` alert fields, keep them in your query. 
 
 [float]
 [[esql-limitations]]
@@ -376,8 +379,8 @@ In general, the rule respects the `max_signals` value if it's less than the `LIM
 
 The {esql} rule has the following limitations:
 
-- If your query contains new fields that aren't compliant with ECS, you won't be able to search or filter for them unless you <<runtime-fields,create runtime fields>> for the new fields. 
-- Custom highlighted fields are not supported for new fields that are not ECS-compliant. 
+- If your query contains new fields that aren't {ecs-ref}[ECS-compliant], the detection engine doesn't write them to alert documents and you can't search or filter for them from the Alerts table. As a workaround, create <<runtime-fields,runtime fields>>. 
+- Newly-created, non-ECS-compliant fields cannot be added to a rule's <<rule-ui-advanced-params,custom highlighted fields>>. 
 
 [float]
 [[rule-ui-basic-params]]
