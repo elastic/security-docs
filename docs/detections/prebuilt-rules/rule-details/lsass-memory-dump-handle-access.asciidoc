@@ -38,7 +38,7 @@ Identifies handle requests for the Local Security Authority Subsystem Service (L
 * Tactic: Credential Access
 * Resources: Investigation Guide
 
-*Version*: 108
+*Version*: 109
 
 *Rule authors*: 
 
@@ -104,24 +104,7 @@ Adversaries may attempt to access credential material stored in LSASS process me
 - Determine the initial vector abused by the attacker and take action to prevent reinfection through the same vector.
 - Using the incident response data, update logging and audit policies to improve the mean time to detect (MTTD) and the mean time to respond (MTTR).
 
-Ensure advanced audit policies for Windows are enabled, specifically:
-Object Access policies [Event ID 4656](https://docs.microsoft.com/en-us/windows/security/threat-protection/auditing/event-4656) (Handle to an Object was Requested)
 
-```
-Computer Configuration >
-Policies >
-Windows Settings >
-Security Settings >
-Advanced Audit Policies Configuration >
-System Audit Policies >
-Object Access >
-Audit File System (Success,Failure)
-Audit Handle Manipulation (Success,Failure)
-```
-
-Also, this event generates only if the object’s [SACL](https://docs.microsoft.com/en-us/windows/win32/secauthz/access-control-lists) has the required access control entry (ACE) to handle the use of specific access rights.
-
-If enabling an EQL rule on a non-elastic-agent index (such as beats) for versions <8.2, events will not define `event.ingested` and default fallback for EQL rules was not added until 8.2, so you will need to add a custom pipeline to populate `event.ingested` to @timestamp for this rule to work.
 ----------------------------------
 
 ==== Rule query
@@ -151,7 +134,8 @@ any where event.action == "File System" and event.code == "4656" and
         "?:\\Windows\\System32\\svchost.exe",
         "?:\\Windows\\System32\\msiexec.exe",
         "?:\\ProgramData\\Microsoft\\Windows Defender\\*.exe",
-        "?:\\Windows\\explorer.exe")
+        "?:\\Windows\\explorer.exe",
+        "?:\\Windows\\System32\\poqexec.exe")
 
 ----------------------------------
 
