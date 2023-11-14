@@ -1,0 +1,62 @@
+[[prebuilt-rule-8-10-6-unusual-user-privilege-enumeration-via-id]]
+=== Unusual User Privilege Enumeration via id
+
+This rule monitors for a sequence of 20 "id" command executions within 1 second by the same parent process. This behavior is unusual, and may be indicative of the execution of an enumeration script such as LinPEAS or LinEnum. These scripts leverage the "id" command to enumerate the privileges of all users present on the system.
+
+*Rule type*: eql
+
+*Rule indices*: 
+
+* logs-endpoint.events.*
+
+*Severity*: low
+
+*Risk score*: 21
+
+*Runs every*: 5m
+
+*Searches indices from*: now-9m ({ref}/common-options.html#date-math[Date Math format], see also <<rule-schedule, `Additional look-back time`>>)
+
+*Maximum alerts per execution*: 100
+
+*References*: None
+
+*Tags*: 
+
+* Domain: Endpoint
+* OS: Linux
+* Use Case: Threat Detection
+* Tactic: Discovery
+* Data Source: Elastic Defend
+
+*Version*: 3
+
+*Rule authors*: 
+
+* Elastic
+
+*Rule license*: Elastic License v2
+
+
+==== Rule query
+
+
+[source, js]
+----------------------------------
+sequence by host.id, process.parent.entity_id with maxspan=1s
+  [process where host.os.type == "linux" and event.action == "exec" and event.type == "start" and 
+   process.name == "id" and process.args_count == 2 and 
+   not (process.parent.name == "rpm" or process.parent.args : "/var/tmp/rpm-tmp*")] with runs=20
+
+----------------------------------
+
+*Framework*: MITRE ATT&CK^TM^
+
+* Tactic:
+** Name: Discovery
+** ID: TA0007
+** Reference URL: https://attack.mitre.org/tactics/TA0007/
+* Technique:
+** Name: System Owner/User Discovery
+** ID: T1033
+** Reference URL: https://attack.mitre.org/techniques/T1033/

@@ -7,9 +7,7 @@ Identifies powershell.exe being used to download an executable file from an untr
 
 *Rule indices*: 
 
-* winlogbeat-*
 * logs-endpoint.events.*
-* logs-windows.*
 
 *Severity*: medium
 
@@ -32,7 +30,7 @@ Identifies powershell.exe being used to download an executable file from an untr
 * Resources: Investigation Guide
 * Data Source: Elastic Defend
 
-*Version*: 107
+*Version*: 108
 
 *Rule authors*: 
 
@@ -55,7 +53,7 @@ Attackers commonly transfer tooling or malware from external systems into a comp
 PowerShell is one of system administrators' main tools for automation, report routines, and other tasks. This makes it available for use in various environments and creates an attractive way for attackers to execute code and perform actions. This rule correlates network and file events to detect downloads of executable and script files performed using PowerShell.
 
 > **Note**:
-> This investigation guide uses the {security-guide}/security/master/invest-guide-run-osquery.html[Osquery Markdown Plugin] introduced in Elastic Stack version 8.5.0. Older Elastic Stack versions will display unrendered Markdown in this guide.
+> This investigation guide uses the [Osquery Markdown Plugin](https://www.elastic.co/guide/en/security/master/invest-guide-run-osquery.html) introduced in Elastic Stack version 8.5.0. Older Elastic Stack versions will display unrendered Markdown in this guide.
 
 #### Possible investigation steps
 
@@ -105,12 +103,19 @@ PowerShell is one of system administrators' main tools for automation, report ro
 
 [source, js]
 ----------------------------------
-sequence by host.id, process.entity_id with maxspan=30s
-  [network where host.os.type == "windows" and process.name : ("powershell.exe", "pwsh.exe", "powershell_ise.exe") and network.protocol == "dns" and
-   not dns.question.name : ("localhost", "*.microsoft.com", "*.azureedge.net", "*.powershellgallery.com", "*.windowsupdate.com", "metadata.google.internal") and
-   not user.domain : "NT AUTHORITY"]
-    [file where host.os.type == "windows" and process.name : "powershell.exe" and event.type == "creation" and file.extension : ("exe", "dll", "ps1", "bat") and
-   not file.name : "__PSScriptPolicy*.ps1"]
+sequence by process.entity_id with maxspan=30s
+
+[network where host.os.type == "windows" and
+  process.name : ("powershell.exe", "pwsh.exe", "powershell_ise.exe") and network.protocol == "dns" and
+   not dns.question.name : (
+          "localhost", "*.microsoft.com", "*.azureedge.net", "*.powershellgallery.com",
+          "*.windowsupdate.com", "metadata.google.internal", "dist.nuget.org",
+          "artifacts.elastic.co", "*.digicert.com", "packages.chocolatey.org",
+          "outlook.office365.com"
+       ) and not user.id : "S-1-5-18"]
+[file where host.os.type == "windows" and event.type == "creation" and
+  process.name : "powershell.exe" and file.extension : ("exe", "dll", "ps1", "bat") and
+  not file.name : "__PSScriptPolicy*.ps1"]
 
 ----------------------------------
 
