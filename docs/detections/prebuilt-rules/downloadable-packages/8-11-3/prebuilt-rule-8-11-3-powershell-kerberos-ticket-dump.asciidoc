@@ -1,0 +1,89 @@
+[[prebuilt-rule-8-11-3-powershell-kerberos-ticket-dump]]
+=== PowerShell Kerberos Ticket Dump
+
+Detects PowerShell scripts that have the capability of dumping Kerberos tickets from LSA, which potentially indicates an attacker's attempt to acquire credentials for lateral movement.
+
+*Rule type*: query
+
+*Rule indices*: 
+
+* winlogbeat-*
+* logs-windows.*
+
+*Severity*: medium
+
+*Risk score*: 47
+
+*Runs every*: 5m
+
+*Searches indices from*: now-9m ({ref}/common-options.html#date-math[Date Math format], see also <<rule-schedule, `Additional look-back time`>>)
+
+*Maximum alerts per execution*: 100
+
+*References*: 
+
+* https://github.com/MzHmO/PowershellKerberos/blob/main/dumper.ps1
+
+*Tags*: 
+
+* Domain: Endpoint
+* OS: Windows
+* Use Case: Threat Detection
+* Tactic: Credential Access
+* Data Source: PowerShell Logs
+
+*Version*: 2
+
+*Rule authors*: 
+
+* Elastic
+
+*Rule license*: Elastic License v2
+
+
+==== Rule query
+
+
+[source, js]
+----------------------------------
+event.category:process and host.os.type:windows and
+  powershell.file.script_block_text : (
+    "LsaCallAuthenticationPackage" and
+    (
+      "KerbRetrieveEncodedTicketMessage" or
+      "KerbQueryTicketCacheMessage" or
+      "KerbQueryTicketCacheExMessage" or
+      "KerbQueryTicketCacheEx2Message" or
+      "KerbRetrieveTicketMessage" or
+      "KerbDecryptDataMessage"
+    )
+  )
+
+----------------------------------
+
+*Framework*: MITRE ATT&CK^TM^
+
+* Tactic:
+** Name: Credential Access
+** ID: TA0006
+** Reference URL: https://attack.mitre.org/tactics/TA0006/
+* Technique:
+** Name: OS Credential Dumping
+** ID: T1003
+** Reference URL: https://attack.mitre.org/techniques/T1003/
+* Technique:
+** Name: Steal or Forge Kerberos Tickets
+** ID: T1558
+** Reference URL: https://attack.mitre.org/techniques/T1558/
+* Tactic:
+** Name: Execution
+** ID: TA0002
+** Reference URL: https://attack.mitre.org/tactics/TA0002/
+* Technique:
+** Name: Command and Scripting Interpreter
+** ID: T1059
+** Reference URL: https://attack.mitre.org/techniques/T1059/
+* Sub-technique:
+** Name: PowerShell
+** ID: T1059.001
+** Reference URL: https://attack.mitre.org/techniques/T1059/001/

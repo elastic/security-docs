@@ -1,0 +1,77 @@
+[[prebuilt-rule-8-11-3-potential-sudo-token-manipulation-via-process-injection]]
+=== Potential Sudo Token Manipulation via Process Injection
+
+This rule detects potential sudo token manipulation attacks through process injection by monitoring the use of a debugger (gdb) process followed by a successful uid change event during the execution of the sudo process. A sudo token manipulation attack is performed by injecting into a process that has a valid sudo token, which can then be used by attackers to activate their own sudo token. This attack requires ptrace to be enabled in conjunction with the existence of a living process that has a valid sudo token with the same uid as the current user.
+
+*Rule type*: eql
+
+*Rule indices*: 
+
+* logs-endpoint.events.*
+
+*Severity*: medium
+
+*Risk score*: 47
+
+*Runs every*: 5m
+
+*Searches indices from*: now-9m ({ref}/common-options.html#date-math[Date Math format], see also <<rule-schedule, `Additional look-back time`>>)
+
+*Maximum alerts per execution*: 100
+
+*References*: 
+
+* https://github.com/nongiach/sudo_inject
+
+*Tags*: 
+
+* Domain: Endpoint
+* OS: Linux
+* Use Case: Threat Detection
+* Tactic: Privilege Escalation
+* Data Source: Elastic Defend
+
+*Version*: 4
+
+*Rule authors*: 
+
+* Elastic
+
+*Rule license*: Elastic License v2
+
+
+==== Rule query
+
+
+[source, js]
+----------------------------------
+sequence by host.id, process.session_leader.entity_id with maxspan=15s
+[ process where host.os.type == "linux" and event.action == "exec" and event.type == "start" and 
+  process.name == "gdb" and process.user.id != "0" and process.group.id != "0" ]
+[ process where host.os.type == "linux" and event.action == "uid_change" and event.type == "change" and 
+  process.name == "sudo" and process.user.id == "0" and process.group.id == "0" ]
+
+----------------------------------
+
+*Framework*: MITRE ATT&CK^TM^
+
+* Tactic:
+** Name: Privilege Escalation
+** ID: TA0004
+** Reference URL: https://attack.mitre.org/tactics/TA0004/
+* Technique:
+** Name: Process Injection
+** ID: T1055
+** Reference URL: https://attack.mitre.org/techniques/T1055/
+* Sub-technique:
+** Name: Ptrace System Calls
+** ID: T1055.008
+** Reference URL: https://attack.mitre.org/techniques/T1055/008/
+* Technique:
+** Name: Abuse Elevation Control Mechanism
+** ID: T1548
+** Reference URL: https://attack.mitre.org/techniques/T1548/
+* Sub-technique:
+** Name: Sudo and Sudo Caching
+** ID: T1548.003
+** Reference URL: https://attack.mitre.org/techniques/T1548/003/

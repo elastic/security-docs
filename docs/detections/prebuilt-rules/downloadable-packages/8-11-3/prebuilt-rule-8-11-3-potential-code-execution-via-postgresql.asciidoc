@@ -1,0 +1,69 @@
+[[prebuilt-rule-8-11-3-potential-code-execution-via-postgresql]]
+=== Potential Code Execution via Postgresql
+
+This rule monitors for suspicious activities that may indicate an attacker attempting to execute arbitrary code within a PostgreSQL environment. Attackers can execute code via PostgreSQL as a result of gaining unauthorized access to a public facing PostgreSQL database or exploiting vulnerabilities, such as remote command execution and SQL injection attacks, which can result in unauthorized access and malicious actions, and facilitate post-exploitation activities for unauthorized access and malicious actions.
+
+*Rule type*: eql
+
+*Rule indices*: 
+
+* logs-endpoint.events.*
+* endgame-*
+
+*Severity*: medium
+
+*Risk score*: 47
+
+*Runs every*: 5m
+
+*Searches indices from*: now-9m ({ref}/common-options.html#date-math[Date Math format], see also <<rule-schedule, `Additional look-back time`>>)
+
+*Maximum alerts per execution*: 100
+
+*References*: None
+
+*Tags*: 
+
+* Domain: Endpoint
+* OS: Linux
+* Use Case: Threat Detection
+* Tactic: Execution
+* Data Source: Elastic Endgame
+* Data Source: Elastic Defend
+
+*Version*: 5
+
+*Rule authors*: 
+
+* Elastic
+
+*Rule license*: Elastic License v2
+
+
+==== Rule query
+
+
+[source, js]
+----------------------------------
+process where host.os.type == "linux" and event.action in ("exec", "exec_event", "fork", "fork_event") and 
+event.type == "start" and user.name == "postgres" and (
+  (process.parent.args : "*sh" and process.parent.args : "echo*") or 
+  (process.args : "*sh" and process.args : "echo*")
+) and not process.parent.name : "puppet"
+
+----------------------------------
+
+*Framework*: MITRE ATT&CK^TM^
+
+* Tactic:
+** Name: Execution
+** ID: TA0002
+** Reference URL: https://attack.mitre.org/tactics/TA0002/
+* Technique:
+** Name: Command and Scripting Interpreter
+** ID: T1059
+** Reference URL: https://attack.mitre.org/techniques/T1059/
+* Sub-technique:
+** Name: Unix Shell
+** ID: T1059.004
+** Reference URL: https://attack.mitre.org/techniques/T1059/004/
