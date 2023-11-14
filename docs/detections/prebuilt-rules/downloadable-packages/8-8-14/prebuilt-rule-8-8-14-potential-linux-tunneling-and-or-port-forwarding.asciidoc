@@ -1,0 +1,77 @@
+[[prebuilt-rule-8-8-14-potential-linux-tunneling-and-or-port-forwarding]]
+=== Potential Linux Tunneling and/or Port Forwarding
+
+This rule monitors for a set of Linux utilities that can be used for tunneling and port forwarding. Attackers can leverage tunneling and port forwarding techniques to bypass network defenses, establish hidden communication channels, and gain unauthorized access to internal resources, facilitating data exfiltration, lateral movement, and remote control.
+
+*Rule type*: eql
+
+*Rule indices*: 
+
+* logs-endpoint.events.*
+
+*Severity*: medium
+
+*Risk score*: 47
+
+*Runs every*: 5m
+
+*Searches indices from*: now-9m ({ref}/common-options.html#date-math[Date Math format], see also <<rule-schedule, `Additional look-back time`>>)
+
+*Maximum alerts per execution*: 100
+
+*References*: 
+
+* https://blog.bitsadmin.com/living-off-the-foreign-land-windows-as-offensive-platform
+* https://book.hacktricks.xyz/generic-methodologies-and-resources/tunneling-and-port-forwarding
+
+*Tags*: 
+
+* Domain: Endpoint
+* OS: Linux
+* Use Case: Threat Detection
+* Tactic: Command and Control
+* Data Source: Elastic Defend
+
+*Version*: 3
+
+*Rule authors*: 
+
+* Elastic
+
+*Rule license*: Elastic License v2
+
+
+==== Rule query
+
+
+[source, js]
+----------------------------------
+process where host.os.type == "linux" and event.action == "exec" and event.type == "start" and ((
+  // gost & pivotnacci - spawned without process.parent.name
+  (process.name == "gost" and process.args : ("-L*", "-C*", "-R*")) or (process.name == "pivotnacci")) or (
+  // ssh
+  (process.name in ("ssh", "sshd") and (process.args in ("-R", "-L", "D", "-w") and process.args_count >= 4 and 
+  not process.args : "chmod")) or
+  // sshuttle
+  (process.name == "sshuttle" and process.args in ("-r", "--remote", "-l", "--listen") and process.args_count >= 4) or
+  // socat
+  (process.name == "socat" and process.args : ("TCP4-LISTEN:*", "SOCKS*") and process.args_count >= 3) or
+  // chisel
+  (process.name : "chisel*" and process.args in ("client", "server")) or
+  // iodine(d), dnscat, hans, ptunnel-ng, ssf, 3proxy & ngrok 
+  (process.name in ("iodine", "iodined", "dnscat", "hans", "hans-ubuntu", "ptunnel-ng", "ssf", "3proxy", "ngrok"))
+  ) and process.parent.name in ("bash", "dash", "ash", "sh", "tcsh", "csh", "zsh", "ksh", "fish")
+)
+
+----------------------------------
+
+*Framework*: MITRE ATT&CK^TM^
+
+* Tactic:
+** Name: Command and Control
+** ID: TA0011
+** Reference URL: https://attack.mitre.org/tactics/TA0011/
+* Technique:
+** Name: Protocol Tunneling
+** ID: T1572
+** Reference URL: https://attack.mitre.org/techniques/T1572/

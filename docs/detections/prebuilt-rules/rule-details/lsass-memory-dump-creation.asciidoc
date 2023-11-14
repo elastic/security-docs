@@ -37,7 +37,7 @@ Identifies the creation of a Local Security Authority Subsystem Service (lsass.e
 * Resources: Investigation Guide
 * Data Source: Elastic Defend
 
-*Version*: 106
+*Version*: 107
 
 *Rule authors*: 
 
@@ -60,7 +60,7 @@ Local Security Authority Server Service (LSASS) is a process in Microsoft Window
 This rule looks for the creation of memory dump files with file names compatible with credential dumping tools or that start with `lsass`.
 
 > **Note**:
-> This investigation guide uses the {security-guide}/security/master/invest-guide-run-osquery.html[Osquery Markdown Plugin] introduced in Elastic Stack version 8.5.0. Older Elastic Stack versions will display unrendered Markdown in this guide.
+> This investigation guide uses the [Osquery Markdown Plugin](https://www.elastic.co/guide/en/security/master/invest-guide-run-osquery.html) introduced in Elastic Stack version 8.5.0. Older Elastic Stack versions will display unrendered Markdown in this guide.
 
 #### Possible investigation steps
 
@@ -101,6 +101,8 @@ This rule looks for the creation of memory dump files with file names compatible
 - Run a full antimalware scan. This may reveal additional artifacts left in the system, persistence mechanisms, and malware components.
 - Determine the initial vector abused by the attacker and take action to prevent reinfection through the same vector.
 - Using the incident response data, update logging and audit policies to improve the mean time to detect (MTTD) and the mean time to respond (MTTR).
+
+
 ----------------------------------
 
 ==== Rule query
@@ -108,14 +110,28 @@ This rule looks for the creation of memory dump files with file names compatible
 
 [source, js]
 ----------------------------------
-file where host.os.type == "windows" and file.name : ("lsass*.dmp", "dumpert.dmp", "Andrew.dmp", "SQLDmpr*.mdmp", "Coredump.dmp") and
+file where host.os.type == "windows" and event.action != "deletion" and
+  file.name : ("lsass*.dmp", "dumpert.dmp", "Andrew.dmp", "SQLDmpr*.mdmp", "Coredump.dmp") and
 
- not (process.executable : ("?:\\Program Files\\Microsoft SQL Server\\*\\Shared\\SqlDumper.exe", "?:\\Windows\\System32\\dllhost.exe") and
-      file.path : ("?:\\Program Files\\Microsoft SQL Server\\*\\Shared\\ErrorDumps\\SQLDmpr*.mdmp",
-                   "?:\\*\\Reporting Services\\Logfiles\\SQLDmpr*.mdmp")) and
+  not (
+        process.executable : (
+          "?:\\Program Files\\Microsoft SQL Server\\*\\Shared\\SqlDumper.exe",
+          "?:\\Windows\\System32\\dllhost.exe"
+        ) and
+        file.path : (
+          "?:\\*\\Reporting Services\\Logfiles\\SQLDmpr*.mdmp",
+          "?:\\Program Files\\Microsoft SQL Server\\*\\Shared\\ErrorDumps\\SQLDmpr*.mdmp",
+          "?:\\Program Files\\Microsoft SQL Server\\*\\MSSQL\\LOG\\SQLDmpr*.mdmp"
+        )
+      ) and
 
- not (process.executable : "?:\\WINDOWS\\system32\\WerFault.exe" and
-      file.path : "?:\\Windows\\System32\\config\\systemprofile\\AppData\\Local\\CrashDumps\\lsass.exe.*.dmp")
+  not (
+        process.executable : "?:\\Windows\\system32\\WerFault.exe" and
+        file.path : (
+          "?:\\Windows\\System32\\config\\systemprofile\\AppData\\Local\\CrashDumps\\lsass.exe.*.dmp",
+          "?:\\Windows\\System32\\%LOCALAPPDATA%\\CrashDumps\\lsass.exe.*.dmp"
+        )
+  )
 
 ----------------------------------
 
