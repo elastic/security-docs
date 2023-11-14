@@ -1,0 +1,67 @@
+[[prebuilt-rule-8-8-14-potential-pspy-process-monitoring-detected]]
+=== Potential Pspy Process Monitoring Detected
+
+This rule leverages auditd to monitor for processes scanning different processes within the /proc directory using the openat syscall. This is a strong indication for the usage of the pspy utility. Attackers may leverage the pspy process monitoring utility to monitor system processes without requiring root permissions, in order to find potential privilege escalation vectors.
+
+*Rule type*: eql
+
+*Rule indices*: 
+
+* logs-auditd_manager.auditd-*
+
+*Severity*: low
+
+*Risk score*: 21
+
+*Runs every*: 5m
+
+*Searches indices from*: now-9m ({ref}/common-options.html#date-math[Date Math format], see also <<rule-schedule, `Additional look-back time`>>)
+
+*Maximum alerts per execution*: 100
+
+*References*: 
+
+* https://github.com/DominicBreuker/pspy
+
+*Tags*: 
+
+* Domain: Endpoint
+* OS: Linux
+* Use Case: Threat Detection
+* Tactic: Discovery
+
+*Version*: 4
+
+*Rule authors*: 
+
+* Elastic
+
+*Rule license*: Elastic License v2
+
+
+==== Rule query
+
+
+[source, js]
+----------------------------------
+sequence by process.pid, host.id with maxspan=5s
+[ file where host.os.type == "linux" and event.dataset == "auditd_manager.auditd" and 
+  auditd.data.syscall == "openat" and file.path == "/proc" and auditd.data.a0 : ("ffffffffffffff9c", "ffffff9c") and 
+  auditd.data.a2 : ("80000", "88000") ] with runs=10
+
+----------------------------------
+
+*Framework*: MITRE ATT&CK^TM^
+
+* Tactic:
+** Name: Discovery
+** ID: TA0007
+** Reference URL: https://attack.mitre.org/tactics/TA0007/
+* Technique:
+** Name: Process Discovery
+** ID: T1057
+** Reference URL: https://attack.mitre.org/techniques/T1057/
+* Technique:
+** Name: System Information Discovery
+** ID: T1082
+** Reference URL: https://attack.mitre.org/techniques/T1082/

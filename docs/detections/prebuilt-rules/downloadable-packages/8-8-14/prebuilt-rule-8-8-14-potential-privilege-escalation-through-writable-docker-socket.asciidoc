@@ -1,0 +1,67 @@
+[[prebuilt-rule-8-8-14-potential-privilege-escalation-through-writable-docker-socket]]
+=== Potential Privilege Escalation through Writable Docker Socket
+
+This rule monitors for the usage of Docker runtime sockets to escalate privileges on Linux systems. Docker sockets by default are only be writable by the root user and docker group. Attackers that have permissions to write to these sockets may be able to create and run a container that allows them to escalate privileges and gain further access onto the host file system.
+
+*Rule type*: eql
+
+*Rule indices*: 
+
+* logs-endpoint.events.*
+
+*Severity*: medium
+
+*Risk score*: 47
+
+*Runs every*: 5m
+
+*Searches indices from*: now-9m ({ref}/common-options.html#date-math[Date Math format], see also <<rule-schedule, `Additional look-back time`>>)
+
+*Maximum alerts per execution*: 100
+
+*References*: 
+
+* https://book.hacktricks.xyz/linux-hardening/privilege-escalation/docker-security/docker-breakout-privilege-escalation#automatic-enumeration-and-escape
+
+*Tags*: 
+
+* Domain: Endpoint
+* OS: Linux
+* Use Case: Threat Detection
+* Tactic: Privilege Escalation
+* Domain: Container
+* Data Source: Elastic Defend
+
+*Version*: 4
+
+*Rule authors*: 
+
+* Elastic
+
+*Rule license*: Elastic License v2
+
+
+==== Rule query
+
+
+[source, js]
+----------------------------------
+process where host.os.type == "linux" and event.type == "start" and event.action == "exec" and 
+(
+  (process.name == "docker" and process.args : "run" and process.args : "-it"  and 
+   process.args : ("unix://*/docker.sock", "unix://*/dockershim.sock")) or 
+  (process.name == "socat" and process.args : ("UNIX-CONNECT:*/docker.sock", "UNIX-CONNECT:*/dockershim.sock"))
+) and not user.Ext.real.id : "0" and not group.Ext.real.id : "0"
+
+----------------------------------
+
+*Framework*: MITRE ATT&CK^TM^
+
+* Tactic:
+** Name: Privilege Escalation
+** ID: TA0004
+** Reference URL: https://attack.mitre.org/tactics/TA0004/
+* Technique:
+** Name: Escape to Host
+** ID: T1611
+** Reference URL: https://attack.mitre.org/techniques/T1611/
