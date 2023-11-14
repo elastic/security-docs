@@ -1,0 +1,113 @@
+[[prebuilt-rule-8-11-3-potential-malicious-file-downloaded-from-google-drive]]
+=== Potential Malicious File Downloaded from Google Drive
+
+Identifies potential malicious file download and execution from Google Drive. The rule checks for download activity from Google Drive URL, followed by the creation of files commonly leveraged by or for malware. This could indicate an attempt to run malicious scripts, executables or payloads.
+
+*Rule type*: eql
+
+*Rule indices*: 
+
+* auditbeat-*
+* logs-endpoint*
+
+*Severity*: high
+
+*Risk score*: 73
+
+*Runs every*: 5m
+
+*Searches indices from*: now-9m ({ref}/common-options.html#date-math[Date Math format], see also <<rule-schedule, `Additional look-back time`>>)
+
+*Maximum alerts per execution*: 100
+
+*References*: 
+
+* https://intelligence.abnormalsecurity.com/blog/google-drive-matanbuchus-malware
+
+*Tags*: 
+
+* Domain: Endpoint
+* OS: Linux
+* OS: Windows
+* OS: macOS
+* Use Case: Threat Detection
+* Tactic: Command and Control
+
+*Version*: 2
+
+*Rule authors*: 
+
+* Elastic
+
+*Rule license*: Elastic License v2
+
+
+==== Rule query
+
+
+[source, js]
+----------------------------------
+sequence by host.id, process.entity_id with maxspan=30s
+[any where
+
+    /* Look for processes started or libraries loaded from untrusted or unsigned Windows, Linux or macOS binaries */
+    (event.action in ("exec", "fork", "start", "load")) or
+
+    /* Look for Google Drive download URL with AV flag skipping */
+    (process.args : "*drive.google.com*" and process.args : "*export=download*" and process.args : "*confirm=no_antivirus*")
+
+    /* ignore trusted processes */
+    and not (
+        process.code_signature.trusted == true and
+        process.code_signature.subject_name:
+            ("Mozilla Corporation",
+            "Google LLC",
+            "Google Inc",
+            "Bitdefender SRL",
+            "Microsoft Corporation",
+            "Netskope, Inc.",
+            "Avast Software s.r.o.",
+            "Microsoft Windows",
+            "AVG Technologies USA, LLC",
+            "Symantec Corporation",
+            "Trend Micro, Inc.",
+            "Palo Alto Networks (Netherlands) B.V.",
+            "Docker Inc"))
+
+    /* ignore common benign processes */
+    and not process.executable:
+        ("/bin/terraform",
+        "*/bin/dockerd",
+        "/usr/local/bin/docker-init",
+        "*/bin/go",
+        "?:\\Program Files*\\Mozilla Firefox\firefox.exe",
+        "?:\\Program Files*\\Google\\Chrome\\Application\\chrome.exe")
+
+    /* ignore shellscripts + go install from legitimate repository*/
+    and not (process.executable == "/bin/sh" and process.args : "go install google.golang.org*")]
+
+[network where
+    /* Look for DNS requests for Google Drive */
+    (dns.question.name : "drive.google.com" and dns.question.type : "A") or
+
+    /* Look for connection attempts to address that resolves to Google */
+    (destination.as.organization.name : "GOOGLE" and event.action == "connection_attempted")]
+
+/* Identify the creation of files following Google Drive connection with extensions commonly used for executables or libraries */
+[file where event.action == "creation" and
+    file.extension :
+        ("exe", "dll", "scr", "jar", "pif", "app", "dmg",
+        "pkg", "elf", "so", "bin", "deb", "rpm","sh","hta","lnk")]
+
+----------------------------------
+
+*Framework*: MITRE ATT&CK^TM^
+
+* Tactic:
+** Name: Command and Control
+** ID: TA0011
+** Reference URL: https://attack.mitre.org/tactics/TA0011/
+* Technique:
+** Name: Ingress Tool Transfer
+** ID: T1105
+** Reference URL: https://attack.mitre.org/techniques/T1105/

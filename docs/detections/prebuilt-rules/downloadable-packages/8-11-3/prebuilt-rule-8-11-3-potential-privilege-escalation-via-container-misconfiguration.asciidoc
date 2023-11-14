@@ -1,0 +1,67 @@
+[[prebuilt-rule-8-11-3-potential-privilege-escalation-via-container-misconfiguration]]
+=== Potential Privilege Escalation via Container Misconfiguration
+
+This rule monitors for the execution of processes that interact with Linux containers through an interactive shell without root permissions. Utilities such as runc and ctr are universal command-line utilities leveraged to interact with containers via root permissions. On systems where the access to these utilities are misconfigured, attackers might be able to create and run a container that mounts the root folder or spawn a privileged container vulnerable to a container escape attack, which might allow them to escalate privileges and gain further access onto the host file system.
+
+*Rule type*: eql
+
+*Rule indices*: 
+
+* logs-endpoint.events.*
+
+*Severity*: medium
+
+*Risk score*: 47
+
+*Runs every*: 5m
+
+*Searches indices from*: now-9m ({ref}/common-options.html#date-math[Date Math format], see also <<rule-schedule, `Additional look-back time`>>)
+
+*Maximum alerts per execution*: 100
+
+*References*: 
+
+* https://book.hacktricks.xyz/linux-hardening/privilege-escalation/runc-privilege-escalation
+* https://book.hacktricks.xyz/linux-hardening/privilege-escalation/containerd-ctr-privilege-escalation
+
+*Tags*: 
+
+* Domain: Endpoint
+* OS: Linux
+* Use Case: Threat Detection
+* Tactic: Privilege Escalation
+* Domain: Container
+* Data Source: Elastic Defend
+
+*Version*: 4
+
+*Rule authors*: 
+
+* Elastic
+
+*Rule license*: Elastic License v2
+
+
+==== Rule query
+
+
+[source, js]
+----------------------------------
+process where host.os.type == "linux" and event.action == "exec" and event.type == "start" and (
+  (process.name == "runc" and process.args == "run") or
+  (process.name == "ctr" and process.args == "run" and process.args in ("--privileged", "--mount"))
+) and not user.Ext.real.id == "0" and not group.Ext.real.id == "0" and 
+process.interactive == true and process.parent.interactive == true
+
+----------------------------------
+
+*Framework*: MITRE ATT&CK^TM^
+
+* Tactic:
+** Name: Privilege Escalation
+** ID: TA0004
+** Reference URL: https://attack.mitre.org/tactics/TA0004/
+* Technique:
+** Name: Escape to Host
+** ID: T1611
+** Reference URL: https://attack.mitre.org/techniques/T1611/
