@@ -35,7 +35,7 @@ Identifies the modification of the network logon provider registry. Adversaries 
 * Data Source: Elastic Endgame
 * Data Source: Elastic Defend
 
-*Version*: 105
+*Version*: 106
 
 *Rule authors*: 
 
@@ -49,18 +49,24 @@ Identifies the modification of the network logon provider registry. Adversaries 
 
 [source, js]
 ----------------------------------
-registry where host.os.type == "windows" and registry.data.strings != null and
- registry.path : (
+registry where host.os.type == "windows" and registry.data.strings : "?*" and
+  registry.path : (
     "HKLM\\SYSTEM\\*ControlSet*\\Services\\*\\NetworkProvider\\ProviderPath",
     "\\REGISTRY\\MACHINE\\SYSTEM\\*ControlSet*\\Services\\*\\NetworkProvider\\ProviderPath"
- ) and
- /* Excluding default NetworkProviders RDPNP, LanmanWorkstation and webclient. */
- not ( user.id : "S-1-5-18" and
-       registry.data.strings in
-                ("%SystemRoot%\\System32\\ntlanman.dll",
-                 "%SystemRoot%\\System32\\drprov.dll",
-                 "%SystemRoot%\\System32\\davclnt.dll")
-      )
+  ) and
+  /* Excluding default NetworkProviders RDPNP, LanmanWorkstation and webclient. */
+  not (
+    user.id : "S-1-5-18" and
+    registry.data.strings : (
+        "%SystemRoot%\\System32\\ntlanman.dll",
+        "%SystemRoot%\\System32\\drprov.dll",
+        "%SystemRoot%\\System32\\davclnt.dll",
+        "%SystemRoot%\\System32\\vmhgfs.dll",
+        "?:\\Program Files (x86)\\Citrix\\ICA Client\\x64\\pnsson.dll",
+        "?:\\Program Files\\Dell\\SARemediation\\agent\\DellMgmtNP.dll",
+        "?:\\Program Files (x86)\\CheckPoint\\Endpoint Connect\\\\epcgina.dll"
+    )
+  )
 
 ----------------------------------
 
