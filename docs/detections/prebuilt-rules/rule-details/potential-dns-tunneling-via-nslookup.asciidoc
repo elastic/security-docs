@@ -3,7 +3,7 @@
 
 This rule identifies a large number (15) of nslookup.exe executions with an explicit query type from the same host. This may indicate command and control activity utilizing the DNS protocol.
 
-*Rule type*: threshold
+*Rule type*: eql
 
 *Rule indices*: 
 
@@ -36,7 +36,7 @@ This rule identifies a large number (15) of nslookup.exe executions with an expl
 * Data Source: Elastic Endgame
 * Data Source: Elastic Defend
 
-*Version*: 106
+*Version*: 108
 
 *Rule authors*: 
 
@@ -91,7 +91,9 @@ More information on how tunneling works and how it can be abused can be found on
 
 [source, js]
 ----------------------------------
-event.category:process and host.os.type:windows and event.type:start and process.name:nslookup.exe and process.args:(-querytype=* or -qt=* or -q=* or -type=*)
+sequence by host.id with maxspan=5m
+[process where host.os.type == "windows" and event.type == "start" and
+  process.name : "nslookup.exe" and process.args:("-querytype=*", "-qt=*", "-q=*", "-type=*")] with runs = 10
 
 ----------------------------------
 
@@ -109,3 +111,7 @@ event.category:process and host.os.type:windows and event.type:start and process
 ** Name: DNS
 ** ID: T1071.004
 ** Reference URL: https://attack.mitre.org/techniques/T1071/004/
+* Technique:
+** Name: Protocol Tunneling
+** ID: T1572
+** Reference URL: https://attack.mitre.org/techniques/T1572/

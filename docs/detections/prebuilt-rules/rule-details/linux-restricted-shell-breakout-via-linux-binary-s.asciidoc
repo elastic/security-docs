@@ -56,7 +56,7 @@ Identifies the abuse of a Linux binary to break out of a restricted shell or env
 * Data Source: Elastic Endgame
 * Data Source: Elastic Defend
 
-*Version*: 109
+*Version*: 111
 
 *Rule authors*: 
 
@@ -116,38 +116,6 @@ Initiate the incident response process based on the outcome of the triage.
 - Using the incident response data, update logging and audit policies to improve the mean time to detect (MTTD) and the mean time to respond (MTTR).
 
 
-
-### Elastic Defend Integration Setup
-Elastic Defend is integrated into the Elastic Agent using Fleet. Upon configuration, the integration allows
-the Elastic Agent to monitor events on your host and send data to the Elastic Security app.
-
-#### Prerequisite Requirements:
-- Fleet is required for Elastic Defend.
-- To configure Fleet Server refer to the {security-guide}/fleet/current/fleet-server.html[documentation].
-
-#### The following steps should be executed in order to add the Elastic Defend integration on a Linux System:
-- Go to the Kibana home page and click Add integrations.
-- In the query bar, search for Elastic Defend and select the integration to see more details about it.
-- Click Add Elastic Defend.
-- Configure the integration name and optionally add a description.
-- Select the type of environment you want to protect, either Traditional Endpoints or Cloud Workloads.
-- Select a configuration preset. Each preset comes with different default settings for Elastic Agent, you can further customize these later by configuring the Elastic Defend integration policy. {security-guide}/security/current/configure-endpoint-integration-policy.html[Helper guide].
-- We suggest to select "Complete EDR (Endpoint Detection and Response)" as a configuration setting, that provides "All events; all preventions"
-- Enter a name for the agent policy in New agent policy name. If other agent policies already exist, you can click the Existing hosts tab and select an existing policy instead.
-For more details on Elastic Agent configuration settings, refer to the {security-guide}/fleet/8.10/agent-policy.html[helper guide].
-- Click Save and Continue.
-- To complete the integration, select Add Elastic Agent to your hosts and continue to the next section to install the Elastic Agent on your hosts.
-For more details on Elastic Defend refer to the {security-guide}/security/current/install-endpoint.html[helper guide].
-
-Session View uses process data collected by the Elastic Defend integration, but this data is not always collected by default. Session View is available on enterprise subscription for versions 8.3 and above.
-#### To confirm that Session View data is enabled:
-- Go to Manage → Policies, and edit one or more of your Elastic Defend integration policies.
-- Select the Policy settings tab, then scroll down to the Linux event collection section near the bottom.
-- Check the box for Process events, and turn on the Include session data toggle.
-- If you want to include file and network alerts in Session View, check the boxes for Network and File events.
-- If you want to enable terminal output capture, turn on the Capture terminal output toggle.
-For more information about the additional fields collected when this setting is enabled and
-the usage of Session View for Analysis refer to the {security-guide}/security/current/session-view.html[helper guide].
 ----------------------------------
 
 ==== Rule query
@@ -161,7 +129,7 @@ process where host.os.type == "linux" and event.type == "start" and
   (process.name == "capsh" and process.args == "--") or
   
   /* launching shells from unusual parents or parent+arg combos */
-  (process.name : "*sh" and (
+  (process.name in ("bash", "dash", "ash", "sh", "tcsh", "csh", "zsh", "ksh", "fish") and (
     (process.parent.name : "*awk" and process.parent.args : "BEGIN {system(*)}") or
     (process.parent.name == "git" and process.parent.args : ("*PAGER*", "!*sh", "exec *sh") or 
      process.args : ("*PAGER*", "!*sh", "exec *sh") and not process.name == "ssh" ) or

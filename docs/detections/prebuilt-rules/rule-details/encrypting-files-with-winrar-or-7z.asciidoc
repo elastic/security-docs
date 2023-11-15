@@ -36,7 +36,7 @@ Identifies use of WinRar or 7z to create an encrypted files. Adversaries will of
 * Data Source: Elastic Endgame
 * Data Source: Elastic Defend
 
-*Version*: 107
+*Version*: 109
 
 *Rule authors*: 
 
@@ -81,6 +81,9 @@ These steps are usually done in preparation for exfiltration, meaning the attack
 - Run a full antimalware scan. This may reveal additional artifacts left in the system, persistence mechanisms, and malware components.
 - Determine the initial vector abused by the attacker and take action to prevent reinfection through the same vector.
 - Using the incident response data, update logging and audit policies to improve the mean time to detect (MTTD) and the mean time to respond (MTTR).
+
+
+
 ----------------------------------
 
 ==== Rule query
@@ -90,17 +93,24 @@ These steps are usually done in preparation for exfiltration, meaning the attack
 ----------------------------------
 process where host.os.type == "windows" and event.type == "start" and
 (
-  ((process.name:"rar.exe" or process.code_signature.subject_name == "win.rar GmbH" or
-      process.pe.original_file_name == "Command line RAR") and
-    process.args == "a" and process.args : ("-hp*", "-p*", "-dw", "-tb", "-ta", "/hp*", "/p*", "/dw", "/tb", "/ta"))
-
-  or
-  (process.pe.original_file_name in ("7z.exe", "7za.exe") and
-     process.args == "a" and process.args : ("-p*", "-sdel"))
-
-  /* uncomment if noisy for backup software related FPs */
-  /* not process.parent.executable : ("C:\\Program Files\\*.exe", "C:\\Program Files (x86)\\*.exe") */
-)
+  (
+    (
+      process.name:"rar.exe" or process.code_signature.subject_name == "win.rar GmbH" or
+      process.pe.original_file_name == "Command line RAR"
+    ) and
+    process.args == "a" and process.args : ("-hp*", "-p*", "/hp*", "/p*")
+  ) or
+  (
+    process.pe.original_file_name in ("7z.exe", "7za.exe") and
+    process.args == "a" and process.args : "-p*"
+  )
+) and
+  not process.parent.executable : (
+        "C:\\Program Files\\*.exe",
+        "C:\\Program Files (x86)\\*.exe",
+        "?:\\ManageEngine\\*\\jre\\bin\\java.exe",
+        "?:\\Nox\\bin\\Nox.exe"
+      )
 
 ----------------------------------
 
@@ -118,3 +128,7 @@ process where host.os.type == "windows" and event.type == "start" and
 ** Name: Archive via Utility
 ** ID: T1560.001
 ** Reference URL: https://attack.mitre.org/techniques/T1560/001/
+* Technique:
+** Name: Data from Local System
+** ID: T1005
+** Reference URL: https://attack.mitre.org/techniques/T1005/

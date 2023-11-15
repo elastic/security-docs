@@ -37,7 +37,7 @@ The hosts file on endpoints is used to control manual IP address to hostname res
 * Resources: Investigation Guide
 * Data Source: Elastic Defend
 
-*Version*: 105
+*Version*: 107
 
 *Rule authors*: 
 
@@ -81,6 +81,8 @@ This rule identifies modifications in the hosts file across multiple operating s
 - Run a full antimalware scan. This may reveal additional artifacts left in the system, persistence mechanisms, and malware components.
 - Determine the initial vector abused by the attacker and take action to prevent reinfection through the same vector.
 - Using the incident response data, update logging and audit policies to improve the mean time to detect (MTTD) and the mean time to respond (MTTR).
+
+
 ----------------------------------
 
 ==== Rule query
@@ -94,7 +96,8 @@ any where
      miss this, which is the purpose of the process + command line args logic below */
   (
    event.category == "file" and event.type in ("change", "creation") and
-     file.path : ("/private/etc/hosts", "/etc/hosts", "?:\\Windows\\System32\\drivers\\etc\\hosts")
+     file.path : ("/private/etc/hosts", "/etc/hosts", "?:\\Windows\\System32\\drivers\\etc\\hosts") and 
+     not process.name in ("dockerd", "rootlesskit", "podman", "crio")
   )
   or
 
@@ -102,7 +105,8 @@ any where
   (
    event.category == "process" and event.type in ("start") and
      process.name in ("nano", "vim", "vi", "emacs", "echo", "sed") and
-     process.args : ("/etc/hosts")
+     process.args : ("/etc/hosts") and 
+     not process.parent.name in ("dhclient-script", "google_set_hostname")
   )
 
 ----------------------------------

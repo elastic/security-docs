@@ -36,7 +36,7 @@ Identifies an executable or script file remotely downloaded via a TeamViewer tra
 * Data Source: Elastic Endgame
 * Data Source: Elastic Defend
 
-*Version*: 107
+*Version*: 109
 
 *Rule authors*: 
 
@@ -99,6 +99,9 @@ TeamViewer is a remote access and remote control tool used by helpdesks and syst
 - Run a full antimalware scan. This may reveal additional artifacts left in the system, persistence mechanisms, and malware components.
 - Investigate credential exposure on systems compromised or used by the attacker to ensure all compromised accounts are identified. Reset passwords for these accounts and other potentially compromised credentials, such as email, business systems, and web services.
 - Using the incident response data, update logging and audit policies to improve the mean time to detect (MTTD) and the mean time to respond (MTTR).
+
+
+
 ----------------------------------
 
 ==== Rule query
@@ -107,7 +110,15 @@ TeamViewer is a remote access and remote control tool used by helpdesks and syst
 [source, js]
 ----------------------------------
 file where host.os.type == "windows" and event.type == "creation" and process.name : "TeamViewer.exe" and
-  file.extension : ("exe", "dll", "scr", "com", "bat", "ps1", "vbs", "vbe", "js", "wsh", "hta")
+  file.extension : ("exe", "dll", "scr", "com", "bat", "ps1", "vbs", "vbe", "js", "wsh", "hta") and
+  not 
+  (
+    file.path : (
+      "?:\\Users\\*\\AppData\\Local\\Microsoft\\Windows\\INetCache\\*.js",
+      "?:\\Users\\*\\AppData\\Local\\Temp\\TeamViewer\\update.exe",
+      "?:\\Users\\*\\AppData\\Local\\Temp\\?\\TeamViewer\\update.exe"
+    ) and process.code_signature.trusted == true
+  )
 
 ----------------------------------
 

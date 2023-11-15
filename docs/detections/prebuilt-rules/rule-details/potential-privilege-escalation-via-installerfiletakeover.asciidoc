@@ -7,9 +7,7 @@ Identifies a potential exploitation of InstallerTakeOver (CVE-2021-41379) defaul
 
 *Rule indices*: 
 
-* winlogbeat-*
 * logs-endpoint.events.*
-* logs-windows.*
 
 *Severity*: high
 
@@ -35,7 +33,7 @@ Identifies a potential exploitation of InstallerTakeOver (CVE-2021-41379) defaul
 * Use Case: Vulnerability
 * Data Source: Elastic Defend
 
-*Version*: 107
+*Version*: 109
 
 *Rule authors*: 
 
@@ -103,6 +101,8 @@ This rule detects the default execution of the PoC, which overwrites the `elevat
 - Investigate credential exposure on systems compromised or used by the attacker to ensure all compromised accounts are identified. Reset passwords for these accounts and other potentially compromised credentials, such as email, business systems, and web services.
 - Determine the initial vector abused by the attacker and take action to prevent reinfection through the same vector.
 - Using the incident response data, update logging and audit policies to improve the mean time to detect (MTTD) and the mean time to respond (MTTR).
+
+
 ----------------------------------
 
 ==== Rule query
@@ -110,17 +110,22 @@ This rule detects the default execution of the PoC, which overwrites the `elevat
 
 [source, js]
 ----------------------------------
-/* This rule is compatible with both Sysmon and Elastic Endpoint */
-
 process where host.os.type == "windows" and event.type == "start" and
-    (?process.Ext.token.integrity_level_name : "System" or
-    ?winlog.event_data.IntegrityLevel : "System") and
+    process.Ext.token.integrity_level_name : "System" and
     (
       (process.name : "elevation_service.exe" and
        not process.pe.original_file_name == "elevation_service.exe") or
+      
+      (process.name : "elevation_service.exe" and
+       not process.code_signature.trusted == true) or
 
       (process.parent.name : "elevation_service.exe" and
        process.name : ("rundll32.exe", "cmd.exe", "powershell.exe"))
+    ) and
+    not
+    (
+      process.name : "elevation_service.exe" and process.code_signature.trusted == true and
+      process.pe.original_file_name == null
     )
 
 ----------------------------------

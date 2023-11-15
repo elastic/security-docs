@@ -32,7 +32,7 @@ Identifies the use of the grep command to discover known third-party macOS and L
 * Resources: Investigation Guide
 * Data Source: Elastic Defend
 
-*Version*: 105
+*Version*: 107
 
 *Rule authors*: 
 
@@ -75,6 +75,8 @@ This rule looks for the execution of the `grep` utility with arguments compatibl
 - Run a full antimalware scan. This may reveal additional artifacts left in the system, persistence mechanisms, and malware components.
 - Determine the initial vector abused by the attacker and take action to prevent reinfection via the same vector.
 - Using the incident response data, update logging and audit policies to improve the mean time to detect (MTTD) and the mean time to respond (MTTR).
+
+
 ----------------------------------
 
 ==== Rule query
@@ -116,7 +118,16 @@ process.name : "grep" and user.id != "0" and
           "osquery*",
           "elastic-endpoint*"
           ) and
-   not (process.args : "Avast" and process.args : "Passwords")
+   not (
+     (process.args : "Avast" and process.args : "Passwords") or
+     (process.parent.args : "/opt/McAfee/agent/scripts/ma" and process.parent.args : "checkhealth") or
+     (process.command_line : (
+       "grep ESET Command-line scanner, version %s -A2",
+       "grep -i McAfee Web Gateway Core version:",
+       "grep --color=auto ESET Command-line scanner, version %s -A2"
+       )
+      )
+    )
 
 ----------------------------------
 
