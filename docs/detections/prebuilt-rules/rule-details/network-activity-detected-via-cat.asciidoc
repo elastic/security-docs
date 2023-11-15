@@ -29,7 +29,7 @@ This rule monitors for the execution of the cat command, followed by a connectio
 * Tactic: Command and Control
 * Data Source: Elastic Defend
 
-*Version*: 1
+*Version*: 3
 
 *Rule authors*: 
 
@@ -44,10 +44,10 @@ This rule monitors for the execution of the cat command, followed by a connectio
 [source, js]
 ----------------------------------
 sequence by host.id, process.entity_id with maxspan=1s
-  [process where host.os.type == "linux" and event.action == "exec" and event.type == "start" and 
-   process.name == "cat"]
-  [network where host.os.type == "linux" and event.action in ("connection_attempted", "disconnect_received") and 
-   process.name == "cat"]
+  [process where host.os.type == "linux" and event.action == "exec" and event.type == "start" and process.name == "cat" and 
+   process.parent.name in ("bash", "dash", "sh", "tcsh", "csh", "zsh", "ksh", "fish")]
+  [network where host.os.type == "linux" and event.action in ("connection_attempted", "disconnect_received") and process.name == "cat" and 
+   destination.ip != null and not cidrmatch(destination.ip, "127.0.0.0/8", "169.254.0.0/16", "224.0.0.0/4", "::1")]
 
 ----------------------------------
 

@@ -1,0 +1,62 @@
+[[prebuilt-rule-8-10-5-sudo-command-enumeration-detected]]
+=== Sudo Command Enumeration Detected
+
+This rule monitors for the usage of the sudo -l command, which is used to list the allowed and forbidden commands for the invoking user. Attackers may execute this command to enumerate commands allowed to be executed with sudo permissions, potentially allowing to escalate privileges to root.
+
+*Rule type*: eql
+
+*Rule indices*: 
+
+* logs-endpoint.events.*
+
+*Severity*: low
+
+*Risk score*: 21
+
+*Runs every*: 5m
+
+*Searches indices from*: now-9m ({ref}/common-options.html#date-math[Date Math format], see also <<rule-schedule, `Additional look-back time`>>)
+
+*Maximum alerts per execution*: 100
+
+*References*: None
+
+*Tags*: 
+
+* Domain: Endpoint
+* OS: Linux
+* Use Case: Threat Detection
+* Tactic: Discovery
+* Data Source: Elastic Defend
+
+*Version*: 3
+
+*Rule authors*: 
+
+* Elastic
+
+*Rule license*: Elastic License v2
+
+
+==== Rule query
+
+
+[source, js]
+----------------------------------
+process where host.os.type == "linux" and event.type == "start" and event.action == "exec" and 
+process.name == "sudo" and process.args == "-l" and process.args_count == 2 and
+process.parent.name in ("bash", "dash", "sh", "tcsh", "csh", "zsh", "ksh", "fish") and 
+not group.Ext.real.id : "0" and not user.Ext.real.id : "0"
+
+----------------------------------
+
+*Framework*: MITRE ATT&CK^TM^
+
+* Tactic:
+** Name: Discovery
+** ID: TA0007
+** Reference URL: https://attack.mitre.org/tactics/TA0007/
+* Technique:
+** Name: System Owner/User Discovery
+** ID: T1033
+** Reference URL: https://attack.mitre.org/techniques/T1033/

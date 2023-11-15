@@ -29,9 +29,10 @@ Identifies access attempts to the LSASS handle, which may indicate an attempt to
 * OS: Windows
 * Use Case: Threat Detection
 * Tactic: Credential Access
+* Tactic: Execution
 * Data Source: Elastic Defend
 
-*Version*: 3
+*Version*: 5
 
 *Rule authors*: 
 
@@ -46,32 +47,48 @@ Identifies access attempts to the LSASS handle, which may indicate an attempt to
 [source, js]
 ----------------------------------
 api where host.os.type == "windows" and 
- process.Ext.api.name in ("OpenProcess", "OpenThread") and Target.process.name : "lsass.exe" and 
- not process.executable : 
-             ("?:\\ProgramData\\Microsoft\\Windows Defender\\Platform\\*\\MsMpEng.exe", 
-              "?:\\Program Files\\Microsoft Security Client\\MsMpEng.exe", 
-              "?:\\Program Files*\\Windows Defender\\MsMpEng.exe", 
-              "?:\\Program Files (x86)\\N-able Technologies\\Windows Agent\\bin\\agent.exe", 
-              "?:\\Windows\\System32\\wbem\\WmiPrvSE.exe", 
-              "?:\\Windows\\SysWOW64\\wbem\\WmiPrvSE.exe",
-              "?:\\Program Files\\VMware\\VMware Tools\\vmtoolsd.exe", 
-              "?:\\Program Files (x86)\\N-able Technologies\\Reactive\\bin\\NableReactiveManagement.exe", 
-              "?:\\Program Files\\EA\\AC\\EAAntiCheat.GameService.exe", 
-              "?:\\Program Files\\Cisco\\AMP\\*\\sfc.exe", 
-              "?:\\Program Files\\TDAgent\\ossec-agent\\ossec-agent.exe", 
-              "?:\\Windows\\System32\\MRT.exe", 
-              "?:\\Program Files\\Elastic\\Agent\\data\\elastic-agent-*\\components\\metricbeat.exe", 
-              "?:\\Program Files\\Elastic\\Agent\\data\\elastic-agent-*\\components\\osqueryd.exe", 
-              "?:\\Windows\\System32\\msiexec.exe", 
-              "?:\\Program Files\\Common Files\\McAfee\\AVSolution\\mcshield.exe", 
-              "?:\\Program Files\\Fortinet\\FortiClient\\FortiProxy.exe", 
-              "?:\\Program Files\\LogicMonitor\\Agent\\bin\\sbshutdown.exe", 
-              "?:\\Program Files (x86)\\Google\\Update\\GoogleUpdate.exe", 
-              "?:\\Program Files (x86)\\Blackpoint\\SnapAgent\\SnapAgent.exe", 
-              "?:\\Program Files\\ESET\\ESET Security\\ekrn.exe", 
-              "?:\\Program Files\\Huntress\\HuntressAgent.exe", 
-              "?:\\Program Files (x86)\\eScan\\reload.exe", 
-              "?:\\Program Files\\Topaz OFD\\Warsaw\\core.exe")
+  process.Ext.api.name in ("OpenProcess", "OpenThread") and Target.process.name : "lsass.exe" and 
+  not 
+  (
+    process.executable : (
+        "?:\\ProgramData\\GetSupportService*\\Updates\\Update_*.exe",
+        "?:\\ProgramData\\Microsoft\\Windows Defender\\Platform\\*\\MsMpEng.exe",
+        "?:\\Program Files (x86)\\Asiainfo Security\\OfficeScan Client\\NTRTScan.exe",
+        "?:\\Program Files (x86)\\Blackpoint\\SnapAgent\\SnapAgent.exe",
+        "?:\\Program Files (x86)\\eScan\\reload.exe",
+        "?:\\Program Files (x86)\\Google\\Update\\GoogleUpdate.exe",
+        "?:\\Program Files (x86)\\Kaspersky Lab\\*\\avp.exe",
+        "?:\\Program Files (x86)\\N-able Technologies\\Reactive\\bin\\NableReactiveManagement.exe",
+        "?:\\Program Files (x86)\\N-able Technologies\\Windows Agent\\bin\\agent.exe",
+        "?:\\Program Files (x86)\\Trend Micro\\*\\CCSF\\TmCCSF.exe",
+        "?:\\Program Files*\\Windows Defender\\MsMpEng.exe",
+        "?:\\Program Files\\Bitdefender\\Endpoint Security\\EPSecurityService.exe",
+        "?:\\Program Files\\Cisco\\AMP\\*\\sfc.exe",
+        "?:\\Program Files\\Common Files\\McAfee\\AVSolution\\mcshield.exe",
+        "?:\\Program Files\\EA\\AC\\EAAntiCheat.GameService.exe",
+        "?:\\Program Files\\Elastic\\Agent\\data\\elastic-agent-*\\components\\metricbeat.exe",
+        "?:\\Program Files\\Elastic\\Agent\\data\\elastic-agent-*\\components\\osqueryd.exe",
+        "?:\\Program Files\\Elastic\\Agent\\data\\elastic-agent-*\\components\\packetbeat.exe",
+        "?:\\Program Files\\ESET\\ESET Security\\ekrn.exe",
+        "?:\\Program Files\\Fortinet\\FortiClient\\FortiProxy.exe",
+        "?:\\Program Files\\Huntress\\HuntressAgent.exe",
+        "?:\\Program Files\\LogicMonitor\\Agent\\bin\\sbshutdown.exe",
+        "?:\\Program Files\\Microsoft Security Client\\MsMpEng.exe",
+        "?:\\Program Files\\Qualys\\QualysAgent\\QualysAgent.exe",
+        "?:\\Program Files\\TDAgent\\ossec-agent\\ossec-agent.exe",
+        "?:\\Program Files\\Topaz OFD\\Warsaw\\core.exe",
+        "?:\\Program Files\\VMware\\VMware Tools\\vmtoolsd.exe",
+        "?:\\Windows\\AdminArsenal\\PDQDeployRunner\\*\\exec\\Sysmon64.exe",
+        "?:\\Windows\\Sysmon.exe",
+        "?:\\Windows\\Sysmon64.exe",
+        "?:\\Windows\\System32\\csrss.exe",
+        "?:\\Windows\\System32\\MRT.exe",
+        "?:\\Windows\\System32\\msiexec.exe",
+        "?:\\Windows\\System32\\RtkAudUService64.exe",
+        "?:\\Windows\\System32\\wbem\\WmiPrvSE.exe",
+        "?:\\Windows\\SysWOW64\\wbem\\WmiPrvSE.exe"
+    ) and process.code_signature.trusted == true
+  )
 
 ----------------------------------
 
@@ -89,3 +106,11 @@ api where host.os.type == "windows" and
 ** Name: LSASS Memory
 ** ID: T1003.001
 ** Reference URL: https://attack.mitre.org/techniques/T1003/001/
+* Tactic:
+** Name: Execution
+** ID: TA0002
+** Reference URL: https://attack.mitre.org/tactics/TA0002/
+* Technique:
+** Name: Native API
+** ID: T1106
+** Reference URL: https://attack.mitre.org/techniques/T1106/

@@ -30,7 +30,7 @@ This rule monitors for the usage of the "find" command in conjunction with SUID 
 * Tactic: Privilege Escalation
 * Data Source: Elastic Defend
 
-*Version*: 2
+*Version*: 4
 
 *Rule authors*: 
 
@@ -47,8 +47,10 @@ This rule monitors for the usage of the "find" command in conjunction with SUID 
 process where host.os.type == "linux" and event.type == "start" and event.action == "exec" and 
 process.name == "find" and process.args : "-perm" and process.args : (
   "/6000", "-6000", "/4000", "-4000", "/2000", "-2000", "/u=s", "-u=s", "/g=s", "-g=s", "/u=s,g=s", "/g=s,u=s"
-) and 
-not user.Ext.real.id == "0" and not group.Ext.real.id == "0"
+) and not (
+  user.Ext.real.id == "0" or group.Ext.real.id == "0" or process.args_count >= 12 or 
+  (process.args : "/usr/bin/pkexec" and process.args : "-xdev" and process.args_count == 7)
+)
 
 ----------------------------------
 
