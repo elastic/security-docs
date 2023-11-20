@@ -1,4 +1,4 @@
----
+[---
 name: Internal documentation request (Elastic employees)
 about: 'Submit a new documentation request or enhancement. '
 title: "[REQUEST] "
