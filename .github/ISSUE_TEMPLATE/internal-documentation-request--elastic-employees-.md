@@ -1,0 +1,105 @@
+---
+name: Internal documentation request (Elastic employees)
+about: 'Submit a new documentation request or enhancement. '
+title: "[REQUEST] "
+labels: ''
+assignees: ''
+
+---
+
+name: "Internal documentation request (Elastic employees)"
+description: Request a documentation change or enhancement.
+title: "[Request]: "
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Hello! This form will create an issue that the Security docs team will triage and prioritize. Please do not add any labels to your issue — that will happen automatically. 
+  - type: textarea
+    id: description
+    attributes:
+      label: Description
+      description: Describe what needs to be documented. What details do users need to know about?
+      placeholder: |
+        What: We're introducing new feature A.
+        When: This feature will launch at the completion of project B.
+        Why: This feature will make X, Y, and Z easier for the user.
+    validations:
+      required: true
+  - type: textarea
+    id: related
+    attributes:
+      label: Resources
+      description: Please include the relative pull request(s) or issue(s).
+      placeholder: |
+        This feature was implemented in {link_to_PR}.
+        This feature was scoped and researched in {link_to_issue}.
+    validations:
+      required: true
+  - type: dropdown
+    id: doc-set
+    attributes:
+      label: Which documentation set does this change impact?
+      description: ESS(classic), Serverless, or both?
+      options:
+        - ESS and Serverless
+        - ESS only
+        - Serverless only
+        - Unknown
+      default: 0
+    validations:
+      required: true
+  - type: textarea
+    id: doc-set-differences
+    attributes:
+      label: Feature differences
+      description: If you selected both ESS and serverless above, please describe how, if at all, the feature differs in each deployment method.
+      placeholder: The feature is identical in ESS and serverless.
+    validations:
+      required: true
+  - type: textarea
+    id: version
+    attributes:
+      label: When is the feature expected to be released?
+      description: Some requests may be tied to the Elastic Stack release schedule. Some, like serverless requests, may not. Please select an option.
+      placeholder: |
+      default: 0
+    validations:
+      required: true
+  - type: textarea
+    id: ATC
+    attributes:
+      label: Acceptance test criteria
+      description: List all the ATC of each action and its intended result.
+      placeholder: As a user, when [action (e.g., viewing, clicking, selecting, etc.)] I should [insert the expected result].
+      default: 0
+    validations:
+      required: true
+  - type: textarea
+    id: prereqs
+    attributes:
+      label: Prerequisites and privileges
+      description: Are there any required role privileges or subscription level tiers?
+      placeholder: Main contact:
+    validations:
+      required: false
+ - type: textarea
+    id: test environment 
+    attributes:
+      label: Test environment 
+      description: Please include the environment which the docs team can test this feature. Example: `https://kibana.siem.estc.dev/`. If one isn't available, please list the steps to generate data we can test.
+      placeholder: |
+    validations:
+      required: false
+- type: textarea
+    id: feature flags
+    attributes:
+      label: Feature flag limitations 
+      description: Are there any feature flags that need to be enabled?
+      placeholder: |
+    validations:
+      required: true
+  - type: markdown
+    attributes:
+      value: |
+        Thanks for completing this form to help us understand and plan accordingly. We'll be in touch soon!
