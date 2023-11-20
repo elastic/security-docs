@@ -40,11 +40,11 @@ body:
     id: doc-set
     attributes:
       label: Which documentation set does this change impact?
-      description: ESS(classic), Serverless, or both?
+      description: ESS(classic), serverless, or both?
       options:
-        - ESS and Serverless
+        - ESS and serverless
         - ESS only
-        - Serverless only
+        - serverless only
         - Unknown
       default: 0
     validations:
@@ -80,7 +80,7 @@ body:
     attributes:
       label: Prerequisites and privileges
       description: Are there any required role privileges or subscription level tiers?
-      placeholder: Main contact:
+      placeholder: |
     validations:
       required: false
  - type: textarea
@@ -96,6 +96,14 @@ body:
     attributes:
       label: Feature flag limitations 
       description: Are there any feature flags that need to be enabled?
+      placeholder: |
+    validations:
+      required: true
+  - type: textarea
+    id: contacts
+    attributes:
+      label: Point of contact 
+      description: Please assign at least one point of contact. Add as many stakeholders as needed -- such as those from dev, design, product management, etc.
       placeholder: |
     validations:
       required: true
