@@ -2,7 +2,7 @@
 name: Bug report
 about: Report documentation bugs or fixes.
 title: "[BUG]"
-labels: bug
+labels: bug, known-issue, release-notes
 assignees: ''
 
 ---
