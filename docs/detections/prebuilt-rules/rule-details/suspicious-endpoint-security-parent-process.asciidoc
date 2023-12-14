@@ -33,7 +33,7 @@ A suspicious Endpoint Security parent process was detected. This may indicate a 
 * Data Source: Elastic Endgame
 * Data Source: Elastic Defend
 
-*Version*: 108
+*Version*: 109
 
 *Rule authors*: 
 
@@ -48,13 +48,31 @@ A suspicious Endpoint Security parent process was detected. This may indicate a 
 [source, js]
 ----------------------------------
 process where host.os.type == "windows" and event.type == "start" and
- process.name : ("esensor.exe", "elastic-endpoint.exe") and
- process.parent.executable != null and
+  process.name : ("esensor.exe", "elastic-endpoint.exe") and
+  process.parent.executable != null and
   /* add FPs here */
- not process.parent.executable : ("C:\\Program Files\\Elastic\\*",
-                                  "C:\\Windows\\System32\\services.exe",
-                                  "C:\\Windows\\System32\\WerFault*.exe",
-                                  "C:\\Windows\\System32\\wermgr.exe")
+  not process.parent.executable : (
+        "?:\\Program Files\\Elastic\\*",
+        "?:\\Windows\\System32\\services.exe",
+        "?:\\Windows\\System32\\WerFault*.exe",
+        "?:\\Windows\\System32\\wermgr.exe",
+        "?:\\Windows\\explorer.exe"
+  ) and
+  not (
+    process.parent.executable : (
+        "?:\\Windows\\System32\\cmd.exe",
+        "?:\\Windows\\System32\\SecurityHealthHost.exe",
+        "?:\\Windows\\System32\\WindowsPowerShell\\v1.0\\powershell.exe"
+    ) and
+    process.args : (
+        "test", "version",
+        "top", "run",
+        "*help", "status",
+        "upgrade", "/launch",
+        "/enable"
+    )
+  )
+  
 
 ----------------------------------
 
