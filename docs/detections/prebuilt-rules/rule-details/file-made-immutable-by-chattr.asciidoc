@@ -5,59 +5,52 @@ Detects a file being made immutable using the chattr binary. Making a file immut
 
 *Rule type*: eql
 
-*Rule indices*:
+*Rule indices*: 
 
 * auditbeat-*
 * logs-endpoint.events.*
+* endgame-*
 
 *Severity*: medium
 
 *Risk score*: 47
 
-*Runs every*: 5 minutes
+*Runs every*: 5m
 
 *Searches indices from*: now-9m ({ref}/common-options.html#date-math[Date Math format], see also <<rule-schedule, `Additional look-back time`>>)
 
 *Maximum alerts per execution*: 33
 
-*Tags*:
+*References*: None
+
+*Tags*: 
+
+* Domain: Endpoint
+* OS: Linux
+* Use Case: Threat Detection
+* Tactic: Defense Evasion
+* Data Source: Elastic Endgame
+* Data Source: Elastic Defend
+
+*Version*: 109
+
+*Rule authors*: 
 
 * Elastic
-* Host
-* Linux
-* Threat Detection
-* Defense Evasion
-
-*Version*: 100 (<<file-made-immutable-by-chattr-history, version history>>)
-
-*Added ({stack} release)*: 8.4.0
-
-*Last modified ({stack} release)*: 8.5.0
-
-*Rule authors*: Elastic
 
 *Rule license*: Elastic License v2
-
-==== Investigation guide
-
-
-[source,markdown]
-----------------------------------
-
-----------------------------------
 
 
 ==== Rule query
 
 
-[source,js]
+[source, js]
 ----------------------------------
-process where event.type == "start" and user.name == "root" and
-process.executable : "/usr/bin/chattr" and process.args : ("-*i*",
-"+*i*") and not process.parent.executable: "/lib/systemd/systemd"
-----------------------------------
+process where host.os.type == "linux" and event.type == "start" and user.name == "root" and
+  process.executable : "/usr/bin/chattr" and process.args : ("-*i*", "+*i*") and
+  not process.parent.executable: ("/lib/systemd/systemd", "/usr/local/uems_agent/bin/*", "/usr/lib/systemd/systemd")
 
-==== Threat mapping
+----------------------------------
 
 *Framework*: MITRE ATT&CK^TM^
 
@@ -69,10 +62,7 @@ process.executable : "/usr/bin/chattr" and process.args : ("-*i*",
 ** Name: File and Directory Permissions Modification
 ** ID: T1222
 ** Reference URL: https://attack.mitre.org/techniques/T1222/
-
-[[file-made-immutable-by-chattr-history]]
-==== Rule version history
-
-Version 100 (8.5.0 release)::
-* Formatting only
-
+* Sub-technique:
+** Name: Linux and Mac File and Directory Permissions Modification
+** ID: T1222.002
+** Reference URL: https://attack.mitre.org/techniques/T1222/002/

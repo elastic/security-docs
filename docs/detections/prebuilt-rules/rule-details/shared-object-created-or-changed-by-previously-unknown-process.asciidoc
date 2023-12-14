@@ -1,0 +1,70 @@
+[[shared-object-created-or-changed-by-previously-unknown-process]]
+=== Shared Object Created or Changed by Previously Unknown Process
+
+This rule monitors the creation of shared object files by previously unknown processes. The creation of a shared object file involves compiling code into a dynamically linked library that can be loaded by other programs at runtime. While this process is typically used for legitimate purposes, malicious actors can leverage shared object files to execute unauthorized code, inject malicious functionality into legitimate processes, or bypass security controls. This allows malware to persist on the system, evade detection, and potentially compromise the integrity and confidentiality of the affected system and its data.
+
+*Rule type*: new_terms
+
+*Rule indices*: 
+
+* logs-endpoint.events.*
+* endgame-*
+
+*Severity*: medium
+
+*Risk score*: 47
+
+*Runs every*: 5m
+
+*Searches indices from*: now-9m ({ref}/common-options.html#date-math[Date Math format], see also <<rule-schedule, `Additional look-back time`>>)
+
+*Maximum alerts per execution*: 100
+
+*References*: 
+
+* https://threatpost.com/sneaky-malware-backdoors-linux/180158/
+
+*Tags*: 
+
+* Domain: Endpoint
+* OS: Linux
+* Use Case: Threat Detection
+* Tactic: Persistence
+* Data Source: Elastic Endgame
+* Data Source: Elastic Defend
+
+*Version*: 5
+
+*Rule authors*: 
+
+* Elastic
+
+*Rule license*: Elastic License v2
+
+
+==== Rule query
+
+
+[source, js]
+----------------------------------
+host.os.type:linux and event.action:(creation or file_create_event or file_rename_event or rename) and 
+file.path:(/dev/shm/* or /usr/lib/*) and file.extension:so and 
+process.name: ( * and not ("5" or "dockerd" or "dpkg" or "rpm" or "snapd" or "exe" or "yum" or "vmis-launcher"
+  or "pacman" or "apt-get" or "dnf"))
+
+----------------------------------
+
+*Framework*: MITRE ATT&CK^TM^
+
+* Tactic:
+** Name: Persistence
+** ID: TA0003
+** Reference URL: https://attack.mitre.org/tactics/TA0003/
+* Technique:
+** Name: Hijack Execution Flow
+** ID: T1574
+** Reference URL: https://attack.mitre.org/techniques/T1574/
+* Sub-technique:
+** Name: Dynamic Linker Hijacking
+** ID: T1574.006
+** Reference URL: https://attack.mitre.org/techniques/T1574/006/

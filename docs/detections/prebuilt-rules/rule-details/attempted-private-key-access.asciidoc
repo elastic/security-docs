@@ -1,0 +1,72 @@
+[[attempted-private-key-access]]
+=== Attempted Private Key Access
+
+Attackers may try to access private keys, e.g. ssh, in order to gain further authenticated access to the environment.
+
+*Rule type*: eql
+
+*Rule indices*: 
+
+* logs-endpoint.events.*
+
+*Severity*: low
+
+*Risk score*: 21
+
+*Runs every*: 60m
+
+*Searches indices from*: now-119m ({ref}/common-options.html#date-math[Date Math format], see also <<rule-schedule, `Additional look-back time`>>)
+
+*Maximum alerts per execution*: 100
+
+*References*: None
+
+*Tags*: 
+
+* Domain: Endpoint
+* OS: Windows
+* Use Case: Threat Detection
+* Tactic: Credential Access
+* Data Source: Elastic Defend
+* Rule Type: BBR
+
+*Version*: 1
+
+*Rule authors*: 
+
+* Elastic
+
+*Rule license*: Elastic License v2
+
+
+==== Rule query
+
+
+[source, js]
+----------------------------------
+process where host.os.type == "windows" and event.type == "start" and process.args : ("*.pem*", "*.id_rsa*") and
+  not process.executable : (
+    "?:\\ProgramData\\Logishrd\\LogiOptions\\Software\\*\\LogiLuUpdater.exe",
+    "?:\\Program Files\\Logi\\LogiBolt\\LogiBoltUpdater.exe",
+    "?:\\Windows\\system32\\icacls.exe",
+    "?:\\Program Files\\Splunk\\bin\\openssl.exe",
+    "?:\\Program Files\\Elastic\\Agent\\data\\*\\components\\osqueryd.exe",
+    "?:\\Windows\\System32\\OpenSSH\\*"
+  )
+
+----------------------------------
+
+*Framework*: MITRE ATT&CK^TM^
+
+* Tactic:
+** Name: Credential Access
+** ID: TA0006
+** Reference URL: https://attack.mitre.org/tactics/TA0006/
+* Technique:
+** Name: Unsecured Credentials
+** ID: T1552
+** Reference URL: https://attack.mitre.org/techniques/T1552/
+* Sub-technique:
+** Name: Private Keys
+** ID: T1552.004
+** Reference URL: https://attack.mitre.org/techniques/T1552/004/

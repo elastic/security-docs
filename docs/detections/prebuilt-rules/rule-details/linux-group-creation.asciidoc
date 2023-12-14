@@ -1,0 +1,119 @@
+[[linux-group-creation]]
+=== Linux Group Creation
+
+Identifies attempts to create a new group. Attackers may create new groups to establish persistence on a system.
+
+*Rule type*: eql
+
+*Rule indices*: 
+
+* logs-system.auth-*
+
+*Severity*: low
+
+*Risk score*: 21
+
+*Runs every*: 5m
+
+*Searches indices from*: now-9m ({ref}/common-options.html#date-math[Date Math format], see also <<rule-schedule, `Additional look-back time`>>)
+
+*Maximum alerts per execution*: 100
+
+*References*: None
+
+*Tags*: 
+
+* Domain: Endpoint
+* OS: Linux
+* Use Case: Threat Detection
+* Tactic: Persistence
+* Resources: Investigation Guide
+
+*Version*: 3
+
+*Rule authors*: 
+
+* Elastic
+
+*Rule license*: Elastic License v2
+
+
+==== Investigation guide
+
+
+[source, markdown]
+----------------------------------
+## Triage and analysis
+
+### Investigating Linux Group Creation
+
+The `groupadd` and `addgroup` commands are used to create new user groups in Linux-based operating systems.
+
+Attackers may create new groups to maintain access to victim systems or escalate privileges by assigning a compromised account to a privileged group.
+
+This rule identifies the usages of `groupadd` and `addgroup` to create new groups.
+
+> **Note**:
+> This investigation guide uses the [Osquery Markdown Plugin](https://www.elastic.co/guide/en/security/master/invest-guide-run-osquery.html) introduced in Elastic Stack version 8.5.0. Older Elastic Stack versions will display unrendered Markdown in this guide.
+> This investigation guide uses [placeholder fields](https://www.elastic.co/guide/en/security/current/osquery-placeholder-fields.html) to dynamically pass alert data into Osquery queries. Placeholder fields were introduced in Elastic Stack version 8.7.0. If you're using Elastic Stack version 8.6.0 or earlier, you'll need to manually adjust this investigation guide's queries to ensure they properly run.
+
+#### Possible investigation steps
+
+- Investigate whether the group was created succesfully.
+  - !{osquery{"label":"Osquery - Retrieve Information for a Specific Group","query":"SELECT * FROM groups WHERE groupname = {{group.name}}"}}
+- Identify if a user account was added to this group after creation.
+  - !{osquery{"label":"Osquery - Retrieve Information for a Specific User","query":"SELECT * FROM users WHERE username = {{user.name}}"}}
+- Investigate whether the user is currently logged in and active.
+  - !{osquery{"label":"Osquery - Investigate the Account Authentication Status","query":"SELECT * FROM logged_in_users WHERE user = {{user.name}}"}}
+- Identify the user account that performed the action and whether it should perform this kind of action.
+- Investigate the process execution chain (parent process tree) for unknown processes. Examine their executable files for prevalence and whether they are located in expected locations.
+  - !{osquery{"label":"Osquery - Retrieve Running Processes by User","query":"SELECT pid, username, name FROM processes p JOIN users u ON u.uid = p.uid ORDER BY username"}}
+- Investigate other alerts associated with the user/host during the past 48 hours.
+
+### False positive analysis
+
+- Group creation is a common administrative task, so there is a high chance of the activity being legitimate. Before investigating further, verify that this activity is not benign.
+
+### Response and remediation
+
+- Initiate the incident response process based on the outcome of the triage.
+- Isolate the involved host to prevent further post-compromise behavior.
+- If the triage identified malware, search the environment for additional compromised hosts.
+  - Implement temporary network rules, procedures, and segmentation to contain the malware.
+  - Stop suspicious processes.
+  - Immediately block the identified indicators of compromise (IoCs).
+  - Inspect the affected systems for additional malware backdoors like reverse shells, reverse proxies, or droppers that attackers could use to reinfect the system.
+- Remove and block malicious artifacts identified during triage.
+- Review the privileges assigned to the involved users to ensure that the least privilege principle is being followed.
+- Delete the created group and, in case an account was added to this group, delete the account.
+- Investigate credential exposure on systems compromised or used by the attacker to ensure all compromised accounts are identified. Reset passwords for these accounts and other potentially compromised credentials, such as email, business systems, and web services.
+- Determine the initial vector abused by the attacker and take action to prevent reinfection through the same vector.
+- Leverage the incident response data and logging to improve the mean time to detect (MTTD) and the mean time to respond (MTTR).
+
+
+----------------------------------
+
+==== Rule query
+
+
+[source, js]
+----------------------------------
+iam where host.os.type == "linux" and (event.type == "group" and event.type == "creation") and
+process.name in ("groupadd", "addgroup") and group.name != null
+
+----------------------------------
+
+*Framework*: MITRE ATT&CK^TM^
+
+* Tactic:
+** Name: Persistence
+** ID: TA0003
+** Reference URL: https://attack.mitre.org/tactics/TA0003/
+* Technique:
+** Name: Create Account
+** ID: T1136
+** Reference URL: https://attack.mitre.org/techniques/T1136/
+* Sub-technique:
+** Name: Local Account
+** ID: T1136.001
+** Reference URL: https://attack.mitre.org/techniques/T1136/001/
