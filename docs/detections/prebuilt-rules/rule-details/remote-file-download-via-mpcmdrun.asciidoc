@@ -37,7 +37,7 @@ Identifies the Windows Defender configuration utility (MpCmdRun.exe) being used 
 * Data Source: Elastic Endgame
 * Data Source: Elastic Defend
 
-*Version*: 108
+*Version*: 109
 
 *Rule authors*: 
 
@@ -60,7 +60,8 @@ Attackers commonly transfer tooling or malware from external systems into a comp
 The `MpCmdRun.exe` is a command-line tool part of Windows Defender and is used to manage various Microsoft Windows Defender Antivirus settings and perform certain tasks. It can also be abused by attackers to download remote files, including malware and offensive tooling. This rule looks for the patterns used to perform downloads using the utility.
 
 > **Note**:
-> This investigation guide uses the {security-guide}/security/master/invest-guide-run-osquery.html[Osquery Markdown Plugin] introduced in Elastic Stack version 8.5.0. Older Elastic Stack versions will display unrendered Markdown in this guide.
+> This investigation guide uses the [Osquery Markdown Plugin](https://www.elastic.co/guide/en/security/master/invest-guide-run-osquery.html) introduced in Elastic Stack version 8.5.0. Older Elastic Stack versions will display unrendered Markdown in this guide.
+> This investigation guide uses the [Investigate Markdown Plugin](https://www.elastic.co/guide/en/security/master/interactive-investigation-guides.html) introduced in Elastic Stack version 8.8.0. Older Elastic Stack versions will display unrendered Markdown in this guide.
 
 #### Possible investigation steps
 
@@ -68,12 +69,15 @@ The `MpCmdRun.exe` is a command-line tool part of Windows Defender and is used t
 - Identify the user account that performed the action and whether it should perform this kind of action.
 - Contact the account owner and confirm whether they are aware of this activity.
 - Investigate other alerts associated with the user/host during the past 48 hours.
+  - !{investigate{"label":"Alerts associated with the user in the last 48h","providers":[[{"excluded":false,"field":"event.kind","queryType":"phrase","value":"signal","valueType":"string"},{"excluded":false,"field":"user.id","queryType":"phrase","value":"{{user.id}}","valueType":"string"}]],"relativeFrom":"now-48h/h","relativeTo":"now"}}
+  - !{investigate{"label":"Alerts associated with the host in the last 48h","providers":[[{"excluded":false,"field":"event.kind","queryType":"phrase","value":"signal","valueType":"string"},{"excluded":false,"field":"host.name","queryType":"phrase","value":"{{host.name}}","valueType":"string"}]],"relativeFrom":"now-48h/h","relativeTo":"now"}}
 - Check the reputation of the domain or IP address used to host the downloaded file.
 - Examine the host for derived artifacts that indicate suspicious activities:
   - Analyze the file using a private sandboxed analysis system.
   - Observe and collect information about the following activities in both the sandbox and the alert subject host:
     - Attempts to contact external domains and addresses.
       - Use the Elastic Defend network events to determine domains and addresses contacted by the subject process by filtering by the process' `process.entity_id`.
+        - !{investigate{"label":"Investigate the Subject Process Network Events","providers":[[{"excluded":false,"field":"process.entity_id","queryType":"phrase","value":"{{process.entity_id}}","valueType":"string"},{"excluded":false,"field":"event.category","queryType":"phrase","value":"network","valueType":"string"}]]}}
       - Examine the DNS cache for suspicious or anomalous entries.
         - !{osquery{"label":"Osquery - Retrieve DNS Cache","query":"SELECT * FROM dns_cache"}}
     - Use the Elastic Defend registry events to examine registry keys accessed, modified, or created by the related processes in the process tree.
