@@ -1041,11 +1041,6 @@ POST api/detection_engine/rules
 --------------------------------------------------
 // KIBANA
 
-==== Response code
-
-`200`::
-    Indicates a successful call.
-
 *Example 7*
 
 {esql} rule that creates alerts from events that match an Excel parent process:
@@ -1068,6 +1063,57 @@ POST api/detection_engine/rules
   "severity": "low"
 }
 --------------------------------------------------
+
+
+*Example 8*
+
+Query rule that searches for processes started by MS Office and suppress alerts by `process.parent.name` field on 5 hours time period:
+
+[source,console]
+--------------------------------------------------
+POST api/detection_engine/rules
+{
+  "rule_id": "process_started_by_ms_office_program",
+  "risk_score": 50,
+  "description": "Process started by MS Office program - possible payload",
+  "interval": "1h", <1>
+  "name": "MS Office child process",
+  "severity": "low",
+  "tags": [
+   "child process",
+   "ms office"
+   ],
+  "type": "query",
+  "from": "now-70m", <2>
+  "query": "process.parent.name:EXCEL.EXE or process.parent.name:MSPUB.EXE or process.parent.name:OUTLOOK.EXE or process.parent.name:POWERPNT.EXE or process.parent.name:VISIO.EXE or process.parent.name:WINWORD.EXE",
+  "language": "kuery",
+  "filters": [
+     {
+      "query": {
+         "match": {
+            "event.action": {
+               "query": "Process Create (rule: ProcessCreate)",
+               "type": "phrase"
+            }
+         }
+      }
+     }
+  ],
+  "enabled": false,
+  "alert_suppression": {
+    "duration": { "unit": "h", "value": 5 },
+    "group_by": [
+        "process.parent.name"
+    ],
+    "missing_fields_strategy": "suppress"
+  }
+}
+--------------------------------------------------
+
+==== Response code
+
+`200`::
+    Indicates a successful call.
 
 ==== Response payload
 
