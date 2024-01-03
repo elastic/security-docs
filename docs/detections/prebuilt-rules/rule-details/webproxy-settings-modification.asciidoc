@@ -5,64 +5,54 @@ Identifies the use of the built-in networksetup command to configure webproxy se
 
 *Rule type*: query
 
-*Rule indices*:
+*Rule indices*: 
 
-* auditbeat-*
 * logs-endpoint.events.*
 
 *Severity*: medium
 
 *Risk score*: 47
 
-*Runs every*: 5 minutes
+*Runs every*: 5m
 
 *Searches indices from*: now-9m ({ref}/common-options.html#date-math[Date Math format], see also <<rule-schedule, `Additional look-back time`>>)
 
 *Maximum alerts per execution*: 100
 
-*References*:
+*References*: 
 
 * https://unit42.paloaltonetworks.com/mac-malware-steals-cryptocurrency-exchanges-cookies/
 * https://objectivebythesea.com/v2/talks/OBTS_v2_Zohar.pdf
 
-*Tags*:
+*Tags*: 
+
+* Domain: Endpoint
+* OS: macOS
+* Use Case: Threat Detection
+* Tactic: Credential Access
+* Data Source: Elastic Defend
+
+*Version*: 105
+
+*Rule authors*: 
 
 * Elastic
-* Host
-* macOS
-* Threat Detection
-* Credential Access
-
-*Version*: 100 (<<webproxy-settings-modification-history, version history>>)
-
-*Added ({stack} release)*: 7.12.0
-
-*Last modified ({stack} release)*: 8.5.0
-
-*Rule authors*: Elastic
 
 *Rule license*: Elastic License v2
 
-==== Potential false positives
-
-Legitimate WebProxy Settings Modification
 
 ==== Rule query
 
 
-[source,js]
+[source, js]
 ----------------------------------
-event.category : process and event.type : start and process.name :
-networksetup and process.args : (("-setwebproxy" or
-"-setsecurewebproxy" or "-setautoproxyurl") and not (Bluetooth or
-off)) and not process.parent.executable :
-("/Library/PrivilegedHelperTools/com.80pct.FreedomHelper" or
-"/Applications/Fiddler
-Everywhere.app/Contents/Resources/app/out/WebServer/Fiddler.WebUi" or
-"/usr/libexec/xpcproxy")
-----------------------------------
+event.category:process and host.os.type:macos and event.type:start and
+ process.name : networksetup and process.args : (("-setwebproxy" or "-setsecurewebproxy" or "-setautoproxyurl") and not (Bluetooth or off)) and
+ not process.parent.executable : ("/Library/PrivilegedHelperTools/com.80pct.FreedomHelper" or
+                                  "/Applications/Fiddler Everywhere.app/Contents/Resources/app/out/WebServer/Fiddler.WebUi" or
+                                  "/usr/libexec/xpcproxy")
 
-==== Threat mapping
+----------------------------------
 
 *Framework*: MITRE ATT&CK^TM^
 
@@ -74,23 +64,3 @@ Everywhere.app/Contents/Resources/app/out/WebServer/Fiddler.WebUi" or
 ** Name: Steal Web Session Cookie
 ** ID: T1539
 ** Reference URL: https://attack.mitre.org/techniques/T1539/
-
-[[webproxy-settings-modification-history]]
-==== Rule version history
-
-Version 100 (8.5.0 release)::
-* Formatting only
-
-Version 3 (8.4.0 release)::
-* Formatting only
-
-Version 2 (7.13.0 release)::
-* Updated query, changed from:
-+
-[source, js]
-----------------------------------
-event.category:process and event.type:start and
-process.name:networksetup and process.args:("-setwebproxy" or
-"-setsecurewebproxy" or "-setautoproxyurl")
-----------------------------------
-
