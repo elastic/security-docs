@@ -34,7 +34,7 @@ The Filter Manager Control Program (fltMC.exe) binary may be abused by adversari
 * Resources: Investigation Guide
 * Data Source: Elastic Defend
 
-*Version*: 107
+*Version*: 108
 
 *Rule authors*: 
 
@@ -108,7 +108,19 @@ This rule identifies the attempt to unload a minifilter using the `fltmc.exe` co
 [source, js]
 ----------------------------------
 process where host.os.type == "windows" and event.type == "start" and
- process.name : "fltMC.exe" and process.args : "unload"
+  process.name : "fltMC.exe" and process.args : "unload" and
+  not
+  (
+    (
+      process.executable : "?:\\Program Files (x86)\\ManageEngine\\UEMS_Agent\\bin\\DCFAService64.exe" and
+      process.args : ("DFMFilter", "DRMFilter")
+    ) or
+    (
+      process.executable : "?:\\Windows\\SysWOW64\\msiexec.exe" and
+      process.args : ("BrFilter_*", "BrCow_*") and
+      user.id : "S-1-5-18"
+    )
+  )
 
 ----------------------------------
 
