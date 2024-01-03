@@ -32,7 +32,7 @@ Identifies unexpected processes making network connections over port 445. Window
 * Resources: Investigation Guide
 * Data Source: Elastic Defend
 
-*Version*: 107
+*Version*: 108
 
 *Rule authors*: 
 
@@ -53,7 +53,7 @@ Identifies unexpected processes making network connections over port 445. Window
 This rule looks for unexpected processes making network connections over port 445. Windows file sharing is typically implemented over Server Message Block (SMB), which communicates between hosts using port 445. When legitimate, these network connections are established by the kernel (PID 4). Occurrences of non-system processes using this port can indicate port scanners, exploits, and tools used to move laterally on the environment.
 
 > **Note**:
-> This investigation guide uses the {security-guide}/security/master/invest-guide-run-osquery.html[Osquery Markdown Plugin] introduced in Elastic Stack version 8.5.0. Older Elastic Stack versions will display unrendered Markdown in this guide.
+> This investigation guide uses the [Osquery Markdown Plugin](https://www.elastic.co/guide/en/security/master/invest-guide-run-osquery.html) introduced in Elastic Stack version 8.5.0. Older Elastic Stack versions will display unrendered Markdown in this guide.
 
 #### Possible investigation steps
 
@@ -102,13 +102,17 @@ This rule looks for unexpected processes making network connections over port 44
 
 [source, js]
 ----------------------------------
-sequence by process.entity_id
-  [process where host.os.type == "windows" and event.type == "start" and process.pid != 4 and
-   not (process.executable : "D:\\EnterpriseCare\\tools\\jre.1\\bin\\java.exe" and process.args : "com.emeraldcube.prism.launcher.Invoker") and
-   not (process.executable : "C:\\Docusnap 11\\Tools\\nmap\\nmap.exe" and process.args : "smb-os-discovery.nse") and
+sequence by process.entity_id with maxspan=2m
+  [process where host.os.type == "windows" and event.type == "start" and process.pid != 4 and 
+   not user.id : ("S-1-5-19", "S-1-5-20") and 
+   not (process.code_signature.trusted == true and not process.code_signature.subject_name : ("Microsoft*", "Famatech Corp.", "Insecure.Com LLC")) and 
+   not (process.name : "powershell.exe" and process.args : "?:\\ProgramData\\Microsoft\\Windows Defender Advanced Threat Protection\\Downloads\\PSScript_*.ps1") and 
+   not (process.executable : "?:\\EnterpriseCare\\tools\\*\\bin\\java.exe" and process.args : "com.*.launcher.Invoker") and
+   not (process.executable : "?:\\Docusnap*\\Tools\\*\\nmap.exe" and process.args : "smb-os-discovery.nse") and
    not process.executable :
-              ("?:\\Program Files\\SentinelOne\\Sentinel Agent *\\Ranger\\SentinelRanger.exe",
-               "?:\\Program Files\\Ivanti\\Security Controls\\ST.EngineHost.exe",
+              ("?:\\Program Files\\*.exe",
+               "?:\\Program Files (x86)\\*.exe", 
+               "?:\\Windows\\ProPatches\\Installation\\InstallationSandbox*\\stdeploy.exe",
                "?:\\Program Files (x86)\\Fortinet\\FSAE\\collectoragent.exe",
                "?:\\Program Files (x86)\\Nmap\\nmap.exe",
                "?:\\Program Files\\Azure Advanced Threat Protection Sensor\\*\\Microsoft.Tri.Sensor.exe",
@@ -118,6 +122,7 @@ sequence by process.entity_id
                "?:\\Program Files\\Rumble\\rumble-agent-*.exe")]
   [network where host.os.type == "windows" and destination.port == 445 and process.pid != 4 and
      not cidrmatch(destination.ip, "127.0.0.1", "::1")]
+until [process where host.os.type == "windows" and event.type == "end"]
 
 ----------------------------------
 
