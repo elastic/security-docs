@@ -1,57 +1,57 @@
 [[kernel-module-load-via-insmod]]
-=== Kernel module load via insmod
+=== Kernel Module Load via insmod
 
 Detects the use of the insmod binary to load a Linux kernel object file. Threat actors can use this binary, given they have root privileges, to load a rootkit on a system providing them with complete control and the ability to hide from security products. Manually loading a kernel module in this manner should not be at all common and can indicate suspcious or malicious behavior.
 
 *Rule type*: eql
 
-*Rule indices*:
+*Rule indices*: 
 
-* logs-*
+* logs-endpoint.events.*
+* endgame-*
 
 *Severity*: medium
 
 *Risk score*: 47
 
-*Runs every*: 5 minutes
+*Runs every*: 5m
 
 *Searches indices from*: now-9m ({ref}/common-options.html#date-math[Date Math format], see also <<rule-schedule, `Additional look-back time`>>)
 
 *Maximum alerts per execution*: 100
 
-*References*:
+*References*: 
 
 * https://decoded.avast.io/davidalvarez/linux-threat-hunting-syslogk-a-kernel-rootkit-found-under-development-in-the-wild/
 
-*Tags*:
+*Tags*: 
+
+* Domain: Endpoint
+* OS: Linux
+* Use Case: Threat Detection
+* Tactic: Persistence
+* Threat: Rootkit
+* Data Source: Elastic Endgame
+* Data Source: Elastic Defend
+
+*Version*: 107
+
+*Rule authors*: 
 
 * Elastic
-* Host
-* Linux
-* Threat Detection
-* Persistence
-* Rootkit
-
-*Version*: 100 (<<kernel-module-load-via-insmod-history, version history>>)
-
-*Added ({stack} release)*: 8.4.0
-
-*Last modified ({stack} release)*: 8.5.0
-
-*Rule authors*: Elastic
 
 *Rule license*: Elastic License v2
+
 
 ==== Rule query
 
 
-[source,js]
+[source, js]
 ----------------------------------
-process where event.type == "start" and process.executable :
-"/usr/sbin/insmod" and process.args : "*.ko"
-----------------------------------
+process where host.os.type == "linux" and event.type == "start" and process.name == "insmod" and process.args : "*.ko"
+and not process.parent.name in ("cisco-amp-helper", "ksplice-apply")
 
-==== Threat mapping
+----------------------------------
 
 *Framework*: MITRE ATT&CK^TM^
 
@@ -63,10 +63,7 @@ process where event.type == "start" and process.executable :
 ** Name: Boot or Logon Autostart Execution
 ** ID: T1547
 ** Reference URL: https://attack.mitre.org/techniques/T1547/
-
-[[kernel-module-load-via-insmod-history]]
-==== Rule version history
-
-Version 100 (8.5.0 release)::
-* Formatting only
-
+* Sub-technique:
+** Name: Kernel Modules and Extensions
+** ID: T1547.006
+** Reference URL: https://attack.mitre.org/techniques/T1547/006/

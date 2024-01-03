@@ -1,0 +1,93 @@
+[[powershell-script-with-remote-execution-capabilities-via-winrm]]
+=== PowerShell Script with Remote Execution Capabilities via WinRM
+
+Identifies the use of Cmdlets and methods related to remote execution activities using WinRM. Attackers can abuse WinRM to perform lateral movement using built-in tools.
+
+*Rule type*: query
+
+*Rule indices*: 
+
+* winlogbeat-*
+* logs-windows.*
+
+*Severity*: low
+
+*Risk score*: 21
+
+*Runs every*: 60m
+
+*Searches indices from*: now-119m ({ref}/common-options.html#date-math[Date Math format], see also <<rule-schedule, `Additional look-back time`>>)
+
+*Maximum alerts per execution*: 100
+
+*References*: 
+
+* https://attack.mitre.org/techniques/T1021/006/
+* https://github.com/cobbr/SharpSploit/blob/master/SharpSploit/LateralMovement/PowerShellRemoting.cs
+* https://github.com/BC-SECURITY/Empire/blob/main/empire/server/modules/powershell/lateral_movement/invoke_psremoting.py
+
+*Tags*: 
+
+* Domain: Endpoint
+* OS: Windows
+* Use Case: Threat Detection
+* Tactic: Lateral Movement
+* Tactic: Execution
+* Data Source: PowerShell Logs
+* Rule Type: BBR
+
+*Version*: 4
+
+*Rule authors*: 
+
+* Elastic
+
+*Rule license*: Elastic License v2
+
+
+==== Rule query
+
+
+[source, js]
+----------------------------------
+event.category:process and host.os.type:windows and
+  powershell.file.script_block_text : (
+    ("Invoke-WmiMethod" or "Invoke-Command" or "Enter-PSSession") and "ComputerName"
+  ) and
+  not user.id : "S-1-5-18" and
+  not file.directory : (
+    "C:\\Program Files\\LogicMonitor\\Agent\\tmp" or
+    ?\:\\\\Program?Files\\\\Microsoft\\\\Exchange?Server\\\\*\\\\bin or
+    ?\:\\\\Logicmonitor\\\\tmp* or
+    ?\:\\\\Program?Files\\\\WindowsPowerShell\\\\Modules\\\\dbatools\\\\* or
+    ?\:\\\\ExchangeServer\\\\bin*
+  )
+
+----------------------------------
+
+*Framework*: MITRE ATT&CK^TM^
+
+* Tactic:
+** Name: Lateral Movement
+** ID: TA0008
+** Reference URL: https://attack.mitre.org/tactics/TA0008/
+* Technique:
+** Name: Remote Services
+** ID: T1021
+** Reference URL: https://attack.mitre.org/techniques/T1021/
+* Sub-technique:
+** Name: Windows Remote Management
+** ID: T1021.006
+** Reference URL: https://attack.mitre.org/techniques/T1021/006/
+* Tactic:
+** Name: Execution
+** ID: TA0002
+** Reference URL: https://attack.mitre.org/tactics/TA0002/
+* Technique:
+** Name: Command and Scripting Interpreter
+** ID: T1059
+** Reference URL: https://attack.mitre.org/techniques/T1059/
+* Sub-technique:
+** Name: PowerShell
+** ID: T1059.001
+** Reference URL: https://attack.mitre.org/techniques/T1059/001/

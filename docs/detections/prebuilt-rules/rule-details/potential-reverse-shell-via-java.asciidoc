@@ -1,0 +1,86 @@
+[[potential-reverse-shell-via-java]]
+=== Potential Reverse Shell via Java
+
+This detection rule identifies the execution of a Linux shell process from a Java JAR application post an incoming network connection. This behavior may indicate reverse shell activity via a Java application.
+
+*Rule type*: eql
+
+*Rule indices*: 
+
+* logs-endpoint.events.*
+
+*Severity*: medium
+
+*Risk score*: 47
+
+*Runs every*: 5m
+
+*Searches indices from*: now-9m ({ref}/common-options.html#date-math[Date Math format], see also <<rule-schedule, `Additional look-back time`>>)
+
+*Maximum alerts per execution*: 100
+
+*References*: 
+
+* https://github.com/swisskyrepo/PayloadsAllTheThings/blob/master/Methodology%20and%20Resources/Reverse%20Shell%20Cheatsheet.md
+
+*Tags*: 
+
+* Domain: Endpoint
+* OS: Linux
+* Use Case: Threat Detection
+* Tactic: Execution
+* Data Source: Elastic Defend
+
+*Version*: 6
+
+*Rule authors*: 
+
+* Elastic
+
+*Rule license*: Elastic License v2
+
+
+==== Rule query
+
+
+[source, js]
+----------------------------------
+sequence by host.id with maxspan=5s
+  [network where host.os.type == "linux" and event.action in ("connection_accepted", "connection_attempted") and 
+   process.executable : ("/usr/bin/java", "/bin/java", "/usr/lib/jvm/*", "/usr/java/*") and
+   destination.ip != null and destination.ip != "127.0.0.1" and destination.ip != "::1"
+  ] by process.entity_id
+  [process where host.os.type == "linux" and event.action == "exec" and process.parent.executable : (
+    "/usr/bin/java", "/bin/java", "/usr/lib/jvm/*", "/usr/java/*"
+  ) and process.parent.args : "-jar" and process.name in (
+    "bash", "dash", "ash", "sh", "tcsh", "csh", "zsh", "ksh", "fish"
+  ) and not process.args : (
+    "-xe", "/tmp/jenkins*.sh", "*/var/lib/jenkins/workspace/*", "vmstat*", "asterisk*", "mpstat*", "/usr/bin/ps*", "umask", "*yum*", "uptime -s",
+    "df -h . | awk '{print $2}'", "free | awk \"/Mem:/\" | awk '{print $2}'"
+  )
+  ] by process.parent.entity_id
+
+----------------------------------
+
+*Framework*: MITRE ATT&CK^TM^
+
+* Tactic:
+** Name: Execution
+** ID: TA0002
+** Reference URL: https://attack.mitre.org/tactics/TA0002/
+* Technique:
+** Name: Command and Scripting Interpreter
+** ID: T1059
+** Reference URL: https://attack.mitre.org/techniques/T1059/
+* Sub-technique:
+** Name: Unix Shell
+** ID: T1059.004
+** Reference URL: https://attack.mitre.org/techniques/T1059/004/
+* Tactic:
+** Name: Command and Control
+** ID: TA0011
+** Reference URL: https://attack.mitre.org/tactics/TA0011/
+* Technique:
+** Name: Application Layer Protocol
+** ID: T1071
+** Reference URL: https://attack.mitre.org/techniques/T1071/

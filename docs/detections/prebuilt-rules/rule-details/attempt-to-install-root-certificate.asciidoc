@@ -5,60 +5,52 @@ Adversaries may install a root certificate on a compromised system to avoid warn
 
 *Rule type*: query
 
-*Rule indices*:
+*Rule indices*: 
 
-* auditbeat-*
 * logs-endpoint.events.*
 
 *Severity*: medium
 
 *Risk score*: 47
 
-*Runs every*: 5 minutes
+*Runs every*: 5m
 
 *Searches indices from*: now-9m ({ref}/common-options.html#date-math[Date Math format], see also <<rule-schedule, `Additional look-back time`>>)
 
 *Maximum alerts per execution*: 100
 
-*References*:
+*References*: 
 
 * https://ss64.com/osx/security-cert.html
 
-*Tags*:
+*Tags*: 
+
+* Domain: Endpoint
+* OS: macOS
+* Use Case: Threat Detection
+* Tactic: Defense Evasion
+* Data Source: Elastic Defend
+
+*Version*: 105
+
+*Rule authors*: 
 
 * Elastic
-* Host
-* macOS
-* Threat Detection
-* Defense Evasion
-
-*Version*: 100 (<<attempt-to-install-root-certificate-history, version history>>)
-
-*Added ({stack} release)*: 7.12.0
-
-*Last modified ({stack} release)*: 8.5.0
-
-*Rule authors*: Elastic
 
 *Rule license*: Elastic License v2
 
-==== Potential false positives
-
-Certain applications may install root certificates for the purpose of inspecting SSL traffic.
 
 ==== Rule query
 
 
-[source,js]
+[source, js]
 ----------------------------------
-event.category:process and event.type:(start or process_started) and
-process.name:security and process.args:"add-trusted-cert" and not pr
-ocess.parent.executable:("/Library/Bitdefender/AVP/product/bin/BDCoreI
-ssues" or "/Applications/Bitdefender/SecurityNetworkInstallerApp.app/C
-ontents/MacOS/SecurityNetworkInstallerApp" )
-----------------------------------
+event.category:process and host.os.type:macos and event.type:(start or process_started) and
+  process.name:security and process.args:"add-trusted-cert" and
+  not process.parent.executable:("/Library/Bitdefender/AVP/product/bin/BDCoreIssues" or "/Applications/Bitdefender/SecurityNetworkInstallerApp.app/Contents/MacOS/SecurityNetworkInstallerApp"
+)
 
-==== Threat mapping
+----------------------------------
 
 *Framework*: MITRE ATT&CK^TM^
 
@@ -70,19 +62,7 @@ ontents/MacOS/SecurityNetworkInstallerApp" )
 ** Name: Subvert Trust Controls
 ** ID: T1553
 ** Reference URL: https://attack.mitre.org/techniques/T1553/
-
-[[attempt-to-install-root-certificate-history]]
-==== Rule version history
-
-Version 100 (8.5.0 release)::
-* Formatting only
-
-Version 3 (8.4.0 release)::
-* Updated query, changed from:
-+
-[source, js]
-----------------------------------
-event.category:process and event.type:(start or process_started) and
-process.name:security and process.args:"add-trusted-cert"
-----------------------------------
-
+* Sub-technique:
+** Name: Install Root Certificate
+** ID: T1553.004
+** Reference URL: https://attack.mitre.org/techniques/T1553/004/
