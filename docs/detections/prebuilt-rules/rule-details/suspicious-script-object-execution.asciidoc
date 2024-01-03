@@ -7,7 +7,8 @@ Identifies scrobj.dll loaded into unusual Microsoft processes. This usually mean
 
 *Rule indices*: 
 
-* logs-endpoint.events.*
+* logs-endpoint.events.library-*
+* logs-windows.sysmon_operational-*
 
 *Severity*: medium
 
@@ -29,7 +30,7 @@ Identifies scrobj.dll loaded into unusual Microsoft processes. This usually mean
 * Tactic: Defense Evasion
 * Data Source: Elastic Defend
 
-*Version*: 105
+*Version*: 106
 
 *Rule authors*: 
 
@@ -43,16 +44,13 @@ Identifies scrobj.dll loaded into unusual Microsoft processes. This usually mean
 
 [source, js]
 ----------------------------------
-sequence by process.entity_id with maxspan=2m
-  [process where host.os.type == "windows" and event.type == "start"
-   and (process.code_signature.subject_name in ("Microsoft Corporation", "Microsoft Windows") and
-   process.code_signature.trusted == true) and
-     not process.executable : (
+any where host.os.type == "windows" and 
+ (event.category == "library" or (event.category == "process" and event.action : "Image loaded*")) and 
+ (?dll.name : "scrobj.dll" or ?file.name : "scrobj.dll") and 
+ process.executable : ("?:\\Windows\\System32\\*.exe", "?:\\Windows\\SysWOW64\\*.exe") and 
+ not process.executable : (
        "?:\\Windows\\System32\\cscript.exe",
        "?:\\Windows\\SysWOW64\\cscript.exe",
-       "?:\\Program Files (x86)\\Internet Explorer\\iexplore.exe",
-       "?:\\Program Files\\Internet Explorer\\iexplore.exe",
-       "?:\\Windows\\SystemApps\\Microsoft.MicrosoftEdge_*\\MicrosoftEdge.exe",
        "?:\\Windows\\system32\\msiexec.exe",
        "?:\\Windows\\SysWOW64\\msiexec.exe",
        "?:\\Windows\\System32\\smartscreen.exe",
@@ -61,11 +59,14 @@ sequence by process.entity_id with maxspan=2m
        "?:\\windows\\SysWOW64\\inetsrv\\w3wp.exe",
        "?:\\Windows\\system32\\wscript.exe",
        "?:\\Windows\\SysWOW64\\wscript.exe",
+       "?:\\Windows\\System32\\mshta.exe",
        "?:\\Windows\\system32\\mobsync.exe",
        "?:\\Windows\\SysWOW64\\mobsync.exe",
        "?:\\Windows\\System32\\cmd.exe",
-       "?:\\Windows\\SysWOW64\\cmd.exe")]
-  [library where host.os.type == "windows" and event.type == "start" and dll.name : "scrobj.dll"]
+       "?:\\Windows\\SysWOW64\\cmd.exe", 
+       "?:\\Windows\\System32\\OpenWith.exe",
+       "?:\\Windows\\System32\\wbem\\WMIADAP.exe",
+       "?:\\Windows\\System32\\WindowsPowerShell\\v1.0\\powershell.exe")
 
 ----------------------------------
 
