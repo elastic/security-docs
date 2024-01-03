@@ -5,67 +5,56 @@ Identifies a potential Gatekeeper bypass. In macOS, when applications or program
 
 *Rule type*: eql
 
-*Rule indices*:
+*Rule indices*: 
 
-* auditbeat-*
 * logs-endpoint.events.*
 
 *Severity*: medium
 
 *Risk score*: 47
 
-*Runs every*: 5 minutes
+*Runs every*: 5m
 
 *Searches indices from*: now-9m ({ref}/common-options.html#date-math[Date Math format], see also <<rule-schedule, `Additional look-back time`>>)
 
 *Maximum alerts per execution*: 100
 
-*References*:
+*References*: 
 
 * https://www.trendmicro.com/en_us/research/20/k/new-macos-backdoor-connected-to-oceanlotus-surfaces.html
 * https://ss64.com/osx/xattr.html
 
-*Tags*:
+*Tags*: 
+
+* Domain: Endpoint
+* OS: macOS
+* Use Case: Threat Detection
+* Tactic: Defense Evasion
+* Data Source: Elastic Defend
+
+*Version*: 106
+
+*Rule authors*: 
 
 * Elastic
-* Host
-* macOS
-* Threat Detection
-* Defense Evasion
-
-*Version*: 100 (<<attempt-to-remove-file-quarantine-attribute-history, version history>>)
-
-*Added ({stack} release)*: 7.11.0
-
-*Last modified ({stack} release)*: 8.5.0
-
-*Rule authors*: Elastic
 
 *Rule license*: Elastic License v2
-
-==== Investigation guide
-
-
-[source,markdown]
-----------------------------------
-
-----------------------------------
 
 
 ==== Rule query
 
 
-[source,js]
+[source, js]
 ----------------------------------
-process where event.type in ("start", "process_started") and
-process.name : "xattr" and ( (process.args :
-"com.apple.quarantine" and process.args : ("-d", "-w")) or
-(process.args : "-c") or (process.command_line : ("/bin/bash -c
-xattr -c *", "/bin/zsh -c xattr -c *", "/bin/sh -c xattr -c *")) )
-and not process.args_count > 12
-----------------------------------
+process where host.os.type == "macos" and event.type in ("start", "process_started") and
+  process.name : "xattr" and
+  (
+    (process.args : "com.apple.quarantine" and process.args : ("-d", "-w")) or
+    (process.args : "-c") or
+    (process.command_line : ("/bin/bash -c xattr -c *", "/bin/zsh -c xattr -c *", "/bin/sh -c xattr -c *"))
+  ) and not process.args_count > 12
 
-==== Threat mapping
+----------------------------------
 
 *Framework*: MITRE ATT&CK^TM^
 
@@ -77,39 +66,7 @@ and not process.args_count > 12
 ** Name: Impair Defenses
 ** ID: T1562
 ** Reference URL: https://attack.mitre.org/techniques/T1562/
-
-[[attempt-to-remove-file-quarantine-attribute-history]]
-==== Rule version history
-
-Version 100 (8.5.0 release)::
-* Formatting only
-
-Version 6 (8.4.0 release)::
-* Updated query, changed from:
-+
-[source, js]
-----------------------------------
-process where event.type in ("start", "process_started") and
-process.args : "xattr" and ( (process.args :
-"com.apple.quarantine" and process.args : ("-d", "-w")) or
-(process.args : "-c" and process.command_line : (
-"/bin/bash -c xattr -c *", "/bin/zsh -c xattr -c *",
-"/bin/sh -c xattr -c *" ) ) )
-----------------------------------
-
-Version 4 (8.2.0 release)::
-* Formatting only
-
-Version 3 (7.12.0 release)::
-* Updated query, changed from:
-+
-[source, js]
-----------------------------------
-process where event.type in ("start", "process_started") and
-process.name == "xattr" and process.args == "com.apple.quarantine" and
-process.args == "-d"
-----------------------------------
-
-Version 2 (7.11.2 release)::
-* Formatting only
-
+* Sub-technique:
+** Name: Disable or Modify Tools
+** ID: T1562.001
+** Reference URL: https://attack.mitre.org/techniques/T1562/001/
