@@ -39,7 +39,7 @@ mappings should be {ecs-ref}[ECS-compliant].
 * *New terms*: Generates an alert for each new term detected in source documents within a specified time range.
 * *{esql}*: Uses {ref}/esql.html[Elasticsearch Query Language ({esql})] to find events and aggregate search results.
 +
-preview::[]
+preview::["Do not use {esql} on production environments. This functionality is in technical preview and may be changed or removed in a future release. Elastic will work to fix any issues, but features in technical preview are not subject to the support SLA of official GA features."]
 * *{ml-cap} rules*: Creates an alert when a {ml} job discovers an anomaly above
 the defined threshold (see <<machine-learning>>).
 
@@ -486,6 +486,43 @@ a detection rule exception (`detection`) or an endpoint exception (`endpoint`).
 
 |==============================================
 
+[[opt-fields-alert-suppression-create]]
+===== Optional alert suppression fields for query, threshold rules
+
+preview::[]
+
+====== Query rule
+
+[width="100%",options="header"]
+|==============================================
+|Name |Type |Description
+
+|alert_suppression |Object a|Defines alert suppression configuration. Available fields:
+
+* `group_by` (string[], required): An array of 1-3 field names to use for suppressing alerts.
+
+* `duration` (<<alert-suppression-duration-schema, duration object>>, optional): The time period in which alerts will be suppressed, beginning when the rule first meets its criteria and creates the alert. If not specified, alerts will be suppressed on rule execution only.
+
+* `missing_fields_strategy` (string, optional): Defines how to handle events with missing suppression fields. Possible values:
+
+    - `doNotSuppress`: Create a separate alert for each matching event.
+
+    - `suppress`: Create one alert for each group of events with missing fields.
+
+|==============================================
+
+====== Threshold rule
+
+[width="100%",options="header"]
+|==============================================
+|Name |Type |Description
+
+|alert_suppression |Object a|Defines alert suppression configuration. Available fields:
+
+* `duration` (<<alert-suppression-duration-schema, duration object>>, required): The time period in which alerts will be suppressed, beginning when the rule first meets its criteria and creates the alert.
+
+|==============================================
+
 [[actions-object-schema]]
 ===== `actions` schema
 
@@ -711,6 +748,20 @@ All fields are required:
 
 NOTE: Only threats described using the MITRE ATT&CK^TM^ framework are displayed
 in the UI (*Rules* -> *Detection rules (SIEM)* -> *_Rule name_*).
+
+[[alert-suppression-duration-schema]]
+===== `alert_suppression.duration` schema
+
+All fields are required:
+
+[width="100%",options="header"]
+|==============================================
+|Name |Type |Description
+
+|unit |string | Time unit. Possible values are: `s`(seconds), `m`(minutes), or `h`(hours).
+|value |number | Positive number.
+
+|==============================================
 
 ===== Example requests
 
@@ -986,11 +1037,6 @@ POST api/detection_engine/rules
 --------------------------------------------------
 // KIBANA
 
-==== Response code
-
-`200`::
-    Indicates a successful call.
-
 *Example 7*
 
 {esql} rule that creates alerts from events that match an Excel parent process:
@@ -1013,6 +1059,57 @@ POST api/detection_engine/rules
   "severity": "low"
 }
 --------------------------------------------------
+
+
+*Example 8*
+
+Query rule that searches for processes started by MS Office and suppresses alerts by the `process.parent.name` field within a 5-hour time period:
+
+[source,console]
+--------------------------------------------------
+POST api/detection_engine/rules
+{
+  "rule_id": "process_started_by_ms_office_program",
+  "risk_score": 50,
+  "description": "Process started by MS Office program - possible payload",
+  "interval": "1h",
+  "name": "MS Office child process",
+  "severity": "low",
+  "tags": [
+   "child process",
+   "ms office"
+   ],
+  "type": "query",
+  "from": "now-70m",
+  "query": "process.parent.name:EXCEL.EXE or process.parent.name:MSPUB.EXE or process.parent.name:OUTLOOK.EXE or process.parent.name:POWERPNT.EXE or process.parent.name:VISIO.EXE or process.parent.name:WINWORD.EXE",
+  "language": "kuery",
+  "filters": [
+     {
+      "query": {
+         "match": {
+            "event.action": {
+               "query": "Process Create (rule: ProcessCreate)",
+               "type": "phrase"
+            }
+         }
+      }
+     }
+  ],
+  "enabled": false,
+  "alert_suppression": {
+    "duration": { "unit": "h", "value": 5 },
+    "group_by": [
+        "process.parent.name"
+    ],
+    "missing_fields_strategy": "suppress"
+  }
+}
+--------------------------------------------------
+
+==== Response code
+
+`200`::
+    Indicates a successful call.
 
 ==== Response payload
 
