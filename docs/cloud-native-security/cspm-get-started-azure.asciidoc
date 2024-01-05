@@ -68,13 +68,11 @@ For manual setup, multiple authentication methods are available:
 * Service principal with client secret
 * Serice principal with client certificate
 
-The first method is simpler, but requires you to deploy {agent} to a VM in the Azure subscription you want to monitor with CSPM; the other methods allows {agent} to be deployed anywhere, including a VM outside Azure or a personal laptop.
-
 [discrete]
 [[cspm-azure-managed-identity-setup]]
 === Option 1: Managed identity (recommended)
 
-This method involves creating an Azure VM (or using an existing one), giving it read access to the subscription you want to monitor with CSPM, and installing {agent} on it.
+This method involves creating an Azure VM (or using an existing one), giving it read access to the resources you want to monitor with CSPM, and installing {agent} on it.
 
 . Go to the Azure portal to https://portal.azure.com/#create/Microsoft.VirtualMachine-ARM[create a new Azure VM].
 . Follow the setup process, and make sure you enable **System assigned managed identity** under the **Management** tab.
@@ -97,17 +95,17 @@ Wait for the confirmation that {kib} received data from your new integration. Th
 
 Before using this method, you must have set up a https://learn.microsoft.com/en-us/entra/identity-platform/howto-create-service-principal-portal#get-tenant-and-app-id-values-for-signing-in[Microsoft Entra application and service principal that can access resources]. 
 
+. On the **Add Cloud Security Posture Management (CSPM) integration** page, under **Setup access**, select **Manual**.
+. Under **Preferred manual method**, select **Service principal with Client Secret**.
 . Go to the **Registered apps** section of https://ms.portal.azure.com/#view/Microsoft_AAD_IAM/ActiveDirectoryMenuBlade/~/RegisteredApps[Microsoft Entra ID].
 . Click on **New Registration**, name your app and click **Register**.
-. Copy your new app's `Directory (tenant) ID` and `Application (client) ID`.
-. Select **Certificates & secrets**, then select **New client secret**. Copy the new secret.
-. Go to your Azure subscription list and select the subscription you want to monitor with CSPM.
+. Copy your new app's `Directory (tenant) ID` and `Application (client) ID`. Paste them into the corresponding fields in {kib}.
+. Return to the Azure portal. Select **Certificates & secrets**, then go to the **Client secrets** tab. Click **New client secret**. 
+. Copy the new secret. Paste it into the corresponding field in {kib}.
+. Return to Azure. Go to your Azure subscription list and select the subscription you want to monitor with CSPM.
 . Go to **Access control (IAM)** and select **Add Role Assignment**. 
 . Select the `Reader` function role, assign access to **User, group, or service principal**, and select your new app.
 . Return to the **Add CSPM** page in {kib}. 
-. Under **Configure integration**, select **Azure**. Under **Setup access**, select **Manual**.
-. Under **Preferred manual method**, select **Service principal with Client Secret**.
-. Fill in the values you copied earlier for **Client ID**, **Tenant ID**, and **Client Secret**.
 . Under **Where to add this integration**, select **New hosts**.
 . Click **Save and continue**, then follow the instructions to install {agent} on your selected host.
 
@@ -119,9 +117,14 @@ Wait for the confirmation that {kib} received data from your new integration. Th
 
 Before using this method, you must have set up a https://learn.microsoft.com/en-us/entra/identity-platform/howto-create-service-principal-portal#get-tenant-and-app-id-values-for-signing-in[Microsoft Entra application and service principal that can access resources]. 
 
+. On the **Add Cloud Security Posture Management (CSPM) integration** page, under **Setup access**, select **Manual**. 
+. Under **Preferred manual method**, select **Service principal with client certificate**.
 . Go to the **Registered apps** section of https://ms.portal.azure.com/#view/Microsoft_AAD_IAM/ActiveDirectoryMenuBlade/~/RegisteredApps[Microsoft Entra ID].
 . Click on **New Registration**, name your app and click **Register**.
-. Copy your new app's `Directory (tenant) ID` and `Application (client) ID`.
+. Copy your new app's `Directory (tenant) ID` and `Application (client) ID`. Paste them into the corresponding fields in {kib}.
+. Go to your Azure subscription list and select the subscription you want to monitor with CSPM.
+. Go to **Access control (IAM)** and select **Add Role Assignment**. 
+. Select the `Reader` function role, assign access to **User, group, or service principal**, and select your new app.
 
 Next, create a certificate. If you intend to use a password-protected certificate, you must use a pkcs12 certificate. Otherwise, you must use a pem certificate.
 
@@ -154,14 +157,11 @@ After creating your certificate:
 . Click **Upload certificate**. 
 .. If you're using a PEM certiciate created using the example commands above, upload `signed.pem`.
 .. If you're using a pkcs12 certificate created using the example commands above, upload `cert.pem`.
-. Upload the certificate bundle to a VM running cloudbeat.
+. Upload the certificate bundle to the VM where you will deploy {agent}.
 .. If you're using a PEM certificate created using the example commands above, upload `bundle.pem`.
 .. If you're using a pkcs12 certificate created using the example commands above, upload `bundle.p12`.
 . Return to the **Add CSPM** page in {kib}. 
-. Under **Configure integration**, select **Azure**. Under **Setup access**, select **Manual**.
-. Under **Preferred manual method**, select **Service principal with client certificate**.
-. Fill in the values you copied earlier for **Client ID** and **Tenant ID**.
-. For **Client Certificate Path**, enter the fullpath to the certificate you uploaded to your Cloudbeat host. 
+. For **Client Certificate Path**, enter the fullpath to the certificate you uploaded to the host where you will install {agent}. 
 . If you used a pkcs12 certificate, enter its password under **Client Certificate Password**.
 . Under **Where to add this integration**, select **New hosts**.
 . Click **Save and continue**, then follow the instructions to install {agent} on your selected host.
