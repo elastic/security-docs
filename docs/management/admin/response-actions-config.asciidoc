@@ -6,8 +6,65 @@
 :frontmatter-tags-content-type: [how-to]
 :frontmatter-tags-user-goals: [manage]
 
+Endpoint response actions involving third-party systems require additional configuration. This page explains the high-level steps you'll need to take to enable these response actions.
+
+== Configure SentinelOne response actions
+
+SentinelOne response actions allow you to perform bidirectional actions on protected hosts, such as directing SentinelOne to isolate a suspicious endpoint from your network, without needing to leave the {elastic-sec} UI.
+
+preview::[]
+
+.Prerequisites
 [sidebar]
 --
-[.text-center]
-**This is a placeholder for future documentation.**
+* https://www.elastic.co/pricing[Subscription level]: **Enterprise** 
+
+* {kibana-ref}/kibana-role-management.html#adding_kibana_privileges[{kib} feature privilege]: **All : Actions and Connectors**.
+
+* <<endpoint-management-req,{elastic-sec} feature privileges>>: **All** for any response action features, such as **Host Isolation**, that you want to perform.
+
+* Endpoints must have actively running SentinelOne agents installed.
 --
+
+Configuration requires the following general steps. Expand the steps and follow the links for detailed instructions:
+
+. **Generate an API access token in SentinelOne.** You'll need this token in later steps, and it allows {elastic-sec} to collect data and perform actions in SentinelOne. You must create the token with the SentinelOne permissions required for the actions you want to perform (for example, isolating and releasing an endpoint).
++
+Refer to the {integrations-docs}/sentinel_one[SentinelOne integration docs] or SentinelOne's docs for details on generating an API token.
+
+. **Install the SentinelOne integration.** The integration uses the SentinelOne API to collect and ingest logs into {elastic-sec}.
++
+.Expand for details
+[%collapsible]
+====
+.. In {kib}, go to **Integrations**, search for and select **SentinelOne**, then select **Add SentinelOne**.
+.. Configure the integration with an **Integration name** and optional **Description**.
+.. Ensure that **Collect SentinelOne logs via API** is selected, and enter the required **Settings**:
+   - **URL**: The SentinelOne console URL.
+   - **API Token**: The SentinelOne API access token you generated previously.
+.. Scroll down and enter a name for the agent policy in **New agent policy name**. If other agent policies already exist, you can click the **Existing hosts** tab and select an existing policy instead. For more details on {agent} configuration settings, refer to {fleet-guide}/agent-policy.html[{agent} policies].
+.. Click **Save and continue**.
+.. If you need to install {agent} on any SentinelOne-protected hosts, select *Add {agent} to your hosts* and continue with the <<enroll-agent,{agent} installation steps>>. 
++
+Select **Add {agent} later** if you want to do this later, or if all your hosts already have {agent} installed with the agent policy you just specified.
+====
+
+. **Create a SentinelOne connector.** This connector enables {elastic-sec} to perform actions on SentinelOne-protected hosts.
++
+.Expand for details
+[%collapsible]
+====
+IMPORTANT: Do not create more than one SentinelOne connector.
+
+.. In {kib}, go to **Stack Management** → **Connectors**, then select **Create connector**.
+.. Select the **SentinelOne** connector.
+.. Enter the configuration information:
+   - **Connector name**: A name to identify the connector.
+   - **SentinelOne tenant URL**: The SentinelOne console URL.
+   - **API token**: The SentinelOne API access token you generated previously.
+.. Click **Save**.
+====
+
+. **Create and enable a rule to generate {elastic-sec} alerts.** Create a <<rules-ui-create,detection rule>> to generate {elastic-sec} alerts whenever SentinelOne generates alerts. Use the index pattern `logs-sentinel_one.alert*` when configuring the rule to target the data collected from SentinelOne.
++
+This gives you visibility into SentinelOne without needing to leave {elastic-sec}, and you can perform supported endpoint response actions directly from an alert using the **Take action** menu on the alert details flyout.
