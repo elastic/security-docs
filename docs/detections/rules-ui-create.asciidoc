@@ -81,22 +81,18 @@ When you use a saved query, the *Load saved query "_query name_" dynamically on 
 
 * Deselect this to load the saved query as a one-time way of populating the rule's *Custom query* field and filters. This copies the settings from the saved query to the rule, so you can then further adjust the rule's query and filters as needed. If the saved query is later changed, the rule will not inherit those changes.
 
-. preview:[] (Optional, https://www.elastic.co/pricing[Platinum or higher subscription] required) Use *Suppress alerts by* to reduce the number of repeated or duplicate alerts created by the rule.
+. preview:[] (Optional, https://www.elastic.co/pricing[Platinum or higher subscription] required) Use *Suppress alerts by* to reduce the number of repeated or duplicate alerts created by the rule. Refer to <<alert-suppression>> for more information.
 
-.. Enter a field name to group matching source events by the field's unique values; only one alert will be created for each group of events. You can also enter multiple fields to group events by unique combinations of values.
+.. Enter a field name to group qualifying source events by the field's unique values; only one alert will be created for each group of events. You can also enter up to 3 fields to group events by unique combinations of values.
 +
-NOTE: If you specify a field with multiple values, an alert grouping is created for each value. For example, if you suppress alerts by `destination.ip` of `[127.0.0.1, 127.0.0.2, 127.0.0.3]`, alerts will be suppressed separately for each matching value of `127.0.0.1`, `127.0.0.2`, and `127.0.0.3`. 
+NOTE: If you specify a field with multiple values, an alert grouping is created for each value. For example, if you suppress alerts by `destination.ip` of `[127.0.0.1, 127.0.0.2, 127.0.0.3]`, alerts will be suppressed separately for each value of `127.0.0.1`, `127.0.0.2`, and `127.0.0.3`. 
 
 .. Select how often to create alerts for duplicate events:
+
+* *Per rule execution*: Create an alert each time the rule runs and meets its criteria.
+* *Per time period*: Create one alert for all qualifying events within a specified time window, beginning when the rule first meets its criteria and creates the alert.
 +
---
-* *Per rule execution*: Create an alert each time the rule runs and matches duplicate events.
-* *Per time period*: Create one alert for all matching events within a specified time window, beginning when the rule first matches an event and creates the alert.
-+
-For example, if a rule runs every 5 minutes but you don't need alerts that frequently, you can set the suppression time period to a longer time, such as 1 hour. If the rule matches an event, it creates an alert at that time, and for the next hour any subsequent matches will be suppressed.
---
-+
-With either option, you can view all events associated with suppressed alerts by investigating the alert in Timeline. Refer to <<alert-suppression>> for more information.
+For example, if a rule runs every 5 minutes but you don't need alerts that frequently, you can set the suppression time period to a longer time, such as 1 hour. If the rule meets its criteria, it creates an alert at that time, and for the next hour, it'll suppress any subsequent qualifying events.
 
 . Click **Continue** to <<rule-ui-basic-params, configure basic rule settings>>.
 
@@ -111,14 +107,24 @@ alerts.
 +
 NOTE: You can use {kib} saved queries (image:images/saved-query-menu.png[Saved query menu,18,18]) and queries from saved Timelines (*Import query from saved Timeline*) as rule conditions.
 
-.. Use the `Group by` and `Threshold` fields to determine which source event field is used as a threshold and the threshold's value.
-.. Use the `Count` field to limit alerts by cardinality of a certain field.
+.. Use the *Group by* and *Threshold* fields to determine which source event field is used as a threshold and the threshold's value.
+.. Use the *Count* field to limit alerts by cardinality of a certain field.
 +
-For example, if `Group by` is `source.ip`, `destination.ip` and its `Threshold` is `10`, an alert is generated for every pair of source and destination IP addresses that appear in at least 10 of the rule's search results.
+For example, if *Group by* is `source.ip, destination.ip` and its *Threshold* is `10`, an alert is generated for every pair of source and destination IP addresses that appear in at least 10 of the rule's search results.
 +
-You can also leave the `Group by` field undefined. The rule then creates an alert when the number of search results is equal to or greater than the threshold value. If you set `Count` to limit the results by `process.name` >= 2, an alert will only be generated for source/destination IP pairs that appear with at least 2 unique process names across all events.
+You can also leave the *Group by* field undefined. The rule then creates an alert when the number of search results is equal to or greater than the threshold value. If you set *Count* to limit the results by `process.name` >= 2, an alert will only be generated for source/destination IP pairs that appear with at least 2 unique process names across all events.
 +
-IMPORTANT: Alerts created by threshold rules are synthetic alerts that do not resemble the source documents. The alert itself only contains data about the fields that were aggregated over (the `Group by` fields). Other fields are omitted, because they can vary across all source documents that were counted toward the threshold. Additionally, you can reference the actual count of documents that exceeded the threshold from the `kibana.alert.threshold_result.count` field.
+IMPORTANT: Alerts created by threshold rules are synthetic alerts that do not resemble the source documents. The alert itself only contains data about the fields that were aggregated over (the *Group by* fields). Other fields are omitted, because they can vary across all source documents that were counted toward the threshold. Additionally, you can reference the actual count of documents that exceeded the threshold from the `kibana.alert.threshold_result.count` field.
+
+. preview:[] (Optional, https://www.elastic.co/pricing[Platinum or higher subscription] required) Select *Suppress alerts* to reduce the number of repeated or duplicate alerts created by the rule. Refer to <<alert-suppression>> for more information.
+
+.. Enter field names in *Group by* to group qualifying source events by the fields' unique values; only one alert will be created for each group of events. You can enter up to 3 fields to group events by unique combinations of values. You can also leave *Group by* empty to group all qualifying events together.
++
+NOTE: If you specify a field with multiple values, an alert grouping is created for each value. For example, if you suppress alerts by `destination.ip` of `[127.0.0.1, 127.0.0.2, 127.0.0.3]`, alerts will be suppressed separately for each value of `127.0.0.1`, `127.0.0.2`, and `127.0.0.3`. 
+
+.. In *Per time period*, specify how often to create alerts for duplicate events. This will create one alert for all qualifying events within the specified time window, beginning when the rule first meets its criteria and creates the alert.
++
+For example, if a rule runs every 5 minutes but you don't need alerts that frequently, you can set the suppression time period to a longer time, such as 1 hour. If the rule meets its criteria, it creates an alert at that time, and for the next hour, it'll suppress any subsequent qualifying events.
 
 . Click *Continue* to <<rule-ui-basic-params, configure basic rule settings>>.
 
@@ -177,6 +183,7 @@ NOTE: {elastic-sec} provides limited support for indicator match rules. See <<su
 
 . Go to *Rules* -> *Detection rules (SIEM)* -> *Create new rule*. The *Create new rule* page displays.
 . To create a rule that searches for events whose specified field value matches the specified indicator field value in the indicator index patterns, select *Indicator Match*, then fill in the following fields:
+
 .. *Source*: The individual index patterns or data view that specifies what data to search.
 .. *Custom query*: The query and filters used to retrieve the required results from
 the {elastic-sec} event indices. For example, if you want to match documents that only contain a `destination.ip` address field, add `destination.ip : *`.
@@ -192,9 +199,13 @@ IMPORTANT: Data in indicator indices must be <<ecs-compliant-reqs, ECS compatibl
 +
 .. *Indicator index query*: The query and filters used to filter the fields from
 the indicator index patterns. The default query `@timestamp > "now-30d/d"` searches specified indicator indices for indicators ingested during the past 30 days and rounds the start time down to the nearest day (resolves to UTC `00:00:00`).
-.. *Indicator mapping*: Compares the values of the specified event and indicator field
-values. When the field values are identical, an alert is generated. To define
+.. *Indicator mapping*: Compares the values of the specified event and indicator fields, and generates an alert if the values are identical.
++
+NOTE: Only single-value fields are supported.
++
+To define
 which field values are compared from the indices add the following:
+
 ** *Field*: The field used for comparing values in the {elastic-sec} event
 indices.
 ** *Indicator index field*: The field used for comparing values in the indicator
@@ -263,14 +274,16 @@ For example, if a rule has an interval of 5 minutes, no additional look-back tim
 [[create-esql-rule]]
 === Create an {esql} rule
 
-preview::[]
+preview::["Do not use {esql} on production environments. This functionality is in technical preview and may be changed or removed in a future release. Elastic will work to fix any issues, but features in technical preview are not subject to the support SLA of official GA features."]
 
 Use {ref}/esql.html[{esql}] to query your source events and aggregate event data. Query results are returned in a table with rows and columns. Each row becomes an alert.
 
 To create an {esql} rule:
 
 . Go to *Rules* -> *Detection rules (SIEM)* -> *Create new rule*. The *Create new rule* page appears.
-. Select **{esql}**, then write a <<esql-rule-query-types,query>>. 
+. Select **{esql}**, then write a query. 
++
+NOTE: Refer to the sections below to learn more about <<esql-rule-query-types,{esql} query types>>, <<esql-query-design,query design considerations>>, and <<esql-rule-limitations,rule limitations>>.
 +
 TIP: Click the help icon (image:images/esql-ref-button.png[Click the ES|QL help icon,20,20]) to open the in-product reference documentation for all {esql} commands and functions.
 +
@@ -357,6 +370,30 @@ FROM logs-* [metadata _id, _index, _version]
 | KEEP event.*
 | LIMIT 10
 -----
+
+[float]
+[[esql-query-design]]
+==== Query design considerations 
+
+When writing your query, consider the following:
+
+- The {ref}/esql-commands.html#esql-limit[`LIMIT`] command specifies the number of rows an {esql} query returns and the number of alerts created per rule execution. Similarly, a detection rule's <<opt-fields-all,`max_signals`>> setting specifies the maximum number of alerts it can create every time it runs.
++ 
+If the `LIMIT` value is lower than the `max_signals` value, the rule uses the `LIMIT` value to determine the maximum number of alerts the rule generates. If the `LIMIT` value is higher than the `max_signals` value, the rule uses the `max_signals` value. 
++
+NOTE: The `max_signals` default value is 100. You can modify it using the <<rules-api-create,Create rule API>>. 
++
+
+- When writing an aggregating query, use the {ref}/esql-commands.html#esql-stats-by[`STATS...BY`] command with fields that you want to search and filter for after alerts are created. For example, using the `host.name`, `user.name`, `process.name` fields with the `BY` operator of the `STATS...BY` command returns these fields in alert documents, and allows you to search and filter for them from the Alerts table. 
+
+[float]
+[[esql-rule-limitations]]
+==== {esql} rule limitations  
+
+The {esql} rule has the following limitations:
+
+- If your {esql} query creates new fields that aren’t part of the ECS schema, they won’t be mapped to the alerts index and you can't search or filter for them from the Alerts table. As a workaround, create <<runtime-fields,runtime fields>>. 
+- If your {esql} query creates new fields that aren’t in the query’s source index, they can’t be added to the rule’s <<rule-ui-advanced-params,custom highlighted fields>>.
 
 [float]
 [[rule-ui-basic-params]]
