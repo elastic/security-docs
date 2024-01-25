@@ -7,9 +7,7 @@ Identifies unexpected processes making network connections over port 445. Window
 
 *Rule indices*: 
 
-* winlogbeat-*
 * logs-endpoint.events.*
-* logs-windows.*
 
 *Severity*: medium
 
@@ -32,7 +30,7 @@ Identifies unexpected processes making network connections over port 445. Window
 * Resources: Investigation Guide
 * Data Source: Elastic Defend
 
-*Version*: 108
+*Version*: 109
 
 *Rule authors*: 
 
@@ -53,7 +51,7 @@ Identifies unexpected processes making network connections over port 445. Window
 This rule looks for unexpected processes making network connections over port 445. Windows file sharing is typically implemented over Server Message Block (SMB), which communicates between hosts using port 445. When legitimate, these network connections are established by the kernel (PID 4). Occurrences of non-system processes using this port can indicate port scanners, exploits, and tools used to move laterally on the environment.
 
 > **Note**:
-> This investigation guide uses the {security-guide}/security/master/invest-guide-run-osquery.html[Osquery Markdown Plugin] introduced in Elastic Stack version 8.5.0. Older Elastic Stack versions will display unrendered Markdown in this guide.
+> This investigation guide uses the [Osquery Markdown Plugin](https://www.elastic.co/guide/en/security/master/invest-guide-run-osquery.html) introduced in Elastic Stack version 8.5.0. Older Elastic Stack versions will display unrendered Markdown in this guide.
 
 #### Possible investigation steps
 
@@ -105,21 +103,8 @@ This rule looks for unexpected processes making network connections over port 44
 sequence by process.entity_id with maxspan=2m
   [process where host.os.type == "windows" and event.type == "start" and process.pid != 4 and 
    not user.id : ("S-1-5-19", "S-1-5-20") and 
-   not (process.code_signature.trusted == true and not process.code_signature.subject_name : ("Microsoft*", "Famatech Corp.", "Insecure.Com LLC")) and 
-   not (process.name : "powershell.exe" and process.args : "?:\\ProgramData\\Microsoft\\Windows Defender Advanced Threat Protection\\Downloads\\PSScript_*.ps1") and 
-   not (process.executable : "?:\\EnterpriseCare\\tools\\*\\bin\\java.exe" and process.args : "com.*.launcher.Invoker") and
-   not (process.executable : "?:\\Docusnap*\\Tools\\*\\nmap.exe" and process.args : "smb-os-discovery.nse") and
-   not process.executable :
-              ("?:\\Program Files\\*.exe",
-               "?:\\Program Files (x86)\\*.exe", 
-               "?:\\Windows\\ProPatches\\Installation\\InstallationSandbox*\\stdeploy.exe",
-               "?:\\Program Files (x86)\\Fortinet\\FSAE\\collectoragent.exe",
-               "?:\\Program Files (x86)\\Nmap\\nmap.exe",
-               "?:\\Program Files\\Azure Advanced Threat Protection Sensor\\*\\Microsoft.Tri.Sensor.exe",
-               "?:\\Program Files\\CloudMatters\\auvik\\AuvikService-release-*\\AuvikService.exe",
-               "?:\\Program Files\\uptime software\\uptime\\UptimeDataCollector.exe",
-               "?:\\Program Files\\CloudMatters\\auvik\\AuvikAgentService.exe",
-               "?:\\Program Files\\Rumble\\rumble-agent-*.exe")]
+   not (process.code_signature.trusted == true and not process.code_signature.subject_name : "Microsoft *") and 
+   not (process.name : "powershell.exe" and process.args : "?:\\ProgramData\\Microsoft\\Windows Defender Advanced Threat Protection\\Downloads\\PSScript_*.ps1")]
   [network where host.os.type == "windows" and destination.port == 445 and process.pid != 4 and
      not cidrmatch(destination.ip, "127.0.0.1", "::1")]
 until [process where host.os.type == "windows" and event.type == "end"]

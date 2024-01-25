@@ -11,6 +11,7 @@ Identifies abuse of the Windows Update Auto Update Client (wuauclt.exe) to load 
 * winlogbeat-*
 * logs-windows.*
 * endgame-*
+* logs-system.security*
 
 *Severity*: medium
 
@@ -36,7 +37,7 @@ Identifies abuse of the Windows Update Auto Update Client (wuauclt.exe) to load 
 * Data Source: Elastic Endgame
 * Data Source: Elastic Defend
 
-*Version*: 109
+*Version*: 110
 
 *Rule authors*: 
 
@@ -59,7 +60,7 @@ The Windows Update Auto Update Client (wuauclt.exe) is the component responsible
 This rule identifies potential abuse for code execution by monitoring for specific process arguments ("/RunHandlerComServer" and "/UpdateDeploymentProvider") and common writable paths where the target DLL can be placed (e.g., "C:\Users\*.dll", "C:\ProgramData\*.dll", etc.).
 
 > **Note**:
-> This investigation guide uses the {security-guide}/security/master/invest-guide-run-osquery.html[Osquery Markdown Plugin] introduced in Elastic Stack version 8.5.0. Older Elastic Stack versions will display unrendered Markdown in this guide.
+> This investigation guide uses the [Osquery Markdown Plugin](https://www.elastic.co/guide/en/security/master/invest-guide-run-osquery.html) introduced in Elastic Stack version 8.5.0. Older Elastic Stack versions will display unrendered Markdown in this guide.
 
 ### Possible investigation steps
 
@@ -109,7 +110,7 @@ This rule identifies potential abuse for code execution by monitoring for specif
 [source, js]
 ----------------------------------
 process where host.os.type == "windows" and event.type == "start" and
-  (process.pe.original_file_name == "wuauclt.exe" or process.name : "wuauclt.exe") and
+  (?process.pe.original_file_name == "wuauclt.exe" or process.name : "wuauclt.exe") and
    /* necessary windows update client args to load a dll */
    process.args : "/RunHandlerComServer" and process.args : "/UpdateDeploymentProvider" and
    /* common paths writeable by a standard user where the target DLL can be placed */

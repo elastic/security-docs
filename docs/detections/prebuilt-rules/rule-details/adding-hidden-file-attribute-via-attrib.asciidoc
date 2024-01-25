@@ -11,6 +11,7 @@ Adversaries can add the 'hidden' attribute to files to hide them from the user i
 * logs-endpoint.events.*
 * logs-windows.*
 * endgame-*
+* logs-system.security*
 
 *Severity*: low
 
@@ -35,7 +36,7 @@ Adversaries can add the 'hidden' attribute to files to hide them from the user i
 * Resources: Investigation Guide
 * Data Source: Elastic Defend
 
-*Version*: 109
+*Version*: 110
 
 *Rule authors*: 
 
@@ -60,7 +61,7 @@ Attackers can use this attribute to conceal tooling and malware to prevent admin
 This rule looks for the execution of the `attrib.exe` utility with a command line that indicates the modification of the `Hidden` attribute.
 
 > **Note**:
-> This investigation guide uses the {security-guide}/security/master/invest-guide-run-osquery.html[Osquery Markdown Plugin] introduced in Elastic Stack version 8.5.0. Older Elastic Stack versions will display unrendered Markdown in this guide.
+> This investigation guide uses the [Osquery Markdown Plugin](https://www.elastic.co/guide/en/security/master/invest-guide-run-osquery.html) introduced in Elastic Stack version 8.5.0. Older Elastic Stack versions will display unrendered Markdown in this guide.
 
 #### Possible investigation steps
 
@@ -110,11 +111,8 @@ This rule looks for the execution of the `attrib.exe` utility with a command lin
 [source, js]
 ----------------------------------
 process where host.os.type == "windows" and event.type == "start" and
-  (process.name : "attrib.exe" or process.pe.original_file_name == "ATTRIB.EXE") and process.args : "+h" and
-  not
-  (process.parent.name: "cmd.exe" and
-    process.command_line: "attrib  +R +H +S +A *.cui" and
-    process.parent.command_line: "?:\\WINDOWS\\system32\\cmd.exe /c \"?:\\WINDOWS\\system32\\*.bat\"")
+  (process.name : "attrib.exe" or ?process.pe.original_file_name == "ATTRIB.EXE") and process.args : "+h" and
+  not (process.parent.name: "cmd.exe" and process.command_line: "attrib  +R +H +S +A *.cui")
 
 ----------------------------------
 

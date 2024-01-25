@@ -30,7 +30,7 @@ Identifies the PowerShell engine being invoked by unexpected processes. Rather t
 * Resources: Investigation Guide
 * Data Source: Elastic Defend
 
-*Version*: 208
+*Version*: 209
 
 *Rule authors*: 
 
@@ -96,10 +96,21 @@ Attackers can use PowerShell without having to execute `PowerShell.exe` directly
 ----------------------------------
 host.os.type:windows and event.category:library and 
   dll.name:("System.Management.Automation.dll" or "System.Management.Automation.ni.dll") and 
-  not (process.code_signature.subject_name:("Microsoft Corporation" or "Microsoft Dynamic Code Publisher" or "Microsoft Windows") and process.code_signature.trusted:true and not process.name.caseless:("regsvr32.exe" or "rundll32.exe")) and 
-  not (process.executable.caseless:(?\:\\\\Program?Files?\(x86\)\\\\*.exe or ?\:\\\\Program?Files\\\\*.exe) and process.code_signature.trusted:true) and 
-  not (process.executable.caseless:?\:\\\\Windows\\\\Lenovo\\\\*.exe and process.code_signature.subject_name:"Lenovo" and 
-  process.code_signature.trusted:true) and not process.executable.caseless : "C:\\Windows\\System32\\powershell.exe"
+  not (
+    process.code_signature.subject_name:("Microsoft Corporation" or "Microsoft Dynamic Code Publisher" or "Microsoft Windows") and process.code_signature.trusted:true and not process.name.caseless:("regsvr32.exe" or "rundll32.exe")
+  ) and 
+  not (
+    process.executable.caseless:(?\:\\\\Program?Files?\(x86\)\\\\*.exe or ?\:\\\\Program?Files\\\\*.exe) and
+    process.code_signature.trusted:true
+  ) and 
+  not (
+    process.executable.caseless:?\:\\\\Windows\\\\Lenovo\\\\*.exe and process.code_signature.subject_name:"Lenovo" and 
+    process.code_signature.trusted:true
+  ) and 
+  not (
+    process.executable.caseless:?\:\\\\ProgramData\\\\chocolatey\\\\choco.exe* and
+    process.code_signature.subject_name:"Chocolatey Software, Inc." and process.code_signature.trusted:true
+  ) and not process.executable.caseless : "C:\\Windows\\System32\\WindowsPowerShell\\v1.0\\powershell.exe"
 
 ----------------------------------
 
