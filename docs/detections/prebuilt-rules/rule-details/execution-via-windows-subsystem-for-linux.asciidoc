@@ -11,6 +11,7 @@ Detects attempts to execute a program on the host from the Windows Subsystem for
 * logs-endpoint.events.*
 * logs-windows.*
 * endgame-*
+* logs-system.security*
 
 *Severity*: medium
 
@@ -35,7 +36,7 @@ Detects attempts to execute a program on the host from the Windows Subsystem for
 * Data Source: Elastic Endgame
 * Data Source: Elastic Defend
 
-*Version*: 4
+*Version*: 5
 
 *Rule authors*: 
 
@@ -50,19 +51,16 @@ Detects attempts to execute a program on the host from the Windows Subsystem for
 [source, js]
 ----------------------------------
 process where host.os.type == "windows" and event.type : "start" and
- process.parent.executable : 
-    ("?:\\Windows\\System32\\wsl.exe", 
-     "?:\\Program Files*\\WindowsApps\\MicrosoftCorporationII.WindowsSubsystemForLinux_*\\wsl.exe", 
-     "?:\\Windows\\System32\\wslhost.exe", 
-     "?:\\Program Files*\\WindowsApps\\MicrosoftCorporationII.WindowsSubsystemForLinux_*\\wslhost.exe") and 
-  not process.executable : 
-           ("?:\\Windows\\System32\\conhost.exe", 
-            "?:\\Windows\\System32\\lxss\\wslhost.exe", 
-            "?:\\Windows\\Sys*\\wslconfig.exe", 
-            "?:\\Program Files*\\WindowsApps\\MicrosoftCorporationII.WindowsSubsystemForLinux_*\\wsl*.exe", 
-            "?:\\Windows\\System32\\WerFault.exe", 
-            "?:\\Program Files\\*", 
-            "?:\\Program Files (x86)\\*")
+  process.parent.name : ("wsl.exe", "wslhost.exe") and
+  not process.executable : (
+        "?:\\Program Files (x86)\\*",
+        "?:\\Program Files\\*",
+        "?:\\Program Files*\\WindowsApps\\MicrosoftCorporationII.WindowsSubsystemForLinux_*\\wsl*.exe",
+        "?:\\Windows\\System32\\conhost.exe",
+        "?:\\Windows\\System32\\lxss\\wslhost.exe",
+        "?:\\Windows\\System32\\WerFault.exe",
+        "?:\\Windows\\Sys*\\wslconfig.exe"
+  )
 
 ----------------------------------
 
