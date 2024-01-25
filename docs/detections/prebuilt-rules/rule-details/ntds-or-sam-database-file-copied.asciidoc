@@ -11,6 +11,7 @@ Identifies a copy operation of the Active Directory Domain Database (ntds.dit) o
 * logs-endpoint.events.*
 * logs-windows.*
 * endgame-*
+* logs-system.security*
 
 *Severity*: high
 
@@ -37,7 +38,7 @@ Identifies a copy operation of the Active Directory Domain Database (ntds.dit) o
 * Data Source: Elastic Endgame
 * Data Source: Elastic Defend
 
-*Version*: 109
+*Version*: 110
 
 *Rule authors*: 
 
@@ -117,12 +118,12 @@ This rule identifies copy operations of these files using specific command-line 
 ----------------------------------
 process where host.os.type == "windows" and event.type == "start" and
   (
-    (process.pe.original_file_name in ("Cmd.Exe", "PowerShell.EXE", "XCOPY.EXE") and
+    ((?process.pe.original_file_name in ("Cmd.Exe", "PowerShell.EXE", "XCOPY.EXE") or process.name : ("Cmd.Exe", "PowerShell.EXE", "XCOPY.EXE")) and
        process.args : ("copy", "xcopy", "Copy-Item", "move", "cp", "mv")
     ) or
-    (process.pe.original_file_name : "esentutl.exe" and process.args : ("*/y*", "*/vss*", "*/d*"))
+    ((?process.pe.original_file_name : "esentutl.exe" or process.name : "esentutl.exe") and process.args : ("*/y*", "*/vss*", "*/d*"))
   ) and
-  process.args : ("*\\ntds.dit", "*\\config\\SAM", "\\*\\GLOBALROOT\\Device\\HarddiskVolumeShadowCopy*\\*", "*/system32/config/SAM*")
+  process.command_line : ("*\\ntds.dit*", "*\\config\\SAM*", "*\\*\\GLOBALROOT\\Device\\HarddiskVolumeShadowCopy*\\*", "*/system32/config/SAM*", "*\\User Data\\*")
 
 ----------------------------------
 
