@@ -11,6 +11,7 @@ Identifies instances of lower privilege accounts enumerating Administrator accou
 * winlogbeat-*
 * logs-windows.*
 * endgame-*
+* logs-system.security*
 
 *Severity*: low
 
@@ -34,7 +35,7 @@ Identifies instances of lower privilege accounts enumerating Administrator accou
 * Data Source: Elastic Endgame
 * Data Source: Elastic Defend
 
-*Version*: 109
+*Version*: 110
 
 *Rule authors*: 
 
@@ -90,18 +91,20 @@ This rule looks for the execution of the `net` and `wmic` utilities to enumerate
 ----------------------------------
 process where host.os.type == "windows" and event.type == "start" and
 (
-  (((process.name : "net.exe" or process.pe.original_file_name == "net.exe") or
-    ((process.name : "net1.exe" or process.pe.original_file_name == "net1.exe") and
-        not process.parent.name : "net.exe")) and
-   process.args : ("group", "user", "localgroup") and
-   process.args : ("*admin*", "Domain Admins", "Remote Desktop Users", "Enterprise Admins", "Organization Management") and
-   not process.args : "/add")
-
-   or
-
-  ((process.name : "wmic.exe" or process.pe.original_file_name == "wmic.exe") and
-     process.args : ("group", "useraccount"))
-) and not user.id in ("S-1-5-18", "S-1-5-19", "S-1-5-20")
+  (
+    (
+      (process.name : "net.exe" or ?process.pe.original_file_name == "net.exe") or
+      ((process.name : "net1.exe" or ?process.pe.original_file_name == "net1.exe") and not process.parent.name : "net.exe")
+    ) and
+    process.args : ("group", "user", "localgroup") and
+    process.args : ("*admin*", "Domain Admins", "Remote Desktop Users", "Enterprise Admins", "Organization Management")
+    and not process.args : ("/add", "/delete")
+  ) or
+  (
+    (process.name : "wmic.exe" or ?process.pe.original_file_name == "wmic.exe") and
+    process.args : ("group", "useraccount")
+  )
+) and not user.id : ("S-1-5-18", "S-1-5-19", "S-1-5-20")
 
 ----------------------------------
 

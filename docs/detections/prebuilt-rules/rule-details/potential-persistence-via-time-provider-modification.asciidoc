@@ -34,7 +34,7 @@ Identifies modification of the Time Provider. Adversaries may establish persiste
 * Data Source: Elastic Endgame
 * Data Source: Elastic Defend
 
-*Version*: 106
+*Version*: 107
 
 *Rule authors*: 
 
@@ -57,7 +57,7 @@ The Time Provider architecture in Windows is responsible for obtaining accurate 
 This rule identifies changes in the registry paths associated with Time Providers, specifically targeting the addition of new DLL files.
 
 > **Note**:
-> This investigation guide uses the {security-guide}/security/master/invest-guide-run-osquery.html[Osquery Markdown Plugin] introduced in Elastic Stack version 8.5.0. Older Elastic Stack versions will display unrendered Markdown in this guide.
+> This investigation guide uses the [Osquery Markdown Plugin](https://www.elastic.co/guide/en/security/master/invest-guide-run-osquery.html) introduced in Elastic Stack version 8.5.0. Older Elastic Stack versions will display unrendered Markdown in this guide.
 
 ### Possible investigation steps
 
@@ -110,7 +110,12 @@ registry where host.os.type == "windows" and event.type:"change" and
     "HKLM\\SYSTEM\\*ControlSet*\\Services\\W32Time\\TimeProviders\\*",
     "\\REGISTRY\\MACHINE\\SYSTEM\\*ControlSet*\\Services\\W32Time\\TimeProviders\\*"
   ) and
-  registry.data.strings:"*.dll"
+  registry.data.strings:"*.dll" and
+  not
+  (
+    process.executable : "?:\\Windows\\System32\\msiexec.exe" and
+    registry.data.strings : "?:\\Program Files\\VMware\\VMware Tools\\vmwTimeProvider\\vmwTimeProvider.dll"
+  )
 
 ----------------------------------
 
