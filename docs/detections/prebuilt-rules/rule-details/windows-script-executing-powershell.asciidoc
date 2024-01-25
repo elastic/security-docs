@@ -35,7 +35,7 @@ Identifies a PowerShell process launched by either cscript.exe or wscript.exe. O
 * Data Source: Elastic Endgame
 * Data Source: Elastic Defend
 
-*Version*: 108
+*Version*: 109
 
 *Rule authors*: 
 
@@ -108,7 +108,12 @@ This rule looks for the spawn of the `powershell.exe` process with `cscript.exe`
 [source, js]
 ----------------------------------
 process where host.os.type == "windows" and event.type == "start" and
-  process.parent.name : ("cscript.exe", "wscript.exe") and process.name : "powershell.exe"
+  process.parent.name : ("cscript.exe", "wscript.exe") and process.name : "powershell.exe" and
+  not (
+    process.parent.name : "wscript.exe" and
+    process.parent.args : "?:\\ProgramData\\intune-drive-mapping-generator\\IntuneDriveMapping-VBSHelper.vbs" and
+    process.parent.args : "?:\\ProgramData\\intune-drive-mapping-generator\\DriveMapping.ps1"
+  )
 
 ----------------------------------
 

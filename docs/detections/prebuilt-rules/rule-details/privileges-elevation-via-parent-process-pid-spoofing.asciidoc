@@ -34,7 +34,7 @@ Identifies parent process spoofing used to create an elevated child process. Adv
 * Tactic: Privilege Escalation
 * Data Source: Elastic Defend
 
-*Version*: 5
+*Version*: 6
 
 *Rule authors*: 
 
@@ -98,7 +98,15 @@ process where host.os.type == "windows" and event.action == "start" and
                     "?:\\Program Files (x86)\\EMC Captiva\\Captiva Cloud Runtime\\Emc.Captiva.WebCaptureRunner.exe",
                     "?:\\Program Files\\Freedom Scientific\\*.exe",
                     "?:\\Program Files (x86)\\Google\\Chrome Remote Desktop\\*\\remoting_host.exe",
-                    "?:\\Program Files (x86)\\GoToAssist Remote Support Customer\\*\\g2ax_comm_customer.exe")
+                    "?:\\Program Files (x86)\\GoToAssist Remote Support Customer\\*\\g2ax_comm_customer.exe") and
+ not (
+    process.code_signature.trusted == true and process.code_signature.subject_name == "Netwrix Corporation" and
+    process.name : "adcrcpy.exe" and process.parent.executable : (
+      "?:\\Program Files (x86)\\Netwrix Auditor\\Active Directory Auditing\\Netwrix.ADA.EventCollector.exe",
+      "?:\\Program Files (x86)\\Netwrix Auditor\\Active Directory Auditing\\Netwrix.ADA.Analyzer.exe",
+      "?:\\Netwrix Auditor\\Active Directory Auditing\\Netwrix.ADA.EventCollector.exe"
+    )
+ )
 
 ----------------------------------
 
