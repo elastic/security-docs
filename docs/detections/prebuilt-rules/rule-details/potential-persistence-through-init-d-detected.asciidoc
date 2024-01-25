@@ -36,7 +36,7 @@ Files that are placed in the /etc/init.d/ directory in Unix can be used to start
 * Resources: Investigation Guide
 * Data Source: Elastic Defend
 
-*Version*: 7
+*Version*: 8
 
 *Rule authors*: 
 
@@ -121,8 +121,14 @@ This rule looks for the creation of new files within the `/etc/init.d/` director
 [source, js]
 ----------------------------------
 host.os.type :"linux" and event.action:("creation" or "file_create_event" or "rename" or "file_rename_event") and 
-file.path : /etc/init.d/* and not process.name : ("dpkg" or "dockerd" or "rpm" or "dnf" or "chef-client" or "apk" or "yum" or 
-"rpm" or "vmis-launcher" or "exe") and not file.extension : ("swp" or "swx")
+file.path : /etc/init.d/* and not (
+  (process.name : ("dpkg" or "dockerd" or "rpm" or "dnf" or "chef-client" or "apk" or "yum" or "rpm" or
+  "vmis-launcher" or "exe" or "platform-python" or "executor" or "podman")) or
+  (file.extension : ("swp" or "swpx")) or
+  (process.name:mv and file.name:*.dpkg-remove) or
+  (process.name:sed and file.name:sed*) or
+  (process.name:systemd and file.name:*.dpkg-new)
+)
 
 ----------------------------------
 
