@@ -1,0 +1,63 @@
+[[potential-container-escape-via-modified-notify-on-release-file]]
+=== Potential Container Escape via Modified notify_on_release File
+
+This rule detects modification of the cgroup notify_on_release file from inside a container. When the notify_on_release flag is enabled (1) in a cgroup, then whenever the last task in the cgroup exits or attaches to another cgroup, the command specified in the release_agent file is run and invoked from the host. A privileged container with SYS_ADMIN capabilities, enables a threat actor to mount a cgroup directory and modify the notify_on_release flag in order to take advantage of this feature, which could be used for further privilege escalation and container escapes to the host machine.
+
+*Rule type*: eql
+
+*Rule indices*: 
+
+* logs-cloud_defend*
+
+*Severity*: high
+
+*Risk score*: 73
+
+*Runs every*: 5m
+
+*Searches indices from*: now-6m ({ref}/common-options.html#date-math[Date Math format], see also <<rule-schedule, `Additional look-back time`>>)
+
+*Maximum alerts per execution*: 100
+
+*References*: 
+
+* https://blog.trailofbits.com/2019/07/19/understanding-docker-container-escapes/
+* https://sysdig.com/blog/detecting-mitigating-cve-2022-0492-sysdig/
+
+*Tags*: 
+
+* Data Source: Elastic Defend for Containers
+* Domain: Container
+* OS: Linux
+* Use Case: Threat Detection
+* Tactic: Privilege Escalation
+
+*Version*: 1
+
+*Rule authors*: 
+
+* Elastic
+
+*Rule license*: Elastic License v2
+
+
+==== Rule query
+
+
+[source, js]
+----------------------------------
+file where event.module == "cloud_defend" and event.action == "open" and 
+event.type == "change" and file.name : "notify_on_release"
+
+----------------------------------
+
+*Framework*: MITRE ATT&CK^TM^
+
+* Tactic:
+** Name: Privilege Escalation
+** ID: TA0004
+** Reference URL: https://attack.mitre.org/tactics/TA0004/
+* Technique:
+** Name: Escape to Host
+** ID: T1611
+** Reference URL: https://attack.mitre.org/techniques/T1611/

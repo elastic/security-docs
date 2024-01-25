@@ -36,7 +36,7 @@ Detects the manual creation of files in specific etc directories, via user root,
 * Data Source: Elastic Endgame
 * Data Source: Elastic Defend
 
-*Version*: 111
+*Version*: 112
 
 *Rule authors*: 
 
@@ -61,8 +61,8 @@ By creating or modifying specific system-wide configuration files, attackers can
 This rule monitors for the creation of the most common system-wide configuration files and scripts abused by attackers for persistence. 
 
 > **Note**:
-> This investigation guide uses the {security-guide}/security/master/invest-guide-run-osquery.html[Osquery Markdown Plugin] introduced in Elastic Stack version 8.5.0. Older Elastic Stack versions will display unrendered Markdown in this guide.
-> This investigation guide uses {security-guide}/security/current/osquery-placeholder-fields.html[placeholder fields] to dynamically pass alert data into Osquery queries. Placeholder fields were introduced in Elastic Stack version 8.7.0. If you're using Elastic Stack version 8.6.0 or earlier, you'll need to manually adjust this investigation guide's queries to ensure they properly run.
+> This investigation guide uses the [Osquery Markdown Plugin](https://www.elastic.co/guide/en/security/master/invest-guide-run-osquery.html) introduced in Elastic Stack version 8.5.0. Older Elastic Stack versions will display unrendered Markdown in this guide.
+> This investigation guide uses [placeholder fields](https://www.elastic.co/guide/en/security/current/osquery-placeholder-fields.html) to dynamically pass alert data into Osquery queries. Placeholder fields were introduced in Elastic Stack version 8.7.0. If you're using Elastic Stack version 8.6.0 or earlier, you'll need to manually adjust this investigation guide's queries to ensure they properly run.
 
 #### Possible Investigation Steps
 
@@ -129,11 +129,18 @@ This rule monitors for the creation of the most common system-wide configuration
 
 [source, js]
 ----------------------------------
-file where host.os.type == "linux" and event.type in ("creation", "file_create_event") and user.name == "root" and
+file where host.os.type == "linux" and event.type in ("creation", "file_create_event") and user.id == "0" and
 file.path : ("/etc/ld.so.conf.d/*", "/etc/cron.d/*", "/etc/sudoers.d/*", "/etc/rc.d/init.d/*", "/etc/systemd/system/*",
-"/usr/lib/systemd/system/*") and not process.executable : ("*/dpkg", "*/yum", "*/apt", "*/dnf", "*/rpm", "*/systemd",
-"*/snapd", "*/dnf-automatic","*/yum-cron", "*/elastic-agent", "*/dnfdaemon-system", "*/bin/dockerd", "*/sbin/dockerd",
-"/kaniko/executor", "/usr/sbin/rhn_check") and not file.extension in ("swp", "swpx", "tmp")
+"/usr/lib/systemd/system/*") and not (
+  (process.executable : (
+    "*/dpkg", "*/yum", "*/apt", "*/dnf", "*/rpm", "*/systemd", "*/snapd",
+    "*/dnf-automatic","*/yum-cron", "*/elastic-agent", "*/dnfdaemon-system",
+    "*/bin/dockerd", "*/sbin/dockerd", "/kaniko/executor", "/usr/sbin/rhn_check"
+    )
+  ) or 
+  (file.extension in ("swp", "swpx", "tmp")) or
+  (process.name : ("chef-client", "ruby", "pacman", "packagekitd", "python*", "platform-python"))
+)
 
 ----------------------------------
 

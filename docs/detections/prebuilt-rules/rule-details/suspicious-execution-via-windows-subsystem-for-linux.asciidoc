@@ -11,10 +11,11 @@ Detects Linux Bash commands from the the Windows Subsystem for Linux. Adversarie
 * logs-endpoint.events.*
 * logs-windows.*
 * endgame-*
+* logs-system.security*
 
-*Severity*: medium
+*Severity*: low
 
-*Risk score*: 47
+*Risk score*: 21
 
 *Runs every*: 5m
 
@@ -38,7 +39,7 @@ Detects Linux Bash commands from the the Windows Subsystem for Linux. Adversarie
 * Data Source: Elastic Endgame
 * Data Source: Elastic Defend
 
-*Version*: 4
+*Version*: 5
 
 *Rule authors*: 
 
@@ -53,14 +54,22 @@ Detects Linux Bash commands from the the Windows Subsystem for Linux. Adversarie
 [source, js]
 ----------------------------------
 process where host.os.type == "windows" and event.type : "start" and
- (
-  ((process.executable : "?:\\Windows\\System32\\bash.exe" or process.pe.original_file_name == "Bash.exe") and 
-  not process.command_line : ("bash", "bash.exe")) or 
-  process.executable : "?:\\Users\\*\\AppData\\Local\\Packages\\*\\rootfs\\usr\\bin\\bash" or 
-  (process.parent.name : "wsl.exe" and process.parent.command_line : "bash*" and not process.name : "wslhost.exe") or 
-  (process.name : "wsl.exe" and process.args : ("curl", "/etc/shadow", "/etc/passwd", "cat","--system", "root", "-e", "--exec", "bash", "/mnt/c/*"))
+  (
+    (
+      (process.executable : "?:\\Windows\\System32\\bash.exe" or ?process.pe.original_file_name == "Bash.exe") and 
+      not process.command_line : ("bash", "bash.exe")
+    ) or 
+    process.executable : "?:\\Users\\*\\AppData\\Local\\Packages\\*\\rootfs\\usr\\bin\\bash" or 
+    (
+      process.parent.name : "wsl.exe" and ?process.parent.command_line : "bash*" and not process.name : "wslhost.exe"
+    ) or 
+    (
+      process.name : "wsl.exe" and process.args : (
+        "curl", "/etc/shadow", "/etc/passwd", "cat", "--system", "root", "-e", "--exec", "bash", "/mnt/c/*"
+      ) and not process.args : ("wsl-bootstrap", "docker-desktop-data", "*.vscode-server*")
+    )
   ) and 
-  not process.parent.executable : ("?:\\Program Files\\Docker\\*.exe", "?:\\Program Files (x86)\\Docker\\*.exe")
+    not process.parent.executable : ("?:\\Program Files\\Docker\\*.exe", "?:\\Program Files (x86)\\Docker\\*.exe")
 
 ----------------------------------
 

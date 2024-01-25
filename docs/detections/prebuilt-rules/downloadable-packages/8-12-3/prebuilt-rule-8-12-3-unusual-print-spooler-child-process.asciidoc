@@ -1,0 +1,79 @@
+[[prebuilt-rule-8-12-3-unusual-print-spooler-child-process]]
+=== Unusual Print Spooler Child Process
+
+Detects unusual Print Spooler service (spoolsv.exe) child processes. This may indicate an attempt to exploit privilege escalation vulnerabilities related to the Printing Service on Windows.
+
+*Rule type*: eql
+
+*Rule indices*: 
+
+* winlogbeat-*
+* logs-endpoint.events.*
+* logs-windows.*
+* logs-system.security*
+
+*Severity*: medium
+
+*Risk score*: 47
+
+*Runs every*: 5m
+
+*Searches indices from*: now-9m ({ref}/common-options.html#date-math[Date Math format], see also <<rule-schedule, `Additional look-back time`>>)
+
+*Maximum alerts per execution*: 100
+
+*References*: 
+
+* https://msrc.microsoft.com/update-guide/vulnerability/CVE-2021-34527
+
+*Tags*: 
+
+* Domain: Endpoint
+* OS: Windows
+* Use Case: Threat Detection
+* Tactic: Privilege Escalation
+* Use Case: Vulnerability
+* Data Source: Elastic Defend
+
+*Version*: 106
+
+*Rule authors*: 
+
+* Elastic
+
+*Rule license*: Elastic License v2
+
+
+==== Rule query
+
+
+[source, js]
+----------------------------------
+process where host.os.type == "windows" and event.type == "start" and
+ process.parent.name : "spoolsv.exe" and process.command_line != null and 
+ (?process.Ext.token.integrity_level_name : "System" or ?winlog.event_data.IntegrityLevel : "System") and
+
+ /* exclusions for FP control below */
+ not process.name : ("splwow64.exe", "PDFCreator.exe", "acrodist.exe", "spoolsv.exe", "msiexec.exe", "route.exe", "WerFault.exe") and
+ not process.command_line : "*\\WINDOWS\\system32\\spool\\DRIVERS*" and
+ not (process.name : "net.exe" and process.command_line : ("*stop*", "*start*")) and
+ not (process.name : ("cmd.exe", "powershell.exe") and process.command_line : ("*.spl*", "*\\program files*", "*route add*")) and
+ not (process.name : "netsh.exe" and process.command_line : ("*add portopening*", "*rule name*")) and
+ not (process.name : "regsvr32.exe" and process.command_line : "*PrintConfig.dll*") and
+ not process.executable : (
+    "?:\\Program Files (x86)\\CutePDF Writer\\CPWriter2.exe",
+    "?:\\Program Files (x86)\\GPLGS\\gswin32c.exe"
+ )
+
+----------------------------------
+
+*Framework*: MITRE ATT&CK^TM^
+
+* Tactic:
+** Name: Privilege Escalation
+** ID: TA0004
+** Reference URL: https://attack.mitre.org/tactics/TA0004/
+* Technique:
+** Name: Exploitation for Privilege Escalation
+** ID: T1068
+** Reference URL: https://attack.mitre.org/techniques/T1068/
