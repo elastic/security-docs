@@ -34,7 +34,7 @@ Identifies unusual child processes of Service Host (svchost.exe) that traditiona
 * Data Source: Elastic Endgame
 * Data Source: Elastic Defend
 
-*Version*: 107
+*Version*: 108
 
 *Rule authors*: 
 
@@ -49,25 +49,31 @@ Identifies unusual child processes of Service Host (svchost.exe) that traditiona
 [source, js]
 ----------------------------------
 process where host.os.type == "windows" and event.type == "start" and
-     process.parent.name : "svchost.exe" and
+  process.parent.name : "svchost.exe" and
 
-     /* based on svchost service arguments -s svcname where the service is known to be childless */
+  /* based on svchost service arguments -s svcname where the service is known to be childless */
+  process.parent.args : (
+    "WdiSystemHost", "LicenseManager", "StorSvc", "CDPSvc", "cdbhsvc", "BthAvctpSvc", "SstpSvc", "WdiServiceHost",
+    "imgsvc", "TrkWks", "WpnService", "IKEEXT", "PolicyAgent", "CryptSvc", "netprofm", "ProfSvc", "StateRepository",
+    "camsvc", "LanmanWorkstation", "NlaSvc", "EventLog", "hidserv", "DisplayEnhancementService", "ShellHWDetection",
+    "AppHostSvc", "fhsvc", "CscService", "PushToInstall"
+  ) and
 
-    process.parent.args : ("WdiSystemHost","LicenseManager",
-      "StorSvc","CDPSvc","cdbhsvc","BthAvctpSvc","SstpSvc","WdiServiceHost",
-      "imgsvc","TrkWks","WpnService","IKEEXT","PolicyAgent","CryptSvc",
-      "netprofm","ProfSvc","StateRepository","camsvc","LanmanWorkstation",
-      "NlaSvc","EventLog","hidserv","DisplayEnhancementService","ShellHWDetection",
-      "AppHostSvc","fhsvc","CscService","PushToInstall") and
-
-      /* unknown FPs can be added here */
-
-     not process.name : ("WerFault.exe","WerFaultSecure.exe","wermgr.exe") and
-     not (process.executable : "?:\\Windows\\System32\\RelPost.exe" and process.parent.args : "WdiSystemHost") and
-     not (process.name : "rundll32.exe" and
-          process.args : "?:\\WINDOWS\\System32\\winethc.dll,ForceProxyDetectionOnNextRun" and process.parent.args : "WdiServiceHost") and
-     not (process.executable : ("?:\\Program Files\\*", "?:\\Program Files (x86)\\*", "?:\\Windows\\System32\\Kodak\\kds_i4x50\\lib\\lexexe.exe") and
-          process.parent.args : "imgsvc")
+  /* unknown FPs can be added here */
+  not process.name : ("WerFault.exe", "WerFaultSecure.exe", "wermgr.exe") and
+  not (process.executable : "?:\\Windows\\System32\\RelPost.exe" and process.parent.args : "WdiSystemHost") and
+  not (
+    process.name : "rundll32.exe" and
+    process.args : "?:\\WINDOWS\\System32\\winethc.dll,ForceProxyDetectionOnNextRun" and
+    process.parent.args : "WdiServiceHost"
+  ) and
+  not (
+    process.executable : (
+      "?:\\Program Files\\*",
+      "?:\\Program Files (x86)\\*",
+      "?:\\Windows\\System32\\Kodak\\kds_?????\\lib\\lexexe.exe"
+    ) and process.parent.args : "imgsvc"
+  )
 
 ----------------------------------
 
