@@ -1,0 +1,64 @@
+[[potential-container-escape-via-modified-release-agent-file]]
+=== Potential Container Escape via Modified release_agent File
+
+This rule detects modification of the CGroup release_agent file from inside a privileged container. The release_agent is a script that is executed at the termination of any process on that CGroup and is invoked from the host. A privileged container with SYS_ADMIN capabilities, enables a threat actor to mount a CGroup directory and modify the release_agent which could be used for further privilege escalation and container escapes to the host machine.
+
+*Rule type*: eql
+
+*Rule indices*: 
+
+* logs-cloud_defend*
+
+*Severity*: medium
+
+*Risk score*: 47
+
+*Runs every*: 5m
+
+*Searches indices from*: now-6m ({ref}/common-options.html#date-math[Date Math format], see also <<rule-schedule, `Additional look-back time`>>)
+
+*Maximum alerts per execution*: 100
+
+*References*: 
+
+* https://blog.aquasec.com/threat-alert-container-escape
+* https://sysdig.com/blog/detecting-mitigating-cve-2022-0492-sysdig/
+* https://book.hacktricks.xyz/linux-hardening/privilege-escalation/docker-security/docker-breakout-privilege-escalation#privileged-escape-abusing-existent-release_agent-cve-2022-0492-poc1
+
+*Tags*: 
+
+* Data Source: Elastic Defend for Containers
+* Domain: Container
+* OS: Linux
+* Use Case: Threat Detection
+* Tactic: Privilege Escalation
+
+*Version*: 1
+
+*Rule authors*: 
+
+* Elastic
+
+*Rule license*: Elastic License v2
+
+
+==== Rule query
+
+
+[source, js]
+----------------------------------
+file where event.module == "cloud_defend" and event.action == "open" and 
+event.type == "change" and file.name : "release_agent"
+
+----------------------------------
+
+*Framework*: MITRE ATT&CK^TM^
+
+* Tactic:
+** Name: Privilege Escalation
+** ID: TA0004
+** Reference URL: https://attack.mitre.org/tactics/TA0004/
+* Technique:
+** Name: Escape to Host
+** ID: T1611
+** Reference URL: https://attack.mitre.org/techniques/T1611/
