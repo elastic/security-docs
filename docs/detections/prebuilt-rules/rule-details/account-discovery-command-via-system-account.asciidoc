@@ -33,7 +33,7 @@ Identifies when the SYSTEM account uses an account discovery utility. This could
 * Resources: Investigation Guide
 * Data Source: Elastic Defend
 
-*Version*: 108
+*Version*: 109
 
 *Rule authors*: 
 
@@ -87,8 +87,12 @@ This rule looks for the execution of account discovery utilities using the SYSTE
 process where host.os.type == "windows" and event.type == "start" and
   (?process.Ext.token.integrity_level_name : "System" or
   ?winlog.event_data.IntegrityLevel : "System") and
-  (process.name : "whoami.exe" or
-  (process.name : "net1.exe" and not process.parent.name : "net.exe"))
+  (
+    process.name : "whoami.exe" or
+    (
+      process.name : "net1.exe" and not process.parent.name : "net.exe" and not process.args : ("start", "stop", "/active:*")
+    )
+  )
 
 ----------------------------------
 
