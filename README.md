@@ -4,7 +4,6 @@ Elastic Security Docs home page: https://www.elastic.co/guide/en/security/curren
 
 Documentation Manager: Janeen Roberts (Github: `@jmikell821`)
 
-Please view [this template](https://github.com/elastic/security-docs/blob/master/.github/ISSUE_TEMPLATE/documentation-issue.md) for guidance on creating issues. 
 
 ## Contributing to Elastic Security docs
 
