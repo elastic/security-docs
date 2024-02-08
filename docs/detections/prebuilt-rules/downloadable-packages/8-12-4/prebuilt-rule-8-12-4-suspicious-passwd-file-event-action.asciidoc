@@ -1,0 +1,64 @@
+[[prebuilt-rule-8-12-4-suspicious-passwd-file-event-action]]
+=== Suspicious Passwd File Event Action
+
+Monitors for the generation of a passwd password entry via openssl, followed by a file write activity on the "/etc/passwd" file. The "/etc/passwd" file in Linux stores user account information, including usernames, user IDs, group IDs, home directories, and default shell paths. Attackers may exploit a misconfiguration in the "/etc/passwd" file permissions or other privileges to add a new entry to the "/etc/passwd" file with root permissions, and leverage this new user account to login as root.
+
+*Rule type*: eql
+
+*Rule indices*: 
+
+* logs-endpoint.events.*
+* logs-auditd_manager.auditd-*
+
+*Severity*: medium
+
+*Risk score*: 47
+
+*Runs every*: 5m
+
+*Searches indices from*: now-9m ({ref}/common-options.html#date-math[Date Math format], see also <<rule-schedule, `Additional look-back time`>>)
+
+*Maximum alerts per execution*: 100
+
+*References*: None
+
+*Tags*: 
+
+* Domain: Endpoint
+* OS: Linux
+* Use Case: Threat Detection
+* Tactic: Privilege Escalation
+* Data Source: Elastic Defend
+
+*Version*: 1
+
+*Rule authors*: 
+
+* Elastic
+
+*Rule license*: Elastic License v2
+
+
+==== Rule query
+
+
+[source, js]
+----------------------------------
+sequence by host.id, process.parent.pid with maxspan=1m
+  [process where host.os.type == "linux" and event.type == "start" and event.action == "exec" and
+   process.name == "openssl" and process.args == "passwd" and user.id != "0"]
+  [file where event.dataset == "auditd_manager.auditd" and host.os.type == "linux" and file.path == "/etc/passwd" and
+  process.parent.pid != 1 and not auditd.data.a2 == "80000" and event.outcome == "success" and user.id != "0"]
+
+----------------------------------
+
+*Framework*: MITRE ATT&CK^TM^
+
+* Tactic:
+** Name: Privilege Escalation
+** ID: TA0004
+** Reference URL: https://attack.mitre.org/tactics/TA0004/
+* Technique:
+** Name: Exploitation for Privilege Escalation
+** ID: T1068
+** Reference URL: https://attack.mitre.org/techniques/T1068/
