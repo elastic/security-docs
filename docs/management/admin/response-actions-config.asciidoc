@@ -1,0 +1,90 @@
+[[response-actions-config]]
+= Response actions configuration
+
+:frontmatter-description: Configure third-party systems to perform response actions on protected hosts.
+:frontmatter-tags-products: [security]
+:frontmatter-tags-content-type: [how-to]
+:frontmatter-tags-user-goals: [manage]
+
+Endpoint response actions involving third-party systems require additional configuration. This page explains the high-level steps you'll need to take to enable these response actions.
+
+[discrete]
+[[configure-sentinelone-response-actions]]
+== Configure SentinelOne response actions
+
+SentinelOne response actions allow you to perform bidirectional actions on protected hosts, such as directing SentinelOne to isolate a suspicious endpoint from your network, without needing to leave the {elastic-sec} UI.
+
+preview::[]
+
+.Prerequisites
+[sidebar]
+--
+* https://www.elastic.co/pricing[Subscription level]: Enterprise 
+
+* {kibana-ref}/kibana-role-management.html#adding_kibana_privileges[{kib} feature privilege]: **Actions and Connectors : All**.
+
+* <<endpoint-management-req,{elastic-sec} feature privileges>>: **All** for the response action features, such as **Host Isolation**, that you want to perform.
+
+* Endpoints must have actively running SentinelOne agents installed.
+--
+
+Configuration requires the following general steps. Expand the steps and follow the links for detailed instructions:
+
+. **Generate API access tokens in SentinelOne.** You'll need these tokens in later steps, and they allow {elastic-sec} to collect data and perform actions in SentinelOne. 
++
+.Expand for details
+[%collapsible]
+====
+Create two API tokens in SentinelOne, and give them the least privilege required by the Elastic components that will use them:
+
+- SentinelOne integration: Permission to read SentinelOne data.
+- SentinelOne connector: Permission to read SentinelOne data and perform actions on SentinelOne-protected hosts (for example, isolating and releasing an endpoint).
+
+Refer to the {integrations-docs}/sentinel_one[SentinelOne integration docs] or SentinelOne's docs for details on generating API tokens.
+====
+
+. **Install the SentinelOne integration and {agent}.** Elastic's {integrations-docs}/sentinel_one[SentinelOne integration] collects and ingests logs into {elastic-sec}.
++
+.Expand for details
+[%collapsible]
+====
+.. In {kib}, go to **Integrations**, search for and select **SentinelOne**, then select **Add SentinelOne**.
+.. Configure the integration with an **Integration name** and optional **Description**.
+.. Ensure that **Collect SentinelOne logs via API** is selected, and enter the required **Settings**:
+   - **URL**: The SentinelOne console URL.
+   - **API Token**: The SentinelOne API access token you generated previously, with permission to read SentinelOne data.
+.. Scroll down and enter a name for the agent policy in **New agent policy name**. If other agent policies already exist, you can click the **Existing hosts** tab and select an existing policy instead. For more details on {agent} configuration settings, refer to {fleet-guide}/agent-policy.html[{agent} policies].
+.. Click **Save and continue**.
+.. Select *Add {agent} to your hosts* and continue with the <<enroll-agent,{agent} installation steps>> to install {agent} on a resource in your network (such as a server or VM). {agent} will act as a bridge collecting data from SentinelOne and sending it to {elastic-sec}.
+====
+
+. **Create a SentinelOne connector.** Elastic's {kibana-ref}/sentinelone-action-type.html[SentinelOne connector] enables {elastic-sec} to perform actions on SentinelOne-protected hosts.
++
+.Expand for details
+[%collapsible]
+====
+IMPORTANT: Do not create more than one SentinelOne connector.
+
+.. In {kib}, go to **Stack Management** → **Connectors**, then select **Create connector**.
+.. Select the **SentinelOne** connector.
+.. Enter the configuration information:
+   - **Connector name**: A name to identify the connector.
+   - **SentinelOne tenant URL**: The SentinelOne tenant URL.
+   - **API token**: The SentinelOne API access token you generated previously, with permission to read SentinelOne data and perform actions on SentinelOne-protected hosts.
+.. Click **Save**.
+====
+
+. **Create and enable a rule to generate {elastic-sec} alerts.** Create a <<create-custom-rule,custom query detection rule>> to generate {elastic-sec} alerts whenever SentinelOne generates alerts. 
++
+.Expand for details
+[%collapsible]
+====
+Use these settings when creating the custom query rule to target the data collected from SentinelOne:
+
+- **Index patterns**: `logs-sentinel_one.alert*`
+- **Custom query**: `observer.serial_number:*`
+
+NOTE: Do not include any other index patterns or query parameters.
+
+This rule will give you visibility into SentinelOne without needing to leave {elastic-sec}. You can perform supported endpoint response actions directly from alerts that the rule creates, by using the **Take action** menu on the alert details flyout.
+====

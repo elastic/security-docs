@@ -6,7 +6,12 @@
 :frontmatter-tags-content-type: [reference]
 :frontmatter-tags-user-goals: [manage]
 
-WARNING: This API supports {kibana-ref}/api.html#token-api-authentication[Token-based authentication] only.
+[WARNING]
+====
+When used with {kibana-ref}/api-keys.html[API key] authentication, the user's key gets assigned to the affected rules. If the user's key gets deleted or the user becomes inactive, the rules will stop running.
+
+If the API key that is used for authorization has different privileges than the key that created or most recently updated the rule, the rule behavior might change.
+====
 
 Creates a new detection rule.
 
@@ -31,6 +36,10 @@ specified {ref}/indices-create-index.html[{es} index]. For example, you can
 create an index for IP addresses and use this index to create an alert whenever
 an event's `destination.ip` equals a value in the index. The index's field
 mappings should be {ecs-ref}[ECS-compliant].
+* *New terms*: Generates an alert for each new term detected in source documents within a specified time range.
+* *{esql}*: Uses {ref}/esql.html[Elasticsearch Query Language ({esql})] to find events and aggregate search results.
++
+preview::["Do not use {esql} on production environments. This functionality is in technical preview and may be changed or removed in a future release. Elastic will work to fix any issues, but features in technical preview are not subject to the support SLA of official GA features."]
 * *{ml-cap} rules*: Creates an alert when a {ml} job discovers an anomaly above
 the defined threshold (see <<machine-learning>>).
 
@@ -100,8 +109,9 @@ A JSON object that defines the rule's values:
 * <<req-fields-eql>>
 * <<req-fields-ml>>
 * <<req-fields-threat-match>>
+* <<req-fields-new-terms>>
+* <<req-fields-esql>>
 * <<opt-fields-all>>
-* <<opt-fields-query-eql>>
 * <<opt-fields-threat-match>>
 * <<opt-fields-query-threshold>>
 * <<opt-fields-eql-query-threshold>>
@@ -138,6 +148,7 @@ occurred
 |type |String a|Data type on which the rule is based:
 
 * `eql`: EQL query (see {ref}/eql.html[Event Query Language]).
+* `esql`: ES\|QL query (see {ref}/esql.html[Elasticsearch Query Language]).
 * `query`: query with or without additional filters.
 * `saved_query`: saved search, identified in the `saved_id` field.
 * `machine_learning`: rule based on a {ml} job's anomaly scores.
@@ -145,19 +156,26 @@ occurred
 {es} index.
 * `threshold`: rule based on the number of times a `query` matches the
 specified field.
+* `new_terms`: rule that alerts on values that have not been seen before
 
 |==============================================
 
 [[req-fields-query-threshold]]
-===== Required field for query, indicator match and threshold rules
+===== Required fields for query, indicator match, threshold, new terms, event correlation, and {esql} rules
 
 [width="100%",options="header"]
 |==============================================
 |Name |Type |Description
 
 |query |String a|{kibana-ref}/search.html[Query] used by the rule to create
-alerts. For indicator match rules, only the query's results are used to determine
-whether an alert is generated.
+alerts. 
+
+[NOTE]
+======
+* For indicator match rules, only the query's results are used to determine
+whether an alert is generated. 
+* ES\|QL rules have additional query requirements. Refer to <<create-esql-rule,Create ES\|QL rules>> for more information. 
+======
 
 |==============================================
 
@@ -206,6 +224,17 @@ generated.
 
 |==============================================
 
+[[req-fields-esql]]
+===== Required field for {esql} rules
+
+[width="100%",options="header"]
+|==============================================
+|Name |Type |Description
+
+|language |String |Must be `esql`.
+
+|==============================================
+
 [[req-fields-ml]]
 ===== Required fields for machine learning rules
 
@@ -247,6 +276,22 @@ matching fields and values generate alerts. Sibling `entries` objects
 are evaluated using `or` logic, whereas multiple entries in a single `entries`
 object use `and` logic. See <<threat-match-example, below>> for an example that
 uses both `and` and `or` logic.
+
+|==============================================
+
+[[req-fields-new-terms]]
+===== Required fields for new terms rules
+
+[width="100%",options="header"]
+|==============================================
+|Name |Type |Description
+
+|new_terms_fields |String[] |Fields to monitor for new values. Must contain 1–3 field names.
+
+|history_window_start |String |Start date to use when checking if a term has been seen before.
+Supports relative dates – for example, `now-30d` will search the last 30 days of data when checking if a term
+is new. We do not recommend using absolute dates, which can cause issues with rule performance
+due to querying increasing amounts of data over time.
 
 |==============================================
 
@@ -329,27 +374,10 @@ Required when `actions` are used to send notifications.
 
 |version |Integer |The rule's version number. Defaults to `1`.
 
-|==============================================
+|investigation_fields |Object a| Specify highlighted fields for personalized alert investigation flows:
 
-[[opt-fields-query-eql]]
-===== Optional fields for query, indicator match, and event correlation rules
+* `field_names`: String[] , required
 
-[width="100%",options="header"]
-|==============================================
-|Name |Type |Description
-
-|exceptions_list |Object[] a|Array of
-<<exceptions-api-overview, exception containers>>, which define
-exceptions that prevent the rule from generating alerts even when its other
-criteria are met. The object has these fields:
-
-* `id` (string, required): ID of the exception container.
-* `list_id` (string, required): List ID of the exception container.
-* `namespace_type` (string required): Determines whether the exceptions are
-valid in only the rule's {kib} space (`single`) or in all {kib} spaces
-(`agnostic`).
-* `type` (string, required): The exception type, which must be either
-a detection rule exception (`detection`) or an endpoint exception (`endpoint`).
 |==============================================
 
 [[opt-fields-threat-match]]
@@ -368,7 +396,7 @@ documents from the {es} index containing the threat values.
 |==============================================
 
 [[opt-fields-query-threshold]]
-===== Optional fields for query, indicator match, and threshold rules
+===== Optional fields for query, indicator match, threshold, and new terms rules
 
 [width="100%",options="header"]
 |==============================================
@@ -379,20 +407,24 @@ documents from the {es} index containing the threat values.
 |==============================================
 
 [[opt-fields-eql-query-threshold]]
-===== Optional fields for event correlation, query, and threshold rules
+===== Optional fields for event correlation, query, threshold, indicator match, new terms, and {esql} rules
 
 [width="100%",options="header"]
 |==============================================
 |Name |Type |Description
 
-|filters |Object[] |The {ref}/query-filter-context.html[query and filter
+|filters |Object[] a|The {ref}/query-filter-context.html[query and filter
 context] array used to define the conditions for when alerts are created from
 events. Defaults to an empty array.
 
-|index |String[] |Indices on which the rule functions. Defaults to the
+NOTE: This field is not supported for ES\|QL rules.
+
+|index |String[] a|Indices on which the rule functions. Defaults to the
 Security Solution indices defined on the {kib} Advanced Settings page
 (*Kibana* → *Stack Management* → *Advanced Settings* →
 `securitySolution:defaultIndex`).
+
+NOTE: This field is not supported for ES\|QL rules.
 
 |risk_score_mapping |Object[] a|Overrides generated alerts' `risk_score` with
 a value from the source event:
@@ -421,6 +453,19 @@ values from the source event:
 When unspecified, rules query the `@timestamp` field. The source field
 must be an {es} date data type.
 
+|exceptions_list |Object[] a|Array of
+<<exceptions-api-overview, exception containers>>, which define
+exceptions that prevent the rule from generating alerts even when its other
+criteria are met. The object has these fields:
+
+* `id` (string, required): ID of the exception container.
+* `list_id` (string, required): List ID of the exception container.
+* `namespace_type` (string required): Determines whether the exceptions are
+valid in only the rule's {kib} space (`single`) or in all {kib} spaces
+(`agnostic`).
+* `type` (string, required): The exception type, which must be either
+a detection rule exception (`detection`) or an endpoint exception (`endpoint`).
+
 |==============================================
 
 [[opt-fields-eql-create]]
@@ -438,6 +483,43 @@ must be an {es} date data type.
 
 |timestamp_field |String
 |Contains the event timestamp used for sorting a sequence of events. This is different from `timestamp_override`, which is used for querying events within a range. Defaults to the `@timestamp` ECS field.
+
+|==============================================
+
+[[opt-fields-alert-suppression-create]]
+===== Optional alert suppression fields for query, threshold rules
+
+preview::[]
+
+====== Query rule
+
+[width="100%",options="header"]
+|==============================================
+|Name |Type |Description
+
+|alert_suppression |Object a|Defines alert suppression configuration. Available fields:
+
+* `group_by` (string[], required): An array of 1-3 field names to use for suppressing alerts.
+
+* `duration` (<<alert-suppression-duration-schema, duration object>>, optional): The time period in which alerts will be suppressed, beginning when the rule first meets its criteria and creates the alert. If not specified, alerts will be suppressed on rule execution only.
+
+* `missing_fields_strategy` (string, optional): Defines how to handle events with missing suppression fields. Possible values:
+
+    - `doNotSuppress`: Create a separate alert for each matching event.
+
+    - `suppress`: Create one alert for each group of events with missing fields.
+
+|==============================================
+
+====== Threshold rule
+
+[width="100%",options="header"]
+|==============================================
+|Name |Type |Description
+
+|alert_suppression |Object a|Defines alert suppression configuration. Available fields:
+
+* `duration` (<<alert-suppression-duration-schema, duration object>>, required): The time period in which alerts will be suppressed, beginning when the rule first meets its criteria and creates the alert.
 
 |==============================================
 
@@ -616,6 +698,7 @@ For Osquery (`.osquery`), use a single query, a saved query, or a query pack:
 * `saved_query_id` (string, optional): To run a saved query, use the `saved_query_id` field and specify the saved query ID. Example: `"saved_query_id":  "processes_elastic"`
 * `packId` (string, optional): To specify a query pack, use the `packId` field. Example: `"packId": "processes_elastic"`
 * `ecs_mapping` (object, required): Map Osquery results columns or static values to Elastic Common Schema (ECS) fields. Example: `"ecs_mapping": {"process.pid": {"field": "pid"}}`
+* `timeout` (number, optional): A timeout period, in seconds, after which the query will stop running. Overwriting the default timeout allows you to support queries that require more time to complete. The default and minimum supported value is `60`. The maximum supported value is `900`. Example: `"timeout": 120`.
 
 NOTE: Refer to {kibana-ref}/osquery-manager-live-queries-api-create.html[Create live query API] for more information about running Osquery queries and packs.
 
@@ -666,6 +749,20 @@ All fields are required:
 
 NOTE: Only threats described using the MITRE ATT&CK^TM^ framework are displayed
 in the UI (*Rules* -> *Detection rules (SIEM)* -> *_Rule name_*).
+
+[[alert-suppression-duration-schema]]
+===== `alert_suppression.duration` schema
+
+All fields are required:
+
+[width="100%",options="header"]
+|==============================================
+|Name |Type |Description
+
+|unit |string | Time unit. Possible values are: `s`(seconds), `m`(minutes), or `h`(hours).
+|value |number | Positive number.
+
+|==============================================
 
 ===== Example requests
 
@@ -918,6 +1015,97 @@ logic. In this example, both the event's `destination.ip` and
 `ip-threat-list`.
 <4> Sibling `entries` are evaluated using `or` logic. An alert is generated when
 at least one `entries` object evaluates to `true`.
+
+*Example 6*
+
+New terms rule that creates alerts a new IP address is detected for a user:
+
+[source,console]
+--------------------------------------------------
+POST api/detection_engine/rules
+{
+  "risk_score": 21,
+  "description": "Detects a user associated with a new IP address",
+  "name": "New User IP Detected",
+  "severity": "medium",
+  "type": "new_terms",
+  "language": "kuery",
+  "query": "*",
+  "new_terms_fields": ["user.id", "source.ip"],
+  "history_window_start": "now-30d",
+  "index": ["auditbeat*"]
+}
+--------------------------------------------------
+// KIBANA
+
+*Example 7*
+
+{esql} rule that creates alerts from events that match an Excel parent process:
+
+[source,json]
+--------------------------------------------------
+POST api/detection_engine/rules
+{
+  "type": "esql",
+  "language": "esql",
+  "query": "from auditbeat-8.10.2 [metadata _id, _version, _index] | where process.parent.name == \"EXCEL.EXE\"",
+  "name": "Find Excel events",
+  "description": "Find Excel events",
+  "tags": [],
+  "interval": "5m",
+  "from": "now-360s",
+  "to": "now",
+  "enabled": false,
+  "risk_score": 21,
+  "severity": "low"
+}
+--------------------------------------------------
+
+
+*Example 8*
+
+Query rule that searches for processes started by MS Office and suppresses alerts by the `process.parent.name` field within a 5-hour time period:
+
+[source,console]
+--------------------------------------------------
+POST api/detection_engine/rules
+{
+  "rule_id": "process_started_by_ms_office_program",
+  "risk_score": 50,
+  "description": "Process started by MS Office program - possible payload",
+  "interval": "1h",
+  "name": "MS Office child process",
+  "severity": "low",
+  "tags": [
+   "child process",
+   "ms office"
+   ],
+  "type": "query",
+  "from": "now-70m",
+  "query": "process.parent.name:EXCEL.EXE or process.parent.name:MSPUB.EXE or process.parent.name:OUTLOOK.EXE or process.parent.name:POWERPNT.EXE or process.parent.name:VISIO.EXE or process.parent.name:WINWORD.EXE",
+  "language": "kuery",
+  "filters": [
+     {
+      "query": {
+         "match": {
+            "event.action": {
+               "query": "Process Create (rule: ProcessCreate)",
+               "type": "phrase"
+            }
+         }
+      }
+     }
+  ],
+  "enabled": false,
+  "alert_suppression": {
+    "duration": { "unit": "h", "value": 5 },
+    "group_by": [
+        "process.parent.name"
+    ],
+    "missing_fields_strategy": "suppress"
+  }
+}
+--------------------------------------------------
 
 ==== Response code
 
@@ -1234,6 +1422,94 @@ Example response for an indicator match rule:
   "related_integrations": [],       <1>
   "required_fields": [],            <1>
   "setup": ""                       <1>
+}
+--------------------------------------------------
+<1> dev:[] These fields are under development and their usage may change: `related_integrations`, `required_fields`, and `setup`.
+
+Example response for a new terms rule:
+
+[source,json]
+--------------------------------------------------
+{
+  "author": [],
+  "created_at": "2020-10-06T07:07:58.227Z",
+  "updated_at": "2020-10-06T07:07:58.237Z",
+  "created_by": "elastic",
+  "description": "Detects a user associated with a new IP address",
+  "enabled": true,
+  "false_positives": [],
+  "from": "now-6m",
+  "id": "eb7225c0-566b-11ee-8b4f-bbf3afdeb9f4",
+  "immutable": false,
+  "interval": "5m",
+  "rule_id": "c6f5d0bc-7be9-47d4-b2f3-073d22641e30",
+  "max_signals": 100,
+  "risk_score": 21,
+  "risk_score_mapping": [],
+  "name": "New User IP Detected",
+  "references": [],
+  "severity": "medium",
+  "severity_mapping": [],
+  "updated_by": "elastic",
+  "tags": [],
+  "to": "now",
+  "type": "new_terms",
+  "threat": [],
+  "version": 1,
+  "exceptions_list": [],
+  "index": [
+    "auditbeat*"
+  ],
+  "query": "*",
+  "language": "kuery",
+  "new_terms_fields": ["user.id", "source.ip"],
+  "history_window_start": "now-30d",
+  "related_integrations": [],       <1>
+  "required_fields": [],            <1>
+  "setup": ""                       <1>
+}
+--------------------------------------------------
+<1> dev:[] These fields are under development and their usage may change: `related_integrations`, `required_fields`, and `setup`.
+
+Example response for an {esql} rule:
+
+[source,json]
+--------------------------------------------------
+{
+  "name": "Find Excel events",
+  "description": "Find Excel events",
+  "risk_score": 21,
+  "severity": "low",
+  "output_index": "",
+  "tags": [],
+  "interval": "5m",
+  "enabled": false,
+  "author": [],
+  "false_positives": [],
+  "from": "now-360s",
+  "max_signals": 100,
+  "risk_score_mapping": [],
+  "severity_mapping": [],
+  "threat": [],
+  "to": "now",
+  "references": [],
+  "version": 1,
+  "exceptions_list": [],
+  "actions": [],
+  "id": "d0f20490-6da4-11ee-b85e-09e9b661f2e2",
+  "updated_at": "2023-10-18T10:55:14.269Z",
+  "updated_by": "elastic",
+  "created_at": "2023-10-18T10:55:14.269Z",
+  "created_by": "elastic",
+  "revision": 0,
+  "rule_id": "e4b53a89-debd-4a0d-a3e3-20606952e589",
+  "immutable": false,
+  "related_integrations": [],     <1>
+  "required_fields": [],          <1>
+  "setup": "",                    <1>
+  "type": "esql",
+  "language": "esql",
+  "query": "from auditbeat-8.10.2 [metadata _id] | where process.parent.name == \"EXCEL.EXE\""
 }
 --------------------------------------------------
 <1> dev:[] These fields are under development and their usage may change: `related_integrations`, `required_fields`, and `setup`.

@@ -21,7 +21,7 @@ To configure an integration policy:
 
 1. In the {security-app}, go to **Manage** -> **Policies** to view the **Policies** page.
 2. Select the integration policy you want to configure. The integration policy configuration page appears.
-3. Review the following settings on the **Policy settings** tab and configure them as appropriate:
+3. On the **Policy settings** tab, review and configure the following settings as appropriate:
 * <<malware-protection>>
 * <<ransomware-protection>>
 * <<memory-protection>>
@@ -35,16 +35,21 @@ To configure an integration policy:
 4. Click the **Trusted applications**, **Event filters**, **Host isolation exceptions**,
 and **Blocklist** tabs to review the endpoint policy artifacts assigned to this integration policy
 (for more information, refer to <<trusted-apps-ov>>, <<event-filters>>, <<host-isolation-exceptions>>, and <<blocklist>>). On these tabs, you can:
++
+--
 * Expand and view an artifact — Click the arrow next to its name.
 * View an artifact's details — Click the actions menu (**...**), then select **View full details**.
 * Unassign an artifact (Platinum or Enterprise subscription) — Click the actions menu (**...**),
 then select **Remove from policy**. This does not delete the artifact; this just unassigns it from the current policy.
 * Assign an existing artifact (Platinum or Enterprise subscription) — Click **Assign _x_ to policy**,
 then select an item from the flyout. This view lists any existing artifacts that aren't already assigned to the current policy.
-
+--
++
 NOTE: You can't create a new endpoint policy artifact while configuring an integration policy.
 To create a new artifact, go to its main page in the {security-app} (for example,
 to create a new trusted application, go to **Manage** -> **Trusted applications**).
+
+5. Click the *Protection updates* tab to configure how {elastic-defend} receives updates from Elastic with the latest threat detections, malware models, and other protection artifacts. Refer to <<artifact-control>> for more information.
 
 [discrete]
 [[malware-protection]]
@@ -70,6 +75,13 @@ Malware protection also allows you to manage a blocklist to prevent specified ap
 extending the list of processes that {elastic-defend} considers malicious. Use the **Blocklist enabled** toggle
 to enable or disable this feature for all hosts associated with the integration policy. To configure the blocklist, refer to <<blocklist>>.
 
+[role="screenshot"]
+image::images/install-endpoint/malware-protection.png[Detail of malware protection section.]
+
+[discrete]
+[[manage-quarantined-files]]
+=== Manage quarantined files
+
 When *Prevent* is enabled for malware protection, {elastic-defend} will quarantine any malicious file it finds. Specifically {elastic-defend} will remove the file from its current location, encrypt it with the encryption key `ELASTIC`, move it to a different folder, and rename it as a GUID string, such as `318e70c2-af9b-4c3a-939d-11410b9a112c`.
 
 The quarantine folder location varies by operating system:
@@ -81,8 +93,9 @@ The quarantine folder location varies by operating system:
 
 To restore a quarantined file to its original state and location, <<add-exceptions, add an exception>> to the rule that identified the file as malicious. If the exception would've stopped the rule from identifying the file as malicious, {elastic-defend} restores the file.
 
-[role="screenshot"]
-image::images/install-endpoint/malware-protection.png[Detail of malware protection section.]
+You can access a quarantined file by using the `get-file` <<response-action-commands,response action command>> in the response console. To do this, copy the path from the alert's **Quarantined file path** field (`file.Ext.quarantine_path`), which appears under **Highlighted fields** in the alert details flyout. Then paste the value into the `--path` parameter. This action doesn't restore the file to its original location, so you will need to do this manually.
+
+NOTE: Response actions and the response console UI are https://www.elastic.co/pricing[Enterprise subscription] features.
 
 [discrete]
 [[ransomware-protection]]
@@ -155,6 +168,10 @@ Malicious behavior protection levels are:
 {elastic-defend} will **not** block the malicious behavior. You must pay attention to and analyze any alerts that are generated.
 * **Prevent** (Default): Detects malicious behavior on the host, forces the process to stop,
 and generates an alert.
+
+Select whether you want to use **Reputation service** for additional malware analysis. This service identifies malicious activity and false positives, and enriches alerts using data from various sources, such as VirusTotal and telemetry. For example, reputation service can detect suspicious downloads of binaries with low or malicious reputation.
+
+NOTE: Reputation service requires an active https://www.elastic.co/pricing[Platinum or Enterprise subscription] and is available on cloud deployments only.
 
 Select **Notify user** to send a push notification in the host operating system when activity is detected or prevented. Notifications are enabled by default for the *Prevent* option.
 
