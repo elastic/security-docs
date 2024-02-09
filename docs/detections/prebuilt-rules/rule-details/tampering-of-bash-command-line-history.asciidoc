@@ -5,7 +5,7 @@ Adversaries may attempt to clear or disable the Bash command-line history in an 
 
 *Rule type*: eql
 
-*Rule indices*:
+*Rule indices*: 
 
 * auditbeat-*
 * logs-endpoint.events.*
@@ -14,61 +14,65 @@ Adversaries may attempt to clear or disable the Bash command-line history in an 
 
 *Risk score*: 47
 
-*Runs every*: 5 minutes
+*Runs every*: 5m
 
 *Searches indices from*: now-9m ({ref}/common-options.html#date-math[Date Math format], see also <<rule-schedule, `Additional look-back time`>>)
 
 *Maximum alerts per execution*: 100
 
-*Tags*:
+*References*: None
+
+*Tags*: 
+
+* Domain: Endpoint
+* OS: Linux
+* OS: macOS
+* Use Case: Threat Detection
+* Tactic: Defense Evasion
+* Data Source: Elastic Defend
+
+*Version*: 104
+
+*Rule authors*: 
 
 * Elastic
-* Host
-* Linux
-* macOS
-* Threat Detection
-* Defense Evasion
-
-*Version*: 100 (<<tampering-of-bash-command-line-history-history, version history>>)
-
-*Added ({stack} release)*: 7.9.0
-
-*Last modified ({stack} release)*: 8.5.0
-
-*Rule authors*: Elastic
 
 *Rule license*: Elastic License v2
 
-==== Investigation guide
+
+==== Setup
 
 
-[source,markdown]
+[source, markdown]
 ----------------------------------
 
-----------------------------------
+If enabling an EQL rule on a non-elastic-agent index (such as beats) for versions <8.2,
+events will not define `event.ingested` and default fallback for EQL rules was not added until version 8.2.
+Hence for this rule to work effectively, users will need to add a custom ingest pipeline to populate
+`event.ingested` to @timestamp.
+For more details on adding a custom ingest pipeline refer - https://www.elastic.co/guide/en/fleet/current/data-streams-pipeline-tutorial.html
 
+----------------------------------
 
 ==== Rule query
 
 
-[source,js]
+[source, js]
 ----------------------------------
-process where event.type in ("start", "process_started") and (
-((process.args : ("rm", "echo") or (process.args : "ln" and
-process.args : "-sf" and process.args : "/dev/null") or
-(process.args : "truncate" and process.args : "-s0")) and
-process.args : (".bash_history", "/root/.bash_history",
-"/home/*/.bash_history","/Users/.bash_history",
-"/Users/*/.bash_history", ".zsh_history",
-"/root/.zsh_history", "/home/*/.zsh_history", "/Users/.zsh_history",
-"/Users/*/.zsh_history")) or (process.name : "history" and
-process.args : "-c") or (process.args : "export" and process.args :
-("HISTFILE=/dev/null", "HISTFILESIZE=0")) or (process.args : "unset"
-and process.args : "HISTFILE") or (process.args : "set" and
-process.args : "history" and process.args : "+o") )
-----------------------------------
+process where event.type in ("start", "process_started") and
+ (
+  ((process.args : ("rm", "echo") or
+    (process.args : "ln" and process.args : "-sf" and process.args : "/dev/null") or
+    (process.args : "truncate" and process.args : "-s0"))
+    and process.args : (".bash_history", "/root/.bash_history", "/home/*/.bash_history","/Users/.bash_history", "/Users/*/.bash_history",
+                        ".zsh_history", "/root/.zsh_history", "/home/*/.zsh_history", "/Users/.zsh_history", "/Users/*/.zsh_history")) or
+  (process.name : "history" and process.args : "-c") or
+  (process.args : "export" and process.args : ("HISTFILE=/dev/null", "HISTFILESIZE=0")) or
+  (process.args : "unset" and process.args : "HISTFILE") or
+  (process.args : "set" and process.args : "history" and process.args : "+o")
+ )
 
-==== Threat mapping
+----------------------------------
 
 *Framework*: MITRE ATT&CK^TM^
 
@@ -77,58 +81,10 @@ process.args : "history" and process.args : "+o") )
 ** ID: TA0005
 ** Reference URL: https://attack.mitre.org/tactics/TA0005/
 * Technique:
-** Name: Indicator Removal on Host
+** Name: Indicator Removal
 ** ID: T1070
 ** Reference URL: https://attack.mitre.org/techniques/T1070/
-
-[[tampering-of-bash-command-line-history-history]]
-==== Rule version history
-
-Version 100 (8.5.0 release)::
-* Formatting only
-
-Version 10 (8.4.0 release)::
-* Formatting only
-
-Version 8 (8.3.0 release)::
-* Updated query, changed from:
-+
-[source, js]
-----------------------------------
-process where event.type in ("start", "process_started") and (
-(process.args : ("rm", "echo") and process.args : (".bash_history",
-"/root/.bash_history", "/home/*/.bash_history")) or (process.name :
-"history" and process.args : "-c") or (process.args : "export" and
-process.args : ("HISTFILE=/dev/null", "HISTFILESIZE=0")) or
-(process.args : "unset" and process.args : "HISTFILE") or
-(process.args : "set" and process.args : "history" and process.args :
-"+o") )
-----------------------------------
-
-Version 7 (8.2.0 release)::
-* Formatting only
-
-Version 6 (7.12.0 release)::
-* Rule name changed from: Deletion of Bash Command Line History
-+
-* Updated query, changed from:
-+
-[source, js]
-----------------------------------
-event.category:process AND event.type:(start or process_started) AND
-process.name:rm AND
-process.args:/\/(home\/.{1,255}|root)\/\.bash_history/
-----------------------------------
-
-Version 5 (7.11.2 release)::
-* Formatting only
-
-Version 4 (7.11.0 release)::
-* Formatting only
-
-Version 3 (7.10.0 release)::
-* Formatting only
-
-Version 2 (7.9.1 release)::
-* Formatting only
-
+* Sub-technique:
+** Name: Clear Command History
+** ID: T1070.003
+** Reference URL: https://attack.mitre.org/techniques/T1070/003/
