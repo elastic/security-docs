@@ -1,5 +1,5 @@
 [[enumeration-of-privileged-local-groups-membership]]
-=== Enumeration of Privileged Local Groups Membership
+= Enumeration of Privileged Local Groups Membership
 
 Identifies instances of an unusual process enumerating built-in Windows privileged local groups membership like Administrators or Remote Desktop users.
 
@@ -40,11 +40,7 @@ Identifies instances of an unusual process enumerating built-in Windows privileg
 *Rule license*: Elastic License v2
 
 
-==== Investigation guide
-
-
-[source, markdown]
-----------------------------------
+== Investigation guide
 ## Triage and analysis
 
 ### Investigating Enumeration of Privileged Local Groups Membership
@@ -54,7 +50,7 @@ After successfully compromising an environment, attackers may try to gain situat
 This rule looks for the enumeration of privileged local groups' membership by suspicious processes, and excludes known legitimate utilities and programs installed. Attackers can use this information to decide the next steps of the attack, such as mapping targets for credential compromise and other post-exploitation activities.
 
 > **Note**:
-> This investigation guide uses the {security-guide}/security/master/invest-guide-run-osquery.html[Osquery Markdown Plugin] introduced in Elastic Stack version 8.5.0. Older Elastic Stack versions will display unrendered Markdown in this guide.
+> This investigation guide uses the https://www.elastic.co/guide/en/security/master/invest-guide-run-osquery.html introduced in Elastic Stack version 8.5.0. Older Elastic Stack versions will display unrendered Markdown in this guide.
 
 #### Possible investigation steps
 
@@ -92,9 +88,33 @@ This rule looks for the enumeration of privileged local groups' membership by su
 - Using the incident response data, update logging and audit policies to improve the mean time to detect (MTTD) and the mean time to respond (MTTR).
 
 
-----------------------------------
 
-==== Rule query
+== Setup
+
+The 'Audit Security Group Management' audit policy must be configured (Success).
+Steps to implement the logging policy with with Advanced Audit Configuration:
+
+```
+Computer Configuration >
+Policies >
+Windows Settings >
+Security Settings >
+Advanced Audit Policies Configuration >
+Audit Policies >
+Account Management >
+Audit Security Group Management (Success)
+```
+
+Microsoft introduced the [event used](https://docs.microsoft.com/en-us/windows/security/threat-protection/auditing/event-4799) in this detection rule on Windows 10 and Windows Server 2016 or later operating systems.
+
+If enabling an EQL rule on a non-elastic-agent index (such as beats) for versions <8.2,
+events will not define `event.ingested` and default fallback for EQL rules was not added until version 8.2.
+Hence for this rule to work effectively, users will need to add a custom ingest pipeline to populate
+`event.ingested` to @timestamp.
+For more details on adding a custom ingest pipeline refer - https://www.elastic.co/guide/en/fleet/current/data-streams-pipeline-tutorial.html
+
+
+== Rule query
 
 
 [source, js]

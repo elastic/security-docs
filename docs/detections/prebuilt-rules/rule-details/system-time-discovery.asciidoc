@@ -1,5 +1,5 @@
 [[system-time-discovery]]
-=== System Time Discovery
+= System Time Discovery
 
 Detects the usage of commonly used system time discovery techniques, which attackers may use during the reconnaissance phase after compromising a system.
 
@@ -34,7 +34,7 @@ Detects the usage of commonly used system time discovery techniques, which attac
 * Data Source: Elastic Endgame
 * Rule Type: BBR
 
-*Version*: 5
+*Version*: 6
 
 *Rule authors*: 
 
@@ -43,15 +43,17 @@ Detects the usage of commonly used system time discovery techniques, which attac
 *Rule license*: Elastic License v2
 
 
-==== Rule query
+== Rule query
 
 
 [source, js]
 ----------------------------------
 process where host.os.type == "windows" and event.type == "start" and
 (
- ((process.name: "net.exe" or (process.name : "net1.exe" and not process.parent.name : "net.exe")) and 
-   process.args : "time") or 
+ (
+    (process.name: "net.exe" or (process.name : "net1.exe" and not process.parent.name : "net.exe")) and 
+    process.args : "time" and not process.args : "/set"
+ ) or 
  (process.name: "w32tm.exe" and process.args: "/tz") or 
  (process.name: "tzutil.exe" and process.args: "/g")
 ) and not user.id : ("S-1-5-18", "S-1-5-19", "S-1-5-20")

@@ -1,5 +1,5 @@
 [[potential-linux-tunneling-and-or-port-forwarding]]
-=== Potential Linux Tunneling and/or Port Forwarding
+= Potential Linux Tunneling and/or Port Forwarding
 
 This rule monitors for a set of Linux utilities that can be used for tunneling and port forwarding. Attackers can leverage tunneling and port forwarding techniques to bypass network defenses, establish hidden communication channels, and gain unauthorized access to internal resources, facilitating data exfiltration, lateral movement, and remote control.
 
@@ -8,6 +8,7 @@ This rule monitors for a set of Linux utilities that can be used for tunneling a
 *Rule indices*: 
 
 * logs-endpoint.events.*
+* endgame-*
 
 *Severity*: medium
 
@@ -31,8 +32,9 @@ This rule monitors for a set of Linux utilities that can be used for tunneling a
 * Use Case: Threat Detection
 * Tactic: Command and Control
 * Data Source: Elastic Defend
+* Data Source: Elastic Endgame
 
-*Version*: 4
+*Version*: 5
 
 *Rule authors*: 
 
@@ -41,11 +43,7 @@ This rule monitors for a set of Linux utilities that can be used for tunneling a
 *Rule license*: Elastic License v2
 
 
-==== Investigation guide
-
-
-[source, markdown]
-----------------------------------
+== Investigation guide
 ## Triage and analysis
 
 ### Investigating Potential Linux Tunneling and/or Port Forwarding
@@ -55,8 +53,8 @@ Attackers can leverage many utilities to clandestinely tunnel network communicat
 This rule looks for several utilities that are capable of setting up tunnel network communications by analyzing process names or command line arguments. 
 
 > **Note**:
-> This investigation guide uses the {security-guide}/security/master/invest-guide-run-osquery.html[Osquery Markdown Plugin] introduced in Elastic Stack version 8.5.0. Older Elastic Stack versions will display unrendered Markdown in this guide.
-> This investigation guide uses {security-guide}/security/current/osquery-placeholder-fields.html[placeholder fields] to dynamically pass alert data into Osquery queries. Placeholder fields were introduced in Elastic Stack version 8.7.0. If you're using Elastic Stack version 8.6.0 or earlier, you'll need to manually adjust this investigation guide's queries to ensure they properly run.
+> This investigation guide uses the https://www.elastic.co/guide/en/security/master/invest-guide-run-osquery.html introduced in Elastic Stack version 8.5.0. Older Elastic Stack versions will display unrendered Markdown in this guide.
+> This investigation guide uses https://www.elastic.co/guide/en/security/current/osquery-placeholder-fields.html to dynamically pass alert data into Osquery queries. Placeholder fields were introduced in Elastic Stack version 8.7.0. If you're using Elastic Stack version 8.6.0 or earlier, you'll need to manually adjust this investigation guide's queries to ensure they properly run.
 
 #### Possible investigation steps
 
@@ -109,27 +107,53 @@ This rule looks for several utilities that are capable of setting up tunnel netw
 - Determine the initial vector abused by the attacker and take action to prevent reinfection through the same vector.
 - Leverage the incident response data and logging to improve the mean time to detect (MTTD) and the mean time to respond (MTTR).
 
-----------------------------------
 
-==== Rule query
+== Setup
+This rule requires data coming in from Elastic Defend.
+
+### Elastic Defend Integration Setup
+Elastic Defend is integrated into the Elastic Agent using Fleet. Upon configuration, the integration allows the Elastic Agent to monitor events on your host and send data to the Elastic Security app.
+
+#### Prerequisite Requirements:
+- Fleet is required for Elastic Defend.
+- To configure Fleet Server refer to the https://www.elastic.co/guide/en/fleet/current/fleet-server.html.
+
+#### The following steps should be executed in order to add the Elastic Defend integration on a Linux System:
+- Go to the Kibana home page and click "Add integrations".
+- In the query bar, search for "Elastic Defend" and select the integration to see more details about it.
+- Click "Add Elastic Defend".
+- Configure the integration name and optionally add a description.
+- Select the type of environment you want to protect, either "Traditional Endpoints" or "Cloud Workloads".
+- Select a configuration preset. Each preset comes with different default settings for Elastic Agent, you can further customize these later by configuring the Elastic Defend integration policy. https://www.elastic.co/guide/en/security/current/configure-endpoint-integration-policy.html.
+- We suggest selecting "Complete EDR (Endpoint Detection and Response)" as a configuration setting, that provides "All events; all preventions"
+- Enter a name for the agent policy in "New agent policy name". If other agent policies already exist, you can click the "Existing hosts" tab and select an existing policy instead.
+For more details on Elastic Agent configuration settings, refer to the https://www.elastic.co/guide/en/fleet/8.10/agent-policy.html.
+- Click "Save and Continue".
+- To complete the integration, select "Add Elastic Agent to your hosts" and continue to the next section to install the Elastic Agent on your hosts.
+For more details on Elastic Defend refer to the https://www.elastic.co/guide/en/security/current/install-endpoint.html.
+
+
+== Rule query
 
 
 [source, js]
 ----------------------------------
-process where host.os.type == "linux" and event.action == "exec" and event.type == "start" and ((
-  // gost & pivotnacci - spawned without process.parent.name
-  (process.name == "gost" and process.args : ("-L*", "-C*", "-R*")) or (process.name == "pivotnacci")) or (
-  // ssh
-  (process.name in ("ssh", "sshd") and (process.args in ("-R", "-L", "D", "-w") and process.args_count >= 4 and 
-  not process.args : "chmod")) or
-  // sshuttle
-  (process.name == "sshuttle" and process.args in ("-r", "--remote", "-l", "--listen") and process.args_count >= 4) or
-  // socat
-  (process.name == "socat" and process.args : ("TCP4-LISTEN:*", "SOCKS*") and process.args_count >= 3) or
-  // chisel
-  (process.name : "chisel*" and process.args in ("client", "server")) or
-  // iodine(d), dnscat, hans, ptunnel-ng, ssf, 3proxy & ngrok 
-  (process.name in ("iodine", "iodined", "dnscat", "hans", "hans-ubuntu", "ptunnel-ng", "ssf", "3proxy", "ngrok"))
+process where host.os.type == "linux" and event.action in ("exec", "exec_event") and
+event.type == "start" and (
+  (
+    // gost & pivotnacci - spawned without process.parent.name
+    (process.name == "gost" and process.args : ("-L*", "-C*", "-R*")) or (process.name == "pivotnacci")) or (
+    // ssh
+    (process.name in ("ssh", "sshd") and (process.args in ("-R", "-L", "D", "-w") and process.args_count >= 4 and 
+     not process.args : "chmod")) or
+    // sshuttle
+    (process.name == "sshuttle" and process.args in ("-r", "--remote", "-l", "--listen") and process.args_count >= 4) or
+    // socat
+    (process.name == "socat" and process.args : ("TCP4-LISTEN:*", "SOCKS*") and process.args_count >= 3) or
+    // chisel
+    (process.name : "chisel*" and process.args in ("client", "server")) or
+    // iodine(d), dnscat, hans, ptunnel-ng, ssf, 3proxy & ngrok 
+    (process.name in ("iodine", "iodined", "dnscat", "hans", "hans-ubuntu", "ptunnel-ng", "ssf", "3proxy", "ngrok"))
   ) and process.parent.name in ("bash", "dash", "ash", "sh", "tcsh", "csh", "zsh", "ksh", "fish")
 )
 

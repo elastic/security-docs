@@ -1,5 +1,5 @@
 [[lsass-memory-dump-handle-access]]
-=== LSASS Memory Dump Handle Access
+= LSASS Memory Dump Handle Access
 
 Identifies handle requests for the Local Security Authority Subsystem Service (LSASS) object access with specific access masks that many tools with a capability to dump memory to disk use (0x1fffff, 0x1010, 0x120089). This rule is tool agnostic as it has been validated against a host of various LSASS dump tools such as SharpDump, Procdump, Mimikatz, Comsvcs etc. It detects this behavior at a low level and does not depend on a specific tool or dump file name.
 
@@ -47,11 +47,7 @@ Identifies handle requests for the Local Security Authority Subsystem Service (L
 *Rule license*: Elastic License v2
 
 
-==== Investigation guide
-
-
-[source, markdown]
-----------------------------------
+== Investigation guide
 ## Triage and analysis
 
 ### Investigating LSASS Memory Dump Handle Access
@@ -61,7 +57,7 @@ Local Security Authority Server Service (LSASS) is a process in Microsoft Window
 Adversaries may attempt to access credential material stored in LSASS process memory. After a user logs on, the system generates and stores a variety of credential materials in LSASS process memory. This is meant to facilitate single sign-on (SSO) ensuring a user isn’t prompted each time resource access is requested. These credential materials can be harvested by an adversary using administrative user or SYSTEM privileges to conduct lateral movement using [alternate authentication material](https://attack.mitre.org/techniques/T1550/).
 
 > **Note**:
-> This investigation guide uses the {security-guide}/security/master/invest-guide-run-osquery.html[Osquery Markdown Plugin] introduced in Elastic Stack version 8.5.0. Older Elastic Stack versions will display unrendered Markdown in this guide.
+> This investigation guide uses the https://www.elastic.co/guide/en/security/master/invest-guide-run-osquery.html introduced in Elastic Stack version 8.5.0. Older Elastic Stack versions will display unrendered Markdown in this guide.
 
 #### Possible investigation steps
 
@@ -105,9 +101,34 @@ Adversaries may attempt to access credential material stored in LSASS process me
 - Using the incident response data, update logging and audit policies to improve the mean time to detect (MTTD) and the mean time to respond (MTTR).
 
 
-----------------------------------
 
-==== Rule query
+== Setup
+
+Ensure advanced audit policies for Windows are enabled, specifically:
+Object Access policies [Event ID 4656](https://docs.microsoft.com/en-us/windows/security/threat-protection/auditing/event-4656) (Handle to an Object was Requested)
+
+```
+Computer Configuration >
+Policies >
+Windows Settings >
+Security Settings >
+Advanced Audit Policies Configuration >
+System Audit Policies >
+Object Access >
+Audit File System (Success,Failure)
+Audit Handle Manipulation (Success,Failure)
+```
+
+Also, this event generates only if the object’s [SACL](https://docs.microsoft.com/en-us/windows/win32/secauthz/access-control-lists) has the required access control entry (ACE) to handle the use of specific access rights.
+
+If enabling an EQL rule on a non-elastic-agent index (such as beats) for versions <8.2,
+events will not define `event.ingested` and default fallback for EQL rules was not added until version 8.2.
+Hence for this rule to work effectively, users will need to add a custom ingest pipeline to populate
+`event.ingested` to @timestamp.
+For more details on adding a custom ingest pipeline refer - https://www.elastic.co/guide/en/fleet/current/data-streams-pipeline-tutorial.html
+
+
+== Rule query
 
 
 [source, js]
