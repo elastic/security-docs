@@ -25,12 +25,13 @@ This rule leverages auditd to monitor for processes scanning different processes
 
 *Tags*: 
 
+* Data Source: Auditd Manager
 * Domain: Endpoint
 * OS: Linux
 * Use Case: Threat Detection
 * Tactic: Discovery
 
-*Version*: 5
+*Version*: 6
 
 *Rule authors*: 
 
@@ -39,15 +40,45 @@ This rule leverages auditd to monitor for processes scanning different processes
 *Rule license*: Elastic License v2
 
 
+==== Setup
+
+
+[source, markdown]
+----------------------------------
+
+This rule requires data coming in from Auditd Manager.
+
+### Auditd Manager Integration Setup
+The Auditd Manager Integration receives audit events from the Linux Audit Framework which is a part of the Linux kernel.
+Auditd Manager provides a user-friendly interface and automation capabilities for configuring and monitoring system auditing through the auditd daemon. With `auditd_manager`, administrators can easily define audit rules, track system events, and generate comprehensive audit reports, improving overall security and compliance in the system.
+
+#### The following steps should be executed in order to add the Elastic Agent System integration "auditd_manager" on a Linux System:
+- Go to the Kibana home page and click “Add integrations”.
+- In the query bar, search for “Auditd Manager” and select the integration to see more details about it.
+- Click “Add Auditd Manager”.
+- Configure the integration name and optionally add a description.
+- Review optional and advanced settings accordingly.
+- Add the newly installed “auditd manager” to an existing or a new agent policy, and deploy the agent on a Linux system from which auditd log files are desirable.
+- Click “Save and Continue”.
+- For more details on the integration refer to the https://docs.elastic.co/integrations/auditd_manager[helper guide].
+
+#### Rule Specific Setup Note
+Auditd Manager subscribes to the kernel and receives events as they occur without any additional configuration.
+However, if more advanced configuration is required to detect specific behavior, audit rules can be added to the integration in either the "audit rules" configuration box or the "auditd rule files" box by specifying a file to read the audit rules from.
+- For this detection rule the following additional audit rules are required to be added to the integration:
+  -- "-w /proc/ -p r -k audit_proc"
+
+
+----------------------------------
+
 ==== Rule query
 
 
 [source, js]
 ----------------------------------
 sequence by process.pid, host.id with maxspan=5s
-[ file where host.os.type == "linux" and event.dataset == "auditd_manager.auditd" and 
-  auditd.data.syscall == "openat" and file.path == "/proc" and auditd.data.a0 : ("ffffffffffffff9c", "ffffff9c") and 
-  auditd.data.a2 : ("80000", "88000") ] with runs=10
+  [file where host.os.type == "linux" and auditd.data.syscall == "openat" and file.path == "/proc" and
+   auditd.data.a0 : ("ffffffffffffff9c", "ffffff9c") and auditd.data.a2 : ("80000", "88000") ] with runs=10
 
 ----------------------------------
 
