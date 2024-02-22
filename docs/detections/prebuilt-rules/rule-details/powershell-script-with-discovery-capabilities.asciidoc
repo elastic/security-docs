@@ -32,13 +32,35 @@ Identifies the use of Cmdlets and methods related to discovery activities. Attac
 * Data Source: PowerShell Logs
 * Rule Type: BBR
 
-*Version*: 4
+*Version*: 5
 
 *Rule authors*: 
 
 * Elastic
 
 *Rule license*: Elastic License v2
+
+
+==== Setup
+
+
+
+The 'PowerShell Script Block Logging' logging policy must be enabled.
+Steps to implement the logging policy with Advanced Audit Configuration:
+
+```
+Computer Configuration >
+Administrative Templates >
+Windows PowerShell >
+Turn on PowerShell Script Block Logging (Enable)
+```
+
+Steps to implement the logging policy via registry:
+
+```
+reg add "hklm\SOFTWARE\Policies\Microsoft\Windows\PowerShell\ScriptBlockLogging" /v EnableScriptBlockLogging /t REG_DWORD /d 1
+```
+
 
 
 ==== Rule query
@@ -48,9 +70,6 @@ Identifies the use of Cmdlets and methods related to discovery activities. Attac
 ----------------------------------
 event.category:process and host.os.type:windows and
   powershell.file.script_block_text : (
-    (
-      ("Get-ItemProperty" or "Get-Item") and "-Path"
-    ) or
     (
       "Get-ADDefaultDomainPasswordPolicy" or
       "Get-ADDomain" or "Get-ComputerInfo" or
@@ -132,6 +151,14 @@ event.category:process and host.os.type:windows and
         "CSFalcon" or "TmPfw" or "kvoop"
       )
     )
+  ) and
+  not powershell.file.script_block_text : (
+    (
+      "__cmdletization_BindCommonParameters" and
+      "Microsoft.PowerShell.Core\Export-ModuleMember" and
+      "Microsoft.PowerShell.Cmdletization.Cim.CimCmdletAdapter"
+    ) or
+    "CmdletsToExport=@(\"Add-Content\","
   ) and
   not user.id : ("S-1-5-18" or "S-1-5-19" or "S-1-5-20") and
   not file.path : (
