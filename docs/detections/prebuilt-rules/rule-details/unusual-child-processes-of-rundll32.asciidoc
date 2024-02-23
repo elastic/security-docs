@@ -43,20 +43,24 @@ Identifies child processes of unusual instances of RunDLL32 where the command li
 ==== Investigation guide
 
 
-[source, markdown]
-----------------------------------
-## Triage and analysis
 
-### Investigating Unusual Child Processes of RunDLL32
+*Triage and analysis*
+
+
+
+*Investigating Unusual Child Processes of RunDLL32*
+
 
 By examining the specific traits of Windows binaries -- such as process trees, command lines, network connections, registry modifications, and so on -- it's possible to establish a baseline of normal activity. Deviations from this baseline can indicate malicious activity, such as masquerading and deserve further investigation.
 
 RunDLL32 is a legitimate Windows utility used to load and execute functions within dynamic-link libraries (DLLs). However, adversaries may abuse RunDLL32 to execute malicious code, bypassing security measures and evading detection. This rule identifies potential abuse by looking for an unusual process creation with no arguments followed by the creation of a child process.
 
 > **Note**:
-> This investigation guide uses the {security-guide}/security/master/invest-guide-run-osquery.html[Osquery Markdown Plugin] introduced in Elastic Stack version 8.5.0. Older Elastic Stack versions will display unrendered Markdown in this guide.
+> This investigation guide uses the https://www.elastic.co/guide/en/security/master/invest-guide-run-osquery.html[Osquery Markdown Plugin] introduced in Elastic Stack version 8.5.0. Older Elastic Stack versions will display unrendered Markdown in this guide.
 
-### Possible investigation steps
+
+*Possible investigation steps*
+
 
 - Investigate the process execution chain (parent process tree) for unknown processes. Examine their executable files for prevalence, whether they are located in expected locations, and if they are signed with valid digital signatures.
 - Investigate other alerts associated with the user/host during the past 48 hours.
@@ -78,15 +82,21 @@ RunDLL32 is a legitimate Windows utility used to load and execute functions with
       - !{osquery{"label":"Osquery - Retrieve Service Unsigned Executables with Virustotal Link","query":"SELECT concat('https://www.virustotal.com/gui/file/', sha1) AS VtLink, name, description, start_type, status, pid,\nservices.path FROM services JOIN authenticode ON services.path = authenticode.path OR services.module_path =\nauthenticode.path JOIN hash ON services.path = hash.path WHERE authenticode.result != 'trusted'\n"}}
   - Retrieve the files' SHA-256 hash values using the PowerShell `Get-FileHash` cmdlet and search for the existence and reputation of the hashes in resources like VirusTotal, Hybrid-Analysis, CISCO Talos, Any.run, etc.
 
-### False positive analysis
+
+*False positive analysis*
+
 
 - This activity is unlikely to happen legitimately. Benign true positives (B-TPs) can be added as exceptions if necessary.
 
-### Related Rules
+
+*Related Rules*
+
 
 - Unusual Network Connection via RunDLL32 - 52aaab7b-b51c-441a-89ce-4387b3aea886
 
-### Response and Remediation
+
+*Response and Remediation*
+
 
 - Initiate the incident response process based on the outcome of the triage.
 - Isolate the involved host to prevent further post-compromise behavior.
@@ -101,7 +111,6 @@ RunDLL32 is a legitimate Windows utility used to load and execute functions with
 - Determine the initial vector abused by the attacker and take action to prevent reinfection through the same vector.
 - Using the incident response data, update logging and audit policies to improve the mean time to detect (MTTD) and the mean time to respond (MTTR).
 
-----------------------------------
 
 ==== Rule query
 
