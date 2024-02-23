@@ -42,20 +42,24 @@ Identifies network connections to the standard Kerberos port from an unusual pro
 ==== Investigation guide
 
 
-[source, markdown]
-----------------------------------
-## Triage and analysis
 
-### Investigating Kerberos Traffic from Unusual Process
+*Triage and analysis*
+
+
+
+*Investigating Kerberos Traffic from Unusual Process*
+
 
 Kerberos is the default authentication protocol in Active Directory, designed to provide strong authentication for client/server applications by using secret-key cryptography.
 
 Domain-joined hosts usually perform Kerberos traffic using the `lsass.exe` process. This rule detects the occurrence of traffic on the Kerberos port (88) by processes other than `lsass.exe` to detect the unusual request and usage of Kerberos tickets.
 
 > **Note**:
-> This investigation guide uses the {security-guide}/security/master/invest-guide-run-osquery.html[Osquery Markdown Plugin] introduced in Elastic Stack version 8.5.0. Older Elastic Stack versions will display unrendered Markdown in this guide.
+> This investigation guide uses the https://www.elastic.co/guide/en/security/master/invest-guide-run-osquery.html[Osquery Markdown Plugin] introduced in Elastic Stack version 8.5.0. Older Elastic Stack versions will display unrendered Markdown in this guide.
 
-#### Possible investigation steps
+
+*Possible investigation steps*
+
 
 - Investigate the process execution chain (parent process tree) for unknown processes. Examine their executable files for prevalence, whether they are located in expected locations, and if they are signed with valid digital signatures.
 - Investigate other alerts associated with the user/host during the past 48 hours.
@@ -76,12 +80,16 @@ Domain-joined hosts usually perform Kerberos traffic using the `lsass.exe` proce
   - Retrieve the files' SHA-256 hash values using the PowerShell `Get-FileHash` cmdlet and search for the existence and reputation of the hashes in resources like VirusTotal, Hybrid-Analysis, CISCO Talos, Any.run, etc.
 - Investigate potentially compromised accounts. Analysts can do this by searching for login events (for example, 4624) to the target host after the registry modification.
 
-### False positive analysis
+
+*False positive analysis*
+
 
 - This rule uses a Kerberos-related port but does not identify the protocol used on that port. HTTP traffic on a non-standard port or destination IP address unrelated to Domain controllers can create false positives.
 - Exceptions can be added for noisy/frequent connections.
 
-### Response and remediation
+
+*Response and remediation*
+
 
 - Initiate the incident response process based on the outcome of the triage.
 - Isolate the involved host to prevent further post-compromise behavior.
@@ -98,7 +106,17 @@ Domain-joined hosts usually perform Kerberos traffic using the `lsass.exe` proce
 - Using the incident response data, update logging and audit policies to improve the mean time to detect (MTTD) and the mean time to respond (MTTR).
 
 
-----------------------------------
+
+==== Setup
+
+
+
+If enabling an EQL rule on a non-elastic-agent index (such as beats) for versions <8.2,
+events will not define `event.ingested` and default fallback for EQL rules was not added until version 8.2.
+Hence for this rule to work effectively, users will need to add a custom ingest pipeline to populate
+`event.ingested` to @timestamp.
+For more details on adding a custom ingest pipeline refer - https://www.elastic.co/guide/en/fleet/current/data-streams-pipeline-tutorial.html
+
 
 ==== Rule query
 
