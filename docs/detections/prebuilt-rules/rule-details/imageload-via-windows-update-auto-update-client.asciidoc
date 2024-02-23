@@ -49,20 +49,18 @@ Identifies abuse of the Windows Update Auto Update Client (wuauclt.exe) to load 
 ==== Investigation guide
 
 
-[source, markdown]
-----------------------------------
-## Triage and analysis
+ Triage and analysis
 
-### Investigating ImageLoad via Windows Update Auto Update Client
+ Investigating ImageLoad via Windows Update Auto Update Client
 
 The Windows Update Auto Update Client (wuauclt.exe) is the component responsible for managing system updates. However, adversaries may abuse this process to load a malicious DLL and execute malicious code while blending into a legitimate system mechanism. 
 
 This rule identifies potential abuse for code execution by monitoring for specific process arguments ("/RunHandlerComServer" and "/UpdateDeploymentProvider") and common writable paths where the target DLL can be placed (e.g., "C:\Users\*.dll", "C:\ProgramData\*.dll", etc.).
 
 > **Note**:
-> This investigation guide uses the {security-guide}/security/master/invest-guide-run-osquery.html[Osquery Markdown Plugin] introduced in Elastic Stack version 8.5.0. Older Elastic Stack versions will display unrendered Markdown in this guide.
+> This investigation guide uses the https://www.elastic.co/guide/en/security/master/invest-guide-run-osquery.html[Osquery Markdown Plugin] introduced in Elastic Stack version 8.5.0. Older Elastic Stack versions will display unrendered Markdown in this guide.
 
-### Possible investigation steps
+ Possible investigation steps
 
 - Investigate the process execution chain (parent process tree) for unknown processes. Examine their executable files for prevalence, whether they are located in expected locations, and if they are signed with valid digital signatures.
 - Investigate any abnormal behavior by the subject process, such as network connections, registry or file modifications, and any spawned child processes.
@@ -83,11 +81,11 @@ This rule identifies potential abuse for code execution by monitoring for specif
   - Retrieve the files' SHA-256 hash values using the PowerShell `Get-FileHash` cmdlet and search for the existence and reputation of the hashes in resources like VirusTotal, Hybrid-Analysis, CISCO Talos, Any.run, etc.
 - Investigate the behavior of child processes, such as network connections, registry or file modifications, and any spawned processes.
 
-### False positive analysis
+ False positive analysis
 
 - This activity is unlikely to happen legitimately. Any activity that triggered the alert and is not inherently malicious must be monitored by the security team.
 
-### Response and Remediation
+ Response and Remediation
 
 - Initiate the incident response process based on the outcome of the triage.
 - Isolate the involved host to prevent further post-compromise behavior.
@@ -102,7 +100,17 @@ This rule identifies potential abuse for code execution by monitoring for specif
 - Determine the initial vector abused by the attacker and take action to prevent reinfection through the same vector.
 - Using the incident response data, update logging and audit policies to improve the mean time to detect (MTTD) and the mean time to respond (MTTR).
 
-----------------------------------
+
+==== Setup
+
+
+
+If enabling an EQL rule on a non-elastic-agent index (such as beats) for versions <8.2,
+events will not define `event.ingested` and default fallback for EQL rules was not added until version 8.2.
+Hence for this rule to work effectively, users will need to add a custom ingest pipeline to populate
+`event.ingested` to @timestamp.
+For more details on adding a custom ingest pipeline refer - https://www.elastic.co/guide/en/fleet/current/data-streams-pipeline-tutorial.html
+
 
 ==== Rule query
 

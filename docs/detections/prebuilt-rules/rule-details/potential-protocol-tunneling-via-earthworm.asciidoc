@@ -47,21 +47,19 @@ Identifies the execution of the EarthWorm tunneler. Adversaries may tunnel netwo
 ==== Investigation guide
 
 
-[source, markdown]
-----------------------------------
-## Triage and analysis
+ Triage and analysis
 
-### Investigating Potential Protocol Tunneling via EarthWorm
+ Investigating Potential Protocol Tunneling via EarthWorm
 
 Attackers can leverage `earthworm` to clandestinely tunnel network communications and evade security measures, potentially gaining unauthorized access to sensitive systems.
 
 This rule looks for several command line arguments that are consistent with `earthworm` tunneling behavior. 
 
 > **Note**:
-> This investigation guide uses the {security-guide}/security/master/invest-guide-run-osquery.html[Osquery Markdown Plugin] introduced in Elastic Stack version 8.5.0. Older Elastic Stack versions will display unrendered Markdown in this guide.
-> This investigation guide uses {security-guide}/security/current/osquery-placeholder-fields.html[placeholder fields] to dynamically pass alert data into Osquery queries. Placeholder fields were introduced in Elastic Stack version 8.7.0. If you're using Elastic Stack version 8.6.0 or earlier, you'll need to manually adjust this investigation guide's queries to ensure they properly run.
+> This investigation guide uses the https://www.elastic.co/guide/en/security/master/invest-guide-run-osquery.html[Osquery Markdown Plugin] introduced in Elastic Stack version 8.5.0. Older Elastic Stack versions will display unrendered Markdown in this guide.
+> This investigation guide uses https://www.elastic.co/guide/en/security/current/osquery-placeholder-fields.html[placeholder fields] to dynamically pass alert data into Osquery queries. Placeholder fields were introduced in Elastic Stack version 8.7.0. If you're using Elastic Stack version 8.6.0 or earlier, you'll need to manually adjust this investigation guide's queries to ensure they properly run.
 
-#### Possible investigation steps
+ Possible investigation steps
 
 - Identify any signs of suspicious network activity or anomalies that may indicate protocol tunneling. This could include unexpected traffic patterns or unusual network behavior.
   - Investigate listening ports and open sockets to look for potential protocol tunneling, reverse shells, or data exfiltration.
@@ -83,19 +81,19 @@ This rule looks for several command line arguments that are consistent with `ear
           - Check the reputation of the domain or IP address.
         - File access, modification, and creation activities.
 
-### Related rules
+ Related rules
 
 - Potential Protocol Tunneling via Chisel Client - 3f12325a-4cc6-410b-8d4c-9fbbeb744cfd
 - Potential Protocol Tunneling via Chisel Server - ac8805f6-1e08-406c-962e-3937057fa86f
 - Potential Linux Tunneling and/or Port Forwarding - 6ee947e9-de7e-4281-a55d-09289bdf947e
 
-### False positive analysis
+ False positive analysis
 
 - If this activity is related to new benign software installation activity, consider adding exceptions — preferably with a combination of user and command line conditions.
 - If this activity is related to a system administrator or developer who uses port tunneling for benign purposes, consider adding exceptions for specific user accounts or hosts. 
 - Try to understand the context of the execution by thinking about the user, machine, or business purpose. A small number of endpoints, such as servers with unique software, might appear unusual but satisfy a specific business need.
 
-### Response and remediation
+ Response and remediation
 
 - Initiate the incident response process based on the outcome of the triage.
 - Isolate the involved host to prevent further post-compromise behavior.
@@ -110,7 +108,47 @@ This rule looks for several command line arguments that are consistent with `ear
 - Determine the initial vector abused by the attacker and take action to prevent reinfection through the same vector.
 - Leverage the incident response data and logging to improve the mean time to detect (MTTD) and the mean time to respond (MTTR).
 
-----------------------------------
+
+==== Setup
+
+
+This rule requires data coming in either from Elastic Defend, or Auditbeat integration.
+
+ Elastic Defend Integration Setup
+Elastic Defend is integrated into the Elastic Agent using Fleet. Upon configuration, the integration allows the Elastic Agent to monitor events on your host and send data to the Elastic Security app.
+
+ Prerequisite Requirements:
+- Fleet is required for Elastic Defend.
+- To configure Fleet Server refer to the https://www.elastic.co/guide/en/fleet/current/fleet-server.html[documentation]
+
+ The following steps should be executed in order to add the Elastic Defend integration on a Linux System:
+- Go to the Kibana home page and click "Add integrations".
+- In the query bar, search for "Elastic Defend" and select the integration to see more details about it.
+- Click "Add Elastic Defend".
+- Configure the integration name and optionally add a description.
+- Select the type of environment you want to protect, either "Traditional Endpoints" or "Cloud Workloads".
+- Select a configuration preset. Each preset comes with different default settings for Elastic Agent, you can further customize these later by configuring the Elastic Defend integration policy. https://www.elastic.co/guide/en/security/current/configure-endpoint-integration-policy.html[Helper guide]
+- We suggest selecting "Complete EDR (Endpoint Detection and Response)" as a configuration setting, that provides "All events; all preventions"
+- Enter a name for the agent policy in "New agent policy name". If other agent policies already exist, you can click the "Existing hosts" tab and select an existing policy instead.
+For more details on Elastic Agent configuration settings, refer to the https://www.elastic.co/guide/en/fleet/8.10/agent-policy.html[helper guide]
+- Click "Save and Continue".
+- To complete the integration, select "Add Elastic Agent to your hosts" and continue to the next section to install the Elastic Agent on your hosts.
+For more details on Elastic Defend refer to the https://www.elastic.co/guide/en/security/current/install-endpoint.html[helper guide]
+
+ Auditbeat Setup
+Auditbeat is a lightweight shipper that you can install on your servers to audit the activities of users and processes on your systems. For example, you can use Auditbeat to collect and centralize audit events from the Linux Audit Framework. You can also use Auditbeat to detect changes to critical files, like binaries and configuration files, and identify potential security policy violations.
+
+ The following steps should be executed in order to add the Auditbeat on a Linux System:
+- Elastic provides repositories available for APT and YUM-based distributions. Note that we provide binary packages, but no source packages.
+- To install the APT and YUM repositories follow the setup instructions in this https://www.elastic.co/guide/en/beats/auditbeat/current/setup-repositories.html[helper guide]
+- To run Auditbeat on Docker follow the setup instructions in the https://www.elastic.co/guide/en/beats/auditbeat/current/running-on-docker.html[helper guide]
+- To run Auditbeat on Kubernetes follow the setup instructions in the https://www.elastic.co/guide/en/beats/auditbeat/current/running-on-kubernetes.html[helper guide]
+- For complete “Setup and Run Auditbeat” information refer to the https://www.elastic.co/guide/en/beats/auditbeat/current/setting-up-and-running.html[helper guide]
+
+ Custom Ingest Pipeline
+For versions <8.2, you need to add a custom ingest pipeline to populate `event.ingested` with @timestamp for non-elastic-agent indexes, like auditbeats/filebeat/winlogbeat etc. For more details to add a custom ingest pipeline refer to the https://www.elastic.co/guide/en/fleet/current/data-streams-pipeline-tutorial.html[guide]
+
+
 
 ==== Rule query
 

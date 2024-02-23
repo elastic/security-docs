@@ -48,20 +48,18 @@ Identifies multiple consecutive logon failures from the same source address and 
 ==== Investigation guide
 
 
-[source, markdown]
-----------------------------------
-## Triage and analysis
+ Triage and analysis
 
-### Investigating Multiple Logon Failure from the same Source Address
+ Investigating Multiple Logon Failure from the same Source Address
 
-Adversaries with no prior knowledge of legitimate credentials within the system or environment may guess passwords to attempt access to accounts. Without knowledge of the password for an account, an adversary may opt to guess the password using a repetitive or iterative mechanism systematically. More details can be found [here](https://attack.mitre.org/techniques/T1110/001/).
+Adversaries with no prior knowledge of legitimate credentials within the system or environment may guess passwords to attempt access to accounts. Without knowledge of the password for an account, an adversary may opt to guess the password using a repetitive or iterative mechanism systematically. More details can be found https://attack.mitre.org/techniques/T1110/001/[here]
 
 This rule identifies potential password guessing/brute force activity from a single address.
 
 > **Note**:
-> This investigation guide uses the {security-guide}/security/master/invest-guide-run-osquery.html[Osquery Markdown Plugin] introduced in Elastic Stack version 8.5.0. Older Elastic Stack versions will display unrendered Markdown in this guide.
+> This investigation guide uses the https://www.elastic.co/guide/en/security/master/invest-guide-run-osquery.html[Osquery Markdown Plugin] introduced in Elastic Stack version 8.5.0. Older Elastic Stack versions will display unrendered Markdown in this guide.
 
-#### Possible investigation steps
+ Possible investigation steps
 
 - Investigate the logon failure reason code and the targeted user names.
   - Prioritize the investigation if the account is critical or has administrative privileges over the domain.
@@ -82,7 +80,7 @@ This rule identifies potential password guessing/brute force activity from a sin
       - !{osquery{"label":"Osquery - Retrieve Service Unsigned Executables with Virustotal Link","query":"SELECT concat('https://www.virustotal.com/gui/file/', sha1) AS VtLink, name, description, start_type, status, pid,\nservices.path FROM services JOIN authenticode ON services.path = authenticode.path OR services.module_path =\nauthenticode.path JOIN hash ON services.path = hash.path WHERE authenticode.result != 'trusted'\n"}}
 - Investigate potentially compromised accounts. Analysts can do this by searching for login events (for example, 4624) to the host which is the source of this activity
 
-### False positive analysis
+ False positive analysis
 
 - Understand the context of the authentications by contacting the asset owners. This activity can be related to a new or existing automation or business process that is in a failing state.
 - Authentication misconfiguration or obsolete credentials.
@@ -90,11 +88,11 @@ This rule identifies potential password guessing/brute force activity from a sin
 - Domain trust relationship issues.
 - Infrastructure or availability issues.
 
-### Related rules
+ Related rules
 
 - Multiple Logon Failure Followed by Logon Success - 4e85dc8a-3e41-40d8-bc28-91af7ac6cf60
 
-### Response and remediation
+ Response and remediation
 
 - Initiate the incident response process based on the outcome of the triage.
 - Isolate the source host to prevent further post-compromise behavior.
@@ -105,7 +103,13 @@ This rule identifies potential password guessing/brute force activity from a sin
 - Using the incident response data, update logging and audit policies to improve the mean time to detect (MTTD) and the mean time to respond (MTTR).
 
 
-----------------------------------
+
+==== Setup
+
+
+
+- In some cases the source network address in Windows events 4625/4624 is not populated due to Microsoft logging limitations (examples in the references links). This edge case will break the rule condition and it won't trigger an alert.
+
 
 ==== Rule query
 

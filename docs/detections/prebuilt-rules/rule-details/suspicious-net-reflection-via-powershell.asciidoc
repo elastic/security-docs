@@ -46,20 +46,18 @@ Detects the use of Reflection.Assembly to load PEs and DLLs in memory in PowerSh
 ==== Investigation guide
 
 
-[source, markdown]
-----------------------------------
-## Triage and analysis
+ Triage and analysis
 
-### Investigating Suspicious .NET Reflection via PowerShell
+ Investigating Suspicious .NET Reflection via PowerShell
 
 PowerShell is one of the main tools system administrators use for automation, report routines, and other tasks. This makes it available for use in various environments, and creates an attractive way for attackers to execute code.
 
 Attackers can use .NET reflection to load PEs and DLLs in memory. These payloads are commonly embedded in the script, which can circumvent file-based security protections.
 
 > **Note**:
-> This investigation guide uses the {security-guide}/security/master/invest-guide-run-osquery.html[Osquery Markdown Plugin] introduced in Elastic Stack version 8.5.0. Older Elastic Stack versions will display unrendered Markdown in this guide.
+> This investigation guide uses the https://www.elastic.co/guide/en/security/master/invest-guide-run-osquery.html[Osquery Markdown Plugin] introduced in Elastic Stack version 8.5.0. Older Elastic Stack versions will display unrendered Markdown in this guide.
 
-#### Possible investigation steps
+ Possible investigation steps
 
 - Examine the script content that triggered the detection; look for suspicious DLL imports, collection or exfiltration capabilities, suspicious functions, encoded or compressed data, and other potentially malicious characteristics.
 - Investigate the script execution chain (parent process tree) for unknown processes. Examine their executable files for prevalence, whether they are located in expected locations, and if they are signed with valid digital signatures.
@@ -81,17 +79,17 @@ Attackers can use .NET reflection to load PEs and DLLs in memory. These payloads
   - Retrieve the files' SHA-256 hash values using the PowerShell `Get-FileHash` cmdlet and search for the existence and reputation of the hashes in resources like VirusTotal, Hybrid-Analysis, CISCO Talos, Any.run, etc.
 - Investigate potentially compromised accounts. Analysts can do this by searching for login events (for example, 4624) to the target host after the registry modification.
 
-### False positive analysis
+ False positive analysis
 
 - This activity is unlikely to happen legitimately outside engineering or IT business units. As long as the analyst did not identify malware or suspicious activity related to the user or host, this alert can be dismissed.
 
-### Related rules
+ Related rules
 
 - PowerShell PSReflect Script - 56f2e9b5-4803-4e44-a0a4-a52dc79d57fe
 - Potential Process Injection via PowerShell - 2e29e96a-b67c-455a-afe4-de6183431d0d
 - PowerShell Suspicious Payload Encoded and Compressed - 81fe9dc6-a2d7-4192-a2d8-eed98afc766a
 
-### Response and remediation
+ Response and remediation
 
 - Initiate the incident response process based on the outcome of the triage.
 - Isolate the involved hosts to prevent further post-compromise behavior.
@@ -108,7 +106,27 @@ Attackers can use .NET reflection to load PEs and DLLs in memory. These payloads
 - Using the incident response data, update logging and audit policies to improve the mean time to detect (MTTD) and the mean time to respond (MTTR).
 
 
-----------------------------------
+
+==== Setup
+
+
+
+The 'PowerShell Script Block Logging' logging policy must be enabled.
+Steps to implement the logging policy with with Advanced Audit Configuration:
+
+```
+Computer Configuration >
+Administrative Templates >
+Windows PowerShell >
+Turn on PowerShell Script Block Logging (Enable)
+```
+
+Steps to implement the logging policy via registry:
+
+```
+reg add "hklm\SOFTWARE\Policies\Microsoft\Windows\PowerShell\ScriptBlockLogging" /v EnableScriptBlockLogging /t REG_DWORD /d 1
+```
+
 
 ==== Rule query
 

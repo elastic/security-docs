@@ -49,20 +49,18 @@ Identifies the creation or modification of a PowerShell profile. PowerShell prof
 ==== Investigation guide
 
 
-[source, markdown]
-----------------------------------
-## Triage and analysis
+ Triage and analysis
 
-### Investigating Persistence via PowerShell profile
+ Investigating Persistence via PowerShell profile
 
 PowerShell profiles are scripts executed when PowerShell starts, customizing the user environment. They are commonly used in Windows environments for legitimate purposes, such as setting variables or loading modules. However, adversaries can abuse PowerShell profiles to establish persistence by inserting malicious code that executes each time PowerShell is launched.
 
 This rule identifies the creation or modification of a PowerShell profile. It does this by monitoring file events on Windows systems, specifically targeting profile-related file paths and names, such as `profile.ps1` and `Microsoft.Powershell_profile.ps1`. By detecting these activities, security analysts can investigate potential abuse of PowerShell profiles for malicious persistence.
 
 > **Note**:
-> This investigation guide uses the {security-guide}/security/master/invest-guide-run-osquery.html[Osquery Markdown Plugin] introduced in Elastic Stack version 8.5.0. Older Elastic Stack versions will display unrendered Markdown in this guide.
+> This investigation guide uses the https://www.elastic.co/guide/en/security/master/invest-guide-run-osquery.html[Osquery Markdown Plugin] introduced in Elastic Stack version 8.5.0. Older Elastic Stack versions will display unrendered Markdown in this guide.
 
-### Possible investigation steps
+ Possible investigation steps
 
 - Retrive and inspect the PowerShell profile content; look for suspicious DLL imports, collection or persistence capabilities, suspicious functions, encoded or compressed data, suspicious commands, and other potentially malicious characteristics.
 - Identify the process responsible for the PowerShell profile creation/modification. Use the Elastic Defend events to examine all the activity of the subject process by filtering by the process's `process.entity_id`.
@@ -81,11 +79,11 @@ This rule identifies the creation or modification of a PowerShell profile. It do
       - !{osquery{"label":"Osquery - Retrieve Services Running on User Accounts","query":"SELECT description, display_name, name, path, pid, service_type, start_type, status, user_account FROM services WHERE\nNOT (user_account LIKE '%LocalSystem' OR user_account LIKE '%LocalService' OR user_account LIKE '%NetworkService' OR\nuser_account == null)\n"}}
       - !{osquery{"label":"Osquery - Retrieve Service Unsigned Executables with Virustotal Link","query":"SELECT concat('https://www.virustotal.com/gui/file/', sha1) AS VtLink, name, description, start_type, status, pid,\nservices.path FROM services JOIN authenticode ON services.path = authenticode.path OR services.module_path =\nauthenticode.path JOIN hash ON services.path = hash.path WHERE authenticode.result != 'trusted'\n"}}
 
-### False positive analysis
+ False positive analysis
 
 - This is a dual-use mechanism, meaning its usage is not inherently malicious. Analysts can dismiss the alert if the script doesn't contain malicious functions or potential for abuse, no other suspicious activity was identified, and the user has business justifications to use PowerShell.
 
-### Response and remediation
+ Response and remediation
 
 - Initiate the incident response process based on the outcome of the triage.
   - If malicious activity is confirmed, perform a broader investigation to identify the scope of the compromise and determine the appropriate remediation steps.
@@ -104,7 +102,6 @@ This rule identifies the creation or modification of a PowerShell profile. It do
 - Using the incident response data, update logging and audit policies to improve the mean time to detect (MTTD) and the mean time to respond (MTTR).
   - Consider enabling and collecting PowerShell logs such as transcription, module, and script block logging, to improve visibility into PowerShell activities.
 
-----------------------------------
 
 ==== Rule query
 

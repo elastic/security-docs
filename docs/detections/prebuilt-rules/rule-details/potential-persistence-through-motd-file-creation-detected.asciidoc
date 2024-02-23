@@ -46,11 +46,9 @@ Message of the day (MOTD) is the message that is presented to the user when a us
 ==== Investigation guide
 
 
-[source, markdown]
-----------------------------------
-## Triage and analysis
+ Triage and analysis
 
-### Investigating Potential Persistence Through MOTD File Creation Detected
+ Investigating Potential Persistence Through MOTD File Creation Detected
 
 The message-of-the-day (MOTD) is used to display a customizable system-wide message or information to users upon login in Linux.
 
@@ -59,10 +57,10 @@ Attackers can abuse message-of-the-day (motd) files to run scripts, commands or 
 This rule identifies the creation of new files within the `/etc/update-motd.d/` or `/usr/lib/update-notifier/` directories.
 
 > **Note**:
-> This investigation guide uses the {security-guide}/security/master/invest-guide-run-osquery.html[Osquery Markdown Plugin] introduced in Elastic Stack version 8.5.0. Older Elastic Stack versions will display unrendered Markdown in this guide.
-> This investigation guide uses {security-guide}/security/current/osquery-placeholder-fields.html[placeholder fields] to dynamically pass alert data into Osquery queries. Placeholder fields were introduced in Elastic Stack version 8.7.0. If you're using Elastic Stack version 8.6.0 or earlier, you'll need to manually adjust this investigation guide's queries to ensure they properly run.
+> This investigation guide uses the https://www.elastic.co/guide/en/security/master/invest-guide-run-osquery.html[Osquery Markdown Plugin] introduced in Elastic Stack version 8.5.0. Older Elastic Stack versions will display unrendered Markdown in this guide.
+> This investigation guide uses https://www.elastic.co/guide/en/security/current/osquery-placeholder-fields.html[placeholder fields] to dynamically pass alert data into Osquery queries. Placeholder fields were introduced in Elastic Stack version 8.7.0. If you're using Elastic Stack version 8.6.0 or earlier, you'll need to manually adjust this investigation guide's queries to ensure they properly run.
 
-#### Possible Investigation Steps
+ Possible Investigation Steps
 
 - Investigate the file that was created or modified.
   - !{osquery{"label":"Osquery - Retrieve File Information","query":"SELECT * FROM file WHERE path = {{file.path}}"}}
@@ -83,15 +81,15 @@ This rule identifies the creation of new files within the `/etc/update-motd.d/` 
         - Cron jobs, services and other persistence mechanisms.
             - !{osquery{"label":"Osquery - Retrieve Crontab Information","query":"SELECT * FROM crontab"}}
 
-### Related Rules
+ Related Rules
 
 - Suspicious Process Spawned from MOTD Detected - 4ec47004-b34a-42e6-8003-376a123ea447
 
-### False positive analysis
+ False positive analysis
 
 - This activity is unlikely to happen legitimately. Any activity that triggered the alert and is not inherently malicious must be monitored by the security team.
 
-### Response and remediation
+ Response and remediation
 
 - Initiate the incident response process based on the outcome of the triage.
 - Isolate the involved host to prevent further post-compromise behavior.
@@ -107,7 +105,35 @@ This rule identifies the creation of new files within the `/etc/update-motd.d/` 
 - Leverage the incident response data and logging to improve the mean time to detect (MTTD) and the mean time to respond (MTTR).
 
 
-----------------------------------
+
+==== Setup
+
+
+
+This rule requires data coming in from Elastic Defend.
+
+ Elastic Defend Integration Setup
+Elastic Defend is integrated into the Elastic Agent using Fleet. Upon configuration, the integration allows the Elastic Agent to monitor events on your host and send data to the Elastic Security app.
+
+ Prerequisite Requirements:
+- Fleet is required for Elastic Defend.
+- To configure Fleet Server refer to the https://www.elastic.co/guide/en/fleet/current/fleet-server.html[documentation]
+
+ The following steps should be executed in order to add the Elastic Defend integration on a Linux System:
+- Go to the Kibana home page and click "Add integrations".
+- In the query bar, search for "Elastic Defend" and select the integration to see more details about it.
+- Click "Add Elastic Defend".
+- Configure the integration name and optionally add a description.
+- Select the type of environment you want to protect, either "Traditional Endpoints" or "Cloud Workloads".
+- Select a configuration preset. Each preset comes with different default settings for Elastic Agent, you can further customize these later by configuring the Elastic Defend integration policy. https://www.elastic.co/guide/en/security/current/configure-endpoint-integration-policy.html[Helper guide]
+- We suggest selecting "Complete EDR (Endpoint Detection and Response)" as a configuration setting, that provides "All events; all preventions"
+- Enter a name for the agent policy in "New agent policy name". If other agent policies already exist, you can click the "Existing hosts" tab and select an existing policy instead.
+For more details on Elastic Agent configuration settings, refer to the https://www.elastic.co/guide/en/fleet/8.10/agent-policy.html[helper guide]
+- Click "Save and Continue".
+- To complete the integration, select "Add Elastic Agent to your hosts" and continue to the next section to install the Elastic Agent on your hosts.
+For more details on Elastic Defend refer to the https://www.elastic.co/guide/en/security/current/install-endpoint.html[helper guide]
+
+
 
 ==== Rule query
 
