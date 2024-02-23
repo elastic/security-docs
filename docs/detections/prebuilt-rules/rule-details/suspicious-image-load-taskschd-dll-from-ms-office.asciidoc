@@ -49,11 +49,13 @@ Identifies a suspicious image load (taskschd.dll) from Microsoft Office processe
 ==== Investigation guide
 
 
-[source, markdown]
-----------------------------------
-## Triage and analysis
 
-### Investigating Suspicious Image Load (taskschd.dll) from MS Office
+*Triage and analysis*
+
+
+
+*Investigating Suspicious Image Load (taskschd.dll) from MS Office*
+
 
 Microsoft Office, a widely used suite of productivity applications, is frequently targeted by attackers due to its popularity in corporate environments. These attackers exploit its extensive capabilities, like macro scripts in Word and Excel, to gain initial access to systems. They often use Office documents as delivery mechanisms for malware or phishing attempts, taking advantage of their trusted status in professional settings.
 
@@ -62,9 +64,11 @@ Microsoft Office, a widely used suite of productivity applications, is frequentl
 This rule looks for an MS Office process loading `taskschd.dll`, which may indicate an adversary abusing COM to configure a scheduled task. This can happen as part of a phishing attack, when a malicious office document registers the scheduled task to download the malware "stage 2" or to establish persistent access.
 
 > **Note**:
-> This investigation guide uses the {security-guide}/security/master/invest-guide-run-osquery.html[Osquery Markdown Plugin] introduced in Elastic Stack version 8.5.0. Older Elastic Stack versions will display unrendered Markdown in this guide.
+> This investigation guide uses the https://www.elastic.co/guide/en/security/master/invest-guide-run-osquery.html[Osquery Markdown Plugin] introduced in Elastic Stack version 8.5.0. Older Elastic Stack versions will display unrendered Markdown in this guide.
 
-### Possible investigation steps
+
+*Possible investigation steps*
+
 
 - Analyze the host's scheduled tasks and explore the related Windows events to determine if tasks were created or deleted (Event IDs 4698 and 4699).
 - Investigate any abnormal behavior by the subject process, such as network connections, registry or file modifications, and spawned child processes.
@@ -88,15 +92,21 @@ This rule looks for an MS Office process loading `taskschd.dll`, which may indic
       - !{osquery{"label":"Osquery - Retrieve Service Unsigned Executables with Virustotal Link","query":"SELECT concat('https://www.virustotal.com/gui/file/', sha1) AS VtLink, name, description, start_type, status, pid,\nservices.path FROM services JOIN authenticode ON services.path = authenticode.path OR services.module_path =\nauthenticode.path JOIN hash ON services.path = hash.path WHERE authenticode.result != 'trusted'\n"}}
   - Retrieve the files' SHA-256 hash values using the PowerShell `Get-FileHash` cmdlet and search for the existence and reputation of the hashes in resources like VirusTotal, Hybrid-Analysis, CISCO Talos, Any.run, etc.
 
-### False positive analysis
+
+*False positive analysis*
+
 
 - This activity is unlikely to happen legitimately. Any activity that triggered the alert and is not inherently malicious must be monitored by the security team.
 
-### Related Rules
+
+*Related Rules*
+
 
 - Suspicious WMI Image Load from MS Office - 891cb88e-441a-4c3e-be2d-120d99fe7b0d
 
-### Response and Remediation
+
+*Response and Remediation*
+
 
 - Initiate the incident response process based on the outcome of the triage.
 - Isolate the involved host to prevent further post-compromise behavior.
@@ -116,7 +126,17 @@ This rule looks for an MS Office process loading `taskschd.dll`, which may indic
     - Consider improvements to the security awareness program.
 - Using the incident response data, update logging and audit policies to improve the mean time to detect (MTTD) and the mean time to respond (MTTR).
 
-----------------------------------
+
+==== Setup
+
+
+
+If enabling an EQL rule on a non-elastic-agent index (such as beats) for versions <8.2,
+events will not define `event.ingested` and default fallback for EQL rules was not added until version 8.2.
+Hence for this rule to work effectively, users will need to add a custom ingest pipeline to populate
+`event.ingested` to @timestamp.
+For more details on adding a custom ingest pipeline refer - https://www.elastic.co/guide/en/fleet/current/data-streams-pipeline-tutorial.html
+
 
 ==== Rule query
 
