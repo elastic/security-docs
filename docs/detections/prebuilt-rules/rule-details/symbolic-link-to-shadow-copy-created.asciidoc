@@ -52,8 +52,6 @@ Identifies the creation of symbolic links to a shadow copy. Symbolic links can b
 ==== Investigation guide
 
 
-[source, markdown]
-----------------------------------
 ## Triage and analysis
 
 ### Investigating Symbolic Link to Shadow Copy Created
@@ -93,7 +91,35 @@ Shadow copies are backups or snapshots of an endpoint's files or volumes while t
 - Using the incident response data, update logging and audit policies to improve the mean time to detect (MTTD) and the mean time to respond (MTTR).
 
 
-----------------------------------
+
+==== Setup
+
+
+
+Ensure advanced audit policies for Windows are enabled, specifically:
+Object Access policies https://docs.microsoft.com/en-us/windows/security/threat-protection/auditing/event-4656[Event ID 4656] (Handle to an Object was Requested)
+
+```
+Computer Configuration >
+Policies >
+Windows Settings >
+Security Settings >
+Advanced Audit Policies Configuration >
+System Audit Policies >
+Object Access >
+Audit File System (Success,Failure)
+Audit Handle Manipulation (Success,Failure)
+```
+
+This event will only trigger if symbolic links are created from a new process spawning cmd.exe or powershell.exe with the correct arguments.
+Direct access to a shell and calling symbolic link creation tools will not generate an event matching this rule.
+
+If enabling an EQL rule on a non-elastic-agent index (such as beats) for versions <8.2,
+events will not define `event.ingested` and default fallback for EQL rules was not added until version 8.2.
+Hence for this rule to work effectively, users will need to add a custom ingest pipeline to populate
+`event.ingested` to @timestamp.
+For more details on adding a custom ingest pipeline refer - https://www.elastic.co/guide/en/fleet/current/data-streams-pipeline-tutorial.html
+
 
 ==== Rule query
 
