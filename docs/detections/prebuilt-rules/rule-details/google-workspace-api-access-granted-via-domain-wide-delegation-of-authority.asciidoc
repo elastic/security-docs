@@ -44,11 +44,13 @@ Detects when a domain-wide delegation of authority is granted to a service accou
 ==== Investigation guide
 
 
-[source, markdown]
-----------------------------------
-## Triage and analysis
 
-### Investigating API Access Granted via Domain-Wide Delegation of Authority
+*Triage and analysis*
+
+
+
+*Investigating API Access Granted via Domain-Wide Delegation of Authority*
+
 
 Domain-wide delegation is a feature that allows apps to access users' data across an organization's Google Workspace environment. Only super admins can manage domain-wide delegation, and they must specify each API scope that the application can access. Google Workspace services all have APIs that can be interacted with after domain-wide delegation is established with an OAuth2 client ID of the application. Typically, GCP service accounts and applications are created where the Google Workspace APIs are enabled, thus allowing the application to access resources and services in Google Workspace.
 
@@ -56,7 +58,9 @@ Applications authorized to interact with Google Workspace resources and services
 
 This rule identifies when an application is authorized API client access.
 
-#### Possible investigation steps
+
+*Possible investigation steps*
+
 
 - Identify the associated user accounts by reviewing `user.name` or `user.email` fields in the alert.
   - Only users with super admin privileges can authorize API client access.
@@ -66,12 +70,16 @@ This rule identifies when an application is authorized API client access.
   - Search for API client name and aggregated results on `event.action` to determine what the service account is being used for in GWS.
 - After identifying the involved user, verify super administrative privileges to access domain-wide delegation settings.
 
-### False positive analysis
+
+*False positive analysis*
+
 
 - Changes to domain-wide delegation require super admin privileges. Check with the user to ensure these changes were expected.
 - Review scheduled maintenance notes related to expected API access changes.
 
-### Response and remediation
+
+*Response and remediation*
+
 
 - Initiate the incident response process based on the outcome of the triage.
 - Review the scope of the authorized API client access in Google Workspace.
@@ -84,13 +92,15 @@ This rule identifies when an application is authorized API client access.
     - Identify any regulatory or legal ramifications related to this activity.
 - Investigate credential exposure on systems compromised or used by the attacker to ensure all compromised accounts are identified. Reset passwords or delete API keys as needed to revoke the attacker's access to the environment. Work with your IT teams to minimize the impact on business operations during these actions.
 - Review the permissions assigned to the implicated user to ensure that the least privilege principle is being followed.
-- Implement security best practices [outlined](https://support.google.com/a/answer/7587183) by Google.
+- Implement security best practices https://support.google.com/a/answer/7587183[outlined] by Google.
 - Determine the initial vector abused by the attacker and take action to prevent reinfection via the same vector.
 - Using the incident response data, update logging and audit policies to improve the mean time to detect (MTTD) and the mean time to respond (MTTR).
 
 
 
-### Important Information Regarding Google Workspace Event Lag Times
+
+*Important Information Regarding Google Workspace Event Lag Times*
+
 - As per Google's documentation, Google Workspace administrators may observe lag times ranging from minutes up to 3 days between the time of an event's occurrence and the event being visible in the Google Workspace admin/audit logs.
 - This rule is configured to run every 10 minutes with a lookback time of 130 minutes.
 - To reduce the risk of false negatives, consider reducing the interval that the Google Workspace (formerly G Suite) Filebeat module polls Google's reporting API for new events.
@@ -98,7 +108,11 @@ This rule identifies when an application is authorized API client access.
 - See the following references for further information:
   - https://support.google.com/a/answer/7061566
   - https://www.elastic.co/guide/en/beats/filebeat/current/filebeat-module-google_workspace.html
-----------------------------------
+
+==== Setup
+
+
+The Google Workspace Fleet integration, Filebeat module, or similarly structured data is required to be compatible with this rule.
 
 ==== Rule query
 
