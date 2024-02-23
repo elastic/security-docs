@@ -45,15 +45,25 @@ Detects when Okta user authentication events are reported for multiple users wit
 ==== Investigation guide
 
 
-[source, markdown]
-----------------------------------
-## Triage and analysis
 
-### Investigating Multiple Okta User Auth Events with Same Device Token Hash Behind a Proxy
+
+*Triage and analysis*
+
+
+
+
+
+*Investigating Multiple Okta User Auth Events with Same Device Token Hash Behind a Proxy*
+
+
 
 This rule detects when Okta user authentication events are reported for multiple users with the same device token hash behind a proxy. This may indicate that a shared device between users, or that a user is using a proxy to access multiple accounts for password spraying.
 
-#### Possible investigation steps:
+
+
+*Possible investigation steps:*
+
+
 - Identify the users involved in this action by examining the `okta.actor.id`, `okta.actor.type`, `okta.actor.alternate_id`, and `okta.actor.display_name` fields.
 - Determine the device client used for these actions by analyzing `okta.client.ip`, `okta.client.user_agent.raw_user_agent`, `okta.client.zone`, `okta.client.device`, and `okta.client.id` fields.
     - Since the device is behind a proxy, the `okta.client.ip` field will not be useful for determining the actual device IP address.
@@ -68,14 +78,22 @@ This rule detects when Okta user authentication events are reported for multiple
 - Evaluate the actions that happened just before and after this event in the `okta.event_type` field to help understand the full context of the activity.
     - This may help determine the authentication and authorization actions that occurred between the user, Okta and application.
 
-### False positive analysis:
+
+
+*False positive analysis:*
+
+
 - A user may have legitimately started a session via a proxy for security or privacy reasons.
 - Users may share an endpoint related to work or personal use in which separate Okta accounts are used.
     - Architecturally, this shared endpoint may leverage a proxy for security or privacy reasons.
     - Shared systems such as Kiosks and conference room computers may be used by multiple users.
     - Shared working spaces may have a single endpoint that is used by multiple users.
 
-### Response and remediation:
+
+
+*Response and remediation:*
+
+
 - Review the profile of the users involved in this action to determine if proxy usage may be expected.
 - If the user is legitimate and the authentication behavior is not suspicious based on device analysis, no action is required.
 - If the user is legitimate but the authentication behavior is suspicious, consider resetting passwords for the users involves and enabling multi-factor authentication (MFA).
@@ -89,7 +107,11 @@ This rule detects when Okta user authentication events are reported for multiple
 - If this is a false positive, consider adding the `okta.debug_context.debug_data.dt_hash` field to the `exceptions` list in the rule.
     - This will prevent future occurrences of this event for this device from triggering the rule.
 
-----------------------------------
+
+==== Setup
+
+
+The Okta Fleet integration, Filebeat module, or similarly structured data is required to be compatible with this rule.
 
 ==== Rule query
 

@@ -45,18 +45,28 @@ Identifies process execution from suspicious default Windows directories. This i
 ==== Investigation guide
 
 
-[source, markdown]
-----------------------------------
-## Triage and analysis
 
-### Investigating Process Execution from an Unusual Directory
+
+*Triage and analysis*
+
+
+
+
+
+*Investigating Process Execution from an Unusual Directory*
+
+
 
 This rule identifies processes that are executed from suspicious default Windows directories. Adversaries may abuse this technique by planting malware in trusted paths, making it difficult for security analysts to discern if their activities are malicious or take advantage of exceptions that may apply to these paths.
 
 > **Note**:
-> This investigation guide uses the {security-guide}/security/master/invest-guide-run-osquery.html[Osquery Markdown Plugin] introduced in Elastic Stack version 8.5.0. Older Elastic Stack versions will display unrendered Markdown in this guide.
+> This investigation guide uses the https://www.elastic.co/guide/en/security/master/invest-guide-run-osquery.html[Osquery Markdown Plugin] introduced in Elastic Stack version 8.5.0. Older Elastic Stack versions will display unrendered Markdown in this guide.
 
-### Possible investigation steps
+
+
+*Possible investigation steps*
+
+
 
 - Investigate the process execution chain (parent process tree) for unknown processes, examining their executable files for prevalence, location, and valid digital signatures.
 - Investigate any abnormal behavior by the subject process, such as network connections, registry or file modifications, and any spawned child processes.
@@ -78,16 +88,28 @@ This rule identifies processes that are executed from suspicious default Windows
       - !{osquery{"label":"Osquery - Retrieve Service Unsigned Executables with Virustotal Link","query":"SELECT concat('https://www.virustotal.com/gui/file/', sha1) AS VtLink, name, description, start_type, status, pid,\nservices.path FROM services JOIN authenticode ON services.path = authenticode.path OR services.module_path =\nauthenticode.path JOIN hash ON services.path = hash.path WHERE authenticode.result != 'trusted'\n"}}
   - Retrieve the files' SHA-256 hash values using the PowerShell `Get-FileHash` cmdlet and search for the existence and reputation of the hashes in resources like VirusTotal, Hybrid-Analysis, CISCO Talos, Any.run, etc.
 
-### False positive analysis
+
+
+*False positive analysis*
+
+
 
 - If this activity is expected and noisy in your environment, consider adding exceptions — preferably with a combination of executable and signature conditions.
 
-### Related Rules
+
+
+*Related Rules*
+
+
 
 - Unusual Windows Path Activity - 445a342e-03fb-42d0-8656-0367eb2dead5
 - Execution from Unusual Directory - Command Line - cff92c41-2225-4763-b4ce-6f71e5bda5e6
 
-### Response and Remediation
+
+
+*Response and Remediation*
+
+
 
 - Initiate the incident response process based on the outcome of the triage.
 - Isolate the involved host to prevent further post-compromise behavior.
@@ -102,7 +124,17 @@ This rule identifies processes that are executed from suspicious default Windows
 - Determine the initial vector abused by the attacker and take action to prevent reinfection through the same vector.
 - Using the incident response data, update logging and audit policies to improve the mean time to detect (MTTD) and the mean time to respond (MTTR).
 
-----------------------------------
+
+==== Setup
+
+
+
+If enabling an EQL rule on a non-elastic-agent index (such as beats) for versions <8.2,
+events will not define `event.ingested` and default fallback for EQL rules was not added until version 8.2.
+Hence for this rule to work effectively, users will need to add a custom ingest pipeline to populate
+`event.ingested` to @timestamp.
+For more details on adding a custom ingest pipeline refer - https://www.elastic.co/guide/en/fleet/current/data-streams-pipeline-tutorial.html
+
 
 ==== Rule query
 

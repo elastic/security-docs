@@ -45,20 +45,30 @@ Identifies multiple logon failures followed by a successful one from the same so
 ==== Investigation guide
 
 
-[source, markdown]
-----------------------------------
-## Triage and analysis
 
-### Investigating Multiple Logon Failure Followed by Logon Success
 
-Adversaries with no prior knowledge of legitimate credentials within the system or environment may guess passwords to attempt access to accounts. Without knowledge of the password for an account, an adversary may opt to guess the password using a repetitive or iterative mechanism systematically. More details can be found [here](https://attack.mitre.org/techniques/T1110/001/).
+*Triage and analysis*
+
+
+
+
+
+*Investigating Multiple Logon Failure Followed by Logon Success*
+
+
+
+Adversaries with no prior knowledge of legitimate credentials within the system or environment may guess passwords to attempt access to accounts. Without knowledge of the password for an account, an adversary may opt to guess the password using a repetitive or iterative mechanism systematically. More details can be found https://attack.mitre.org/techniques/T1110/001/[here].
 
 This rule identifies potential password guessing/brute force activity from a single address, followed by a successful logon, indicating that an attacker potentially successfully compromised the account.
 
 > **Note**:
-> This investigation guide uses the {security-guide}/security/master/invest-guide-run-osquery.html[Osquery Markdown Plugin] introduced in Elastic Stack version 8.5.0. Older Elastic Stack versions will display unrendered Markdown in this guide.
+> This investigation guide uses the https://www.elastic.co/guide/en/security/master/invest-guide-run-osquery.html[Osquery Markdown Plugin] introduced in Elastic Stack version 8.5.0. Older Elastic Stack versions will display unrendered Markdown in this guide.
 
-#### Possible investigation steps
+
+
+*Possible investigation steps*
+
+
 
 - Investigate the logon failure reason code and the targeted user name.
   - Prioritize the investigation if the account is critical or has administrative privileges over the domain.
@@ -79,18 +89,30 @@ This rule identifies potential password guessing/brute force activity from a sin
       - !{osquery{"label":"Osquery - Retrieve Service Unsigned Executables with Virustotal Link","query":"SELECT concat('https://www.virustotal.com/gui/file/', sha1) AS VtLink, name, description, start_type, status, pid,\nservices.path FROM services JOIN authenticode ON services.path = authenticode.path OR services.module_path =\nauthenticode.path JOIN hash ON services.path = hash.path WHERE authenticode.result != 'trusted'\n"}}
 - Investigate potentially compromised accounts. Analysts can do this by searching for login events (for example, 4624) to the host which is the source of this activity.
 
-### False positive analysis
+
+
+*False positive analysis*
+
+
 
 - Authentication misconfiguration or obsolete credentials.
 - Service account password expired.
 - Domain trust relationship issues.
 - Infrastructure or availability issues.
 
-### Related rules
+
+
+*Related rules*
+
+
 
 - Multiple Logon Failure from the same Source Address - 48b6edfc-079d-4907-b43c-baffa243270d
 
-### Response and remediation
+
+
+*Response and remediation*
+
+
 
 - Initiate the incident response process based on the outcome of the triage.
 - Isolate the source host to prevent further post-compromise behavior.
@@ -101,7 +123,17 @@ This rule identifies potential password guessing/brute force activity from a sin
 - Using the incident response data, update logging and audit policies to improve the mean time to detect (MTTD) and the mean time to respond (MTTR).
 
 
-----------------------------------
+
+==== Setup
+
+
+
+If enabling an EQL rule on a non-elastic-agent index (such as beats) for versions <8.2,
+events will not define `event.ingested` and default fallback for EQL rules was not added until version 8.2.
+Hence for this rule to work effectively, users will need to add a custom ingest pipeline to populate
+`event.ingested` to @timestamp.
+For more details on adding a custom ingest pipeline refer - https://www.elastic.co/guide/en/fleet/current/data-streams-pipeline-tutorial.html
+
 
 ==== Rule query
 

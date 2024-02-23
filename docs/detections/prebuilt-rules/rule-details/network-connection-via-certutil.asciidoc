@@ -47,21 +47,31 @@ Identifies certutil.exe making a network connection. Adversaries could abuse cer
 ==== Investigation guide
 
 
-[source, markdown]
-----------------------------------
-## Triage and analysis
 
-### Investigating Network Connection via Certutil
+
+*Triage and analysis*
+
+
+
+
+
+*Investigating Network Connection via Certutil*
+
+
 
 Attackers can abuse `certutil.exe` to download malware, offensive security tools, and certificates from external sources in order to take the next steps in a compromised environment.
 
-This rule looks for network events where `certutil.exe` contacts IP ranges other than the ones specified in [IANA IPv4 Special-Purpose Address Registry](https://www.iana.org/assignments/iana-ipv4-special-registry/iana-ipv4-special-registry.xhtml)
+This rule looks for network events where `certutil.exe` contacts IP ranges other than the ones specified in https://www.iana.org/assignments/iana-ipv4-special-registry/iana-ipv4-special-registry.xhtml[IANA IPv4 Special-Purpose Address Registry]
 
 > **Note**:
-> This investigation guide uses the {security-guide}/security/master/invest-guide-run-osquery.html[Osquery Markdown Plugin] introduced in Elastic Stack version 8.5.0. Older Elastic Stack versions will display unrendered Markdown in this guide.
-> This investigation guide uses the {security-guide}/security/master/interactive-investigation-guides.html[Investigate Markdown Plugin] introduced in Elastic Stack version 8.8.0. Older Elastic Stack versions will display unrendered Markdown in this guide.
+> This investigation guide uses the https://www.elastic.co/guide/en/security/master/invest-guide-run-osquery.html[Osquery Markdown Plugin] introduced in Elastic Stack version 8.5.0. Older Elastic Stack versions will display unrendered Markdown in this guide.
+> This investigation guide uses the https://www.elastic.co/guide/en/security/master/interactive-investigation-guides.html[Investigate Markdown Plugin] introduced in Elastic Stack version 8.8.0. Older Elastic Stack versions will display unrendered Markdown in this guide.
 
-#### Possible investigation steps
+
+
+*Possible investigation steps*
+
+
 
 - Investigate the process execution chain (parent process tree) for unknown processes. Examine their executable files for prevalence, whether they are located in expected locations, and if they are signed with valid digital signatures.
 - Investigate other alerts associated with the user/host during the past 48 hours.
@@ -84,12 +94,20 @@ This rule looks for network events where `certutil.exe` contacts IP ranges other
       - !{osquery{"label":"Osquery - Retrieve Service Unsigned Executables with Virustotal Link","query":"SELECT concat('https://www.virustotal.com/gui/file/', sha1) AS VtLink, name, description, start_type, status, pid,\nservices.path FROM services JOIN authenticode ON services.path = authenticode.path OR services.module_path =\nauthenticode.path JOIN hash ON services.path = hash.path WHERE authenticode.result != 'trusted'\n"}}
   - Retrieve the files' SHA-256 hash values using the PowerShell `Get-FileHash` cmdlet and search for the existence and reputation of the hashes in resources like VirusTotal, Hybrid-Analysis, CISCO Talos, Any.run, etc.
 
-### False positive analysis
+
+
+*False positive analysis*
+
+
 
 - This mechanism can be used legitimately. If trusted software uses this command and the triage has not identified anything suspicious, this alert can be closed as a false positive.
 - If this rule is noisy in your environment due to expected activity, consider adding exceptions — preferably with a combination of user and command line conditions.
 
-### Response and remediation
+
+
+*Response and remediation*
+
+
 
 - Initiate the incident response process based on the outcome of the triage.
 - Isolate the involved host to prevent further post-compromise behavior.
@@ -103,7 +121,6 @@ This rule looks for network events where `certutil.exe` contacts IP ranges other
 - Determine the initial vector abused by the attacker and take action to prevent reinfection through the same vector.
 - Using the incident response data, update logging and audit policies to improve the mean time to detect (MTTD) and the mean time to respond (MTTR).
 
-----------------------------------
 
 ==== Rule query
 

@@ -46,11 +46,17 @@ Detects the use of PSReflect in PowerShell scripts. Attackers leverage PSReflect
 ==== Investigation guide
 
 
-[source, markdown]
-----------------------------------
-## Triage and analysis
 
-### Investigating PowerShell PSReflect Script
+
+*Triage and analysis*
+
+
+
+
+
+*Investigating PowerShell PSReflect Script*
+
+
 
 PowerShell is one of the main tools system administrators use for automation, report routines, and other tasks. This makes it available for use in various environments, and creates an attractive way for attackers to execute code.
 
@@ -61,9 +67,13 @@ Although this is an interesting project for every developer and admin out there,
 Detecting the core implementation of PSReflect means detecting most of the tooling that uses Windows API through PowerShell, enabling defenders to discover tools being dropped in the environment.
 
 > **Note**:
-> This investigation guide uses the {security-guide}/security/master/invest-guide-run-osquery.html[Osquery Markdown Plugin] introduced in Elastic Stack version 8.5.0. Older Elastic Stack versions will display unrendered Markdown in this guide.
+> This investigation guide uses the https://www.elastic.co/guide/en/security/master/invest-guide-run-osquery.html[Osquery Markdown Plugin] introduced in Elastic Stack version 8.5.0. Older Elastic Stack versions will display unrendered Markdown in this guide.
 
-#### Possible investigation steps
+
+
+*Possible investigation steps*
+
+
 
 - Examine the script content that triggered the detection; look for suspicious DLL imports, collection or exfiltration capabilities, suspicious functions, encoded or compressed data, and other potentially malicious characteristics. The script content that may be split into multiple script blocks (you can use the field `powershell.file.script_block_id` for filtering).
 - Investigate the script execution chain (parent process tree) for unknown processes. Examine their executable files for prevalence, whether they are located in expected locations, and if they are signed with valid digital signatures.
@@ -85,11 +95,19 @@ Detecting the core implementation of PSReflect means detecting most of the tooli
   - Retrieve the files' SHA-256 hash values using the PowerShell `Get-FileHash` cmdlet and search for the existence and reputation of the hashes in resources like VirusTotal, Hybrid-Analysis, CISCO Talos, Any.run, etc.
 - Investigate potentially compromised accounts. Analysts can do this by searching for login events (for example, 4624) to the target host after the registry modification.
 
-### False positive analysis
+
+
+*False positive analysis*
+
+
 
 - This activity is unlikely to happen legitimately. Benign true positives (B-TPs) can be added as exceptions if necessary.
 
-### Related rules
+
+
+*Related rules*
+
+
 
 - PowerShell Suspicious Discovery Related Windows API Functions - 61ac3638-40a3-44b2-855a-985636ca985e
 - PowerShell Keylogging Script - bd2c86a0-8b61-4457-ab38-96943984e889
@@ -99,7 +117,11 @@ Detecting the core implementation of PSReflect means detecting most of the tooli
 - PowerShell Suspicious Payload Encoded and Compressed - 81fe9dc6-a2d7-4192-a2d8-eed98afc766a
 - PowerShell Suspicious Script with Screenshot Capabilities - 959a7353-1129-4aa7-9084-30746b256a70
 
-### Response and remediation
+
+
+*Response and remediation*
+
+
 
 - Initiate the incident response process based on the outcome of the triage.
 - Isolate the involved hosts to prevent further post-compromise behavior.
@@ -115,7 +137,28 @@ Detecting the core implementation of PSReflect means detecting most of the tooli
 - Using the incident response data, update logging and audit policies to improve the mean time to detect (MTTD) and the mean time to respond (MTTR).
 
 
-----------------------------------
+
+==== Setup
+
+
+
+The 'PowerShell Script Block Logging' logging policy must be configured (Enable).
+
+Steps to implement the logging policy with with Advanced Audit Configuration:
+
+```
+Computer Configuration >
+Administrative Templates >
+Windows PowerShell >
+Turn on PowerShell Script Block Logging (Enable)
+```
+
+Steps to implement the logging policy via registry:
+
+```
+reg add "hklm\SOFTWARE\Policies\Microsoft\Windows\PowerShell\ScriptBlockLogging" /v EnableScriptBlockLogging /t REG_DWORD /d 1
+```
+
 
 ==== Rule query
 
