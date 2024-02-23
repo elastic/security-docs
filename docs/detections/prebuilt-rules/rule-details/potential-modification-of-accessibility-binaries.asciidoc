@@ -48,22 +48,26 @@ Windows contains accessibility features that may be launched with a key combinat
 ==== Investigation guide
 
 
-[source, markdown]
-----------------------------------
-## Triage and analysis
 
-### Investigating Potential Modification of Accessibility Binaries
+*Triage and analysis*
+
+
+
+*Investigating Potential Modification of Accessibility Binaries*
+
 
 Adversaries may establish persistence and/or elevate privileges by executing malicious content triggered by accessibility features. Windows contains accessibility features that may be launched with a key combination before a user has logged in (ex: when the user is on the Windows logon screen). An adversary can modify the way these programs are launched to get a command prompt or backdoor without logging in to the system.
 
-More details can be found [here](https://attack.mitre.org/techniques/T1546/008/).
+More details can be found https://attack.mitre.org/techniques/T1546/008/[here].
 
 This rule looks for the execution of supposed accessibility binaries that don't match any of the accessibility features binaries' original file names, which is likely a custom binary deployed by the attacker.
 
 > **Note**:
-> This investigation guide uses the {security-guide}/security/master/invest-guide-run-osquery.html[Osquery Markdown Plugin] introduced in Elastic Stack version 8.5.0. Older Elastic Stack versions will display unrendered Markdown in this guide.
+> This investigation guide uses the https://www.elastic.co/guide/en/security/master/invest-guide-run-osquery.html[Osquery Markdown Plugin] introduced in Elastic Stack version 8.5.0. Older Elastic Stack versions will display unrendered Markdown in this guide.
 
-#### Possible investigation steps
+
+*Possible investigation steps*
+
 
 - Investigate the process execution chain (parent process tree) for unknown processes. Examine their executable files for prevalence, whether they are located in expected locations, and if they are signed with valid digital signatures.
 - Identify the user account that performed the action and whether it should perform this kind of action.
@@ -85,11 +89,15 @@ This rule looks for the execution of supposed accessibility binaries that don't 
   - Retrieve the files' SHA-256 hash values using the PowerShell `Get-FileHash` cmdlet and search for the existence and reputation of the hashes in resources like VirusTotal, Hybrid-Analysis, CISCO Talos, Any.run, etc.
 - Investigate potentially compromised accounts. Analysts can do this by searching for login events (for example, 4624) to the target host after the registry modification.
 
-### False positive analysis
+
+*False positive analysis*
+
 
 - This activity should not happen legitimately. The security team should address any potential benign true positive (B-TP), as this configuration can put the user and the domain at risk.
 
-### Response and remediation
+
+*Response and remediation*
+
 
 - Initiate the incident response process based on the outcome of the triage.
 - Isolate the involved host to prevent further post-compromise behavior.
@@ -106,7 +114,17 @@ This rule looks for the execution of supposed accessibility binaries that don't 
 
 
 
-----------------------------------
+
+==== Setup
+
+
+
+If enabling an EQL rule on a non-elastic-agent index (such as beats) for versions <8.2,
+events will not define `event.ingested` and default fallback for EQL rules was not added until version 8.2.
+Hence for this rule to work effectively, users will need to add a custom ingest pipeline to populate
+`event.ingested` to @timestamp.
+For more details on adding a custom ingest pipeline refer - https://www.elastic.co/guide/en/fleet/current/data-streams-pipeline-tutorial.html
+
 
 ==== Rule query
 
