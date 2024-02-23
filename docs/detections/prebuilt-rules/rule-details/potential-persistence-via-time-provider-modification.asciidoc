@@ -46,20 +46,24 @@ Identifies modification of the Time Provider. Adversaries may establish persiste
 ==== Investigation guide
 
 
-[source, markdown]
-----------------------------------
-## Triage and analysis
 
-### Investigating Potential Persistence via Time Provider Modification
+*Triage and analysis*
+
+
+
+*Investigating Potential Persistence via Time Provider Modification*
+
 
 The Time Provider architecture in Windows is responsible for obtaining accurate timestamps from network devices or clients. It is implemented as a DLL file in the System32 folder and is initiated by the W32Time service during Windows startup. Adversaries may exploit this by registering and enabling a malicious DLL as a time provider to establish persistence. 
 
 This rule identifies changes in the registry paths associated with Time Providers, specifically targeting the addition of new DLL files.
 
 > **Note**:
-> This investigation guide uses the {security-guide}/security/master/invest-guide-run-osquery.html[Osquery Markdown Plugin] introduced in Elastic Stack version 8.5.0. Older Elastic Stack versions will display unrendered Markdown in this guide.
+> This investigation guide uses the https://www.elastic.co/guide/en/security/master/invest-guide-run-osquery.html[Osquery Markdown Plugin] introduced in Elastic Stack version 8.5.0. Older Elastic Stack versions will display unrendered Markdown in this guide.
 
-### Possible investigation steps
+
+*Possible investigation steps*
+
 
 - Investigate the process execution chain (parent process tree) for unknown processes. Examine their executable files for prevalence, whether they are located in expected locations, and if they are signed with valid digital signatures.
 - Investigate other alerts associated with the user/host during the past 48 hours.
@@ -78,11 +82,15 @@ This rule identifies changes in the registry paths associated with Time Provider
       - !{osquery{"label":"Osquery - Retrieve Service Unsigned Executables with Virustotal Link","query":"SELECT concat('https://www.virustotal.com/gui/file/', sha1) AS VtLink, name, description, start_type, status, pid,\nservices.path FROM services JOIN authenticode ON services.path = authenticode.path OR services.module_path =\nauthenticode.path JOIN hash ON services.path = hash.path WHERE authenticode.result != 'trusted'\n"}}
   - Retrieve the files' SHA-256 hash values using the PowerShell `Get-FileHash` cmdlet and search for the existence and reputation of the hashes in resources like VirusTotal, Hybrid-Analysis, CISCO Talos, Any.run, etc.
 
-### False positive analysis
+
+*False positive analysis*
+
 
 - This activity is unlikely to happen legitimately. Benign true positives (B-TPs) can be added as exceptions if necessary.
 
-### Response and Remediation
+
+*Response and Remediation*
+
 
 - Initiate the incident response process based on the outcome of the triage.
 - Isolate the involved host to prevent further post-compromise behavior.
@@ -98,7 +106,6 @@ This rule identifies changes in the registry paths associated with Time Provider
 - Determine the initial vector abused by the attacker and take action to prevent reinfection through the same vector.
 - Using the incident response data, update logging and audit policies to improve the mean time to detect (MTTD) and the mean time to respond (MTTR).
 
-----------------------------------
 
 ==== Rule query
 

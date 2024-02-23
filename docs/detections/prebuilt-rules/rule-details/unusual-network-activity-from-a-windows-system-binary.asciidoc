@@ -44,20 +44,24 @@ Identifies network activity from unexpected system applications. This may indica
 ==== Investigation guide
 
 
-[source, markdown]
-----------------------------------
-## Triage and analysis
 
-### Investigating Unusual Network Activity from a Windows System Binary
+*Triage and analysis*
+
+
+
+*Investigating Unusual Network Activity from a Windows System Binary*
+
 
 Attackers can abuse certain trusted developer utilities to proxy the execution of malicious payloads. Since these utilities are usually signed, they can bypass the security controls that were put in place to prevent or detect direct execution.
 
 This rule identifies network connections established by trusted developer utilities, which can indicate abuse to execute payloads or process masquerading.
 
 > **Note**:
-> This investigation guide uses the {security-guide}/security/master/invest-guide-run-osquery.html[Osquery Markdown Plugin] introduced in Elastic Stack version 8.5.0. Older Elastic Stack versions will display unrendered Markdown in this guide.
+> This investigation guide uses the https://www.elastic.co/guide/en/security/master/invest-guide-run-osquery.html[Osquery Markdown Plugin] introduced in Elastic Stack version 8.5.0. Older Elastic Stack versions will display unrendered Markdown in this guide.
 
-#### Possible investigation steps
+
+*Possible investigation steps*
+
 
 - Investigate the process execution chain (parent process tree) for unknown processes. Examine their executable files for prevalence, whether they are located in expected locations, and if they are signed with valid digital signatures.
 - Investigate abnormal behaviors observed by the subject process, such as registry or file modifications, and any spawned child processes.
@@ -76,11 +80,15 @@ This rule identifies network connections established by trusted developer utilit
       - !{osquery{"label":"Osquery - Retrieve Service Unsigned Executables with Virustotal Link","query":"SELECT concat('https://www.virustotal.com/gui/file/', sha1) AS VtLink, name, description, start_type, status, pid,\nservices.path FROM services JOIN authenticode ON services.path = authenticode.path OR services.module_path =\nauthenticode.path JOIN hash ON services.path = hash.path WHERE authenticode.result != 'trusted'\n"}}
   - Retrieve the files' SHA-256 hash values using the PowerShell `Get-FileHash` cmdlet and search for the existence and reputation of the hashes in resources like VirusTotal, Hybrid-Analysis, CISCO Talos, Any.run, etc.
 
-### False positive analysis
+
+*False positive analysis*
+
 
 - As trusted developer utilities have dual-use purposes, alerts derived from this rule are not essentially malicious. If these utilities are contacting internal or known trusted domains, review their security and consider creating exceptions if the domain is safe.
 
-### Response and remediation
+
+*Response and remediation*
+
 
 - Initiate the incident response process based on the outcome of the triage.
 - Isolate the involved host to prevent further post-compromise behavior.
@@ -100,7 +108,6 @@ This rule identifies network connections established by trusted developer utilit
     - Consider improvements to the security awareness program.
 - Using the incident response data, update logging and audit policies to improve the mean time to detect (MTTD) and the mean time to respond (MTTR).
 
-----------------------------------
 
 ==== Rule query
 

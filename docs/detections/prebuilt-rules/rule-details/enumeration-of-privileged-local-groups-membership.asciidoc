@@ -43,20 +43,24 @@ Identifies instances of an unusual process enumerating built-in Windows privileg
 ==== Investigation guide
 
 
-[source, markdown]
-----------------------------------
-## Triage and analysis
 
-### Investigating Enumeration of Privileged Local Groups Membership
+*Triage and analysis*
+
+
+
+*Investigating Enumeration of Privileged Local Groups Membership*
+
 
 After successfully compromising an environment, attackers may try to gain situational awareness to plan their next steps. This can happen by running commands to enumerate network resources, users, connections, files, and installed security software.
 
 This rule looks for the enumeration of privileged local groups' membership by suspicious processes, and excludes known legitimate utilities and programs installed. Attackers can use this information to decide the next steps of the attack, such as mapping targets for credential compromise and other post-exploitation activities.
 
 > **Note**:
-> This investigation guide uses the {security-guide}/security/master/invest-guide-run-osquery.html[Osquery Markdown Plugin] introduced in Elastic Stack version 8.5.0. Older Elastic Stack versions will display unrendered Markdown in this guide.
+> This investigation guide uses the https://www.elastic.co/guide/en/security/master/invest-guide-run-osquery.html[Osquery Markdown Plugin] introduced in Elastic Stack version 8.5.0. Older Elastic Stack versions will display unrendered Markdown in this guide.
 
-#### Possible investigation steps
+
+*Possible investigation steps*
+
 
 - Identify the process, host and user involved on the event.
 - Investigate the process execution chain (parent process tree) for unknown processes. Examine their executable files for prevalence, whether they are located in expected locations, and if they are signed with valid digital signatures.
@@ -77,12 +81,16 @@ This rule looks for the enumeration of privileged local groups' membership by su
   - Retrieve the files' SHA-256 hash values using the PowerShell `Get-FileHash` cmdlet and search for the existence and reputation of the hashes in resources like VirusTotal, Hybrid-Analysis, CISCO Talos, Any.run, etc.
 - Investigate potentially compromised accounts. Analysts can do this by searching for login events (for example, 4624) to the target host after the registry modification.
 
-### False positive analysis
+
+*False positive analysis*
+
 
 - Discovery activities are not inherently malicious if they occur in isolation. As long as the analyst did not identify suspicious activity related to the user or host, such alerts can be dismissed.
 - If this rule is noisy in your environment due to expected activity, consider adding exceptions — preferably with a combination of user and command line conditions.
 
-### Response and remediation
+
+*Response and remediation*
+
 
 - Initiate the incident response process based on the outcome of the triage.
 - Isolate the involved hosts to prevent further post-compromise behavior.
@@ -92,7 +100,33 @@ This rule looks for the enumeration of privileged local groups' membership by su
 - Using the incident response data, update logging and audit policies to improve the mean time to detect (MTTD) and the mean time to respond (MTTR).
 
 
-----------------------------------
+
+==== Setup
+
+
+
+The 'Audit Security Group Management' audit policy must be configured (Success).
+Steps to implement the logging policy with with Advanced Audit Configuration:
+
+```
+Computer Configuration >
+Policies >
+Windows Settings >
+Security Settings >
+Advanced Audit Policies Configuration >
+Audit Policies >
+Account Management >
+Audit Security Group Management (Success)
+```
+
+Microsoft introduced the https://docs.microsoft.com/en-us/windows/security/threat-protection/auditing/event-4799[event used] in this detection rule on Windows 10 and Windows Server 2016 or later operating systems.
+
+If enabling an EQL rule on a non-elastic-agent index (such as beats) for versions <8.2,
+events will not define `event.ingested` and default fallback for EQL rules was not added until version 8.2.
+Hence for this rule to work effectively, users will need to add a custom ingest pipeline to populate
+`event.ingested` to @timestamp.
+For more details on adding a custom ingest pipeline refer - https://www.elastic.co/guide/en/fleet/current/data-streams-pipeline-tutorial.html
+
 
 ==== Rule query
 

@@ -48,11 +48,13 @@ Identifies the creation of a Process ID (PID), lock or reboot file created in te
 ==== Investigation guide
 
 
-[source, markdown]
-----------------------------------
-## Triage and analysis
 
-### Investigating Abnormal Process ID or Lock File Created
+*Triage and analysis*
+
+
+
+*Investigating Abnormal Process ID or Lock File Created*
+
 
 Linux applications may need to save their process identification number (PID) for various purposes: from signaling that a program is running to serving as a signal that a previous instance of an application didn't exit successfully. PID files contain its creator process PID in an integer value.
 
@@ -60,7 +62,9 @@ Linux lock files are used to coordinate operations in files so that conflicts an
 
 This rule identifies the creation of PID, lock, or reboot files in the /var/run/ directory. Attackers can masquerade malware, payloads, staged data for exfiltration, and more as legitimate PID files.
 
-#### Possible investigation steps
+
+*Possible investigation steps*
+
 
 - Retrieve the file and determine if it is malicious:
     - Check the contents of the PID files. They should only contain integer strings.
@@ -74,12 +78,16 @@ This rule identifies the creation of PID, lock, or reboot files in the /var/run/
 - Investigate any abnormal account behavior, such as command executions, file creations or modifications, and network connections.
 - Investigate any abnormal behavior by the subject process such as network connections, file modifications, and any spawned child processes.
 
-### False positive analysis
+
+*False positive analysis*
+
 
 - False positives can appear if the PID file is legitimate and holding a process ID as intended. If the PID file is an executable or has a file size that's larger than 10 bytes, it should be ruled suspicious.
 - If this activity is expected and noisy in your environment, consider adding exceptions — preferably with a combination of file name and process executable conditions.
 
-### Response and remediation
+
+*Response and remediation*
+
 
 - Initiate the incident response process based on the outcome of the triage.
 - Isolate the involved host to prevent further post-compromise behavior.
@@ -91,7 +99,41 @@ This rule identifies the creation of PID, lock, or reboot files in the /var/run/
 - Using the incident response data, update logging and audit policies to improve the mean time to detect (MTTD) and the mean time to respond (MTTR).
 
 
-----------------------------------
+
+==== Setup
+
+
+
+This rule requires data coming in from Elastic Defend.
+
+
+*Elastic Defend Integration Setup*
+
+Elastic Defend is integrated into the Elastic Agent using Fleet. Upon configuration, the integration allows the Elastic Agent to monitor events on your host and send data to the Elastic Security app.
+
+
+*Prerequisite Requirements:*
+
+- Fleet is required for Elastic Defend.
+- To configure Fleet Server refer to the https://www.elastic.co/guide/en/fleet/current/fleet-server.html[documentation].
+
+
+*The following steps should be executed in order to add the Elastic Defend integration on a Linux System:*
+
+- Go to the Kibana home page and click "Add integrations".
+- In the query bar, search for "Elastic Defend" and select the integration to see more details about it.
+- Click "Add Elastic Defend".
+- Configure the integration name and optionally add a description.
+- Select the type of environment you want to protect, either "Traditional Endpoints" or "Cloud Workloads".
+- Select a configuration preset. Each preset comes with different default settings for Elastic Agent, you can further customize these later by configuring the Elastic Defend integration policy. https://www.elastic.co/guide/en/security/current/configure-endpoint-integration-policy.html[Helper guide].
+- We suggest selecting "Complete EDR (Endpoint Detection and Response)" as a configuration setting, that provides "All events; all preventions"
+- Enter a name for the agent policy in "New agent policy name". If other agent policies already exist, you can click the "Existing hosts" tab and select an existing policy instead.
+For more details on Elastic Agent configuration settings, refer to the https://www.elastic.co/guide/en/fleet/8.10/agent-policy.html[helper guide].
+- Click "Save and Continue".
+- To complete the integration, select "Add Elastic Agent to your hosts" and continue to the next section to install the Elastic Agent on your hosts.
+For more details on Elastic Defend refer to the https://www.elastic.co/guide/en/security/current/install-endpoint.html[helper guide].
+
+
 
 ==== Rule query
 
