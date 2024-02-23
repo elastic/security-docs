@@ -29,7 +29,7 @@ Adversaries may attempt to connect to a remote system over Windows Remote Deskto
 * Tactic: Lateral Movement
 * Data Source: Elastic Defend
 
-*Version*: 1
+*Version*: 2
 
 *Rule authors*: 
 
@@ -45,8 +45,16 @@ Adversaries may attempt to connect to a remote system over Windows Remote Deskto
 ----------------------------------
 network where host.os.type == "windows" and
   event.action == "connection_attempted" and destination.port == 3389 and
-  not process.executable : "?:\\Windows\\System32\\mstsc.exe" and
-  destination.ip != "::1" and destination.ip != "127.0.0.1"
+  destination.ip != "::1" and destination.ip != "127.0.0.1" and
+  not (
+    process.executable : (
+      "?:\\Windows\\System32\\mstsc.exe",
+      "?:\\Program Files (x86)\\mRemoteNG\\mRemoteNG.exe",
+      "?:\\Program Files (x86)\\PRTG Network Monitor\\PRTG Probe.exe",
+      "?:\\Program Files\\Azure Advanced Threat Protection Sensor\\*\\Microsoft.Tri.Sensor.exe",
+      "?:\\Program Files (x86)\\Microsoft\\Remote Desktop Connection Manager\\RDCMan.exe"
+    ) and process.code_signature.trusted == true
+  )
 
 ----------------------------------
 
