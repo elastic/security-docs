@@ -5,7 +5,7 @@ This rule detects when a user creates a pod/container running in privileged mode
 
 *Rule type*: query
 
-*Rule indices*:
+*Rule indices*: 
 
 * logs-kubernetes.*
 
@@ -13,63 +13,55 @@ This rule detects when a user creates a pod/container running in privileged mode
 
 *Risk score*: 47
 
-*Runs every*: 5 minutes
+*Runs every*: 5m
 
-*Searches indices from*: now-6m ({ref}/common-options.html#date-math[Date Math format], see also <<rule-schedule, `Additional look-back time`>>)
+*Searches indices from*: None ({ref}/common-options.html#date-math[Date Math format], see also <<rule-schedule, `Additional look-back time`>>)
 
 *Maximum alerts per execution*: 100
 
-*References*:
+*References*: 
 
 * https://media.defense.gov/2021/Aug/03/2002820425/-1/-1/1/CTR_KUBERNETES%20HARDENING%20GUIDANCE.PDF
 * https://kubernetes.io/docs/tasks/configure-pod-container/security-context/
 
-*Tags*:
+*Tags*: 
+
+* Data Source: Kubernetes
+* Tactic: Execution
+* Tactic: Privilege Escalation
+
+*Version*: 203
+
+*Rule authors*: 
 
 * Elastic
-* Kubernetes
-* Continuous Monitoring
-* Execution
-* Privilege Escalation
-
-*Version*: 200 (<<kubernetes-privileged-pod-created-history, version history>>)
-
-*Added ({stack} release)*: 8.4.0
-
-*Last modified ({stack} release)*: 8.6.0
-
-*Rule authors*: Elastic
 
 *Rule license*: Elastic License v2
 
-==== Potential false positives
-
-By default a container is not allowed to access any devices on the host, but a "privileged" container is given access to all devices on the host. This allows the container nearly all the same access as processes running on the host. An administrator may want to run a privileged container to use operating system administrative capabilities such as manipulating the network stack or accessing hardware devices from within the cluster. Add exceptions for trusted container images using the query field "kubernetes.audit.requestObject.spec.container.image"
 
 ==== Investigation guide
 
 
-[source,markdown]
-----------------------------------
 
-----------------------------------
 
+==== Setup
+
+
+The Kubernetes Fleet integration with Audit Logs enabled or similarly structured data is required to be compatible with this rule.
 
 ==== Rule query
 
 
-[source,js]
+[source, js]
 ----------------------------------
-event.dataset : "kubernetes.audit_logs" and
-kubernetes.audit.annotations.authorization_k8s_io/decision:"allow"
-and kubernetes.audit.objectRef.resource:pods and
-kubernetes.audit.verb:create and kubernetes.audit.requestObject.spe
-c.containers.securityContext.privileged:true and not
-kubernetes.audit.requestObject.spec.containers.image:
-("docker.elastic.co/beats/elastic-agent:8.4.0")
-----------------------------------
+event.dataset : "kubernetes.audit_logs"
+  and kubernetes.audit.annotations.authorization_k8s_io/decision:"allow"
+  and kubernetes.audit.objectRef.resource:pods
+  and kubernetes.audit.verb:create
+  and kubernetes.audit.requestObject.spec.containers.securityContext.privileged:true
+  and not kubernetes.audit.requestObject.spec.containers.image: ("docker.elastic.co/beats/elastic-agent:8.4.0")
 
-==== Threat mapping
+----------------------------------
 
 *Framework*: MITRE ATT&CK^TM^
 
@@ -81,8 +73,6 @@ kubernetes.audit.requestObject.spec.containers.image:
 ** Name: Escape to Host
 ** ID: T1611
 ** Reference URL: https://attack.mitre.org/techniques/T1611/
-
-
 * Tactic:
 ** Name: Execution
 ** ID: TA0002
@@ -91,20 +81,3 @@ kubernetes.audit.requestObject.spec.containers.image:
 ** Name: Deploy Container
 ** ID: T1610
 ** Reference URL: https://attack.mitre.org/techniques/T1610/
-
-[[kubernetes-privileged-pod-created-history]]
-==== Rule version history
-
-Version 200 (8.6.0 release)::
-* Updated query, changed from:
-+
-[source, js]
-----------------------------------
-kubernetes.audit.objectRef.resource:pods and
-kubernetes.audit.verb:create and kubernetes.audit.requestObject.spec
-.containers.securityContext.privileged:true
-----------------------------------
-
-Version 100 (8.5.0 release)::
-* Formatting only
-

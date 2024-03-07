@@ -5,7 +5,7 @@ Identifies potential full network packet capture in Azure. Packet Capture is an 
 
 *Rule type*: query
 
-*Rule indices*:
+*Rule indices*: 
 
 * filebeat-*
 * logs-azure*
@@ -14,62 +14,55 @@ Identifies potential full network packet capture in Azure. Packet Capture is an 
 
 *Risk score*: 47
 
-*Runs every*: 5 minutes
+*Runs every*: 5m
 
 *Searches indices from*: now-25m ({ref}/common-options.html#date-math[Date Math format], see also <<rule-schedule, `Additional look-back time`>>)
 
 *Maximum alerts per execution*: 100
 
-*References*:
+*References*: 
 
 * https://docs.microsoft.com/en-us/azure/role-based-access-control/resource-provider-operations
 
-*Tags*:
+*Tags*: 
 
-* Elastic
-* Cloud
-* Azure
-* Continuous Monitoring
-* SecOps
-* Monitoring
+* Domain: Cloud
+* Data Source: Azure
+* Tactic: Credential Access
 
-*Version*: 101 (<<azure-full-network-packet-capture-detected-history, version history>>)
+*Version*: 103
 
-*Added ({stack} release)*: 7.16.0
+*Rule authors*: 
 
-*Last modified ({stack} release)*: 8.6.0
-
-*Rule authors*: Austin Songer
+* Austin Songer
 
 *Rule license*: Elastic License v2
 
-==== Potential false positives
-
-Full Network Packet Capture may be done by a system or network administrator. Verify whether the user identity, user agent, and/or hostname should be making changes in your environment. Full Network Packet Capture from unfamiliar users or hosts should be investigated. If known behavior is causing false positives, it can be exempted from the rule.
 
 ==== Investigation guide
 
 
-[source,markdown]
-----------------------------------
 
-----------------------------------
 
+==== Setup
+
+
+The Azure Fleet integration, Filebeat module, or similarly structured data is required to be compatible with this rule.
 
 ==== Rule query
 
 
-[source,js]
+[source, js]
 ----------------------------------
-event.dataset:azure.activitylogs and
-azure.activitylogs.operation_name: (
-"MICROSOFT.NETWORK/*/STARTPACKETCAPTURE/ACTION" or
-"MICROSOFT.NETWORK/*/VPNCONNECTIONS/STARTPACKETCAPTURE/ACTION" or
-"MICROSOFT.NETWORK/*/PACKETCAPTURES/WRITE" ) and
+event.dataset:azure.activitylogs and azure.activitylogs.operation_name:
+    (
+        MICROSOFT.NETWORK/*/STARTPACKETCAPTURE/ACTION or
+        MICROSOFT.NETWORK/*/VPNCONNECTIONS/STARTPACKETCAPTURE/ACTION or
+        MICROSOFT.NETWORK/*/PACKETCAPTURES/WRITE
+    ) and
 event.outcome:(Success or success)
-----------------------------------
 
-==== Threat mapping
+----------------------------------
 
 *Framework*: MITRE ATT&CK^TM^
 
@@ -81,26 +74,3 @@ event.outcome:(Success or success)
 ** Name: Network Sniffing
 ** ID: T1040
 ** Reference URL: https://attack.mitre.org/techniques/T1040/
-
-[[azure-full-network-packet-capture-detected-history]]
-==== Rule version history
-
-Version 101 (8.6.0 release)::
-* Formatting only
-
-Version 100 (8.5.0 release)::
-* Formatting only
-
-Version 3 (8.4.0 release)::
-* Updated query, changed from:
-+
-[source, js]
-----------------------------------
-event.dataset:azure.activitylogs and
-azure.activitylogs.operation_name: (
-"MICROSOFT.NETWORK/*/STARTPACKETCAPTURE/ACTION" or
-"MICROSOFT.NETWORK/*/VPNCONNECTIONS/STARTPACKETCAPTURE/ACTION" or
-"MICROSOFT.NETWORK/*/PACKETCAPTURES/WRITE" ) and
-event.outcome:(Success or success)
-----------------------------------
-
