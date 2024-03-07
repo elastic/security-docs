@@ -1,0 +1,112 @@
+[[potential-linux-reverse-connection-through-port-knocking]]
+=== Potential Linux Reverse Connection through Port Knocking
+
+Monitors for a sequence of network activity on atypical ports, prior to receiving a single packet on such a non-standard port, which potentially indicates signal port knocking activity. Port knocking is a covert method of externally opening ports by sending a sequence of packets to previously closed ports, which adversaries may leverage to discreetly gain access without directly alerting traditional monitoring systems.
+
+*Rule type*: eql
+
+*Rule indices*: 
+
+* logs-endpoint.events.*
+* logs-network_traffic.*
+
+*Severity*: low
+
+*Risk score*: 21
+
+*Runs every*: 5m
+
+*Searches indices from*: now-9m ({ref}/common-options.html#date-math[Date Math format], see also <<rule-schedule, `Additional look-back time`>>)
+
+*Maximum alerts per execution*: 100
+
+*References*: 
+
+* https://github.com/f0rb1dd3n/Reptile
+
+*Tags*: 
+
+* Domain: Endpoint
+* OS: Linux
+* Use Case: Threat Detection
+* Tactic: Command and Control
+* Data Source: Elastic Defend
+* Rule Type: BBR
+
+*Version*: 1
+
+*Rule authors*: 
+
+* Elastic
+
+*Rule license*: Elastic License v2
+
+
+==== Rule query
+
+
+[source, js]
+----------------------------------
+sequence by host.id with maxspan=10s
+  [network where host.os.type == "linux" and event.action in ("connection_accepted", "connection_attempted") and 
+    event.type == "start" and process.name : "*" and (
+      process.name : (
+        "python*", "php*", "perl*", "ruby", "lua*", "openssl", "nc", "netcat", "ncat", "telnet",
+        "awk", "gawk", "mawk", "nawk", "bash", "dash", "sh", "tcsh", "csh", "zsh", "ksh"
+      ) or not process.executable : ("/usr/bin/*", "/bin/*")
+    ) and not (
+       cidrmatch(destination.ip, "127.0.0.0/8", "169.254.0.0/16", "224.0.0.0/4", "::1") or destination.port in (
+         20, 21, 22, 23, 25, 53, 67, 68, 69, 80, 110, 123, 137, 138, 139, 143, 161, 162, 179, 443, 445, 465, 514, 515,
+         587,636, 989, 990, 993, 995, 1025, 1026, 1080, 1194, 1433, 1434, 1521, 1701, 1723, 1812, 1813, 2082, 2083, 2086,
+         2087, 2095, 2096, 2121, 2483, 2484, 3306, 3389, 3478, 3497, 3544, 3689, 3784, 3785, 389, 3998, 5060, 5061, 5190,
+         5222, 5223, 5228, 5432, 5500, 554, 5631, 5632, 5800, 5801, 5900, 5901, 8000, 8008, 8080, 8081, 8443, 8888, 9100,
+         9200, 9443, 10000
+       ) or source.port in (
+         20, 21, 22, 23, 25, 53, 67, 68, 69, 80, 110, 123, 137, 138, 139, 143, 161, 162, 179, 443, 445, 465, 514, 515,
+         587, 636, 989, 990, 993, 995, 1025, 1026, 1080, 1194, 1433, 1434, 1521, 1701, 1723, 1812, 1813, 2082, 2083, 2086,
+         2087, 2095, 2096, 2121, 2483, 2484, 3306, 3389, 3478, 3497, 3544, 3689, 3784, 3785, 389, 3998, 5060, 5061, 5190,
+         5222, 5223, 5228, 5432, 5500, 554, 5631, 5632, 5800, 5801, 5900, 5901, 8000, 8008, 8080, 8081, 8443, 8888, 9100,
+         9200, 9443, 10000)
+      )
+  ] by destination.ip
+  [network where event.dataset == "network_traffic.flow" and host.os.type == "linux" and event.action == "network_flow"
+    and event.type == "connection" and source.packets == 1 and flow.final == false and not (
+      cidrmatch(destination.ip, "127.0.0.0/8", "169.254.0.0/16", "224.0.0.0/4", "::1") or destination.port in (
+        20, 21, 22, 23, 25, 53, 67, 68, 69, 80, 110, 123, 137, 138, 139, 143, 161, 162, 179, 443, 445, 465, 514, 515,
+        587,636, 989, 990, 993, 995, 1025, 1026, 1080, 1194, 1433, 1434, 1521, 1701, 1723, 1812, 1813, 2082, 2083, 2086,
+        2087, 2095, 2096, 2121, 2483, 2484, 3306, 3389, 3478, 3497, 3544, 3689, 3784, 3785, 389, 3998, 5060, 5061, 5190,
+        5222, 5223, 5228, 5432, 5500, 554, 5631, 5632, 5800, 5801, 5900, 5901, 8000, 8008, 8080, 8081, 8443, 8888, 9100,
+        9200, 9443, 10000
+      ) or source.port in (
+        20, 21, 22, 23, 25, 53, 67, 68, 69, 80, 110, 123, 137, 138, 139, 143, 161, 162, 179, 443, 445, 465, 514, 515,
+        587, 636, 989, 990, 993, 995, 1025, 1026, 1080, 1194, 1433, 1434, 1521, 1701, 1723, 1812, 1813, 2082, 2083, 2086,
+        2087, 2095, 2096, 2121, 2483, 2484, 3306, 3389, 3478, 3497, 3544, 3689, 3784, 3785, 389, 3998, 5060, 5061, 5190,
+        5222, 5223, 5228, 5432, 5500, 554, 5631, 5632, 5800, 5801, 5900, 5901, 8000, 8008, 8080, 8081, 8443, 8888, 9100,
+        9200, 9443, 10000)
+      )
+  ] by source.ip
+
+----------------------------------
+
+*Framework*: MITRE ATT&CK^TM^
+
+* Tactic:
+** Name: Command and Control
+** ID: TA0011
+** Reference URL: https://attack.mitre.org/tactics/TA0011/
+* Technique:
+** Name: Non-Standard Port
+** ID: T1571
+** Reference URL: https://attack.mitre.org/techniques/T1571/
+* Technique:
+** Name: Traffic Signaling
+** ID: T1205
+** Reference URL: https://attack.mitre.org/techniques/T1205/
+* Sub-technique:
+** Name: Port Knocking
+** ID: T1205.001
+** Reference URL: https://attack.mitre.org/techniques/T1205/001/
+* Tactic:
+** Name: Defense Evasion
+** ID: TA0005
+** Reference URL: https://attack.mitre.org/tactics/TA0005/
