@@ -8,14 +8,15 @@ This rule monitors for the usage of the which command with an unusual amount of 
 *Rule indices*: 
 
 * logs-endpoint.events.*
+* endgame-*
 
 *Severity*: low
 
 *Risk score*: 21
 
-*Runs every*: 60m
+*Runs every*: 5m
 
-*Searches indices from*: now-119m ({ref}/common-options.html#date-math[Date Math format], see also <<rule-schedule, `Additional look-back time`>>)
+*Searches indices from*: now-9m ({ref}/common-options.html#date-math[Date Math format], see also <<rule-schedule, `Additional look-back time`>>)
 
 *Maximum alerts per execution*: 100
 
@@ -28,9 +29,9 @@ This rule monitors for the usage of the which command with an unusual amount of 
 * Use Case: Threat Detection
 * Tactic: Discovery
 * Data Source: Elastic Defend
-* Rule Type: BBR
+* Data Source: Elastic Endgame
 
-*Version*: 3
+*Version*: 4
 
 *Rule authors*: 
 
@@ -44,8 +45,9 @@ This rule monitors for the usage of the which command with an unusual amount of 
 
 [source, js]
 ----------------------------------
-process where host.os.type == "linux" and event.action == "exec" and event.type == "start" and 
-process.name == "which" and process.args_count >= 10 and not process.parent.name == "jem"
+process where host.os.type == "linux" and event.action in ("exec", "exec_event") and event.type == "start" and 
+process.name == "which" and process.args_count >= 10 and not process.parent.name == "jem" and 
+not process.args == "--tty-only"
 
 /* potential tuning if rule would turn out to be noisy
 and process.args in ("nmap", "nc", "ncat", "netcat", nc.traditional", "gcc", "g++", "socat") and 
