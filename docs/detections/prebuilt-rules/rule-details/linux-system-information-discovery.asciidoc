@@ -7,8 +7,10 @@ Enrich process events with uname and other command lines that imply Linux system
 
 *Rule indices*: 
 
-* auditbeat-*
 * logs-endpoint.events.*
+* endgame-*
+* auditbeat-*
+* logs-auditd_manager.auditd-*
 
 *Severity*: low
 
@@ -30,8 +32,10 @@ Enrich process events with uname and other command lines that imply Linux system
 * Tactic: Discovery
 * Rule Type: BBR
 * Data Source: Elastic Defend
+* Data Source: Elastic Endgame
+* Data Source: Auditd Manager
 
-*Version*: 2
+*Version*: 3
 
 *Rule authors*: 
 
@@ -45,11 +49,10 @@ Enrich process events with uname and other command lines that imply Linux system
 
 [source, js]
 ----------------------------------
-process where event.type == "start" and
-(
-  process.name: "uname" or
-  (process.name: ("cat", "more", "less") and
-  process.args: ("*issue*", "*version*", "*profile*", "*services*", "*cpuinfo*"))
+process where event.action in ("exec", "exec_event", "executed", "process_started") and event.type == "start" and (
+  process.name: "uname" or (
+  process.name: ("cat", "more", "less") and process.args: ("*issue*", "*version*", "*profile*", "*services*", "*cpuinfo*")
+  )
 )
 
 ----------------------------------
