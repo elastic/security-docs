@@ -9,10 +9,12 @@ Identifies attempts to add a user to a privileged group. Attackers may add users
 
 * logs-endpoint.events.*
 * endgame-*
+* auditbeat-*
+* logs-auditd_manager.auditd-*
 
-*Severity*: medium
+*Severity*: low
 
-*Risk score*: 47
+*Risk score*: 21
 
 *Runs every*: 5m
 
@@ -31,8 +33,9 @@ Identifies attempts to add a user to a privileged group. Attackers may add users
 * Data Source: Elastic Endgame
 * Resources: Investigation Guide
 * Data Source: Elastic Defend
+* Data Source: Auditd Manager
 
-*Version*: 5
+*Version*: 6
 
 *Rule authors*: 
 
@@ -142,10 +145,10 @@ For more details on Elastic Defend refer to the https://www.elastic.co/guide/en/
 
 [source, js]
 ----------------------------------
-process where host.os.type == "linux" and event.type == "start" and
-process.parent.name == "sudo" and
-process.args in ("root", "admin", "wheel", "staff", "sudo",
-                             "disk", "video", "shadow", "lxc", "lxd") and
+process where host.os.type == "linux" and event.action in ("exec", "exec_event", "executed", "process_started") and
+event.type == "start" and process.args in (
+  "root", "admin", "wheel", "staff", "sudo","disk", "video", "shadow", "lxc", "lxd"
+) and
 (
   process.name in ("usermod", "adduser") or
   process.name == "gpasswd" and 
