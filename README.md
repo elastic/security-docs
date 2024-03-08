@@ -4,14 +4,13 @@ Elastic Security Docs home page: https://www.elastic.co/guide/en/security/curren
 
 Documentation Manager: Janeen Roberts (Github: `@jmikell821`)
 
-Please view [this template](https://github.com/elastic/security-docs/blob/master/.github/ISSUE_TEMPLATE/documentation-issue.md) for guidance on creating issues. 
 
 ## Contributing to Elastic Security docs
 
 If you are an Elastic employee and would like to contribute to Elastic Security documentation: 
 
 1. Please clone and fork the `security-docs` repo. 
-2. Open an issue using the appropriate [template](https://github.com/elastic/security-docs/tree/master/.github/ISSUE_TEMPLATE).
+2. Open an issue using the appropriate [template](https://github.com/elastic/security-docs/issues/new/choose).
 3. Check out the `main` branch and fetch the latest changes. 
 4. Check out a new branch and make your changes. 
 5. Save your changes and open a pull request. 
@@ -27,5 +26,5 @@ When you open a pull request, preview links are automatically added as a comment
 You also might want to add targeted links to help reviewers find specific pages related to your PR. Preview URLs include the following pattern (replace `<YOUR_PR_NUMBER_HERE>` with the PR number):
 
 ```
-https://security-docs_<YOUR_PR_NUMBER_HERE>.docs-preview.app.elstc.co/guide/en/security/master/
+https://security-docs_bk_<YOUR_PR_NUMBER_HERE>.docs-preview.app.elstc.co/guide/en/security/master/
 ```
