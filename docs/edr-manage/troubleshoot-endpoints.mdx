@@ -85,3 +85,58 @@ To restart a transform that’s not running:
 1. The transform’s status changes to `started`. If it doesn't change, refresh the page.
 
 </DocAccordion>
+
+<DocAccordion id="ts-agent-connection" buttonContent="((agent)) and Endpoint connection issues">
+
+After ((agent)) installs Endpoint, Endpoint connects to ((agent)) over a local relay connection to report its health status and receive policy updates and response action requests. If that connection cannot be established, the ((elastic-defend)) integration will cause ((agent)) to be in an `Unhealthy` status, and Endpoint won't operate properly.
+
+### Identify if the issue is happening
+
+You can identify if this issue is happening in the following ways:
+
+* Run ((agent))'s status command:
+
+  * `sudo /opt/Elastic/Agent/elastic-agent status` (Linux)
+  * `sudo /Library/Elastic/Agent/elastic-agent status` (macOS)
+  * `c:\Program Files\Elastic\Agent\elastic-agent.exe status` (Windows)
+
+  If the status result for `endpoint-security` says that Endpoint has missed check-ins or `localhost:6788` cannot be bound to, it might indicate this problem is occurring.
+
+* If the problem starts happening right after installing Endpoint, check the value of `fleet.agent.id` in the following file:
+
+  * `/opt/Elastic/Endpoint/elastic-endpoint.yaml` (Linux)
+  * `/Library/Elastic/Endpoint/elastic-endpoint.yaml` (macOS)
+  * `c:\Program Files\Elastic\Endpoint\elastic-endpoint.yaml` (Windows)
+
+  If the value of `fleet.agent.id` is `00000000-0000-0000-0000-000000000000`, this indicates this problem is occurring.
+
+  <DocCallOut title="Note">
+  If this problem starts happening after Endpoint has already been installed and working properly, then this value will have changed even though the problem is happening.
+  </DocCallOut>
+
+### Examine Endpoint logs
+
+If you've confirmed that the issue is happening, you can look at Endpoint log messages to identify the cause:
+
+* `Failed to find connection to validate. Is Agent listening on 127.0.0.1:6788?` or `Failed to validate connection. Is Agent running as root/admin?` means that Endpoint is not able to create an initial connection to ((agent)) over port `6788`.
+* `Unable to make GRPC connection in deadline(60s). Fetching connection info again` means that Endpoint's original connection to ((agent)) over port `6788` worked, but the connection over port `6789` is failing.
+
+### Resolve the issue
+
+To debug and resolve the issue, follow these steps:
+
+1. Examine the Endpoint diagnostics file named `analysis.txt`, which contains information about what may cause this issue. ((agent)) diagnostics automatically include Endpoint diagnostics. 
+
+1. Make sure nothing else on your device is listening on ports `6788` or `6789` by running:
+
+    * `sudo netstat -anp --tcp` (Linux)
+    * `sudo netstat -an -f inet` (macOS)
+    * `netstat -an` (Windows)
+
+1. Make sure `localhost` can be resolved to `127.0.0.1` by running:
+
+    * `ping -4 -c 1 localhost` (Linux)
+    * `ping -c 1 localhost` (macOS)
+    * `ping -4 localhost` (Windows)
+
+</DocAccordion>
