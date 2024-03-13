@@ -1,0 +1,87 @@
+---
+id: serverlessSecurityThreatIntelligence
+slug: /serverless/security/threat-intelligence
+title: Enable threat intelligence integrations
+description: Use threat indicators to detect known threats and malicious activity.
+tags: [ 'serverless', 'security', 'how-to' ]
+status: in review
+---
+
+<DocBadge template="technical preview" />
+<div id="threat-intelligence"></div>
+
+The Threat Intelligence view provides a streamlined way to collect threat intelligence data that you can use for threat detection and matching. Threat intelligence data consists of  <DocLink id="serverlessSecurityIndicatorsOfCompromise" section="threat-intelligence-and-indicators">threat indicators</DocLink> ingested from third-party threat intelligence sources.
+
+Threat indicators describe potential threats, unusual behavior, or malicious activity on a network or in an environment. They are commonly used in indicator match rules to detect and match known threats. When an indicator match rule generates an alert, it includes information about the matched threat indicator.
+
+<DocCallOut title="Note">
+To learn more about alerts with threat intelligence, visit <DocLink id="serverlessSecurityViewAlertDetails">View alert details</DocLink>.
+</DocCallOut>
+
+Refer to the following sections to learn how to connect to threat intelligence sources using an <DocLink id="serverlessSecurityThreatIntelligence" section="add-an-elastic-agent-integration">((agent)) integration</DocLink>, the <DocLink id="serverlessSecurityThreatIntelligence" section="ti-mod-integration">Threat Intel module</DocLink>, or a <DocLink id="serverlessSecurityThreatIntelligence" section="custom-ti-integration">custom integration</DocLink>.
+
+<DocImage size="l" url="../images/es-threat-intel-integrations/-getting-started-threat-intelligence-view.png" alt="The Threat Intelligence view on the Overview dashboard" />
+
+There are a few scenarios when data won't display in the Threat Intelligence view:
+
+- If you've chosen a time range that doesn't contain threat indicator event data, you are prompted to choose a different range. Use the date and time picker in the ((security-app)) to select a new range to analyze.
+- If the ((agent)) or ((filebeat)) agent hasn't ingested Threat Intel module data yet, the threat indicator event counts won't load. You can wait for data to be ingested or reach out to your administrator for help resolving this.
+
+<div id="agent-ti-integration"></div>
+
+## Add an ((agent)) integration
+
+1. Install a [((fleet))-managed ((agent))](((fleet-guide))/install-fleet-managed-elastic-agent.html) on the hosts you want to monitor.
+1. In the Threat Intelligence view, click **Enable sources** to view the Integrations page. Scroll down and select **Elastic Agent only** to filter by ((agent)) integrations.
+
+    <DocCallOut title="Tip">
+
+    If you know the name of ((agent)) integration you want to install, you can search for it directly. You can use the following ((agent)) integrations with the Threat Intelligence view:
+
+    * AbuseCH
+    * AlienVault OTX
+    * Anomali
+    * Cybersixgill
+    * Maltiverse
+    * MISP
+    * Mimecast
+    * Recorded Future
+    * ThreatQuotient
+
+    </DocCallOut>
+
+1. Select an ((agent)) integration, then complete the installation steps.
+1. Return to the Threat Intelligence view on the Overview dashboard. If indicator data isn't displaying, refresh the page or refer to these <DocLink id="serverlessSecurityIndicatorsOfCompromise" section="troubleshooting">troubleshooting steps</DocLink>.
+
+<div id="ti-mod-integration"></div>
+
+## Add a ((filebeat)) Threat Intel module integration
+
+1. Set up the [((filebeat)) agent](((filebeat-ref))/filebeat-installation-configuration.html) and enable the Threat Intel module.
+
+    <DocCallOut title="Note">
+    For more information about enabling available threat intelligence filesets, refer to [Threat Intel module](((filebeat-ref))/filebeat-module-threatintel.html).
+    </DocCallOut>
+
+1. Update the `securitySolution:defaultThreatIndex` <DocLink id="serverlessSecurityAdvancedSettings" section="update-default-elastic-security-threat-intelligence-indices">advanced setting</DocLink> by adding the appropriate index pattern name after the default ((fleet)) threat intelligence index pattern (`logs-ti*`):
+    1. If you're _only_ using ((filebeat)) version 8.x, add the appropriate ((filebeat)) threat intelligence index pattern. For example, `logs-ti*`, `filebeat-8*`.
+    1. If you're using a previous version of Filebeat _and_ a current one, differentiate between the threat intelligence indices by using unique index pattern names. For example, if you’re using ((filebeat)) version 7.0.0 and 8.0.0, update the setting to `logs-ti*`,`filebeat-7*`,`filebeat-8*`.
+1. Return to the Threat Intelligence view on the Overview dashboard. Refresh the page if indicator data isn't displaying.
+
+<div id="custom-ti-integration"></div>
+
+## Add a custom integration
+
+1. Set up a way to <DocLink id="serverlessSecurityIngestData">ingest data</DocLink> into your system.
+1. Update the `securitySolution:defaultThreatIndex` <DocLink id="serverlessSecurityAdvancedSettings" section="update-default-elastic-security-threat-intelligence-indices">advanced setting</DocLink> by adding the appropriate index pattern name after the default ((fleet)) threat intelligence index pattern (`logs-ti*`), for example, `logs-ti*`,`custom-ti-index*`.
+
+    <DocCallOut title="Note">
+    Threat intelligence indices aren’t required to be ECS compatible. However, we strongly recommend compatibility if you’d like your alerts to be enriched with relevant threat indicator information. You can find a list of ECS-compliant threat intelligence fields at [Threat Fields](((ecs-ref))/ecs-threat.html).
+    </DocCallOut>
+
+1. Return to the Threat Intelligence view on the Overview dashboard (**Dashboards** → **Overview**). Refresh the page if indicator data isn't displaying.
+
+    <DocCallOut title="Note">
+    The Threat Intelligence view searches for a `threat.feed.name` field value to define the source name in the **Name** column. If a custom source doesn't have the `threat.feed.name` field or hasn't defined a `threat.feed.name` field value, it's considered unnamed and labeled as **Other**. Dashboards aren't created for unnamed sources unless the `threat.feed.dashboard_id` field is defined.
+    </DocCallOut>
+
