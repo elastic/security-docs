@@ -5,7 +5,7 @@ This rule detects when an unauthenticated user request is authorized within the 
 
 *Rule type*: query
 
-*Rule indices*:
+*Rule indices*: 
 
 * logs-kubernetes.*
 
@@ -13,62 +13,53 @@ This rule detects when an unauthenticated user request is authorized within the 
 
 *Risk score*: 47
 
-*Runs every*: 5 minutes
+*Runs every*: 5m
 
-*Searches indices from*: now-6m ({ref}/common-options.html#date-math[Date Math format], see also <<rule-schedule, `Additional look-back time`>>)
+*Searches indices from*: None ({ref}/common-options.html#date-math[Date Math format], see also <<rule-schedule, `Additional look-back time`>>)
 
 *Maximum alerts per execution*: 100
 
-*References*:
+*References*: 
 
 * https://media.defense.gov/2022/Aug/29/2003066362/-1/-1/0/CTR_KUBERNETES_HARDENING_GUIDANCE_1.2_20220829.PDF
 
-*Tags*:
+*Tags*: 
+
+* Data Source: Kubernetes
+* Tactic: Execution
+* Tactic: Initial Access
+* Tactic: Defense Evasion
+
+*Version*: 6
+
+*Rule authors*: 
 
 * Elastic
-* Kubernetes
-* Continuous Monitoring
-* Execution
-* Initial Access
-* Defense Evasion
-
-*Version*: 2 (<<kubernetes-anonymous-request-authorized-history, version history>>)
-
-*Added ({stack} release)*: 8.5.0
-
-*Last modified ({stack} release)*: 8.6.0
-
-*Rule authors*: Elastic
 
 *Rule license*: Elastic License v2
 
-==== Potential false positives
-
-Anonymous access to the API server is a dangerous setting enabled by default. Common anonymous connections (e.g., health checks) have been excluded from this rule. All other instances of authorized anonymous requests should be investigated.
 
 ==== Investigation guide
 
 
-[source,markdown]
-----------------------------------
 
-----------------------------------
 
+==== Setup
+
+
+The Kubernetes Fleet integration with Audit Logs enabled or similarly structured data is required to be compatible with this rule.
 
 ==== Rule query
 
 
-[source,js]
+[source, js]
 ----------------------------------
-event.dataset : "kubernetes.audit_logs" and
-kubernetes.audit.annotations.authorization_k8s_io/decision:"allow"
-and (kubernetes.audit.user.username:("system:anonymous" or
-"system:unauthenticated") or not kubernetes.audit.user.username:*)
-and not kubernetes.audit.objectRef.resource:("healthz" or "livez" or
-"readyz")
-----------------------------------
+event.dataset:kubernetes.audit_logs
+  and kubernetes.audit.annotations.authorization_k8s_io/decision:allow
+  and kubernetes.audit.user.username:("system:anonymous" or "system:unauthenticated" or not *)
+  and not kubernetes.audit.requestURI:(/healthz* or /livez* or /readyz*)
 
-==== Threat mapping
+----------------------------------
 
 *Framework*: MITRE ATT&CK^TM^
 
@@ -80,19 +71,7 @@ and not kubernetes.audit.objectRef.resource:("healthz" or "livez" or
 ** Name: Valid Accounts
 ** ID: T1078
 ** Reference URL: https://attack.mitre.org/techniques/T1078/
-
-[[kubernetes-anonymous-request-authorized-history]]
-==== Rule version history
-
-Version 2 (8.6.0 release)::
-* Updated query, changed from:
-+
-[source, js]
-----------------------------------
-kubernetes.audit.annotations.authorization_k8s_io/decision:"allow"
-and (kubernetes.audit.user.username:("system:anonymous" or
-"system:unauthenticated") or not kubernetes.audit.user.username:*)
-and not kubernetes.audit.objectRef.resource:("healthz" or "livez" or
-"readyz")
-----------------------------------
-
+* Sub-technique:
+** Name: Default Accounts
+** ID: T1078.001
+** Reference URL: https://attack.mitre.org/techniques/T1078/001/
