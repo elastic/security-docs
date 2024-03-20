@@ -13,6 +13,7 @@ Alert suppression allows you to reduce the number of repeated or duplicate detec
 
 * <<create-custom-rule,Custom query>>
 * <<create-threshold-rule,Threshold>>
+* <<create-indicator-rule,Indicator match>>
 
 Normally, when a rule meets its criteria repeatedly, it creates multiple alerts, one for each time the rule's criteria are met. When alert suppression is configured, duplicate qualifying events are grouped, and only one alert is created for each group. Depending on the rule type, you can configure alert suppression to create alerts each time the rule runs, or once within a specified time window. You can also specify multiple fields to group events by unique combinations of values.
 
@@ -22,21 +23,29 @@ NOTE: Alert suppression is not available for Elastic prebuilt rules. However, if
 
 === Configure alert suppression
 
-You can configure alert suppression when you create or edit a supported rule type. Refer to <<create-custom-rule>> or <<create-threshold-rule>> for detailed instructions.
+You can configure alert suppression when you create or edit a supported rule type. Refer to <<create-custom-rule>>, <<create-threshold-rule>>, or <<create-indicator-rule>> for detailed instructions.
 
 . When configuring the rule type (the *Define rule* step for a new rule, or the *Definition* tab for an existing rule), specify how you want to group events for alert suppression:
 +
 --
-* Custom query rule: In *Suppress alerts by*, enter 1-3 field names to group events by the fields' values.
-* Threshold rule: In *Group by*, enter up to 3 field names to group events by the fields' values, or leave the setting empty to group all qualifying events together.
+* Custom query rule: In *Suppress alerts by*, enter 1-3 field names to group events by the fields' values. 
+* Threshold rule: In *Group by*, enter up to 3 field names to group events by the fields' values, or leave the setting empty to group all qualifying events together. 
+* Indicator match rule: In *Suppress alerts by*, enter 1-3 field names to group events by the fields' values. 
 --
 +
-NOTE: If you specify a field with multiple values, an alert grouping is created for each value. For example, if you suppress alerts by `destination.ip` of `[127.0.0.1, 127.0.0.2, 127.0.0.3]`, alerts will be suppressed separately for each value of `127.0.0.1`, `127.0.0.2`, and `127.0.0.3`. 
+[NOTE]
+======
+Fields with multiple values are handled as follows:
+
+* **Custom query or threshold rules** - If you specify a field with multiple values, an alert grouping is created for each value. For example, if you suppress alerts by `destination.ip` of `[127.0.0.1, 127.0.0.2, 127.0.0.3]`, alerts will be suppressed separately for each value of `127.0.0.1`, `127.0.0.2`, and `127.0.0.3`. 
+* **Indicator match rule** - If you specify a field with multiple values, an alert grouping is created for alerts that contain the array you specified. For example, if you suppress alerts by `destination.ip` of `[127.0.0.1, 127.0.0.2, 127.0.0.3]`, alerts that contain this array are grouped and suppressed.
+
+======
 
 . If available, select how often to create alerts for duplicate events:
 +
 --
-* *Per rule execution*: (Custom query rules only) Create an alert each time the rule runs and meets its criteria.
+* *Per rule execution*: (Only available for custom query rules and indicator match rules) Create an alert each time the rule runs and meets its criteria.
 * *Per time period*: Create one alert for all qualifying events within a specified time window, beginning when the rule first meets its criteria and creates the alert. (This is the only option available for threshold rules.)
 +
 For example, if a rule runs every 5 minutes but you don't need alerts that frequently, you can set the suppression time period to a longer time, such as 1 hour. If the rule meets its criteria, it creates an alert at that time, and for the next hour, it'll suppress any subsequent qualifying events.
@@ -44,13 +53,19 @@ For example, if a rule runs every 5 minutes but you don't need alerts that frequ
 image::images/alert-suppression-options.png[Alert suppression options,400]
 --
 
-. (Custom query rules only) Under *If a suppression field is missing*, choose how to handle events with missing suppression fields (events in which one or more of the *Suppress alerts by* fields don't exist):
+. (Only available for custom query rules and indicator match rules) Under *If a suppression field is missing*, choose how to handle events with missing suppression fields (events in which one or more of the *Suppress alerts by* fields don't exist):
 * *Suppress and group alerts for events with missing fields*: Create one alert for each group of events with missing fields. Missing fields get a `null` value, which is used to group and suppress alerts. 
 * *Do not suppress alerts for events with missing fields*: Create a separate alert for each matching event. This basically falls back to normal alert creation for events with missing suppression fields.
 
 . Configure other rule settings, then save and enable the rule.
 
-TIP: Use the *Rule preview* before saving the rule to visualize how alert suppression will affect the alerts created, based on historical data.
+[TIP]
+==== 
+
+* Use the *Rule preview* before saving the rule to visualize how alert suppression will affect the alerts created, based on historical data.
+* If a rule times out while suppression is turned on, try shortening the rule's <<rule-schedule,look-back>> time or turn off suppression to improve the rule's performance.
+
+====
 
 === Confirm suppressed alerts
 
@@ -81,3 +96,10 @@ With alert suppression, detection alerts aren't created for the grouped source e
 image::images/timeline-button.png[Investigate in timeline button, 200]
 
 * Alert details flyout — Select *Take action* -> *Investigate in timeline*.
+
+=== Alert suppression limit by rule type
+
+Some rule types have a maximum number of alerts that can be suppressed (custom query rules don't have a suppression limit):
+
+* **Threshold** - The maximum number of alerts is the value specified for the <<opt-fields-all,`max_signals`>> setting, which is `100` by default.
+* **Indicator match** - The maximum number is five times the value specified for the <<opt-fields-all,`max_signals`>> setting. The default `max_signals` value is `100`, which means the default maximum limit for indicator match rules is `500`.
