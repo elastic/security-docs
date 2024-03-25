@@ -1,0 +1,73 @@
+[[prebuilt-rule-8-10-14-deprecated-remote-file-creation-on-a-sensitive-directory]]
+=== Deprecated - Remote File Creation on a Sensitive Directory
+
+Discovery of files created by a remote host on sensitive directories and folders. Remote file creation in these directories could indicate a malicious binary or script trying to compromise the system.
+
+*Rule type*: eql
+
+*Rule indices*: 
+
+* logs-endpoint.events.*
+
+*Severity*: medium
+
+*Risk score*: 47
+
+*Runs every*: 5m
+
+*Searches indices from*: now-10m ({ref}/common-options.html#date-math[Date Math format], see also <<rule-schedule, `Additional look-back time`>>)
+
+*Maximum alerts per execution*: 100
+
+*References*: 
+
+* https://www.elastic.co/es/blog/remote-desktop-protocol-connections-elastic-security
+
+*Tags*: 
+
+* Domain: Endpoint
+* Use Case: Lateral Movement Detection
+* Tactic: Lateral Movement
+* Data Source: Elastic Defend
+
+*Version*: 2
+
+*Rule authors*: 
+
+* Elastic
+
+*Rule license*: Elastic License v2
+
+
+==== Rule query
+
+
+[source, js]
+----------------------------------
+file where event.action in ("creation", "modification") and
+  not user.name:("SYSTEM", "root") and
+  process.name in ("System", "scp", "sshd", "smbd", "vsftpd", "sftp-server") and
+  (
+    file.path : (
+        "?:\\Users\\*\\AppData\\Roaming*", "?:\\Program Files*",
+        "?:\\Windows\\*", "?:\\Windows\\System\\*",
+        "?:\\Windows\\System32\\*", "/etc/*", "/tmp*",
+        "/var/tmp*", "/home/*/.*", "/home/.*", "/usr/bin/*",
+        "/sbin/*", "/bin/*", "/usr/lib/*", "/usr/sbin/*",
+        "/usr/share/*", "/usr/local/*", "/var/lib/dpkg/*",
+        "/lib/systemd/*"
+    )
+)
+
+----------------------------------
+
+*Framework*: MITRE ATT&CK^TM^
+
+* Tactic:
+** Name: Lateral Movement
+** ID: TA0008
+** Reference URL: https://attack.mitre.org/tactics/TA0008/
+* Technique:
+** Name: Exploitation of Remote Services
+** ID: T1210
+** Reference URL: https://attack.mitre.org/techniques/T1210/
