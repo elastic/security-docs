@@ -11,6 +11,7 @@ Identifies use of the Set-MpPreference PowerShell command to disable or weaken c
 * logs-endpoint.events.*
 * logs-windows.*
 * endgame-*
+* logs-system.security*
 
 *Severity*: medium
 
@@ -37,7 +38,7 @@ Identifies use of the Set-MpPreference PowerShell command to disable or weaken c
 * Data Source: Elastic Endgame
 * Data Source: Elastic Defend
 
-*Version*: 108
+*Version*: 109
 
 *Rule authors*: 
 
@@ -99,9 +100,11 @@ This rule monitors the execution of commands that can tamper the Windows Defende
 - Using the incident response data, update logging and audit policies to improve the mean time to detect (MTTD) and the mean time to respond (MTTR).
 
 
-
 ==== Setup
 
+
+
+*Setup*
 
 
 If enabling an EQL rule on a non-elastic-agent index (such as beats) for versions <8.2,
@@ -117,8 +120,11 @@ For more details on adding a custom ingest pipeline refer - https://www.elastic.
 [source, js]
 ----------------------------------
 process where host.os.type == "windows" and event.type == "start" and
- (process.name : ("powershell.exe", "pwsh.exe", "powershell_ise.exe") or process.pe.original_file_name in ("powershell.exe", "pwsh.dll", "powershell_ise.exe")) and
- process.args : "Set-MpPreference" and process.args : ("-Disable*", "Disabled", "NeverSend", "-Exclusion*")
+  (
+    process.name : ("powershell.exe", "pwsh.exe", "powershell_ise.exe") or
+    ?process.pe.original_file_name in ("powershell.exe", "pwsh.dll", "powershell_ise.exe")
+  ) and
+  process.args : "Set-MpPreference" and process.args : ("-Disable*", "Disabled", "NeverSend", "-Exclusion*")
 
 ----------------------------------
 
