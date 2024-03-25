@@ -3,7 +3,7 @@
 
 Identifies potential privilege escalation exploitation of DAC (Discretionary access control) file permissions. The rule identifies exploitation of DAC checks on sensitive file paths via suspicious processes whose capabilities include CAP_DAC_OVERRIDE (where a process can bypass all read write and execution checks) or CAP_DAC_READ_SEARCH (where a process can read any file or perform any executable permission on the directories).
 
-*Rule type*: eql
+*Rule type*: new_terms
 
 *Rule indices*: 
 
@@ -29,7 +29,7 @@ Identifies potential privilege escalation exploitation of DAC (Discretionary acc
 * Tactic: Privilege Escalation
 * Data Source: Elastic Defend
 
-*Version*: 1
+*Version*: 2
 
 *Rule authors*: 
 
@@ -39,6 +39,10 @@ Identifies potential privilege escalation exploitation of DAC (Discretionary acc
 
 
 ==== Setup
+
+
+
+*Setup*
 
 
 
@@ -72,15 +76,14 @@ For more details on Elastic Agent configuration settings, refer to the https://w
 For more details on Elastic Defend refer to the https://www.elastic.co/guide/en/security/current/install-endpoint.html[helper guide].
 
 
-
 ==== Rule query
 
 
 [source, js]
 ----------------------------------
-process where host.os.type == "linux" and event.type == "start" and event.action == "exec" and
-(process.thread.capabilities.permitted: "CAP_DAC_*" or process.thread.capabilities.effective: "CAP_DAC_*") and
-process.command_line : ("*sudoers*", "*passwd*", "*shadow*", "*/root/*") and user.id != "0"
+event.category:process and host.os.type:linux and event.type:start and event.action:exec and
+(process.thread.capabilities.permitted:CAP_DAC_* or process.thread.capabilities.effective: CAP_DAC_*) and
+process.command_line:(*sudoers* or *passwd* or *shadow* or */root/*) and not user.id:"0"
 
 ----------------------------------
 
