@@ -9,7 +9,7 @@ A scheduled task was created by a Windows script via cscript.exe, wscript.exe or
 
 * winlogbeat-*
 * logs-endpoint.events.*
-* logs-windows.*
+* logs-windows.sysmon_operational-*
 * endgame-*
 
 *Severity*: medium
@@ -33,8 +33,9 @@ A scheduled task was created by a Windows script via cscript.exe, wscript.exe or
 * Tactic: Execution
 * Data Source: Elastic Endgame
 * Data Source: Elastic Defend
+* Data Source: Sysmon
 
-*Version*: 105
+*Version*: 106
 
 *Rule authors*: 
 
@@ -60,7 +61,7 @@ Decode the base64 encoded Tasks Actions registry value to investigate the task's
 sequence by host.id with maxspan = 30s
   [any where host.os.type == "windows" and 
     (event.category : ("library", "driver") or (event.category == "process" and event.action : "Image loaded*")) and
-    (dll.name : "taskschd.dll" or file.name : "taskschd.dll") and
+    (?dll.name : "taskschd.dll" or file.name : "taskschd.dll") and
     process.name : ("cscript.exe", "wscript.exe", "powershell.exe", "pwsh.exe", "powershell_ise.exe")]
   [registry where host.os.type == "windows" and registry.path : (
     "HKLM\\SOFTWARE\\Microsoft\\Windows NT\\CurrentVersion\\Schedule\\TaskCache\\Tasks\\*\\Actions",

@@ -9,7 +9,7 @@ Identifies attempts to disable the code signing policy through the registry. Cod
 
 * winlogbeat-*
 * logs-endpoint.events.*
-* logs-windows.*
+* logs-windows.sysmon_operational-*
 * endgame-*
 
 *Severity*: medium
@@ -33,8 +33,9 @@ Identifies attempts to disable the code signing policy through the registry. Cod
 * Data Source: Elastic Endgame
 * Resources: Investigation Guide
 * Data Source: Elastic Defend
+* Data Source: Sysmon
 
-*Version*: 7
+*Version*: 8
 
 *Rule authors*: 
 
@@ -114,7 +115,11 @@ This rule identifies registry modifications that can disable DSE.
 ----------------------------------
 registry where host.os.type == "windows" and event.type : ("creation", "change") and
 (
-  registry.path : "HKEY_USERS\\*\\Software\\Policies\\Microsoft\\Windows NT\\Driver Signing\\BehaviorOnFailedVerify" and
+  registry.path : (
+    "HKEY_USERS\\*\\Software\\Policies\\Microsoft\\Windows NT\\Driver Signing\\BehaviorOnFailedVerify",
+    "HKU\\*\\Software\\Policies\\Microsoft\\Windows NT\\Driver Signing\\BehaviorOnFailedVerify",
+    "\\REGISTRY\\USER\\*\\Software\\Policies\\Microsoft\\Windows NT\\Driver Signing\\BehaviorOnFailedVerify"
+  ) and
   registry.value: "BehaviorOnFailedVerify" and
   registry.data.strings : ("0", "0x00000000", "1", "0x00000001")
 )
