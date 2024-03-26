@@ -8,8 +8,8 @@ Identifies script engines creating files in the Startup folder, or the creation 
 *Rule indices*: 
 
 * winlogbeat-*
-* logs-endpoint.events.*
-* logs-windows.*
+* logs-endpoint.events.file*
+* logs-windows.sysmon_operational-*
 * endgame-*
 
 *Severity*: medium
@@ -33,8 +33,9 @@ Identifies script engines creating files in the Startup folder, or the creation 
 * Resources: Investigation Guide
 * Data Source: Elastic Endgame
 * Data Source: Elastic Defend
+* Data Source: Sysmon
 
-*Version*: 109
+*Version*: 110
 
 *Rule authors*: 
 
@@ -115,9 +116,11 @@ This rule looks for shortcuts created by wscript.exe or cscript.exe, or js/vbs s
 - Using the incident response data, update logging and audit policies to improve the mean time to detect (MTTD) and the mean time to respond (MTTR).
 
 
-
 ==== Setup
 
+
+
+*Setup*
 
 
 If enabling an EQL rule on a non-elastic-agent index (such as beats) for versions <8.2,
@@ -132,7 +135,10 @@ For more details on adding a custom ingest pipeline refer - https://www.elastic.
 
 [source, js]
 ----------------------------------
-file where host.os.type == "windows" and event.type != "deletion" and user.domain != "NT AUTHORITY" and
+file where host.os.type == "windows" and event.type != "deletion" and
+
+  file.extension : ("lnk", "vbs", "vbe", "wsh", "wsf", "js") and
+  not (startsWith(user.domain, "NT") or endsWith(user.domain, "NT")) and
 
   /* detect shortcuts created by wscript.exe or cscript.exe */
   (file.path : "C:\\*\\Programs\\Startup\\*.lnk" and
