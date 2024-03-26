@@ -9,7 +9,8 @@ Identifies the enable of the full user-mode dumps feature system-wide. This feat
 
 * winlogbeat-*
 * logs-endpoint.events.*
-* logs-windows.*
+* logs-windows.sysmon_operational-*
+* endgame-*
 
 *Severity*: medium
 
@@ -34,8 +35,10 @@ Identifies the enable of the full user-mode dumps feature system-wide. This feat
 * Use Case: Threat Detection
 * Tactic: Credential Access
 * Data Source: Elastic Defend
+* Data Source: Elastic Endgame
+* Data Source: Sysmon
 
-*Version*: 5
+*Version*: 6
 
 *Rule authors*: 
 
@@ -49,7 +52,11 @@ Identifies the enable of the full user-mode dumps feature system-wide. This feat
 
 [source, js]
 ----------------------------------
-registry where host.os.type == "windows" and registry.path : "HKLM\\SOFTWARE\\Microsoft\\Windows\\Windows Error Reporting\\LocalDumps\\DumpType" and
+registry where host.os.type == "windows" and
+    registry.path : (
+        "HKLM\\SOFTWARE\\Microsoft\\Windows\\Windows Error Reporting\\LocalDumps\\DumpType",
+        "\\REGISTRY\\MACHINE\\SOFTWARE\\Microsoft\\Windows\\Windows Error Reporting\\LocalDumps\\DumpType"
+    ) and
     registry.data.strings : ("2", "0x00000002") and
     not (process.executable : "?:\\Windows\\system32\\svchost.exe" and user.id : ("S-1-5-18", "S-1-5-19", "S-1-5-20"))
 
