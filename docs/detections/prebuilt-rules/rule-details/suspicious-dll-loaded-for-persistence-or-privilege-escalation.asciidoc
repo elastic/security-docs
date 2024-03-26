@@ -9,7 +9,7 @@ Identifies the loading of a non Microsoft signed DLL that is missing on a defaul
 
 * winlogbeat-*
 * logs-endpoint.events.*
-* logs-windows.*
+* logs-windows.sysmon_operational-*
 * endgame-*
 
 *Severity*: high
@@ -42,8 +42,9 @@ Identifies the loading of a non Microsoft signed DLL that is missing on a defaul
 * Resources: Investigation Guide
 * Data Source: Elastic Endgame
 * Data Source: Elastic Defend
+* Data Source: Sysmon
 
-*Version*: 109
+*Version*: 110
 
 *Rule authors*: 
 
@@ -106,9 +107,11 @@ Attackers can execute malicious code by abusing missing modules that processes t
 - Using the incident response data, update logging and audit policies to improve the mean time to detect (MTTD) and the mean time to respond (MTTR).
 
 
-
 ==== Setup
 
+
+
+*Setup*
 
 
 If enabling an EQL rule on a non-elastic-agent index (such as beats) for versions <8.2,
@@ -127,11 +130,11 @@ any where host.os.type == "windows" and
  (event.category : ("driver", "library") or (event.category == "process" and event.action : "Image loaded*")) and
  (
   /* compatible with Elastic Endpoint Library Events */
-  (dll.name : ("wlbsctrl.dll", "wbemcomn.dll", "WptsExtensions.dll", "Tsmsisrv.dll", "TSVIPSrv.dll", "Msfte.dll",
+  (?dll.name : ("wlbsctrl.dll", "wbemcomn.dll", "WptsExtensions.dll", "Tsmsisrv.dll", "TSVIPSrv.dll", "Msfte.dll",
                "wow64log.dll", "WindowsCoreDeviceInfo.dll", "Ualapi.dll", "wlanhlp.dll", "phoneinfo.dll", "EdgeGdi.dll",
                "cdpsgshims.dll", "windowsperformancerecordercontrol.dll", "diagtrack_win.dll", "oci.dll", "TPPCOIPW32.dll", 
                "tpgenlic.dll", "thinmon.dll", "fxsst.dll", "msTracer.dll")
-   and (dll.code_signature.trusted != true or dll.code_signature.exists != true)) or
+   and (?dll.code_signature.trusted != true or ?dll.code_signature.exists != true)) or
 
   /* compatible with Sysmon EventID 7 - Image Load */
   (file.name : ("wlbsctrl.dll", "wbemcomn.dll", "WptsExtensions.dll", "Tsmsisrv.dll", "TSVIPSrv.dll", "Msfte.dll",

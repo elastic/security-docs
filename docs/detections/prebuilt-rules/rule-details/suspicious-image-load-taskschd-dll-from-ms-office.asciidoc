@@ -9,7 +9,7 @@ Identifies a suspicious image load (taskschd.dll) from Microsoft Office processe
 
 * winlogbeat-*
 * logs-endpoint.events.*
-* logs-windows.*
+* logs-windows.sysmon_operational-*
 * endgame-*
 
 *Severity*: low
@@ -36,8 +36,9 @@ Identifies a suspicious image load (taskschd.dll) from Microsoft Office processe
 * Tactic: Execution
 * Data Source: Elastic Endgame
 * Data Source: Elastic Defend
+* Data Source: Sysmon
 
-*Version*: 107
+*Version*: 108
 
 *Rule authors*: 
 
@@ -131,6 +132,9 @@ This rule looks for an MS Office process loading `taskschd.dll`, which may indic
 
 
 
+*Setup*
+
+
 If enabling an EQL rule on a non-elastic-agent index (such as beats) for versions <8.2,
 events will not define `event.ingested` and default fallback for EQL rules was not added until version 8.2.
 Hence for this rule to work effectively, users will need to add a custom ingest pipeline to populate
@@ -146,7 +150,7 @@ For more details on adding a custom ingest pipeline refer - https://www.elastic.
 any where host.os.type == "windows" and
  (event.category : ("library", "driver") or (event.category == "process" and event.action : "Image loaded*")) and
   process.name : ("WINWORD.EXE", "EXCEL.EXE", "POWERPNT.EXE", "MSPUB.EXE", "MSACCESS.EXE") and
-  (dll.name : "taskschd.dll" or file.name : "taskschd.dll")
+  (?dll.name : "taskschd.dll" or file.name : "taskschd.dll")
 
 ----------------------------------
 
