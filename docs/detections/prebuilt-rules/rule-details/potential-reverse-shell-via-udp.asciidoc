@@ -32,7 +32,7 @@ This detection rule identifies suspicious network traffic patterns associated wi
 * Use Case: Threat Detection
 * Tactic: Execution
 
-*Version*: 5
+*Version*: 6
 
 *Rule authors*: 
 
@@ -43,6 +43,9 @@ This detection rule identifies suspicious network traffic patterns associated wi
 
 ==== Setup
 
+
+
+*Setup*
 
 
 This rule requires data coming in from one of the following integrations:
@@ -89,29 +92,26 @@ However, if more advanced configuration is required to detect specific behavior,
 - For this detection rule no additional audit rules are required to be added to the integration.
 
 
-
 ==== Rule query
 
 
 [source, js]
 ----------------------------------
 sample by host.id, process.pid, process.parent.pid
-  [process where host.os.type == "linux" and auditd.data.syscall == "execve" and process.name : (
-     "bash", "dash", "sh", "tcsh", "csh", "zsh", "ksh", "fish", "perl", "python*", "nc", "ncat", "netcat", "php*",
-     "ruby", "openssl", "awk", "telnet", "lua*", "socat"
-   )
-  ]
+  [process where host.os.type == "linux" and event.type == "start" and event.action == "executed" and process.name : (
+    "bash", "dash", "sh", "tcsh", "csh", "zsh", "ksh", "fish", "perl", "python*", "nc", "ncat", "netcat", "php*",
+    "ruby", "openssl", "awk", "telnet", "lua*", "socat"
+    )]
   [process where host.os.type == "linux" and auditd.data.syscall == "socket" and process.name : (
-     "bash", "dash", "sh", "tcsh", "csh", "zsh", "ksh", "fish", "perl", "python*", "nc", "ncat", "netcat", "php*",
-     "ruby", "openssl", "awk", "telnet", "lua*", "socat"
-   ) and
-   auditd.data.a0 == "2" and auditd.data.a1 : ("2", "802")]
-[network where host.os.type == "linux" and auditd.data.syscall == "connect" and process.name : (
-   "bash", "dash", "sh", "tcsh", "csh", "zsh", "ksh", "fish", "perl", "python*", "nc", "ncat", "netcat", "php*",
-   "ruby", "openssl", "awk", "telnet", "lua*", "socat"
- ) and
- network.direction == "egress" and destination.ip != null and destination.ip != "127.0.0.1" and
- destination.ip != "127.0.0.53" and destination.ip != "::1"]
+    "bash", "dash", "sh", "tcsh", "csh", "zsh", "ksh", "fish", "perl", "python*", "nc", "ncat", "netcat", "php*",
+    "ruby", "openssl", "awk", "telnet", "lua*", "socat"
+    ) and auditd.data.a1 == "2"]
+  [network where host.os.type == "linux" and event.type == "start" and event.action == "connected-to" and
+   process.name : (
+    "bash", "dash", "sh", "tcsh", "csh", "zsh", "ksh", "fish", "perl", "python*", "nc", "ncat", "netcat", "php*",
+    "ruby", "openssl", "awk", "telnet", "lua*", "socat"
+    ) and network.direction == "egress" and destination.ip != null and
+   not cidrmatch(destination.ip, "127.0.0.0/8", "169.254.0.0/16", "224.0.0.0/4", "::1")]
 
 ----------------------------------
 
