@@ -1,28 +1,11 @@
-[[exceptions-api-create-exception-item]]
-=== Create exception item
+[[exceptions-api-create-rule-default-exception-item]]
+=== Create exception item for individual rules
 
-Creates an exception item that you can add to a shared exception list or endpoint exception list. 
-
-[IMPORTANT]
-=====
-* Before creating exception items, you must create an <<exceptions-api-create-container, exception container>>. After creating the container, you can associate exception items with it.
-* Endpoint rule exception items cannot use
-<<lists-api-overview, lists>> (the `list` in the `entries` array), and the
-following fields cannot be used in exception queries (as `field` values in the
-`entries` object):
-
-** `file.Ext.quarantine_path`
-** `file.Ext.quarantine_result`
-** `process.entity_id`
-** `process.parent.entity_id`
-** `process.ancestry`
-=====
-
-NOTE: Refer to <<lists-api-overview>> for information about creating exception items from lists, such as a list of IP addresses or host names.
+Creates an exception item for a specific rule. Allows a user to create exception items to be associated with the specified rule id.
 
 ==== Request URL
 
-`POST <kibana host>:<port>/api/exception_lists/items`
+`POST <kibana host>:<port>/api/detection_engine/rules/{id}/exceptions`
 
 ==== Request body
 
@@ -39,11 +22,13 @@ A JSON object with these fields:
 |No, defaults to empty array.
 
 |`description` |String |Describes the exception item. |Yes
-|`entries` |<<entries-object-schema, entries[]>> |Array containing the
+|`entries` |<<entries-object-schema-default-exception, entries[]>> |Array containing the
 exception queries. Boolean `AND` logic is used to evaluate the relationship
 between array elements. If you want to use `OR` logic, create a separate
 exception item. |Yes
 |`expire_time` |String |The exception item's expiration date, in ISO format. This field is only available for regular exception items, not endpoint exceptions. |No
+|`id` |String |ID of the associated rule. |Yes
+//Keep `list_id` and `item_id`?
 |`list_id` |String |ID of the associated <<exceptions-api-create-container, exception container>>. |Yes
 |`item_id` |String |Unique identifier of the exception item. |No, automatically
 created when it is not provided.
@@ -74,7 +59,7 @@ The array must also include an `endpoint` element (to implement the exception on
 
 |==============================================
 
-[[entries-object-schema]]
+[[entries-object-schema-default-exception]]
 ===== `entries` schema
 
 [width="100%",options="header"]
@@ -130,6 +115,7 @@ IMPORTANT: When you use <<lists-api-create-container, list containers>>
 For endpoint exceptions, you cannot create exception items based on excluded
 values (`"operator": "excluded"`).
 
+//Do we need to update these examples at all?
 ===== Example requests
 
 *Example 1*
@@ -210,7 +196,7 @@ POST api/exception_lists/items
 
 *Example 3*
 
-[[endpoint-item-example]]
+[[endpoint-item-example-default-exception]]
 Creates an endpoint exception item for files with the specified SHA-1 hash
 value on Windows OS:
 
@@ -249,7 +235,7 @@ POST api/exception_lists/items
 
 *Example 4*
 
-[[list-item-example]]
+[[list-item-example-default-exception]]
 Associates the `external-ip-excludes` <<lists-api-create-container, list container>>
 as an exception item to the `trusted-IPs` exception container:
 
@@ -286,7 +272,7 @@ POST api/exception_lists/items
 <<lists-api-create-list-item, list items>>.
 <2> The exception container's ID.
 
-[[nested-field-ex-api]]
+[[nested-field-ex-api-default-exception]]
 *Example 5*
 
 Adds an exception for nested Endpoint fields:
@@ -336,6 +322,29 @@ POST api/exception_lists/items
 
 [source,json]
 --------------------------------------------------
+
+{
+    "comments": [],
+    "created_by": "elastic",
+    "description": "Exception item for rule default exception list",
+    "entries": [
+        {
+          "field": "host.name",
+          "operator": "included",
+          "type": "match",
+          "value": "foo",
+        },
+          ],
+    "name": "Sample exception item",
+    "list_id": "e6c44050-c661-11ea-bab5-9d6ae015701b",
+    "namespace_type": "single",
+    "os_types": [],
+    "tags": [],
+    "type": "simple",
+    "updated_by": "elastic"
+}
+
+}
 {
   "_tags": [],
   "comments": [
