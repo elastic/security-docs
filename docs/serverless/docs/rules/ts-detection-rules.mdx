@@ -1,0 +1,109 @@
+---
+id: serverlessSecurityTsDetectionRules
+slug: /serverless/security/ts-detection-rules
+title: Troubleshoot detection rules
+description: Covers common troubleshooting issues when creating or managing detection rules.
+tags: ["serverless","security","troubleshooting","configure"]
+status: in review
+---
+
+<DocBadge template="technical preview" />
+<div id="ts-detection-rules"></div>
+
+This topic covers common troubleshooting issues when creating or managing <DocLink id="serverlessSecurityRulesUiCreate">detection rules</DocLink>.
+
+<div id="ML-rules-ts"></div>
+
+## ((ml-cap)) rules
+
+<DocAccordion id="start-ML-jobs-ts" buttonContent="((ml-cap)) rule is failing and a required ((ml)) job is stopped">
+
+If a ((ml)) rule is failing, check to make sure the required ((ml)) jobs are running and start any jobs that have stopped.
+
+1. Go to **Rules** → **Detection rules (SIEM)**, then select the ((ml)) rule. The required ((ml)) jobs and their statuses are listed in the **Definition** section.
+
+    ![Rule details page with ML job stopped](../images/ts-detection-rules/-troubleshooting-rules-ts-ml-job-stopped.png)
+
+1. If a required ((ml)) job isn't running, turn on the **Run job** toggle next to it.
+1. Rerun the ((ml)) detection rule.
+
+</DocAccordion>
+
+<div id="IM-match-rules-ts"></div>
+
+## Indicator match rules
+
+<DocAccordion id="IM-rule-failure" buttonContent="Rules are failing due to number of alerts">
+
+If you receive the following rule failure: `"Bulk Indexing of signals failed: [parent] Data too large"`, this indicates that the alerts payload was too large to process.
+
+This can be caused by bad indicator data, a misconfigured rule, or too many event matches. Review your indicator data or rule query. If nothing obvious is misconfigured, try executing the rule against a subset of the original data and continue diagnosis.
+
+</DocAccordion>
+
+<DocAccordion id="IM-rule-timeout" buttonContent="Indicator match rules are timing out">
+
+If you receive the following rule failure: `"An error occurred during rule execution: message: "Request Timeout after 90000ms"`, this indicates that the query phase is timing out. Try refining the time frame or dividing the data defined in the query into multiple rules.
+
+</DocAccordion>
+
+<DocAccordion id="IM-rule-heap-memory" buttonContent="Indicator match rules are failing because the `maxClauseCount` limit is too low">
+
+If you receive the following rule failure: `Bulk Indexing of signals failed: index: ".index-name" reason: "maxClauseCount is set to 1024" type: "too_many_clauses"`, this indicates that the limit for the total number of clauses that a query tree can have is too low. To update your maximum clause count, [increase the size of your ((es)) JVM heap memory](((ref))/advanced-configuration.html#set-jvm-heap-size). 1 GB of ((es)) JVM heap size or more is sufficient.
+
+</DocAccordion>
+
+<DocAccordion id="IM-slowness" buttonContent="General slowness">
+
+If you notice rule delays, review the suggestions above to troubleshoot, and also consider limiting the number of rules that run simultaneously, as this can cause noticeable performance implications.
+
+</DocAccordion>
+
+<div id="rule-exceptions-ts"></div>
+
+## Rule exceptions
+
+<DocAccordion id="rule-exceptions-autocomplete-ts" buttonContent="No autocomplete suggestions">
+
+When you're creating detection rule exceptions, autocomplete might not provide suggestions in the **Value** field if the values don't exist in the current page's time range.
+
+You can resolve this by expanding the time range, or by configuring the autocomplete feature to get suggestions from your full data set instead (turn off the `autocomplete:useTimeRange` advanced setting).
+{/* Will need to revisit this section since it mentions advanced settings, which aren't exposed yet.  */} 
+
+<DocCallOut title="Caution" color="warning">
+Turning off `autocomplete:useTimeRange` could cause performance issues if the data set is especially large.
+</DocCallOut>
+
+</DocAccordion>
+
+<DocAccordion id="rule-exceptions-field-conflicts" buttonContent="Warning about type conflicts and unmapped fields ">
+
+A warning icon (<DocIcon type="warning" title="Warning" size="s" />) and message appear for fields with <DocLink id="serverlessSecurityTsDetectionRules" section="fields-with-conflicting-types">type conflicts</DocLink> across multiple indices or  fields that are <DocLink id="serverlessSecurityTsDetectionRules" section="unmapped-fields">unmapped</DocLink>. You can learn more about the conflict by clicking the warning message. 
+
+<DocCallOut title="Note">
+A field can have type conflicts _and_ be unmapped in specified indices.  
+</DocCallOut>
+
+<DocImage size="l" url="../images/ts-detection-rules/-troubleshooting-warning-icon-message.png" alt="Shows the warning icon and message" />
+
+<div id="fields-with-conflicting-types"></div>
+
+### Fields with conflicting types  
+
+Type conflicts occur when a field is mapped to different types across multiple indices. To resolve this issue, you can create new indices with matching field type mappings and [reindex your data](((ref))/docs-reindex.html). Otherwise, use the information about a field's type mappings to ensure you're entering compatible field values when defining exception conditions. 
+
+In the following example, the selected field has been defined as different types across five indices.
+
+<DocImage size="xl" flatImage alt="Warning for fields with type conflicts" url="../images/ts-detection-rules/-troubleshooting-warning-type-conflicts.png" /> 
+
+<div id="unmapped-field-conflict"></div>
+
+### Unmapped fields 
+
+Unmapped fields are undefined within an index's mapping definition. Using unmapped fields to define an exception can prevent it from working as expected, and lead to false positives or unexpected alerts. To fix unmapped fields, [add them](((ref))/explicit-mapping.html#update-mapping) to your indices' mapping definitions. 
+
+In the following example, the selected field is unmapped across two indices. 
+
+<DocImage size="xl" flatImage alt="Warning for unmapped fields" url="../images/ts-detection-rules/-troubleshooting-warning-unmapped-fields.png" /> 
+
+</DocAccordion>

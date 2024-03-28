@@ -1,0 +1,91 @@
+---
+id: serverlessSecurityD4cGetStarted
+slug: /serverless/security/d4c-get-started
+title: Get started with CWP
+description: Secure your containerized workloads and start detecting threats and vulnerabilities.
+tags: ["security","how-to","get-started", "cloud security"]
+status: in review
+---
+
+<DocBadge template="technical preview" />
+<div id="d4c-get-started"></div>
+
+This page describes how to set up Cloud Workload Protection (CWP) for Kubernetes.
+
+<DocCallOut title="Requirements">
+
+- Kubernetes node operating systems must have Linux kernels 5.10.16 or higher.
+
+</DocCallOut>
+
+## Initial setup
+
+First, you'll need to deploy Elastic's Defend for Containers integration to the Kubernetes clusters you wish to monitor.
+
+1. Go to **Assets → Cloud**, then click **Add D4C Integration**.
+1. Name the integration. The default name, which you can change, is `cloud_defend-1`.
+1. Optional — make any desired changes to the integration's policy by adjusting the **Selectors** and **Responses** sections. (For more information, refer to the <DocLink id="serverlessSecurityD4cPolicyGuide">Defend for Containers policy guide</DocLink>). You can also change these later.
+1. Under **Where to add this integration**, select an existing or new agent policy.
+1. Click **Save & Continue**, then **Add ((agent)) to your hosts**.
+1. On the ((agent)) policy page, click **Add agent** to open the Add agent flyout.
+1. In the flyout, go to step 3 (**Install ((agent)) on your host**) and select the **Kubernetes** tab.
+1. Download or copy the manifest (`elastic-agent-managed-kubernetes.yml`).
+1. Open the manifest using your favorite editor, and uncomment the `#capabilities` section:
+
+    ```console
+    #capabilities:
+    #  add:
+    #    - BPF # (since Linux 5.8) allows loading of BPF programs, create most map types, load BTF, iterate programs and maps.
+    #    - PERFMON # (since Linux 5.8) allows attaching of BPF programs used for performance metrics and observability operations.
+    #    - SYS_RESOURCE # Allow use of special resources or raising of resource limits. Used by 'Defend for Containers' to modify 'rlimit_memlock'
+    ```
+
+1. From the directory where you saved the manifest, run the command `kubectl apply -f elastic-agent-managed-kubernetes.yml`.
+1. Wait for the **Confirm agent enrollment** dialogue to show that data has started flowing from your newly-installed agent, then click **Close**.
+
+<div id="d4c-get-started-threat"></div>
+
+## Get started with threat detection
+
+One of the <DocLink id="serverlessSecurityD4cPolicyGuide" section="default-policies">default D4C policies</DocLink> sends process telemetry events (`fork` and `exec`) to ((es)).
+
+In order to detect threats using this data, you'll need active <DocLink id="serverlessSecurityDetectionEngineOverview">detection rules</DocLink>. Elastic has prebuilt detection rules designed for this data. (You can also create your own <DocLink id="serverlessSecurityRulesUiCreate">custom rules</DocLink>.)
+
+To install and enable the prebuilt rules:
+
+1. Go to **Security → Rules → Detection rules (SIEM)**, then click **Add Elastic rules**.
+1. Click the **Tags** filter next to the search bar, and search for the `Data Source: Elastic Defend for Containers` tag.
+1. Select all the displayed rules, then click **Install _x_ selected rule(s)**.
+1. Return to the **Rules** page. Click the **Tags** filter next to the search bar, and search for the `Data Source: Elastic Defend for Containers` tag.
+1. Select all the rules with the tag, and then click **Bulk actions → Enable**.
+
+<div id="d4c-get-started-drift"></div>
+
+## Get started with drift detection and prevention
+
+((elastic-sec)) defines container drift as the creation or modification of an executable within a container. Blocking drift restricts the number of attack vectors available to bad actors by prohibiting them from using external tools.
+
+To enable drift detection, you can use the default D4C policy:
+
+1. Make sure the <DocLink id="serverlessSecurityD4cPolicyGuide" section="default-policies">default D4C policy</DocLink> is active.
+1. Make sure you enabled at least the "Container Workload Protection" rule, by following the steps to install prebuilt rules, above.
+
+To enable drift prevention, create a new policy:
+
+1. Add a new selector called `blockDrift`.
+1. Go to **Security → Manage → Container Workload Security → Your integration name**.
+1. Under **Selectors**, click **Add selector → File Selector**. By default, it selects the operations `createExecutable` and `modifyExecutable`.
+1. Name the selector, for example: `blockDrift`.
+1. Scroll down to the **Responses** section and click **Add response → File Response**.
+1. Under **Match selectors**, add the name of your new selector, for example: `blockDrift`.
+1. Select the **Alert** and **Block** actions.
+1. Click **Save integration**.
+
+<DocCallOut title="Important" color="warning">
+Before you enable blocking, we strongly recommend you observe a production workload that's using the default D4C policy to ensure that the workload does not create or modify executables as part of its normal operation.
+</DocCallOut>
+
+<div id="d4c-get-started-validation"></div>
+
+## Policy validation
+To ensure the stability of your production workloads, you should test policy changes before implementing them in production workloads. We also recommend you test policy changes on a simulated environment with workloads similar to production. This approach allows you to test that policy changes prevent undesirable behavior without disrupting your production workloads.

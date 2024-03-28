@@ -1,0 +1,143 @@
+---
+id: serverlessSecurityInstallDefend
+slug: /serverless/security/install-edr
+title: Install and configure the ((elastic-defend)) integration
+description: Start protecting your endpoints with ((elastic-defend)).
+tags: [ 'serverless', 'security', 'how-to' ]
+status: in review
+---
+
+<DocBadge template="technical preview" />
+<div id="install-endpoint"></div>
+
+Like other Elastic integrations, ((elastic-defend)) is integrated into the ((agent)) using [((fleet))](((fleet-guide))/fleet-overview.html). Upon configuration, the integration allows the ((agent)) to monitor events on your host and send data to the ((security-app)).
+
+<DocCallOut title="Requirements">
+
+* ((fleet)) is required for ((elastic-defend)).
+
+* To configure the ((elastic-defend)) integration on the ((agent)), you must have permission to use ((fleet)).
+
+* You must have the appropriate user role to configure an integration policy and access the **Endpoints** page.
+{/* Placeholder statement until we know which specific roles are required. Classic statement below for reference. */}
+{/* * You must have the **((elastic-defend)) Policy Management: All** <DocLink id="serverlessSecurityEndpointManagementReq">privilege</DocLink> to configure an integration policy, and the **Endpoint List** <DocLink id="serverlessSecurityEndpointManagementReq">privilege</DocLink> to access the **Endpoints** page. */}
+
+</DocCallOut>
+
+<div id="security-before-you-begin"></div>
+
+## Before you begin
+
+If you're using macOS, some versions may require you to grant Full Disk Access to different kernels, system extensions, or files. Refer to <DocLink id="serverlessSecurityElasticEndpointDeployReqs">requirements for ((elastic-endpoint))</DocLink> if you're installing the ((elastic-endpoint)) or <DocLink id="serverlessSecurityEndgameSensorFullDiskAccess">requirements for the Endgame sensor</DocLink> for more information.
+
+<div id="add-security-integration"></div>
+
+## Add the ((elastic-defend)) integration
+
+1. Go to the **Integrations** page, which you can access in several ways:
+
+    * The **Add integrations** link at the top of most pages
+    * **Assets** → **Browse Integrations**
+    * **Project settings** → **Integrations**
+    
+
+    ![Search result for "((elastic-defend))" on the Integrations page.](../images/install-endpoint/-getting-started-install-endpoint-endpoint-cloud-sec-integrations-page.png)
+
+1. Search for and select **((elastic-defend))**, then select **Add ((elastic-defend))**. The integration configuration page appears.
+
+    <DocCallOut title="Note">
+    If this is the first integration you've installed and the **Ready to add your first integration?** page appears instead, select **Add integration only (skip agent installation)** to proceed. You can <DocLink id="serverlessSecurityInstallDefend" section="add-the-((agent))">install ((agent))</DocLink> after setting up the ((elastic-defend)) integration.
+    </DocCallOut>
+
+    <DocImage size="xl" url="../images/install-endpoint/-getting-started-install-endpoint-endpoint-cloud-security-configuration.png" alt="Add ((elastic-defend)) integration page" />
+
+1. Configure the ((elastic-defend)) integration with an **Integration name** and optional **Description**.
+1. Select the type of environment you want to protect, either **Traditional Endpoints** or **Cloud Workloads**.
+1. Select a configuration preset. Each preset comes with different default settings for ((agent)) — you can further customize these later by <DocLink id="serverlessSecurityConfigureEndpointIntegrationPolicy">configuring the ((elastic-defend)) integration policy</DocLink>.
+
+    <DocTable columns={[
+    {
+    "title": "",
+    "width": "20%"
+    },
+    {
+    "title": "",
+    "width": "80%"
+    }
+    ]}>
+    <DocRow>
+    <DocCell>
+    **Traditional Endpoint presets**
+
+    </DocCell>
+    <DocCell>
+    All traditional endpoint presets _except_ **Data Collection** have these preventions enabled by default: malware, ransomware, memory threat, malicious behavior, and credential theft. Each preset collects the following events:
+
+    * **Data Collection:** All events; no preventions
+    * **Next-Generation Antivirus (NGAV):** Process events; all preventions
+    * **Essential EDR (Endpoint Detection & Response):** Process, Network, File events; all preventions
+    * **Complete EDR (Endpoint Detection & Response):** All events; all preventions
+
+    </DocCell>
+    </DocRow>
+    <DocRow>
+    <DocCell>
+    **Cloud Workloads presets**
+
+    </DocCell>
+    <DocCell>
+    Both cloud workload presets are intended for monitoring cloud-based Linux hosts. Therefore, <DocLink id="serverlessSecuritySessionView">session data</DocLink> collection, which enriches process events, is enabled by default. They both have all preventions disabled by default, and collect process, network, and file events.
+
+    * **All events:** Includes data from automated sessions.
+    * **Interactive only:** Filters out data from non-interactive sessions by creating an <DocLink id="serverlessSecurityEventFilters">event filter</DocLink>.
+
+    </DocCell>
+    </DocRow>
+    </DocTable>
+
+1. Enter a name for the agent policy in **New agent policy name**. If other agent policies already exist, you can click the **Existing hosts** tab and select an existing policy instead. For more details on ((agent)) configuration settings, refer to [((agent)) policies](((fleet-guide))/agent-policy.html).
+1. When you're ready, click **Save and continue**.
+1. To complete the integration, select **Add ((agent)) to your hosts** and continue to the next section to install the ((agent)) on your hosts.
+
+<div id="enroll-security-agent"></div>
+
+## Configure and enroll the ((agent))
+
+To enable the ((elastic-defend)) integration, you must enroll agents in the relevant policy using ((fleet)).
+
+<DocCallOut title="Important" color="warning">
+
+Before you add an ((agent)), a ((fleet-server)) must be running. Refer to [Add a ((fleet-server))](((fleet-guide))/add-a-fleet-server.html).
+
+((elastic-defend)) cannot be integrated with an ((agent)) in standalone mode.
+
+</DocCallOut>
+
+<div id="enroll-agent"></div>
+
+### Add the ((agent))
+
+1. If you're in the process of installing an ((agent)) integration (such as ((elastic-defend))), the **Add agent** UI opens automatically. Otherwise, go to **Assets** → **((fleet))** → **Agents** → **Add agent**.
+
+    ![Add agent flyout on the Fleet page.](../images/install-endpoint/-getting-started-install-endpoint-endpoint-cloud-sec-add-agent.png)
+
+1. Select an agent policy for the ((agent)). You can select an existing policy, or select **Create new agent policy** to create a new one. For more details on ((agent)) configuration settings, refer to [((agent)) policies](((fleet-guide))/agent-policy.html).
+
+    The selected agent policy should include the integration you want to install on the hosts covered by the agent policy (in this example, ((elastic-defend))).
+
+    <DocImage size="l" url="../images/install-endpoint/-getting-started-install-endpoint-endpoint-cloud-sec-add-agent-detail.png" alt="Add agent flyout with ((elastic-defend)) integration highlighted." />
+
+1. Ensure that the **Enroll in ((fleet))** option is selected. ((elastic-defend)) cannot be integrated with ((agent)) in standalone mode.
+
+1. Select the appropriate platform or operating system for the host, then copy the provided commands.
+
+1. On the host, open a command-line interface and navigate to the directory where you want to install ((agent)). Paste and run the commands from ((fleet)) to download, extract, enroll, and start ((agent)).
+
+1. (Optional) Return to the **Add agent** flyout in ((fleet)), and observe the **Confirm agent enrollment** and **Confirm incoming data** steps automatically checking the host connection. It may take a few minutes for data to arrive in ((es)).
+
+1. After you have enrolled the ((agent)) on your host, you can click **View enrolled agents** to access the list of agents enrolled in ((fleet)). Otherwise, select **Close**.
+
+    The host will now appear on the **Endpoints** page in the ((security-app)). It may take another minute or two for endpoint data to appear in ((elastic-sec)).
+
+1. For macOS, continue with <DocLink id="serverlessSecurityDeployElasticEndpoint">these instructions</DocLink> to grant ((elastic-endpoint)) the required permissions.
+
