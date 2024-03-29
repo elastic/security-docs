@@ -9,5 +9,87 @@ Entity risk scoring allows you to monitor risk score changes of hosts and users 
 
 It also generates risk scores on a recurring interval, and allows for easy onboarding and management. The engine is built to factor in risks from all {elastic-sec} use cases, and allows you to customize and control how and when risk is calculated.
 
+[discrete]
+== Risk scoring inputs
+
+Entity risk scores are determined by the following risk inputs:
+
+* <<alerts-ui-manage, Alerts>>, stored in the `.alerts-security.alerts-<space-id>` index alias
+* <<asset-criticality, Asset criticality level>>, stored in the `.asset-criticality.asset-criticality-<space-id>` index alias
+
+The resulting entity risk scores are stored in the `risk-score.risk-score-<space-id>` data stream alias.
+
+[NOTE]
+======
+* Entities without any alerts, or with only `Closed` alerts, are not assigned a risk score.
+* To use asset criticality, you must enable the `securitySolution:enableAssetCriticality` <<enable-asset-criticality, advanced setting>>.
+======
+
+[discrete]
+[[how-is-risk-score-calculated]]
+== How is risk score calculated?
+
+The risk scoring engine runs hourly to aggregate `Open` and `Acknowledged` alerts from the last 30 days. For each entity, the engine processes up to 10,000 alerts. It groups alerts by `host.name` or `user.name`, and aggregates the individual alert risk scores (`kibana.alert.risk_score`) such that alerts with higher risk scores contribute more than alerts with lower risk scores. The resulting aggregated risk score is assigned to the **Alerts** category in the entity's <<host-risk-summary, risk summary>>.
+
+The engine then verifies the entity's <<asset-criticality, asset criticality level>>. If there is no asset criticality assigned, the entity risk score remains equal to the aggregated score from the **Alerts** category. If a criticality level is assigned, the engine updates the risk score based on the default risk weight for each criticality level:
+
+[width="100%",options="header"]
+|==============================================
+|Asset criticality level |Default risk weight
+
+|Low impact |0.5
+|Medium impact |1
+|High impact |1.5
+|Extreme impact |2
+
+|==============================================
+
+NOTE: Asset criticality levels and default risk weights are subject to change.
+
+The asset criticality risk input is assigned to the **Asset Criticality** category in the entity's risk summary.
+
+Based on the two risk inputs, the risk scoring engine generates a single numeric value, normalized to a 0-100 range, as the entity risk score. It assigns a risk level by mapping the normalized risk score to one of these levels:
+
+[width="100%",options="header"]
+|==============================================
+|Risk level |Risk score
+
+|Unknown |< 20
+|Low |20-40
+|Moderate |40-70
+|High |70-90
+|Critical |> 90
+
+|==============================================
+
+.Click for a risk score calculation example
+[%collapsible]
+====
+This example shows how the risk scoring engine calculates the user risk score for `User_A`, whose asset criticality level is **Extreme impact**.
+
+There are 5 open alerts associated with `User_A`:
+
+* Alert 1 with alert risk score 21
+* Alert 2 with alert risk score 45
+* Alert 3 with alert risk score 21
+* Alert 4 with alert risk score 70
+* Alert 5 with alert risk score 21
+
+To calculate the user risk score, the risk scoring engine:
+
+. Sorts the associated alerts in descending order of alert risk score:
+** Alert 4 with alert risk score 70
+** Alert 2 with alert risk score 45
+** Alert 1 with alert risk score 21
+** Alert 3 with alert risk score 21
+** Alert 5 with alert risk score 21
+. Generates an aggregated risk score of 36.16, and assigns it to `User_A`'s **Alerts** risk category.
+. Looks up `User_A`'s asset criticality level, and identifies it as **Extreme impact**.
+. Generates a new risk input under the **Asset Criticality** risk category, with a risk contribution score of 16.95.
+. Increases the user risk score to 53.11, and assigns `User_A` a **Moderate** user risk level.
+
+If `User_A` had no asset criticality level assigned, the user risk score would remain unchanged at 36.16.
+====
+
 Learn how to <<turn-on-risk-engine, turn on the latest risk scoring engine>>.
 
