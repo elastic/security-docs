@@ -7,17 +7,10 @@ You can add alerts from multiple indices to a Timeline to facilitate advanced in
 You can drag or send fields of interest to a Timeline to create the desired query. For example, you can add fields from tables and histograms
 on the *Overview*, *Alerts*, *Hosts*, and *Network* pages, as well as from
 other Timelines. Alternatively, you can add a query directly in Timeline
-by clicking *+ Add field*.
+by expanding the <<narrow-expand,query builder>> and clicking **+ Add field**.
 
 [role="screenshot"]
 image::images/timeline-ui-updated.png[example Timeline with several events]
-
-To avoid losing your changes, you must save the Timeline before moving to a different {security-app} page.
-
-If you change an existing Timeline, you can use the **Save as new timeline** toggle to make a new copy of the Timeline, without overwriting the original one.
-
-TIP: You can record and share your findings with others by attaching your Timeline to a
-<<cases-overview, case>>.
 
 In addition to Timelines, you can create and attach Timeline templates to
 <<detection-engine-overview, detection rules>>. Timeline templates allow you to
@@ -25,12 +18,32 @@ define the source event fields used when you investigate alerts in
 Timeline. You can select whether the fields use predefined values or values
 retrieved from the alert. For more information, refer to <<timeline-templates-ui>>.
 
+[discrete]
+[[open-create-timeline]]
+
+== Create new or open existing Timeline
+
+To make a new Timeline, choose one of the following:
+
+* Go to **Timelines**, then click **Create new Timeline**. 
+* Go to the Timeline bar (which is at the bottom of most pages), click the image:images/add-new-timeline-button.png[Click the add new button,20,20] button, then click **Create new Timeline template**.
+* From an open Timeline or Timeline template, click **New** -> **New Timeline**.
+
+To open an existing Timeline, choose one of the following: 
+
+* Go to the Timelines page, then click a Timeline's title. 
+* Go to the Timeline bar, click the image:images/add-new-timeline-button.png[Click the add new button,20,20] button, then click **Open Timeline**.
+* From an open Timeline  or Timeline template, click **Open**, then select a Timeline. 
+
+To avoid losing your changes, save the Timeline before moving to a different {security-app} page. If you change an existing Timeline, you can use the **Save as new timeline** toggle to make a new copy of the Timeline without overwriting the original one.
+
+TIP: Click the star icon (image:images/favorite-icon.png[Click the favorite icon,20,20]) to favorite your Timeline and quickly find it later.
 
 [discrete]
 [[refine-timeline-results]]
 == View and refine Timeline results
 
-You can select whether Timeline displays detection alerts and other raw events, or just alerts. By default, Timeline displays both raw events and alerts. To hide raw events and display alerts only, click *Data view* to the right of the date and time picker, then select *Show only detection alerts*.
+You can select whether Timeline displays detection alerts and other raw events, or just alerts. By default, Timeline displays both raw events and alerts. To hide raw events and display alerts only, click *Data view* to the left of the KQL query bar, then select *Show only detection alerts*.
 
 [discrete]
 [[timeline-inspect-events-alerts]]
@@ -63,11 +76,11 @@ You can also modify a Timeline's display in other ways:
 
 [discrete]
 [[narrow-expand]]
-== Narrow or expand your KQL query
+== Use the Timeline query builder
 
-By placing fields within the drop zone, you turn them into query filters.
-Their relative placement specifies their logical relationships: horizontally adjacent filters use `AND`,
-while vertically adjacent filters use `OR`.
+Expand the query builder by clicking the query builder button (image:images/query-builder-button.png[Click the query builder button,20,20]) to the right of the KQL query bar. Drop in fields to build a query that filters Timeline results. The fields' relative placement specifies their logical relationships: horizontally adjacent filters use `AND`, while vertically adjacent filters use `OR`. 
+
+TIP: Collapse the query builder to provide more space for Timeline results by clicking the query builder button (image:images/query-builder-button.png[Click the query builder button,20,20]).
 
 [discrete]
 [[pivot]]
@@ -183,13 +196,33 @@ From the *Correlation* tab, you can also do the following:
 [[esql-in-timeline]]
 == Use {esql} to investigate events 
 
-preview::[]
+preview::["Do not use {esql} on production environments. This functionality is in technical preview and may be changed or removed in a future release. Elastic will work to fix any issues, but features in technical preview are not subject to the support SLA of official GA features."]
+
+NOTE: The {esql} tab is available by default. Since it's in technical preview, you can remove it by editing your {cloud}/ec-manage-kibana-settings.html#ec-manage-kibana-settings[{kib} user settings] and adding the `xpack.securitySolution.enableExperimental: ["timelineEsqlTabDisabled"]` feature flag.
 
 The {ref}/esql.html[Elasticsearch Query Language ({esql})] provides a powerful way to filter, transform, and analyze event data stored in {es}. {esql} queries use "pipes" to manipulate and transform data in a step-by-step fashion. This approach allows you to compose a series of operations, where the output of one operation becomes the input for the next, enabling complex data transformations and analysis.
 
 You can use {esql} in Timeline by opening the **{esql}** tab. From there, you can: 
 
-- Explore your events using the default query, or create a custom one. The default query searches documents within the Security alert index (`.alerts-security.alerts-default`) and indices specified in the <<update-sec-indices,Security data view>>, then returns 10 events from the defined time range.  
+- Write an {esql} query to explore your events. For example, start with the following query, then iterate on it to tailor your results: 
++
+[source,esql]
+----
+FROM .alerts-security.alerts-default,apm-*-transaction*,auditbeat-*,endgame-*,filebeat-*,logs-*,packetbeat-*,traces-apm*,winlogbeat-*,-*elastic-cloud-logs-*
+| LIMIT 10
+| KEEP @timestamp, message, event.category, event.action, host.name, source.ip, destination.ip, user.name
+----
++
+This query does the following:
+
+** It starts by querying documents within the Security alert index (`.alerts-security.alerts-default`) and indices specified in the <<update-sec-indices,Security data view>>.
+** Then, the query limits the output to the top 10 results.
+** Finally, it keeps the default Timeline fields (`@timestamp`, `message`, `event.category`, `event.action`, `host.name`, `source.ip`, `destination.ip`, and `user.name`) in the output.
++
+TIP: When querying indices that tend to be large (for example, `logs-*`), performance can be impacted by the number of fields returned in the output. To optimize performance, we recommend using the {ref}/esql-commands.html#esql-keep[`KEEP`] command to specify fields that you want returned. For example, add the clause `KEEP @timestamp, user.name` to the end of your query to specify that you only want the `@timestamp` and `user.name` fields returned.
+
+NOTE: An error message displays when the query bar is empty. 
+
 - Click the help icon (image:images/esql-ref-button.png[Click the ES|QL reference button,20,20]) on the far right side of the query editor to open the in-product reference documentation for all {esql} commands and functions.  
 - Visualize query results using {kibana-ref}/discover.html[Discover] functionality.
 

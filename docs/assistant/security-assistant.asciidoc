@@ -1,5 +1,4 @@
 [[security-assistant]]
-[chapter]
 = AI Assistant
 
 :frontmatter-description: The Elastic AI Assistant is a generative AI open-code chat assistant.
@@ -41,7 +40,7 @@ For example, refer to OpenAI's documentation on https://platform.openai.com/docs
 [[data-information]]
 == Your data and AI Assistant
 
-Elastic does not store or examine prompts or results used by AI Assistant, or use this data for model training. This includes anything you send the model, such as alert or event data, detection rule configurations, queries, and prompts. However, any data you provide to AI Assistant will be processed by the third-party provider you chose when setting up the OpenAI connector as part of the assistant setup.
+Elastic does not store or examine prompts or results used by AI Assistant, or use this data for model training. This includes anything you send the model, such as alert or event data, detection rule configurations, queries, and prompts. However, any data you provide to AI Assistant will be processed by the third-party large language model (LLM) provider you connected to as part of AI Assistant setup.
 
 Elastic does not control third-party tools, and assumes no responsibility or liability for their content, operation, or use, nor for any loss or damage that may arise from your using such tools. Please exercise caution when using AI tools with personal, sensitive, or confidential information. Any data you submit may be used by the provider for AI training or other purposes. There is no guarantee that the provider will keep any information you provide secure or confidential. You should familiarize yourself with the privacy practices and terms of use of any generative AI tools prior to use.
 
@@ -100,7 +99,7 @@ This opens the *Welcome* chat interface, where you can ask general questions abo
 You can also chat with AI Assistant from several particular pages in {elastic-sec} where you can easily send context-specific data and prompts to AI Assistant.
 
 * <<view-alert-details, Alert details>> or Event details flyout: Click *Chat* while viewing the details of an alert or event.
-* <<rules-ui-management, Rules page>>: Select one or more rules, then click the magic wand icon (🪄✨) at the top of the page next to the *Rules* title.
+* <<rules-ui-management, Rules page>>: Select one or more rules, then click the **Chat** button at the top right of the page.
 * <<data-quality-dash, Data Quality dashboard>>: Select the *Incompatible fields* tab, then click *Chat*. (This is only available for fields marked red, indicating they're incompatible).
 * <<timelines-ui, Timeline>>: Select the *Security Assistant* tab.
 
@@ -144,7 +143,7 @@ The *Settings* menu (image:images/icon-settings.png[Settings icon,17,17]) allows
 [role="screenshot"]
 image::images/assistant-settings-menu.png[AI Assistant's settings menu, open to the Conversations tab]
 
-The *Settings* menu has four tabs:
+The *Settings* menu has the following tabs:
 
 * **Conversations:** When you open AI Assistant from certain pages, such as Timeline or Alerts, it defaults to the relevant conversation type. Choose the default system prompt for each conversation type, the connector, and model (if applicable).
 * **Quick Prompts:** Modify existing quick prompts or create new ones. To create a new quick prompt, type a unique name in the *Name* field, then press *enter*. Under *Prompt*, enter or update the quick prompt's text. Under *Contexts*, select where the quick prompt should appear.
@@ -152,32 +151,62 @@ The *Settings* menu has four tabs:
 +
 NOTE: To delete a custom prompt, open the *Name* drop-down menu, hover over the prompt you want to delete, and click the *X* that appears. You cannot delete the default prompts.
 
-* **Anonymization:** When you provide an event to AI Assistant as context, you can select fields to include as plaintext, to obfuscate, and to not send. The **Anonymization** tab allows you to define default data anonymization behavior. You can update these settings for individual events when you include them in the chat.
-+
+* **Anonymization:** Select fields to include as plaintext, to obfuscate, and to not send when you provide events to AI Assistant as context. <<ai-assistant-anonymization, Learn more>>.
+
+* **Knowledge base:** Provide additional context to AI Assistant so it can answer questions about {esql} and alerts in your environment. <<ai-assistant-knowledge-base, Learn more>>.
+
+[discrete]
+[[ai-assistant-anonymization]]
+=== Anonymization
+
+The **Anonymization** tab of the AI Assistant settings menu allows you to define default data anonymization behavior for events you send to AI Assistant. You can update these settings for individual events when you include them in the chat.
+
 [role="screenshot"]
 image::images/assistant-anonymization-menu.png[AI Assistant's settings menu, open to the Anonymization tab]
-+
+
 The fields on this list are among those most likely to provide relevant context to AI Assistant. Fields with *Allowed* toggled on are included. *Allowed* fields with *Anonymized* set to *Yes* are included, but with their values obfuscated.
-+
+
 [role="screenshot"]
 image::images/add-alert-context.gif[A video that shows an alert being added as context to an AI Assistant chat message]
-+
+
 When you include a particular event as context, you can use a similar interface to adjust anonymization behavior. Be sure the anonymization behavior meets your specifications before sending a message with the event attached.
-+
+
 The *Show anonymized* toggle controls whether you see the obfuscated or plaintext versions of the fields you sent to AI Assistant. It doesn't control what gets obfuscated — that's determined by the anonymization settings. It also doesn't affect how event fields appear _before_ being sent to AI Assistant. Instead, it controls how fields that were already sent and obfuscated appear to you.
 
-* **Knowledge base:** Use retrieval-augmented generation to provide specialized knowledge of the Elastic Search Query Language ({esql}) to AI Assistant. For example, with the knowledge base active, you can ask AI Assistant to help you write an {esql} query for a particular use case, or ask it to answer general questions about {esql} syntax and usage. Without the knowledge base enabled, AI Assistant will not be able to answer questions about {esql}.
-+
-beta::[]
-+
-To enable the knowledge base:
-+
+
+[discrete]
+[[ai-assistant-knowledge-base]]
+=== Knowledge base
+beta::["Do not use {esql} on production environments. This functionality is in beta and is subject to change. The design and code is less mature than official GA features and is being provided as-is with no warranties. Beta features are not subject to the support SLA of official GA features."]
+
+The **Knowledge base** tab of the AI Assistant settings menu allows you to enable AI Assistant to answer questions about the Elastic Search Query Language ({esql}), and about alerts in your environment.
+
+[discrete]
+[[rag-for-esql]]
+==== Knowledge base for {esql}
+When this feature is enabled, AI Assistant can help you write an {esql} query for a particular use case, or answer general questions about {esql} syntax and usage. To enable AI Assistant to answer questions about {esql}:
+
 . Enable the Elastic Learned Sparse EncodeR (ELSER). This model provides additional context to the third-party LLM. To learn more, refer to {ml-docs}/ml-nlp-elser.html#download-deploy-elser[Configure ELSER].
 . Initialize the knowledge base by clicking *Initialize*.
 . Turn on the *Knowledge Base* option.
-. Click *Save*. The knowledge base is now active.
+. Click *Save*. The knowledge base is now active. A quick prompt for {esql} queries becomes available, which provides a good starting point for your {esql} conversations and questions. 
+
+NOTE: To update AI Assistant so that it uses the most current {esql} documentation to answer your questions, click **Delete** next to **Knowledge Base**, and toggle the **Knowledge Base** slider off and then on. 
+
+[discrete]
+[[rag-for-alerts]]
+==== Knowledge base for alerts
+When this feature is enabled, AI Assistant will receive multiple alerts as context for each of your prompts. It will receive alerts from the last 24 hours that have a status of `open` or `acknowledged`, ordered first by risk score, then by recency. Building block alerts are excluded. This enables it to answer questions about multiple alerts in your environment, rather than just the individual alerts you choose to include as context. 
+
+To enable RAG for alerts:
+
+. Turn on the **Alerts** setting.
+. Use the slider to select the number of alerts to send to AI Assistant. 
 +
-When the knowledge base is active, a quick prompt for {esql} queries becomes available. It provides a good starting point for your {esql} conversations and questions.
+[role="screenshot"]
+image::images/knowledge-base-settings.png["AI Assistant's settings menu open to the Knowledge Base tab",75%]
+
+NOTE: Including a large number of alerts may cause your request to exceed the maximum token length of your third-party generative AI provider. If this happens, try selecting a lower number of alerts to send.
 
 [discrete]
 [[ai-assistant-queries]]
@@ -191,3 +220,6 @@ In addition to practical advice, AI Assistant can offer conceptual advice, tips,
 
 * “How do I set up a {ml} job in {elastic-sec} to detect anomalies in network traffic volume over time?”
 * “I need to monitor for unusual file creation patterns that could indicate ransomware activity. How would I construct this query using EQL?”
+
+
+include::ai-alert-triage.asciidoc[leveloffset=+1]

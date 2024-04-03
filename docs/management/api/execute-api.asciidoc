@@ -15,20 +15,19 @@ A JSON object with these fields:
 
 [width="100%",options="header"]
 |==============================================
-|Name |Type |Description |Required
+include::_response-actions-api-reusable-content.asciidoc[tags=create-response-actions-api-common-body-options-row-content]
 
-|`endpoint_ids` |Array (String) |The IDs of endpoints where you want to issue this action. |Yes
-|`alert_ids` |Array (String) |If this action is associated with any alerts, they can be specified here. The action will be logged in any cases associated with the specified alerts. |No
-|`case_ids` |Array (String) |The IDs of cases where the action taken will be logged. |No
-|`comment` |String |Attach a comment to this action's log. The comment text will appear in associated cases. |No
 |`parameters.command` |String |A shell command to run on the host. The command must be supported by `bash` for Linux and macOS hosts, and `cmd.exe` for Windows. |Yes
-|`parameters.timeout` |String |How long the host should wait for the command to complete. Use `h` for hours, `m` for minutes, `s` for seconds (for example, `2s` is two seconds). If no timeout is specified, it defaults to four hours. |No
+|`parameters.timeout` |Integer |The duration, in seconds, that the host waits for the command to complete. If no timeout is specified, it defaults to four hours. |No
+
 |==============================================
 
 
+NOTE: The `execute` action uploads a text file containing the results of the execution on the endpoint, which is rate-limited.  If you are using the `endpoint_ids` field to task multiple endpoints, you should batch your calls in groups of 10 at a time.
+
 ===== Example requests
 
-Runs the command `ls -al` on a host with an `endpoint_id` value of `ed518850-681a-4d60-bb98-e22640cae2a8` with a timeout of `5m` and comments `Get list of all files`:
+Runs the command `ls -al` on a host with an `endpoint_id` value of `ed518850-681a-4d60-bb98-e22640cae2a8` with a timeout of `600` seconds and comments `Get list of all files`:
 
 [source,sh]
 --------------------------------------------------
@@ -37,7 +36,7 @@ POST /api/endpoint/action/execute
   "endpoint_ids": ["ed518850-681a-4d60-bb98-e22640cae2a8"],
   "parameters": {
     "command": "ls -al",
-    "timeout": "5m"
+    "timeout": 600
   },
   "comment": "Get list of all files"
 }
@@ -71,6 +70,7 @@ A JSON object with the details of the response action created.
         "name": "gke-endpoint-gke-clu-endpoint-node-po-e1a3ab89-4c4r"
       }
     },
+    "agentType": "endpoint",
     "command": "execute",
     "startedAt": "2023-07-28T18:43:27.362Z",
     "isCompleted": false,
@@ -88,7 +88,7 @@ A JSON object with the details of the response action created.
     "comment": "Get list of all files",
     "parameters": {
       "command": "ls -al",
-      "timeout": 300
+      "timeout": 600
     }
   }
 }
