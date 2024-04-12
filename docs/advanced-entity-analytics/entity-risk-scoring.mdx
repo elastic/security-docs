@@ -19,8 +19,25 @@ It also generates risk scores on a recurring interval, and allows for easy onboa
 
 Entity risk scores are determined by the following risk inputs:
 
-* <DocLink id="serverlessSecurityAlertsUiManage">Alerts</DocLink>, stored in the `.alerts-security.alerts-<space-id>` index alias
-* <DocLink id="serverlessSecurityAssetCriticality">Asset criticality level</DocLink>, stored in the `.asset-criticality.asset-criticality-<space-id>` index alias
+<DocTable columns={[
+  {
+    "title": "Risk input",
+    "width": "30%"
+  },
+  {
+    "title": "Storage location",
+    "width": "70%"
+  }
+]}>
+  <DocRow>
+    <DocCell><DocLink id="serverlessSecurityAlertsUiManage">Alerts</DocLink></DocCell>
+    <DocCell>`.alerts-security.alerts-<space-id>` index alias</DocCell>
+  </DocRow>
+  <DocRow>
+    <DocCell><DocLink id="serverlessSecurityAssetCriticality">Asset criticality level</DocLink></DocCell>
+    <DocCell>`.asset-criticality.asset-criticality-<space-id>` index alias</DocCell>
+  </DocRow>
+</DocTable>
 
 The resulting entity risk scores are stored in the `risk-score.risk-score-<space-id>` data stream alias.
 
@@ -33,32 +50,32 @@ The resulting entity risk scores are stored in the `risk-score.risk-score-<space
 
 ## How is risk score calculated?
 
-The risk scoring engine runs hourly to aggregate `Open` and `Acknowledged` alerts from the last 30 days. For each entity, the engine processes up to 10,000 alerts. It groups alerts by `host.name` or `user.name`, and aggregates the individual alert risk scores (`kibana.alert.risk_score`) such that alerts with higher risk scores contribute more than alerts with lower risk scores. The resulting aggregated risk score is assigned to the **Alerts** category in the entity's <DocLink id="serverlessSecurityHostsOverview" section="host-risk-summary">risk summary</DocLink>.
+1. The risk scoring engine runs hourly to aggregate `Open` and `Acknowledged` alerts from the last 30 days. For each entity, the engine processes up to 10,000 alerts.
 
-The engine then verifies the entity's <DocLink id="serverlessSecurityAssetCriticality">asset criticality level</DocLink>. If there is no asset criticality assigned, the entity risk score remains equal to the aggregated score from the **Alerts** category. If a criticality level is assigned, the engine updates the risk score based on the default risk weight for each criticality level:
+1. The engine groups alerts by `host.name` or `user.name`, and aggregates the individual alert risk scores (`kibana.alert.risk_score`) such that alerts with higher risk scores contribute more than alerts with lower risk scores. The resulting aggregated risk score is assigned to the **Alerts** category in the entity's <DocLink id="serverlessSecurityHostsOverview" section="host-risk-summary">risk summary</DocLink>.
 
-| Asset criticality level | Default risk weight |
-|-------------------------|---------------------|
-| Low impact              | 0.5                 |
-| Medium impact           | 1                   |
-| High impact             | 1.5                 |
-| Extreme impact          | 2                   |
+1. The engine then verifies the entity's <DocLink id="serverlessSecurityAssetCriticality">asset criticality level</DocLink>. If there is no asset criticality assigned, the entity risk score remains equal to the aggregated score from the **Alerts** category. If a criticality level is assigned, the engine updates the risk score based on the default risk weight for each criticality level. The asset criticality risk input is assigned to the **Asset Criticality** category in the entity's risk summary.
 
-<DocCallOut title="Note">
-Asset criticality levels and default risk weights are subject to change.
-</DocCallOut>
+    | Asset criticality level | Default risk weight |
+    |-------------------------|---------------------|
+    | Low impact              | 0.5                 |
+    | Medium impact           | 1                   |
+    | High impact             | 1.5                 |
+    | Extreme impact          | 2                   |
 
-The asset criticality risk input is assigned to the **Asset Criticality** category in the entity's risk summary.
+    <DocCallOut title="Note">
+    Asset criticality levels and default risk weights are subject to change.
+    </DocCallOut>
 
-Based on the two risk inputs, the risk scoring engine generates a single numeric value, normalized to a 0-100 range, as the entity risk score. It assigns a risk level by mapping the normalized risk score to one of these levels:
+1. Based on the two risk inputs, the risk scoring engine generates a single entity risk score of 0-100. It assigns a risk level by mapping the risk score to one of these levels:
 
-| Risk level    | Risk score    |
-| ------------- |---------------|
-| Unknown       | < 20          |
-| Low           | 20-40         |
-| Moderate      | 40-70         |
-| High          | 70-90         |
-| Critical      | > 90          |
+    | Risk level    | Risk score    |
+    | ------------- |---------------|
+    | Unknown       | < 20          |
+    | Low           | 20-40         |
+    | Moderate      | 40-70         |
+    | High          | 70-90         |
+    | Critical      | > 90          |
 
 <DocAccordion buttonContent="Click for a risk score calculation example">
 
