@@ -14,8 +14,14 @@ It also generates risk scores on a recurring interval, and allows for easy onboa
 
 Entity risk scores are determined by the following risk inputs:
 
-* <<alerts-ui-manage, Alerts>>, stored in the `.alerts-security.alerts-<space-id>` index alias
-* <<asset-criticality, Asset criticality level>>, stored in the `.asset-criticality.asset-criticality-<space-id>` index alias
+[width="100%",options="header"]
+|==============================================
+|Risk input |Storage location
+
+|<<alerts-ui-manage, Alerts>> |`.alerts-security.alerts-<space-id>` index alias
+|<<asset-criticality, Asset criticality level>> |`.asset-criticality.asset-criticality-<space-id>` index alias
+|==============================================
+
 
 The resulting entity risk scores are stored in the `risk-score.risk-score-<space-id>` data stream alias.
 
@@ -29,10 +35,12 @@ The resulting entity risk scores are stored in the `risk-score.risk-score-<space
 [[how-is-risk-score-calculated]]
 == How is risk score calculated?
 
-The risk scoring engine runs hourly to aggregate `Open` and `Acknowledged` alerts from the last 30 days. For each entity, the engine processes up to 10,000 alerts. It groups alerts by `host.name` or `user.name`, and aggregates the individual alert risk scores (`kibana.alert.risk_score`) such that alerts with higher risk scores contribute more than alerts with lower risk scores. The resulting aggregated risk score is assigned to the **Alerts** category in the entity's <<host-risk-summary, risk summary>>.
+. The risk scoring engine runs hourly to aggregate `Open` and `Acknowledged` alerts from the last 30 days. For each entity, the engine processes up to 10,000 alerts.
 
-The engine then verifies the entity's <<asset-criticality, asset criticality level>>. If there is no asset criticality assigned, the entity risk score remains equal to the aggregated score from the **Alerts** category. If a criticality level is assigned, the engine updates the risk score based on the default risk weight for each criticality level:
+. The engine groups alerts by `host.name` or `user.name`, and aggregates the individual alert risk scores (`kibana.alert.risk_score`) such that alerts with higher risk scores contribute more than alerts with lower risk scores. The resulting aggregated risk score is assigned to the **Alerts** category in the entity's <<host-risk-summary, risk summary>>.
 
+. The engine then verifies the entity's <<asset-criticality, asset criticality level>>. If there is no asset criticality assigned, the entity risk score remains equal to the aggregated score from the **Alerts** category. If a criticality level is assigned, the engine updates the risk score based on the default risk weight for each criticality level. The asset criticality risk input is assigned to the **Asset Criticality** category in the entity's risk summary.
++
 [width="100%",options="header"]
 |==============================================
 |Asset criticality level |Default risk weight
@@ -43,13 +51,11 @@ The engine then verifies the entity's <<asset-criticality, asset criticality lev
 |Extreme impact |2
 
 |==============================================
-
++
 NOTE: Asset criticality levels and default risk weights are subject to change.
 
-The asset criticality risk input is assigned to the **Asset Criticality** category in the entity's risk summary.
-
-Based on the two risk inputs, the risk scoring engine generates a single numeric value, normalized to a 0-100 range, as the entity risk score. It assigns a risk level by mapping the normalized risk score to one of these levels:
-
+. Based on the two risk inputs, the risk scoring engine generates a single entity risk score of 0-100. It assigns a risk level by mapping the risk score to one of these levels:
++
 [width="100%",options="header"]
 |==============================================
 |Risk level |Risk score
