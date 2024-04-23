@@ -7,15 +7,15 @@ Managed Object Format (MOF) files can be compiled locally or remotely through mo
 
 *Rule indices*: 
 
-* logs-endpoint.events.*
+* logs-endpoint.events.process-*
 
 *Severity*: low
 
 *Risk score*: 21
 
-*Runs every*: 60m
+*Runs every*: 5m
 
-*Searches indices from*: now-119m ({ref}/common-options.html#date-math[Date Math format], see also <<rule-schedule, `Additional look-back time`>>)
+*Searches indices from*: now-9m ({ref}/common-options.html#date-math[Date Math format], see also <<rule-schedule, `Additional look-back time`>>)
 
 *Maximum alerts per execution*: 100
 
@@ -28,9 +28,8 @@ Managed Object Format (MOF) files can be compiled locally or remotely through mo
 * Use Case: Threat Detection
 * Tactic: Execution
 * Data Source: Elastic Defend
-* Rule Type: BBR
 
-*Version*: 1
+*Version*: 2
 
 *Rule authors*: 
 
@@ -46,7 +45,16 @@ Managed Object Format (MOF) files can be compiled locally or remotely through mo
 ----------------------------------
 process where host.os.type == "windows" and event.type == "start" and
   process.name : "mofcomp.exe" and process.args : "*.mof" and
-  not user.id : "S-1-5-18"
+  not user.id : "S-1-5-18" and
+  not
+  (
+    process.parent.name : "ScenarioEngine.exe" and
+    process.args : (
+      "*\\MSSQL\\Binn\\*.mof",
+      "*\\Microsoft SQL Server\\???\\Shared\\*.mof",
+      "*\\OLAP\\bin\\*.mof"
+    )
+  )
 
 ----------------------------------
 
