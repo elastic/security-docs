@@ -7,7 +7,7 @@ Discovery of remote system information using built-in commands, which may be use
 
 *Rule indices*: 
 
-* logs-endpoint.events.*
+* logs-endpoint.events.process-*
 * winlogbeat-*
 * logs-windows.*
 * endgame-*
@@ -35,7 +35,7 @@ Discovery of remote system information using built-in commands, which may be use
 * Data Source: Elastic Endgame
 * Rule Type: BBR
 
-*Version*: 111
+*Version*: 112
 
 *Rule authors*: 
 
@@ -114,7 +114,18 @@ process where host.os.type == "windows" and event.type == "start" and
   ((((process.name : "net.exe" or process.pe.original_file_name == "net.exe") or
     ((process.name : "net1.exe" or process.pe.original_file_name == "net1.exe") and not 
        process.parent.name : "net.exe")) and 
-       process.args : "group" and process.args : "/domain" and not process.args : "/add")))
+       process.args : "group" and process.args : "/domain" and not process.args : "/add"))) and
+  not
+  (
+    (
+      process.name : "arp.exe" and
+      process.parent.executable : (
+        "?:\\ProgramData\\CentraStage\\AEMAgent\\AEMAgent.exe",
+        "?:\\Program Files (x86)\\Citrix\\Workspace Environment Management Agent\\Citrix.Wem.Agent.Service.exe",
+        "?:\\Program Files (x86)\\Lansweeper\\Service\\LansweeperService.exe"
+      )
+    )
+  )
 
 ----------------------------------
 
