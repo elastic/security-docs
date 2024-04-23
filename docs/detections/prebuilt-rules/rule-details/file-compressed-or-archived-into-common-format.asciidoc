@@ -7,7 +7,7 @@ Detects files being compressed or archived into common formats. This is a common
 
 *Rule indices*: 
 
-* logs-endpoint.events.*
+* logs-endpoint.events.file-*
 
 *Severity*: low
 
@@ -32,7 +32,7 @@ Detects files being compressed or archived into common formats. This is a common
 * Tactic: Collection
 * Rule Type: BBR
 
-*Version*: 3
+*Version*: 4
 
 *Rule authors*: 
 
@@ -46,7 +46,7 @@ Detects files being compressed or archived into common formats. This is a common
 
 [source, js]
 ----------------------------------
-file where event.type in ("creation", "change") and process.executable != null and not user.id : "S-1-5-18" and
+file where host.os.type == "windows" and event.type in ("creation", "change") and process.executable != null and not user.id : ("S-1-5-18", "S-1-5-17") and
  file.Ext.header_bytes : (
                           /* compression formats */
                           "1F9D*",             /* tar zip, tar.z (Lempel-Ziv-Welch algorithm) */
@@ -94,9 +94,16 @@ file where event.type in ("creation", "change") and process.executable != null a
      file.name : ("ossec-*.log.gz", "tmp-entry.gz", "tmp-entry", "last-entry.gz")
    ) or
    (
-     process.name : "excel.exe" and
+     process.name : ("excel.exe", "winword.exe", "powerpnt.exe") and
+     process.code_signature.subject_name : "Microsoft Corporation" and process.code_signature.trusted == true
+   ) or
+   (
+     process.name : "OneDrive.exe" and
      process.code_signature.subject_name : "Microsoft Corporation" and process.code_signature.trusted == true and
-     file.extension : ("tmp", "xlsx", "gz", "xlsb", "xar", "xslm")
+     (
+      file.extension : ("xlsx", "docx", "pptx", "xlsm") or
+      file.path : "?:\\Users\\*\\AppData\\Local\\Microsoft\\OneDrive\\logs\\*"
+     )
    ) or
    (
      process.name : "Dropbox.exe" and
@@ -107,6 +114,11 @@ file where event.type in ("creation", "change") and process.executable != null a
      process.name : "DellSupportAssistRemedationService.exe" and
      process.code_signature.subject_name : "Dell Inc" and process.code_signature.trusted == true and
      file.extension : "manifest"
+   ) or
+   (
+     process.name : "w3wp.exe" and
+     process.code_signature.subject_name : "Microsoft Windows" and process.code_signature.trusted == true and
+     file.path : "?:\\inetpub\\temp\\IIS Temporary Compressed Files\\*"
    )
  )
 
