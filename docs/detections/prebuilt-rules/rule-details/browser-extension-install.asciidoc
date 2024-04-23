@@ -7,15 +7,15 @@ Identifies the install of browser extensions. Malicious browser extensions can b
 
 *Rule indices*: 
 
-* logs-endpoint.events.*
+* logs-endpoint.events.file-*
 
 *Severity*: low
 
 *Risk score*: 21
 
-*Runs every*: 60m
+*Runs every*: 5m
 
-*Searches indices from*: now-119m ({ref}/common-options.html#date-math[Date Math format], see also <<rule-schedule, `Additional look-back time`>>)
+*Searches indices from*: now-9m ({ref}/common-options.html#date-math[Date Math format], see also <<rule-schedule, `Additional look-back time`>>)
 
 *Maximum alerts per execution*: 100
 
@@ -28,9 +28,8 @@ Identifies the install of browser extensions. Malicious browser extensions can b
 * Use Case: Threat Detection
 * Tactic: Persistence
 * Data Source: Elastic Defend
-* Rule Type: BBR
 
-*Version*: 1
+*Version*: 2
 
 *Rule authors*: 
 
@@ -44,12 +43,17 @@ Identifies the install of browser extensions. Malicious browser extensions can b
 
 [source, js]
 ----------------------------------
-file where event.action : "creation" and 
+file where host.os.type == "windows" and event.action : "creation" and 
 (
   /* Firefox-Based Browsers */
   (
     file.name : "*.xpi" and
-    file.path : "?:\\Users\\*\\AppData\\Roaming\\*\\Profiles\\*\\Extensions\\*.xpi"
+    file.path : "?:\\Users\\*\\AppData\\Roaming\\*\\Profiles\\*\\Extensions\\*.xpi" and
+    not 
+    (
+      process.name : "firefox.exe" and
+      file.name : ("langpack-*@firefox.mozilla.org.xpi", "*@dictionaries.addons.mozilla.org.xpi")
+    )
   ) or
   /* Chromium-Based Browsers */
   (
