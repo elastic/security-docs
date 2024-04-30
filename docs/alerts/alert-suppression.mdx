@@ -17,6 +17,8 @@ Alert suppression allows you to reduce the number of repeated or duplicate detec
 * <DocLink id="serverlessSecurityRulesUiCreate" section="create-custom-rule" text="Custom query" />
 * <DocLink id="serverlessSecurityRulesUiCreate" section="create-threshold-rule" text="Threshold" />
 * <DocLink id="serverlessSecurityRulesUiCreate" section="create-indicator-rule" text="Indicator match" />
+* <DocLink id="serverlessSecurityRulesUiCreate" section="create-eql-rule" text="Event correlation" /> (non-sequence queries only)
+* <DocLink id="serverlessSecurityRulesUiCreate" section="create-new-terms-rule" text="New terms" />
 
 Normally, when a rule meets its criteria repeatedly, it creates multiple alerts, one for each time the rule's criteria are met. When alert suppression is configured, duplicate qualifying events are grouped, and only one alert is created for each group. Depending on the rule type, you can configure alert suppression to create alerts each time the rule runs, or once within a specified time window. You can also specify multiple fields to group events by unique combinations of values.
 
@@ -28,32 +30,43 @@ Alert suppression is not available for Elastic prebuilt rules. However, if you w
 
 ## Configure alert suppression
 
-You can configure alert suppression when you create or edit a supported rule type. Refer to <DocLink id="serverlessSecurityRulesUiCreate" section="create-custom-rule" text="Create a custom query rule"/>, <DocLink id="serverlessSecurityRulesUiCreate" section="create-threshold-rule" text="Create a threshold rule"/>, or <DocLink id="serverlessSecurityRulesUiCreate" section="create-indicator-rule" text="Create an indicator match rule"/> for detailed instructions.
+You can configure alert suppression when you create or edit a supported rule type. Refer to documentation for creating <DocLink id="serverlessSecurityRulesUiCreate" section="create-custom-rule" text="custom query"/>, <DocLink id="serverlessSecurityRulesUiCreate" section="create-threshold-rule" text="threshold"/>, <DocLink id="serverlessSecurityRulesUiCreate" section="create-indicator-rule" text="indicator match"/>, <DocLink id="serverlessSecurityRulesUiCreate" section="create-eql-rule" text="event correlation"/>, or <DocLink id="serverlessSecurityRulesUiCreate" section="create-new-terms-rule" text="new terms" /> rules for detailed instructions.
 
 1. When configuring the rule type (the **Define rule** step for a new rule, or the **Definition** tab for an existing rule), specify how you want to group events for alert suppression:
 
     * Custom query rule: In **Suppress alerts by**, enter 1-3 field names to group events by the fields' values.  
     * Threshold rule: In **Group by**, enter up to 3 field names to group events by the fields' values, or leave the setting empty to group all qualifying events together. 
     * Indicator match rule: In **Suppress alerts by**, enter 1-3 field names to group events by the fields' values. 
+    * Event correlation rule (non-sequence queries only): In **Suppress alerts by**, enter 1-3 field names to group events by the fields' values.  
+    * New terms rule: In **Suppress alerts by**, enter 1-3 field names to group events by the fields' values. 
 
     <DocCallOut title="Note">  
-    Fields with multiple values are handled as follows:
+    If you specify a field with multiple values, alerts with that field are handled as follows:
 
-    * **Custom query or threshold rules** - If you specify a field with multiple values, an alert grouping is created for each value. For example, if you suppress alerts by `destination.ip` of `[127.0.0.1, 127.0.0.2, 127.0.0.3]`, alerts will be suppressed separately for each value of `127.0.0.1`, `127.0.0.2`, and `127.0.0.3`. 
-    * **Indicator match rule** - If you specify a field with multiple values, an alert grouping is created for alerts that contain the array you specified. For example, if you suppress alerts by `destination.ip` of `[127.0.0.1, 127.0.0.2, 127.0.0.3]`, alerts that contain this array are grouped and suppressed.
+    * **Custom query or threshold rules** - Alerts are grouped by each unique value. For example, if you suppress alerts by `destination.ip` of `[127.0.0.1, 127.0.0.2, 127.0.0.3]`, alerts will be suppressed separately for each value of `127.0.0.1`, `127.0.0.2`, and `127.0.0.3`. 
+    * **Indicator match, event correlation (non-sequence queries only), or new terms rule** - Alerts with the specified field name and identical array values are grouped together. For example, if you suppress alerts by `destination.ip` of `[127.0.0.1, 127.0.0.2, 127.0.0.3]`, alerts with the entire array are grouped and only one alert is created for the group. 
 
     </DocCallOut>
 
 1. If available, select how often to create alerts for duplicate events:
 
-    * **Per rule execution**: (Only available for custom query rules and indicator match rules) Create an alert each time the rule runs and meets its criteria.
-    * **Per time period**: Create one alert for all qualifying events within a specified time window, beginning when the rule first meets its criteria and creates the alert. (This is the only option available for threshold rules.)
+     <DocCallOut title="NOTE">
+     Both options are available for custom query, indicator match, event correlation, and new terms rules. Threshold rules only have the **Per time period** option. 
+     </DocCallOut>
+
+    * **Per rule execution**: Create an alert each time the rule runs and an event meets its criteria. 
+    * **Per time period**: Create one alert for all qualifying events that occur within a specified time window, beginning from when an event first meets the rule criteria and creates the alert. 
 
         For example, if a rule runs every 5 minutes but you don't need alerts that frequently, you can set the suppression time period to a longer time, such as 1 hour. If the rule meets its criteria, it creates an alert at that time, and for the next hour, it'll suppress any subsequent qualifying events.
 
         <DocImage size="l" url="../images/alert-suppression/-detections-alert-suppression-options.png" alt="Alert suppression options" />
 
-1. (Only available for custom query rules and indicator match rules) Under **If a suppression field is missing**, choose how to handle events with missing suppression fields (events in which one or more of the **Suppress alerts by** fields don't exist):
+1. Under **If a suppression field is missing**, choose how to handle events with missing suppression fields (events in which one or more of the **Suppress alerts by** fields don't exist):
+
+     <DocCallOut title="NOTE">
+     These options are not available for threshold rules. 
+     </DocCallOut>
+
     * **Suppress and group alerts for events with missing fields**: Create one alert for each group of events with missing fields. Missing fields get a `null` value, which is used to group and suppress alerts. 
     * **Do not suppress alerts for events with missing fields**: Create a separate alert for each matching event. This basically falls back to normal alert creation for events with missing suppression fields.
 
@@ -94,5 +107,5 @@ With alert suppression, detection alerts aren't created for the grouped source e
 
 Some rule types have a maximum number of alerts that can be suppressed (custom query rules don't have a suppression limit):
 
-* **Threshold** - The maximum number is the value specified for the [`max_signals`](((security-guide))/rules-api-create.html) setting, which is `100` by default.
-* **Indicator match** - The maximum number is five times the value specified for the [`max_signals`](((security-guide))/rules-api-create.html) setting. The default `max_signals` value is `100`, which means the default maximum limit for indicator match rules is `500`.
+* **Threshold  and event correlation (non-sequence queries only)** - The maximum number is the value you choose for the [`max_signals`](((security-guide))/rules-api-create.html) setting, which is `100` by default.
+* **Indicator match and new terms** - The maximum number is five times the value you choose for the [`max_signals`](((security-guide))/rules-api-create.html) setting. The default `max_signals` value is `100`, which means the default maximum limit for indicator match rules and new terms rules is `500`.
