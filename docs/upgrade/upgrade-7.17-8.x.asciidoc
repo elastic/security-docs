@@ -1,0 +1,151 @@
+[[upgrade-7.17-8x]]
+== Upgrade from 7.17 to an 8.x version
+
+[float]
+=== Why it’s important to upgrade
+
+Upgrading provides you access to Elastic Security’s latest features, enhancements, and bug fixes, many of which enable you to save your company money, respond faster to potential threats, investigate and analyze data with enhanced tooling. For more benefits, check out our blog, “Top 5 reasons to upgrade Elastic Security.” Also it’s important to ensure your deployment is fully maintained and supported. For more information, refer to Elastic’s Product End of Life Dates. 
+
+[float]
+=== Plan for your upgrade
+
+Before upgrading to Elastic Security 8.x, consider the following recommendations:
+
+* Plan for an appropriate amount of time to complete the upgrade. Depending on your configuration and the size of your cluster, the upgrade process can take up to a week to complete.
+
+* Open a support case with Elastic to alert our Customer Support team of your system change. You can also get support by purchasing a consulting engagement. 
+
+* Choose your desired Elastic Security 8.x version to upgrade to. We recommend that you upgrade to the latest minor and patch version available, as this provides the largest set of features, bug fixes, and security patches. Be sure to use the same version for upgrading your development or non-production deployment as for your production deployment. 
+
+* Review the latest 8.x Elastic Security features and the current set of Elastic connectors, integrations, and detection rules to determine if you can replace any customized content with out-of-the-box functionality. This can help reduce the workload and complexity of your upgrade.
+
+* If your organization uses external SOAR workflows on Elastic Security alerts (signals), you may need to change your workflows to accommodate the new alert schema used in 8.x. These changes may take up to two weeks to complete.
+
+* Review release notes, deprecations, and breaking changes for Elastic Security, Elasticsearch, Kibana, and, if applicable, Fleet, Elastic Agent, Beats, and Logstash. Identify any issues that might affect your deployment. Work with your Support Engineer on any questions you may have. Start with breaking changes for the solutions and platform components that you use, such as Elasticsearch and Kibana. 
+
+* Schedule a system maintenance window within your organization.
+
+[float]
+=== Pre-upgrade steps
+
+To prepare for the upgrade process, follow these steps before you start:
+
+. Do a software version inventory across your entire Elastic platform, including Elasticsearch, Kibana, Elastic Agent, Beats, and Logstash. If you're managing your deployments using Elastic Cloud Enterprise (ECE) or Elastic Cloud on Kubernetes (ECK), you may need to upgrade the orchestrator first.
+
+. If you’re running any of these at versions earlier than 7.17, you must first upgrade them all to the latest 7.17.x patch release before upgrading to 8.x. This enables you to use the Kibana Upgrade Assistant to perform the upgrade to 8.x. 
+
+. Run the Upgrade Assistant. Take note of any critical error messages, then work with your Support rep to resolve them.
++
+.Requirements
+[sidebar]
+--
+To run the Upgrade Assistant, you must have superuser cluster admin permissions.
+--
+
+. If you're not using Snapshot lifecycle management (SLM), you must set up, configure, and run at least one snapshot. Snapshots are incremental – depending on the cluster size and the input/output rate, the initial snapshot may take several hours to complete. If you are using SLM, check the SLM history to ensure that snapshots are completing successfully.
+
+[float]
+=== Perform 8.x upgrade on Non-Prod (Optional) or Prod Deployment
+
+NOTE: We strongly recommend you perform the following steps on a non-prod test deployment first to address any potential issues prior to upgrading on a prod deployment. 
+
+. Back up all of your data to a snapshot – which is a backup of an index taken from a running cluster. Rollbacks require a snapshot and cause data loss without one.
+
+. We recommend you export all your custom detection rules in the event there are issues with the detection engine after the upgrade.
+
+. Upgrade Elasticsearch. Refer to these upgrade instructions. 
+** If you’re using Elastic Cloud, we recommend upgrades with no downtime. Refer to these instructions.  
+** If you’re using Elastic Cloud Enterprise (ECE), refer to these instructions.  
+** If you’re using Elastic Cloud on Kubernetes (ECK), refer to these instructions. 
+** If you’re upgrading a self-orchestrated deployment, upgrade the data nodes first, tier-by-tier, in this order:
+... Frozen tier
+... Cold tier 
+... Warm tier
+... Hot tier 
+... Any other nodes not in a tier
+... All remaining nodes that are neither master-eligible nor data nodes
+... Master-eligible nodes
+
+. Upgrade Kibana. Refer to these instructions. Note: If you’re using Elastic Cloud or Elastic Cloud Enterprise, this is already included in the Elasticsearch upgrade.
+
+. Validate Elasticsearch and Kibana are operating as expected by completing the following checks: 
+.. Elasticsearch
+... Check the status of your clusters and ensure they’re green. Run the `GET _cat/health` API request. For more information, refer to the cat health API documentation.
+... Check the size of your rolled over indices/shards, which should be less than 50 GB. Run the `GET _cat/shards?s=store:desc` API request. For more information, refer to the cat shards API documentation.    
+... Ensure the index and search rate are close what they were prior to upgrading. Go to Stack Monitoring > ES > Overview. Tip: You can also check the index doc count using the cat index API.
+... Verify the snapshot lifecycle management (SLM) is taking snapshots by checking the SLM history. 
+... Ensure ML (Machine Learning?) is up and running. 
+.. Kibana 
+... Ensure that you and your users are able to successfully log in to Kibana and that they can access desired pages.
+... Check Discover and verify that the index patterns you normally use are available
+... Verify that your commonly-used dashboards are available and working properly
+... Check your SIEM detection rules, ensure that the desired set of rules is enabled (Rule Management) and that enabled rules are running without errors or warnings (Rule monitoring).
+... If you use any watcher-based Kibana scheduled reporting, ensure that it is working properly.
+
+. Upgrade your ingest components (such as Logstash, Fleet & Elastic Agent, Beats, etc.) Refer to the Elastic Stack upgrade docs for details.
+
+. Validate Ingest is operating OK
+.. Open Discover, go through data views for each of your expected ingest data streams and ensure that data is indeed being ingested in the expected format and volume. 
+
+. Validate that Elastic Security is operating OK
+.. Ensure that your detection rules are (re-enabled)
+.. Ensure that any downstream (SOAR) workflows that consume alerts are working
+.. Verify that any custom dashboards your team has created are working properly, especially if they operate on alert (signal) documents
+
+. User and stakeholder validation and sign off
+
+[float]
+=== Post-upgrade steps
+
+The following sections describe procedures to complete after upgrading {elastic-sec} to 8.x.
+
+[float]
+[[reenable-rules-upgrade]]
+==== Re-enable disabled rules
+
+Any active rules when you upgrade from 7.17 to 8.0.1 or newer are automatically disabled, and a tag named `auto_disabled_8.0` is added to those rules for tracking purposes. Once the upgrade is complete, you can filter rules by the newly added tag, then use bulk actions to re-enable them:
+
+. Go to the Rules page (*Detect -> Rules*).
+. From the *Tags* dropdown, search for `auto_disabled_8.0`.
+. Click *Select all _x_ rules*, or individually select the rules you want to re-enable.
+. Click *Bulk actions -> Enable* to re-enable the rules.
+
+Alternatively, you can use the <<bulk-actions-rules-api, Bulk rule actions>> API to re-enable rules.
+
+[float]
+[[fda-upgrade]]
+==== Full Disk Access (FDA) approval for {elastic-endpoint}
+
+When you manually install {elastic-endpoint}, you must approve a system extension, kernel extension, and enable Full Disk Access (FDA). There is a new FDA requirement in 8.x. Refer to <<elastic-endpoint-deploy-reqs>> to review the required permissions.
+
+[float]
+[[data-views-upgrade]]
+==== Requirements to display Data views in the {security-app}
+
+To make the *Data view* option appear in an environment with legacy alerts, a user with elevated role privileges must visit the {security-app}, open a page that displays alert data (such as the Overview page), then refresh the page. The user's role privileges must allow them to enable the detections feature in a Kibana space. Refer to <<enable-detections-ui, Enable and access detections>> for more information.
+
+NOTE: If new alerts are generated in an upgraded environment without legacy alerts, refreshing any page with alert data in {elastic-sec} will make the *Data view* option appear in the {elastic-sec} UI.
+
+[float]
+[[alert-schema-upgrade]]
+==== New alert schema
+
+The system index for detection alerts has been renamed from `.siem-signals-<space-id>` to `.alerts-security.alerts-<space-id>` and is now a hidden index. Therefore, the schema used for alert documents in {elastic-sec} has changed. Users that access documents in the `.siem-signals` indices using the {elastic-sec} API must modify their API queries and scripts to operate properly on the new 8.x alert documents. Refer to <<query-alert-indices, how to query alert indices>> and review the new <<alert-schema, Alert schema>>.
+
+[float]
+[[preview-upgrade]]
+==== New privileges required to view alerts and preview rules
+
+* To view alerts, users need `manage`, `write`, `read`, and `view_index_metadata` privileges to two new indices, `.alerts-security.alerts` and `.internal.alerts-security.alerts`. Existing users who are upgrading to 8.x can retain their privileges to the `.siem-signals` index.
+
+* To <<preview-rules, preview rules>>, users need `read` access to the new `.preview.alerts-security.alerts` index. Refer to <<detections-permissions-section>> for more information.
+
+[float]
+[[im-rules-upgrade]]
+==== Updates to indictor match rules
+
+Changes to the indicator match rule's <<rule-ui-advanced-params, default threat indicator path>> might require you to update existing rules or create new ones after upgrading to 8.x. Be mindful of the following:
+
+* If an indicator match rule's default threat indicator path was not defined before the upgrade, it will default to `threatintel.indicator` after the upgrade. This allows the rule to continue using indicator data ingested by {filebeat} version 7.x. If a custom value was defined before the upgrade, the value will not change.
+* If an existing indicator match rule was configured to use threat indicator indices generated from {filebeat} version 7.x, updating the default threat indicator path to `threat.indicator` after you upgrade to {stack} version 8.x and {agent} or {filebeat} version 8.x configures the rule to use threat indicator indices generated by those later versions.
+* You must create separate rules to query threat intelligence indices created by {filebeat} version 7.x and version 8.x because each version requires a different default threat indicator path value. Review the recommendations for <<query-alert-indices, querying alert indices>>.
