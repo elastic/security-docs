@@ -197,3 +197,46 @@ From the **Correlation** tab, you can also do the following:
 * Reorder the columns and choose which fields to display.
 * Choose a data view and whether to show detection alerts only.
 
+
+<div id="esql-in-timeline"></div>
+
+## Use ((esql)) to investigate events 
+
+The [Elasticsearch Query Language (((esql)))](((ref))/esql.html) provides a powerful way to filter, transform, and analyze event data stored in ((es)). ((esql)) queries use "pipes" to manipulate and transform data in a step-by-step fashion. This approach allows you to compose a series of operations, where the output of one operation becomes the input for the next, enabling complex data transformations and analysis.
+
+You can use ((esql)) in Timeline by opening the **((esql))** tab. From there, you can: 
+
+- Write an ((esql)) query to explore your events. For example, start with the following query, then iterate on it to tailor your results: 
+
+    ```esql
+    FROM .alerts-security.alerts-default,apm-*-transaction*,auditbeat-*,endgame-*,filebeat-*,logs-*,packetbeat-*,traces-apm*,winlogbeat-*,-*elastic-cloud-logs-*
+    | LIMIT 10
+    | KEEP @timestamp, message, event.category, event.action, host.name, source.ip, destination.ip, user.name
+    ```
+
+        This query does the following:
+
+        - It starts by querying documents within the Security alert index (`.alerts-security.alerts-default`) and indices specified in the <DocLink id="serverlessSecurityAdvancedSettings" section="update-sec-indices">Security data view</DocLink>.
+        - Then, the query limits the output to the top 10 results.
+        - Finally, it keeps the default Timeline fields (`@timestamp`, `message`, `event.category`, `event.action`, `host.name`, `source.ip`, `destination.ip`, and `user.name`) in the output.
+
+            <DocCallOut title="Tip">
+            When querying indices that tend to be large (for example, `logs-*`), performance can be impacted by the number of fields returned in the output. To optimize performance, we recommend using the [`KEEP`](((ref))/esql-commands.html#esql-keep) command to specify fields that you want returned. For example, add the clause `KEEP @timestamp, user.name` to the end of your query to specify that you only want the `@timestamp` and `user.name` fields returned.
+            </DocCallOut>
+
+        <DocCallOut title="Note">
+        An error message displays when the query bar is empty. 
+        </DocCallOut> 
+
+- Click the help icon (<DocIcon type="documentation" title="Click the ES|QL help icon" />) on the far right side of the query editor to open the in-product reference documentation for all ((esql)) commands and functions.  
+- Visualize query results using [Discover](((kibana-ref))/discover.html) functionality.
+
+<DocImage size="xl" url="../images/timelines-ui/-events-esql-tab.png" alt="Example of the ES|QL tab in Timeline" />
+
+<div id="esql-in-timeline-resources"></div> 
+
+## Additional ((esql)) resources 
+
+To get started using ((esql)), read the tutorial for [using ((esql)) in ((kib))](((ref))/esql-kibana.html). Much of the functionality available in ((kib)) is also available in Timeline.  
+
+To find examples of using ((esql)) for threat hunting, check out [our blog](https://www.elastic.co/blog/introduction-to-esql-new-query-language-flexible-iterative-analytics).
