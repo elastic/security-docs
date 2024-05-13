@@ -12,9 +12,9 @@ status: in review
 
 The Elastic AI Assistant utilizes generative AI to bolster your cybersecurity operations team. It allows users to interact with ((elastic-sec)) for tasks such as alert investigation, incident response, and query generation or conversion using natural language and much more.
 
-AI Assistant relies on generative AI connectors to third-party AI providers.
+AI Assistant can connect to multiple LLM providers so you can select the best model for your needs.
 
-<DocImage size="xl" url="../images/ai-assistant/-assistant-assistant.gif" alt="Animation of AI Assistant chat window" />
+<DocImage size="xl" url="../images/ai-assistant/assistant-basic-view.png" alt="Image of AI Assistant chat window" />
 
 <DocCallOut title="Important" color="warning">
 The Elastic AI Assistant is designed to enhance your analysis with smart dialogues. Its capabilities are still developing. Users should exercise caution as the quality of its responses might vary. Your insights and feedback will help us improve this feature. Always cross-verify AI-generated advice for accuracy.
@@ -57,32 +57,7 @@ Elastic can automatically anonymize event data that you provide to AI Assistant 
 
 You must create a generative AI connector before you can use AI Assistant.
 
-1. Open AI Assistant **Cmd + ;** (or **Ctrl + ;** on Windows), and click **Connector** → **Add new Connector**.
-2. Select either **Amazon Bedrock** or **OpenAI**. 
-3. Enter the authentication details required for your chosen connector type, then click **Save**.
-
-For OpenAI and Azure OpenAI Service, you need to provide an API key. For Amazon Bedrock, you need to provide an access key and secret for an IAM user with at least the following permissions:
-
-```
-{
-    "Version": "2012-10-17",
-    "Statement": [
-        {
-            "Sid": "VisualEditor0",
-            "Effect": "Allow",
-            "Action": [
-                "bedrock:InvokeModel",
-                "bedrock:InvokeModelWithResponseStream"
-            ],
-            "Resource": "*"
-        }
-    ]
-}
-```
-
-For Amazon Bedrock, only Anthropic models are supported: Claude and Claude Instant. You need to [enable them in AWS](https://docs.aws.amazon.com/bedrock/latest/userguide/model-access.html#manage-model-access) before setting up an Amazon Bedrock connector. You can configure an Amazon Bedrock connector to use any [AWS region where Anthropic models are supported](https://docs.aws.amazon.com/general/latest/gr/bedrock.html) by editing the **URL** field under **Connector settings**, for example by changing `us-west-2` to `eu-central-1`.
-
-For more information about setting up generative AI connectors, refer to [OpenAI connector](((kibana-ref))/openai-action-type.html) or [Amazon Bedrock connector](((kibana-ref))/bedrock-action-type.html).
+For more information about setting up generative AI connectors, refer to <DocLink id="serverlessSecurityConnectBedrock"/>, <DocLink id="serverlessSecurityConnectOpenAI"/>, or <DocLink id="serverlessSecurityConnectAzureOpenAI"/>.
 
 <div id="start-chatting"></div>
 
@@ -102,7 +77,7 @@ You can also chat with AI Assistant from several particular pages in ((elastic-s
 * <DocLink id="serverlessSecurityTimelinesUi">Timeline</DocLink>: Select the **Security Assistant** tab.
 
 <DocCallOut title="Note">
-All chat history and custom quick prompts persist in local browser storage, allowing you to navigate away to other areas in ((elastic-sec)), then return to ongoing conversations. This also means that chats persist across multiple users if they use the same browser; be sure clear any chats that you don't want available to other users.
+Each user's chat history and custom quick prompts are automatically saved, so you can leave ((elastic-sec)) and return to pick up a conversation later.
 </DocCallOut>
 
 <div id="interact-with-assistant"></div>
@@ -125,7 +100,7 @@ Use these features to adjust and act on your conversations with AI Assistant:
     Quick prompt availability varies based on context — for example, the **Alert summarization** quick prompt appears when you open AI Assistant while viewing an alert. To customize existing quick prompts and create new ones, click **Add Quick prompt**.
 
 
-* Use these buttons to perform actions in the conversation history and prompt entry area:
+* In an active conversation, you can use the inline actions that appear on messages to incorporate AI Assistant's responses into your workflows:
 
     * **Add note to timeline** (<DocIcon type="editorComment" title="Comment" />): Add the selected text to your currently active Timeline as a note.
     * **Add to existing case** (<DocIcon type="addDataApp" title="Add data" />): Add a comment to an existing case using the selected text.
@@ -136,7 +111,6 @@ Use these features to adjust and act on your conversations with AI Assistant:
         Be sure to specify which language you'd like AI Assistant to use when writing a query. For example: "Can you generate an Event Query Language query to find four failed logins followed by a successful login?"
         </DocCallOut>
 
-    * **Clear chat** (<DocIcon type="cross" title="Remove" />): Delete the conversation history and start a new chat.
 
 <div id="configure-ai-assistant"></div>
 
@@ -147,9 +121,9 @@ The **Settings** menu (<DocIcon type="controlsVertical" title="EQL settings" />)
 
 The **Settings** menu has the following tabs:
 
-* **Conversations:** When you open AI Assistant from certain pages, such as Timeline or Alerts, it defaults to the relevant conversation type. Choose the default system prompt for each conversation type, the connector, and model (if applicable).
+* **Conversations:** When you open AI Assistant from certain pages, such as Timeline or Alerts, it defaults to the relevant conversation type. Choose the system prompt for each conversation type, the connector, and model (if applicable). The **Streaming** setting controls whether AI Assistant's responses appear word-by-word (streamed), or as a complete block of text. Streaming is currently only available for OpenAI models.
 * **Quick Prompts:** Modify existing quick prompts or create new ones. To create a new quick prompt, type a unique name in the **Name** field, then press **enter**. Under **Prompt**, enter or update the quick prompt's text. Under **Contexts**, select where the quick prompt should appear.
-* **System Prompts:** Edit existing system prompts or create new ones. To create a new system prompt, type a unique name in the **Name** field, then press **enter**. Under **Prompt**, enter or update the system prompt's text. Under **Contexts**, select where the system prompt should appear.
+* **System Prompts:** Edit existing system prompts or create new ones. To create a new system prompt, type a unique name in the **Name** field, then press **enter**. Under **Prompt**, enter or update the system prompt's text. 
 
     <DocCallOut title="Note">
     To delete a custom prompt, open the **Name** drop-down menu, hover over the prompt you want to delete, and click the *X* that appears. You cannot delete the default prompts.
@@ -162,17 +136,13 @@ The **Settings** menu has the following tabs:
 
 ### Anonymization
 
-The **Anonymization** tab of the AI Assistant settings menu allows you to define default data anonymization behavior for events you send to AI Assistant. You can update these settings for individual events when you include them in the chat.
+The **Anonymization** tab of the AI Assistant settings menu allows you to define default data anonymization behavior for events you send to AI Assistant. Fields with **Allowed** toggled on are included in events provided to AI Assistant. **Allowed** fields with **Anonymized** set to **Yes** are included, but with their values obfuscated.
 
 ![AI Assistant's settings menu, open to the Anonymization tab](../images/ai-assistant/-assistant-assistant-anonymization-menu.png)
 
-The fields on this list are among those most likely to provide relevant context to AI Assistant. Fields with **Allowed** toggled on are included. **Allowed** fields with **Anonymized** set to **Yes** are included, but with their values obfuscated.
-
-![A video that shows an alert being added as context to an AI Assistant chat message](../images/ai-assistant/-assistant-add-alert-context.gif)
-
-When you include a particular event as context, you can use a similar interface to adjust anonymization behavior. Be sure the anonymization behavior meets your specifications before sending a message with the event attached.
-
 The **Show anonymized** toggle controls whether you see the obfuscated or plaintext versions of the fields you sent to AI Assistant. It doesn't control what gets obfuscated — that's determined by the anonymization settings. It also doesn't affect how event fields appear _before_ being sent to AI Assistant. Instead, it controls how fields that were already sent and obfuscated appear to you.
+
+When you include a particular event as context, such as an alert from the Alerts page, you can adjust anonymization behavior for the specific event. Be sure the anonymization behavior meets your specifications before sending a message with the event attached.
 
 <div id="ai-assistant-knowledge-base"></div>
 
