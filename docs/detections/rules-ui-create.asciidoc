@@ -320,11 +320,11 @@ NOTE: New fields don't exist in the source index that the query is searching. In
 Here is an example non-aggregating query:
 [source,esql]
 -----
-FROM logs-* [metadata _id, _index, _version]
+FROM logs-* METADATA _id, _index, _version
 | WHERE event.category == "process"  AND event.id == "8a4f500d"
 | LIMIT 10
 -----
-- This query starts by querying logs from indices that match the pattern `logs-*`. The `[metadata _id, _index, _version]` operator allows <<esql-non-agg-query-dedupe,alert deduplication>>.  
+- This query starts by querying logs from indices that match the pattern `logs-*`. The `METADATA _id, _index, _version` operator allows <<esql-non-agg-query-dedupe,alert deduplication>>.  
 - Next, the query filters events where the `event.category` is a process and the `event.id` is `8a4f500d`. 
 - Then, it limits the output to the top 10 results.
 
@@ -332,11 +332,11 @@ FROM logs-* [metadata _id, _index, _version]
 [[esql-non-agg-query-dedupe]]
 ===== Turn on alert deduplication for rules using non-aggregating queries
 
-To deduplicate alerts, a query needs access to the `_id`, `_index`, and `_version` metadata fields of the queried source event documents. You can allow this by adding the `[metadata _id, _index, _version]` operator after the `FROM` source command, for example:
+To deduplicate alerts, a query needs access to the `_id`, `_index`, and `_version` metadata fields of the queried source event documents. You can allow this by adding the `METADATA _id, _index, _version` operator after the `FROM` source command, for example:
 
 [source,esql]
 -----
-FROM logs-* [metadata _id, _index, _version]
+FROM logs-* METADATA _id, _index, _version
 | WHERE event.category == "process"  AND event.id == "8a4f500d"
 | LIMIT 10
 -----
@@ -349,7 +349,7 @@ Here is an example of a query that fails to deduplicate alerts. It uses the `DRO
 
 [source,esql]
 -----
-FROM logs-* [metadata _id, _index, _version]
+FROM logs-* METADATA _id, _index, _version
 | WHERE event.category == "process"  AND event.id == "8a4f500d"
 | DROP _id
 | LIMIT 10
@@ -359,7 +359,7 @@ Here is another example of an invalid query that uses the `KEEP` command to only
 
 [source,esql]
 -----
-FROM logs-* [metadata _id, _index, _version]
+FROM logs-* METADATA _id, _index, _version
 | WHERE event.category == "process"  AND event.id == "8a4f500d"
 | KEEP event.*
 | LIMIT 10
@@ -371,7 +371,7 @@ FROM logs-* [metadata _id, _index, _version]
 
 When writing your query, consider the following:
 
-- The {ref}/esql-commands.html#esql-limit[`LIMIT`] command specifies the number of rows an {esql} query returns and the number of alerts created per rule execution. Similarly, a detection rule's <<opt-fields-all,`max_signals`>> setting specifies the maximum number of alerts it can create every time it runs.
+- The {ref}/esql-commands.html#esql-limit[`LIMIT`] command specifies the maximum number of rows an {esql} query returns and the maximum number of alerts created per rule execution. Similarly, a detection rule's <<opt-fields-all,`max_signals`>> setting specifies the maximum number of alerts it can create every time it runs.
 + 
 If the `LIMIT` value is lower than the `max_signals` value, the rule uses the `LIMIT` value to determine the maximum number of alerts the rule generates. If the `LIMIT` value is higher than the `max_signals` value, the rule uses the `max_signals` value. 
 +
