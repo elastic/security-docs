@@ -1,0 +1,73 @@
+[[prebuilt-rule-8-13-7-alternate-data-stream-creation-execution-at-volume-root-directory]]
+=== Alternate Data Stream Creation/Execution at Volume Root Directory
+
+Identifies the creation of an Alternate Data Stream (ADS) at a volume root directory, which can indicate the attempt to hide tools and malware, as ADSs created in this directory are not displayed by system utilities.
+
+*Rule type*: eql
+
+*Rule indices*: 
+
+* winlogbeat-*
+* logs-endpoint.events.process-*
+* logs-endpoint.events.file-*
+* logs-windows.sysmon_operational-*
+
+*Severity*: medium
+
+*Risk score*: 47
+
+*Runs every*: 5m
+
+*Searches indices from*: now-9m ({ref}/common-options.html#date-math[Date Math format], see also <<rule-schedule, `Additional look-back time`>>)
+
+*Maximum alerts per execution*: 100
+
+*References*: 
+
+* https://www.crowdstrike.com/blog/anatomy-of-alpha-spider-ransomware/
+
+*Tags*: 
+
+* Domain: Endpoint
+* OS: Windows
+* Use Case: Threat Detection
+* Tactic: Defense Evasion
+* Data Source: Elastic Defend
+* Data Source: Sysmon
+
+*Version*: 1
+
+*Rule authors*: 
+
+* Elastic
+
+*Rule license*: Elastic License v2
+
+
+==== Rule query
+
+
+[source, js]
+----------------------------------
+any where host.os.type == "windows" and event.category in ("file", "process") and 
+  (
+    (event.type == "creation" and file.path regex~ """[A-Z]:\\:.+""") or 
+    (event.type == "start" and process.executable regex~ """[A-Z]:\\:.+""")
+  )
+
+----------------------------------
+
+*Framework*: MITRE ATT&CK^TM^
+
+* Tactic:
+** Name: Defense Evasion
+** ID: TA0005
+** Reference URL: https://attack.mitre.org/tactics/TA0005/
+* Technique:
+** Name: Hide Artifacts
+** ID: T1564
+** Reference URL: https://attack.mitre.org/techniques/T1564/
+* Sub-technique:
+** Name: NTFS File Attributes
+** ID: T1564.004
+** Reference URL: https://attack.mitre.org/techniques/T1564/004/
