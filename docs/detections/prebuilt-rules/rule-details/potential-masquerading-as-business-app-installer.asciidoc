@@ -1,0 +1,217 @@
+[[potential-masquerading-as-business-app-installer]]
+=== Potential Masquerading as Business App Installer
+
+Identifies executables with names resembling legitimate business applications but lacking signatures from the original developer. Attackers may trick users into downloading malicious executables that masquerade as legitimate applications via malicious ads, forum posts, and tutorials, effectively gaining initial access.
+
+*Rule type*: eql
+
+*Rule indices*: 
+
+* logs-endpoint.events.process-*
+
+*Severity*: low
+
+*Risk score*: 21
+
+*Runs every*: 5m
+
+*Searches indices from*: now-9m ({ref}/common-options.html#date-math[Date Math format], see also <<rule-schedule, `Additional look-back time`>>)
+
+*Maximum alerts per execution*: 100
+
+*References*: 
+
+* https://www.rapid7.com/blog/post/2023/08/31/fake-update-utilizes-new-idat-loader-to-execute-stealc-and-lumma-infostealers
+
+*Tags*: 
+
+* Domain: Endpoint
+* Data Source: Elastic Defend
+* OS: Windows
+* Use Case: Threat Detection
+* Tactic: Defense Evasion
+* Tactic: Initial Access
+* Tactic: Execution
+
+*Version*: 4
+
+*Rule authors*: 
+
+* Elastic
+
+*Rule license*: Elastic License v2
+
+
+==== Rule query
+
+
+[source, js]
+----------------------------------
+process where host.os.type == "windows" and
+  event.type == "start" and process.executable : "?:\\Users\\*\\Downloads\\*" and
+  not process.code_signature.status : ("errorCode_endpoint*", "errorUntrustedRoot", "errorChaining") and
+  (
+    /* Slack */
+    (process.name : "*slack*.exe" and not
+      (process.code_signature.subject_name in (
+        "Slack Technologies, Inc.",
+        "Slack Technologies, LLC"
+       ) and process.code_signature.trusted == true)
+    ) or
+
+    /* WebEx */
+    (process.name : "*webex*.exe" and not
+      (process.code_signature.subject_name in ("Cisco WebEx LLC", "Cisco Systems, Inc.") and process.code_signature.trusted == true)
+    ) or
+
+    /* Teams */
+    (process.name : "teams*.exe" and not
+      (process.code_signature.subject_name == "Microsoft Corporation" and process.code_signature.trusted == true)
+    ) or
+
+    /* Discord */
+    (process.name : "*discord*.exe" and not
+      (process.code_signature.subject_name == "Discord Inc." and process.code_signature.trusted == true)
+    ) or
+
+    /* WhatsApp */
+    (process.name : "*whatsapp*.exe" and not
+      (process.code_signature.subject_name in (
+        "WhatsApp LLC",
+        "WhatsApp, Inc",
+        "24803D75-212C-471A-BC57-9EF86AB91435"
+       ) and process.code_signature.trusted == true)
+    ) or
+
+    /* Zoom */
+    (process.name : ("*zoom*installer*.exe", "*zoom*setup*.exe", "zoom.exe")  and not
+      (process.code_signature.subject_name == "Zoom Video Communications, Inc." and process.code_signature.trusted == true)
+    ) or
+
+    /* Outlook */
+    (process.name : "*outlook*.exe" and not
+      (
+        (process.code_signature.subject_name == "Microsoft Corporation" and process.code_signature.trusted == true) or
+        (
+          process.name: "MSOutlookHelp-PST-Viewer.exe" and process.code_signature.subject_name == "Aryson Technologies Pvt. Ltd" and
+          process.code_signature.trusted == true
+        )
+      )
+    ) or
+
+    /* Thunderbird */
+    (process.name : "*thunderbird*.exe" and not
+      (process.code_signature.subject_name == "Mozilla Corporation" and process.code_signature.trusted == true)
+    ) or
+
+    /* Grammarly */
+    (process.name : "*grammarly*.exe" and not
+      (process.code_signature.subject_name == "Grammarly, Inc." and process.code_signature.trusted == true)
+    ) or
+
+    /* Dropbox */
+    (process.name : "*dropbox*.exe" and not
+      (process.code_signature.subject_name == "Dropbox, Inc" and process.code_signature.trusted == true)
+    ) or
+
+    /* Tableau */
+    (process.name : "*tableau*.exe" and not
+      (process.code_signature.subject_name == "Tableau Software LLC" and process.code_signature.trusted == true)
+    ) or
+
+    /* Google Drive */
+    (process.name : "*googledrive*.exe" and not
+      (process.code_signature.subject_name == "Google LLC" and process.code_signature.trusted == true)
+    ) or
+
+    /* MSOffice */
+    (process.name : "*office*setup*.exe" and not
+      (process.code_signature.subject_name == "Microsoft Corporation" and process.code_signature.trusted == true)
+    ) or
+
+    /* Okta */
+    (process.name : "*okta*.exe" and not
+      (process.code_signature.subject_name == "Okta, Inc." and process.code_signature.trusted == true)
+    ) or
+
+    /* OneDrive */
+    (process.name : "*onedrive*.exe" and not
+      (process.code_signature.subject_name == "Microsoft Corporation" and process.code_signature.trusted == true)
+    ) or
+
+    /* Chrome */
+    (process.name : "*chrome*.exe" and not
+      (process.code_signature.subject_name in ("Google LLC", "Google Inc") and process.code_signature.trusted == true)
+    ) or
+
+    /* Firefox */
+    (process.name : "*firefox*.exe" and not
+      (process.code_signature.subject_name == "Mozilla Corporation" and process.code_signature.trusted == true)
+    ) or
+
+    /* Edge */
+    (process.name : ("*microsoftedge*.exe", "*msedge*.exe") and not
+      (process.code_signature.subject_name == "Microsoft Corporation" and process.code_signature.trusted == true)
+    ) or
+
+    /* Brave */
+    (process.name : "*brave*.exe" and not
+      (process.code_signature.subject_name == "Brave Software, Inc." and process.code_signature.trusted == true)
+    ) or
+
+    /* GoogleCloud Related Tools */
+    (process.name : "*GoogleCloud*.exe" and not
+      (process.code_signature.subject_name == "Google LLC" and process.code_signature.trusted == true)
+    ) or
+
+    /* Github Related Tools */
+    (process.name : "*github*.exe" and not
+      (process.code_signature.subject_name == "GitHub, Inc." and process.code_signature.trusted == true)
+    ) or
+
+    /* Notion */
+    (process.name : "*notion*.exe" and not
+      (process.code_signature.subject_name == "Notion Labs, Inc." and process.code_signature.trusted == true)
+    )
+  )
+
+----------------------------------
+
+*Framework*: MITRE ATT&CK^TM^
+
+* Tactic:
+** Name: Defense Evasion
+** ID: TA0005
+** Reference URL: https://attack.mitre.org/tactics/TA0005/
+* Technique:
+** Name: Masquerading
+** ID: T1036
+** Reference URL: https://attack.mitre.org/techniques/T1036/
+* Sub-technique:
+** Name: Invalid Code Signature
+** ID: T1036.001
+** Reference URL: https://attack.mitre.org/techniques/T1036/001/
+* Sub-technique:
+** Name: Match Legitimate Name or Location
+** ID: T1036.005
+** Reference URL: https://attack.mitre.org/techniques/T1036/005/
+* Tactic:
+** Name: Initial Access
+** ID: TA0001
+** Reference URL: https://attack.mitre.org/tactics/TA0001/
+* Technique:
+** Name: Drive-by Compromise
+** ID: T1189
+** Reference URL: https://attack.mitre.org/techniques/T1189/
+* Tactic:
+** Name: Execution
+** ID: TA0002
+** Reference URL: https://attack.mitre.org/tactics/TA0002/
+* Technique:
+** Name: User Execution
+** ID: T1204
+** Reference URL: https://attack.mitre.org/techniques/T1204/
+* Sub-technique:
+** Name: Malicious File
+** ID: T1204.002
+** Reference URL: https://attack.mitre.org/techniques/T1204/002/

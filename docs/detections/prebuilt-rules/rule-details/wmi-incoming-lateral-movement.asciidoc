@@ -5,60 +5,72 @@ Identifies processes executed via Windows Management Instrumentation (WMI) on a 
 
 *Rule type*: eql
 
-*Rule indices*:
+*Rule indices*: 
 
-* logs-endpoint.events.*
+* logs-endpoint.events.process-*
+* logs-endpoint.events.network-*
 * winlogbeat-*
-* logs-windows.*
+* logs-windows.sysmon_operational-*
 
 *Severity*: medium
 
 *Risk score*: 47
 
-*Runs every*: 5 minutes
+*Runs every*: 5m
 
 *Searches indices from*: now-9m ({ref}/common-options.html#date-math[Date Math format], see also <<rule-schedule, `Additional look-back time`>>)
 
 *Maximum alerts per execution*: 100
 
-*Tags*:
+*References*: None
+
+*Tags*: 
+
+* Domain: Endpoint
+* OS: Windows
+* Use Case: Threat Detection
+* Tactic: Lateral Movement
+* Data Source: Elastic Defend
+* Data Source: Sysmon
+
+*Version*: 110
+
+*Rule authors*: 
 
 * Elastic
-* Host
-* Windows
-* Threat Detection
-* Lateral Movement
-
-*Version*: 101 (<<wmi-incoming-lateral-movement-history, version history>>)
-
-*Added ({stack} release)*: 7.11.0
-
-*Last modified ({stack} release)*: 8.5.0
-
-*Rule authors*: Elastic
 
 *Rule license*: Elastic License v2
+
 
 ==== Rule query
 
 
-[source,js]
+[source, js]
 ----------------------------------
-sequence by host.id with maxspan = 2s /* Accepted Incoming RPC
-connection by Winmgmt service */ [network where process.name :
-"svchost.exe" and network.direction : ("incoming", "ingress") and
-source.ip != "127.0.0.1" and source.ip != "::1" and source.port >=
-49152 and destination.port >= 49152 ] /* Excluding Common FPs
-Nessus and SCCM */ [process where event.type == "start" and
-process.parent.name : "WmiPrvSE.exe" and not process.args :
-("C:\\windows\\temp\\nessus_*.txt",
-"C:\\windows\\TEMP\\nessus_*.TMP",
-"C:\\Windows\\CCM\\SystemTemp\\*",
-"C:\\Windows\\CCMCache\\*",
-"C:\\CCM\\Cache\\*") ]
-----------------------------------
+sequence by host.id with maxspan = 2s
 
-==== Threat mapping
+ /* Accepted Incoming RPC connection by Winmgmt service */
+
+  [network where host.os.type == "windows" and process.name : "svchost.exe" and network.direction : ("incoming", "ingress") and
+   source.ip != "127.0.0.1" and source.ip != "::1" and source.port >= 49152 and destination.port >= 49152
+  ]
+
+  /* Excluding Common FPs Nessus and SCCM */
+
+  [process where host.os.type == "windows" and event.type == "start" and process.parent.name : "WmiPrvSE.exe" and
+   not (?process.Ext.token.integrity_level_name : "System" or ?winlog.event_data.IntegrityLevel : "System") and
+   not user.id : ("S-1-5-18", "S-1-5-19", "S-1-5-20") and
+   not process.executable :
+               ("?:\\Program Files\\HPWBEM\\Tools\\hpsum_swdiscovery.exe",
+                "?:\\Windows\\CCM\\Ccm32BitLauncher.exe",
+                "?:\\Windows\\System32\\wbem\\mofcomp.exe",
+                "?:\\Windows\\Microsoft.NET\\Framework*\\csc.exe",
+                "?:\\Windows\\System32\\powercfg.exe") and
+   not (process.executable : "?:\\Windows\\System32\\msiexec.exe" and process.args : "REBOOT=ReallySuppress") and
+   not (process.executable : "?:\\Windows\\System32\\inetsrv\\appcmd.exe" and process.args : "uninstall")
+   ]
+
+----------------------------------
 
 *Framework*: MITRE ATT&CK^TM^
 
@@ -66,8 +78,10 @@ process.parent.name : "WmiPrvSE.exe" and not process.args :
 ** Name: Lateral Movement
 ** ID: TA0008
 ** Reference URL: https://attack.mitre.org/tactics/TA0008/
-
-
+* Technique:
+** Name: Remote Services
+** ID: T1021
+** Reference URL: https://attack.mitre.org/techniques/T1021/
 * Tactic:
 ** Name: Execution
 ** ID: TA0002
@@ -76,70 +90,3 @@ process.parent.name : "WmiPrvSE.exe" and not process.args :
 ** Name: Windows Management Instrumentation
 ** ID: T1047
 ** Reference URL: https://attack.mitre.org/techniques/T1047/
-
-[[wmi-incoming-lateral-movement-history]]
-==== Rule version history
-
-Version 101 (8.5.0 release)::
-* Updated query, changed from:
-+
-[source, js]
-----------------------------------
-sequence by host.id with maxspan = 2s /* Accepted Incoming RPC
-connection by Winmgmt service */ [network where process.name :
-"svchost.exe" and network.direction : ("incoming", "ingress") and
-source.ip != "127.0.0.1" and source.ip != "::1" and source.port >=
-49152 and destination.port >= 49152 ] /* Excluding Common FPs
-Nessus and SCCM */ [process where event.type in ("start",
-"process_started") and process.parent.name : "WmiPrvSE.exe" and not
-process.args : ("C:\\windows\\temp\\nessus_*.txt",
-"C:\\windows\\TEMP\\nessus_*.TMP",
-"C:\\Windows\\CCM\\SystemTemp\\*",
-"C:\\Windows\\CCMCache\\*",
-"C:\\CCM\\Cache\\*") ]
-----------------------------------
-
-Version 5 (8.4.0 release)::
-* Formatting only
-
-Version 4 (8.0.0 release)::
-* Updated query, changed from:
-+
-[source, js]
-----------------------------------
-sequence by host.id with maxspan = 2s /* Accepted Incoming RPC
-connection by Winmgmt service */ [network where process.name :
-"svchost.exe" and network.direction : ("incoming", "ingress") and
-source.address != "127.0.0.1" and source.address != "::1" and
-source.port >= 49152 and destination.port >= 49152 ] /* Excluding
-Common FPs Nessus and SCCM */ [process where event.type in
-("start", "process_started") and process.parent.name : "WmiPrvSE.exe"
-and not process.args : ("C:\\windows\\temp\\nessus_*.txt",
-"C:\\windows\\TEMP\\nessus_*.TMP",
-"C:\\Windows\\CCM\\SystemTemp\\*",
-"C:\\Windows\\CCMCache\\*",
-"C:\\CCM\\Cache\\*") ]
-----------------------------------
-
-Version 3 (7.16.0 release)::
-* Updated query, changed from:
-+
-[source, js]
-----------------------------------
-sequence by host.id with maxspan = 2s /* Accepted Incoming RPC
-connection by Winmgmt service */ [network where process.name :
-"svchost.exe" and network.direction == "incoming" and
-source.address != "127.0.0.1" and source.address != "::1" and
-source.port >= 49152 and destination.port >= 49152 ] /* Excluding
-Common FPs Nessus and SCCM */ [process where event.type in
-("start", "process_started") and process.parent.name : "WmiPrvSE.exe"
-and not process.args : ("C:\\windows\\temp\\nessus_*.txt",
-"C:\\windows\\TEMP\\nessus_*.TMP",
-"C:\\Windows\\CCM\\SystemTemp\\*",
-"C:\\Windows\\CCMCache\\*",
-"C:\\CCM\\Cache\\*") ]
-----------------------------------
-
-Version 2 (7.12.0 release)::
-* Formatting only
-

@@ -1,0 +1,68 @@
+[[execution-from-a-removable-media-with-network-connection]]
+=== Execution from a Removable Media with Network Connection
+
+Identifies process execution from a removable media and by an unusual process. Adversaries may move onto systems, possibly those on disconnected or air-gapped networks, by copying malware to removable media and taking advantage of Autorun features when the media is inserted into a system and executes.
+
+*Rule type*: eql
+
+*Rule indices*: 
+
+* logs-endpoint.events.process-*
+* logs-endpoint.events.network-*
+
+*Severity*: low
+
+*Risk score*: 21
+
+*Runs every*: 5m
+
+*Searches indices from*: now-9m ({ref}/common-options.html#date-math[Date Math format], see also <<rule-schedule, `Additional look-back time`>>)
+
+*Maximum alerts per execution*: 100
+
+*References*: None
+
+*Tags*: 
+
+* Domain: Endpoint
+* OS: Windows
+* Use Case: Threat Detection
+* Tactic: Initial Access
+* Data Source: Elastic Defend
+
+*Version*: 3
+
+*Rule authors*: 
+
+* Elastic
+
+*Rule license*: Elastic License v2
+
+
+==== Rule query
+
+
+[source, js]
+----------------------------------
+sequence by process.entity_id with maxspan=5m
+ [process where host.os.type == "windows" and event.action == "start" and
+  
+  /* Direct Exec from USB */
+  (process.Ext.device.bus_type : "usb" or process.Ext.device.product_id : "USB *") and
+  (process.code_signature.trusted == false or process.code_signature.exists == false) and 
+  
+  not process.code_signature.status : ("errorExpired", "errorCode_endpoint*")]
+ [network where host.os.type == "windows" and event.action == "connection_attempted"]
+
+----------------------------------
+
+*Framework*: MITRE ATT&CK^TM^
+
+* Tactic:
+** Name: Initial Access
+** ID: TA0001
+** Reference URL: https://attack.mitre.org/tactics/TA0001/
+* Technique:
+** Name: Replication Through Removable Media
+** ID: T1091
+** Reference URL: https://attack.mitre.org/techniques/T1091/
