@@ -5,70 +5,74 @@ Identifies attempts to bypass User Account Control (UAC) via DLL side-loading. A
 
 *Rule type*: eql
 
-*Rule indices*:
+*Rule indices*: 
 
 * winlogbeat-*
-* logs-endpoint.events.*
-* logs-windows.*
+* logs-endpoint.events.file-*
+* logs-windows.sysmon_operational-*
+* endgame-*
 
 *Severity*: high
 
 *Risk score*: 73
 
-*Runs every*: 5 minutes
+*Runs every*: 5m
 
 *Searches indices from*: now-9m ({ref}/common-options.html#date-math[Date Math format], see also <<rule-schedule, `Additional look-back time`>>)
 
 *Maximum alerts per execution*: 100
 
-*References*:
+*References*: 
 
 * https://github.com/hfiref0x/UACME
 * https://www.elastic.co/security-labs/exploring-windows-uac-bypasses-techniques-and-detection-strategies
 
-*Tags*:
+*Tags*: 
+
+* Domain: Endpoint
+* OS: Windows
+* Use Case: Threat Detection
+* Tactic: Privilege Escalation
+* Tactic: Defense Evasion
+* Data Source: Elastic Endgame
+* Data Source: Elastic Defend
+* Data Source: Sysmon
+
+*Version*: 109
+
+*Rule authors*: 
 
 * Elastic
-* Host
-* Windows
-* Threat Detection
-* Privilege Escalation
-
-*Version*: 101 (<<uac-bypass-attempt-via-privileged-ifileoperation-com-interface-history, version history>>)
-
-*Added ({stack} release)*: 7.11.0
-
-*Last modified ({stack} release)*: 8.6.0
-
-*Rule authors*: Elastic
 
 *Rule license*: Elastic License v2
 
-==== Investigation guide
+
+==== Setup
 
 
-[source,markdown]
-----------------------------------
 
-----------------------------------
+*Setup*
+
+
+If enabling an EQL rule on a non-elastic-agent index (such as beats) for versions <8.2,
+events will not define `event.ingested` and default fallback for EQL rules was not added until version 8.2.
+Hence for this rule to work effectively, users will need to add a custom ingest pipeline to populate
+`event.ingested` to @timestamp.
+For more details on adding a custom ingest pipeline refer - https://www.elastic.co/guide/en/fleet/current/data-streams-pipeline-tutorial.html
 
 
 ==== Rule query
 
 
-[source,js]
+[source, js]
 ----------------------------------
-file where event.type : "change" and process.name : "dllhost.exe" and
-/* Known modules names side loaded into process running with high or
-system integrity level for UAC Bypass, update here for new modules */
-file.name : ("wow64log.dll", "comctl32.dll", "DismCore.dll",
-"OskSupport.dll", "duser.dll", "Accessibility.ni.dll") and /* has no
-impact on rule logic just to avoid OS install related FPs */ not
-file.path : ("C:\\Windows\\SoftwareDistribution\\*",
-"C:\\Windows\\WinSxS\\*")
-----------------------------------
+file where host.os.type == "windows" and event.type : "change" and process.name : "dllhost.exe" and
+  /* Known modules names side loaded into process running with high or system integrity level for UAC Bypass, update here for new modules */
+  file.name : ("wow64log.dll", "comctl32.dll", "DismCore.dll", "OskSupport.dll", "duser.dll", "Accessibility.ni.dll") and
+  /* has no impact on rule logic just to avoid OS install related FPs */
+  not file.path : ("C:\\Windows\\SoftwareDistribution\\*", "C:\\Windows\\WinSxS\\*")
 
-==== Threat mapping
+----------------------------------
 
 *Framework*: MITRE ATT&CK^TM^
 
@@ -80,28 +84,27 @@ file.path : ("C:\\Windows\\SoftwareDistribution\\*",
 ** Name: Abuse Elevation Control Mechanism
 ** ID: T1548
 ** Reference URL: https://attack.mitre.org/techniques/T1548/
-
-[[uac-bypass-attempt-via-privileged-ifileoperation-com-interface-history]]
-==== Rule version history
-
-Version 101 (8.6.0 release)::
-* Formatting only
-
-Version 100 (8.5.0 release)::
-* Formatting only
-
-Version 7 (8.4.0 release)::
-* Formatting only
-
-Version 5 (8.2.0 release)::
-* Formatting only
-
-Version 4 (7.15.0 release)::
-* Formatting only
-
-Version 3 (7.12.0 release)::
-* Formatting only
-
-Version 2 (7.11.2 release)::
-* Formatting only
-
+* Sub-technique:
+** Name: Bypass User Account Control
+** ID: T1548.002
+** Reference URL: https://attack.mitre.org/techniques/T1548/002/
+* Tactic:
+** Name: Defense Evasion
+** ID: TA0005
+** Reference URL: https://attack.mitre.org/tactics/TA0005/
+* Technique:
+** Name: Abuse Elevation Control Mechanism
+** ID: T1548
+** Reference URL: https://attack.mitre.org/techniques/T1548/
+* Sub-technique:
+** Name: Bypass User Account Control
+** ID: T1548.002
+** Reference URL: https://attack.mitre.org/techniques/T1548/002/
+* Technique:
+** Name: Hijack Execution Flow
+** ID: T1574
+** Reference URL: https://attack.mitre.org/techniques/T1574/
+* Sub-technique:
+** Name: DLL Side-Loading
+** ID: T1574.002
+** Reference URL: https://attack.mitre.org/techniques/T1574/002/

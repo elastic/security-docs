@@ -5,7 +5,7 @@ Detects attempts to bypass Okta multi-factor authentication (MFA). An adversary 
 
 *Rule type*: query
 
-*Rule indices*:
+*Rule indices*: 
 
 * filebeat-*
 * logs-okta*
@@ -14,55 +14,96 @@ Detects attempts to bypass Okta multi-factor authentication (MFA). An adversary 
 
 *Risk score*: 73
 
-*Runs every*: 5 minutes
+*Runs every*: 5m
 
-*Searches indices from*: now-6m ({ref}/common-options.html#date-math[Date Math format], see also <<rule-schedule, `Additional look-back time`>>)
+*Searches indices from*: None ({ref}/common-options.html#date-math[Date Math format], see also <<rule-schedule, `Additional look-back time`>>)
 
 *Maximum alerts per execution*: 100
 
-*References*:
+*References*: 
 
 * https://developer.okta.com/docs/reference/api/system-log/
 * https://developer.okta.com/docs/reference/api/event-types/
 * https://www.elastic.co/security-labs/testing-okta-visibility-and-detection-dorothy
 
-*Tags*:
+*Tags*: 
+
+* Data Source: Okta
+* Use Case: Identity and Access Audit
+* Tactic: Credential Access
+
+*Version*: 207
+
+*Rule authors*: 
 
 * Elastic
-* Identity
-* Okta
-* Continuous Monitoring
-* SecOps
-* Identity and Access
-
-*Version*: 102 (<<attempted-bypass-of-okta-mfa-history, version history>>)
-
-*Added ({stack} release)*: 7.9.0
-
-*Last modified ({stack} release)*: 8.6.0
-
-*Rule authors*: Elastic
 
 *Rule license*: Elastic License v2
+
 
 ==== Investigation guide
 
 
-[source,markdown]
-----------------------------------
 
-----------------------------------
+*Triage and analysis*
 
+
+
+*Investigating Attempted Bypass of Okta MFA*
+
+
+Multi-factor authentication (MFA) is a crucial security measure in preventing unauthorized access. Okta MFA, like other MFA solutions, requires the user to provide multiple means of identification at login. An adversary might attempt to bypass Okta MFA to gain unauthorized access to an application.
+
+This rule detects attempts to bypass Okta MFA. It might indicate a serious attempt to compromise a user account within the organization's network.
+
+
+*Possible investigation steps*
+
+
+- Identify the actor related to the alert by reviewing `okta.actor.id`, `okta.actor.type`, `okta.actor.alternate_id`, or `okta.actor.display_name` fields in the alert.
+- Review the `okta.client.user_agent.raw_user_agent` field to understand the device and software used by the actor.
+- Examine the `okta.outcome.reason` field for additional context around the bypass attempt.
+- Check the `okta.outcome.result` field to confirm the MFA bypass attempt.
+- Check if there are multiple unsuccessful MFA attempts from the same actor or IP address (`okta.client.ip`).
+- Check for successful logins immediately following the MFA bypass attempt.
+- Verify whether the actor's activity aligns with typical behavior or if any unusual activity took place around the time of the bypass attempt.
+
+
+*False positive analysis*
+
+
+- Check if there were issues with the MFA system at the time of the bypass attempt. This could indicate a system error rather than a genuine bypass attempt.
+- Check the geographical location (`okta.request.ip_chain.geographical_context`) and time of the login attempt. If these match the actor's normal behavior, it might be a false positive.
+- Verify the actor's MFA settings to ensure they are correctly configured.
+
+
+*Response and remediation*
+
+
+- If unauthorized access is confirmed, initiate the incident response process.
+- Immediately lock the affected actor account and require a password change.
+- Consider resetting MFA tokens for the actor and require re-enrollment.
+- Check if the compromised account was used to access or alter any sensitive data or systems.
+- If a specific MFA bypass technique was used, ensure your systems are patched or configured to prevent such techniques.
+- Assess the criticality of affected services and servers.
+- Work with your IT team to minimize the impact on users and maintain business continuity.
+- If multiple accounts are affected, consider a broader reset or audit of MFA tokens.
+- Implement security best practices https://www.okta.com/blog/2019/10/9-admin-best-practices-to-keep-your-org-secure/[outlined] by Okta.
+- Using the incident response data, update logging and audit policies to improve the mean time to detect (MTTD) and the mean time to respond (MTTR).
+
+==== Setup
+
+
+The Okta Fleet integration, Filebeat module, or similarly structured data is required to be compatible with this rule.
 
 ==== Rule query
 
 
-[source,js]
+[source, js]
 ----------------------------------
 event.dataset:okta.system and event.action:user.mfa.attempt_bypass
-----------------------------------
 
-==== Threat mapping
+----------------------------------
 
 *Framework*: MITRE ATT&CK^TM^
 
@@ -74,37 +115,3 @@ event.dataset:okta.system and event.action:user.mfa.attempt_bypass
 ** Name: Multi-Factor Authentication Interception
 ** ID: T1111
 ** Reference URL: https://attack.mitre.org/techniques/T1111/
-
-[[attempted-bypass-of-okta-mfa-history]]
-==== Rule version history
-
-Version 102 (8.6.0 release)::
-* Formatting only
-
-Version 100 (8.5.0 release)::
-* Formatting only
-
-Version 8 (8.4.0 release)::
-* Formatting only
-
-Version 6 (7.13.0 release)::
-* Formatting only
-
-Version 5 (7.12.0 release)::
-* Formatting only
-
-Version 4 (7.11.2 release)::
-* Formatting only
-
-Version 3 (7.11.0 release)::
-* Formatting only
-
-Version 2 (7.10.0 release)::
-* Updated query, changed from:
-+
-[source, js]
-----------------------------------
-event.module:okta and event.dataset:okta.system and
-event.action:user.mfa.attempt_bypass
-----------------------------------
-
