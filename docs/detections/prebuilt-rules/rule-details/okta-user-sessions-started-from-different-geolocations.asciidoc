@@ -1,0 +1,79 @@
+[[okta-user-sessions-started-from-different-geolocations]]
+=== Okta User Sessions Started from Different Geolocations
+
+Detects when a specific Okta actor has multiple sessions started from different geolocations.
+
+*Rule type*: threshold
+
+*Rule indices*: 
+
+* filebeat-*
+* logs-okta*
+
+*Severity*: medium
+
+*Risk score*: 47
+
+*Runs every*: 15m
+
+*Searches indices from*: now-30m ({ref}/common-options.html#date-math[Date Math format], see also <<rule-schedule, `Additional look-back time`>>)
+
+*Maximum alerts per execution*: 100
+
+*References*: 
+
+* https://developer.okta.com/docs/reference/api/system-log/
+* https://developer.okta.com/docs/reference/api/event-types/
+* https://www.elastic.co/security-labs/testing-okta-visibility-and-detection-dorothy
+* https://sec.okta.com/articles/2023/08/cross-tenant-impersonation-prevention-and-detection
+* https://www.rezonate.io/blog/okta-logs-decoded-unveiling-identity-threats-through-threat-hunting/
+
+*Tags*: 
+
+* Use Case: Identity and Access Audit
+* Data Source: Okta
+* Tactic: Initial Access
+
+*Version*: 1
+
+*Rule authors*: 
+
+* Elastic
+
+*Rule license*: Elastic License v2
+
+
+==== Investigation guide
+
+
+
+
+==== Setup
+
+
+The Okta Fleet integration, Filebeat module, or similarly structured data is required to be compatible with this rule.
+
+==== Rule query
+
+
+[source, js]
+----------------------------------
+event.dataset:okta.system and okta.event_type:user.session.start and not okta.security_context.is_proxy:true
+    and okta.actor.id:* and client.geo.country_name:*
+
+----------------------------------
+
+*Framework*: MITRE ATT&CK^TM^
+
+* Tactic:
+** Name: Initial Access
+** ID: TA0001
+** Reference URL: https://attack.mitre.org/tactics/TA0001/
+* Technique:
+** Name: Valid Accounts
+** ID: T1078
+** Reference URL: https://attack.mitre.org/techniques/T1078/
+* Sub-technique:
+** Name: Cloud Accounts
+** ID: T1078.004
+** Reference URL: https://attack.mitre.org/techniques/T1078/004/

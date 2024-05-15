@@ -1,0 +1,76 @@
+[[wmic-remote-command]]
+=== WMIC Remote Command
+
+Identifies the use of wmic.exe to run commands on remote hosts. While this can be used by administrators legitimately, attackers can abuse this built-in utility to achieve lateral movement.
+
+*Rule type*: eql
+
+*Rule indices*: 
+
+* logs-endpoint.events.process-*
+
+*Severity*: low
+
+*Risk score*: 21
+
+*Runs every*: 60m
+
+*Searches indices from*: now-119m ({ref}/common-options.html#date-math[Date Math format], see also <<rule-schedule, `Additional look-back time`>>)
+
+*Maximum alerts per execution*: 100
+
+*References*: None
+
+*Tags*: 
+
+* Domain: Endpoint
+* OS: Windows
+* Use Case: Threat Detection
+* Tactic: Lateral Movement
+* Data Source: Elastic Defend
+* Rule Type: BBR
+
+*Version*: 4
+
+*Rule authors*: 
+
+* Elastic
+
+*Rule license*: Elastic License v2
+
+
+==== Rule query
+
+
+[source, js]
+----------------------------------
+process where host.os.type == "windows" and event.type == "start" and
+  process.name : "WMIC.exe" and
+  process.args : "*node:*" and
+  process.args : ("call", "set", "get") and
+  not process.args : ("*/node:localhost*", "*/node:\"127.0.0.1\"*", "/node:127.0.0.1")
+
+----------------------------------
+
+*Framework*: MITRE ATT&CK^TM^
+
+* Tactic:
+** Name: Lateral Movement
+** ID: TA0008
+** Reference URL: https://attack.mitre.org/tactics/TA0008/
+* Technique:
+** Name: Remote Services
+** ID: T1021
+** Reference URL: https://attack.mitre.org/techniques/T1021/
+* Sub-technique:
+** Name: Windows Remote Management
+** ID: T1021.006
+** Reference URL: https://attack.mitre.org/techniques/T1021/006/
+* Tactic:
+** Name: Execution
+** ID: TA0002
+** Reference URL: https://attack.mitre.org/tactics/TA0002/
+* Technique:
+** Name: Windows Management Instrumentation
+** ID: T1047
+** Reference URL: https://attack.mitre.org/techniques/T1047/

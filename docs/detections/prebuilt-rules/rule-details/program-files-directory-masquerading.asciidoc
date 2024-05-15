@@ -5,63 +5,76 @@ Identifies execution from a directory masquerading as the Windows Program Files 
 
 *Rule type*: eql
 
-*Rule indices*:
+*Rule indices*: 
 
 * winlogbeat-*
-* logs-endpoint.events.*
+* logs-endpoint.events.process-*
 * logs-windows.*
 * endgame-*
+* logs-system.security*
 
 *Severity*: medium
 
 *Risk score*: 47
 
-*Runs every*: 5 minutes
+*Runs every*: 5m
 
 *Searches indices from*: now-9m ({ref}/common-options.html#date-math[Date Math format], see also <<rule-schedule, `Additional look-back time`>>)
 
 *Maximum alerts per execution*: 100
 
-*Tags*:
+*References*: None
+
+*Tags*: 
+
+* Domain: Endpoint
+* OS: Windows
+* Use Case: Threat Detection
+* Tactic: Defense Evasion
+* Data Source: Elastic Endgame
+* Data Source: Elastic Defend
+
+*Version*: 109
+
+*Rule authors*: 
 
 * Elastic
-* Host
-* Windows
-* Threat Detection
-* Defense Evasion
-* Elastic Endgame
-
-*Version*: 101 (<<program-files-directory-masquerading-history, version history>>)
-
-*Added ({stack} release)*: 7.11.0
-
-*Last modified ({stack} release)*: 8.6.0
-
-*Rule authors*: Elastic
 
 *Rule license*: Elastic License v2
 
-==== Investigation guide
+
+==== Setup
 
 
-[source,markdown]
-----------------------------------
 
-----------------------------------
+*Setup*
+
+
+If enabling an EQL rule on a non-elastic-agent index (such as beats) for versions <8.2,
+events will not define `event.ingested` and default fallback for EQL rules was not added until version 8.2.
+Hence for this rule to work effectively, users will need to add a custom ingest pipeline to populate
+`event.ingested` to @timestamp.
+For more details on adding a custom ingest pipeline refer - https://www.elastic.co/guide/en/fleet/current/data-streams-pipeline-tutorial.html
 
 
 ==== Rule query
 
 
-[source,js]
+[source, js]
 ----------------------------------
-process where event.type == "start" and process.executable :
-"C:\\*Program*Files*\\*.exe" and not process.executable :
-("C:\\Program Files\\*.exe", "C:\\Program Files (x86)\\*.exe",
-"C:\\Users\\*.exe", "C:\\ProgramData\\*.exe")
-----------------------------------
+process where host.os.type == "windows" and event.type == "start" and
+  process.executable : "C:\\*Program*Files*\\*.exe" and
+  not process.executable : (
+        "?:\\Program Files\\*.exe",
+        "?:\\Program Files (x86)\\*.exe",
+        "?:\\Users\\*.exe",
+        "?:\\ProgramData\\*.exe",
+        "?:\\Windows\\Downloaded Program Files\\*.exe",
+        "?:\\Windows\\Temp\\.opera\\????????????\\CProgram?FilesOpera*\\*.exe",
+        "?:\\Windows\\Temp\\.opera\\????????????\\CProgram?Files?(x86)Opera*\\*.exe"
+  )
 
-==== Threat mapping
+----------------------------------
 
 *Framework*: MITRE ATT&CK^TM^
 
@@ -73,43 +86,7 @@ process where event.type == "start" and process.executable :
 ** Name: Masquerading
 ** ID: T1036
 ** Reference URL: https://attack.mitre.org/techniques/T1036/
-
-[[program-files-directory-masquerading-history]]
-==== Rule version history
-
-Version 101 (8.6.0 release)::
-* Formatting only
-
-Version 100 (8.5.0 release)::
-* Formatting only
-
-Version 9 (8.4.0 release)::
-* Formatting only
-
-Version 7 (8.2.0 release)::
-* Formatting only
-
-Version 6 (8.1.0 release)::
-* Formatting only
-
-Version 5 (7.16.0 release)::
-* Formatting only
-
-Version 4 (7.13.0 release)::
-* Updated query, changed from:
-+
-[source, js]
-----------------------------------
-process where event.type in ("start", "process_started", "info") and
-/* capture both fake program files directory in process executable as
-well as if passed in process args as a dll*/ process.args :
-("C:\\*Program*Files*\\*", "C:\\*Program*Files*\\*") and not
-process.args : ("C:\\Program Files\\*", "C:\\Program Files (x86)\\*")
-----------------------------------
-
-Version 3 (7.12.0 release)::
-* Formatting only
-
-Version 2 (7.11.2 release)::
-* Formatting only
-
+* Sub-technique:
+** Name: Match Legitimate Name or Location
+** ID: T1036.005
+** Reference URL: https://attack.mitre.org/techniques/T1036/005/
