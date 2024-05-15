@@ -1,0 +1,127 @@
+[[prebuilt-rule-8-12-12-enumeration-of-users-or-groups-via-built-in-commands]]
+=== Enumeration of Users or Groups via Built-in Commands
+
+Identifies the execution of macOS built-in commands related to account or group enumeration. Adversaries may use account and group information to orient themselves before deciding how to act.
+
+*Rule type*: eql
+
+*Rule indices*: 
+
+* logs-endpoint.events.*
+
+*Severity*: low
+
+*Risk score*: 21
+
+*Runs every*: 5m
+
+*Searches indices from*: now-9m ({ref}/common-options.html#date-math[Date Math format], see also <<rule-schedule, `Additional look-back time`>>)
+
+*Maximum alerts per execution*: 100
+
+*References*: None
+
+*Tags*: 
+
+* Domain: Endpoint
+* OS: macOS
+* Use Case: Threat Detection
+* Tactic: Discovery
+* Data Source: Elastic Defend
+
+*Version*: 207
+
+*Rule authors*: 
+
+* Elastic
+
+*Rule license*: Elastic License v2
+
+
+==== Setup
+
+
+
+*Setup*
+
+
+This rule requires data coming in from Elastic Defend.
+
+
+*Elastic Defend Integration Setup*
+
+Elastic Defend is integrated into the Elastic Agent using Fleet. Upon configuration, the integration allows the Elastic Agent to monitor events on your host and send data to the Elastic Security app.
+
+
+*Prerequisite Requirements:*
+
+- Fleet is required for Elastic Defend.
+- To configure Fleet Server refer to the https://www.elastic.co/guide/en/fleet/current/fleet-server.html[documentation].
+
+
+*The following steps should be executed in order to add the Elastic Defend integration on a macOS System:*
+
+- Go to the Kibana home page and click "Add integrations".
+- In the query bar, search for "Elastic Defend" and select the integration to see more details about it.
+- Click "Add Elastic Defend".
+- Configure the integration name and optionally add a description.
+- Select the type of environment you want to protect, for MacOS it is recommended to select "Traditional Endpoints".
+- Select a configuration preset. Each preset comes with different default settings for Elastic Agent, you can further customize these later by configuring the Elastic Defend integration policy. https://www.elastic.co/guide/en/security/current/configure-endpoint-integration-policy.html[Helper guide].
+- We suggest selecting "Complete EDR (Endpoint Detection and Response)" as a configuration setting, that provides "All events; all preventions"
+- Enter a name for the agent policy in "New agent policy name". If other agent policies already exist, you can click the "Existing hosts" tab and select an existing policy instead.
+For more details on Elastic Agent configuration settings, refer to the https://www.elastic.co/guide/en/fleet/current/agent-policy.html[helper guide].
+- Click "Save and Continue".
+- To complete the integration, select "Add Elastic Agent to your hosts" and continue to the next section to install the Elastic Agent on your hosts.
+For more details on Elastic Defend refer to the https://www.elastic.co/guide/en/security/current/install-endpoint.html[helper guide].
+
+
+==== Rule query
+
+
+[source, js]
+----------------------------------
+process where host.os.type == "macos" and event.type in ("start", "process_started") and
+  (
+    process.name : ("ldapsearch", "dsmemberutil") or
+    (process.name : "dscl" and
+      process.args : ("read", "-read", "list", "-list", "ls", "search", "-search") and
+      process.args : ("/Active Directory/*", "/Users*", "/Groups*"))
+	) and
+  ((process.Ext.effective_parent.executable : ("/Volumes/*", "/Applications/*") or process.parent.executable : ("/Volumes/*", "/Applications/*")) or
+   (process.Ext.effective_parent.name : ".*" or process.parent.name : ".*")) and
+  not process.Ext.effective_parent.executable : ("/Applications/QualysCloudAgent.app/Contents/MacOS/qualys-cloud-agent",
+                                                 "/Applications/Kaspersky Anti-Virus For Mac.app/Contents/MacOS/kavd.app/Contents/MacOS/kavd",
+                                                 "/Applications/ESET Endpoint Security.app/Contents/MacOS/esets_ctl",
+                                                 "/Applications/NordVPN.app/Contents/MacOS/NordVPN",
+                                                 "/Applications/Xcode.app/Contents/MacOS/Xcode",
+                                                 "/Applications/ESET Endpoint Security.app/Contents/Helpers/Uninstaller.app/Contents/MacOS/Uninstaller",
+                                                 "/Applications/Parallels Desktop.app/Contents/MacOS/prl_client_app",
+                                                 "/Applications/Zscaler/Zscaler.app/Contents/MacOS/Zscaler",
+                                                 "/Applications/com.avast.av.uninstaller.app/Contents/MacOS/com.avast.av.uninstaller",
+                                                 "/Applications/NoMAD.app/Contents/MacOS/NoMAD",
+                                                 "/Applications/ESET Management Agent.app/Contents/MacOS/ERAAgent")
+
+----------------------------------
+
+*Framework*: MITRE ATT&CK^TM^
+
+* Tactic:
+** Name: Discovery
+** ID: TA0007
+** Reference URL: https://attack.mitre.org/tactics/TA0007/
+* Technique:
+** Name: Permission Groups Discovery
+** ID: T1069
+** Reference URL: https://attack.mitre.org/techniques/T1069/
+* Sub-technique:
+** Name: Local Groups
+** ID: T1069.001
+** Reference URL: https://attack.mitre.org/techniques/T1069/001/
+* Technique:
+** Name: Account Discovery
+** ID: T1087
+** Reference URL: https://attack.mitre.org/techniques/T1087/
+* Sub-technique:
+** Name: Local Account
+** ID: T1087.001
+** Reference URL: https://attack.mitre.org/techniques/T1087/001/
