@@ -3,9 +3,9 @@
 
 The Secure Shell (SSH) authorized_keys file specifies which users are allowed to log into a server using public key authentication. Adversaries may modify it to maintain persistence on a victim host by adding their own public key(s).
 
-*Rule type*: query
+*Rule type*: new_terms
 
-*Rule indices*:
+*Rule indices*: 
 
 * auditbeat-*
 * logs-endpoint.events.*
@@ -14,49 +14,58 @@ The Secure Shell (SSH) authorized_keys file specifies which users are allowed to
 
 *Risk score*: 47
 
-*Runs every*: 5 minutes
+*Runs every*: 5m
 
 *Searches indices from*: now-9m ({ref}/common-options.html#date-math[Date Math format], see also <<rule-schedule, `Additional look-back time`>>)
 
 *Maximum alerts per execution*: 100
 
-*Tags*:
+*References*: None
+
+*Tags*: 
+
+* Domain: Endpoint
+* OS: Linux
+* OS: macOS
+* Use Case: Threat Detection
+* Tactic: Lateral Movement
+* Tactic: Persistence
+* Data Source: Elastic Defend
+
+*Version*: 205
+
+*Rule authors*: 
 
 * Elastic
-* Host
-* Linux
-* macOS
-* Threat Detection
-* Persistence
-
-*Version*: 100 (<<ssh-authorized-keys-file-modification-history, version history>>)
-
-*Added ({stack} release)*: 7.12.0
-
-*Last modified ({stack} release)*: 8.5.0
-
-*Rule authors*: Elastic
 
 *Rule license*: Elastic License v2
+
 
 ==== Rule query
 
 
-[source,js]
+[source, js]
 ----------------------------------
 event.category:file and event.type:(change or creation) and
-file.name:("authorized_keys" or "authorized_keys2") and not
-process.executable:
-(/Library/Developer/CommandLineTools/usr/bin/git or
-/usr/local/Cellar/maven/*/libexec/bin/mvn or
-/Library/Java/JavaVirtualMachines/jdk*.jdk/Contents/Home/bin/java or
-/usr/bin/vim or /usr/local/Cellar/coreutils/*/bin/gcat
-or /usr/bin/bsdtar or /usr/bin/nautilus or
-/usr/bin/scp or /usr/bin/touch or
-/var/lib/docker/* or /usr/bin/google_guest_agent)
-----------------------------------
+ file.name:("authorized_keys" or "authorized_keys2" or "/etc/ssh/sshd_config" or "/root/.ssh") and
+ not process.executable:
+             (/Library/Developer/CommandLineTools/usr/bin/git or
+              /usr/local/Cellar/maven/*/libexec/bin/mvn or
+              /Library/Java/JavaVirtualMachines/jdk*.jdk/Contents/Home/bin/java or
+              /usr/bin/vim or
+              /usr/local/Cellar/coreutils/*/bin/gcat or
+              /usr/bin/bsdtar or
+              /usr/bin/nautilus or
+              /usr/bin/scp or
+              /usr/bin/touch or
+              /var/lib/docker/* or
+              /usr/bin/google_guest_agent or 
+              /opt/jc/bin/jumpcloud-agent or 
+              /opt/puppetlabs/puppet/bin/puppet or
+              /usr/bin/chef-client
+)
 
-==== Threat mapping
+----------------------------------
 
 *Framework*: MITRE ATT&CK^TM^
 
@@ -68,44 +77,27 @@ or /usr/bin/bsdtar or /usr/bin/nautilus or
 ** Name: Account Manipulation
 ** ID: T1098
 ** Reference URL: https://attack.mitre.org/techniques/T1098/
-
-[[ssh-authorized-keys-file-modification-history]]
-==== Rule version history
-
-Version 100 (8.5.0 release)::
-* Updated query, changed from:
-+
-[source, js]
-----------------------------------
-event.category:file and event.type:(change or creation) and
-file.name:("authorized_keys" or "authorized_keys2") and not
-process.executable:
-(/Library/Developer/CommandLineTools/usr/bin/git or
-/usr/local/Cellar/maven/*/libexec/bin/mvn or
-/Library/Java/JavaVirtualMachines/jdk*.jdk/Contents/Home/bin/java or
-/usr/bin/vim or /usr/local/Cellar/coreutils/*/bin/gcat
-or /usr/bin/bsdtar or /usr/bin/nautilus
-or /usr/bin/scp or /usr/bin/touch or
-/var/lib/docker/* or /usr/bin/google_guest_agent)
-----------------------------------
-
-Version 3 (8.4.0 release)::
-* Formatting only
-
-Version 2 (8.3.0 release)::
-* Updated query, changed from:
-+
-[source, js]
-----------------------------------
-event.category:file and event.type:(change or creation) and
-file.name:("authorized_keys" or "authorized_keys2") and not
-process.executable:
-(/Library/Developer/CommandLineTools/usr/bin/git or
-/usr/local/Cellar/maven/*/libexec/bin/mvn or
-/Library/Java/JavaVirtualMachines/jdk*.jdk/Contents/Home/bin/java or
-/usr/bin/vim or /usr/local/Cellar/coreutils/*/bin/gcat
-or /usr/bin/bsdtar or /usr/bin/nautilus
-or /usr/bin/scp or /usr/bin/touch or
-/var/lib/docker/*)
-----------------------------------
-
+* Sub-technique:
+** Name: SSH Authorized Keys
+** ID: T1098.004
+** Reference URL: https://attack.mitre.org/techniques/T1098/004/
+* Tactic:
+** Name: Lateral Movement
+** ID: TA0008
+** Reference URL: https://attack.mitre.org/tactics/TA0008/
+* Technique:
+** Name: Remote Service Session Hijacking
+** ID: T1563
+** Reference URL: https://attack.mitre.org/techniques/T1563/
+* Sub-technique:
+** Name: SSH Hijacking
+** ID: T1563.001
+** Reference URL: https://attack.mitre.org/techniques/T1563/001/
+* Technique:
+** Name: Remote Services
+** ID: T1021
+** Reference URL: https://attack.mitre.org/techniques/T1021/
+* Sub-technique:
+** Name: SSH
+** ID: T1021.004
+** Reference URL: https://attack.mitre.org/techniques/T1021/004/

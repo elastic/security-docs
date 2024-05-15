@@ -1,0 +1,148 @@
+[[delayed-execution-via-ping]]
+=== Delayed Execution via Ping
+
+Identifies the execution of commonly abused Windows utilities via a delayed Ping execution. This behavior is often observed during malware installation and is consistent with an attacker attempting to evade detection.
+
+*Rule type*: eql
+
+*Rule indices*: 
+
+* logs-endpoint.events.process-*
+
+*Severity*: low
+
+*Risk score*: 21
+
+*Runs every*: 5m
+
+*Searches indices from*: now-9m ({ref}/common-options.html#date-math[Date Math format], see also <<rule-schedule, `Additional look-back time`>>)
+
+*Maximum alerts per execution*: 100
+
+*References*: None
+
+*Tags*: 
+
+* Domain: Endpoint
+* OS: Windows
+* Use Case: Threat Detection
+* Tactic: Execution
+* Tactic: Defense Evasion
+* Data Source: Elastic Defend
+
+*Version*: 2
+
+*Rule authors*: 
+
+* Elastic
+
+*Rule license*: Elastic License v2
+
+
+==== Rule query
+
+
+[source, js]
+----------------------------------
+sequence by process.parent.entity_id with maxspan=1m
+  [process where host.os.type == "windows" and event.action == "start" and process.name : "ping.exe" and
+   process.args : "-n" and process.parent.name : "cmd.exe" and not user.id : "S-1-5-18"]
+  [process where host.os.type == "windows" and event.action == "start" and
+   process.parent.name : "cmd.exe" and
+   (
+        process.name : (
+            "rundll32.exe", "powershell.exe",
+            "mshta.exe", "msbuild.exe",
+            "certutil.exe", "regsvr32.exe",
+            "powershell.exe", "cscript.exe",
+            "wscript.exe", "wmic.exe",
+            "installutil.exe", "msxsl.exe",
+            "Microsoft.Workflow.Compiler.exe",
+            "ieexec.exe", "iexpress.exe",
+            "RegAsm.exe", "installutil.exe",
+            "RegSvcs.exe", "RegAsm.exe"
+        ) or
+        (process.executable : "?:\\Users\\*\\AppData\\*.exe" and not process.code_signature.trusted == true)
+    ) and
+
+    not process.args : ("?:\\Program Files\\*", "?:\\Program Files (x86)\\*") and
+    not (process.name : ("openssl.exe", "httpcfg.exe", "certutil.exe") and process.parent.command_line : "*ScreenConnectConfigurator.cmd*") and
+    not (process.pe.original_file_name : "DPInst.exe" and process.command_line : "driver\\DPInst_x64  /f ") and
+    not (process.name : "powershell.exe" and process.args : "Write-Host ======*") and
+    not (process.name : "wscript.exe" and process.args : "launchquiet_args.vbs" and process.parent.args : "?:\\Windows\\TempInst\\7z*") and
+    not (process.name : "regsvr32.exe" and process.args : ("?:\\windows\\syswow64\\msxml?.dll", "msxml?.dll", "?:\\Windows\\SysWOW64\\mschrt20.ocx")) and 
+    not (process.name : "wscript.exe" and
+         process.working_directory :
+                    ("?:\\Windows\\TempInst\\*",
+                     "?:\\Users\\*\\AppData\\Local\\Temp\\BackupBootstrapper\\Logs\\",
+                     "?:\\Users\\*\\AppData\\Local\\Temp\\QBTools\\"))
+    ]
+
+----------------------------------
+
+*Framework*: MITRE ATT&CK^TM^
+
+* Tactic:
+** Name: Execution
+** ID: TA0002
+** Reference URL: https://attack.mitre.org/tactics/TA0002/
+* Technique:
+** Name: Command and Scripting Interpreter
+** ID: T1059
+** Reference URL: https://attack.mitre.org/techniques/T1059/
+* Sub-technique:
+** Name: Visual Basic
+** ID: T1059.005
+** Reference URL: https://attack.mitre.org/techniques/T1059/005/
+* Sub-technique:
+** Name: PowerShell
+** ID: T1059.001
+** Reference URL: https://attack.mitre.org/techniques/T1059/001/
+* Tactic:
+** Name: Defense Evasion
+** ID: TA0005
+** Reference URL: https://attack.mitre.org/tactics/TA0005/
+* Technique:
+** Name: Virtualization/Sandbox Evasion
+** ID: T1497
+** Reference URL: https://attack.mitre.org/techniques/T1497/
+* Sub-technique:
+** Name: Time Based Evasion
+** ID: T1497.003
+** Reference URL: https://attack.mitre.org/techniques/T1497/003/
+* Technique:
+** Name: System Binary Proxy Execution
+** ID: T1218
+** Reference URL: https://attack.mitre.org/techniques/T1218/
+* Sub-technique:
+** Name: CMSTP
+** ID: T1218.003
+** Reference URL: https://attack.mitre.org/techniques/T1218/003/
+* Sub-technique:
+** Name: InstallUtil
+** ID: T1218.004
+** Reference URL: https://attack.mitre.org/techniques/T1218/004/
+* Sub-technique:
+** Name: Mshta
+** ID: T1218.005
+** Reference URL: https://attack.mitre.org/techniques/T1218/005/
+* Sub-technique:
+** Name: Regsvcs/Regasm
+** ID: T1218.009
+** Reference URL: https://attack.mitre.org/techniques/T1218/009/
+* Sub-technique:
+** Name: Regsvr32
+** ID: T1218.010
+** Reference URL: https://attack.mitre.org/techniques/T1218/010/
+* Sub-technique:
+** Name: Rundll32
+** ID: T1218.011
+** Reference URL: https://attack.mitre.org/techniques/T1218/011/
+* Technique:
+** Name: System Script Proxy Execution
+** ID: T1216
+** Reference URL: https://attack.mitre.org/techniques/T1216/
+* Technique:
+** Name: XSL Script Processing
+** ID: T1220
+** Reference URL: https://attack.mitre.org/techniques/T1220/

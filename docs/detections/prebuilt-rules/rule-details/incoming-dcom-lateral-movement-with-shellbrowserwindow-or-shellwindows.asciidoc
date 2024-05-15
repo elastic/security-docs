@@ -5,59 +5,60 @@ Identifies use of Distributed Component Object Model (DCOM) to run commands from
 
 *Rule type*: eql
 
-*Rule indices*:
+*Rule indices*: 
 
 * winlogbeat-*
-* logs-endpoint.events.*
-* logs-windows.*
+* logs-endpoint.events.process-*
+* logs-endpoint.events.network-*
+* logs-windows.sysmon_operational-*
 
 *Severity*: medium
 
 *Risk score*: 47
 
-*Runs every*: 5 minutes
+*Runs every*: 5m
 
 *Searches indices from*: now-9m ({ref}/common-options.html#date-math[Date Math format], see also <<rule-schedule, `Additional look-back time`>>)
 
 *Maximum alerts per execution*: 100
 
-*References*:
+*References*: 
 
 * https://enigma0x3.net/2017/01/23/lateral-movement-via-dcom-round-2/
 
-*Tags*:
+*Tags*: 
+
+* Domain: Endpoint
+* OS: Windows
+* Use Case: Threat Detection
+* Tactic: Lateral Movement
+* Data Source: Elastic Defend
+* Data Source: Sysmon
+
+*Version*: 107
+
+*Rule authors*: 
 
 * Elastic
-* Host
-* Windows
-* Threat Detection
-* Lateral Movement
-
-*Version*: 101 (<<incoming-dcom-lateral-movement-with-shellbrowserwindow-or-shellwindows-history, version history>>)
-
-*Added ({stack} release)*: 7.11.0
-
-*Last modified ({stack} release)*: 8.5.0
-
-*Rule authors*: Elastic
 
 *Rule license*: Elastic License v2
+
 
 ==== Rule query
 
 
-[source,js]
+[source, js]
 ----------------------------------
-sequence by host.id with maxspan=5s [network where event.type ==
-"start" and process.name : "explorer.exe" and network.direction :
-("incoming", "ingress") and network.transport == "tcp" and
-source.port > 49151 and destination.port > 49151 and source.ip !=
-"127.0.0.1" and source.ip != "::1" ] by process.entity_id [process
-where event.type == "start" and process.parent.name : "explorer.exe"
-] by process.parent.entity_id
-----------------------------------
+sequence by host.id with maxspan=5s
+ [network where host.os.type == "windows" and event.type == "start" and process.name : "explorer.exe" and
+  network.direction : ("incoming", "ingress") and network.transport == "tcp" and
+  source.port > 49151 and destination.port > 49151 and source.ip != "127.0.0.1" and source.ip != "::1"
+ ] by process.entity_id
+ [process where host.os.type == "windows" and event.type == "start" and
+  process.parent.name : "explorer.exe"
+ ] by process.parent.entity_id
 
-==== Threat mapping
+----------------------------------
 
 *Framework*: MITRE ATT&CK^TM^
 
@@ -69,55 +70,7 @@ where event.type == "start" and process.parent.name : "explorer.exe"
 ** Name: Remote Services
 ** ID: T1021
 ** Reference URL: https://attack.mitre.org/techniques/T1021/
-
-[[incoming-dcom-lateral-movement-with-shellbrowserwindow-or-shellwindows-history]]
-==== Rule version history
-
-Version 101 (8.5.0 release)::
-* Updated query, changed from:
-+
-[source, js]
-----------------------------------
-sequence by host.id with maxspan=5s [network where event.type ==
-"start" and process.name : "explorer.exe" and network.direction :
-("incoming", "ingress") and network.transport == "tcp" and
-source.port > 49151 and destination.port > 49151 and source.ip !=
-"127.0.0.1" and source.ip != "::1" ] by process.entity_id [process
-where event.type in ("start", "process_started") and
-process.parent.name : "explorer.exe" ] by process.parent.entity_id
-----------------------------------
-
-Version 6 (8.4.0 release)::
-* Formatting only
-
-Version 5 (8.0.0 release)::
-* Updated query, changed from:
-+
-[source, js]
-----------------------------------
-sequence by host.id with maxspan=5s [network where event.type ==
-"start" and process.name : "explorer.exe" and network.direction :
-("incoming", "ingress") and network.transport == "tcp" and
-source.port > 49151 and destination.port > 49151 and not
-source.address in ("127.0.0.1", "::1") ] by process.entity_id
-[process where event.type in ("start", "process_started") and
-process.parent.name : "explorer.exe" ] by process.parent.entity_id
-----------------------------------
-
-Version 4 (7.16.0 release)::
-* Updated query, changed from:
-+
-[source, js]
-----------------------------------
-sequence by host.id with maxspan=5s [network where event.type ==
-"start" and process.name : "explorer.exe" and network.direction ==
-"incoming" and network.transport == "tcp" and source.port > 49151
-and destination.port > 49151 and not source.address in ("127.0.0.1",
-"::1") ] by process.entity_id [process where event.type in ("start",
-"process_started") and process.parent.name : "explorer.exe" ] by
-process.parent.entity_id
-----------------------------------
-
-Version 2 (7.12.0 release)::
-* Formatting only
-
+* Sub-technique:
+** Name: Distributed Component Object Model
+** ID: T1021.003
+** Reference URL: https://attack.mitre.org/techniques/T1021/003/
