@@ -1,0 +1,123 @@
+[[prebuilt-rule-8-11-16-route53-resolver-query-log-configuration-deleted]]
+=== Route53 Resolver Query Log Configuration Deleted
+
+Identifies when a Route53 Resolver Query Log Configuration is deleted. When a Route53 Resolver query log configuration is deleted, Resolver stops logging DNS queries and responses for the specified configuration. Adversaries may delete query log configurations to evade detection or cover their tracks.
+
+*Rule type*: query
+
+*Rule indices*: 
+
+* filebeat-*
+* logs-aws.cloudtrail*
+
+*Severity*: medium
+
+*Risk score*: 47
+
+*Runs every*: 10m
+
+*Searches indices from*: now-60m ({ref}/common-options.html#date-math[Date Math format], see also <<rule-schedule, `Additional look-back time`>>)
+
+*Maximum alerts per execution*: 100
+
+*References*: 
+
+* https://docs.aws.amazon.com/Route53/latest/APIReference/API_route53resolver_DeleteResolverQueryLogConfig.html
+
+*Tags*: 
+
+* Domain: Cloud
+* Data Source: AWS
+* Data Source: Amazon Web Services
+* Data Source: Amazon Route53
+* Use Case: Log Auditing
+* Resources: Investigation Guide
+* Tactic: Defense Evasion
+
+*Version*: 1
+
+*Rule authors*: 
+
+* Elastic
+
+*Rule license*: Elastic License v2
+
+
+==== Investigation guide
+
+
+
+
+*Triage and Analysis*
+
+
+
+*Investigating Route53 Resolver Query Log Configuration Deleted*
+
+
+This rule detects when a Route53 Resolver Query Log Configuration is deleted. Deleting these configurations stops the logging of DNS queries and responses, which can significantly impede network monitoring and compromise security visibility. Adversaries may delete these configurations to evade detection, remove evidence, or obscure their activities within a network.
+
+Adversaries target Route53 Resolver query log configurations because these logs can contain evidence of malicious domain queries or responses. By deleting these logs, an adversary can prevent the capture of information that could reveal unauthorized network activities, aiding in avoiding detection and thwarting incident response efforts.
+
+
+*Possible Investigation Steps*
+
+
+- **Review the Deletion Details**: Examine the CloudTrail logs to identify when and by whom the deletion was initiated.
+    - Check the `event.action` and `user_identity` elements to understand the scope and authorization of the deletion.
+- **Contextualize with User Actions**: Assess whether the deletion aligns with the user’s role and job responsibilities.
+    - Investigate if similar modifications have occurred recently that could suggest a pattern or broader campaign.
+- **Analyze Access Patterns and Permissions**: Verify whether the user had the appropriate permissions to delete log configurations.
+    - Investigate any recent permission changes that might indicate role abuse or credentials compromise.
+- **Correlate with Other Security Incidents**: Look for related security alerts or incidents that could be connected to the log deletion.
+    - This includes unusual network traffic, alerts from other AWS services, or findings from intrusion detection systems.
+- **Interview the Responsible Team**: If the deletion was initiated by an internal team member, confirm their intent and authorization to ensure it was a legitimate action.
+
+
+*False Positive Analysis*
+
+
+- **Legitimate Administrative Actions**: Confirm that the deletion was part of scheduled IT operations or network management activities, possibly linked to maintenance or infrastructure updates. Validate this action against change management records or through interviews with relevant personnel.
+
+
+*Response and Remediation*
+
+
+- **Restore Logs if Feasible**: If the deletion was unauthorized, consider restoring the configuration from backups to ensure continuous visibility into DNS queries.
+- **Review and Tighten Permissions**: Ensure that only authorized personnel have the capability to delete critical configurations.
+    - Adjust AWS IAM policies to reinforce security measures.
+- **Enhance Monitoring of Log Management**: Implement or enhance monitoring rules to detect and alert on unauthorized changes to logging configurations, focusing on critical deletions.
+- **Conduct Comprehensive Security Review**: If the deletion is verified as malicious, initiate a thorough security assessment to identify any further unauthorized changes or ongoing malicious activities.
+
+
+*Additional Information*
+
+
+For detailed instructions on managing Route53 Resolver and securing its configurations, refer to the https://docs.aws.amazon.com/Route53/latest/APIReference/API_route53resolver_DeleteResolverQueryLogConfig.html[Amazon Route53 Resolver documentation].
+
+
+
+==== Rule query
+
+
+[source, js]
+----------------------------------
+event.dataset:aws.cloudtrail and event.provider: route53resolver.amazonaws.com
+    and event.action: DeleteResolverQueryLogConfig and event.outcome: success
+
+----------------------------------
+
+*Framework*: MITRE ATT&CK^TM^
+
+* Tactic:
+** Name: Defense Evasion
+** ID: TA0005
+** Reference URL: https://attack.mitre.org/tactics/TA0005/
+* Technique:
+** Name: Impair Defenses
+** ID: T1562
+** Reference URL: https://attack.mitre.org/techniques/T1562/
+* Sub-technique:
+** Name: Disable or Modify Cloud Logs
+** ID: T1562.008
+** Reference URL: https://attack.mitre.org/techniques/T1562/008/
