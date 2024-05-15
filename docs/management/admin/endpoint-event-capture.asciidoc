@@ -1,0 +1,50 @@
+[[endpoint-event-capture]]
+[chapter]
+= Event capture and {elastic-defend}
+
+{elastic-defend} collects selective data on system activities in order to detect and prevent as many threats as possible, while balancing storage and performance overhead. To that end, {elastic-defend} isn't designed to provide a complete capture of all system events. The event data that {elastic-defend} generates might be aggregated, truncated, or deduplicated as needed to optimize threat detection and prevention.
+
+You can supplement {elastic-defend}'s protection capabilities with additional {integrations-docs}[Elastic integrations] and tools that provide more visibility and historical data. Consult the following sections to expand data collection for specific system events.
+
+
+[discrete]
+== Network port creation and deletion
+
+{elastic-defend} tracks TCP connections. If a port is created but no traffic flows, no events are generated.
+
+For complete capture of network port creation and deletion, consider capturing Windows event ID 5158 using the {integrations-docs}/winlog[Custom Windows Event Logs] integration.
+
+[discrete]
+== Network in/out connections
+
+{elastic-defend} tracks TCP connections, which don't include network in/out connections.
+
+For complete network capture, consider deploying {packetbeat} using the https://docs.elastic.co/en/integrations/network_traffic[Network Packet Capture] integration.
+
+[discrete]
+== User behavior
+
+{elastic-defend} only captures user security events required by its behavioral protection. This doesn't include every user event such as logins and logouts, or every time a user account is created, deleted, or modified.
+
+For complete capture of all or specific Windows security events, consider the https://docs.elastic.co/en/integrations/winlog[Custom Windows Event Logs] integration.
+
+[discrete]
+== System service registration, deletion, and modification
+
+{elastic-defend} only captures system service security events required by its behavioral protection engine. Service creation and modification can also be detected in registry activity, for which {elastic-defend} has internal rules such as https://github.com/elastic/protections-artifacts/blob/6d54ae289b290b1d42a7717569483f6ce907200a/behavior/rules/persistence_registry_or_file_modification_from_suspicious_memory.toml[Registry or File Modification from Suspicious Memory].
+
+For complete capture of all or specific Windows security events, consider the https://docs.elastic.co/en/integrations/winlog[Custom Windows Event Logs] integration. In particular, capture events such as https://learn.microsoft.com/en-us/windows/security/threat-protection/auditing/event-4697[Windows event ID 4697].
+
+[discrete]
+== Kernel driver registration, deletion, and queries
+
+{elastic-defend} scans every driver as it is loaded, but it doesn't generate an event each time.
+
+Drivers are registered in the system as system services. You can capture this with Windows event ID 4697 using the https://docs.elastic.co/en/integrations/winlog[Custom Windows Event Logs] integration. 
+
+Also consider capturing Windows event ID 6 using {winlogbeat}'s {winlogbeat-ref}/winlogbeat-module-sysmon.html[Sysmon module].
+
+[discrete]
+== System configuration file creation, modification, and deletion
+
+{elastic-defend} tracks creation, modification, and deletion of all files on the system. However, as mentioned above, the data might be aggregated, truncated, or deduplicated to provide only what's required for threat detection and prevention.
