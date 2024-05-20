@@ -342,6 +342,14 @@ single execution. Defaults to `100`.
 |references |String[] |Array containing notes about or references to
 relevant information about the rule. Defaults to an empty array.
 
+|required_fields |Object[] a| {es} fields and their types that need to be present for the rule to function. The object has these fields:
+
+ * `name` (string, required): The field's name.
+ * `type` (string, required): The field's data type.
+ * `ecs` (Boolean, optional): Indicates whether the field is {ecs-ref}[ECS-compliant]. This property is only present in responses. Its value is computed based on field's name and type.
+
+*NOTE*: The value of `required_fields` does not affect the rule's behavior, and specifying it incorrectly won't cause the rule to fail. Use `required_fields` as an informational property to document the fields that the rule expects to be present in the data. 
+
 |rule_id |String |Unique ID used to identify rules. For example, when a rule
 is converted from a third-party security solution. Automatically created when
 it is not provided.
@@ -815,6 +823,9 @@ POST api/detection_engine/rules
       }
      }
   ],
+  "required_fields": [
+    { name: "process.parent.name", "type": "keyword" }
+  ],
   "enabled": false
 }
 --------------------------------------------------
@@ -852,6 +863,9 @@ POST api/detection_engine/rules
   "interval": "2m",
   "name": "Windows server prml-19",
   "query": "host.name:prml-19 and event.category:authentication and event.outcome:failure",
+  "required_fields": [
+    { "name": "source.ip", "type": "ip" }
+  ],
   "risk_score": 30,
   "rule_id": "liv-win-ser-logins",
   "severity": "low",
@@ -960,7 +974,15 @@ POST api/detection_engine/rules
    ],
   "type": "eql",
   "language": "eql",
-  "query": "sequence by process.entity_id with maxspan=2h [process where event.type in (\"start\", \"process_started\") and (process.name == \"rundll32.exe\" or process.pe.original_file_name == \"rundll32.exe\") and ((process.args == \"rundll32.exe\" and process.args_count == 1) or (process.args != \"rundll32.exe\" and process.args_count == 0))] [network where event.type == \"connection\" and (process.name == \"rundll32.exe\" or process.pe.original_file_name == \"rundll32.exe\")]"
+  "query": "sequence by process.entity_id with maxspan=2h [process where event.type in (\"start\", \"process_started\") and (process.name == \"rundll32.exe\" or process.pe.original_file_name == \"rundll32.exe\") and ((process.args == \"rundll32.exe\" and process.args_count == 1) or (process.args != \"rundll32.exe\" and process.args_count == 0))] [network where event.type == \"connection\" and (process.name == \"rundll32.exe\" or process.pe.original_file_name == \"rundll32.exe\")]",
+  "required_fields": [
+    { "name": "event.type", "type": "keyword" },
+    { "name": "process.args", "type": "keyword" },
+    { "name": "process.args_count", "type": "long" },
+    { "name": "process.entity_id", "type": "keyword" },
+    { "name": "process.name", "type": "keyword" },
+    { "name": "process.pe.original_file_name", "type": "keyword" }
+  ]
 }
 --------------------------------------------------
 // KIBANA
@@ -1014,6 +1036,11 @@ POST api/detection_engine/rules
             ]
         }
     ],
+    "required_fields": [
+      { "name": "destination.ip", "type": "ip" },
+      { "name": "destination.port", "type": "long" },
+      { "name": "host.ip", "type": "ip" }
+    ],
     "risk_score": 50,
     "severity": "medium",
     "name": "Bad IP threat match",
@@ -1049,7 +1076,11 @@ POST api/detection_engine/rules
   "query": "*",
   "new_terms_fields": ["user.id", "source.ip"],
   "history_window_start": "now-30d",
-  "index": ["auditbeat*"]
+  "index": ["auditbeat*"],
+  "required_fields": [
+    { "name": "user.id", "type": "keyword" },
+    { "name": "source.ip", "type": "ip" }
+  ]
 }
 --------------------------------------------------
 // KIBANA
@@ -1064,7 +1095,7 @@ POST api/detection_engine/rules
 {
   "type": "esql",
   "language": "esql",
-  "query": "from auditbeat-8.10.2 [metadata _id, _version, _index] | where process.parent.name == \"EXCEL.EXE\"",
+  "query": "from auditbeat-8.10.2 METADATA _id, _version, _index | where process.parent.name == \"EXCEL.EXE\"",
   "name": "Find Excel events",
   "description": "Find Excel events",
   "tags": [],
@@ -1073,7 +1104,10 @@ POST api/detection_engine/rules
   "to": "now",
   "enabled": false,
   "risk_score": 21,
-  "severity": "low"
+  "severity": "low",
+  "required_fields": [
+    { "name": "process.parent.name", "type": "keyword" }
+  ]
 }
 --------------------------------------------------
 
@@ -1180,11 +1214,13 @@ Example response for a query rule:
   "query": "process.parent.name:EXCEL.EXE or process.parent.name:MSPUB.EXE or process.parent.name:OUTLOOK.EXE or process.parent.name:POWERPNT.EXE or process.parent.name:VISIO.EXE or process.parent.name:WINWORD.EXE",
   "language": "kuery",
   "related_integrations": [],       <1>
-  "required_fields": [],            <1>
+  "required_fields": [
+    { "name": "process.parent.name", "type": "keyword", "ecs": true }
+  ],
   "setup": ""
 }
 --------------------------------------------------
-<1> dev:[] These fields are under development and their usage may change: `related_integrations` and `required_fields`.
+<1> dev:[] These fields are under development and their usage may change: `related_integrations`.
 
 
 Example response for a {ml} job rule:
@@ -1238,11 +1274,11 @@ Example response for a {ml} job rule:
   "anomaly_threshold": 70,
   "machine_learning_job_id": "linux_anomalous_network_activity_ecs",
   "related_integrations": [],       <1>
-  "required_fields": [],            <1>
+  "required_fields": [],
   "setup": ""
 }
 --------------------------------------------------
-<1> dev:[] These fields are under development and their usage may change: `related_integrations` and `required_fields`.
+<1> dev:[] These fields are under development and their usage may change: `related_integrations`.
 
 Example response for a threshold rule:
 
@@ -1319,11 +1355,13 @@ Example response for a threshold rule:
     "value": 20
   },
   "related_integrations": [],       <1>
-  "required_fields": [],            <1>
+  "required_fields": [
+    { "name": "source.ip", "type": "ip", "ecs": true }
+  ],
   "setup": ""
 }
 --------------------------------------------------
-<1> dev:[] These fields are under development and their usage may change: `related_integrations` and `required_fields`.
+<1> dev:[] These fields are under development and their usage may change: `related_integrations`.
 
 Example response for an EQL rule:
 
@@ -1364,11 +1402,18 @@ Example response for an EQL rule:
   "query": "sequence by process.entity_id with maxspan=2h [process where event.type in (\"start\", \"process_started\") and (process.name == \"rundll32.exe\" or process.pe.original_file_name == \"rundll32.exe\") and ((process.args == \"rundll32.exe\" and process.args_count == 1) or (process.args != \"rundll32.exe\" and process.args_count == 0))] [network where event.type == \"connection\" and (process.name == \"rundll32.exe\" or process.pe.original_file_name == \"rundll32.exe\")]",
   "language": "eql",
   "related_integrations": [],       <1>
-  "required_fields": [],            <1>
+  "required_fields": [
+    { "name": "event.type", "type": "keyword", "ecs": true },
+    { "name": "process.args", "type": "keyword", "ecs": true },
+    { "name": "process.args_count", "type": "long", "ecs": true },
+    { "name": "process.entity_id", "type": "keyword", "ecs": true },
+    { "name": "process.name", "type": "keyword", "ecs": true },
+    { "name": "process.pe.original_file_name", "type": "keyword", "ecs": true }
+  ],
   "setup": ""
 }
 --------------------------------------------------
-<1> dev:[] These fields are under development and their usage may change: `related_integrations` and `required_fields`.
+<1> dev:[] These fields are under development and their usage may change: `related_integrations`.
 
 Example response for an indicator match rule:
 
@@ -1436,11 +1481,15 @@ Example response for an indicator match rule:
     }
   ],
   "related_integrations": [],       <1>
-  "required_fields": [],            <1>
+  "required_fields": [
+    { "name": "destination.ip", "type": "ip", "ecs": true },
+    { "name": "destination.port", "type": "long", "ecs": true },
+    { "name": "host.ip", "type": "ip", "ecs": true }
+  ],
   "setup": ""
 }
 --------------------------------------------------
-<1> dev:[] These fields are under development and their usage may change: `related_integrations` and `required_fields`.
+<1> dev:[] These fields are under development and their usage may change: `related_integrations`.
 
 Example response for a new terms rule:
 
@@ -1481,11 +1530,14 @@ Example response for a new terms rule:
   "new_terms_fields": ["user.id", "source.ip"],
   "history_window_start": "now-30d",
   "related_integrations": [],       <1>
-  "required_fields": [],            <1>
+  "required_fields": [
+    { "name": "user.id", "type": "keyword", "ecs": true },
+    { "name": "source.ip", "type": "ip", "ecs": true }
+  ],
   "setup": ""
 }
 --------------------------------------------------
-<1> dev:[] These fields are under development and their usage may change: `related_integrations` and `required_fields`.
+<1> dev:[] These fields are under development and their usage may change: `related_integrations`.
 
 Example response for an {esql} rule:
 
@@ -1521,11 +1573,13 @@ Example response for an {esql} rule:
   "rule_id": "e4b53a89-debd-4a0d-a3e3-20606952e589",
   "immutable": false,
   "related_integrations": [],     <1>
-  "required_fields": [],          <1>
+  "required_fields": [
+    { "name": "process.parent.name", "type": "keyword", "ecs": true }
+  ],
   "setup": "",
   "type": "esql",
   "language": "esql",
-  "query": "from auditbeat-8.10.2 [metadata _id] | where process.parent.name == \"EXCEL.EXE\""
+  "query": "from auditbeat-8.10.2 METADATA _id | where process.parent.name == \"EXCEL.EXE\""
 }
 --------------------------------------------------
-<1> dev:[] These fields are under development and their usage may change: `related_integrations` and `required_fields`.
+<1> dev:[] These fields are under development and their usage may change: `related_integrations`.
