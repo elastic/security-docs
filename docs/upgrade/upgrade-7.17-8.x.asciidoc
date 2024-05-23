@@ -4,7 +4,7 @@
 [float]
 === Why it's important to upgrade
 
-Upgrading provides you access to {elastic-sec}'s latest features, enhancements, and bug fixes, many of which enable you to save your company money, respond faster to potential threats, and improve the tools you use to investigate and analyze your data. For more benefits, check out our blog, https://www.elastic.co/blog/top-5-reasons-to-upgrade-elastic-security[Top 5 reasons to upgrade Elastic Security]. Also, it's important to ensure your deployment is fully maintained and supported. For more information, refer to https://www.elastic.co/support/eol[Elastic's Product End of Life Dates]. 
+Upgrading provides you access to {elastic-sec}'s latest features, enhancements, and bug fixes, many of which enable you to save your company money, respond faster to potential threats, and improve the tools you use to investigate and analyze your data. For more benefits, check out our blog, https://www.elastic.co/blog/top-5-reasons-to-upgrade-elastic-security[Top 5 reasons to upgrade Elastic Security]. Also, it's important to ensure that your deployment is fully maintained and supported. For more information, refer to https://www.elastic.co/support/eol[Elastic's Product End of Life Dates]. 
 
 [float]
 === Plan for your upgrade
@@ -30,9 +30,11 @@ Before upgrading to {elastic-sec} 8.x, consider the following recommendations:
 
 To prepare for the upgrade process, follow these steps before you start:
 
-. Do a software version inventory across your entire Elastic platform, including {es}, {kib}, {agent}, {beats}, and {ls}. If you're managing your deployments using {ece-ref}/ece-upgrade.html[{ece}] (ECE) or {eck-ref}/k8s-upgrading-eck.html[{eck}] (ECK), you may need to upgrade the orchestrator first.
+. Do a software version inventory across your entire Elastic deployment, including {es}, {kib}, {agent}, {beats}, and {ls}. 
 
-. If you're running any of these at versions earlier than 7.17, you must first upgrade them all to the latest 7.17.x patch release before upgrading to 8.x. This enables you to use the {kib} Upgrade Assistant to upgrade to 8.x. 
+. If you're running any of these at versions earlier than 7.17, you must first upgrade them all to the latest 7.17.x patch release before upgrading to 8.x. This enables you to use the Upgrade Assistant to upgrade to 8.x. 
++
+NOTE: If you're managing your deployments using {ece-ref}/ece-upgrade.html[{ece}] (ECE) or {eck-ref}/k8s-upgrading-eck.html[{eck}] (ECK), you may need to upgrade the system clusters first.
 
 . Run the {kibana-ref}/upgrade-assistant.html[Upgrade Assistant]. Take note of any critical error messages, then work with your Elastic Support rep to resolve them.
 +
@@ -45,9 +47,9 @@ To run the Upgrade Assistant, you must have `superuser` cluster admin permission
 . If you're not using {ref}/snapshots-take-snapshot.html#automate-snapshots-slm[{slm} (SLM)], you must set up, configure, and run at least one {ref}/snapshot-restore.html[snapshot]. Rollbacks require a snapshot and cause data loss without one. Snapshots are {ref}/snapshot-restore.html#how-snapshots-work[incremental] – depending on the cluster size and the input/output rate, the initial snapshot may take several hours to complete. If you are using SLM, {ref}/snapshots-take-snapshot.html#check-slm-history[check the SLM history] to ensure that snapshots are completing successfully.
 
 [float]
-=== Perform 8.x upgrade on Non-Prod (Optional) or Prod Deployment
+=== Perform 8.x upgrade on a non-prod (optional) or prod deployment
 
-NOTE: We strongly recommend you perform the following steps on a non-prod test deployment first to address any potential issues before upgrading on a prod deployment. 
+IMPORTANT: We strongly recommend you perform the following steps on a non-prod test deployment first to address any potential issues before upgrading on a prod deployment. If you're using a cross-cluster search environment, make sure to upgrade your remote deployments first.
 
 . Back up all of your data to a {ref}/snapshots-take-snapshot.html[snapshot] – which is a backup of indices taken from a running cluster. 
 
@@ -72,9 +74,8 @@ NOTE: If you're using {ecloud} or {ece}, this is already included in the {es} up
 
 . Validate {es} and {kib} are operating as expected by completing the following checks: 
 .. {es}
-... Check the status of your clusters and ensure they're green. Run the `GET _cat/health` API request. For more information, refer to the {ref}/cat-health.html[cat health API documentation].
-... Check the size of your rolled over indices/shards, which should be less than 50 GB. Run the `GET _cat/shards?s=store:desc` API request. For more information, refer to the {ref}/cat-shards.html[cat shards API documentation].    
-... Ensure the index and search rate are close to what they were prior to upgrading. Go to **Stack Monitoring** -> **ES** -> **Overview**.
+... Check the status of your clusters and ensure that they're green. Run the `GET _cat/health` API request. For more information, refer to the {ref}/cat-health.html[cat health API documentation].
+... Ensure that the index and search rate are close to what they were prior to upgrading. Go to **Stack Monitoring** -> **ES** -> **Overview**.
 +
 TIP: You can also check the index doc count using the {ref}/cat-indices.html[cat index API].
 ... Verify the {slm} (SLM) is taking snapshots by {ref}/snapshots-take-snapshot.html#check-slm-history[checking the SLM history]. 
@@ -83,7 +84,7 @@ TIP: You can also check the index doc count using the {ref}/cat-indices.html[cat
 ... Ensure that you and your users can successfully log in to {kib} and access desired pages.
 ... Check {kibana-ref}/discover.html[Discover] and verify that the index patterns you normally use are available.
 ... Verify that your commonly used {kibana-ref}/dashboard.html[dashboards] are available and working properly.
-... If you use any watcher-based {kib} scheduled {kibana-ref}/reporting-getting-started.html[reporting], ensure that it is working properly.
+... If you use any watcher-based {kib} scheduled {kibana-ref}/reporting-getting-started.html[reporting], ensure that it's working properly.
 
 . Upgrade your ingest components (such as {ls}, {fleet} and {agent}, {beats}, etc.) Refer to the {stack-ref}/upgrading-elastic-stack.html[Elastic Stack upgrade docs] for details.
 
@@ -95,6 +96,7 @@ TIP: You can also check the index doc count using the {ref}/cat-indices.html[cat
 .. Ensure that any SOAR workflows that consume alerts are working.
 .. Verify that any custom dashboards your team has created are working properly, especially if they operate on alert (signal) documents.
 
+. If you performed these steps on a non-prod deployment, repeat these same steps on your prod environment. If you're using a cross-cluster search environment and performed these steps on your remote clusters, repeat these same steps on your other deployments. 
 . Confirm with your appropriate stakeholders that the upgrade process is complete.
 
 [float]
