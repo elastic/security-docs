@@ -17,11 +17,13 @@ Before upgrading to {elastic-sec} 8.x, consider the following recommendations:
 
 * Choose a version to upgrade to. We recommend the latest minor and patch version. Be sure to upgrade your development or non-production deployment to the same version as your production deployment. 
 
+* Ensure that you have {kibana-ref}/configuring-monitoring.html[stack monitoring] enabled in {kib}. Take note of your current index and search rate. 
+
 * Review your selected version's features, Elastic connectors, integrations, and detection rules to determine if you can replace any customized content with out-of-the-box functionality. This can help reduce your workload and the complexity of your upgrade.
 
 * If your organization sends alerts (signals) to an external SOAR (security orchestration, automation, and response) platform, you may need to change your workflows to accommodate the new <<alert-schema, alert schema>> used in 8.x.
 
-* Review release notes, deprecations, and breaking changes for {security-guide}/release-notes.html[{elastic-sec}], {ref}/es-release-notes.html[{es}], {kibana-ref}/release-notes.html[{kib}], and, if applicable, {fleet-guide}/release-notes.html[{fleet} and {agent}], {beats-ref}/release-notes.html[{beats}], and {logstash-ref}/releasenotes.html[{ls}]. Identify any issues that might affect your deployment. Work with your Support Engineer on any questions you may have. Start with breaking changes for solution and platform components you use, such as {es} and {kib}. 
+* Review release notes, deprecations, and breaking changes for {security-guide}/release-notes.html[{elastic-sec}], {ref}/es-release-notes.html[{es}], {kibana-ref}/release-notes.html[{kib}], and, if applicable, {fleet-guide}/release-notes.html[{fleet} and {agent}], {beats-ref}/release-notes.html[{beats}], and {logstash-ref}/releasenotes.html[{ls}]. Identify any issues that might affect your deployment. Work with your Support Engineer on any questions you may have. Start with breaking changes for your solution and platform components,such as {es} and {kib}. 
 
 * Schedule a system maintenance window within your organization.
 
@@ -32,7 +34,7 @@ To prepare for the upgrade process, follow these steps before you start:
 
 . Do a software version inventory across your entire Elastic deployment, including {es}, {kib}, {agent}, {beats}, and {ls}. 
 
-. If you're running any of these at versions earlier than 7.17, you must first upgrade them all to the latest 7.17.x patch release before upgrading to 8.x. This enables you to use the Upgrade Assistant to upgrade to 8.x. 
+. If you're running any of these versions earlier than 7.17, you must first upgrade them all to the latest 7.17.x patch release before upgrading to 8.x. This enables you to use the Upgrade Assistant to upgrade to 8.x. 
 +
 NOTE: If you're managing your deployments using {ece-ref}/ece-upgrade.html[{ece}] (ECE) or {eck-ref}/k8s-upgrading-eck.html[{eck}] (ECK), you may need to upgrade the system clusters first.
 
@@ -41,25 +43,25 @@ NOTE: If you're managing your deployments using {ece-ref}/ece-upgrade.html[{ece}
 .Requirements
 [sidebar]
 --
-To run the Upgrade Assistant, you must have `superuser` cluster admin permissions.
+To run the Upgrade Assistant, you must have the `superuser` role on the cluster.
 --
 
-. If you're not using {ref}/snapshots-take-snapshot.html#automate-snapshots-slm[{slm} (SLM)], you must set up, configure, and run at least one {ref}/snapshot-restore.html[snapshot]. Rollbacks require a snapshot and cause data loss without one. Snapshots are {ref}/snapshot-restore.html#how-snapshots-work[incremental] – depending on the cluster size and the input/output rate, the initial snapshot may take several hours to complete. If you are using SLM, {ref}/snapshots-take-snapshot.html#check-slm-history[check the SLM history] to ensure that snapshots are completing successfully.
+. If you're not using {ref}/snapshots-take-snapshot.html#automate-snapshots-slm[{slm} (SLM)], you must set up and configure a policy, then run the policy to create at least one {ref}/snapshot-restore.html[snapshot] -- a backup of indices taken from a running cluster. If you need to roll back during the upgrade process, use a recent snapshot to avoid data loss. Snapshots are {ref}/snapshot-restore.html#how-snapshots-work[incremental] -- depending on the cluster size and the input/output rate, the initial snapshot may take several hours to complete. If you're using SLM, {ref}/snapshots-take-snapshot.html#check-slm-history[check the SLM history] to ensure that snapshots are completing successfully.
 
 [float]
-=== Perform 8.x upgrade on a non-prod (optional) or prod deployment
+=== Perform an 8.x upgrade on a deployment
 
-IMPORTANT: We strongly recommend you perform the following steps on a non-prod test deployment first to address any potential issues before upgrading on a prod deployment. If you're using a cross-cluster search environment, make sure to upgrade your remote deployments first.
+IMPORTANT: We strongly recommend performing the following steps on a non-production deployment first to address any potential issues before upgrading your production deployments. If you're using a cross-cluster search environment, upgrade your remote deployments first.
 
-. Back up all of your data to a {ref}/snapshots-take-snapshot.html[snapshot] – which is a backup of indices taken from a running cluster. 
+. If you haven't already done so, back up your cluster data to a {ref}/snapshots-take-snapshot.html[snapshot].
 
-. We recommend you <<rules-api-export, export all your custom detection rules>> in the event there are issues with the detection engine after the upgrade.
+. We recommend you <<rules-api-export, export all your custom detection rules>> in case there are issues with the detection engine after the upgrade.
 
-. Upgrade {es}. Refer to {stack-ref}/upgrading-elasticsearch.html[these upgrade instructions]. 
+. Upgrade {es}.  
 ** If you're using {ecloud}, we recommend upgrades with no downtime. Refer to {cloud}/ec-upgrade-deployment.html[these instructions].  
 ** If you're using {ece} (ECE), refer to {ece-ref}/ece-upgrade-deployment.html[these instructions].  
 ** If you're using {eck} (ECK), refer to {eck-ref}/k8s-upgrading-stack.html[these instructions]. 
-** If you're upgrading a self-orchestrated deployment, upgrade the data nodes tier-by-tier, in this order:
+** If you're upgrading a self-orchestrated deployment, refer to {stack-ref}/upgrading-elasticsearch.html[these instructions] and upgrade the data nodes tier by tier in this order:
 ... Frozen tier
 ... Cold tier 
 ... Warm tier
@@ -72,23 +74,23 @@ IMPORTANT: We strongly recommend you perform the following steps on a non-prod t
 +
 NOTE: If you're using {ecloud} or {ece}, this is already included in the {es} upgrade.
 
-. Validate {es} and {kib} are operating as expected by completing the following checks: 
-.. {es}
-... Check the status of your clusters and ensure that they're green. Run the `GET _cat/health` API request. For more information, refer to the {ref}/cat-health.html[cat health API documentation].
-... Ensure that the index and search rate are close to what they were prior to upgrading. Go to **Stack Monitoring** -> **ES** -> **Overview**.
+. Validate that {es} and {kib} are operating as expected by completing the following checks: 
+.. For {es}:
+... Check the status of your clusters and ensure that they're green by running a `GET _cat/health` API request. For more information, refer to the {ref}/cat-health.html[cat health API documentation].
+... Ensure that the index and search rate are close to what they were before upgrading. Go to **Stack Monitoring** -> **{es}** -> **Overview**.
 +
-TIP: You can also check the index doc count using the {ref}/cat-indices.html[cat index API].
-... Verify the {slm} (SLM) is taking snapshots by {ref}/snapshots-take-snapshot.html#check-slm-history[checking the SLM history]. 
-... Ensure {ml} is up and running. 
-.. {kib} 
+TIP: You can also check the index document count using the {ref}/cat-indices.html[cat index API].
+... Verify that {slm} (SLM) is taking snapshots by {ref}/snapshots-take-snapshot.html#check-slm-history[checking the SLM history]. 
+... If you use {ml}, ensure that it is up and running. 
+.. For {kib}: 
 ... Ensure that you and your users can successfully log in to {kib} and access desired pages.
-... Check {kibana-ref}/discover.html[Discover] and verify that the index patterns you normally use are available.
+... Check {kibana-ref}/discover.html[Discover] and verify that the index patterns you typically use are available.
 ... Verify that your commonly used {kibana-ref}/dashboard.html[dashboards] are available and working properly.
-... If you use any watcher-based {kib} scheduled {kibana-ref}/reporting-getting-started.html[reporting], ensure that it's working properly.
+... If you use any Watcher-based {kib} scheduled {kibana-ref}/reporting-getting-started.html[reporting], ensure that it's working properly.
 
-. Upgrade your ingest components (such as {ls}, {fleet} and {agent}, {beats}, etc.) Refer to the {stack-ref}/upgrading-elastic-stack.html[Elastic Stack upgrade docs] for details.
+. Upgrade your ingest components (such as {ls}, {fleet} and {agent}, {beats}, etc.). For details, refer to the {stack-ref}/upgrading-elastic-stack.html[Elastic Stack upgrade docs].
 
-. Validate Ingest is operating OK.
+. Validate that Ingest is operating OK.
 .. Open *Discover*, go through data views for each of your expected ingest data streams, and ensure that data is being ingested in the expected format and volume. 
 
 . Validate that {elastic-sec} is operating OK.
@@ -127,7 +129,7 @@ When you manually install {elastic-endpoint}, you must approve a system extensio
 [[data-views-upgrade]]
 ==== Requirements to display Data views in the {security-app}
 
-To make the *Data view* option appear in an environment with legacy alerts, a user with elevated role privileges must visit the {security-app}, open a page that displays alert data (at least one alert must be present), then refresh the page. The user's role privileges must allow them to enable the detections feature in a {kib} space. Refer to <<enable-detections-ui, Enable and access detections>> for more information.
+To make the *Data view* option appear in an environment with legacy alerts, a user with elevated role privileges must visit the {security-app}, open a page that displays alert data (at least one alert must be present), and then refresh the page. The user's role privileges must allow them to enable the detections feature in a {kib} space. For more information, refer to <<enable-detections-ui, Enable and access detections>>. 
 
 [float]
 [[alert-schema-upgrade]]
