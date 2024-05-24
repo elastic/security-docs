@@ -1,0 +1,31 @@
+name: Elastic docs
+
+on:
+  pull_request_target:
+    # The paths property can be omitted entirely if the repo is mainly used for docs. Leaving it in can result in builds that 
+    # have branch protection checks in place lose the ability to merge because the workflow is not starting. If this property 
+    # is included, please ensure that branch protection checks are disabled for the repo. 
+    paths:
+      # Preface with your docs dir if you need further specificity (optional)
+      - 'docs/serverless/**.mdx'
+      - 'docs/serverless/**.docnav.json'
+      - 'docs/serverless/**.docapi.json'
+      - 'docs/serverless/**.devdocs.json'
+      - 'docs/serverless/**.jpg'
+      - 'docs/serverless/**.jpeg'
+      - 'docs/serverless/**.svg'
+      - 'docs/serverless/**.png'
+      - 'docs/serverless/**.gif'
+    types: [closed, opened, synchronize, labeled]
+
+jobs:
+  publish:
+    if: contains(github.event.pull_request.labels.*.name, 'ci:doc-build')
+    uses: elastic/workflows/.github/workflows/docs-elastic-co-publish.yml@main
+    with:
+      subdirectory: 'docs/serverless/'
+    secrets:
+      VERCEL_GITHUB_TOKEN: ${{ secrets.VERCEL_GITHUB_TOKEN_PUBLIC }}
+      VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN_PUBLIC }}
+      VERCEL_ORG_ID: ${{ secrets.VERCEL_ORG_ID_PUBLIC }}
+      VERCEL_PROJECT_ID_DOCS_CO: ${{ secrets.VERCEL_PROJECT_ID_DOCS_CO_PUBLIC }}
