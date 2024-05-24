@@ -1,0 +1,137 @@
+---
+id: serverlessSecurityIngestData
+slug: /serverless/security/ingest-data
+title: Ingest data to Elastic Security
+description: Learn how to add your own data to ((elastic-sec)).
+tags: [ 'serverless', 'security', 'how-to' ]
+status: in review
+---
+
+<DocBadge template="technical preview" />
+<div id="ingest-data"></div>
+
+To ingest data, you can use:
+
+* The [((agent))](((fleet-guide))/fleet-overview.html) with the **((elastic-defend))** integration, which protects
+    your hosts and sends logs, metrics, and endpoint security data to ((elastic-sec)). See <DocLink id="serverlessSecurityInstallDefend" />.
+
+* The ((agent)) with other integrations, which are available in the [Elastic Package Registry (EPR)](((fleet-guide))/fleet-overview.html#package-registry-intro). To install an integration that works with ((elastic-sec)), select **Add integrations** in the toolbar on most pages. On the **Integrations** page, select the **Security** category filter, then select an integration to view the installation instructions. For more information on integrations, refer to [((integrations))](((integrations-docs))).
+* **((beats))** shippers installed for each system you want to monitor.
+* The ((agent)) to send data from Splunk to ((elastic-sec)). See [Get started with data from Splunk](((observability-guide))/splunk-get-started.html).
+* Third-party collectors configured to ship ECS-compliant data. <DocLink id="serverlessSecuritySiemFieldReference" /> provides a list of ECS fields used in ((elastic-sec)).
+
+<DocCallOut title="Important" color="warning">
+
+If you use a third-party collector to ship data to ((elastic-sec)), you must
+map its fields to the [Elastic Common Schema (ECS)](((ecs-ref))). Additionally,
+you must add its index to the ((elastic-sec)) indices (update the **`securitySolution:defaultIndex`** <DocLink id="serverlessSecurityAdvancedSettings" section="update-sec-indices">advanced setting</DocLink>).
+
+((elastic-sec)) uses the [`host.name`](((ecs-ref))/ecs-host.html) ECS field as the
+primary key for identifying hosts.
+
+</DocCallOut>
+
+The ((agent)) with the
+[((elastic-defend)) integration](https://www.elastic.co/products/endpoint-security)
+ships these data sources:
+
+* Process - Linux, macOS, Windows
+* Network - Linux, macOS, Windows
+* File - Linux, macOS, Windows
+* DNS - Windows
+* Registry - Windows
+* DLL and Driver Load - Windows
+* Security - Windows
+
+<div id="install-beats"></div>
+
+## Install ((beats)) shippers
+
+To add hosts and populate ((elastic-sec)) with network security events, you need to install and
+configure Beats on the hosts from which you want to ingest security events:
+
+* [((filebeat))](https://www.elastic.co/products/beats/filebeat) for forwarding and
+    centralizing logs and files
+
+* [((auditbeat))](https://www.elastic.co/products/beats/auditbeat) for collecting security events
+* [((winlogbeat))](https://www.elastic.co/products/beats/winlogbeat) for centralizing
+    Windows event logs
+
+* [((packetbeat))](https://www.elastic.co/products/beats/packetbeat) for analyzing
+    network activity
+
+You can install ((beats)) using the UI guide or directly from the command line.
+
+### Install ((beats)) using the UI guide
+
+When you add integrations that use ((beats)), you're guided through the ((beats)) installation process. To begin, go to the **Integrations** page (select **Add integrations** in the toolbar on most pages), and then follow the links for the types of data you want to collect.
+
+<DocCallOut title="Tip">
+On the Integrations page, you can select the **Beats only** filter to only view integrations using Beats.
+</DocCallOut>
+
+### Download and install ((beats)) from the command line
+
+To install ((beats)), see these installation guides:
+
+* [((filebeat)) quick start](((filebeat-ref))/filebeat-installation-configuration.html)
+
+* [((auditbeat)) quick start](((auditbeat-ref))/auditbeat-installation-configuration.html)
+
+* [((winlogbeat)) quick start](((winlogbeat-ref))/winlogbeat-installation-configuration.html)
+
+* [((packetbeat)) quick start](((packetbeat-ref))/packetbeat-installation-configuration.html)
+
+<div id="enable-beat-modules"></div>
+
+### Enable modules and configuration options
+
+No matter how you installed ((beats)), you need to enable modules in ((auditbeat))
+and ((filebeat)) to populate ((elastic-sec)) with data.
+
+<DocCallOut title="Tip">
+For a full list of security-related beat modules,
+[click here](https://www.elastic.co/integrations?solution=security).
+</DocCallOut>
+
+To populate **Hosts** data, enable these modules:
+
+* [Auditbeat system module  - Linux, macOS,
+    Windows](((auditbeat-ref))/auditbeat-module-system.html):
+
+    * packages
+    * processes
+    * logins
+    * sockets
+    * users and groups
+* [Auditbeat auditd module - Linux kernel audit events](((auditbeat-ref))/auditbeat-module-auditd.html)
+* [Auditbeat file integrity
+    module - Linux, macOS, Windows](((auditbeat-ref))/auditbeat-module-file_integrity.html)
+
+* [Filebeat system module - Linux
+    system logs](((filebeat-ref))/filebeat-module-system.html)
+
+* [Filebeat Santa module  - macOS
+    security events](((filebeat-ref))/filebeat-module-santa.html)
+
+* [Winlogbeat - Windows event logs](((winlogbeat-ref))/_winlogbeat_overview.html)
+
+To populate **Network** data, enable Packetbeat protocols and Filebeat modules:
+
+* [((packetbeat))](((packetbeat-ref))/packetbeat-overview.html)
+    * [DNS](((packetbeat-ref))/packetbeat-dns-options.html)
+    * [TLS](((packetbeat-ref))/configuration-tls.html)
+    * [Other supported protocols](((packetbeat-ref))/configuration-protocols.html)
+* [((filebeat))](((filebeat-ref))/filebeat-overview.html)
+    * [Zeek NMS module](((filebeat-ref))/filebeat-module-zeek.html)
+    * [Suricata IDS module](((filebeat-ref))/filebeat-module-suricata.html)
+    * [Iptables/Ubiquiti module](((filebeat-ref))/filebeat-module-iptables.html)
+    * [CoreDNS module](((filebeat-ref))/filebeat-module-coredns.html)
+    * [Envoy proxy module (Kubernetes)](((filebeat-ref))/filebeat-module-envoyproxy.html)
+    * [Palo Alto Networks firewall module](((filebeat-ref))/filebeat-module-panw.html)
+    * [Cisco ASA firewall module](((filebeat-ref))/filebeat-module-cisco.html)
+    * [AWS module](((filebeat-ref))/filebeat-module-aws.html)
+    * [CEF module](((filebeat-ref))/filebeat-module-cef.html)
+    * [Google Cloud module](((filebeat-ref))/filebeat-module-googlecloud.html)
+    * [NetFlow module](((filebeat-ref))/filebeat-module-netflow.html)
+

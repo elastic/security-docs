@@ -1,0 +1,156 @@
+---
+id: serverlessSecurityConfMapUi
+slug: /serverless/security/conf-map-ui
+title: Network map data requirements
+description: Requirements for setting up and using the Network page. 
+tags: [ 'serverless', 'security', 'how-to','manage' ]
+status: in review
+---
+
+<DocBadge template="technical preview" />
+<div id="conf-map-ui"></div>
+
+Depending on your setup, to display and interact with data on the
+**Network** page's map you might need to:
+
+* <DocLink id="serverlessSecurityConfMapUi" section="create-((kib))-data-views">Create data views</DocLink>
+* <DocLink id="serverlessSecurityConfMapUi" section="add-geoip-data">Add geographical IP data to events</DocLink>
+* <DocLink id="serverlessSecurityConfMapUi" section="map-your-internal-network">Map your internal network</DocLink>
+
+<DocCallOut title="Note">
+To see source and destination connections lines on the map, you must
+configure `source.geo` and `destination.geo` ECS fields for your indices.
+</DocCallOut>
+
+<div id="prereq-perms"></div>
+
+## Permissions required
+In order to view the map, you need the appropriate user role.
+
+<div id="kibana-index-pattern"></div>
+
+## Create data views
+
+To display map data, you must define a 
+[data view](((kibana-ref))/data-views.html) (**Project settings** → **Management** → **Data views**) that includes one or more of the indices specified in the `securitysolution:defaultIndex` field in advanced settings.
+
+For example, to display data that is stored in indices matching the index pattern `servers-europe-*` on the map, you must use a data view whose index pattern matches `servers-europe-*`, such as `servers-*`.
+
+<div id="geoip-data"></div>
+
+## Add geoIP data
+
+When the ECS [source.geo.location and
+destination.geo.location](((ecs-ref))/ecs-geo.html) fields are mapped, network data is displayed on
+the map.
+
+If you use Beats, configure a geoIP processor to add data to the relevant
+fields:
+
+<div id="geo-pipeleine"></div>
+
+1. Define an ingest node pipeline that uses one or more `geoIP` processors to add
+    location information to events. For example, use the Console in **Dev tools** to create
+    the following pipeline:
+
+    ```json
+    PUT _ingest/pipeline/geoip-info
+    {
+    "description": "Add geoip info",
+    "processors": [
+    {
+    "geoip": {
+    "field": "client.ip",
+    "target_field": "client.geo",
+    "ignore_missing": true
+    }
+    },
+    {
+    "geoip": {
+    "field": "source.ip",
+    "target_field": "source.geo",
+    "ignore_missing": true
+    }
+    },
+    {
+    "geoip": {
+    "field": "destination.ip",
+    "target_field": "destination.geo",
+    "ignore_missing": true
+    }
+    },
+    {
+    "geoip": {
+    "field": "server.ip",
+    "target_field": "server.geo",
+    "ignore_missing": true
+    }
+    },
+    {
+    "geoip": {
+    "field": "host.ip",
+    "target_field": "host.geo",
+    "ignore_missing": true
+    }
+    }
+    ]
+    }
+    ```
+    {/* CONSOLE */}
+
+    In this example, the pipeline ID is `geoip-info`. `field` specifies the field
+    that contains the IP address to use for the geographical lookup, and
+    `target_field` is the field that will hold the geographical information.
+    `"ignore_missing": true` configures the pipeline to continue processing when
+    it encounters an event that doesn't have the specified field.
+
+    <DocCallOut title="Tip">
+    An example ingest pipeline that uses the GeoLite2-ASN.mmdb database to add
+    autonomous system number (ASN) fields can be found [here](https://github.com/elastic/examples/blob/master/Security%20Analytics/SIEM-examples/Packetbeat/geoip-info.json).
+    </DocCallOut>
+
+1. In your Beats configuration files, add the pipeline to the
+    `output.elasticsearch`tag:
+
+    ```yml
+    output.elasticsearch:
+    hosts: ["localhost:9200"]
+    pipeline: geoip-info  [^1]
+    ```
+    [^1]: The value of this field must be the same as the ingest pipeline name in
+    <DocLink id="serverlessSecurityConfMapUi" section="geo-pipeleine">step 1</DocLink> (`geoip-info` in this example).
+
+<div id="private-network"></div>
+
+## Map your internal network
+
+If you want to add your network’s internal IP addresses to the map, define geo
+location fields under the `processors` tag in the Beats configuration files
+on your hosts:
+
+```yml
+  processors:
+   - add_host_metadata:
+   - add_cloud_metadata: ~
+   - add_fields:
+       when.network.source.ip: <private/IP address>  [^1]
+       fields:
+         source.geo.location:
+           lat: <latitude coordinate>
+           lon: <longitude coordinate>
+       target: ''
+   - add_fields:
+       when.network.destination.ip: <private/IP address>
+       fields:
+         destination.geo.location:
+           lat: <latitude coordinate>
+           lon: <longitude coordinate>
+       target: ''
+```
+[^1]: For the IP address, you can use either `private` or CIDR notation.
+
+<DocCallOut title="Tip">
+You can also enrich your data with other
+[host fields](((packetbeat-ref))/add-host-metadata.html).
+</DocCallOut>
+
