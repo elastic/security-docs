@@ -1,0 +1,88 @@
+---
+id: serverlessSecurityKspm
+slug: /serverless/security/kspm
+title: Kubernetes security posture management
+description: Identify configuration risks in your Kubernetes clusters.
+tags: [ 'serverless', 'security', 'overview', 'cloud security' ]
+status: in review
+---
+
+<DocBadge template="technical preview" />
+<div id="kspm"></div>
+
+<div id="kspm-overview"></div>
+
+## Overview
+The Kubernetes Security Posture Management (KSPM) integration allows you to identify configuration risks in the various components that make up your Kubernetes cluster.
+It does this by evaluating your Kubernetes clusters against secure configuration guidelines defined by the Center for Internet Security (CIS) and generating findings with step-by-step instructions for remediating potential security risks.
+
+This integration supports Amazon EKS and unmanaged Kubernetes clusters. For setup instructions, refer to <DocLink id="serverlessSecurityGetStartedWithKspm">Get started with KSPM</DocLink>.
+
+<DocCallOut title="Requirements">
+
+* KSPM only works in the `Default` ((kib)) space. Installing the KSPM integration on a different ((kib)) space will not work. 
+* KSPM is not supported on EKS clusters in AWS GovCloud ([request support](https://github.com/elastic/kibana/issues/new/choose)).
+* To view posture data, ensure you have the appropriate user role to read the following ((es)) indices:
+
+- `logs-cloud_security_posture.findings_latest-*`
+- `logs-cloud_security_posture.scores-*`
+- `logs-cloud_security_posture.findings`
+
+</DocCallOut>
+
+<div id="kspm-how-kspm-works"></div>
+
+## How KSPM works
+1. When you add a KSPM integration, it generates a Kubernetes manifest. When applied to a cluster, the manifest deploys an ((agent)) as a [DaemonSet](https://kubernetes.io/docs/concepts/workloads/controllers/daemonset) to ensure all nodes are evaluated.
+1. Upon deployment, the integration immediately assesses the security posture of your Kubernetes resources. The evaluation process repeats every four hours.
+1. After each evaluation, the integration sends findings to ((es)). Findings appear on the <DocLink id="serverlessSecurityCloudPostureDashboard">Cloud Security Posture dashboard</DocLink> and the <DocLink id="serverlessSecurityCspmFindingsPage">findings</DocLink> page.
+
+<div id="kspm-use-cases"></div>
+
+## Use cases
+
+The KSPM integration helps you to:
+
+* Identify and remediate `failed` findings
+* Identify the most misconfigured resources
+* Identify risks in particular CIS benchmark sections
+
+<div id="kspm-remediate-failed-findings"></div>
+
+### Identify and remediate failed findings
+
+To identify and remediate failed failed findings:
+
+1. Go to the <DocLink id="serverlessSecurityCloudPostureDashboard">Cloud Security Posture dashboard</DocLink>.
+1. Click **View all failed findings**, either for an individual cluster or for all monitored clusters.
+1. Click a failed finding. The findings flyout opens.
+1. Follow the steps under **Remediation** to correct the misconfiguration.
+
+    <DocCallOut title="Note">
+    Remediation steps typically include commands for you to execute. These sometimes contain placeholder values that you must replace before execution.
+    </DocCallOut>
+
+<div id="kspm-identify-misconfigured-resources"></div>
+
+### Identify the most misconfigured Kubernetes resources
+
+To identify the Kubernetes resources generating the most failed findings:
+
+1. Go to the <DocLink id="serverlessSecurityCspmFindingsPage">Findings</DocLink> page.
+1. Click the **Group by** menu near the search box and select **Resource** to view a list of resources sorted by their total number of failed findings.
+1. Click a resource ID to view the findings associated with that resource.
+
+<div id="kspm-identify-config-risks-by-section"></div>
+
+### Identify configuration risks by CIS section
+
+To identify risks in particular CIS sections:
+
+1. Go to the <DocLink id="serverlessSecurityCloudPostureDashboard">Cloud Security Posture dashboard</DocLink> (**Dashboards → Cloud Security Posture**).
+1. In the Failed findings by CIS section widget, click the name of a CIS section to view all failed findings for that section.
+
+Alternatively:
+
+1. Go to the Findings page.
+1. Filter by the `rule.section` field. For example, search for `rule.section : API Server` to view findings for benchmark rules in the API Server category.
+
