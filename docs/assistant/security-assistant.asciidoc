@@ -8,19 +8,18 @@
 
 The Elastic AI Assistant utilizes generative AI to bolster your cybersecurity operations team. It allows users to interact with {elastic-sec} for tasks such as alert investigation, incident response, and query generation or conversion using natural language and much more.
 
-AI Assistant relies on generative AI connectors to communicate with third-party AI providers.
+AI Assistant can connect to multiple LLM providers so you can select the best model for your needs.
 
 [role="screenshot"]
-image::images/assistant.gif[Animation of AI Assistant chat window,90%]
+image::images/assistant-basic-view.png[Image of AI Assistant chat window,90%]
 
-IMPORTANT: The Elastic AI Assistant is designed to enhance your analysis with smart dialogues. Its capabilities are still developing. Users should exercise caution as the quality of its responses might vary. Your insights and feedback will help us improve this feature. Always cross-verify AI-generated advice for accuracy.
+WARNING: The Elastic AI Assistant is designed to enhance your analysis with smart dialogues. Its capabilities are still developing. Users should exercise caution as the quality of its responses might vary. Your insights and feedback will help us improve this feature. Always cross-verify AI-generated advice for accuracy.
 
-[TIP]
-====
-When choosing a third-party provider to use with AI Assistant, remember that different services may impose rate limits on their APIs. This may negatively affect AI Assistant performance. In addition, different models support various context lengths. Models with larger context lengths will provide a better experience when using the AI Assistant.
-
-For example, refer to OpenAI's documentation on https://platform.openai.com/docs/guides/rate-limits/[rate limits] and https://help.openai.com/en/articles/7127966-what-is-the-difference-between-the-gpt-4-models[GPT-4 models] for more information on their available options.
-====
+.Recommended models
+[sidebar]
+--
+While AI Assistant is compatible with many different models, our testing found increased quality with Azure 32k, and faster and more cost-effective responses with Claude 3 Haiku and OpenAI GPT4 Turbo.
+--
 
 .Requirements
 [sidebar]
@@ -53,37 +52,7 @@ NOTE: Elastic can automatically anonymize event data that you provide to AI Assi
 
 You must create a generative AI connector before you can use AI Assistant. 
 
-. Open AI Assistant *Cmd + ;* (or *Ctrl + ;* on Windows), and click **Connector** -> **Add new Connector**.
-. Select either *Amazon Bedrock* or *OpenAI*. 
-. Enter the authentication details required for your chosen connector type, then click *Save*.
-
-For OpenAI and Azure OpenAI Service, you need to provide an API key. For Amazon Bedrock, you need to provide an access key and secret for an IAM user with at least the following permissions:
-
-.Click to expand permissions JSON
-[%collapsible]
-====
-```
-{
-    "Version": "2012-10-17",
-    "Statement": [
-        {
-            "Sid": "VisualEditor0",
-            "Effect": "Allow",
-            "Action": [
-                "bedrock:InvokeModel",
-                "bedrock:InvokeModelWithResponseStream"
-            ],
-            "Resource": "*"
-        }
-    ]
-}
-```
-====
-
-For Amazon Bedrock, only Anthropic models are supported: Claude and Claude Instant. You need to https://docs.aws.amazon.com/bedrock/latest/userguide/model-access.html#manage-model-access[enable them in AWS] before setting up an Amazon Bedrock connector. You can configure an Amazon Bedrock connector to use any https://docs.aws.amazon.com/general/latest/gr/bedrock.html[AWS region where Anthropic models are supported] by editing the *URL* field under *Connector settings*, for example by changing `us-west-2` to `eu-central-1`.
-
-For more information about setting up generative AI connectors, refer to {kibana-ref}/openai-action-type.html[OpenAI connector] or {kibana-ref}/bedrock-action-type.html[Amazon Bedrock connector].
-
+For more information about setting up generative AI connectors, refer to <<assistant-connect-to-bedrock>>, <<assistant-connect-to-openai>>, or <<assistant-connect-to-azure-openai>>.
 
 [discrete]
 [[start-chatting]]
@@ -103,7 +72,7 @@ You can also chat with AI Assistant from several particular pages in {elastic-se
 * <<data-quality-dash, Data Quality dashboard>>: Select the *Incompatible fields* tab, then click *Chat*. (This is only available for fields marked red, indicating they're incompatible).
 * <<timelines-ui, Timeline>>: Select the *Security Assistant* tab.
 
-NOTE: All chat history and custom quick prompts persist in local browser storage, allowing you to navigate away to other areas in {elastic-sec}, then return to ongoing conversations. This also means that chats persist across multiple users if they use the same browser; be sure clear any chats that you don't want available to other users.
+NOTE: Each user's chat history and custom quick prompts are automatically saved, so you can leave ((elastic-sec)) and return to pick up a conversation later.
 
 [discrete]
 [[interact-with-assistant]]
@@ -125,15 +94,14 @@ image::images/quick-prompts.png[Quick prompts highlighted below a conversation,9
 +
 Quick prompt availability varies based on context — for example, the **Alert summarization** quick prompt appears when you open AI Assistant while viewing an alert. To customize existing quick prompts and create new ones, click *Add Quick prompt*.
 
-* Use these buttons to perform actions in the conversation history and prompt entry area:
+* In an active conversation, you can use the inline actions that appear on messages to incorporate AI Assistant's responses into your workflows:
 
 ** *Add note to timeline* (image:images/icon-add-note.png[Add note icon,16,16]): Add the selected text to your currently active Timeline as a note.
 ** *Add to existing case* (image:images/icon-add-to-case.png[Add to case icon,19,16]): Add a comment to an existing case using the selected text.
 ** *Copy to clipboard* (image:images/icon-copy.png[Copy to clipboard icon,17,18]): Copy the text to clipboard to paste elsewhere. Also helpful for resubmitting a previous prompt.
-** *Add to timeline* (image:images/icon-add-to-timeline.png[Copy to clipboard icon,17,18]): Add a filter or query to Timeline using the text. This button appears for particular queries in AI Assistant's responses.
+** *Add to timeline* (image:images/icon-add-to-timeline.png[Add to timeline icon,17,18]): Add a filter or query to Timeline using the text. This button appears for particular queries in AI Assistant's responses.
 +
 TIP: Be sure to specify which language you'd like AI Assistant to use when writing a query. For example: "Can you generate an Event Query Language query to find four failed logins followed by a successful login?"
-** *Clear chat* (image:images/icon-clear-red.png[Red X icon,16,16]): Delete the conversation history and start a new chat.
 
 [discrete]
 [[configure-ai-assistant]]
@@ -145,8 +113,8 @@ image::images/assistant-settings-menu.png[AI Assistant's settings menu, open to 
 
 The *Settings* menu has the following tabs:
 
-* **Conversations:** When you open AI Assistant from certain pages, such as Timeline or Alerts, it defaults to the relevant conversation type. Choose the default system prompt for each conversation type, the connector, and model (if applicable).
-* **Quick Prompts:** Modify existing quick prompts or create new ones. To create a new quick prompt, type a unique name in the *Name* field, then press *enter*. Under *Prompt*, enter or update the quick prompt's text. Under *Contexts*, select where the quick prompt should appear.
+* **Conversations:** When you open AI Assistant from certain pages, such as Timeline or Alerts, it defaults to the relevant conversation type. Choose the default system prompt for each conversation type, the connector, and model (if applicable). The **Streaming** setting controls whether AI Assistant's responses appear word-by-word (streamed), or as a complete block of text. Streaming is currently only available for OpenAI models.
+* **Quick Prompts:** Modify existing quick prompts or create new ones. To create a new quick prompt, type a unique name in the *Name* field, then press *enter*. Under *Prompt*, enter or update the quick prompt's text. 
 * **System Prompts:** Edit existing system prompts or create new ones. To create a new system prompt, type a unique name in the *Name* field, then press *enter*. Under *Prompt*, enter or update the system prompt's text. Under *Contexts*, select where the system prompt should appear.
 +
 NOTE: To delete a custom prompt, open the *Name* drop-down menu, hover over the prompt you want to delete, and click the *X* that appears. You cannot delete the default prompts.
@@ -159,31 +127,34 @@ NOTE: To delete a custom prompt, open the *Name* drop-down menu, hover over the 
 [[ai-assistant-anonymization]]
 === Anonymization
 
-The **Anonymization** tab of the AI Assistant settings menu allows you to define default data anonymization behavior for events you send to AI Assistant. You can update these settings for individual events when you include them in the chat.
+The **Anonymization** tab of the AI Assistant settings menu allows you to define default data anonymization behavior for events you send to AI Assistant. Fields with **Allowed** toggled on are included in events provided to AI Assistant. **Allowed** fields with **Anonymized** set to **Yes** are included, but with their values obfuscated.
 
 [role="screenshot"]
 image::images/assistant-anonymization-menu.png[AI Assistant's settings menu, open to the Anonymization tab]
 
 The fields on this list are among those most likely to provide relevant context to AI Assistant. Fields with *Allowed* toggled on are included. *Allowed* fields with *Anonymized* set to *Yes* are included, but with their values obfuscated.
 
-[role="screenshot"]
-image::images/add-alert-context.gif[A video that shows an alert being added as context to an AI Assistant chat message]
-
-When you include a particular event as context, you can use a similar interface to adjust anonymization behavior. Be sure the anonymization behavior meets your specifications before sending a message with the event attached.
-
 The *Show anonymized* toggle controls whether you see the obfuscated or plaintext versions of the fields you sent to AI Assistant. It doesn't control what gets obfuscated — that's determined by the anonymization settings. It also doesn't affect how event fields appear _before_ being sent to AI Assistant. Instead, it controls how fields that were already sent and obfuscated appear to you.
 
+When you include a particular event as context, such as an alert from the Alerts page, you can adjust anonymization behavior for the specific event. Be sure the anonymization behavior meets your specifications before sending a message with the event attached.
 
 [discrete]
 [[ai-assistant-knowledge-base]]
 === Knowledge base
-beta::["Do not use {esql} on production environments. This functionality is in beta and is subject to change. The design and code is less mature than official GA features and is being provided as-is with no warranties. Beta features are not subject to the support SLA of official GA features."]
+beta::[]
 
 The **Knowledge base** tab of the AI Assistant settings menu allows you to enable AI Assistant to answer questions about the Elastic Search Query Language ({esql}), and about alerts in your environment.
 
 [discrete]
 [[rag-for-esql]]
 ==== Knowledge base for {esql}
+
+NOTE: {esql} is enabled by default in {kib}. It can be
+disabled using the `enableESQL` setting from the
+{kibana-ref}/advanced-options.html[Advanced Settings]. This will hide the {esql} user interface from various applications. However, users will be able to access existing {esql} artifacts like saved searches and visualizations.
+
+IMPORTANT: {esql} queries generated by AI Assistant might require additional validation. To ensure they're correct, refer to the {ref}/esql-language.html[{esql} documentation]. 
+
 When this feature is enabled, AI Assistant can help you write an {esql} query for a particular use case, or answer general questions about {esql} syntax and usage. To enable AI Assistant to answer questions about {esql}:
 
 . Enable the Elastic Learned Sparse EncodeR (ELSER). This model provides additional context to the third-party LLM. To learn more, refer to {ml-docs}/ml-nlp-elser.html#download-deploy-elser[Configure ELSER].
@@ -224,4 +195,5 @@ In addition to practical advice, AI Assistant can offer conceptual advice, tips,
 
 include::ai-alert-triage.asciidoc[leveloffset=+1]
 include::azure-openai-setup.asciidoc[leveloffset=+1]
+include::connect-to-openai.asciidoc[leveloffset=+1]
 include::connect-to-bedrock.asciidoc[leveloffset=+1]

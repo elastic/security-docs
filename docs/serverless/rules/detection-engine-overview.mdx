@@ -1,0 +1,142 @@
+---
+id: serverlessSecurityDetectionEngineOverview
+slug: /serverless/security/detection-engine-overview
+title: Detection engine overview
+description: Learn about the detection engine and its features.
+tags: [ 'serverless', 'security', 'overview' ]
+status: in review
+---
+
+<DocBadge template="technical preview" />
+<div id="detection-engine-overview"></div>
+
+Use the detection engine to create and manage rules and view the alerts
+these rules create. Rules periodically search indices (such as `logs-*` and
+`filebeat-*`) for suspicious source events and create alerts when a rule's
+conditions are met. When an alert is created, its status is `Open`. To help
+track investigations, an alert's <DocLink id="serverlessSecurityAlertsUiManage" section="change-an-alerts-status">status</DocLink> can be set as 
+`Open`, `Acknowledged`, or `Closed`.
+
+![Alerts page](../images/detection-engine-overview/-detections-alert-page.png)
+
+In addition to creating <DocLink id="serverlessSecurityRulesUiCreate">your own rules</DocLink>, enable
+<DocLink id="serverlessSecurityPrebuiltRulesManagement" section="install-and-enable-elastic-prebuilt-rules">Elastic prebuilt rules</DocLink> to immediately start detecting
+suspicious activity. For detailed information on all the prebuilt rules, see the <DocLink id="serverlessSecurityPrebuiltRules">Prebuilt rules reference</DocLink>. Once the prebuilt rules are loaded and
+running, <DocLink id="serverlessSecurityTuningDetectionSignals">Tune detection rules</DocLink> and <DocLink id="serverlessSecurityAddExceptions">Add and manage exceptions</DocLink> explain
+how to modify the rules to reduce false positives and get a better set of
+actionable alerts. You can also use exceptions and value lists when creating or
+modifying your own rules.
+
+There are two special prebuilt rules you need to know about:
+
+{/* Links to prebuilt rule pages temporarily removed for initial serverless docs. */}
+* **Endpoint Security**:
+    Automatically creates an alert from all incoming Elastic Endpoint alerts. To
+    receive Elastic Endpoint alerts, you must install the Endpoint agent on your
+    hosts (see <DocLink id="serverlessSecurityInstallDefend">Install and configure the ((elastic-defend)) integration</DocLink>).
+
+    When this rule is enabled, the following Endpoint events are displayed as
+    detection alerts:
+
+        * Malware Prevention Alert
+        * Malware Detection Alert
+
+    <DocCallOut title="Note">
+    When you load the prebuilt rules, this is the only rule that is enabled
+    by default.
+    </DocCallOut>
+
+{/* Links to prebuilt rule pages temporarily removed for initial serverless docs. */}
+* **External Alerts**: Automatically creates an alert for
+    all incoming third-party system alerts (for example, Suricata alerts).
+
+If you want to receive notifications via external systems, such as Slack or
+email, when alerts are created, use the [Alerting and Actions](((kibana-ref))/alerting-getting-started.html) framework.
+
+After rules have started running, you can monitor their executions to verify
+they are functioning correctly, as well as view, manage, and troubleshoot
+alerts (see <DocLink id="serverlessSecurityAlertsUiManage">Manage detection alerts</DocLink> and <DocLink id="serverlessSecurityAlertsUiMonitor">Monitor and troubleshoot rule executions</DocLink>).
+
+You can create and manage rules and alerts via the UI or the [Detections API](((security-guide))/rule-api-overview.html).
+{/* Link to classic docs until serverless API docs are available. */}
+
+<DocCallOut title="Important" color="warning">
+
+To make sure you can access Detections and manage rules, see
+<DocLink id="serverlessSecurityDetectionsPermissionsSection">Detections prerequisites and requirements</DocLink>.
+
+</DocCallOut>
+
+<div id="support-indicator-rules"></div>
+
+## Limited support for indicator match rules
+
+Indicator match rules provide a powerful capability to search your security data; however, their queries can consume significant deployment resources. When creating an <DocLink id="serverlessSecurityRulesUiCreate" section="create-an-indicator-match-rule">indicator match rule</DocLink>, we recommend limiting the time range of the indicator index query to the minimum period necessary for the desired rule coverage. For example, the default indicator index query `@timestamp > "now-30d/d"` searches specified indicator indices for indicators ingested during the past 30 days and rounds the query start time down to the nearest day (resolves to UTC `00:00:00`). Without this limitation, the rule will include all of the indicators in your indicator indices, which may extend the time it takes for the indicator index query to complete.
+
+In addition, indicator match rules with an additional look-back time value greater than 24 hours are not supported.
+
+<div id="detections-permissions"></div>
+
+## Detections configuration and prerequisites
+
+<DocLink id="serverlessSecurityDetectionsPermissionsSection">Detections requirements</DocLink> provides detailed information on all the
+permissions required to initiate and use the Detections feature.
+
+<div id="malware-prevention"></div>
+
+## Malware prevention
+
+Malware, short for malicious software, is any software program designed to damage or execute unauthorized actions on a
+computer system. Examples of malware include viruses, worms, Trojan horses, adware, scareware, and spyware. Some
+malware, such as viruses, can severely damage a computer's hard drive by deleting files or directory information. Other
+malware, such as spyware, can obtain user data without their knowledge.
+
+Malware may be stealthy and appear as legitimate executable code, scripts, active content, and other software. It is also
+often embedded in non-malicious files, non-suspicious websites, and standard programs — sometimes making the root
+source difficult to identify. If infected and not resolved promptly, malware can cause irreparable damage to a computer
+network.
+
+For information on how to enable malware protection on your host, see <DocLink id="serverlessSecurityConfigureEndpointIntegrationPolicy" section="malware-protection">Malware Protection</DocLink>.
+
+<div id="machine-learning-model"></div>
+
+### Machine learning model
+
+To determine if a file is malicious or benign, a machine learning model looks for static attributes of files (without executing
+the file) that include file structure, layout, and content. This includes information such as file header data, imports, exports,
+section names, and file size. These attributes are extracted from millions of benign and malicious file samples, which then
+are passed to a machine-learning algorithm that distinguishes a benign file from a malicious one. The machine learning
+model is updated as new data is procured and analyzed.
+
+### Threshold
+
+A malware threshold determines the action the agent should take if malware is detected. The Elastic Agent uses a recommended threshold level that generates a balanced number of alerts with a low probability of undetected malware. This threshold also minimizes the number of false positive alerts.
+
+<div id="ransomware-prevention"></div>
+
+## Ransomware prevention
+
+Ransomware is computer malware that installs discreetly on a user's computer and encrypts data until a specified amount of money (ransom) is paid. Ransomware is usually similar to other malware in its delivery and execution, infecting systems
+through spear-phishing or drive-by downloads. If not resolved immediately, ransomware can cause irreparable damage to an entire computer network.
+
+Behavioral ransomware prevention on the Elastic Endpoint detects and stops ransomware attacks on Windows systems by analyzing data from low-level system processes, and is effective across an array of widespread ransomware families — including those targeting the system’s master boot record.
+
+For information on how to enable ransomware protection on your host, see <DocLink id="serverlessSecurityConfigureEndpointIntegrationPolicy" section="ransomware-protection">Ransomware protection</DocLink>.
+
+### Resolve UI error messages
+
+Depending on your user role privileges and whether detection system indices have already been created, you might get one of these error messages when you 
+open the **Alerts** or **Rules** page:
+
+* **`Let’s set up your detection engine`**
+
+    If you get this message, a user with specific privileges must visit the
+    **Alerts** or **Rules** page before you can view detection alerts and rules.
+    Refer to <DocLink id="serverlessSecurityDetectionsPermissionsSection" section="enable-and-access-detections">Enable and access detections</DocLink> for a list of all the requirements.
+
+* **`Detection engine permissions required`**
+
+    If you get this message, you do not have the
+    <DocLink id="serverlessSecurityDetectionEngineOverview" section="detections-permissions">required privileges</DocLink> to view the **Detections** feature,
+    and you should contact your project administrator.
+
