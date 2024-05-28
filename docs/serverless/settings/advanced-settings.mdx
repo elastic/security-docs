@@ -1,0 +1,205 @@
+---
+id: serverlessSecurityAdvancedSettings
+slug: /serverless/security/advanced-settings
+title: Advanced settings
+description: Update advanced ((elastic-sec)) settings.
+tags: [ 'serverless','security','reference','manage' ]
+status: in review
+---
+
+<DocBadge template="technical preview" />
+
+<div id="advanced-settings"></div>
+
+The advanced settings determine:
+
+* Which indices ((elastic-sec)) uses to retrieve data
+* ((ml-cap)) anomaly score display threshold
+* The navigation menu style used throughout the ((security-app))
+* Whether the news feed is displayed on the <DocLink id="serverlessSecurityOverviewDashboard">Overview dashboard</DocLink>
+* The default time interval used to filter ((elastic-sec)) pages
+* The default ((elastic-sec)) pages refresh time
+* Which IP reputation links appear on <DocLink id="serverlessSecurityNetworkPageOverview">IP detail</DocLink> pages
+* Whether cross-cluster search (CCS) privilege warnings are displayed
+* Whether related integrations are displayed on the Rules page tables
+* The options provided in the alert tag menu  
+
+You must have the appropriate user role to access and change advanced settings.
+
+<DocCallOut title="Warning" color="warning">
+Modifying advanced settings can affect performance and cause
+problems that are difficult to diagnose. Setting a property value to a blank
+field reverts to the default behavior, which might not be compatible with other
+configuration settings. Deleting a custom setting removes it 
+permanently.
+</DocCallOut>
+
+## Access advanced settings
+
+To access advanced settings, go to **Project Settings** → **Management** → **Advanced Settings**, then scroll down to **Security Solution** settings.
+
+<DocCallOut title="Tip">
+For more information on non-Security settings, refer to [Advanced Settings](((kibana-ref))/advanced-options.html). Some settings might not be available in ((serverless-short)) projects.
+</DocCallOut>
+
+![](../images/advanced-settings/-getting-started-solution-advanced-settings.png)
+
+<div id="update-sec-indices"></div>
+
+## Update default Elastic Security indices
+
+The `securitySolution:defaultIndex` field defines which ((es)) indices the
+((security-app)) uses to collect data. By default, index patterns are used to
+match sets of ((es)) indices:
+
+* `apm-*-transaction*`
+* `auditbeat-*`
+* `endgame-*`
+* `filebeat-*`
+* `logs-*`
+* `packetbeat-*`
+* `winlogbeat-*`
+
+<DocCallOut title="Note">
+Index patterns use wildcards to specify a set of indices. For example, the
+`filebeat-*` index pattern means all indices starting with `filebeat-` are
+available in the ((security-app)).
+</DocCallOut>
+
+All of the default index patterns match [((beats))](((beats-ref))/beats-reference.html) and
+[((agent))](((fleet-guide))/fleet-overview.html) indices. This means all
+data shipped via ((beats)) and the ((agent)) is automatically added to the
+((security-app)).
+
+You can add or remove any indices and index patterns as required, with a maximum of 50 items in the comma-delimited list. For background information on ((es)) indices, refer to [Data in: documents and indices](((ref))/documents-indices.html).
+
+<DocCallOut title="Note">
+If you leave the `-*elastic-cloud-logs-*` index pattern selected, all Elastic cloud logs are excluded from all queries in the ((security-app)) by default. This is to avoid adding data from cloud monitoring to the app.
+</DocCallOut>
+
+<DocCallOut title="Important" color="warning">
+((elastic-sec)) requires [ECS-compliant data](((ecs-ref))). If you use third-party data
+collectors to ship data to ((es)), the data must be mapped to ECS.
+<DocLink id="serverlessSecuritySiemFieldReference" /> lists ECS fields used in ((elastic-sec)).
+</DocCallOut>
+
+<div id="update-threat-intel-indices"></div>
+
+## Update default Elastic Security threat intelligence indices
+
+The `securitySolution:defaultThreatIndex` advanced setting specifies threat intelligence indices that ((elastic-sec)) features query for ingested threat indicators. This setting affects features that query threat intelligence indices, such as the Threat Intelligence view on the Overview page, indicator match rules, and the alert enrichment query. 
+
+You can specify a maximum of 10 threat intelligence indices; multiple indices must be separated by commas. By default, only the `logs-ti*` index pattern is specified. Do not remove or overwrite this index pattern, as it is used by ((agent)) integrations.
+
+<DocCallOut title="Important" color="warning">
+Threat intelligence indices aren't required to be ECS-compatible for use in indicator match rules. However, we strongly recommend compatibility if you want your alerts to be enriched with relevant threat indicator information. When searching for threat indicator data, indicator match rules use the threat indicator path specified in the **Indicator prefix override** advanced setting. Visit <DocLink id="serverlessSecurityRulesUiCreate" section="configure-advanced-rule-settings-optional">Configure advanced rule settings</DocLink> for more information.
+</DocCallOut>
+
+<div id="telemetry-settings"></div>
+
+## Telemetry settings
+
+Elastic transmits certain information about Elastic Security when users interact with the ((security-app)), detailed below. Elastic redacts or obfuscates personal data (IP addresses, host names, usernames, etc.) before transmitting messages. Security-specific telemetry events include:
+
+* **Detection rule security alerts:** Information about Elastic-authored prebuilt detection rules using the detection engine. Examples of alert data include machine learning job influencers, process names, and cloud audit events.
+* **((elastic-endpoint)) Security alerts:** Information about malicious activity detected using ((elastic-endpoint)) detection engines. Examples of alert data include malicious process names, digital signatures, and file names written by the malicious software. Examples of alert metadata include the time of the alert, the ((elastic-endpoint)) version and related detection engine versions.
+* **Configuration data for ((elastic-endpoint)):** Information about the configuration of ((elastic-endpoint)) deployments. Examples of configuration data include the Endpoint versions, operating system versions, and performance counters for Endpoint.
+* **Exception list entries for Elastic rules:** Information about exceptions added for Elastic rules. Examples include trusted applications, detection exceptions, and rule exceptions.
+* **Security alert activity records:** Information about actions taken on alerts generated in the ((security-app)), such as acknowledged or closed.
+
+To learn more, refer to our [Privacy Statement](https://www.elastic.co/legal/privacy-statement).
+
+## Set machine learning score threshold
+
+When security <DocLink id="serverlessSecurityMachineLearning">((ml)) jobs</DocLink> are enabled, this setting
+determines the threshold above which anomaly scores appear in ((elastic-sec)):
+
+* `securitySolution:defaultAnomalyScore`
+
+## Modify news feed settings
+
+You can change these settings, which affect the news feed displayed on the
+((elastic-sec)) **Overview** page:
+
+* `securitySolution:enableNewsFeed`: Enables the security news feed on the
+    Security **Overview** page.
+
+* `securitySolution:newsFeedUrl`: The URL from which the security news feed content is
+    retrieved.
+
+<div id="enable-expandable-flyout"></div>
+
+## Display the expandable flyout
+
+The `securitySolution:enableExpandableFlyout` setting enables the expandable alert details flyout on the Alerts page. This setting is turned on by default. Turn it off to apply a simplified alert details flyout design. 
+
+## Enable asset criticality workflows
+
+The `securitySolution:enableAssetCriticality` setting determines whether asset criticality is included as a risk input to entity risk scoring. This setting is turned off by default. Turn it on to enable asset criticality workflows and to use asset criticality as part of entity risk scoring.
+
+## Exclude cold and frozen tier data from analyzer queries
+
+Including data from cold and frozen [data tiers](((ref))/data-tiers.html) in <DocLink id="serverlessSecurityVisualEventAnalyzer">visual event analyzer</DocLink> queries may result in performance degradation. The `securitySolution:excludeColdAndFrozenTiersInAnalyzer` setting allows you to exclude this data from analyzer queries. This setting is turned off by default.
+
+## Change the default search interval and data refresh time
+
+These settings determine the default time interval and refresh rate ((elastic-sec))
+pages use to display data when you open the app:
+
+* `securitySolution:timeDefaults`: Default time interval
+* `securitySolution:refreshIntervalDefaults`: Default refresh rate
+
+<DocCallOut title="Note">
+Refer to [Date Math](((ref))/common-options.html) for information about the
+syntax. The UI [time filter](((kibana-ref))/set-time-filter.html) overrides the
+default values.
+</DocCallOut>
+
+<div id="ip-reputation-links"></div>
+
+## Display reputation links on IP detail pages
+
+On IP details pages (**Network** → **_IP address_**), links to
+external sites for verifying the IP address's reputation are displayed. By
+default, links to these sites are listed: [TALOS](https://talosintelligence.com/)
+and [VIRUSTOTAL](https://www.virustotal.com/).
+
+The `securitySolution:ipReputationLinks` field determines which IP reputation
+sites are listed. To modify the listed sites, edit the field's JSON array. These
+fields must be defined in each array element:
+
+* `name`: The link's UI display name.
+* `url_template`: The link's URL. It can include `{{ip}}`, which is placeholder
+    for the IP address you are viewing on the **IP detail** page.
+
+**Example**
+
+Adds a link to https://www.dnschecker.org on **IP detail** pages:
+
+```json
+[
+  { "name": "virustotal.com", "url_template": "https://www.virustotal.com/gui/search/{{ip}}" },
+  { "name": "dnschecker.org", "url_template": "https://www.dnschecker.org/ip-location.php?ip={{ip}}" },
+  { "name": "talosIntelligence.com", "url_template": "https://talosintelligence.com/reputation_center/lookup?search={{ip}}" }
+]
+```
+
+<div id="enable-ccs-warning"></div>
+
+## Configure cross-cluster search privilege warnings
+
+Each time a detection rule runs using a remote cross-cluster search (CCS) index pattern, it will return a warning saying that the rule may not have the required `read` privileges to the remote index. Because privileges cannot be checked across remote indices, this warning displays even when the rule actually does have `read` privileges to the remote index.
+
+If you've ensured that your detection rules have the required privileges across your remote indices, you can use the `securitySolution:enableCcsWarning` setting to disable this warning and reduce noise.
+
+<div id="show-related-integrations"></div>
+
+## Show/hide related integrations in Rules page tables
+
+By default, Elastic prebuilt rules in the **Rules** and **Rule Monitoring** tables include a badge showing how many related integrations have been installed. Turn off `securitySolution:showRelatedIntegrations` to hide this in the rules tables (related integrations will still appear on rule details pages).
+
+<div id="manage-alert-tags"></div>
+
+## Manage alert tag options
+
+The `securitySolution:alertTags` field determines which options display in the alert tag menu. The default alert tag options are `Duplicate`, `False Positive`, and `Further investigation required`. You can update the alert tag menu by editing these options or adding more. To learn more about using alert tags, refer to <DocLink id="serverlessSecurityAlertsUiManage" section="apply-and-filter-alert-tags">Apply and filter alert tags</DocLink>.

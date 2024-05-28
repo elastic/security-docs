@@ -1,0 +1,116 @@
+---
+id: serverlessSecurityEntityRiskScoring
+slug: /serverless/security/entity-risk-scoring
+title: Entity risk scoring
+description: Learn about the risk scoring engine and its features.
+tags: [ 'serverless', 'security', 'overview', 'analyze' ]
+status: in review
+---
+
+<DocBadge template="technical preview" />
+
+Entity risk scoring is an advanced ((elastic-sec)) analytics feature that helps security analysts detect changes in an entity's risk posture, hunt for new threats, and prioritize incident response.
+
+Entity risk scoring allows you to monitor risk score changes of hosts and users in your environment. When generating advanced scoring analytics, the risk scoring engine utilizes threats from its end-to-end XDR use cases, such as SIEM, cloud, and endpoint. It leverages the Elastic SIEM detection engine to generate host and user risk scores from the last 30 days.
+
+It also generates risk scores on a recurring interval, and allows for easy onboarding and management. The engine is built to factor in risks from all ((elastic-sec)) use cases, and allows you to customize and control how and when risk is calculated.
+
+## Risk scoring inputs
+
+Entity risk scores are determined by the following risk inputs:
+
+<DocTable columns={[
+  {
+    "title": "Risk input",
+    "width": "30%"
+  },
+  {
+    "title": "Storage location",
+    "width": "70%"
+  }
+]}>
+  <DocRow>
+    <DocCell><DocLink id="serverlessSecurityAlertsUiManage">Alerts</DocLink></DocCell>
+    <DocCell>`.alerts-security.alerts-<space-id>` index alias</DocCell>
+  </DocRow>
+  <DocRow>
+    <DocCell><DocLink id="serverlessSecurityAssetCriticality">Asset criticality level</DocLink></DocCell>
+    <DocCell>`.asset-criticality.asset-criticality-<space-id>` index alias</DocCell>
+  </DocRow>
+</DocTable>
+
+The resulting entity risk scores are stored in the `risk-score.risk-score-<space-id>` data stream alias.
+
+<DocCallOut title="Note">
+
+* Entities without any alerts, or with only `Closed` alerts, are not assigned a risk score.
+* To use asset criticality, you must enable the `securitySolution:enableAssetCriticality` <DocLink id="serverlessSecurityAdvancedSettings" section="enable-asset-criticality-workflows" >advanced setting</DocLink>.
+
+</DocCallOut>
+
+## How is risk score calculated?
+
+1. The risk scoring engine runs hourly to aggregate `Open` and `Acknowledged` alerts from the last 30 days. For each entity, the engine processes up to 10,000 alerts.
+
+1. The engine groups alerts by `host.name` or `user.name`, and aggregates the individual alert risk scores (`kibana.alert.risk_score`) such that alerts with higher risk scores contribute more than alerts with lower risk scores. The resulting aggregated risk score is assigned to the **Alerts** category in the entity's <DocLink id="serverlessSecurityHostsOverview" section="host-risk-summary">risk summary</DocLink>.
+
+1. The engine then verifies the entity's <DocLink id="serverlessSecurityAssetCriticality">asset criticality level</DocLink>. If there is no asset criticality assigned, the entity risk score remains equal to the aggregated score from the **Alerts** category. If a criticality level is assigned, the engine updates the risk score based on the default risk weight for each criticality level. The asset criticality risk input is assigned to the **Asset Criticality** category in the entity's risk summary.
+
+    | Asset criticality level | Default risk weight |
+    |-------------------------|---------------------|
+    | Low impact              | 0.5                 |
+    | Medium impact           | 1                   |
+    | High impact             | 1.5                 |
+    | Extreme impact          | 2                   |
+
+    <DocCallOut title="Note">
+    Asset criticality levels and default risk weights are subject to change.
+    </DocCallOut>
+
+1. Based on the two risk inputs, the risk scoring engine generates a single entity risk score of 0-100. It assigns a risk level by mapping the risk score to one of these levels:
+
+    | Risk level    | Risk score    |
+    | ------------- |---------------|
+    | Unknown       | < 20          |
+    | Low           | 20-40         |
+    | Moderate      | 40-70         |
+    | High          | 70-90         |
+    | Critical      | > 90          |
+
+<DocAccordion buttonContent="Click for a risk score calculation example">
+
+This example shows how the risk scoring engine calculates the user risk score for `User_A`, whose asset criticality level is **Extreme impact**.
+
+There are 5 open alerts associated with `User_A`:
+
+* Alert 1 with alert risk score 21
+* Alert 2 with alert risk score 45
+* Alert 3 with alert risk score 21
+* Alert 4 with alert risk score 70
+* Alert 5 with alert risk score 21
+
+---
+
+To calculate the user risk score, the risk scoring engine:
+
+1. Sorts the associated alerts in descending order of alert risk score:
+
+    * Alert 4 with alert risk score 70
+    * Alert 2 with alert risk score 45
+    * Alert 1 with alert risk score 21
+    * Alert 3 with alert risk score 21
+    * Alert 5 with alert risk score 21
+
+1. Generates an aggregated risk score of 36.16, and assigns it to `User_A`'s **Alerts** risk category.
+
+1. Looks up `User_A`'s asset criticality level, and identifies it as **Extreme impact**.
+
+1. Generates a new risk input under the **Asset Criticality** risk category, with a risk contribution score of 16.95.
+
+1. Increases the user risk score to 53.11, and assigns `User_A` a **Moderate** user risk level.
+
+If `User_A` had no asset criticality level assigned, the user risk score would remain unchanged at 36.16.
+
+</DocAccordion>
+ 
+Learn how to <DocLink id="serverlessSecurityTurnOnRiskEngine">turn on the risk scoring engine</DocLink>.
