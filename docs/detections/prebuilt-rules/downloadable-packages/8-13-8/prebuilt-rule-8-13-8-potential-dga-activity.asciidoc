@@ -1,0 +1,94 @@
+[[prebuilt-rule-8-13-8-potential-dga-activity]]
+=== Potential DGA Activity
+
+A population analysis machine learning job detected potential DGA (domain generation algorithm) activity. Such activity is often used by malware command and control (C2) channels. This machine learning job looks for a source IP address making DNS requests that have an aggregate high probability of being DGA activity.
+
+*Rule type*: machine_learning
+
+*Rule indices*: None
+
+*Severity*: low
+
+*Risk score*: 21
+
+*Runs every*: 15m
+
+*Searches indices from*: now-45m ({ref}/common-options.html#date-math[Date Math format], see also <<rule-schedule, `Additional look-back time`>>)
+
+*Maximum alerts per execution*: 100
+
+*References*: 
+
+* https://www.elastic.co/guide/en/security/current/prebuilt-ml-jobs.html
+* https://docs.elastic.co/en/integrations/dga
+* https://www.elastic.co/security-labs/detect-domain-generation-algorithm-activity-with-new-kibana-integration
+
+*Tags*: 
+
+* Use Case: Domain Generation Algorithm Detection
+* Rule Type: ML
+* Rule Type: Machine Learning
+* Tactic: Command and Control
+
+*Version*: 4
+
+*Rule authors*: 
+
+* Elastic
+
+*Rule license*: Elastic License v2
+
+
+==== Setup
+
+
+
+*Setup*
+
+
+The rule requires the Domain Generation Algorithm (DGA) Detection integration assets to be installed, as well as DNS events collected by integrations such as Elastic Defend, Network Packet Capture, or Packetbeat.  
+
+
+*DGA Detection Setup*
+
+The DGA Detection integration consists of an ML-based framework to detect DGA activity in DNS events.
+
+
+*Prerequisite Requirements:*
+
+- Fleet is required for DGA Detection.
+- To configure Fleet Server refer to the https://www.elastic.co/guide/en/fleet/current/fleet-server.html[documentation].
+- DNS events collected by the https://docs.elastic.co/en/integrations/endpoint[Elastic Defend], https://docs.elastic.co/integrations/network_traffic[Network Packet Capture] integration, or https://www.elastic.co/guide/en/beats/packetbeat/current/packetbeat-overview.html[Packetbeat].
+- To install Elastic Defend, refer to the https://www.elastic.co/guide/en/security/current/install-endpoint.html[documentation].
+- To add the Network Packet Capture integration to an Elastic Agent policy, refer to https://www.elastic.co/guide/en/fleet/current/add-integration-to-policy.html[this] guide.
+- To set up and run Packetbeat, follow https://www.elastic.co/guide/en/beats/packetbeat/current/setting-up-and-running.html[this] guide.
+
+
+*The following steps should be executed to install assets associated with the DGA Detection integration:*
+
+- Go to the Kibana homepage. Under Management, click Integrations.
+- In the query bar, search for Domain Generation Algorithm Detection and select the integration to see more details about it.
+- Follow the instructions under the **Installation** section.
+- For this rule to work, complete the instructions through **Add preconfigured anomaly detection jobs**.
+```
+
+
+*Anomaly Detection Setup*
+
+Before you can enable this rule, you'll need to enable the corresponding Anomaly Detection job. 
+- Go to the Kibana homepage. Under Analytics, click Machine Learning.
+- Under Anomaly Detection, click Jobs, and then click "Create job". Select the Data View containing your enriched DNS events. For example, this would be `logs-endpoint.events.*` if you used Elastic Defend to collect events, or `logs-network_traffic.*` if you used Network Packet Capture.
+- If the selected Data View contains events that match the query in https://github.com/elastic/integrations/blob/main/packages/dga/kibana/ml_module/dga-ml.json[this] configuration file, you will see a card for DGA under "Use preconfigured jobs".
+- Keep the default settings and click "Create jobs" to start the anomaly detection job and datafeed.
+
+
+*Framework*: MITRE ATT&CK^TM^
+
+* Tactic:
+** Name: Command and Control
+** ID: TA0011
+** Reference URL: https://attack.mitre.org/tactics/TA0011/
+* Technique:
+** Name: Dynamic Resolution
+** ID: T1568
+** Reference URL: https://attack.mitre.org/techniques/T1568/
