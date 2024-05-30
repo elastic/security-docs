@@ -36,7 +36,7 @@ This rule monitors the creation/alteration of the rc.local file by a previously 
 * Resources: Investigation Guide
 * Data Source: Elastic Defend
 
-*Version*: 110
+*Version*: 111
 
 *Rule authors*: 
 
@@ -76,7 +76,7 @@ Detection alerts from this rule indicate the creation of a new `/etc/rc.local` f
 - Investigate the script execution chain (parent process tree) for unknown processes. Examine their executable files for prevalence and whether they are located in expected locations.
   - !{osquery{"label":"Osquery - Retrieve Running Processes by User","query":"SELECT pid, username, name FROM processes p JOIN users u ON u.uid = p.uid ORDER BY username"}}
 - Investigate whether the `/lib/systemd/system/rc-local.service` and `/run/systemd/generator/multi-user.target.wants/rc-local.service` files were created through the `systemd-rc-local-generator` located at `/usr/lib/systemd/system-generators/systemd-rc-local-generator`.
-  - !{osquery{"label":"Osquery - Retrieve rc-local.service File Information","query":"SELECT * FROM file WHERE (path = '/run/systemd/generator/multi-user.target.wants/rc-local.service' OR path = '/run/systemd/generator/multi-user.target.wants/rc-local.service')"}}
+  - !{osquery{"label":"Osquery - Retrieve rc-local.service File Information","query":"SELECT * FROM file WHERE (path = '/run/systemd/generator/multi-user.target.wants/rc-local.service' OR path =\n'/run/systemd/generator/multi-user.target.wants/rc-local.service')\n"}}
   - In case the file is not present here, `sudo systemctl status rc-local` can be executed to find the location of the rc-local unit file.
   - If `rc-local.service` is found, manual investigation is required to check for the rc script execution. Systemd will generate syslogs in case of the execution of the rc-local service. `sudo cat /var/log/syslog | grep "rc-local.service|/etc/rc.local Compatibility"` can be executed to check for the execution of the service.
     - If logs are found, it's likely that the contents of the `rc.local` file have been executed. Analyze the logs. In case several syslog log files are available, use a wildcard to search through all of the available logs.
