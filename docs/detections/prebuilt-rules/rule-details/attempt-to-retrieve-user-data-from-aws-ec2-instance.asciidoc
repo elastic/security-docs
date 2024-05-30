@@ -1,0 +1,67 @@
+[[attempt-to-retrieve-user-data-from-aws-ec2-instance]]
+=== Attempt to Retrieve User Data from AWS EC2 Instance
+
+Identifies discovery request `DescribeInstanceAttribute` with the attribute userData and instanceId in AWS CloudTrail logs. This may indicate an attempt to retrieve user data from an EC2 instance. Adversaries may use this information to gather sensitive data from the instance or to identify potential vulnerabilities. This is a building block rule that does not generate an alert on its own, but serves as a signal for anomalous activity.
+
+*Rule type*: query
+
+*Rule indices*: 
+
+* filebeat-*
+* logs.aws.cloudtrail-*
+
+*Severity*: low
+
+*Risk score*: 21
+
+*Runs every*: 60m
+
+*Searches indices from*: now-119m ({ref}/common-options.html#date-math[Date Math format], see also <<rule-schedule, `Additional look-back time`>>)
+
+*Maximum alerts per execution*: 100
+
+*References*: 
+
+* https://docs.aws.amazon.com/AWSEC2/latest/APIReference/API_DescribeInstanceAttribute.html
+* https://hackingthe.cloud/aws/exploitation/local_ec2_priv_esc_through_user_data
+
+*Tags*: 
+
+* Domain: Cloud
+* Data Source: AWS
+* Data Source: Amazon Web Services
+* Data Source: Amazon EC2
+* Use Case: Log Auditing
+* Tactic: Discovery
+* Rule Type: BBR
+
+*Version*: 1
+
+*Rule authors*: 
+
+* Elastic
+
+*Rule license*: Elastic License v2
+
+
+==== Rule query
+
+
+[source, js]
+----------------------------------
+event.dataset:aws.cloudtrail
+    and event.action:DescribeInstanceAttribute
+    and aws.cloudtrail.request_parameters:(*attribute=userData* and *instanceId*)
+
+----------------------------------
+
+*Framework*: MITRE ATT&CK^TM^
+
+* Tactic:
+** Name: Discovery
+** ID: TA0007
+** Reference URL: https://attack.mitre.org/tactics/TA0007/
+* Technique:
+** Name: Cloud Infrastructure Discovery
+** ID: T1580
+** Reference URL: https://attack.mitre.org/techniques/T1580/
