@@ -34,7 +34,7 @@ Message of the day (MOTD) is the message that is presented to the user when a us
 * Resources: Investigation Guide
 * Data Source: Elastic Defend
 
-*Version*: 9
+*Version*: 10
 
 *Rule authors*: 
 
@@ -72,7 +72,7 @@ This rule identifies the creation of new files within the `/etc/update-motd.d/` 
   - !{osquery{"label":"Osquery - Retrieve File Information","query":"SELECT * FROM file WHERE path = {{file.path}}"}}
 - Investigate whether any other files in the `/etc/update-motd.d/` or `/usr/lib/update-notifier/` directories have been altered.
   - !{osquery{"label":"Osquery - Retrieve File Listing Information","query":"SELECT * FROM file WHERE (path LIKE '/etc/update-motd.d/%' OR path LIKE '/usr/lib/update-notifier/%')"}}
-  - !{osquery{"label":"Osquery - Retrieve Additional File Listing Information","query":"SELECT\n  f.path,\n  u.username AS file_owner,\n  g.groupname AS group_owner,\n  datetime(f.atime, 'unixepoch') AS file_last_access_time,\n  datetime(f.mtime, 'unixepoch') AS file_last_modified_time,\n  datetime(f.ctime, 'unixepoch') AS file_last_status_change_time,\n  datetime(f.btime, 'unixepoch') AS file_created_time,\n  f.size AS size_bytes\nFROM\n  file f\n  LEFT JOIN users u ON f.uid = u.uid\n  LEFT JOIN groups g ON f.gid = g.gid\nWHERE (path LIKE '/etc/update-motd.d/%' OR path LIKE '/usr/lib/update-notifier/%')\n"}}
+  - !{osquery{"label":"Osquery - Retrieve Additional File Listing Information","query":"SELECT f.path, u.username AS file_owner, g.groupname AS group_owner, datetime(f.atime, 'unixepoch') AS\nfile_last_access_time, datetime(f.mtime, 'unixepoch') AS file_last_modified_time, datetime(f.ctime, 'unixepoch') AS\nfile_last_status_change_time, datetime(f.btime, 'unixepoch') AS file_created_time, f.size AS size_bytes FROM file f LEFT\nJOIN users u ON f.uid = u.uid LEFT JOIN groups g ON f.gid = g.gid WHERE (path LIKE '/etc/update-motd.d/%' OR path LIKE\n'/usr/lib/update-notifier/%')\n"}}
 - Investigate the script execution chain (parent process tree) for unknown processes. Examine their executable files for prevalence and whether they are located in expected locations.
   - !{osquery{"label":"Osquery - Retrieve Running Processes by User","query":"SELECT pid, username, name FROM processes p JOIN users u ON u.uid = p.uid ORDER BY username"}}
 - Investigate other alerts associated with the user/host during the past 48 hours.

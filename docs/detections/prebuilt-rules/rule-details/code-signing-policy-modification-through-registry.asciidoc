@@ -35,7 +35,7 @@ Identifies attempts to disable the code signing policy through the registry. Cod
 * Data Source: Elastic Defend
 * Data Source: Sysmon
 
-*Version*: 9
+*Version*: 10
 
 *Rule authors*: 
 
@@ -72,8 +72,8 @@ This rule identifies registry modifications that can disable DSE.
 - Investigate the process execution chain (parent process tree) for unknown processes. Examine their executable files for prevalence, whether they are located in expected locations, and if they are signed with valid digital signatures.
 - Investigate other alerts associated with the user/host during the past 48 hours.
 - Use Osquery and endpoint driver events (`event.category = "driver"`) to investigate if suspicious drivers were loaded into the system after the registry was modified.
-  - !{osquery{"label":"Osquery - Retrieve All Non-Microsoft Drivers with Virustotal Link","query":"SELECT concat('https://www.virustotal.com/gui/file/', sha1) AS VtLink, class, description, directory, image, issuer_name, manufacturer, service, signed, subject_name FROM drivers JOIN authenticode ON drivers.image = authenticode.path JOIN hash ON drivers.image = hash.path WHERE NOT (provider == \"Microsoft\" AND signed == \"1\")\n"}}
-  - !{osquery{"label":"Osquery - Retrieve All Unsigned Drivers with Virustotal Link","query":"SELECT concat('https://www.virustotal.com/gui/file/', sha1) AS VtLink, class, description, directory, image, issuer_name, manufacturer, service, signed, subject_name FROM drivers JOIN authenticode ON drivers.image = authenticode.path JOIN hash ON drivers.image = hash.path WHERE signed == \"0\"\n"}}
+  - !{osquery{"label":"Osquery - Retrieve All Non-Microsoft Drivers with Virustotal Link","query":"SELECT concat('https://www.virustotal.com/gui/file/', sha1) AS VtLink, class, description, directory, image,\nissuer_name, manufacturer, service, signed, subject_name FROM drivers JOIN authenticode ON drivers.image =\nauthenticode.path JOIN hash ON drivers.image = hash.path WHERE NOT (provider == \"Microsoft\" AND signed == \"1\")\n"}}
+  - !{osquery{"label":"Osquery - Retrieve All Unsigned Drivers with Virustotal Link","query":"SELECT concat('https://www.virustotal.com/gui/file/', sha1) AS VtLink, class, description, directory, image,\nissuer_name, manufacturer, service, signed, subject_name FROM drivers JOIN authenticode ON drivers.image =\nauthenticode.path JOIN hash ON drivers.image = hash.path WHERE signed == \"0\"\n"}}
 - Identify the driver's `Device Name` and `Service Name`.
 - Check for alerts from the rules specified in the `Related Rules` section.
 
@@ -133,6 +133,10 @@ registry where host.os.type == "windows" and event.type : ("creation", "change")
 ** ID: TA0005
 ** Reference URL: https://attack.mitre.org/tactics/TA0005/
 * Technique:
+** Name: Modify Registry
+** ID: T1112
+** Reference URL: https://attack.mitre.org/techniques/T1112/
+* Technique:
 ** Name: Subvert Trust Controls
 ** ID: T1553
 ** Reference URL: https://attack.mitre.org/techniques/T1553/
@@ -140,7 +144,3 @@ registry where host.os.type == "windows" and event.type : ("creation", "change")
 ** Name: Code Signing Policy Modification
 ** ID: T1553.006
 ** Reference URL: https://attack.mitre.org/techniques/T1553/006/
-* Technique:
-** Name: Modify Registry
-** ID: T1112
-** Reference URL: https://attack.mitre.org/techniques/T1112/

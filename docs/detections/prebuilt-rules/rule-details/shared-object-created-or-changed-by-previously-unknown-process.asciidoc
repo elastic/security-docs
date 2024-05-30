@@ -33,7 +33,7 @@ This rule monitors the creation of shared object files by previously unknown pro
 * Data Source: Elastic Endgame
 * Data Source: Elastic Defend
 
-*Version*: 7
+*Version*: 8
 
 *Rule authors*: 
 
@@ -69,7 +69,7 @@ This rule monitors the creation of shared object files by previously unknown pro
 
 - Investigate the shared object that was created or modified through OSQuery.
   - !{osquery{"label":"Osquery - Retrieve File Listing Information","query":"SELECT * FROM file WHERE path = {{file.path}}\n"}}
-  - !{osquery{"label":"Osquery - Retrieve Additional File Listing Information","query":"SELECT\n  f.path,\n  u.username AS file_owner,\n  g.groupname AS group_owner,\n  datetime(f.atime, 'unixepoch') AS file_last_access_time,\n  datetime(f.mtime, 'unixepoch') AS file_last_modified_time,\n  datetime(f.ctime, 'unixepoch') AS file_last_status_change_time,\n  datetime(f.btime, 'unixepoch') AS file_created_time,\n  f.size AS size_bytes\nFROM\n  file f\n  LEFT JOIN users u ON f.uid = u.uid\n  LEFT JOIN groups g ON f.gid = g.gid\nWHERE path = {{file.path}}\n"}}
+  - !{osquery{"label":"Osquery - Retrieve Additional File Listing Information","query":"SELECT f.path, u.username AS file_owner, g.groupname AS group_owner, datetime(f.atime, 'unixepoch') AS\nfile_last_access_time, datetime(f.mtime, 'unixepoch') AS file_last_modified_time, datetime(f.ctime, 'unixepoch') AS\nfile_last_status_change_time, datetime(f.btime, 'unixepoch') AS file_created_time, f.size AS size_bytes FROM file f LEFT\nJOIN users u ON f.uid = u.uid LEFT JOIN groups g ON f.gid = g.gid WHERE path = {{file.path}}\n"}}
 - Investigate the script execution chain (parent process tree) for unknown processes. Examine their executable files for prevalence and whether they are located in expected locations.
   - !{osquery{"label":"Osquery - Retrieve Running Processes by User","query":"SELECT pid, username, name FROM processes p JOIN users u ON u.uid = p.uid ORDER BY username"}}
 - Investigate other alerts associated with the user/host during the past 48 hours.
