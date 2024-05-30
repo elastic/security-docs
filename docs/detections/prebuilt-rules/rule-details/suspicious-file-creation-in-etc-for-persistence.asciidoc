@@ -36,7 +36,7 @@ Detects the manual creation of files in specific etc directories, via user root,
 * Data Source: Elastic Endgame
 * Data Source: Elastic Defend
 
-*Version*: 113
+*Version*: 114
 
 *Rule authors*: 
 
@@ -72,8 +72,8 @@ This rule monitors for the creation of the most common system-wide configuration
 
 - Investigate the file that was created or modified.
 - Investigate whether any other files in any of the commonly abused directories have been altered through OSQuery.
-  - !{osquery{"label":"Osquery - Retrieve File Listing Information","query":"SELECT * FROM file WHERE (\n  path LIKE '/etc/ld.so.conf.d/%' OR\n  path LIKE '/etc/cron.d/%' OR\n  path LIKE '/etc/sudoers.d/%' OR\n  path LIKE '/etc/rc%.d/%' OR\n  path LIKE '/etc/init.d/%' OR\n  path LIKE '/etc/systemd/system/%' OR\n  path LIKE '/usr/lib/systemd/system/%'\n)\n"}}
-  - !{osquery{"label":"Osquery - Retrieve Additional File Listing Information","query":"SELECT\n  f.path,\n  u.username AS file_owner,\n  g.groupname AS group_owner,\n  datetime(f.atime, 'unixepoch') AS file_last_access_time,\n  datetime(f.mtime, 'unixepoch') AS file_last_modified_time,\n  datetime(f.ctime, 'unixepoch') AS file_last_status_change_time,\n  datetime(f.btime, 'unixepoch') AS file_created_time,\n  f.size AS size_bytes\nFROM\n  file f\n  LEFT JOIN users u ON f.uid = u.uid\n  LEFT JOIN groups g ON f.gid = g.gid\nWHERE (\n  path LIKE '/etc/ld.so.conf.d/%' OR\n  path LIKE '/etc/cron.d/%' OR\n  path LIKE '/etc/sudoers.d/%' OR\n  path LIKE '/etc/rc%.d/%' OR\n  path LIKE '/etc/init.d/%' OR\n  path LIKE '/etc/systemd/system/%' OR\n  path LIKE '/usr/lib/systemd/system/%'\n)\n"}}
+  - !{osquery{"label":"Osquery - Retrieve File Listing Information","query":"SELECT * FROM file WHERE ( path LIKE '/etc/ld.so.conf.d/%' OR path LIKE '/etc/cron.d/%' OR path LIKE '/etc/sudoers.d/%'\nOR path LIKE '/etc/rc%.d/%' OR path LIKE '/etc/init.d/%' OR path LIKE '/etc/systemd/system/%' OR path LIKE\n'/usr/lib/systemd/system/%' )\n"}}
+  - !{osquery{"label":"Osquery - Retrieve Additional File Listing Information","query":"SELECT f.path, u.username AS file_owner, g.groupname AS group_owner, datetime(f.atime, 'unixepoch') AS\nfile_last_access_time, datetime(f.mtime, 'unixepoch') AS file_last_modified_time, datetime(f.ctime, 'unixepoch') AS\nfile_last_status_change_time, datetime(f.btime, 'unixepoch') AS file_created_time, f.size AS size_bytes FROM file f LEFT\nJOIN users u ON f.uid = u.uid LEFT JOIN groups g ON f.gid = g.gid WHERE ( path LIKE '/etc/ld.so.conf.d/%' OR path LIKE\n'/etc/cron.d/%' OR path LIKE '/etc/sudoers.d/%' OR path LIKE '/etc/rc%.d/%' OR path LIKE '/etc/init.d/%' OR path LIKE\n'/etc/systemd/system/%' OR path LIKE '/usr/lib/systemd/system/%' )\n"}}
 - Investigate the script execution chain (parent process tree) for unknown processes. Examine their executable files for prevalence and whether they are located in expected locations.
   - !{osquery{"label":"Osquery - Retrieve Running Processes by User","query":"SELECT pid, username, name FROM processes p JOIN users u ON u.uid = p.uid ORDER BY username"}}
 - Investigate other alerts associated with the user/host during the past 48 hours.
@@ -204,14 +204,6 @@ file.path : ("/etc/ld.so.conf.d/*", "/etc/cron.d/*", "/etc/sudoers.d/*", "/etc/r
 ** ID: T1037.004
 ** Reference URL: https://attack.mitre.org/techniques/T1037/004/
 * Technique:
-** Name: Hijack Execution Flow
-** ID: T1574
-** Reference URL: https://attack.mitre.org/techniques/T1574/
-* Sub-technique:
-** Name: Dynamic Linker Hijacking
-** ID: T1574.006
-** Reference URL: https://attack.mitre.org/techniques/T1574/006/
-* Technique:
 ** Name: Create or Modify System Process
 ** ID: T1543
 ** Reference URL: https://attack.mitre.org/techniques/T1543/
@@ -219,6 +211,14 @@ file.path : ("/etc/ld.so.conf.d/*", "/etc/cron.d/*", "/etc/sudoers.d/*", "/etc/r
 ** Name: Systemd Service
 ** ID: T1543.002
 ** Reference URL: https://attack.mitre.org/techniques/T1543/002/
+* Technique:
+** Name: Hijack Execution Flow
+** ID: T1574
+** Reference URL: https://attack.mitre.org/techniques/T1574/
+* Sub-technique:
+** Name: Dynamic Linker Hijacking
+** ID: T1574.006
+** Reference URL: https://attack.mitre.org/techniques/T1574/006/
 * Tactic:
 ** Name: Execution
 ** ID: TA0002
