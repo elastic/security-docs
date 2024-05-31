@@ -1,4 +1,3 @@
-[chapter]
 [[upgrade-intro]]
 
 = Upgrade {elastic-sec} to {version}
@@ -105,72 +104,6 @@ you will need to restore from the snapshot.
 After you upgrade to 8.8 or later, frequency settings for <<rule-notifications,rule actions>> created in 8.7 or earlier are automatically moved from the rule level to the action level. The action schedules remain the same and will continue to run on their previously specified frequency (`On each rule execution`, `Hourly`, `Daily`, or `Weekly`). 
 
 [float]
-[[upgrade-7.17-8x]]
-== Upgrade from 7.17 to an 8.x version
-
-This section provides the necessary steps you need to take before upgrading to 8.x. It also contains new requirements and other pertinent information that affect various features in the {security-app}.  
-
-First, review the breaking changes for each product you use and make the necessary changes so your code is compatible with {version}.
-
-** {apm-guide-ref}/apm-breaking.html[APM {version} breaking changes]
-** {beats-ref}/breaking-changes.html[Beats {version} breaking changes]
-** {ref}/breaking-changes.html[{es} {version} breaking changes]
-** {security-guide}/release-notes.html[{elastic-sec} {version} breaking changes]
-** {kibana-ref}/release-notes.html[{kib} {version} breaking changes]
-** {logstash-ref}/breaking-changes.html[{ls} {version} breaking changes]
-
-[float]
-[[reenable-rules-upgrade]]
-=== Re-enable disabled rules
-
-Any active rules when you upgrade from 7.17 to 8.0.1 or newer are automatically disabled, and a tag named `auto_disabled_8.0` is added to those rules for tracking purposes. Once the upgrade is complete, you can filter rules by the newly added tag, then use bulk actions to re-enable them:
-
-. Go to the Rules page (*Detect -> Rules*).
-. From the *Tags* dropdown, search for `auto_disabled_8.0`.
-. Click *Select all _x_ rules*, or individually select the rules you want to re-enable.
-. Click *Bulk actions -> Enable* to re-enable the rules.
-
-Alternatively, you can use the <<bulk-actions-rules-api, Bulk rule actions>> API to re-enable rules.
-
-[float]
-[[fda-upgrade]]
-=== Full Disk Access (FDA) approval for {elastic-endpoint}
-
-When you manually install {elastic-endpoint}, you must approve a system extension, kernel extension, and enable Full Disk Access (FDA). There is a new FDA requirement in 8.x. Refer to <<elastic-endpoint-deploy-reqs>> to review the required permissions.
-
-[float]
-[[data-views-upgrade]]
-=== Requirements to display Data views in the {security-app}
-
-To make the *Data view* option appear in an environment with legacy alerts, a user with elevated role privileges must visit the {security-app}, open a page that displays alert data (such as the Overview page), then refresh the page. The user's role privileges must allow them to enable the detections feature in a Kibana space. Refer to <<enable-detections-ui, Enable and access detections>> for more information.
-
-NOTE: If new alerts are generated in an upgraded environment without legacy alerts, refreshing any page with alert data in {elastic-sec} will make the *Data view* option appear in the {elastic-sec} UI.
-
-[float]
-[[alert-schema-upgrade]]
-=== New alert schema
-
-The system index for detection alerts has been renamed from `.siem-signals-<space-id>` to `.alerts-security.alerts-<space-id>` and is now a hidden index. Therefore, the schema used for alert documents in {elastic-sec} has changed. Users that access documents in the `.siem-signals` indices using the {elastic-sec} API must modify their API queries and scripts to operate properly on the new 8.x alert documents. Refer to <<query-alert-indices, how to query alert indices>> and review the new <<alert-schema, Alert schema>>.
-
-[float]
-[[preview-upgrade]]
-=== New privileges required to view alerts and preview rules
-
-* To view alerts, users need `manage`, `write`, `read`, and `view_index_metadata` privileges to two new indices, `.alerts-security.alerts` and `.internal.alerts-security.alerts`. Existing users who are upgrading to 8.x can retain their privileges to the `.siem-signals` index.
-
-* To <<preview-rules, preview rules>>, users need `read` access to the new `.preview.alerts-security.alerts` index. Refer to <<detections-permissions-section>> for more information.
-
-[float]
-[[im-rules-upgrade]]
-=== Updates to indictor match rules
-
-Changes to the indicator match rule's <<rule-ui-advanced-params, default threat indicator path>> might require you to update existing rules or create new ones after upgrading to 8.x. Be mindful of the following:
-
-* If an indicator match rule's default threat indicator path was not defined before the upgrade, it will default to `threatintel.indicator` after the upgrade. This allows the rule to continue using indicator data ingested by {filebeat} version 7.x. If a custom value was defined before the upgrade, the value will not change.
-* If an existing indicator match rule was configured to use threat indicator indices generated from {filebeat} version 7.x, updating the default threat indicator path to `threat.indicator` after you upgrade to {stack} version 8.x and {agent} or {filebeat} version 8.x configures the rule to use threat indicator indices generated by those later versions.
-* You must create separate rules to query threat intelligence indices created by {filebeat} version 7.x and version 8.x because each version requires a different default threat indicator path value. Review the recommendations for <<query-alert-indices, querying alert indices>>.
-
-[float]
 [[upgrade-7.16-8.x]]
 == Upgrade from 7.16 or earlier to an 8.x version
 
@@ -179,3 +112,5 @@ To upgrade from 7.16.0 or earlier to {version}, you must first upgrade your {sta
 Initially, {agent}s will be version 7.17. This is fine because {elastic-sec} 8.x supports the last minor release in 7.x (7.17) and any subsequent {elastic-endpoint} versions in 8.x. After the {stack} upgrade, you can decide whether to upgrade {agent}s to 8.x, which is recommended to ensure you get the latest features.
 
 NOTE: You do not need to shut down your {agent}s or endpoints to upgrade the {stack}.
+
+include::upgrade-7.17-8.x.asciidoc[]
