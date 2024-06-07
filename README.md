@@ -17,7 +17,7 @@ If you're an Elastic employee, you can open an issue using the appropriate [temp
 1. Save your changes and open a pull request. 
 1. Add the [@elastic/security-docs](https://github.com/orgs/elastic/teams/security-docs) team and any other appropriate members as reviewers. 
 1. Add the appropriate release version label, backport version label if appropriate, and team label to the PR. 
-1. If your PR changes any [serverless docs content](https://github.com/elastic/security-docs/tree/64d741451ceeafe41065f99594bcfd8a6cb98664/docs/serverless), add the label `ci:doc-build` to generate a preview of the serverless docs on the PR.
+1. If your PR changes any [serverless docs content](https://github.com/elastic/security-docs/tree/main/docs/serverless), add the label `ci:doc-build` to generate a preview of the serverless docs on the PR.
 1. Once the docs team approves all changes, you can merge it. If a backport version label was added to a PR for stack versions 7.14.0 and newer, mergify will automatically open a backport PR. 
 1. Merge the backport PR once it passes all CI checks. 
 
