@@ -1,0 +1,110 @@
+[[prebuilt-rule-8-14-3-executable-bit-set-for-rc-local-rc-common]]
+=== Executable Bit Set for rc.local/rc.common
+
+This rule monitors for the addition of an executable bit of the `/etc/rc.local` or `/etc/rc.common` files. These files are used to start custom applications, services, scripts or commands during start-up. They require executable permissions to be executed on boot. An alert of this rule is an indicator that this method is being set up within your environment. This method has mostly been replaced by Systemd. However, through the `systemd-rc-local-generator`, these files can be converted to services that run at boot. Adversaries may alter these files to execute malicious code at start-up, and gain persistence onto the system.
+
+*Rule type*: eql
+
+*Rule indices*: 
+
+* logs-endpoint.events.process*
+* endgame-*
+
+*Severity*: medium
+
+*Risk score*: 47
+
+*Runs every*: 5m
+
+*Searches indices from*: now-9m ({ref}/common-options.html#date-math[Date Math format], see also <<rule-schedule, `Additional look-back time`>>)
+
+*Maximum alerts per execution*: 100
+
+*References*: 
+
+* https://www.intezer.com/blog/malware-analysis/hiddenwasp-malware-targeting-linux-systems/
+* https://pberba.github.io/security/2022/02/06/linux-threat-hunting-for-persistence-initialization-scripts-and-shell-configuration/#8-boot-or-logon-initialization-scripts-rc-scripts
+* https://www.cyberciti.biz/faq/how-to-enable-rc-local-shell-script-on-systemd-while-booting-linux-system/
+
+*Tags*: 
+
+* Domain: Endpoint
+* OS: Linux
+* Use Case: Threat Detection
+* Tactic: Persistence
+* Data Source: Elastic Endgame
+* Data Source: Elastic Defend
+
+*Version*: 1
+
+*Rule authors*: 
+
+* Elastic
+
+*Rule license*: Elastic License v2
+
+
+==== Setup
+
+
+
+*Setup*
+
+
+This rule requires data coming in from Elastic Defend.
+
+
+*Elastic Defend Integration Setup*
+
+Elastic Defend is integrated into the Elastic Agent using Fleet. Upon configuration, the integration allows the Elastic Agent to monitor events on your host and send data to the Elastic Security app.
+
+
+*Prerequisite Requirements:*
+
+- Fleet is required for Elastic Defend.
+- To configure Fleet Server refer to the https://www.elastic.co/guide/en/fleet/current/fleet-server.html[documentation].
+
+
+*The following steps should be executed in order to add the Elastic Defend integration on a Linux System:*
+
+- Go to the Kibana home page and click "Add integrations".
+- In the query bar, search for "Elastic Defend" and select the integration to see more details about it.
+- Click "Add Elastic Defend".
+- Configure the integration name and optionally add a description.
+- Select the type of environment you want to protect, either "Traditional Endpoints" or "Cloud Workloads".
+- Select a configuration preset. Each preset comes with different default settings for Elastic Agent, you can further customize these later by configuring the Elastic Defend integration policy. https://www.elastic.co/guide/en/security/current/configure-endpoint-integration-policy.html[Helper guide].
+- We suggest selecting "Complete EDR (Endpoint Detection and Response)" as a configuration setting, that provides "All events; all preventions"
+- Enter a name for the agent policy in "New agent policy name". If other agent policies already exist, you can click the "Existing hosts" tab and select an existing policy instead.
+For more details on Elastic Agent configuration settings, refer to the https://www.elastic.co/guide/en/fleet/8.10/agent-policy.html[helper guide].
+- Click "Save and Continue".
+- To complete the integration, select "Add Elastic Agent to your hosts" and continue to the next section to install the Elastic Agent on your hosts.
+For more details on Elastic Defend refer to the https://www.elastic.co/guide/en/security/current/install-endpoint.html[helper guide].
+
+
+==== Rule query
+
+
+[source, js]
+----------------------------------
+process where host.os.type == "linux" and event.type == "start" and event.action in ("exec", "exec_event") and
+process.args in ("/etc/rc.local", "/etc/rc.common") and (
+  (process.name == "chmod" and process.args : ("*+x*", "1*", "3*", "5*", "7*")) or
+  (process.name == "install" and process.args : "-m*" and process.args : ("*7*", "*5*", "*3*", "*1*"))
+)
+
+----------------------------------
+
+*Framework*: MITRE ATT&CK^TM^
+
+* Tactic:
+** Name: Persistence
+** ID: TA0003
+** Reference URL: https://attack.mitre.org/tactics/TA0003/
+* Technique:
+** Name: Boot or Logon Initialization Scripts
+** ID: T1037
+** Reference URL: https://attack.mitre.org/techniques/T1037/
+* Sub-technique:
+** Name: RC Scripts
+** ID: T1037.004
+** Reference URL: https://attack.mitre.org/techniques/T1037/004/
