@@ -1,0 +1,88 @@
+[[prebuilt-rule-8-11-18-authentication-via-unusual-pam-grantor]]
+=== Authentication via Unusual PAM Grantor
+
+This rule detects successful authentications via PAM grantors that are not commonly used. This could indicate an attacker is attempting to escalate privileges or maintain persistence on the system by modifying the default PAM configuration.
+
+*Rule type*: new_terms
+
+*Rule indices*: 
+
+* auditbeat-*
+* logs-auditd_manager.auditd-*
+
+*Severity*: medium
+
+*Risk score*: 47
+
+*Runs every*: 5m
+
+*Searches indices from*: now-9m ({ref}/common-options.html#date-math[Date Math format], see also <<rule-schedule, `Additional look-back time`>>)
+
+*Maximum alerts per execution*: 100
+
+*References*: None
+
+*Tags*: 
+
+* Domain: Endpoint
+* OS: Linux
+* Use Case: Threat Detection
+* Tactic: Credential Access
+* Tactic: Persistence
+* Data Source: Auditd Manager
+
+*Version*: 1
+
+*Rule authors*: 
+
+* Elastic
+
+*Rule license*: Elastic License v2
+
+
+==== Setup
+
+
+
+*Setup*
+
+This rule requires the use of the `auditd_manager` integration. `Auditd_manager` is a tool designed to simplify and enhance the management of the audit subsystem in Linux systems. It provides a user-friendly interface and automation capabilities for configuring and monitoring system auditing through the auditd daemon. With `auditd_manager`, administrators can easily define audit rules, track system events, and generate comprehensive audit reports, improving overall security and compliance in the system. The following steps should be executed in order to install and deploy `auditd_manager` on a Linux system.
+```
+Kibana -->
+Management -->
+Integrations -->
+Auditd Manager -->
+Add Auditd Manager
+```
+`Auditd_manager` subscribes to the kernel and receives events as they occur without any additional configuration. However, if more advanced configuration is required to detect specific behavior, audit rules can be added to the integration in either the "audit rules" configuration box or the "auditd rule files" box by specifying a file to read the audit rules from.
+For this detection rule to trigger, no additional configuration is required.
+
+
+==== Rule query
+
+
+[source, js]
+----------------------------------
+event.category:authentication and host.os.type:linux and event.action:authenticated and event.outcome:success and
+auditd.data.grantors:(* and not (pam_rootok or *pam_cap* or *pam_permit*))
+
+----------------------------------
+
+*Framework*: MITRE ATT&CK^TM^
+
+* Tactic:
+** Name: Persistence
+** ID: TA0003
+** Reference URL: https://attack.mitre.org/tactics/TA0003/
+* Technique:
+** Name: Create or Modify System Process
+** ID: T1543
+** Reference URL: https://attack.mitre.org/techniques/T1543/
+* Tactic:
+** Name: Credential Access
+** ID: TA0006
+** Reference URL: https://attack.mitre.org/tactics/TA0006/
+* Technique:
+** Name: Modify Authentication Process
+** ID: T1556
+** Reference URL: https://attack.mitre.org/techniques/T1556/
