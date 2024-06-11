@@ -1,0 +1,131 @@
+[[prebuilt-rule-8-14-3-network-connections-initiated-through-xdg-autostart-entry]]
+=== Network Connections Initiated Through XDG Autostart Entry
+
+Detects network connections initiated through Cross-Desktop Group (XDG) autostart entries for GNOME and XFCE-based Linux distributions. XDG Autostart entries can be used to execute arbitrary commands or scripts when a user logs in. This rule helps to identify potential malicious activity where an attacker may have modified XDG autostart scripts to establish persistence on the system.
+
+*Rule type*: eql
+
+*Rule indices*: 
+
+* logs-endpoint.events.*
+
+*Severity*: medium
+
+*Risk score*: 47
+
+*Runs every*: 5m
+
+*Searches indices from*: now-9m ({ref}/common-options.html#date-math[Date Math format], see also <<rule-schedule, `Additional look-back time`>>)
+
+*Maximum alerts per execution*: 100
+
+*References*: 
+
+* https://specifications.freedesktop.org/autostart-spec/autostart-spec-latest.html
+* https://hadess.io/the-art-of-linux-persistence/
+
+*Tags*: 
+
+* Domain: Endpoint
+* OS: Linux
+* Use Case: Threat Detection
+* Tactic: Persistence
+* Data Source: Elastic Defend
+
+*Version*: 1
+
+*Rule authors*: 
+
+* Elastic
+
+*Rule license*: Elastic License v2
+
+
+==== Setup
+
+
+
+*Setup*
+
+
+This rule requires data coming in from one of the following integrations:
+- Elastic Defend
+- Auditbeat
+
+
+*Elastic Defend Integration Setup*
+
+Elastic Defend is integrated into the Elastic Agent using Fleet. Upon configuration, the integration allows the Elastic Agent to monitor events on your host and send data to the Elastic Security app.
+
+
+*Prerequisite Requirements:*
+
+- Fleet is required for Elastic Defend.
+- To configure Fleet Server refer to the https://www.elastic.co/guide/en/fleet/current/fleet-server.html[documentation].
+
+
+*The following steps should be executed in order to add the Elastic Defend integration on a Linux System:*
+
+- Go to the Kibana home page and click "Add integrations".
+- In the query bar, search for "Elastic Defend" and select the integration to see more details about it.
+- Click "Add Elastic Defend".
+- Configure the integration name and optionally add a description.
+- Select the type of environment you want to protect, either "Traditional Endpoints" or "Cloud Workloads".
+- Select a configuration preset. Each preset comes with different default settings for Elastic Agent, you can further customize these later by configuring the Elastic Defend integration policy. https://www.elastic.co/guide/en/security/current/configure-endpoint-integration-policy.html[Helper guide].
+- We suggest selecting "Complete EDR (Endpoint Detection and Response)" as a configuration setting, that provides "All events; all preventions"
+- Enter a name for the agent policy in "New agent policy name". If other agent policies already exist, you can click the "Existing hosts" tab and select an existing policy instead.
+For more details on Elastic Agent configuration settings, refer to the https://www.elastic.co/guide/en/fleet/8.10/agent-policy.html[helper guide].
+- Click "Save and Continue".
+- To complete the integration, select "Add Elastic Agent to your hosts" and continue to the next section to install the Elastic Agent on your hosts.
+For more details on Elastic Defend refer to the https://www.elastic.co/guide/en/security/current/install-endpoint.html[helper guide].
+
+
+*Auditbeat Setup*
+
+Auditbeat is a lightweight shipper that you can install on your servers to audit the activities of users and processes on your systems. For example, you can use Auditbeat to collect and centralize audit events from the Linux Audit Framework. You can also use Auditbeat to detect changes to critical files, like binaries and configuration files, and identify potential security policy violations.
+
+
+*The following steps should be executed in order to add the Auditbeat on a Linux System:*
+
+- Elastic provides repositories available for APT and YUM-based distributions. Note that we provide binary packages, but no source packages.
+- To install the APT and YUM repositories follow the setup instructions in this https://www.elastic.co/guide/en/beats/auditbeat/current/setup-repositories.html[helper guide].
+- To run Auditbeat on Docker follow the setup instructions in the https://www.elastic.co/guide/en/beats/auditbeat/current/running-on-docker.html[helper guide].
+- To run Auditbeat on Kubernetes follow the setup instructions in the https://www.elastic.co/guide/en/beats/auditbeat/current/running-on-kubernetes.html[helper guide].
+- For complete “Setup and Run Auditbeat” information refer to the https://www.elastic.co/guide/en/beats/auditbeat/current/setting-up-and-running.html[helper guide].
+
+
+*Custom Ingest Pipeline*
+
+For versions <8.2, you need to add a custom ingest pipeline to populate `event.ingested` with @timestamp for non-elastic-agent indexes, like auditbeats/filebeat/winlogbeat etc. For more details to add a custom ingest pipeline refer to the https://www.elastic.co/guide/en/fleet/current/data-streams-pipeline-tutorial.html[guide].
+
+
+==== Rule query
+
+
+[source, js]
+----------------------------------
+sequence by host.id, process.entity_id with maxspan=1s
+  [process where host.os.type == "linux" and event.type == "start" and event.action == "exec" and (
+     (process.parent.executable == "/usr/bin/xfce4-session") or
+     (process.executable == "/bin/sh" and process.args == "-e" and process.args == "-u" and
+      process.args == "-c" and process.args : "export GIO_LAUNCHED_DESKTOP_FILE_PID=$$;*")
+   )
+  ]
+  [network where host.os.type == "linux" and event.type == "start" and event.action == "connection_attempted"]
+
+----------------------------------
+
+*Framework*: MITRE ATT&CK^TM^
+
+* Tactic:
+** Name: Persistence
+** ID: TA0003
+** Reference URL: https://attack.mitre.org/tactics/TA0003/
+* Technique:
+** Name: Boot or Logon Autostart Execution
+** ID: T1547
+** Reference URL: https://attack.mitre.org/techniques/T1547/
+* Sub-technique:
+** Name: XDG Autostart Entries
+** ID: T1547.013
+** Reference URL: https://attack.mitre.org/techniques/T1547/013/
