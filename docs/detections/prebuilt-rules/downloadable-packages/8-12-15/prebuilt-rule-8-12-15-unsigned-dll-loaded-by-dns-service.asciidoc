@@ -1,0 +1,69 @@
+[[prebuilt-rule-8-12-15-unsigned-dll-loaded-by-dns-service]]
+=== Unsigned DLL loaded by DNS Service
+
+Identifies unusual DLLs loaded by the DNS Server process, potentially indicating the abuse of the ServerLevelPluginDll functionality. This can lead to privilege escalation and remote code execution with SYSTEM privileges.
+
+*Rule type*: eql
+
+*Rule indices*: 
+
+* logs-endpoint.events.library-*
+* logs-windows.sysmon_operational-*
+
+*Severity*: medium
+
+*Risk score*: 47
+
+*Runs every*: 5m
+
+*Searches indices from*: now-9m ({ref}/common-options.html#date-math[Date Math format], see also <<rule-schedule, `Additional look-back time`>>)
+
+*Maximum alerts per execution*: 100
+
+*References*: 
+
+* https://cube0x0.github.io/Pocing-Beyond-DA/
+* https://adsecurity.org/?p=4064
+* https://github.com/gtworek/PSBits/tree/master/ServerLevelPluginDll
+
+*Tags*: 
+
+* Domain: Endpoint
+* OS: Windows
+* Use Case: Threat Detection
+* Tactic: Privilege Escalation
+* Data Source: Elastic Defend
+* Data Source: Sysmon
+
+*Version*: 1
+
+*Rule authors*: 
+
+* Elastic
+
+*Rule license*: Elastic License v2
+
+
+==== Rule query
+
+
+[source, js]
+----------------------------------
+any where host.os.type == "windows" and event.category : ("library", "process") and
+  event.type : ("start", "change") and event.action : ("load", "Image loaded*") and
+  process.executable : "?:\\windows\\system32\\dns.exe" and 
+  not ?dll.code_signature.trusted == true and
+  not file.code_signature.status == "Valid"
+
+----------------------------------
+
+*Framework*: MITRE ATT&CK^TM^
+
+* Tactic:
+** Name: Privilege Escalation
+** ID: TA0004
+** Reference URL: https://attack.mitre.org/tactics/TA0004/
+* Technique:
+** Name: Exploitation for Privilege Escalation
+** ID: T1068
+** Reference URL: https://attack.mitre.org/techniques/T1068/
