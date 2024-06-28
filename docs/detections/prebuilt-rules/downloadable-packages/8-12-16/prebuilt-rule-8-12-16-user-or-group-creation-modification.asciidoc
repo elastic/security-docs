@@ -1,0 +1,83 @@
+[[prebuilt-rule-8-12-16-user-or-group-creation-modification]]
+=== User or Group Creation/Modification
+
+This rule leverages the `auditd_manager` integration to detect user or group creation or modification events on Linux systems. Threat actors may attempt to create or modify users or groups to establish persistence on the system.
+
+*Rule type*: eql
+
+*Rule indices*: 
+
+* auditbeat-*
+* logs-auditd_manager.auditd-*
+
+*Severity*: low
+
+*Risk score*: 21
+
+*Runs every*: 5m
+
+*Searches indices from*: now-9m ({ref}/common-options.html#date-math[Date Math format], see also <<rule-schedule, `Additional look-back time`>>)
+
+*Maximum alerts per execution*: 100
+
+*References*: None
+
+*Tags*: 
+
+* Domain: Endpoint
+* OS: Linux
+* Use Case: Threat Detection
+* Tactic: Persistence
+* Data Source: Auditd Manager
+
+*Version*: 1
+
+*Rule authors*: 
+
+* Elastic
+
+*Rule license*: Elastic License v2
+
+
+==== Setup
+
+
+
+*Setup*
+
+This rule requires the use of the `auditd_manager` integration. `Auditd_manager` is a tool designed to simplify and enhance the management of the audit subsystem in Linux systems. It provides a user-friendly interface and automation capabilities for configuring and monitoring system auditing through the auditd daemon. With `auditd_manager`, administrators can easily define audit rules, track system events, and generate comprehensive audit reports, improving overall security and compliance in the system. The following steps should be executed in order to install and deploy `auditd_manager` on a Linux system.
+```
+Kibana -->
+Management -->
+Integrations -->
+Auditd Manager -->
+Add Auditd Manager
+```
+`Auditd_manager` subscribes to the kernel and receives events as they occur without any additional configuration. However, if more advanced configuration is required to detect specific behavior, audit rules can be added to the integration in either the "audit rules" configuration box or the "auditd rule files" box by specifying a file to read the audit rules from.
+For this detection rule to trigger, no additional configuration is required.
+
+
+==== Rule query
+
+
+[source, js]
+----------------------------------
+iam where host.os.type == "linux" and event.type in ("creation", "change") and auditd.result == "success" and 
+event.action in ("changed-password", "added-user-account", "added-group-account-to")
+
+----------------------------------
+
+*Framework*: MITRE ATT&CK^TM^
+
+* Tactic:
+** Name: Persistence
+** ID: TA0003
+** Reference URL: https://attack.mitre.org/tactics/TA0003/
+* Technique:
+** Name: Create Account
+** ID: T1136
+** Reference URL: https://attack.mitre.org/techniques/T1136/
+* Sub-technique:
+** Name: Local Account
+** ID: T1136.001
+** Reference URL: https://attack.mitre.org/techniques/T1136/001/
