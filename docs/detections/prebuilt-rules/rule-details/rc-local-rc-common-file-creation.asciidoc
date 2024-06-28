@@ -1,14 +1,13 @@
-[[suspicious-file-creation-in-etc-for-persistence]]
-=== Suspicious File Creation in /etc for Persistence
+[[rc-local-rc-common-file-creation]]
+=== rc.local/rc.common File Creation
 
-Detects the manual creation of files in specific etc directories, via user root, used by Linux malware to persist and elevate privileges on compromised systems. File creation in these directories should not be entirely common and could indicate a malicious binary or script installing persistence mechanisms for long term access.
+This rule monitors the creation/alteration of the rc.local/rc.common file. The /etc/rc.local file is used to start custom applications, services, scripts or commands during start-up. The rc.local file has mostly been replaced by Systemd. However, through the "systemd-rc-local-generator", rc.local files can be converted to services that run at boot. Adversaries may alter rc.local/rc.common to execute malicious code at start-up, and gain persistence onto the system.
 
 *Rule type*: eql
 
 *Rule indices*: 
 
 * logs-endpoint.events.*
-* endgame-*
 
 *Severity*: medium
 
@@ -22,8 +21,9 @@ Detects the manual creation of files in specific etc directories, via user root,
 
 *References*: 
 
-* https://www.intezer.com/blog/incident-response/orbit-new-undetected-linux-threat/
-* https://www.intezer.com/blog/research/lightning-framework-new-linux-threat/
+* https://www.intezer.com/blog/malware-analysis/hiddenwasp-malware-targeting-linux-systems/
+* https://pberba.github.io/security/2022/02/06/linux-threat-hunting-for-persistence-initialization-scripts-and-shell-configuration/#8-boot-or-logon-initialization-scripts-rc-scripts
+* https://www.cyberciti.biz/faq/how-to-enable-rc-local-shell-script-on-systemd-while-booting-linux-system/
 
 *Tags*: 
 
@@ -31,12 +31,10 @@ Detects the manual creation of files in specific etc directories, via user root,
 * OS: Linux
 * Use Case: Threat Detection
 * Tactic: Persistence
-* Threat: Orbit
-* Threat: Lightning Framework
-* Data Source: Elastic Endgame
+* Resources: Investigation Guide
 * Data Source: Elastic Defend
 
-*Version*: 115
+*Version*: 112
 
 *Rule authors*: 
 
@@ -53,14 +51,14 @@ Detects the manual creation of files in specific etc directories, via user root,
 
 
 
-*Investigating Suspicious File Creation in /etc for Persistence*
+*Investigating rc.local/rc.common File Creation*
 
 
-The /etc/ directory in Linux is used to store system-wide configuration files and scripts.
+The `rc.local` file executes custom commands or scripts during system startup on Linux systems. `rc.local` has been deprecated in favor of the use of `systemd services`, and more recent Unix distributions no longer leverage this method of on-boot script execution.
 
-By creating or modifying specific system-wide configuration files, attackers can leverage system services to execute malicious commands or scripts at predefined intervals, ensuring their continued presence and enabling unauthorized activities.
+There might still be users that use `rc.local` in a benign matter, so investigation to see whether the file is malicious is vital.
 
-This rule monitors for the creation of the most common system-wide configuration files and scripts abused by attackers for persistence. 
+Detection alerts from this rule indicate the creation of a new `/etc/rc.local` file.
 
 > **Note**:
 > This investigation guide uses the https://www.elastic.co/guide/en/security/master/invest-guide-run-osquery.html[Osquery Markdown Plugin] introduced in Elastic Stack version 8.5.0. Older Elastic Stack versions will display unrendered Markdown in this guide.
@@ -70,15 +68,19 @@ This rule monitors for the creation of the most common system-wide configuration
 *Possible Investigation Steps*
 
 
+- Identify the user account that performed the action and whether it should perform this kind of action.
 - Investigate the file that was created or modified.
-- Investigate whether any other files in any of the commonly abused directories have been altered through OSQuery.
-  - !{osquery{"label":"Osquery - Retrieve File Listing Information","query":"SELECT * FROM file WHERE ( path LIKE '/etc/ld.so.conf.d/%' OR path LIKE '/etc/cron.d/%' OR path LIKE '/etc/sudoers.d/%'\nOR path LIKE '/etc/rc%.d/%' OR path LIKE '/etc/init.d/%' OR path LIKE '/etc/systemd/system/%' OR path LIKE\n'/usr/lib/systemd/system/%' )\n"}}
-  - !{osquery{"label":"Osquery - Retrieve Additional File Listing Information","query":"SELECT f.path, u.username AS file_owner, g.groupname AS group_owner, datetime(f.atime, 'unixepoch') AS\nfile_last_access_time, datetime(f.mtime, 'unixepoch') AS file_last_modified_time, datetime(f.ctime, 'unixepoch') AS\nfile_last_status_change_time, datetime(f.btime, 'unixepoch') AS file_created_time, f.size AS size_bytes FROM file f LEFT\nJOIN users u ON f.uid = u.uid LEFT JOIN groups g ON f.gid = g.gid WHERE ( path LIKE '/etc/ld.so.conf.d/%' OR path LIKE\n'/etc/cron.d/%' OR path LIKE '/etc/sudoers.d/%' OR path LIKE '/etc/rc%.d/%' OR path LIKE '/etc/init.d/%' OR path LIKE\n'/etc/systemd/system/%' OR path LIKE '/usr/lib/systemd/system/%' )\n"}}
+  - !{osquery{"label":"Osquery - Retrieve File Information","query":"SELECT * FROM file WHERE path = {{file.path}}"}}
 - Investigate the script execution chain (parent process tree) for unknown processes. Examine their executable files for prevalence and whether they are located in expected locations.
   - !{osquery{"label":"Osquery - Retrieve Running Processes by User","query":"SELECT pid, username, name FROM processes p JOIN users u ON u.uid = p.uid ORDER BY username"}}
+- Investigate whether the `/lib/systemd/system/rc-local.service` and `/run/systemd/generator/multi-user.target.wants/rc-local.service` files were created through the `systemd-rc-local-generator` located at `/usr/lib/systemd/system-generators/systemd-rc-local-generator`.
+  - !{osquery{"label":"Osquery - Retrieve rc-local.service File Information","query":"SELECT * FROM file WHERE (path = '/run/systemd/generator/multi-user.target.wants/rc-local.service' OR path =\n'/run/systemd/generator/multi-user.target.wants/rc-local.service')\n"}}
+  - In case the file is not present here, `sudo systemctl status rc-local` can be executed to find the location of the rc-local unit file.
+  - If `rc-local.service` is found, manual investigation is required to check for the rc script execution. Systemd will generate syslogs in case of the execution of the rc-local service. `sudo cat /var/log/syslog | grep "rc-local.service|/etc/rc.local Compatibility"` can be executed to check for the execution of the service.
+    - If logs are found, it's likely that the contents of the `rc.local` file have been executed. Analyze the logs. In case several syslog log files are available, use a wildcard to search through all of the available logs.
 - Investigate other alerts associated with the user/host during the past 48 hours.
-- Validate the activity is not related to planned patches, updates, network administrator activity, or legitimate software installations.
-- Investigate whether the altered scripts call other malicious scripts elsewhere on the file system. 
+- Validate whether this activity is related to planned patches, updates, network administrator activity, or legitimate software installations.
+- Investigate whether the altered scripts call other malicious scripts elsewhere on the file system.
   - If scripts or executables were dropped, retrieve the files and determine if they are malicious:
     - Use a private sandboxed malware analysis system to perform analysis.
       - Observe and collect information about the following activities:
@@ -88,36 +90,17 @@ This rule monitors for the creation of the most common system-wide configuration
         - File access, modification, and creation activities.
         - Cron jobs, services and other persistence mechanisms.
             - !{osquery{"label":"Osquery - Retrieve Crontab Information","query":"SELECT * FROM crontab"}}
-- Investigate abnormal behaviors by the subject process/user such as network connections, file modifications, and any other spawned child processes.
-  - Investigate listening ports and open sockets to look for potential command and control traffic or data exfiltration.
-    - !{osquery{"label":"Osquery - Retrieve Listening Ports","query":"SELECT pid, address, port, socket, protocol, path FROM listening_ports"}}
-    - !{osquery{"label":"Osquery - Retrieve Open Sockets","query":"SELECT pid, family, remote_address, remote_port, socket, state FROM process_open_sockets"}}
-  - Identify the user account that performed the action, analyze it, and check whether it should perform this kind of action.
-    - !{osquery{"label":"Osquery - Retrieve Information for a Specific User","query":"SELECT * FROM users WHERE username = {{user.name}}"}}
-- Investigate whether the user is currently logged in and active.
-    - !{osquery{"label":"Osquery - Investigate the Account Authentication Status","query":"SELECT * FROM logged_in_users WHERE user = {{user.name}}"}}
 
 
 *False Positive Analysis*
 
 
 - If this activity is related to new benign software installation activity, consider adding exceptions — preferably with a combination of user and command line conditions.
-- If this activity is related to a system administrator that performed these actions for administrative purposes, consider adding exceptions for this specific administrator user account. 
+- If this activity is related to a system administrator who uses `rc.local` for administrative purposes, consider adding exceptions for this specific administrator user account.
 - Try to understand the context of the execution by thinking about the user, machine, or business purpose. A small number of endpoints, such as servers with unique software, might appear unusual but satisfy a specific business need.
 
 
-*Related Rules*
-
-
-- Cron Job Created or Changed by Previously Unknown Process - ff10d4d8-fea7-422d-afb1-e5a2702369a9
-- Potential Persistence Through Run Control Detected - 0f4d35e4-925e-4959-ab24-911be207ee6f
-- Potential Persistence Through init.d Detected - 474fd20e-14cc-49c5-8160-d9ab4ba16c8b
-- New Systemd Timer Created - 7fb500fa-8e24-4bd1-9480-2a819352602c
-- New Systemd Service Created by Previously Unknown Process - 17b0a495-4d9f-414c-8ad0-92f018b8e001
-
-
 *Response and remediation*
-
 
 - Initiate the incident response process based on the outcome of the triage.
 - Isolate the involved host to prevent further post-compromise behavior.
@@ -127,7 +110,7 @@ This rule monitors for the creation of the most common system-wide configuration
   - Immediately block the identified indicators of compromise (IoCs).
   - Inspect the affected systems for additional malware backdoors like reverse shells, reverse proxies, or droppers that attackers could use to reinfect the system.
 - Investigate credential exposure on systems compromised or used by the attacker to ensure all compromised accounts are identified. Reset passwords for these accounts and other potentially compromised credentials, such as email, business systems, and web services.
-- Delete the service/timer or restore its original configuration.
+- Delete the `service/rc.local` files or restore their original configuration.
 - Run a full antimalware scan. This may reveal additional artifacts left in the system, persistence mechanisms, and malware components.
 - Determine the initial vector abused by the attacker and take action to prevent reinfection through the same vector.
 - Leverage the incident response data and logging to improve the mean time to detect (MTTD) and the mean time to respond (MTTR).
@@ -175,16 +158,26 @@ For more details on Elastic Defend refer to the https://www.elastic.co/guide/en/
 
 [source, js]
 ----------------------------------
-file where host.os.type == "linux" and event.type in ("creation", "file_create_event") and user.id == "0" and
-file.path : ("/etc/ld.so.conf.d/*", "/etc/cron.d/*", "/etc/sudoers.d/*", "/etc/init.d/*", "/etc/systemd/system/*",
-"/usr/lib/systemd/system/*") and not (
-  (process.name : (
-    "chef-client", "ruby", "pacman", "packagekitd", "python*", "platform-python", "dpkg", "yum", "apt", "dnf", "rpm",
-    "systemd", "snapd", "dnf-automatic", "yum-cron", "elastic-agent", "dnfdaemon-system", "dockerd", "executor",
-    "rhn_check"
-    )
-  ) or 
-  (file.extension in ("swp", "swpx", "tmp"))
+file where host.os.type == "linux" and event.action in ("rename", "creation") and
+file.path in ("/etc/rc.local", "/etc/rc.common") and not (
+  process.executable in (
+    "/bin/dpkg", "/usr/bin/dpkg", "/bin/dockerd", "/usr/bin/dockerd", "/usr/sbin/dockerd", "/bin/microdnf",
+    "/usr/bin/microdnf", "/bin/rpm", "/usr/bin/rpm", "/bin/snapd", "/usr/bin/snapd", "/bin/yum", "/usr/bin/yum",
+    "/bin/dnf", "/usr/bin/dnf", "/bin/podman", "/usr/bin/podman", "/bin/dnf-automatic", "/usr/bin/dnf-automatic",
+    "/bin/pacman", "/usr/bin/pacman", "/usr/bin/dpkg-divert", "/bin/dpkg-divert", "/sbin/apk", "/usr/sbin/apk",
+    "/usr/local/sbin/apk", "/usr/bin/apt", "/usr/sbin/pacman", "/bin/podman", "/usr/bin/podman", "/usr/bin/puppet",
+    "/bin/puppet", "/opt/puppetlabs/puppet/bin/puppet", "/usr/bin/chef-client", "/bin/chef-client",
+    "/bin/autossl_check", "/usr/bin/autossl_check", "/proc/self/exe", "/dev/fd/*",  "/usr/bin/pamac-daemon",
+    "/bin/pamac-daemon", "/usr/lib/snapd/snapd", "/usr/local/bin/dockerd"
+  ) or
+  file.extension in ("swp", "swpx", "swx", "dpkg-remove") or
+  file.Ext.original.extension == "dpkg-new" or
+  process.executable : (
+    "/nix/store/*", "/var/lib/dpkg/*", "/snap/*", "/dev/fd/*", "/usr/lib/virtualbox/*"
+  ) or
+  process.executable == null or
+  (process.name == "sed" and file.name : "sed*") or
+  (process.name == "perl" and file.name : "e2scrub_all.tmp*") 
 )
 
 ----------------------------------
@@ -203,43 +196,3 @@ file.path : ("/etc/ld.so.conf.d/*", "/etc/cron.d/*", "/etc/sudoers.d/*", "/etc/i
 ** Name: RC Scripts
 ** ID: T1037.004
 ** Reference URL: https://attack.mitre.org/techniques/T1037/004/
-* Technique:
-** Name: Create or Modify System Process
-** ID: T1543
-** Reference URL: https://attack.mitre.org/techniques/T1543/
-* Sub-technique:
-** Name: Systemd Service
-** ID: T1543.002
-** Reference URL: https://attack.mitre.org/techniques/T1543/002/
-* Technique:
-** Name: Hijack Execution Flow
-** ID: T1574
-** Reference URL: https://attack.mitre.org/techniques/T1574/
-* Sub-technique:
-** Name: Dynamic Linker Hijacking
-** ID: T1574.006
-** Reference URL: https://attack.mitre.org/techniques/T1574/006/
-* Tactic:
-** Name: Execution
-** ID: TA0002
-** Reference URL: https://attack.mitre.org/tactics/TA0002/
-* Technique:
-** Name: Scheduled Task/Job
-** ID: T1053
-** Reference URL: https://attack.mitre.org/techniques/T1053/
-* Sub-technique:
-** Name: Cron
-** ID: T1053.003
-** Reference URL: https://attack.mitre.org/techniques/T1053/003/
-* Tactic:
-** Name: Privilege Escalation
-** ID: TA0004
-** Reference URL: https://attack.mitre.org/tactics/TA0004/
-* Technique:
-** Name: Abuse Elevation Control Mechanism
-** ID: T1548
-** Reference URL: https://attack.mitre.org/techniques/T1548/
-* Sub-technique:
-** Name: Sudo and Sudo Caching
-** ID: T1548.003
-** Reference URL: https://attack.mitre.org/techniques/T1548/003/
