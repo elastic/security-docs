@@ -1,17 +1,16 @@
-[[program-files-directory-masquerading]]
-=== Program Files Directory Masquerading
+[[prebuilt-rule-8-11-20-executable-file-creation-with-multiple-extensions]]
+=== Executable File Creation with Multiple Extensions
 
-Identifies execution from a directory masquerading as the Windows Program Files directories. These paths are trusted and usually host trusted third party programs. An adversary may leverage masquerading, along with low privileges to bypass detections allowlisting those folders.
+Masquerading can allow an adversary to evade defenses and better blend in with the environment. One way it occurs is when the name or location of a file is manipulated as a means of tricking a user into executing what they think is a benign file type but is actually executable code.
 
 *Rule type*: eql
 
 *Rule indices*: 
 
 * winlogbeat-*
-* logs-endpoint.events.process-*
-* logs-windows.*
+* logs-endpoint.events.file-*
+* logs-windows.sysmon_operational-*
 * endgame-*
-* logs-system.security*
 * logs-m365_defender.event-*
 
 *Severity*: medium
@@ -34,9 +33,10 @@ Identifies execution from a directory masquerading as the Windows Program Files 
 * Tactic: Defense Evasion
 * Data Source: Elastic Endgame
 * Data Source: Elastic Defend
+* Data Source: Sysmon
 * Data Source: Microsoft Defender for Endpoint
 
-*Version*: 110
+*Version*: 109
 
 *Rule authors*: 
 
@@ -64,17 +64,10 @@ For more details on adding a custom ingest pipeline refer - https://www.elastic.
 
 [source, js]
 ----------------------------------
-process where host.os.type == "windows" and event.type == "start" and
-  process.executable : "C:\\*Program*Files*\\*.exe" and
-  not process.executable : (
-        "?:\\Program Files\\*.exe",
-        "?:\\Program Files (x86)\\*.exe",
-        "?:\\Users\\*.exe",
-        "?:\\ProgramData\\*.exe",
-        "?:\\Windows\\Downloaded Program Files\\*.exe",
-        "?:\\Windows\\Temp\\.opera\\????????????\\CProgram?FilesOpera*\\*.exe",
-        "?:\\Windows\\Temp\\.opera\\????????????\\CProgram?Files?(x86)Opera*\\*.exe"
-  )
+file where host.os.type == "windows" and event.type == "creation" and file.extension : "exe" and
+  file.name regex~ """.*\.(vbs|vbe|bat|js|cmd|wsh|ps1|pdf|docx?|xlsx?|pptx?|txt|rtf|gif|jpg|png|bmp|hta|txt|img|iso)\.exe""" and
+  not (process.executable : ("?:\\Windows\\System32\\msiexec.exe", "C:\\Users\\*\\QGIS_SCCM\\Files\\QGIS-OSGeo4W-*-Setup-x86_64.exe") and
+       file.path : "?:\\Program Files\\QGIS *\\apps\\grass\\*.exe")
 
 ----------------------------------
 
@@ -89,6 +82,18 @@ process where host.os.type == "windows" and event.type == "start" and
 ** ID: T1036
 ** Reference URL: https://attack.mitre.org/techniques/T1036/
 * Sub-technique:
-** Name: Match Legitimate Name or Location
-** ID: T1036.005
-** Reference URL: https://attack.mitre.org/techniques/T1036/005/
+** Name: Double File Extension
+** ID: T1036.007
+** Reference URL: https://attack.mitre.org/techniques/T1036/007/
+* Tactic:
+** Name: Execution
+** ID: TA0002
+** Reference URL: https://attack.mitre.org/tactics/TA0002/
+* Technique:
+** Name: User Execution
+** ID: T1204
+** Reference URL: https://attack.mitre.org/techniques/T1204/
+* Sub-technique:
+** Name: Malicious File
+** ID: T1204.002
+** Reference URL: https://attack.mitre.org/techniques/T1204/002/
