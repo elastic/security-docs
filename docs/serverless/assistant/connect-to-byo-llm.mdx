@@ -1,0 +1,153 @@
+---
+slug: /serverless/security/connect-to-byo-llm
+title: Connect to your own local LLM
+description: Set up a connector to LM Studio so you can use a local model with AI Assistant.
+tags: ["security", "overview", "get-started"]
+status: in review
+---
+
+This page provides instructions for setting up a connector to a large language model (LLM) of your choice using LM Studio. This allows you to use your chosen model within ((elastic-sec)). You'll first need to set up LM Studio on a server, set up a reverse proxy to communicate with ((elastic-sec)), and finally configure the connector in your ((elastic-sec)) project. [Learn more about the benefits of using a local LLM](https://www.elastic.co/blog/ai-assistant-locally-hosted-models).
+
+This example uses a server hosted in GCP to run:
+- LM Studio with the [Mixtral-8x7b](https://mistral.ai/technology/#models) model
+- a reverse proxy using Nginx to authenticate to Elastic Cloud
+
+<DocImage url="images/lms-studio-arch-diagram.png" alt="Architecture diagram for this guide"/>
+
+
+<DocCallOut title="Note">
+For testing, you can use alternatives to Nginx such as Azure Dev Tunnels or Ngrock, but using Nginx makes it easy to collect additional telemetry and monitor its status by using Elastic's native Nginx integration. While this example uses cloud infrastructure, it could also be replicated locally without an internet connection.
+</DocCallOut>
+
+## Configure your reverse proxy
+
+<DocCallOut title="Note">
+If your Elastic instance is on the same host as LM Studio, you can skip this step.
+</DocCallOut>
+
+You need to set up a reverse proxy to enable communication between LM Studio and ((elastic-sec)). For more complete instructions, refer to a guide such as [this one](https://www.digitalocean.com/community/tutorials/how-to-configure-nginx-as-a-reverse-proxy-on-ubuntu-22-04).
+
+The following is an example Nginx configuration file:
+```
+server {
+    listen                          80;
+    listen                          [::]:80;
+    server_name                     yourdomainname.com;
+    server_tokens off;
+    add_header x-xss-protection "1; mode=block" always;
+    add_header x-frame-options "SAMEORIGIN" always;
+    add_header X-Content-Type-Options "nosniff" always;
+    return 301                      https://$server_name$request_uri;
+}
+
+server {
+
+    listen                          443 ssl http2;
+    listen                          [::]:443 ssl http2;
+    server_name                     yourdomainname.com;
+    server_tokens off;
+    ssl_certificate                 /etc/letsencrypt/live/yourdomainname.com/fullchain.pem;
+    ssl_certificate_key             /etc/letsencrypt/live/yourdomainname.com/privkey.pem;
+    ssl_session_timeout 1d;
+    ssl_session_cache shared:SSL:50m;
+    ssl_session_tickets on;
+    ssl_ciphers 'ECDHE-ECDSA-AES256-GCM-SHA384:ECDHE-RSA-AES256-GCM-SHA384:ECDHE-ECDSA-CHACHA20-POLY1305:ECDHE-RSA-CHACHA20-POLY1305:ECDHE-ECDSA-AES128-GCM-SHA256:ECDHE-RSA-AES128-GCM-SHA256';
+    ssl_protocols TLSv1.3 TLSv1.2;
+    ssl_prefer_server_ciphers on;
+    add_header Strict-Transport-Security "max-age=31536000; includeSubDomains; preload" always;
+    add_header x-xss-protection "1; mode=block" always;
+    add_header x-frame-options "SAMEORIGIN" always;
+    add_header X-Content-Type-Options "nosniff" always;
+    add_header Referrer-Policy "strict-origin-when-cross-origin" always;
+    ssl_stapling on;
+    ssl_stapling_verify on;
+    ssl_trusted_certificate /etc/letsencrypt/live/yourdomainname.com/fullchain.pem;
+    resolver 1.1.1.1;
+    location / {
+          
+    if ($http_authorization != "Bearer <secret token>") {
+    return 401;
+}                            
+
+    proxy_pass http://localhost:1234/;
+   }
+
+}
+```
+
+<DocCallOut title="Important">
+Store the bearer `secret token`, you'll need it to set up the ((elastic-sec)) connector.
+</DocCallOut>
+
+### (Optional) set up performance monitoring for your reverse proxy
+You can use Elastic's [Nginx integration](https://www.elastic.co/docs/current/integrations/nginx) to monitor performance and populate monitoring dashboards in ((kib)).
+
+## Configure LM Studio and download a model
+
+LM Studio supports the OpenAI SDK, which means that any local model listed in its marketplace can be connected to ((elastic-sec)).
+
+<DocCallOut title="Important">
+One current limitation is that for best results you must launch the LM Studio application using its GUI before doing so using the CLI. For example, you could use the GUI to launch the application using Chrome RDP with an [X Window System](https://cloud.google.com/architecture/chrome-desktop-remote-on-compute-engine). Using `sudo lms server start` in the CLI yielded inconsistent results. 
+</DocCallOut>
+
+Once you've launched LM Studio, select a model:
+
+1. Go to the Search section.
+2. Search for an LLM (for example, `Mixtral-8x7B-instruct`).
+3. Your chosen model must include `instruct` in its name. Models with this label are capable of carrying out tasks in ((elastic-sec)).
+4. Filtering your search for "Compatibility Guess" will optimize results for your hardware. Results will be color coded (green for "Full GPU Possible" yields the best results, while blue may work but isn't optimal for your machine, and red is not likely to work).
+5. For security reasons, before downloading your chosen model, verify that it is from a trusted source and review community feedback on the model (for example on a site like Hugging Face). 
+6. Download one or more models.
+
+In this example we used [`TheBloke/Mixtral-8x7B-Instruct-v0.1.Q3_K_M.gguf`](https://huggingface.co/TheBloke/Mixtral-8x7B-Instruct-v0.1-GGUF). It has 46.7B total parameters, a 32,000 token context window, and uses GGUF quanitization. For more information about model names and format information, refer to the following table:
+
+| Model Name | Parameter Size | Tokens/Context Window | Quantization Format |
+|------------|----------------|-----------------------|---------------------|
+| Name of model, sometimes with a version number. | LLMs are often compared by their number of parameters — higher numbers mean more powerful models. | Tokens are small chunks of input information. Characters do not necessarily correspond to tokens 1:1. You can use [Tokenizer](https://platform.openai.com/tokenizer) to see how many tokens a given prompt might contain. | Quantization reduces overall parameters and helps the model to run faster, but reduces accuracy. |
+| Examples: Llama, Mistral, Phi-3, Falcon. | The number of parameters is a measure of the size and the complexity of the model. The more parameters a model has, the more data it can process, learn from, generate, and predict. | The context window defines how much information the model can process at once. If the number of input tokens exceeds this limit, input gets truncated. | Specific formats for quantization vary, most models now support GPU rather than CPU offloading. |
+
+
+## Load a model in LM Studio 
+
+After downloading a model, you'll need to load it in LM Studio using the GUI or LM Studio's [CLI tool](https://lmstudio.ai/blog/lms). You can do this either using the CLI, or the GUI.
+
+It is a best practice to use the GUI to download at least one model from the marketplace first, and then load/unload the model(s) using the CLI. The GUI allows you to search for models, whereas the CLI only allows you to import specific paths, but the CLI provides a good interface for loading/unloading.
+
+Use the following commands in your CLI:
+
+1. Verify LM Studio: `lms`
+2. Check LM Studio's status: `lms status`
+3. List all downloaded models: `lms ls`
+4. Load a model: `lms load`
+
+After the model loads, you should see a `Model loaded successfully` message in the CLI:
+
+<DocImage url="images/lms-studio-model-loaded-msg.png" alt="The CLI message that appears after a model loads"/>
+
+To verify which model is loaded, use the `lms ps` command.
+
+If your model uses NVIDIA drivers, you can check the GPU performance with the `sudo nvidia-smi` command.
+
+## (Optional) Collect logs using Elastic's Custom Logs integration
+
+You can monitor the performance of the host running LM Studio using Elastic's [Custom Logs integration](https://www.elastic.co/docs/current/integrations/log). This can also help with troubleshooting. Note that the default path for LM Studio logs is `/tmp/lmstudio-server-log.txt`, as in the following screenshot:
+
+<DocImage url="images/lms-custom-logs-config.png" alt="The configuration window for the custom logs integration"/>
+
+## Configure the connector in ((elastic-sec))
+
+Finally, configure the connector in ((kib)):
+
+1. Log in to ((kib)).
+2. Navigate to **Stack Management → Connectors → Create Connector → OpenAI**. The OpenAI connector enables this use-case because LM Studio uses the OpenAI SDK.
+3. Name your connector to help keep track of the model version you are using.
+4. Under **URL**, enter the domain name specified in your Nginx configuration file.
+5. Under **Default model**, enter `local-model`.
+6. Under **API Key**, enter the secret token specified in your Nginx configuration file.
+7. Click **Save**.
+
+Setup is now complete. You can use the model you've loaded in LM Studio to power ((elastic-sec)) features like AI Assistant. You can test a variety of models as you interact with AI Assistant to see what works best. 
+
+<DocCallOut title="Note">
+While local models work well for <DocLink slug="/serverless/security/ai-assistant" text="AI Assistant"/> if you would like to interact with <DocLink slug="/serverless/security/attack-discovery" text="Attack Discovery"/> we recommend you use one of <DocLink slug="/serverless/security/llm-performance-matrix" text="these models"/>. As local models become more performant over time, this is likely to change. 
+</DocCallOut>
