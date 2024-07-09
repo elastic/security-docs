@@ -1,7 +1,7 @@
-[[potential-ransomware-note-file-dropped-via-smb]]
-=== Potential Ransomware Note File Dropped via SMB
+[[prebuilt-rule-8-11-21-suspicious-file-renamed-via-smb]]
+=== Suspicious File Renamed via SMB
 
-Identifies an incoming SMB connection followed by the creation of a file with a name similar to ransomware note files. This may indicate a remote ransomware attack via the SMB protocol.
+Identifies an incoming SMB connection followed by a suspicious file rename operation. This may indicate a remote ransomware attack via the SMB protocol.
 
 *Rule type*: eql
 
@@ -19,7 +19,9 @@ Identifies an incoming SMB connection followed by the creation of a file with a 
 
 *Maximum alerts per execution*: 100
 
-*References*: None
+*References*: 
+
+* https://news.sophos.com/en-us/2023/12/21/akira-again-the-ransomware-that-keeps-on-taking/
 
 *Tags*: 
 
@@ -65,8 +67,7 @@ Identifies an incoming SMB connection followed by the creation of a file with a 
 *False positive analysis*
 
 
-- Remote file creation with similar file naming convention via SMB.
-
+- Remote file rename over SMB.
 
 
 *Related rules*
@@ -76,7 +77,7 @@ Identifies an incoming SMB connection followed by the creation of a file with a 
 - Volume Shadow Copy Deleted or Resized via VssAdmin - b5ea4bfe-a1b2-421f-9d47-22a75a6f2921
 - Volume Shadow Copy Deletion via PowerShell - d99a037b-c8e2-47a5-97b9-170d076827c4
 - Volume Shadow Copy Deletion via WMIC - dc9c1f74-dac3-48e3-b47f-eb79db358f57
-- Suspicious File Renamed via SMB - 78e9b5d5-7c07-40a7-a591-3dbbf464c386
+- Potential Ransomware Note File Dropped via SMB - 02bab13d-fb14-4d7c-b6fe-4a28874d37c5
 
 
 *Response and remediation*
@@ -102,11 +103,11 @@ sequence by host.id with maxspan=1s
   event.action == "connection_accepted" and destination.port == 445 and source.port >= 49152 and process.pid == 4 and
   source.ip != "127.0.0.1" and source.ip != "::1" and
   network.type == "ipv4" and not endswith(source.address, destination.address)]
- [file where host.os.type == "windows" and event.action == "creation" and
-  process.pid == 4 and user.id : ("S-1-5-21*", "S-1-12-*") and file.extension : ("hta", "txt", "readme", "htm*") and
-  file.path : "C:\\Users\\*" and
-   /* ransom file name keywords */
-    file.name : ("*read*me*", "*lock*", "*@*", "*RECOVER*", "*decrypt*", "*restore*file*", "*FILES_BACK*", "*how*to*")] with runs=3
+ [file where host.os.type == "windows" and
+  event.action == "rename" and process.pid == 4 and user.id : ("S-1-5-21*", "S-1-12-*") and
+  file.extension != null and file.Ext.entropy >= 6 and file.path : "C:\\Users\\*" and
+  file.Ext.original.name : ("*.jpg", "*.bmp", "*.png", "*.pdf", "*.doc", "*.docx", "*.xls", "*.xlsx", "*.ppt", "*.pptx", "*.lnk") and
+  not file.extension : ("jpg", "bmp", "png", "pdf", "doc", "docx", "xls", "xlsx", "ppt", "pptx", "*.lnk")] with runs=3
 
 ----------------------------------
 
