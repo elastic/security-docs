@@ -1,0 +1,105 @@
+[[prebuilt-rule-8-14-6-attempts-to-brute-force-a-microsoft-365-user-account]]
+=== Attempts to Brute Force a Microsoft 365 User Account
+
+Identifies attempts to brute force a Microsoft 365 user account. An adversary may attempt a brute force attack to obtain unauthorized access to user accounts.
+
+*Rule type*: esql
+
+*Rule indices*: None
+
+*Severity*: medium
+
+*Risk score*: 47
+
+*Runs every*: 5m
+
+*Searches indices from*: now-9m ({ref}/common-options.html#date-math[Date Math format], see also <<rule-schedule, `Additional look-back time`>>)
+
+*Maximum alerts per execution*: 100
+
+*References*: 
+
+* https://blueteamblog.com/7-ways-to-monitor-your-office-365-logs-using-siem
+* https://learn.microsoft.com/en-us/purview/audit-log-detailed-properties
+
+*Tags*: 
+
+* Domain: Cloud
+* Domain: SaaS
+* Data Source: Microsoft 365
+* Use Case: Identity and Access Audit
+* Tactic: Credential Access
+
+*Version*: 209
+
+*Rule authors*: 
+
+* Elastic
+* Willem D'Haese
+* Austin Songer
+
+*Rule license*: Elastic License v2
+
+
+==== Investigation guide
+
+
+
+
+==== Setup
+
+
+The Office 365 Logs Fleet integration, Filebeat module, or similarly structured data is required to be compatible with this rule.
+
+==== Rule query
+
+
+[source, js]
+----------------------------------
+from logs-o365.audit-*
+| MV_EXPAND event.category
+| WHERE event.dataset == "o365.audit"
+  AND event.category == "authentication"
+
+  // filter only on Entra ID or Exchange audit logs in O365 integration
+  AND event.provider in ("AzureActiveDirectory", "Exchange")
+
+  // filter only for UserLoginFailed or partial failures
+  AND event.action in ("UserLoginFailed", "PasswordLogonInitialAuthUsingPassword")
+
+  // ignore specific logon errors
+  AND not o365.audit.LogonError in (
+    "EntitlementGrantsNotFound",
+    "UserStrongAuthEnrollmentRequired",
+    "UserStrongAuthClientAuthNRequired",
+    "InvalidReplyTo",
+    "SsoArtifactExpiredDueToConditionalAccess",
+    "PasswordResetRegistrationRequiredInterrupt",
+    "SsoUserAccountNotFoundInResourceTenant",
+    "UserStrongAuthExpired",
+    "CmsiInterrupt"
+)
+  // filters out non user or application logins based on target
+  AND o365.audit.Target.Type in ("0", "2", "3", "5", "6", "10")
+
+  // filters only for logins from user or application, ignoring oauth:token
+  AND to_lower(o365.audit.ExtendedProperties.RequestType) rlike "(.*)login(.*)"
+
+| STATS
+  // count the number of failed login attempts target per user
+  login_attempt_counts = COUNT(*) by o365.audit.Target.ID, o365.audit.LogonError
+
+| WHERE login_attempt_counts > 10
+
+----------------------------------
+
+*Framework*: MITRE ATT&CK^TM^
+
+* Tactic:
+** Name: Credential Access
+** ID: TA0006
+** Reference URL: https://attack.mitre.org/tactics/TA0006/
+* Technique:
+** Name: Brute Force
+** ID: T1110
+** Reference URL: https://attack.mitre.org/techniques/T1110/
