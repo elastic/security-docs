@@ -17,6 +17,7 @@ If you're an Elastic employee, you can open an issue using the appropriate [temp
 1. Save your changes and open a pull request. 
 1. Add the [@elastic/security-docs](https://github.com/orgs/elastic/teams/security-docs) team and any other appropriate members as reviewers. 
 1. Add the appropriate release version label, backport version label if appropriate, and team label to the PR. 
+1. If your PR changes any [serverless docs content](https://github.com/elastic/security-docs/tree/main/docs/serverless), add the label `ci:doc-build` to generate a preview of the serverless docs on the PR.
 1. Once the docs team approves all changes, you can merge it. If a backport version label was added to a PR for stack versions 7.14.0 and newer, mergify will automatically open a backport PR. 
 1. Merge the backport PR once it passes all CI checks. 
 
@@ -32,3 +33,16 @@ https://security-docs_bk_<YOUR_PR_NUMBER_HERE>.docs-preview.app.elstc.co/guide/e
 
 > [!NOTE]
 > Serverless docs previews don't allow targeted links, because the id in the URL changes with each rebuild.
+
+## License
+
+Shield: [![CC BY-NC-ND 4.0][cc-by-nc-nd-shield]][cc-by-nc-nd]
+
+This work is licensed under a
+[Creative Commons Attribution-NonCommercial-NoDerivs 4.0 International License][cc-by-nc-nd].
+
+[![CC BY-NC-ND 4.0][cc-by-nc-nd-image]][cc-by-nc-nd]
+
+[cc-by-nc-nd]: http://creativecommons.org/licenses/by-nc-nd/4.0/
+[cc-by-nc-nd-image]: https://licensebuttons.net/l/by-nc-nd/4.0/88x31.png
+[cc-by-nc-nd-shield]: https://img.shields.io/badge/License-CC%20BY--NC--ND%204.0-lightgrey.svg
