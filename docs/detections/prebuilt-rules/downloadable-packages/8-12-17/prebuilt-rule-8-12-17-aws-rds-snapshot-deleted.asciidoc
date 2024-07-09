@@ -1,0 +1,70 @@
+[[prebuilt-rule-8-12-17-aws-rds-snapshot-deleted]]
+=== AWS RDS Snapshot Deleted
+
+Identifies the deletion of an AWS RDS DB snapshot. Snapshots contain a full backup of an entire DB instance. Unauthorized deletion of snapshots can make it impossible to recover critical or sensitive data. This rule detects deleted snapshots and instances modified so that backupRetentionPeriod is set to 0 which disables automated backups and is functionally similar to deleting the system snapshot.
+
+*Rule type*: eql
+
+*Rule indices*: 
+
+* filebeat-*
+* logs-aws.cloudtrail-*
+
+*Severity*: medium
+
+*Risk score*: 47
+
+*Runs every*: 5m
+
+*Searches indices from*: now-10m ({ref}/common-options.html#date-math[Date Math format], see also <<rule-schedule, `Additional look-back time`>>)
+
+*Maximum alerts per execution*: 100
+
+*References*: 
+
+* https://docs.aws.amazon.com/AmazonRDS/latest/UserGuide/USER_DeleteSnapshot.html
+* https://docs.aws.amazon.com/AmazonRDS/latest/APIReference/API_DeleteDBSnapshot.html
+
+*Tags*: 
+
+* Domain: Cloud
+* Data Source: AWS
+* Data Source: Amazon Web Services
+* Data Source: AWS RDS
+* Use Case: Asset Visibility
+* Tactic: Impact
+
+*Version*: 1
+
+*Rule authors*: 
+
+* Elastic
+
+*Rule license*: Elastic License v2
+
+
+==== Rule query
+
+
+[source, js]
+----------------------------------
+any where event.dataset == "aws.cloudtrail"
+    and event.provider == "rds.amazonaws.com"
+    and event.outcome == "success"
+    and (
+        event.action in ("DeleteDBSnapshot", "DeleteDBClusterSnapshot") or 
+        (event.action == "ModifyDBInstance" and stringContains(aws.cloudtrail.request_parameters, "backupRetentionPeriod=0"))
+    )
+
+----------------------------------
+
+*Framework*: MITRE ATT&CK^TM^
+
+* Tactic:
+** Name: Impact
+** ID: TA0040
+** Reference URL: https://attack.mitre.org/tactics/TA0040/
+* Technique:
+** Name: Data Destruction
+** ID: T1485
+** Reference URL: https://attack.mitre.org/techniques/T1485/
