@@ -3,35 +3,34 @@
 
 Identifies attempts to brute force a Microsoft 365 user account. An adversary may attempt a brute force attack to obtain unauthorized access to user accounts.
 
-*Rule type*: threshold
+*Rule type*: esql
 
-*Rule indices*: 
+*Rule indices*: None
 
-* filebeat-*
-* logs-o365*
+*Severity*: medium
 
-*Severity*: high
-
-*Risk score*: 73
+*Risk score*: 47
 
 *Runs every*: 5m
 
-*Searches indices from*: now-30m ({ref}/common-options.html#date-math[Date Math format], see also <<rule-schedule, `Additional look-back time`>>)
+*Searches indices from*: now-9m ({ref}/common-options.html#date-math[Date Math format], see also <<rule-schedule, `Additional look-back time`>>)
 
 *Maximum alerts per execution*: 100
 
 *References*: 
 
 * https://blueteamblog.com/7-ways-to-monitor-your-office-365-logs-using-siem
+* https://learn.microsoft.com/en-us/purview/audit-log-detailed-properties
 
 *Tags*: 
 
 * Domain: Cloud
+* Domain: SaaS
 * Data Source: Microsoft 365
 * Use Case: Identity and Access Audit
 * Tactic: Credential Access
 
-*Version*: 208
+*Version*: 209
 
 *Rule authors*: 
 
@@ -57,12 +56,40 @@ The Office 365 Logs Fleet integration, Filebeat module, or similarly structured 
 
 [source, js]
 ----------------------------------
-event.dataset:o365.audit and event.provider:(AzureActiveDirectory or Exchange) and
-  event.category:authentication and event.action:(UserLoginFailed or PasswordLogonInitialAuthUsingPassword) and
-  not o365.audit.LogonError:(UserAccountNotFound or EntitlementGrantsNotFound or UserStrongAuthEnrollmentRequired or
-                             UserStrongAuthClientAuthNRequired or InvalidReplyTo or SsoArtifactExpiredDueToConditionalAccess or
-                             PasswordResetRegistrationRequiredInterrupt or SsoUserAccountNotFoundInResourceTenant or
-                             UserStrongAuthExpired)
+from logs-o365.audit-*
+| MV_EXPAND event.category
+| WHERE event.dataset == "o365.audit"
+  AND event.category == "authentication"
+
+  // filter only on Entra ID or Exchange audit logs in O365 integration
+  AND event.provider in ("AzureActiveDirectory", "Exchange")
+
+  // filter only for UserLoginFailed or partial failures
+  AND event.action in ("UserLoginFailed", "PasswordLogonInitialAuthUsingPassword")
+
+  // ignore specific logon errors
+  AND not o365.audit.LogonError in (
+    "EntitlementGrantsNotFound",
+    "UserStrongAuthEnrollmentRequired",
+    "UserStrongAuthClientAuthNRequired",
+    "InvalidReplyTo",
+    "SsoArtifactExpiredDueToConditionalAccess",
+    "PasswordResetRegistrationRequiredInterrupt",
+    "SsoUserAccountNotFoundInResourceTenant",
+    "UserStrongAuthExpired",
+    "CmsiInterrupt"
+)
+  // filters out non user or application logins based on target
+  AND o365.audit.Target.Type in ("0", "2", "3", "5", "6", "10")
+
+  // filters only for logins from user or application, ignoring oauth:token
+  AND to_lower(o365.audit.ExtendedProperties.RequestType) rlike "(.*)login(.*)"
+
+| STATS
+  // count the number of failed login attempts target per user
+  login_attempt_counts = COUNT(*) by o365.audit.Target.ID, o365.audit.LogonError
+
+| WHERE login_attempt_counts > 10
 
 ----------------------------------
 
