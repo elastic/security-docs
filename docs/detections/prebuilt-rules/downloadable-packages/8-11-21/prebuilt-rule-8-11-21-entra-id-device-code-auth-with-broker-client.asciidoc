@@ -1,0 +1,76 @@
+[[prebuilt-rule-8-11-21-entra-id-device-code-auth-with-broker-client]]
+=== Entra ID Device Code Auth with Broker Client
+
+Identifies device code authentication with an Azure broker client for Entra ID. Adversaries abuse Primary Refresh Tokens (PRTs) to bypass multi-factor authentication (MFA) and gain unauthorized access to Azure resources. PRTs are used in Conditional Access policies to enforce device-based controls. Compromising PRTs allows attackers to bypass these policies and gain unauthorized access. This rule detects successful sign-ins using device code authentication with the Entra ID broker client application ID (29d9ed98-a469-4536-ade2-f981bc1d605e).
+
+*Rule type*: query
+
+*Rule indices*: 
+
+* filebeat-*
+* logs-azure.signinlogs-*
+* logs-azure.activitylogs-*
+
+*Severity*: medium
+
+*Risk score*: 47
+
+*Runs every*: 5m
+
+*Searches indices from*: now-9m ({ref}/common-options.html#date-math[Date Math format], see also <<rule-schedule, `Additional look-back time`>>)
+
+*Maximum alerts per execution*: 100
+
+*References*: 
+
+* https://dirkjanm.io/assets/raw/Phishing%20the%20Phishing%20Resistant.pdf
+* https://learn.microsoft.com/en-us/troubleshoot/azure/entra/entra-id/governance/verify-first-party-apps-sign-in
+* https://learn.microsoft.com/en-us/azure/azure-monitor/reference/tables/signinlogs
+
+*Tags*: 
+
+* Domain: Cloud
+* Data Source: Azure
+* Data Source: Microsoft Entra ID
+* Use Case: Identity and Access Audit
+* Tactic: Credential Access
+
+*Version*: 1
+
+*Rule authors*: 
+
+* Elastic
+
+*Rule license*: Elastic License v2
+
+
+==== Setup
+
+
+This rule optionally requires Azure Sign-In logs from the Azure integration. Ensure that the Azure integration is correctly set up and that the required data is being collected.
+
+
+==== Rule query
+
+
+[source, js]
+----------------------------------
+ event.dataset:(azure.activitylogs or azure.signinlogs)
+    and azure.signinlogs.properties.authentication_protocol:deviceCode
+    and azure.signinlogs.properties.conditional_access_audiences.application_id:29d9ed98-a469-4536-ade2-f981bc1d605e
+    and event.outcome:success or (
+        azure.activitylogs.properties.appId:29d9ed98-a469-4536-ade2-f981bc1d605e
+        and azure.activitylogs.properties.authentication_protocol:deviceCode)
+
+----------------------------------
+
+*Framework*: MITRE ATT&CK^TM^
+
+* Tactic:
+** Name: Credential Access
+** ID: TA0006
+** Reference URL: https://attack.mitre.org/tactics/TA0006/
+* Technique:
+** Name: Steal Application Access Token
+** ID: T1528
+** Reference URL: https://attack.mitre.org/techniques/T1528/
