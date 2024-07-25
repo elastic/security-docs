@@ -29,7 +29,7 @@ Identifies instances where a process (granted CAP_SETUID and/or CAP_SETGID capab
 * Tactic: Privilege Escalation
 * Data Source: Elastic Defend
 
-*Version*: 2
+*Version*: 3
 
 *Rule authors*: 
 
@@ -84,7 +84,17 @@ For more details on Elastic Defend refer to the https://www.elastic.co/guide/en/
 sequence by host.id, process.entity_id with maxspan=1s
   [process where host.os.type == "linux" and event.type == "start" and event.action == "exec" and process.name != null and
    (process.thread.capabilities.effective : "CAP_SET?ID" or process.thread.capabilities.permitted : "CAP_SET?ID") and 
-   user.id != "0"]
+   user.id != "0" and not (
+     process.parent.executable : ("/tmp/newroot/*", "/opt/carbonblack*") or
+     process.parent.executable in (
+       "/opt/SolarWinds/Agent/bin/Plugins/JobEngine/SolarWinds.Agent.JobEngine.Plugin", "/usr/bin/vmware-toolbox-cmd",
+       "/usr/bin/dbus-daemon", "/usr/bin/update-notifier", "/usr/share/language-tools/language-options"
+     ) or
+     process.executable : ("/opt/dynatrace/*", "/tmp/newroot/*") or
+     process.executable in (
+       "/bin/fgrep", "/usr/bin/sudo", "/usr/bin/pkexec", "/usr/lib/cockpit/cockpit-session", "/usr/sbin/suexec"
+     )
+   )]
   [process where host.os.type == "linux" and event.action == "uid_change" and event.type == "change" and 
    (process.thread.capabilities.effective : "CAP_SET?ID" or process.thread.capabilities.permitted : "CAP_SET?ID")
    and user.id == "0"]
