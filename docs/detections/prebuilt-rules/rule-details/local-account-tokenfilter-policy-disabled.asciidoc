@@ -5,59 +5,65 @@ Identifies registry modification to the LocalAccountTokenFilterPolicy policy. If
 
 *Rule type*: eql
 
-*Rule indices*:
+*Rule indices*: 
 
 * winlogbeat-*
-* logs-endpoint.events.*
-* logs-windows.*
+* logs-endpoint.events.registry-*
+* logs-windows.sysmon_operational-*
 * endgame-*
+* logs-sentinel_one_cloud_funnel.*
+* logs-m365_defender.event-*
 
 *Severity*: medium
 
 *Risk score*: 47
 
-*Runs every*: 5 minutes
+*Runs every*: 5m
 
 *Searches indices from*: now-9m ({ref}/common-options.html#date-math[Date Math format], see also <<rule-schedule, `Additional look-back time`>>)
 
 *Maximum alerts per execution*: 100
 
-*References*:
+*References*: 
 
 * https://www.stigviewer.com/stig/windows_server_2008_r2_member_server/2014-04-02/finding/V-36439
 * https://posts.specterops.io/pass-the-hash-is-dead-long-live-localaccounttokenfilterpolicy-506c25a7c167
 * https://www.welivesecurity.com/wp-content/uploads/2018/01/ESET_Turla_Mosquito.pdf
 
-*Tags*:
+*Tags*: 
+
+* Domain: Endpoint
+* OS: Windows
+* Use Case: Threat Detection
+* Tactic: Defense Evasion
+* Tactic: Lateral Movement
+* Data Source: Elastic Endgame
+* Data Source: Elastic Defend
+* Data Source: Sysmon
+* Data Source: SentinelOne
+* Data Source: Microsoft Defender for Endpoint
+
+*Version*: 211
+
+*Rule authors*: 
 
 * Elastic
-* Host
-* Windows
-* Threat Detection
-* Defense Evasion
-* Privilege Escalation
-* Elastic Endgame
-
-*Version*: 1
-
-*Added ({stack} release)*: 8.6.0
-
-*Rule authors*: Elastic
 
 *Rule license*: Elastic License v2
+
 
 ==== Rule query
 
 
-[source,js]
+[source, js]
 ----------------------------------
-registry where registry.path : (
-"HKLM\\*\\LocalAccountTokenFilterPolicy",
-"\\REGISTRY\\MACHINE\\*\\LocalAccountTokenFilterPolicy") and
-registry.data.strings : ("1", "0x00000001")
-----------------------------------
+registry where host.os.type == "windows" and registry.path : (
+  "HKLM\\*\\LocalAccountTokenFilterPolicy",
+  "\\REGISTRY\\MACHINE\\*\\LocalAccountTokenFilterPolicy",
+  "MACHINE\\*\\LocalAccountTokenFilterPolicy") and
+  registry.data.strings : ("1", "0x00000001")
 
-==== Threat mapping
+----------------------------------
 
 *Framework*: MITRE ATT&CK^TM^
 
@@ -69,13 +75,19 @@ registry.data.strings : ("1", "0x00000001")
 ** Name: Modify Registry
 ** ID: T1112
 ** Reference URL: https://attack.mitre.org/techniques/T1112/
-
-
-* Tactic:
-** Name: Privilege Escalation
-** ID: TA0004
-** Reference URL: https://attack.mitre.org/tactics/TA0004/
 * Technique:
-** Name: Valid Accounts
-** ID: T1078
-** Reference URL: https://attack.mitre.org/techniques/T1078/
+** Name: Impair Defenses
+** ID: T1562
+** Reference URL: https://attack.mitre.org/techniques/T1562/
+* Tactic:
+** Name: Lateral Movement
+** ID: TA0008
+** Reference URL: https://attack.mitre.org/tactics/TA0008/
+* Technique:
+** Name: Use Alternate Authentication Material
+** ID: T1550
+** Reference URL: https://attack.mitre.org/techniques/T1550/
+* Sub-technique:
+** Name: Pass the Hash
+** ID: T1550.002
+** Reference URL: https://attack.mitre.org/techniques/T1550/002/
