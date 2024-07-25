@@ -1,0 +1,64 @@
+[[prebuilt-rule-8-12-18-docker-escape-via-nsenter]]
+=== Docker Escape via Nsenter
+
+This rule identifies a UID change event via `nsenter`. The `nsenter` command is used to enter a namespace, which is a way to isolate processes and resources. Attackers can use `nsenter` to escape from a container to the host, which can lead to privilege escalation and lateral movement.
+
+*Rule type*: eql
+
+*Rule indices*: 
+
+* logs-endpoint.events.process*
+
+*Severity*: medium
+
+*Risk score*: 47
+
+*Runs every*: 5m
+
+*Searches indices from*: now-9m ({ref}/common-options.html#date-math[Date Math format], see also <<rule-schedule, `Additional look-back time`>>)
+
+*Maximum alerts per execution*: 100
+
+*References*: 
+
+* https://www.cyberark.com/resources/threat-research-blog/the-route-to-root-container-escape-using-kernel-exploitation
+
+*Tags*: 
+
+* Domain: Endpoint
+* Domain: Container
+* OS: Linux
+* Use Case: Threat Detection
+* Tactic: Privilege Escalation
+* Data Source: Elastic Defend
+
+*Version*: 1
+
+*Rule authors*: 
+
+* Elastic
+
+*Rule license*: Elastic License v2
+
+
+==== Rule query
+
+
+[source, js]
+----------------------------------
+process where host.os.type == "linux" and event.type == "change" and event.action == "uid_change" and
+process.entry_leader.entry_meta.type == "container" and process.args == "nsenter" and
+process.args in ("-t", "--target") and process.args_count >= 4
+
+----------------------------------
+
+*Framework*: MITRE ATT&CK^TM^
+
+* Tactic:
+** Name: Privilege Escalation
+** ID: TA0004
+** Reference URL: https://attack.mitre.org/tactics/TA0004/
+* Technique:
+** Name: Escape to Host
+** ID: T1611
+** Reference URL: https://attack.mitre.org/techniques/T1611/
