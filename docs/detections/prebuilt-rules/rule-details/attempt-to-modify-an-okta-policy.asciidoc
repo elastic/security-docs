@@ -5,7 +5,7 @@ Detects attempts to modify an Okta policy. An adversary may attempt to modify an
 
 *Rule type*: query
 
-*Rule indices*:
+*Rule indices*: 
 
 * filebeat-*
 * logs-okta*
@@ -14,60 +14,85 @@ Detects attempts to modify an Okta policy. An adversary may attempt to modify an
 
 *Risk score*: 21
 
-*Runs every*: 5 minutes
+*Runs every*: 5m
 
-*Searches indices from*: now-6m ({ref}/common-options.html#date-math[Date Math format], see also <<rule-schedule, `Additional look-back time`>>)
+*Searches indices from*: None ({ref}/common-options.html#date-math[Date Math format], see also <<rule-schedule, `Additional look-back time`>>)
 
 *Maximum alerts per execution*: 100
 
-*References*:
+*References*: 
 
 * https://developer.okta.com/docs/reference/api/system-log/
 * https://developer.okta.com/docs/reference/api/event-types/
 * https://www.elastic.co/security-labs/testing-okta-visibility-and-detection-dorothy
 
-*Tags*:
+*Tags*: 
+
+* Use Case: Identity and Access Audit
+* Data Source: Okta
+* Tactic: Defense Evasion
+
+*Version*: 206
+
+*Rule authors*: 
 
 * Elastic
-* Identity
-* Okta
-* Continuous Monitoring
-* SecOps
-* Monitoring
-* Defense Evasion
-
-*Version*: 102 (<<attempt-to-modify-an-okta-policy-history, version history>>)
-
-*Added ({stack} release)*: 7.9.0
-
-*Last modified ({stack} release)*: 8.6.0
-
-*Rule authors*: Elastic
 
 *Rule license*: Elastic License v2
 
-==== Potential false positives
-
-Consider adding exceptions to this rule to filter false positives if Okta policies are regularly modified in your organization.
 
 ==== Investigation guide
 
 
-[source,markdown]
-----------------------------------
 
-----------------------------------
+*Triage and analysis*
 
+
+
+*Investigating Attempt to Modify an Okta Policy*
+
+
+Modifications to Okta policies may indicate attempts to weaken an organization's security controls. If such an attempt is detected, consider the following steps for investigation.
+
+
+*Possible investigation steps:*
+
+- Identify the actor associated with the event. Check the fields `okta.actor.id`, `okta.actor.type`, `okta.actor.alternate_id`, and `okta.actor.display_name`.
+- Determine the client used by the actor. You can look at `okta.client.device`, `okta.client.ip`, `okta.client.user_agent.raw_user_agent`, `okta.client.ip_chain.ip`, and `okta.client.geographical_context`.
+- Check the nature of the policy modification. You can review the `okta.target` field, especially `okta.target.display_name` and `okta.target.id`.
+- Examine the `okta.outcome.result` and `okta.outcome.reason` fields to understand the outcome of the modification attempt.
+- Check if there have been other similar modification attempts in a short time span from the same actor or IP address.
+
+
+*False positive analysis:*
+
+- This alert might be a false positive if Okta policies are regularly updated in your organization as a part of normal operations.
+- Check if the actor associated with the event has legitimate rights to modify the Okta policies.
+- Verify the actor's geographical location and the time of the modification attempt. If these align with the actor's regular behavior, it could be a false positive.
+
+
+*Response and remediation:*
+
+- If unauthorized modification is confirmed, initiate the incident response process.
+- Lock the actor's account and enforce password change as an immediate response.
+- Reset MFA tokens for the actor and enforce re-enrollment, if applicable.
+- Review any other actions taken by the actor to assess the overall impact.
+- If the attack was facilitated by a particular technique, ensure your systems are patched or configured to prevent such techniques.
+- Consider a security review of your Okta policies and rules to ensure they follow security best practices.
+
+==== Setup
+
+
+The Okta Fleet integration, Filebeat module, or similarly structured data is required to be compatible with this rule.
 
 ==== Rule query
 
 
-[source,js]
+[source, js]
 ----------------------------------
 event.dataset:okta.system and event.action:policy.lifecycle.update
-----------------------------------
 
-==== Threat mapping
+----------------------------------
 
 *Framework*: MITRE ATT&CK^TM^
 
@@ -79,36 +104,7 @@ event.dataset:okta.system and event.action:policy.lifecycle.update
 ** Name: Impair Defenses
 ** ID: T1562
 ** Reference URL: https://attack.mitre.org/techniques/T1562/
-
-[[attempt-to-modify-an-okta-policy-history]]
-==== Rule version history
-
-Version 102 (8.6.0 release)::
-* Formatting only
-
-Version 100 (8.5.0 release)::
-* Formatting only
-
-Version 8 (8.4.0 release)::
-* Formatting only
-
-Version 6 (7.13.0 release)::
-* Formatting only
-
-Version 5 (7.12.0 release)::
-* Formatting only
-
-Version 4 (7.11.2 release)::
-* Formatting only
-
-Version 3 (7.11.0 release)::
-* Rule name changed from: Attempt to Modify Okta Policy
-Version 2 (7.10.0 release)::
-* Updated query, changed from:
-+
-[source, js]
-----------------------------------
-event.module:okta and event.dataset:okta.system and
-event.action:policy.lifecycle.update
-----------------------------------
-
+* Sub-technique:
+** Name: Disable or Modify Cloud Firewall
+** ID: T1562.007
+** Reference URL: https://attack.mitre.org/techniques/T1562/007/

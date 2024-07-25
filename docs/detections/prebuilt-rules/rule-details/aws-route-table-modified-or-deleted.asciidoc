@@ -5,22 +5,22 @@ Identifies when an AWS Route Table has been modified or deleted.
 
 *Rule type*: query
 
-*Rule indices*:
+*Rule indices*: 
 
 * filebeat-*
-* logs-aws*
+* logs-aws.cloudtrail-*
 
 *Severity*: low
 
 *Risk score*: 21
 
-*Runs every*: 10 minutes
+*Runs every*: 10m
 
 *Searches indices from*: now-60m ({ref}/common-options.html#date-math[Date Math format], see also <<rule-schedule, `Additional look-back time`>>)
 
 *Maximum alerts per execution*: 100
 
-*References*:
+*References*: 
 
 * https://github.com/easttimor/aws-incident-response#network-routing
 * https://docs.datadoghq.com/security_platform/default_rules/aws-ec2-route-table-modified/
@@ -30,51 +30,44 @@ Identifies when an AWS Route Table has been modified or deleted.
 * https://docs.aws.amazon.com/AWSEC2/latest/APIReference/API_DeleteRoute.html
 * https://docs.aws.amazon.com/AWSEC2/latest/APIReference/API_DisassociateRouteTable.html
 
-*Tags*:
+*Tags*: 
+
+* Domain: Cloud
+* Data Source: AWS
+* Data Source: Amazon Web Services
+* Data Source: AWS Route53
+* Use Case: Network Security Monitoring
+* Tactic: Persistence
+
+*Version*: 207
+
+*Rule authors*: 
 
 * Elastic
-* Cloud
-* AWS
-* Continuous Monitoring
-* SecOps
-* Network Security
-* Persistence
-
-*Version*: 101 (<<aws-route-table-modified-or-deleted-history, version history>>)
-
-*Added ({stack} release)*: 7.16.0
-
-*Last modified ({stack} release)*: 8.6.0
-
-*Rule authors*: Elastic, Austin Songer
+* Austin Songer
 
 *Rule license*: Elastic License v2
 
-==== Potential false positives
-
-Route Table could be modified or deleted by a system administrator. Verify whether the user identity, user agent, and/or hostname should be making changes in your environment. Route Table being modified from unfamiliar users should be investigated. If known behavior is causing false positives, it can be exempted from the rule. Also automated processes that use Terraform may lead to false positives.
 
 ==== Investigation guide
 
 
-[source,markdown]
-----------------------------------
 
-----------------------------------
 
+==== Setup
+
+
+The AWS Fleet integration, Filebeat module, or similarly structured data is required to be compatible with this rule.
 
 ==== Rule query
 
 
-[source,js]
+[source, js]
 ----------------------------------
-event.dataset:aws.cloudtrail and
-event.provider:cloudtrail.amazonaws.com and event.action:(ReplaceRoute
-or ReplaceRouteTableAssociation or DeleteRouteTable or DeleteRoute or
-DisassociateRouteTable) and event.outcome:success
-----------------------------------
+event.dataset:aws.cloudtrail and event.provider:ec2.amazonaws.com and event.action:(ReplaceRoute or ReplaceRouteTableAssociation or
+DeleteRouteTable or DeleteRoute or DisassociateRouteTable) and event.outcome:success
 
-==== Threat mapping
+----------------------------------
 
 *Framework*: MITRE ATT&CK^TM^
 
@@ -82,22 +75,3 @@ DisassociateRouteTable) and event.outcome:success
 ** Name: Persistence
 ** ID: TA0003
 ** Reference URL: https://attack.mitre.org/tactics/TA0003/
-
-[[aws-route-table-modified-or-deleted-history]]
-==== Rule version history
-
-Version 101 (8.6.0 release)::
-* Formatting only
-
-Version 100 (8.5.0 release)::
-* Formatting only
-
-Version 5 (8.4.0 release)::
-* Formatting only
-
-Version 3 (8.3.0 release)::
-* Formatting only
-
-Version 2 (8.1.0 release)::
-* Formatting only
-

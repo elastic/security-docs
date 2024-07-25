@@ -5,54 +5,59 @@ Identifies NullSessionPipe registry modifications that specify which pipes can b
 
 *Rule type*: eql
 
-*Rule indices*:
+*Rule indices*: 
 
-* logs-endpoint.events.*
+* logs-endpoint.events.registry-*
+* endgame-*
+* logs-windows.sysmon_operational-*
 
 *Severity*: medium
 
 *Risk score*: 47
 
-*Runs every*: 5 minutes
+*Runs every*: 5m
 
 *Searches indices from*: now-9m ({ref}/common-options.html#date-math[Date Math format], see also <<rule-schedule, `Additional look-back time`>>)
 
 *Maximum alerts per execution*: 100
 
-*References*:
+*References*: 
 
 * https://www.welivesecurity.com/2019/05/29/turla-powershell-usage/
 * https://docs.microsoft.com/en-us/windows/security/threat-protection/security-policy-settings/network-access-restrict-anonymous-access-to-named-pipes-and-shares
 
-*Tags*:
+*Tags*: 
+
+* Domain: Endpoint
+* OS: Windows
+* Use Case: Threat Detection
+* Tactic: Lateral Movement
+* Tactic: Defense Evasion
+* Data Source: Elastic Endgame
+* Data Source: Elastic Defend
+* Data Source: Sysmon
+
+*Version*: 108
+
+*Rule authors*: 
 
 * Elastic
-* Host
-* Windows
-* Threat Detection
-* Lateral Movement
-
-*Version*: 101 (<<nullsessionpipe-registry-modification-history, version history>>)
-
-*Added ({stack} release)*: 7.13.0
-
-*Last modified ({stack} release)*: 8.6.0
-
-*Rule authors*: Elastic
 
 *Rule license*: Elastic License v2
+
 
 ==== Rule query
 
 
-[source,js]
+[source, js]
 ----------------------------------
-registry where event.type in ("creation", "change") and registry.path
-: "HKLM\\SYSTEM\\*ControlSet*\\services\\LanmanServer\\Parameters\\Nul
-lSessionPipes" and length(registry.data.strings) > 0
-----------------------------------
+registry where host.os.type == "windows" and event.type in ("creation", "change") and
+registry.path : (
+    "HKLM\\SYSTEM\\*ControlSet*\\services\\LanmanServer\\Parameters\\NullSessionPipes",
+    "\\REGISTRY\\MACHINE\\SYSTEM\\*ControlSet*\\services\\LanmanServer\\Parameters\\NullSessionPipes"
+) and length(registry.data.strings) > 0
 
-==== Threat mapping
+----------------------------------
 
 *Framework*: MITRE ATT&CK^TM^
 
@@ -64,26 +69,15 @@ lSessionPipes" and length(registry.data.strings) > 0
 ** Name: Remote Services
 ** ID: T1021
 ** Reference URL: https://attack.mitre.org/techniques/T1021/
-
-[[nullsessionpipe-registry-modification-history]]
-==== Rule version history
-
-Version 101 (8.6.0 release)::
-* Updated query, changed from:
-+
-[source, js]
-----------------------------------
-registry where registry.path : "HKLM\\SYSTEM\\*ControlSet*\\services\\
-LanmanServer\\Parameters\\NullSessionPipes" and registry.data.strings
-!= null
-----------------------------------
-
-Version 100 (8.5.0 release)::
-* Formatting only
-
-Version 3 (8.4.0 release)::
-* Formatting only
-
-Version 2 (8.1.0 release)::
-* Formatting only
-
+* Sub-technique:
+** Name: SMB/Windows Admin Shares
+** ID: T1021.002
+** Reference URL: https://attack.mitre.org/techniques/T1021/002/
+* Tactic:
+** Name: Defense Evasion
+** ID: TA0005
+** Reference URL: https://attack.mitre.org/tactics/TA0005/
+* Technique:
+** Name: Modify Registry
+** ID: T1112
+** Reference URL: https://attack.mitre.org/techniques/T1112/
