@@ -33,7 +33,7 @@ This rule monitors for (ana)cron jobs being created or renamed. Linux cron jobs 
 * Tactic: Execution
 * Data Source: Elastic Defend
 
-*Version*: 11
+*Version*: 12
 
 *Rule authors*: 
 
@@ -68,7 +68,7 @@ This rule monitors the creation of cron jobs by monitoring for file creation and
 
 - Investigate the cron job file that was created or modified.
 - Investigate whether any other files in any of the available cron job directories have been altered through OSQuery.
-  - !{osquery{"label":"Osquery - Retrieve File Listing Information","query":"SELECT * FROM file WHERE (path LIKE '/etc/cron.allow.d/%' OR path LIKE '/etc/cron.d/%' OR path LIKE\n'/etc/cron.hourly/%' OR path LIKE '/etc/cron.daily/%' OR path LIKE '/etc/cron.weekly/%' OR path LIKE\n'/etc/cron.monthly/%' OR path LIKE '/var/spool/cron/crontabs/%')\n"}}
+  - !{osquery{"label":"Osquery - Retrieve File Listing Information","query":"SELECT * FROM file WHERE (path LIKE '/etc/cron.allow.d/%' OR path LIKE '/etc/cron.d/%' OR path LIKE '/etc/cron.hourly/%'\nOR path LIKE '/etc/cron.daily/%' OR path LIKE '/etc/cron.weekly/%' OR path LIKE '/etc/cron.monthly/%' OR path LIKE\n'/var/spool/cron/crontabs/%')\n"}}
   - !{osquery{"label":"Osquery - Retrieve Cron File Information","query":"SELECT * FROM file WHERE (path = '/etc/cron.allow' OR path = '/etc/cron.deny' OR path = '/etc/crontab')\n"}}
   - !{osquery{"label":"Osquery - Retrieve Additional File Listing Information","query":"SELECT f.path, u.username AS file_owner, g.groupname AS group_owner, datetime(f.atime, 'unixepoch') AS\nfile_last_access_time, datetime(f.mtime, 'unixepoch') AS file_last_modified_time, datetime(f.ctime, 'unixepoch') AS\nfile_last_status_change_time, datetime(f.btime, 'unixepoch') AS file_created_time, f.size AS size_bytes FROM file f LEFT\nJOIN users u ON f.uid = u.uid LEFT JOIN groups g ON f.gid = g.gid WHERE ( path LIKE '/etc/cron.allow.d/%' OR path LIKE\n'/etc/cron.d/%' OR path LIKE '/etc/cron.hourly/%' OR path LIKE '/etc/cron.daily/%' OR path LIKE '/etc/cron.weekly/%' OR\npath LIKE '/etc/cron.monthly/%' OR path LIKE '/var/spool/cron/crontabs/%')\n"}}
 - Investigate the script execution chain (parent process tree) for unknown processes. Examine their executable files for prevalence and whether they are located in expected locations.
@@ -183,13 +183,18 @@ event.action in ("rename", "creation") and file.path : (
     "/usr/local/sbin/apk", "/usr/bin/apt", "/usr/sbin/pacman", "/bin/podman", "/usr/bin/podman", "/usr/bin/puppet",
     "/bin/puppet", "/opt/puppetlabs/puppet/bin/puppet", "/usr/bin/chef-client", "/bin/chef-client",
     "/bin/autossl_check", "/usr/bin/autossl_check", "/proc/self/exe", "/dev/fd/*",  "/usr/bin/pamac-daemon",
-    "/bin/pamac-daemon", "/usr/local/bin/dockerd"
+    "/bin/pamac-daemon", "/usr/local/bin/dockerd", "/opt/elasticbeanstalk/bin/platform-engine",
+    "/opt/puppetlabs/puppet/bin/ruby", "/usr/libexec/platform-python", "/opt/imunify360/venv/bin/python3",
+    "/opt/eset/efs/lib/utild", "/usr/sbin/anacron", "/usr/bin/podman", "/kaniko/kaniko-executor"
   ) or
   file.path : "/var/spool/cron/crontabs/tmp.*" or
   file.extension in ("swp", "swpx", "swx", "dpkg-remove") or
   file.Ext.original.extension == "dpkg-new" or
-  process.executable : ("/nix/store/*", "/var/lib/dpkg/*", "/tmp/vmis.*", "/snap/*", "/dev/fd/*") or
+  process.executable : (
+    "/nix/store/*", "/var/lib/dpkg/*", "/tmp/vmis.*", "/snap/*", "/dev/fd/*", "/usr/libexec/platform-python*"
+  ) or
   process.executable == null or
+  process.name in ("crontab", "crond", "executor", "puppet", "droplet-agent.postinst", "cf-agent") or
   (process.name == "sed" and file.name : "sed*") or
   (process.name == "perl" and file.name : "e2scrub_all.tmp*") 
 )
