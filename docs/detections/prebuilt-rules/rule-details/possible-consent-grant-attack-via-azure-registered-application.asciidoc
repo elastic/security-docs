@@ -5,67 +5,64 @@ Detects when a user grants permissions to an Azure-registered application or whe
 
 *Rule type*: query
 
-*Rule indices*:
+*Rule indices*: 
 
 * filebeat-*
 * logs-azure*
+* logs-o365*
 
 *Severity*: medium
 
 *Risk score*: 47
 
-*Runs every*: 5 minutes
+*Runs every*: 5m
 
 *Searches indices from*: now-25m ({ref}/common-options.html#date-math[Date Math format], see also <<rule-schedule, `Additional look-back time`>>)
 
 *Maximum alerts per execution*: 100
 
-*References*:
+*References*: 
 
 * https://docs.microsoft.com/en-us/microsoft-365/security/office-365-security/detect-and-remediate-illicit-consent-grants?view=o365-worldwide
 * https://www.cloud-architekt.net/detection-and-mitigation-consent-grant-attacks-azuread/
 * https://docs.microsoft.com/en-us/defender-cloud-apps/investigate-risky-oauth#how-to-detect-risky-oauth-apps
 
-*Tags*:
+*Tags*: 
+
+* Domain: Cloud
+* Data Source: Azure
+* Data Source: Microsoft 365
+* Use Case: Identity and Access Audit
+* Resources: Investigation Guide
+* Tactic: Initial Access
+
+*Version*: 212
+
+*Rule authors*: 
 
 * Elastic
-* Cloud
-* Azure
-* Continuous Monitoring
-* SecOps
-* Identity and Access
-* Investigation Guide
-
-*Version*: 103 (<<possible-consent-grant-attack-via-azure-registered-application-history, version history>>)
-
-*Added ({stack} release)*: 7.10.0
-
-*Last modified ({stack} release)*: 8.6.0
-
-*Rule authors*: Elastic
 
 *Rule license*: Elastic License v2
+
 
 ==== Investigation guide
 
 
-[source,markdown]
-----------------------------------
-## Triage and analysis
 
-### Investigating Possible Consent Grant Attack via Azure-Registered Application
+*Triage and analysis*
 
-In an illicit consent grant attack, the attacker creates an Azure-registered application that requests access to data
-such as contact information, email, or documents. The attacker then tricks an end user into granting that application
-consent to access their data either through a phishing attack, or by injecting illicit code into a trusted website.
-After the illicit application has been granted consent, it has account-level access to data without the need for an
-organizational account. Normal remediation steps like resetting passwords for breached accounts or requiring multi-factor
-authentication (MFA) on accounts are not effective against this type of attack, since these are third-party applications
-and are external to the organization.
 
-Official Microsoft guidance for detecting and remediating this attack can be found [here](https://docs.microsoft.com/en-us/microsoft-365/security/office-365-security/detect-and-remediate-illicit-consent-grants).
 
-#### Possible investigation steps
+*Investigating Possible Consent Grant Attack via Azure-Registered Application*
+
+
+In an illicit consent grant attack, the attacker creates an Azure-registered application that requests access to data such as contact information, email, or documents. The attacker then tricks an end user into granting that application consent to access their data either through a phishing attack, or by injecting illicit code into a trusted website. After the illicit application has been granted consent, it has account-level access to data without the need for an organizational account. Normal remediation steps like resetting passwords for breached accounts or requiring multi-factor authentication (MFA) on accounts are not effective against this type of attack, since these are third-party applications and are external to the organization.
+
+Official Microsoft guidance for detecting and remediating this attack can be found https://docs.microsoft.com/en-us/microsoft-365/security/office-365-security/detect-and-remediate-illicit-consent-grants[here].
+
+
+*Possible investigation steps*
+
 
 - From the Azure AD portal, Review the application that was granted permissions:
   - Click on the `Review permissions` button on the `Permissions` blade of the application.
@@ -76,14 +73,17 @@ Official Microsoft guidance for detecting and remediating this attack can be fou
   -  Low rating or score or bad comments.
   -  Apps with a suspicious publisher or website.
   -  Apps whose last update is not recent. This might indicate an app that is no longer supported.
-- Export and examine the [Oauth app auditing](https://docs.microsoft.com/en-us/defender-cloud-apps/manage-app-permissions#oauth-app-auditing) to identify users affected.
+- Export and examine the https://docs.microsoft.com/en-us/defender-cloud-apps/manage-app-permissions#oauth-app-auditing[Oauth app auditing] to identify users affected.
 
-### False positive analysis
 
-- This mechanism can be used legitimately. Malicious applications abuse the same workflow used by legitimate apps.
-Thus, analysts must review each app consent to ensure that only desired apps are granted access.
+*False positive analysis*
 
-### Response and remediation
+
+- This mechanism can be used legitimately. Malicious applications abuse the same workflow used by legitimate apps. Thus, analysts must review each app consent to ensure that only desired apps are granted access.
+
+
+*Response and remediation*
+
 
 - Initiate the incident response process based on the outcome of the triage.
 - Identify the possible impact of the incident and prioritize accordingly; the following actions can help you gain context:
@@ -93,37 +93,35 @@ Thus, analysts must review each app consent to ensure that only desired apps are
     - Identify if the attacker is moving laterally and compromising other accounts, servers, or services.
     - Identify any regulatory or legal ramifications related to this activity.
 - Disable the malicious application to stop user access and the application access to your data.
-- Revoke the application Oauth consent grant. The `Remove-AzureADOAuth2PermissionGrant` cmdlet can be used to complete
-this task.
-- Remove the service principal application role assignment. The `Remove-AzureADServiceAppRoleAssignment` cmdlet can be
-used to complete this task.
-- Revoke the refresh token for all users assigned to the application. Azure provides a [playbook](https://github.com/Azure/Azure-Sentinel/tree/master/Playbooks/Revoke-AADSignInSessions) for this task.
-- [Report](https://docs.microsoft.com/en-us/defender-cloud-apps/manage-app-permissions#send-feedback) the application as malicious to Microsoft.
-- Investigate credential exposure on systems compromised or used by the attacker to ensure all compromised accounts are
-identified. Reset passwords or delete API keys as needed to revoke the attacker's access to the environment. Work with
-your IT teams to minimize the impact on business operations during these actions.
-- Investigate the potential for data compromise from the user's email and file sharing services. Activate your Data Loss
-incident response playbook.
+- Revoke the application Oauth consent grant. The `Remove-AzureADOAuth2PermissionGrant` cmdlet can be used to complete this task.
+- Remove the service principal application role assignment. The `Remove-AzureADServiceAppRoleAssignment` cmdlet can be used to complete this task.
+- Revoke the refresh token for all users assigned to the application. Azure provides a https://github.com/Azure/Azure-Sentinel/tree/master/Playbooks/Revoke-AADSignInSessions[playbook] for this task.
+- https://docs.microsoft.com/en-us/defender-cloud-apps/manage-app-permissions#send-feedback[Report] the application as malicious to Microsoft.
+- Investigate credential exposure on systems compromised or used by the attacker to ensure all compromised accounts are identified. Reset passwords or delete API keys as needed to revoke the attacker's access to the environment. Work with your IT teams to minimize the impact on business operations during these actions.
+- Investigate the potential for data compromise from the user's email and file sharing services. Activate your Data Loss incident response playbook.
 - Disable the permission for a user to set consent permission on their behalf.
-  - Enable the [Admin consent request](https://docs.microsoft.com/en-us/azure/active-directory/manage-apps/configure-admin-consent-workflow) feature.
-- Using the incident response data, update logging and audit policies to improve the mean time to detect (MTTD) and the
-mean time to respond (MTTR).
-----------------------------------
+  - Enable the https://docs.microsoft.com/en-us/azure/active-directory/manage-apps/configure-admin-consent-workflow[Admin consent request] feature.
+- Using the incident response data, update logging and audit policies to improve the mean time to detect (MTTD) and the mean time to respond (MTTR).
 
+==== Setup
+
+
+The Azure Fleet integration, Filebeat module, or similarly structured data is required to be compatible with this rule.
 
 ==== Rule query
 
 
-[source,js]
+[source, js]
 ----------------------------------
-event.dataset:(azure.activitylogs or azure.auditlogs or o365.audit)
-and ( azure.activitylogs.operation_name:"Consent to application"
-or azure.auditlogs.operation_name:"Consent to application" or
-o365.audit.Operation:"Consent to application." ) and
-event.outcome:(Success or success)
-----------------------------------
+event.dataset:(azure.activitylogs or azure.auditlogs or o365.audit) and
+  (
+    azure.activitylogs.operation_name:"Consent to application" or
+    azure.auditlogs.operation_name:"Consent to application" or
+    o365.audit.Operation:"Consent to application."
+  ) and
+  event.outcome:(Success or success)
 
-==== Threat mapping
+----------------------------------
 
 *Framework*: MITRE ATT&CK^TM^
 
@@ -135,8 +133,10 @@ event.outcome:(Success or success)
 ** Name: Phishing
 ** ID: T1566
 ** Reference URL: https://attack.mitre.org/techniques/T1566/
-
-
+* Sub-technique:
+** Name: Spearphishing Link
+** ID: T1566.002
+** Reference URL: https://attack.mitre.org/techniques/T1566/002/
 * Tactic:
 ** Name: Credential Access
 ** ID: TA0006
@@ -145,45 +145,3 @@ event.outcome:(Success or success)
 ** Name: Steal Application Access Token
 ** ID: T1528
 ** Reference URL: https://attack.mitre.org/techniques/T1528/
-
-[[possible-consent-grant-attack-via-azure-registered-application-history]]
-==== Rule version history
-
-Version 103 (8.6.0 release)::
-* Formatting only
-
-Version 101 (8.5.0 release)::
-* Formatting only
-
-Version 7 (8.4.0 release)::
-* Updated query, changed from:
-+
-[source, js]
-----------------------------------
-event.dataset:(azure.activitylogs or azure.auditlogs or o365.audit)
-and ( azure.activitylogs.operation_name:"Consent to
-application" or azure.auditlogs.operation_name:"Consent to
-application" or o365.audit.Operation:"Consent to application." )
-and event.outcome:(Success or success)
-----------------------------------
-
-Version 5 (7.13.0 release)::
-* Formatting only
-
-Version 4 (7.12.0 release)::
-* Formatting only
-
-Version 3 (7.11.2 release)::
-* Formatting only
-
-Version 2 (7.11.0 release)::
-* Updated query, changed from:
-+
-[source, js]
-----------------------------------
-event.dataset:(azure.activitylogs or azure.auditlogs) and (
-azure.activitylogs.operation_name:"Consent to application" or
-azure.auditlogs.operation_name:"Consent to application" ) and
-event.outcome:success
-----------------------------------
-

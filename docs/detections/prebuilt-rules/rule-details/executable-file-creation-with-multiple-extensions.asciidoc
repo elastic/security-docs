@@ -5,67 +5,71 @@ Masquerading can allow an adversary to evade defenses and better blend in with t
 
 *Rule type*: eql
 
-*Rule indices*:
+*Rule indices*: 
 
 * winlogbeat-*
-* logs-endpoint.events.*
-* logs-windows.*
+* logs-endpoint.events.file-*
+* logs-windows.sysmon_operational-*
 * endgame-*
+* logs-m365_defender.event-*
 
 *Severity*: medium
 
 *Risk score*: 47
 
-*Runs every*: 5 minutes
+*Runs every*: 5m
 
 *Searches indices from*: now-9m ({ref}/common-options.html#date-math[Date Math format], see also <<rule-schedule, `Additional look-back time`>>)
 
 *Maximum alerts per execution*: 100
 
-*Tags*:
+*References*: None
+
+*Tags*: 
+
+* Domain: Endpoint
+* OS: Windows
+* Use Case: Threat Detection
+* Tactic: Defense Evasion
+* Data Source: Elastic Endgame
+* Data Source: Elastic Defend
+* Data Source: Sysmon
+* Data Source: Microsoft Defender for Endpoint
+
+*Version*: 109
+
+*Rule authors*: 
 
 * Elastic
-* Host
-* Windows
-* Threat Detection
-* Defense Evasion
-* Elastic Endgame
-
-*Version*: 101 (<<executable-file-creation-with-multiple-extensions-history, version history>>)
-
-*Added ({stack} release)*: 7.12.0
-
-*Last modified ({stack} release)*: 8.6.0
-
-*Rule authors*: Elastic
 
 *Rule license*: Elastic License v2
 
-==== Investigation guide
+
+==== Setup
 
 
-[source,markdown]
-----------------------------------
 
-----------------------------------
+*Setup*
+
+
+If enabling an EQL rule on a non-elastic-agent index (such as beats) for versions <8.2,
+events will not define `event.ingested` and default fallback for EQL rules was not added until version 8.2.
+Hence for this rule to work effectively, users will need to add a custom ingest pipeline to populate
+`event.ingested` to @timestamp.
+For more details on adding a custom ingest pipeline refer - https://www.elastic.co/guide/en/fleet/current/data-streams-pipeline-tutorial.html
 
 
 ==== Rule query
 
 
-[source,js]
+[source, js]
 ----------------------------------
-file where event.type == "creation" and file.extension : "exe" and
-file.name regex~ """.*\.(vbs|vbe|bat|js|cmd|wsh|ps1|pdf|docx?|xlsx?|pp
-tx?|txt|rtf|gif|jpg|png|bmp|hta|txt|img|iso)\.exe""" and not
-(process.executable : ("?:\\Windows\\System32\\msiexec.exe",
-"C:\\Users\\*\\QGIS_SCCM\\Files\\QGIS-OSGeo4W-*-Setup-x86_64.exe") and
-file.path : "?:\\Program Files\\QGIS *\\apps\\grass\\*.exe") and not
-process.executable : ("/bin/sh", "/usr/sbin/MailScanner",
-"/usr/bin/perl")
-----------------------------------
+file where host.os.type == "windows" and event.type == "creation" and file.extension : "exe" and
+  file.name regex~ """.*\.(vbs|vbe|bat|js|cmd|wsh|ps1|pdf|docx?|xlsx?|pptx?|txt|rtf|gif|jpg|png|bmp|hta|txt|img|iso)\.exe""" and
+  not (process.executable : ("?:\\Windows\\System32\\msiexec.exe", "C:\\Users\\*\\QGIS_SCCM\\Files\\QGIS-OSGeo4W-*-Setup-x86_64.exe") and
+       file.path : "?:\\Program Files\\QGIS *\\apps\\grass\\*.exe")
 
-==== Threat mapping
+----------------------------------
 
 *Framework*: MITRE ATT&CK^TM^
 
@@ -77,8 +81,10 @@ process.executable : ("/bin/sh", "/usr/sbin/MailScanner",
 ** Name: Masquerading
 ** ID: T1036
 ** Reference URL: https://attack.mitre.org/techniques/T1036/
-
-
+* Sub-technique:
+** Name: Double File Extension
+** ID: T1036.007
+** Reference URL: https://attack.mitre.org/techniques/T1036/007/
 * Tactic:
 ** Name: Execution
 ** ID: TA0002
@@ -87,44 +93,7 @@ process.executable : ("/bin/sh", "/usr/sbin/MailScanner",
 ** Name: User Execution
 ** ID: T1204
 ** Reference URL: https://attack.mitre.org/techniques/T1204/
-
-[[executable-file-creation-with-multiple-extensions-history]]
-==== Rule version history
-
-Version 101 (8.6.0 release)::
-* Formatting only
-
-Version 100 (8.5.0 release)::
-* Formatting only
-
-Version 6 (8.4.0 release)::
-* Updated query, changed from:
-+
-[source, js]
-----------------------------------
-file where event.type == "creation" and file.extension : "exe" and
-file.name regex~ """.*\.(vbs|vbe|bat|js|cmd|wsh|ps1|pdf|docx?|xlsx?|pp
-tx?|txt|rtf|gif|jpg|png|bmp|hta|txt|img|iso)\.exe"""
-----------------------------------
-
-Version 4 (8.2.0 release)::
-* Formatting only
-
-Version 3 (7.16.0 release)::
-* Formatting only
-
-Version 2 (7.14.0 release)::
-* Updated query, changed from:
-+
-[source, js]
-----------------------------------
-file where event.type == "creation" and file.extension:"exe" and
-file.name: ( "*.vbs.exe", "*.vbe.exe", "*.bat.exe",
-"*.js.exe", "*.cmd.exe", "*.wsh.exe", "*.ps1.exe",
-"*.pdf.exe", "*.docx.exe", "*.doc.exe", "*.xlsx.exe",
-"*.xls.exe", "*.pptx.exe", "*.ppt.exe", "*.txt.exe",
-"*.rtf.exe", "*.gif.exe", "*.jpg.exe", "*.png.exe",
-"*.bmp.exe", "*.hta.exe", "*.txt.exe", "*.img.exe",
-"*.iso.exe" )
-----------------------------------
-
+* Sub-technique:
+** Name: Malicious File
+** ID: T1204.002
+** Reference URL: https://attack.mitre.org/techniques/T1204/002/

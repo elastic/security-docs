@@ -1,0 +1,124 @@
+[[potential-powershell-pass-the-hash-relay-script]]
+=== Potential PowerShell Pass-the-Hash/Relay Script
+
+Detects PowerShell scripts that can execute pass-the-hash (PtH) attacks, intercept and relay NTLM challenges, and carry out other man-in-the-middle (MitM) attacks.
+
+*Rule type*: query
+
+*Rule indices*: 
+
+* winlogbeat-*
+* logs-windows.powershell*
+
+*Severity*: high
+
+*Risk score*: 73
+
+*Runs every*: 5m
+
+*Searches indices from*: now-9m ({ref}/common-options.html#date-math[Date Math format], see also <<rule-schedule, `Additional look-back time`>>)
+
+*Maximum alerts per execution*: 100
+
+*References*: 
+
+* https://github.com/Kevin-Robertson/Invoke-TheHash/blob/master/Invoke-WMIExec.ps1
+* https://github.com/Kevin-Robertson/Invoke-TheHash/blob/master/Invoke-SMBExec.ps1
+* https://github.com/dafthack/Check-LocalAdminHash/blob/master/Check-LocalAdminHash.ps1
+* https://github.com/nettitude/PoshC2/blob/master/resources/modules/Invoke-Tater.ps1
+* https://github.com/Kevin-Robertson/Inveigh/blob/master/Inveigh.ps1
+
+*Tags*: 
+
+* Domain: Endpoint
+* OS: Windows
+* Use Case: Threat Detection
+* Tactic: Credential Access
+* Resources: Investigation Guide
+* Data Source: PowerShell Logs
+
+*Version*: 2
+
+*Rule authors*: 
+
+* Elastic
+
+*Rule license*: Elastic License v2
+
+
+==== Setup
+
+
+
+*Setup*
+
+
+The 'PowerShell Script Block Logging' logging policy must be enabled.
+Steps to implement the logging policy with Advanced Audit Configuration:
+
+```
+Computer Configuration >
+Administrative Templates >
+Windows PowerShell >
+Turn on PowerShell Script Block Logging (Enable)
+```
+
+Steps to implement the logging policy via registry:
+
+```
+reg add "hklm\SOFTWARE\Policies\Microsoft\Windows\PowerShell\ScriptBlockLogging" /v EnableScriptBlockLogging /t REG_DWORD /d 1
+```
+
+
+==== Rule query
+
+
+[source, js]
+----------------------------------
+event.category:process and host.os.type:windows and
+  powershell.file.script_block_text : (
+    ("NTLMSSPNegotiate" and ("NegotiateSMB" or "NegotiateSMB2")) or
+    "4E544C4D53535000" or
+    "0x4e,0x54,0x4c,0x4d,0x53,0x53,0x50" or
+    "0x4e,0x54,0x20,0x4c,0x4d" or
+    "0x53,0x4d,0x42,0x20,0x32" or
+    "0x81,0xbb,0x7a,0x36,0x44,0x98,0xf1,0x35,0xad,0x32,0x98,0xf0,0x38"
+  ) and
+  not file.directory : "C:\ProgramData\Microsoft\Windows Defender Advanced Threat Protection\Downloads"
+
+----------------------------------
+
+*Framework*: MITRE ATT&CK^TM^
+
+* Tactic:
+** Name: Credential Access
+** ID: TA0006
+** Reference URL: https://attack.mitre.org/tactics/TA0006/
+* Technique:
+** Name: Adversary-in-the-Middle
+** ID: T1557
+** Reference URL: https://attack.mitre.org/techniques/T1557/
+* Tactic:
+** Name: Execution
+** ID: TA0002
+** Reference URL: https://attack.mitre.org/tactics/TA0002/
+* Technique:
+** Name: Command and Scripting Interpreter
+** ID: T1059
+** Reference URL: https://attack.mitre.org/techniques/T1059/
+* Sub-technique:
+** Name: PowerShell
+** ID: T1059.001
+** Reference URL: https://attack.mitre.org/techniques/T1059/001/
+* Tactic:
+** Name: Lateral Movement
+** ID: TA0008
+** Reference URL: https://attack.mitre.org/tactics/TA0008/
+* Technique:
+** Name: Use Alternate Authentication Material
+** ID: T1550
+** Reference URL: https://attack.mitre.org/techniques/T1550/
+* Sub-technique:
+** Name: Pass the Hash
+** ID: T1550.002
+** Reference URL: https://attack.mitre.org/techniques/T1550/002/
