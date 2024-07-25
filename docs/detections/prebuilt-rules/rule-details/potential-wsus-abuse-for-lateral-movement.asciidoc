@@ -1,0 +1,72 @@
+[[potential-wsus-abuse-for-lateral-movement]]
+=== Potential WSUS Abuse for Lateral Movement
+
+Identifies a potential Windows Server Update Services (WSUS) abuse to execute psexec to enable for lateral movement. WSUS is limited to executing Microsoft signed binaries, which limits the executables that can be used to tools published by Microsoft.
+
+*Rule type*: eql
+
+*Rule indices*: 
+
+* logs-endpoint.events.process-*
+* logs-windows.sysmon_operational-*
+* endgame-*
+* logs-sentinel_one_cloud_funnel.*
+* logs-m365_defender.event-*
+* logs-system.security-*
+
+*Severity*: medium
+
+*Risk score*: 47
+
+*Runs every*: 5m
+
+*Searches indices from*: now-9m ({ref}/common-options.html#date-math[Date Math format], see also <<rule-schedule, `Additional look-back time`>>)
+
+*Maximum alerts per execution*: 100
+
+*References*: 
+
+* https://www.thehacker.recipes/a-d/movement/mitm-and-coerced-authentications/wsus-spoofing
+
+*Tags*: 
+
+* Domain: Endpoint
+* OS: Windows
+* Use Case: Threat Detection
+* Tactic: Lateral Movement
+* Data Source: Elastic Endgame
+* Data Source: Elastic Defend
+* Data Source: Sysmon
+* Data Source: SentinelOne
+* Data Source: Microsoft Defender for Endpoint
+
+*Version*: 3
+
+*Rule authors*: 
+
+* Elastic
+
+*Rule license*: Elastic License v2
+
+
+==== Rule query
+
+
+[source, js]
+----------------------------------
+process where host.os.type == "windows" and event.type == "start" and process.parent.name : "wuauclt.exe" and
+process.executable : "?:\\Windows\\SoftwareDistribution\\Download\\Install\\*" and
+(process.name : "psexec64.exe" or ?process.pe.original_file_name : "psexec.c")
+
+----------------------------------
+
+*Framework*: MITRE ATT&CK^TM^
+
+* Tactic:
+** Name: Lateral Movement
+** ID: TA0008
+** Reference URL: https://attack.mitre.org/tactics/TA0008/
+* Technique:
+** Name: Exploitation of Remote Services
+** ID: T1210
+** Reference URL: https://attack.mitre.org/techniques/T1210/
