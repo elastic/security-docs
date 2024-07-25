@@ -5,7 +5,7 @@ Google Workspace administrators may be aware of malicious applications within th
 
 *Rule type*: query
 
-*Rule indices*:
+*Rule indices*: 
 
 * filebeat-*
 * logs-google_workspace*
@@ -14,46 +14,94 @@ Google Workspace administrators may be aware of malicious applications within th
 
 *Risk score*: 47
 
-*Runs every*: 10 minutes
+*Runs every*: 10m
 
 *Searches indices from*: now-130m ({ref}/common-options.html#date-math[Date Math format], see also <<rule-schedule, `Additional look-back time`>>)
 
 *Maximum alerts per execution*: 100
 
-*References*:
+*References*: 
 
 * https://support.google.com/a/answer/6328701?hl=en#
 
-*Tags*:
+*Tags*: 
+
+* Domain: Cloud
+* Data Source: Google Workspace
+* Use Case: Configuration Audit
+* Resources: Investigation Guide
+* Tactic: Defense Evasion
+
+*Version*: 106
+
+*Rule authors*: 
 
 * Elastic
-* Cloud
-* Google Workspace
-* Continuous Monitoring
-* SecOps
-* Configuration Audit
-* Impair Defenses
-
-*Version*: 2 (<<application-removed-from-blocklist-in-google-workspace-history, version history>>)
-
-*Added ({stack} release)*: 8.5.0
-
-*Last modified ({stack} release)*: 8.6.0
-
-*Rule authors*: Elastic
 
 *Rule license*: Elastic License v2
 
-==== Potential false positives
-
-Applications can be added and removed from blocklists by Google Workspace administrators. Verify that the configuration change was expected. Exceptions can be added to this rule to filter expected behavior.
 
 ==== Investigation guide
 
 
-[source,markdown]
-----------------------------------
-### Important Information Regarding Google Workspace Event Lag Times
+
+*Triage and analysis*
+
+
+
+*Investigating Application Removed from Blocklist in Google Workspace*
+
+
+Google Workspace Marketplace is an online store for free and paid web applications that work with Google Workspace services and third-party software. Listed applications are based on Google APIs or Google Apps Script and created by both Google and third-party developers.
+
+Marketplace applications require access to specific Google Workspace resources. Individual users with the appropriate permissions can install applications in their Google Workspace domain. Administrators have additional permissions that allow them to install applications for an entire Google Workspace domain. Consent screens typically display permissions and privileges the user needs to install an application. As a result, malicious Marketplace applications may require more permissions than necessary or have malicious intent.
+
+Google clearly states that they are not responsible for any Marketplace product that originates from a source that isn't Google.
+
+This rule identifies a Marketplace blocklist update that consists of a Google Workspace account with administrative privileges manually removing a previously blocked application.
+
+
+*Possible investigation steps*
+
+
+- Identify the associated user accounts by reviewing `user.name` or `user.email` fields in the alert.
+- This rule relies on data from `google_workspace.admin`, thus indicating the associated user has administrative privileges to the Marketplace.
+- With access to the Google Workspace admin console, visit the `Security > Investigation` tool with filters for the user email and event is `Assign Role` or `Update Role` to determine if new cloud roles were recently updated.
+- After identifying the involved user account, review other potentially related events within the last 48 hours.
+- Re-assess the permissions and reviews of the Marketplace applications to determine if they violate organizational policies or introduce unexpected risks.
+- With access to the Google Workspace admin console, determine if the application was installed domain-wide or individually by visiting `Apps > Google Workspace Marketplace Apps`.
+
+
+*False positive analysis*
+
+
+- Google Workspace administrators might intentionally remove an application from the blocklist due to a re-assessment or a domain-wide required need for the application.
+- Identify the user account associated with this action and assess their administrative privileges with Google Workspace Marketplace.
+- Contact the user to verify that they intentionally removed the application from the blocklist and their reasoning.
+
+
+*Response and remediation*
+
+
+- Initiate the incident response process based on the outcome of the triage.
+- Disable or limit the account during the investigation and response.
+- Identify the possible impact of the incident and prioritize accordingly; the following actions can help you gain context:
+    - Identify the account role in the cloud environment.
+    - Assess the criticality of affected services and servers.
+    - Work with your IT team to identify and minimize the impact on users.
+    - Identify if the attacker is moving laterally and compromising other accounts, servers, or services.
+    - Identify any regulatory or legal ramifications related to this activity.
+- Investigate credential exposure on systems compromised or used by the attacker to ensure all compromised accounts are identified. Reset passwords or delete API keys as needed to revoke the attacker's access to the environment. Work with your IT teams to minimize the impact on business operations during these actions.
+- Review the permissions assigned to the implicated user to ensure that the least privilege principle is being followed.
+- Implement security best practices https://support.google.com/a/answer/7587183[outlined] by Google.
+- Determine the initial vector abused by the attacker and take action to prevent reinfection via the same vector.
+- Using the incident response data, update logging and audit policies to improve the mean time to detect (MTTD) and the mean time to respond (MTTR).
+
+
+
+
+*Important Information Regarding Google Workspace Event Lag Times*
+
 - As per Google's documentation, Google Workspace administrators may observe lag times ranging from minutes up to 3 days between the time of an event's occurrence and the event being visible in the Google Workspace admin/audit logs.
 - This rule is configured to run every 10 minutes with a lookback time of 130 minutes.
 - To reduce the risk of false negatives, consider reducing the interval that the Google Workspace (formerly G Suite) Filebeat module polls Google's reporting API for new events.
@@ -61,22 +109,23 @@ Applications can be added and removed from blocklists by Google Workspace admini
 - See the following references for further information:
   - https://support.google.com/a/answer/7061566
   - https://www.elastic.co/guide/en/beats/filebeat/current/filebeat-module-google_workspace.html
-----------------------------------
 
+==== Setup
+
+
+The Google Workspace Fleet integration, Filebeat module, or similarly structured data is required to be compatible with this rule.
 
 ==== Rule query
 
 
-[source,js]
+[source, js]
 ----------------------------------
-event.dataset:"google_workspace.admin" and event.category:"iam" and
-event.type:"change" and event.action:"CHANGE_APPLICATION_SETTING"
-and google_workspace.admin.application.name:"Google Workspace
-Marketplace" and google_workspace.admin.old_value: *allowed*false*
-and google_workspace.admin.new_value: *allowed*true*
-----------------------------------
+event.dataset:"google_workspace.admin" and event.category:"iam" and event.type:"change"  and
+  event.action:"CHANGE_APPLICATION_SETTING" and
+  google_workspace.admin.application.name:"Google Workspace Marketplace" and
+  google_workspace.admin.old_value: *allowed*false* and google_workspace.admin.new_value: *allowed*true*
 
-==== Threat mapping
+----------------------------------
 
 *Framework*: MITRE ATT&CK^TM^
 
@@ -88,10 +137,7 @@ and google_workspace.admin.new_value: *allowed*true*
 ** Name: Impair Defenses
 ** ID: T1562
 ** Reference URL: https://attack.mitre.org/techniques/T1562/
-
-[[application-removed-from-blocklist-in-google-workspace-history]]
-==== Rule version history
-
-Version 2 (8.6.0 release)::
-* Formatting only
-
+* Sub-technique:
+** Name: Disable or Modify Tools
+** ID: T1562.001
+** Reference URL: https://attack.mitre.org/techniques/T1562/001/

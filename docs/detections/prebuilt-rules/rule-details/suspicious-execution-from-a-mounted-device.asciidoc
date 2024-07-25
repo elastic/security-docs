@@ -5,68 +5,72 @@ Identifies when a script interpreter or signed binary is launched via a non-stan
 
 *Rule type*: eql
 
-*Rule indices*:
+*Rule indices*: 
 
 * winlogbeat-*
-* logs-endpoint.events.*
-* logs-windows.*
+* logs-endpoint.events.process-*
+* logs-windows.sysmon_operational-*
 
 *Severity*: medium
 
 *Risk score*: 47
 
-*Runs every*: 5 minutes
+*Runs every*: 5m
 
 *Searches indices from*: now-9m ({ref}/common-options.html#date-math[Date Math format], see also <<rule-schedule, `Additional look-back time`>>)
 
 *Maximum alerts per execution*: 100
 
-*References*:
+*References*: 
 
 * https://www.microsoft.com/security/blog/2021/05/27/new-sophisticated-email-based-attack-from-nobelium/
 * https://www.volexity.com/blog/2021/05/27/suspected-apt29-operation-launches-election-fraud-themed-phishing-campaigns/
 
-*Tags*:
+*Tags*: 
+
+* Domain: Endpoint
+* OS: Windows
+* Use Case: Threat Detection
+* Tactic: Defense Evasion
+* Tactic: Execution
+* Data Source: Elastic Defend
+* Data Source: Sysmon
+
+*Version*: 108
+
+*Rule authors*: 
 
 * Elastic
-* Host
-* Windows
-* Threat Detection
-* Defense Evasion
-
-*Version*: 100 (<<suspicious-execution-from-a-mounted-device-history, version history>>)
-
-*Added ({stack} release)*: 7.14.0
-
-*Last modified ({stack} release)*: 8.5.0
-
-*Rule authors*: Elastic
 
 *Rule license*: Elastic License v2
 
-==== Investigation guide
+
+==== Setup
 
 
-[source,markdown]
-----------------------------------
 
-----------------------------------
+*Setup*
+
+
+If enabling an EQL rule on a non-elastic-agent index (such as beats) for versions <8.2,
+events will not define `event.ingested` and default fallback for EQL rules was not added until version 8.2.
+Hence for this rule to work effectively, users will need to add a custom ingest pipeline to populate
+`event.ingested` to @timestamp.
+For more details on adding a custom ingest pipeline refer - https://www.elastic.co/guide/en/fleet/current/data-streams-pipeline-tutorial.html
 
 
 ==== Rule query
 
 
-[source,js]
+[source, js]
 ----------------------------------
-process where event.type == "start" and process.executable : "C:\\*"
-and (process.working_directory : "?:\\" and not
-process.working_directory: "C:\\") and process.parent.name :
-"explorer.exe" and process.name : ("rundll32.exe", "mshta.exe",
-"powershell.exe", "pwsh.exe", "cmd.exe", "regsvr32.exe",
-"cscript.exe", "wscript.exe")
-----------------------------------
+process where host.os.type == "windows" and event.type == "start" and process.executable : "C:\\*" and
+  (process.working_directory : "?:\\" and not process.working_directory: "C:\\") and
+  process.parent.name : "explorer.exe" and
+  process.name : ("rundll32.exe", "mshta.exe", "powershell.exe", "pwsh.exe", "cmd.exe", "regsvr32.exe",
+                  "cscript.exe", "wscript.exe")
 
-==== Threat mapping
+----------------------------------
 
 *Framework*: MITRE ATT&CK^TM^
 
@@ -78,8 +82,18 @@ process.working_directory: "C:\\") and process.parent.name :
 ** Name: System Binary Proxy Execution
 ** ID: T1218
 ** Reference URL: https://attack.mitre.org/techniques/T1218/
-
-
+* Sub-technique:
+** Name: Mshta
+** ID: T1218.005
+** Reference URL: https://attack.mitre.org/techniques/T1218/005/
+* Sub-technique:
+** Name: Regsvr32
+** ID: T1218.010
+** Reference URL: https://attack.mitre.org/techniques/T1218/010/
+* Sub-technique:
+** Name: Rundll32
+** ID: T1218.011
+** Reference URL: https://attack.mitre.org/techniques/T1218/011/
 * Tactic:
 ** Name: Execution
 ** ID: TA0002
@@ -88,16 +102,11 @@ process.working_directory: "C:\\") and process.parent.name :
 ** Name: Command and Scripting Interpreter
 ** ID: T1059
 ** Reference URL: https://attack.mitre.org/techniques/T1059/
-
-[[suspicious-execution-from-a-mounted-device-history]]
-==== Rule version history
-
-Version 100 (8.5.0 release)::
-* Formatting only
-
-Version 4 (8.4.0 release)::
-* Formatting only
-
-Version 2 (8.2.0 release)::
-* Formatting only
-
+* Sub-technique:
+** Name: PowerShell
+** ID: T1059.001
+** Reference URL: https://attack.mitre.org/techniques/T1059/001/
+* Sub-technique:
+** Name: Windows Command Shell
+** ID: T1059.003
+** Reference URL: https://attack.mitre.org/techniques/T1059/003/
