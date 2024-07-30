@@ -5,69 +5,70 @@ Detects when the Console Window Host (conhost.exe) process is spawned by a suspi
 
 *Rule type*: eql
 
-*Rule indices*:
+*Rule indices*: 
 
 * winlogbeat-*
-* logs-endpoint.events.*
-* logs-windows.*
+* logs-endpoint.events.process-*
+* logs-windows.sysmon_operational-*
 * endgame-*
 
 *Severity*: high
 
 *Risk score*: 73
 
-*Runs every*: 5 minutes
+*Runs every*: 5m
 
 *Searches indices from*: now-9m ({ref}/common-options.html#date-math[Date Math format], see also <<rule-schedule, `Additional look-back time`>>)
 
 *Maximum alerts per execution*: 100
 
-*References*:
+*References*: 
 
 * https://www.fireeye.com/blog/threat-research/2017/08/monitoring-windows-console-activity-part-one.html
 
-*Tags*:
+*Tags*: 
+
+* Domain: Endpoint
+* OS: Windows
+* Use Case: Threat Detection
+* Tactic: Execution
+* Tactic: Defense Evasion
+* Tactic: Privilege Escalation
+* Resources: Investigation Guide
+* Data Source: Elastic Endgame
+* Data Source: Elastic Defend
+* Data Source: Sysmon
+
+*Version*: 110
+
+*Rule authors*: 
 
 * Elastic
-* Host
-* Windows
-* Threat Detection
-* Execution
-* Investigation Guide
-* Elastic Endgame
-
-*Version*: 102 (<<conhost-spawned-by-suspicious-parent-process-history, version history>>)
-
-*Added ({stack} release)*: 7.10.0
-
-*Last modified ({stack} release)*: 8.6.0
-
-*Rule authors*: Elastic
 
 *Rule license*: Elastic License v2
+
 
 ==== Investigation guide
 
 
-[source,markdown]
-----------------------------------
-## Triage and analysis
 
-### Investigating Conhost Spawned By Suspicious Parent Process
+*Triage and analysis*
 
-The Windows Console Host, or `conhost.exe`, is both the server application for all of the Windows Console APIs as well as
-the classic Windows user interface for working with command-line applications.
 
-Attackers often rely on custom shell implementations to avoid using built-in command interpreters like `cmd.exe` and
-`PowerShell.exe` and bypass application allowlisting and security features. Attackers commonly inject these implementations into
-legitimate system processes.
 
-#### Possible investigation steps
+*Investigating Conhost Spawned By Suspicious Parent Process*
 
-- Investigate the process execution chain (parent process tree) for unknown processes. Examine their executable files
-for prevalence, whether they are located in expected locations, and if they are signed with valid digital signatures.
-- Investigate abnormal behaviors observed by the subject process, such as network connections, registry or file
-modifications, and any spawned child processes.
+
+The Windows Console Host, or `conhost.exe`, is both the server application for all of the Windows Console APIs as well as the classic Windows user interface for working with command-line applications.
+
+Attackers often rely on custom shell implementations to avoid using built-in command interpreters like `cmd.exe` and `PowerShell.exe` and bypass application allowlisting and security features. Attackers commonly inject these implementations into legitimate system processes.
+
+
+*Possible investigation steps*
+
+
+- Investigate the process execution chain (parent process tree) for unknown processes. Examine their executable files for prevalence, whether they are located in expected locations, and if they are signed with valid digital signatures.
+- Investigate abnormal behaviors observed by the subject process, such as network connections, registry or file modifications, and any spawned child processes.
 - Investigate other alerts associated with the user/host during the past 48 hours.
 - Inspect the host for suspicious or abnormal behavior in the alert timeframe.
 - Retrieve the parent process executable and determine if it is malicious:
@@ -80,16 +81,22 @@ modifications, and any spawned child processes.
   - Use the PowerShell `Get-FileHash` cmdlet to get the files' SHA-256 hash values.
     - Search for the existence and reputation of the hashes in resources like VirusTotal, Hybrid-Analysis, CISCO Talos, Any.run, etc.
 
-### False positive analysis
+
+*False positive analysis*
+
 
 - This activity is unlikely to happen legitimately. Benign true positives (B-TPs) can be added as exceptions if necessary.
 
-### Related rules
+
+*Related rules*
+
 
 - Suspicious Process from Conhost - 28896382-7d4f-4d50-9b72-67091901fd26
 - Suspicious PowerShell Engine ImageLoad - 852c1f19-68e8-43a6-9dce-340771fe1be3
 
-### Response and remediation
+
+*Response and remediation*
+
 
 - Initiate the incident response process based on the outcome of the triage.
 - Isolate the involved hosts to prevent further post-compromise behavior.
@@ -97,37 +104,43 @@ modifications, and any spawned child processes.
   - Implement temporary network rules, procedures, and segmentation to contain the malware.
   - Stop suspicious processes.
   - Immediately block the identified indicators of compromise (IoCs).
-  - Inspect the affected systems for additional malware backdoors like reverse shells, reverse proxies, or droppers that
-  attackers could use to reinfect the system.
+  - Inspect the affected systems for additional malware backdoors like reverse shells, reverse proxies, or droppers that attackers could use to reinfect the system.
 - Remove and block malicious artifacts identified during triage.
-- Investigate credential exposure on systems compromised or used by the attacker to ensure all compromised accounts are
-identified. Reset passwords for these accounts and other potentially compromised credentials, such as email, business
-systems, and web services.
-- Run a full antimalware scan. This may reveal additional artifacts left in the system, persistence mechanisms, and
-malware components.
+- Investigate credential exposure on systems compromised or used by the attacker to ensure all compromised accounts are identified. Reset passwords for these accounts and other potentially compromised credentials, such as email, business systems, and web services.
+- Run a full antimalware scan. This may reveal additional artifacts left in the system, persistence mechanisms, and malware components.
 - Determine the initial vector abused by the attacker and take action to prevent reinfection through the same vector.
-- Using the incident response data, update logging and audit policies to improve the mean time to detect (MTTD) and the
-mean time to respond (MTTR).
-----------------------------------
+- Using the incident response data, update logging and audit policies to improve the mean time to detect (MTTD) and the mean time to respond (MTTR).
+
+
+==== Setup
+
+
+
+*Setup*
+
+
+If enabling an EQL rule on a non-elastic-agent index (such as beats) for versions <8.2,
+events will not define `event.ingested` and default fallback for EQL rules was not added until version 8.2.
+Hence for this rule to work effectively, users will need to add a custom ingest pipeline to populate
+`event.ingested` to @timestamp.
+For more details on adding a custom ingest pipeline refer - https://www.elastic.co/guide/en/fleet/current/data-streams-pipeline-tutorial.html
 
 
 ==== Rule query
 
 
-[source,js]
+[source, js]
 ----------------------------------
-process where event.type == "start" and process.name : "conhost.exe"
-and process.parent.name : ("lsass.exe", "services.exe", "smss.exe",
-"winlogon.exe", "explorer.exe", "dllhost.exe", "rundll32.exe",
-"regsvr32.exe", "userinit.exe", "wininit.exe", "spoolsv.exe",
-"ctfmon.exe") and not (process.parent.name : "rundll32.exe" and
-process.parent.args : ("?:\\Windows\\Installer\\MSI*.tmp,zzzzInvokeMan
-agedCustomActionOutOfProc",
-"?:\\WINDOWS\\system32\\PcaSvc.dll,PcaPatchSdbTask",
-"?:\\WINDOWS\\system32\\davclnt.dll,DavSetCookie"))
-----------------------------------
+process where host.os.type == "windows" and event.type == "start" and
+  process.name : "conhost.exe" and
+  process.parent.name : ("lsass.exe", "services.exe", "smss.exe", "winlogon.exe", "explorer.exe", "dllhost.exe", "rundll32.exe",
+                         "regsvr32.exe", "userinit.exe", "wininit.exe", "spoolsv.exe", "ctfmon.exe") and
+  not (process.parent.name : "rundll32.exe" and
+       process.parent.args : ("?:\\Windows\\Installer\\MSI*.tmp,zzzzInvokeManagedCustomActionOutOfProc",
+                              "?:\\WINDOWS\\system32\\PcaSvc.dll,PcaPatchSdbTask",
+                              "?:\\WINDOWS\\system32\\davclnt.dll,DavSetCookie"))
 
-==== Threat mapping
+----------------------------------
 
 *Framework*: MITRE ATT&CK^TM^
 
@@ -139,51 +152,19 @@ agedCustomActionOutOfProc",
 ** Name: Command and Scripting Interpreter
 ** ID: T1059
 ** Reference URL: https://attack.mitre.org/techniques/T1059/
-
-[[conhost-spawned-by-suspicious-parent-process-history]]
-==== Rule version history
-
-Version 102 (8.6.0 release)::
-* Formatting only
-
-Version 101 (8.5.0 release)::
-* Updated query, changed from:
-+
-[source, js]
-----------------------------------
-process where event.type in ("start", "process_started") and
-process.name : "conhost.exe" and process.parent.name :
-("svchost.exe", "lsass.exe", "services.exe", "smss.exe",
-"winlogon.exe", "explorer.exe",
-"dllhost.exe", "rundll32.exe", "regsvr32.exe", "userinit.exe",
-"wininit.exe", "spoolsv.exe", "wermgr.exe",
-"csrss.exe", "ctfmon.exe")
-----------------------------------
-
-Version 8 (8.4.0 release)::
-* Formatting only
-
-Version 6 (8.3.0 release)::
-* Formatting only
-
-Version 5 (8.2.0 release)::
-* Formatting only
-
-Version 4 (7.13.0 release)::
-* Updated query, changed from:
-+
-[source, js]
-----------------------------------
-event.category:process and event.type:(start or process_started) and
-process.name:conhost.exe and process.parent.name:(svchost.exe or
-lsass.exe or services.exe or smss.exe or winlogon.exe or explorer.exe
-or dllhost.exe or rundll32.exe or regsvr32.exe or userinit.exe or
-wininit.exe or spoolsv.exe or wermgr.exe or csrss.exe or ctfmon.exe)
-----------------------------------
-
-Version 3 (7.12.0 release)::
-* Formatting only
-
-Version 2 (7.11.2 release)::
-* Formatting only
-
+* Tactic:
+** Name: Defense Evasion
+** ID: TA0005
+** Reference URL: https://attack.mitre.org/tactics/TA0005/
+* Technique:
+** Name: Masquerading
+** ID: T1036
+** Reference URL: https://attack.mitre.org/techniques/T1036/
+* Tactic:
+** Name: Privilege Escalation
+** ID: TA0004
+** Reference URL: https://attack.mitre.org/tactics/TA0004/
+* Technique:
+** Name: Process Injection
+** ID: T1055
+** Reference URL: https://attack.mitre.org/techniques/T1055/

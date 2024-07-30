@@ -1,0 +1,68 @@
+[[suspicious-wmi-event-subscription-created]]
+=== Suspicious WMI Event Subscription Created
+
+Detects the creation of a WMI Event Subscription. Attackers can abuse this mechanism for persistence or to elevate to SYSTEM privileges.
+
+*Rule type*: eql
+
+*Rule indices*: 
+
+* winlogbeat-*
+* logs-windows.sysmon_operational-*
+
+*Severity*: medium
+
+*Risk score*: 47
+
+*Runs every*: 5m
+
+*Searches indices from*: now-9m ({ref}/common-options.html#date-math[Date Math format], see also <<rule-schedule, `Additional look-back time`>>)
+
+*Maximum alerts per execution*: 100
+
+*References*: 
+
+* https://www.blackhat.com/docs/us-15/materials/us-15-Graeber-Abusing-Windows-Management-Instrumentation-WMI-To-Build-A-Persistent%20Asynchronous-And-Fileless-Backdoor-wp.pdf
+* https://medium.com/threatpunter/detecting-removing-wmi-persistence-60ccbb7dff96
+
+*Tags*: 
+
+* Domain: Endpoint
+* OS: Windows
+* Use Case: Threat Detection
+* Tactic: Persistence
+* Data Source: Sysmon
+
+*Version*: 106
+
+*Rule authors*: 
+
+* Elastic
+
+*Rule license*: Elastic License v2
+
+
+==== Rule query
+
+
+[source, js]
+----------------------------------
+any where event.dataset == "windows.sysmon_operational" and event.code == "21" and
+    winlog.event_data.Operation : "Created" and winlog.event_data.Consumer : ("*subscription:CommandLineEventConsumer*", "*subscription:ActiveScriptEventConsumer*")
+
+----------------------------------
+
+*Framework*: MITRE ATT&CK^TM^
+
+* Tactic:
+** Name: Persistence
+** ID: TA0003
+** Reference URL: https://attack.mitre.org/tactics/TA0003/
+* Technique:
+** Name: Event Triggered Execution
+** ID: T1546
+** Reference URL: https://attack.mitre.org/techniques/T1546/
+* Sub-technique:
+** Name: Windows Management Instrumentation Event Subscription
+** ID: T1546.003
+** Reference URL: https://attack.mitre.org/techniques/T1546/003/
