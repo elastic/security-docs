@@ -5,111 +5,121 @@ Identifies when a user attempts to clear console history. An adversary may clear
 
 *Rule type*: eql
 
-*Rule indices*:
+*Rule indices*: 
 
 * winlogbeat-*
-* logs-endpoint.events.*
+* logs-endpoint.events.process-*
 * logs-windows.*
 * endgame-*
+* logs-system.security*
 
 *Severity*: medium
 
 *Risk score*: 47
 
-*Runs every*: 5 minutes
+*Runs every*: 5m
 
 *Searches indices from*: now-9m ({ref}/common-options.html#date-math[Date Math format], see also <<rule-schedule, `Additional look-back time`>>)
 
 *Maximum alerts per execution*: 100
 
-*References*:
+*References*: 
 
 * https://stefanos.cloud/kb/how-to-clear-the-powershell-command-history/
 * https://www.shellhacks.com/clear-history-powershell/
 * https://community.sophos.com/sophos-labs/b/blog/posts/powershell-command-history-forensics
 
-*Tags*:
+*Tags*: 
 
-* Elastic
-* Host
-* Windows
-* Threat Detection
-* Defense Evasion
-* Investigation Guide
-* Elastic Endgame
+* Domain: Endpoint
+* OS: Windows
+* Use Case: Threat Detection
+* Tactic: Defense Evasion
+* Tactic: Execution
+* Resources: Investigation Guide
+* Data Source: Elastic Endgame
+* Data Source: Elastic Defend
 
-*Version*: 102 (<<clearing-windows-console-history-history, version history>>)
+*Version*: 111
 
-*Added ({stack} release)*: 8.0.0
+*Rule authors*: 
 
-*Last modified ({stack} release)*: 8.6.0
-
-*Rule authors*: Austin Songer
+* Austin Songer
 
 *Rule license*: Elastic License v2
+
 
 ==== Investigation guide
 
 
-[source,markdown]
-----------------------------------
-## Triage and analysis
 
-### Investigating Clearing Windows Console History
+*Triage and analysis*
 
-PowerShell is one of the main tools system administrators use for automation, report routines, and other tasks. This
-makes it available for use in various environments, and creates an attractive way for attackers to execute code.
 
-Attackers can try to cover their tracks by clearing PowerShell console history. PowerShell has two different ways of
-logging commands: the built-in history and the command history managed by the PSReadLine module. This rule looks for the
-execution of commands that can clear the built-in PowerShell logs or delete the `ConsoleHost_history.txt` file.
 
-#### Possible investigation steps
+*Investigating Clearing Windows Console History*
 
-- Investigate the process execution chain (parent process tree) for unknown processes. Examine their executable files
-for prevalence, whether they are located in expected locations, and if they are signed with valid digital signatures.
+
+PowerShell is one of the main tools system administrators use for automation, report routines, and other tasks. This makes it available for use in various environments, and creates an attractive way for attackers to execute code.
+
+Attackers can try to cover their tracks by clearing PowerShell console history. PowerShell has two different ways of logging commands: the built-in history and the command history managed by the PSReadLine module. This rule looks for the execution of commands that can clear the built-in PowerShell logs or delete the `ConsoleHost_history.txt` file.
+
+
+*Possible investigation steps*
+
+
+- Investigate the process execution chain (parent process tree) for unknown processes. Examine their executable files for prevalence, whether they are located in expected locations, and if they are signed with valid digital signatures.
 - Identify the user account that performed the action and whether it should perform this kind of action.
 - Contact the account owner and confirm whether they are aware of this activity.
 - Investigate other alerts associated with the user/host during the past 48 hours.
   - Verify if any other anti-forensics behaviors were observed.
-- Investigate the PowerShell logs on the SIEM to determine if there was suspicious behavior that an attacker may be
-trying to cover up.
+- Investigate the PowerShell logs on the SIEM to determine if there was suspicious behavior that an attacker may be trying to cover up.
 
-### False positive analysis
+
+*False positive analysis*
+
 
 - This activity is unlikely to happen legitimately. Benign true positives (B-TPs) can be added as exceptions if necessary.
 
-### Response and remediation
+
+*Response and remediation*
+
 
 - Initiate the incident response process based on the outcome of the triage.
 - Isolate the involved host to prevent further post-compromise behavior.
-- Investigate credential exposure on systems compromised or used by the attacker to ensure all compromised accounts are
-identified. Reset passwords for these accounts and other potentially compromised credentials, such as email, business
-systems, and web services.
-- Run a full antimalware scan. This may reveal additional artifacts left in the system, persistence mechanisms, and
-malware components.
+- Investigate credential exposure on systems compromised or used by the attacker to ensure all compromised accounts are identified. Reset passwords for these accounts and other potentially compromised credentials, such as email, business systems, and web services.
+- Run a full antimalware scan. This may reveal additional artifacts left in the system, persistence mechanisms, and malware components.
 - Determine the initial vector abused by the attacker and take action to prevent reinfection through the same vector.
-- Using the incident response data, update logging and audit policies to improve the mean time to detect (MTTD) and the
-mean time to respond (MTTR).
+- Using the incident response data, update logging and audit policies to improve the mean time to detect (MTTD) and the mean time to respond (MTTR).
   - Ensure that PowerShell auditing policies and log collection are in place to grant future visibility.
-----------------------------------
+
+
+==== Setup
+
+
+
+*Setup*
+
+
+If enabling an EQL rule on a non-elastic-agent index (such as beats) for versions <8.2,
+events will not define `event.ingested` and default fallback for EQL rules was not added until version 8.2.
+Hence for this rule to work effectively, users will need to add a custom ingest pipeline to populate
+`event.ingested` to @timestamp.
+For more details on adding a custom ingest pipeline refer - https://www.elastic.co/guide/en/fleet/current/data-streams-pipeline-tutorial.html
 
 
 ==== Rule query
 
 
-[source,js]
+[source, js]
 ----------------------------------
-process where event.type == "start" and (process.name :
-("powershell.exe", "pwsh.exe", "powershell_ise.exe") or
-process.pe.original_file_name == "PowerShell.EXE") and
-(process.args : "*Clear-History*" or (process.args : ("*Remove-
-Item*", "rm") and process.args : ("*ConsoleHost_history.txt*", "*(Get-
-PSReadlineOption).HistorySavePath*")) or (process.args : "*Set-
-PSReadlineOption*" and process.args : "*SaveNothing*"))
-----------------------------------
+process where host.os.type == "windows" and event.type == "start" and
+  (process.name : ("powershell.exe", "pwsh.exe", "powershell_ise.exe") or ?process.pe.original_file_name == "PowerShell.EXE") and
+     (process.args : "*Clear-History*" or
+     (process.args : ("*Remove-Item*", "rm") and process.args : ("*ConsoleHost_history.txt*", "*(Get-PSReadlineOption).HistorySavePath*")) or
+     (process.args : "*Set-PSReadlineOption*" and process.args : "*SaveNothing*"))
 
-==== Threat mapping
+----------------------------------
 
 *Framework*: MITRE ATT&CK^TM^
 
@@ -118,36 +128,22 @@ PSReadlineOption*" and process.args : "*SaveNothing*"))
 ** ID: TA0005
 ** Reference URL: https://attack.mitre.org/tactics/TA0005/
 * Technique:
-** Name: Indicator Removal on Host
+** Name: Indicator Removal
 ** ID: T1070
 ** Reference URL: https://attack.mitre.org/techniques/T1070/
-
-[[clearing-windows-console-history-history]]
-==== Rule version history
-
-Version 102 (8.6.0 release)::
-* Updated query, changed from:
-+
-[source, js]
-----------------------------------
-process where event.action == "start" and (process.name :
-("powershell.exe", "pwsh.exe", "powershell_ise.exe") or
-process.pe.original_file_name == "PowerShell.EXE") and
-(process.args : "*Clear-History*" or (process.args : ("*Remove-
-Item*", "rm") and process.args : ("*ConsoleHost_history.txt*", "*(Get-
-PSReadlineOption).HistorySavePath*")) or (process.args : "*Set-
-PSReadlineOption*" and process.args : "*SaveNothing*"))
-----------------------------------
-
-Version 101 (8.5.0 release)::
-* Formatting only
-
-Version 5 (8.4.0 release)::
-* Formatting only
-
-Version 3 (8.3.0 release)::
-* Formatting only
-
-Version 2 (8.2.0 release)::
-* Formatting only
-
+* Sub-technique:
+** Name: Clear Command History
+** ID: T1070.003
+** Reference URL: https://attack.mitre.org/techniques/T1070/003/
+* Tactic:
+** Name: Execution
+** ID: TA0002
+** Reference URL: https://attack.mitre.org/tactics/TA0002/
+* Technique:
+** Name: Command and Scripting Interpreter
+** ID: T1059
+** Reference URL: https://attack.mitre.org/techniques/T1059/
+* Sub-technique:
+** Name: PowerShell
+** ID: T1059.001
+** Reference URL: https://attack.mitre.org/techniques/T1059/001/

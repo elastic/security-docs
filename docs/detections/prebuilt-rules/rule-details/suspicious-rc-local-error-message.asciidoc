@@ -1,0 +1,100 @@
+[[suspicious-rc-local-error-message]]
+=== Suspicious rc.local Error Message
+
+This rule monitors the syslog log file for error messages related to the rc.local process. The rc.local file is a script that is executed during the boot process on Linux systems. Attackers may attempt to modify the rc.local file to execute malicious commands or scripts during system startup. This rule detects error messages such as "Connection refused," "No such file or directory," or "command not found" in the syslog log file, which may indicate that the rc.local file has been tampered with.
+
+*Rule type*: query
+
+*Rule indices*: 
+
+* logs-system.syslog-*
+
+*Severity*: low
+
+*Risk score*: 21
+
+*Runs every*: 5m
+
+*Searches indices from*: now-9m ({ref}/common-options.html#date-math[Date Math format], see also <<rule-schedule, `Additional look-back time`>>)
+
+*Maximum alerts per execution*: 100
+
+*References*: 
+
+* https://www.intezer.com/blog/malware-analysis/hiddenwasp-malware-targeting-linux-systems/
+* https://pberba.github.io/security/2022/02/06/linux-threat-hunting-for-persistence-initialization-scripts-and-shell-configuration/#8-boot-or-logon-initialization-scripts-rc-scripts
+* https://www.cyberciti.biz/faq/how-to-enable-rc-local-shell-script-on-systemd-while-booting-linux-system/
+
+*Tags*: 
+
+* Domain: Endpoint
+* OS: Linux
+* Use Case: Threat Detection
+* Tactic: Persistence
+
+*Version*: 1
+
+*Rule authors*: 
+
+* Elastic
+
+*Rule license*: Elastic License v2
+
+
+==== Setup
+
+
+
+*Setup*
+
+
+This rule requires data coming in from one of the following integrations:
+- Filebeat
+
+
+*Filebeat Setup*
+
+Filebeat is a lightweight shipper for forwarding and centralizing log data. Installed as an agent on your servers, Filebeat monitors the log files or locations that you specify, collects log events, and forwards them either to Elasticsearch or Logstash for indexing.
+
+
+*The following steps should be executed in order to add the Filebeat for the Linux System:*
+
+- Elastic provides repositories available for APT and YUM-based distributions. Note that we provide binary packages, but no source packages.
+- To install the APT and YUM repositories follow the setup instructions in this https://www.elastic.co/guide/en/beats/filebeat/current/setup-repositories.html[helper guide].
+- To run Filebeat on Docker follow the setup instructions in the https://www.elastic.co/guide/en/beats/filebeat/current/running-on-docker.html[helper guide].
+- To run Filebeat on Kubernetes follow the setup instructions in the https://www.elastic.co/guide/en/beats/filebeat/current/running-on-kubernetes.html[helper guide].
+- For quick start information for Filebeat refer to the https://www.elastic.co/guide/en/beats/filebeat/8.11/filebeat-installation-configuration.html[helper guide].
+- For complete Setup and Run Filebeat information refer to the https://www.elastic.co/guide/en/beats/filebeat/current/setting-up-and-running.html[helper guide].
+
+
+*Rule Specific Setup Note*
+
+- This rule requires the Filebeat System Module to be enabled.
+- The system module collects and parses logs created by the system logging service of common Unix/Linux based distributions.
+- To run the system module of Filebeat on Linux follow the setup instructions in the https://www.elastic.co/guide/en/beats/filebeat/current/filebeat-module-system.html[helper guide].
+
+
+==== Rule query
+
+
+[source, js]
+----------------------------------
+host.os.type:linux and event.dataset:system.syslog and process.name:rc.local and
+message:("Connection refused" or "No such file or directory" or "command not found")
+
+----------------------------------
+
+*Framework*: MITRE ATT&CK^TM^
+
+* Tactic:
+** Name: Persistence
+** ID: TA0003
+** Reference URL: https://attack.mitre.org/tactics/TA0003/
+* Technique:
+** Name: Boot or Logon Initialization Scripts
+** ID: T1037
+** Reference URL: https://attack.mitre.org/techniques/T1037/
+* Sub-technique:
+** Name: RC Scripts
+** ID: T1037.004
+** Reference URL: https://attack.mitre.org/techniques/T1037/004/

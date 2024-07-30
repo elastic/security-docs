@@ -1,0 +1,94 @@
+[[potential-wpad-spoofing-via-dns-record-creation]]
+=== Potential WPAD Spoofing via DNS Record Creation
+
+Identifies the creation of a DNS record that is potentially meant to enable WPAD spoofing. Attackers can disable the Global Query Block List (GQBL) and create a "wpad" record to exploit hosts running WPAD with default settings for privilege escalation and lateral movement.
+
+*Rule type*: eql
+
+*Rule indices*: 
+
+* winlogbeat-*
+* logs-system.*
+* logs-windows.*
+
+*Severity*: medium
+
+*Risk score*: 47
+
+*Runs every*: 5m
+
+*Searches indices from*: now-9m ({ref}/common-options.html#date-math[Date Math format], see also <<rule-schedule, `Additional look-back time`>>)
+
+*Maximum alerts per execution*: 100
+
+*References*: 
+
+* https://www.thehacker.recipes/ad/movement/mitm-and-coerced-authentications/wpad-spoofing#through-adidns-spoofing
+* https://cube0x0.github.io/Pocing-Beyond-DA/
+
+*Tags*: 
+
+* Domain: Endpoint
+* OS: Windows
+* Use Case: Threat Detection
+* Tactic: Credential Access
+* Data Source: Active Directory
+* Use Case: Active Directory Monitoring
+
+*Version*: 2
+
+*Rule authors*: 
+
+* Elastic
+
+*Rule license*: Elastic License v2
+
+
+==== Setup
+
+
+
+*Setup*
+
+
+The 'Audit Directory Service Changes' logging policy must be configured for (Success, Failure).
+Steps to implement the logging policy with Advanced Audit Configuration:
+
+```
+Computer Configuration >
+Policies >
+Windows Settings >
+Security Settings >
+Advanced Audit Policies Configuration >
+Audit Policies >
+DS Access >
+Audit Directory Service Changes (Success,Failure)
+```
+
+The above policy does not cover the target object by default (we still need it to be configured to generate events), so we need to set up an AuditRule using https://github.com/OTRF/Set-AuditRule.
+
+```
+Set-AuditRule -AdObjectPath 'AD:\CN=MicrosoftDNS,DC=DomainDNSZones,DC=Domain,DC=com' -WellKnownSidType WorldSid -Rights CreateChild -InheritanceFlags Descendents -AttributeGUID e0fa1e8c-9b45-11d0-afdd-00c04fd930c9 -AuditFlags Success
+```
+
+
+==== Rule query
+
+
+[source, js]
+----------------------------------
+any where host.os.type == "windows" and event.action in ("Directory Service Changes", "directory-service-object-modified") and
+    event.code == "5137" and winlog.event_data.ObjectDN : "DC=wpad,*"
+
+----------------------------------
+
+*Framework*: MITRE ATT&CK^TM^
+
+* Tactic:
+** Name: Credential Access
+** ID: TA0006
+** Reference URL: https://attack.mitre.org/tactics/TA0006/
+* Technique:
+** Name: Adversary-in-the-Middle
+** ID: T1557
+** Reference URL: https://attack.mitre.org/techniques/T1557/

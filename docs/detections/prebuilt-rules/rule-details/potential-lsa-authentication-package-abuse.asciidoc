@@ -5,50 +5,55 @@ Adversaries can use the autostart mechanism provided by the Local Security Autho
 
 *Rule type*: eql
 
-*Rule indices*:
+*Rule indices*: 
 
-* logs-endpoint.events.*
+* logs-endpoint.events.registry-*
+* endgame-*
 
 *Severity*: medium
 
 *Risk score*: 47
 
-*Runs every*: 5 minutes
+*Runs every*: 5m
 
 *Searches indices from*: now-9m ({ref}/common-options.html#date-math[Date Math format], see also <<rule-schedule, `Additional look-back time`>>)
 
 *Maximum alerts per execution*: 100
 
-*Tags*:
+*References*: None
+
+*Tags*: 
+
+* Domain: Endpoint
+* OS: Windows
+* Use Case: Threat Detection
+* Tactic: Privilege Escalation
+* Data Source: Elastic Endgame
+* Data Source: Elastic Defend
+
+*Version*: 105
+
+*Rule authors*: 
 
 * Elastic
-* Host
-* Windows
-* Threat Detection
-* Privilege Escalation
-
-*Version*: 100 (<<potential-lsa-authentication-package-abuse-history, version history>>)
-
-*Added ({stack} release)*: 7.12.0
-
-*Last modified ({stack} release)*: 8.5.0
-
-*Rule authors*: Elastic
 
 *Rule license*: Elastic License v2
+
 
 ==== Rule query
 
 
-[source,js]
+[source, js]
 ----------------------------------
-registry where event.type == "change" and registry.path :
-"HKLM\\SYSTEM\\*ControlSet*\\Control\\Lsa\\Authentication Packages"
-and /* exclude SYSTEM SID - look for changes by non-SYSTEM user */
-not user.id : "S-1-5-18"
-----------------------------------
+registry where host.os.type == "windows" and event.type == "change" and
+  registry.path : (
+      "HKLM\\SYSTEM\\*ControlSet*\\Control\\Lsa\\Authentication Packages",
+      "\\REGISTRY\\MACHINE\\SYSTEM\\*ControlSet*\\Control\\Lsa\\Authentication Packages"
+  ) and
+  /* exclude SYSTEM SID - look for changes by non-SYSTEM user */
+  not user.id : "S-1-5-18"
 
-==== Threat mapping
+----------------------------------
 
 *Framework*: MITRE ATT&CK^TM^
 
@@ -60,8 +65,10 @@ not user.id : "S-1-5-18"
 ** Name: Boot or Logon Autostart Execution
 ** ID: T1547
 ** Reference URL: https://attack.mitre.org/techniques/T1547/
-
-
+* Sub-technique:
+** Name: Authentication Package
+** ID: T1547.002
+** Reference URL: https://attack.mitre.org/techniques/T1547/002/
 * Tactic:
 ** Name: Persistence
 ** ID: TA0003
@@ -70,16 +77,7 @@ not user.id : "S-1-5-18"
 ** Name: Boot or Logon Autostart Execution
 ** ID: T1547
 ** Reference URL: https://attack.mitre.org/techniques/T1547/
-
-[[potential-lsa-authentication-package-abuse-history]]
-==== Rule version history
-
-Version 100 (8.5.0 release)::
-* Formatting only
-
-Version 3 (8.4.0 release)::
-* Formatting only
-
-Version 2 (8.1.0 release)::
-* Formatting only
-
+* Sub-technique:
+** Name: Authentication Package
+** ID: T1547.002
+** Reference URL: https://attack.mitre.org/techniques/T1547/002/

@@ -5,66 +5,82 @@ Detects attempts to exploit privilege escalation vulnerabilities related to the 
 
 *Rule type*: eql
 
-*Rule indices*:
+*Rule indices*: 
 
 * winlogbeat-*
-* logs-endpoint.events.*
-* logs-windows.*
+* logs-endpoint.events.file-*
+* logs-windows.sysmon_operational-*
+* endgame-*
 
 *Severity*: high
 
 *Risk score*: 73
 
-*Runs every*: 5 minutes
+*Runs every*: 5m
 
 *Searches indices from*: now-9m ({ref}/common-options.html#date-math[Date Math format], see also <<rule-schedule, `Additional look-back time`>>)
 
 *Maximum alerts per execution*: 100
 
-*References*:
+*References*: 
 
 * https://voidsec.com/cve-2020-1337-printdemon-is-dead-long-live-printdemon/
 * https://www.thezdi.com/blog/2020/7/8/cve-2020-1300-remote-code-execution-through-microsoft-windows-cab-files
 
-*Tags*:
+*Tags*: 
+
+* Domain: Endpoint
+* OS: Windows
+* Use Case: Threat Detection
+* Tactic: Privilege Escalation
+* Data Source: Elastic Endgame
+* Use Case: Vulnerability
+* Data Source: Elastic Defend
+* Data Source: Sysmon
+
+*Version*: 108
+
+*Rule authors*: 
 
 * Elastic
-* Host
-* Windows
-* Threat Detection
-* Privilege Escalation
-
-*Version*: 100 (<<suspicious-printspooler-service-executable-file-creation-history, version history>>)
-
-*Added ({stack} release)*: 7.10.0
-
-*Last modified ({stack} release)*: 8.5.0
-
-*Rule authors*: Elastic
 
 *Rule license*: Elastic License v2
 
-==== Investigation guide
+
+==== Setup
 
 
-[source,markdown]
-----------------------------------
 
-----------------------------------
+*Setup*
+
+
+If enabling an EQL rule on a non-elastic-agent index (such as beats) for versions <8.2,
+events will not define `event.ingested` and default fallback for EQL rules was not added until version 8.2.
+Hence for this rule to work effectively, users will need to add a custom ingest pipeline to populate
+`event.ingested` to @timestamp.
+For more details on adding a custom ingest pipeline refer - https://www.elastic.co/guide/en/fleet/current/data-streams-pipeline-tutorial.html
 
 
 ==== Rule query
 
 
-[source,js]
+[source, js]
 ----------------------------------
-file where event.type != "deletion" and process.name : "spoolsv.exe"
-and file.extension : ("exe", "dll") and not file.path :
-("?:\\Windows\\System32\\spool\\*", "?:\\Windows\\Temp\\*",
-"?:\\Users\\*")
-----------------------------------
+file where host.os.type == "windows" and event.type == "creation" and
+  process.name : "spoolsv.exe" and file.extension : "dll" and
+  file.path : ("?:\\Windows\\System32\\*", "?:\\Windows\\SysWOW64\\*") and
+  not file.path : (
+    "?:\\WINDOWS\\SysWOW64\\PrintConfig.dll",
+    "?:\\WINDOWS\\system32\\x5lrs.dll",
+    "?:\\WINDOWS\\sysWOW64\\x5lrs.dll",
+    "?:\\WINDOWS\\system32\\PrintConfig.dll",
+    "?:\\WINDOWS\\system32\\spool\\DRIVERS\\x64\\*.dll",
+    "?:\\WINDOWS\\system32\\spool\\DRIVERS\\W32X86\\*.dll",
+    "?:\\WINDOWS\\system32\\spool\\PRTPROCS\\x64\\*.dll",
+    "?:\\WINDOWS\\system32\\spool\\{????????-????-????-????-????????????}\\*.dll"
+  )
 
-==== Threat mapping
+----------------------------------
 
 *Framework*: MITRE ATT&CK^TM^
 
@@ -76,33 +92,3 @@ and file.extension : ("exe", "dll") and not file.path :
 ** Name: Exploitation for Privilege Escalation
 ** ID: T1068
 ** Reference URL: https://attack.mitre.org/techniques/T1068/
-
-[[suspicious-printspooler-service-executable-file-creation-history]]
-==== Rule version history
-
-Version 100 (8.5.0 release)::
-* Formatting only
-
-Version 7 (8.4.0 release)::
-* Formatting only
-
-Version 5 (8.2.0 release)::
-* Formatting only
-
-Version 4 (7.13.0 release)::
-* Updated query, changed from:
-+
-[source, js]
-----------------------------------
-event.category:file and not event.type:deletion and
-process.name:spoolsv.exe and file.extension:(exe or dll) and not
-file.path:(C\:\\Windows\\System32\\spool\\* or C\:\\Windows\\Temp\\*
-or C\:\\Users\\*)
-----------------------------------
-
-Version 3 (7.12.0 release)::
-* Formatting only
-
-Version 2 (7.11.2 release)::
-* Formatting only
-
