@@ -11,144 +11,33 @@ The Chat Complete API lets you create new Elastic AI Assistant conversations, an
 [discrete]
 === Request body
 
-<DocTable columns={[
-  {
-    "title": "Name",
-    "width": "30%"
-  },
-  {
-    "title": "Type",
-    "width": "20%"
-  },
-  {
-    "title": "Description",
-    "width": "50%"
-  }
-]}>
-  <DocRow>
-    <DocCell>`conversationId`</DocCell>
-    <DocCell>String</DocCell>
-    <DocCell>
-      (Optional) Conversation id to which append the messages and use as a context. See conversations APIs.
-      
-    </DocCell>
-  </DocRow>
-  <DocRow>
-    <DocCell>`connectorId`</DocCell>
-    <DocCell>String</DocCell>
-    <DocCell>
-      Unique identifier for a connector saved object. Connector is a Kibana integration with the specific LLM provider.
-      
-    </DocCell>
-  </DocRow>
-  <DocRow>
-    <DocCell>`promptId`</DocCell>
-    <DocCell>String</DocCell>
-    <DocCell>
-      (Optional) Default conversation propmt Id
-      
-    </DocCell>
-  </DocRow>
-  <DocRow>
-    <DocCell>`persist`</DocCell>
-    <DocCell>Boolean</DocCell>
-    <DocCell>
-      Define if the new conversation should be created or updated if `conversationId` is provided.
-      
-    </DocCell>
-  </DocRow>
-  <DocRow>
-    <DocCell>`isStream`</DocCell>
-    <DocCell>Boolean</DocCell>
-    <DocCell>
-      (Optional) Define the type of the response. If isStream equals `true`, the result will be returned as a streaming chunks. 
-      
-    </DocCell>
-  </DocRow>
-  </DocRow>
-  <DocRow>
-    <DocCell>`messages`</DocCell>
-    <DocCell><DocLink slug="/AI-for-security/api/chat-complete-api" section="message-object">Array<Message></DocLink></DocCell>
-    <DocCell>
-      Array of conversation messages.
-      
-    </DocCell>
-  </DocRow>
-  <DocRow>
-    <DocCell>`model`</DocCell>
-    <DocCell>String</DocCell>
-    <DocCell>
-      (Optional) LLM provider specific model to use.
-      
-    </DocCell>
-  </DocRow>
-  <DocRow>
-    <DocCell>`responseLanguage`</DocCell>
-    <DocCell>String</DocCell>
-    <DocCell>
-      (Optional) Defines the language for LLM to response with.
-      
-    </DocCell>
-  </DocRow>
-</DocTable>
+[width="100%",options="header"]
+|==============================================
+|Name |Type |Description |Required
 
+|`conversationId` |String |Conversation id to which append the messages and use as a context. See conversations APIs. |No
+|`connectorId` |String |Unique identifier for a connector saved object. Connector is a Kibana integration with the specific LLM provider. |Yes
+|`promptId` |String |Default conversation prompt Id. |No
+|`persist` |Boolean |Define if the new conversation should be created or updated if `conversationId` is provided. |Yes
+|`isStream` |Boolean |Define the type of the response. If isStream equals `true`, the result will be returned as a streaming chunks. |No
+|`messages` |<<message-obj,message object>> |Array of conversation messages. |Yes
+|`model` |String |LLM provider specific model to use. |No
+|`responseLanguage` |String |Defines the language for LLM to response with. |No
+|==============================================
 
 [discrete]
 [[message-obj]]
 === Message object
 
-<DocTable columns={[
-  {
-    "title": "Name",
-    "width": "30%"
-  },
-  {
-    "title": "Type",
-    "width": "20%"
-  },
-  {
-    "title": "Description",
-    "width": "50%"
-  }
-]}>
-  <DocRow>
-    <DocCell>`role`</DocCell>
-    <DocCell>String</DocCell>
-    <DocCell>
-      Message role. Could be "user", "assisatnt" or "system".
+[width="100%",options="header"]
+|==============================================
+|Name |Type |Description |Required
 
-      
-    </DocCell>
-  </DocRow>
-  <DocRow>
-    <DocCell>`content`</DocCell>
-    <DocCell>String</DocCell>
-    <DocCell>
-      Message content to send to LLM
-
-      
-    </DocCell>
-  </DocRow>
-  
-  <DocRow>
-    <DocCell>`data`</DocCell>
-    <DocCell>Object</DocCell>
-    <DocCell>
-      (Optional) JSON object to extend the context with the specific field of the document.
-
-      
-    </DocCell>
-  </DocRow>
-  <DocRow>
-    <DocCell>`fields_to_anonymize`</DocCell>
-    <DocCell>Array<String></DocCell>
-    <DocCell>
-      (Optional) List of the fields in `data` object, which should be anonymized.
-
-      
-    </DocCell>
-  </DocRow>
-</DocTable>
+|`role` |String |Message role. Could be "user", "assisatnt" or "system". |Yes
+|`content` |String |Message content to send to LLM. |Yes
+|`data` |Object |JSON object to extend the context with the specific field of the document. |No
+|`fields_to_anonymize` |Array |List of the fields in `data` object, which should be anonymized. |No
+|==============================================
 
 [discrete]
 === Example requests
@@ -161,30 +50,33 @@ Creates a new Conversation.
 --------------------------------------------------
 POST api/security_ai_assistant/current_user/conversations
 {
-    "connectorId": "my-gpt4o-ai",
-    "conversationId": "df071e68-3c8e-4c0d-b0e7-1557e80c0319",
-    "persist": true,
-    "messages": [
-        {
-            "role": "user",
-            "content": "Evaluate the event from the context and format your output neatly in markdown syntax for my Elastic Security case.\nAdd your description, recommended actions and bulleted triage steps. Use the MITRE ATT&CK data provided to add more context and recommendations from MITRE, and hyperlink to the relevant pages on MITRE's website. Be sure to include the user and host risk score data from the context. Your response should include steps that point to Elastic Security specific features, including endpoint response actions, the Elastic Agent OSQuery manager integration (with example osquery queries), timelines and entity analytics and link to all the relevant Elastic Security documentation.",
-            "data": {
-                "event.category": "process",
-                "process.pid": 69516,
-                "host.os.version": 14.5,
-                "host.os.name": "macOS",
-                "host.name": "test-MBP",
-                "process.name": "biomesyncd",
-                "user.name": "usertest",
-                "process.working_directory":"/",
-                "event.module":"system",
-                "process.executable": "/usr/libexec/biomesyncd",
-                "process.args": "/usr/libexec/biomesyncd",
-                "message": "Process biomesyncd (PID: 69516) by user usertest STOPPED"
-            },
-            "fields_to_anonymize": ["host.os.name", "event.module"]
-        }
-    ]
+  "connectorId": "my-gpt4o-ai",
+  "conversationId": "df071e68-3c8e-4c0d-b0e7-1557e80c0319",
+  "persist": true,
+  "messages": [
+    {
+      "role": "user",
+      "content": "Evaluate the event from the context and format your output neatly in markdown syntax for my Elastic Security case.\nAdd your description, recommended actions and bulleted triage steps. Use the MITRE ATT&CK data provided to add more context and recommendations from MITRE, and hyperlink to the relevant pages on MITRE's website. Be sure to include the user and host risk score data from the context. Your response should include steps that point to Elastic Security specific features, including endpoint response actions, the Elastic Agent OSQuery manager integration (with example osquery queries), timelines and entity analytics and link to all the relevant Elastic Security documentation.",
+      "data": {
+        "event.category": "process",
+        "process.pid": 69516,
+        "host.os.version": 14.5,
+        "host.os.name": "macOS",
+        "host.name": "test-MBP",
+        "process.name": "biomesyncd",
+        "user.name": "usertest",
+        "process.working_directory": "/",
+        "event.module": "system",
+        "process.executable": "/usr/libexec/biomesyncd",
+        "process.args": "/usr/libexec/biomesyncd",
+        "message": "Process biomesyncd (PID: 69516) by user usertest STOPPED"
+      },
+      "fields_to_anonymize": [
+        "host.os.name",
+        "event.module"
+      ]
+    }
+  ]
 }
 --------------------------------------------------
 
@@ -206,22 +98,20 @@ Conversation response payload:
 [source,json]
 --------------------------------------------------
 {
-  {
-    "connector_id": "my-gpt4o-ai",
-    "data": "### Elastic Security Case: Process Stopped Event\n\n#### Description\nA process named `biomesyncd` with PID `69516` was stopped by the user `2fede99b-5ec7-4274-b990-469b4110f7ba` on the host `e4d4dc93-754e-4282-ac84-94fe72071ab1` running `dc00f5d9-bdf3-4517-b7ef-de5a89f0d071` version `14.5`. The executable path for the process is `/usr/libexec/biomesyncd`.\n\n#### Recommended Actions\n1. **Investigate the process**: Determine if the process `biomesyncd` is legitimate or potentially malicious.\n2. **Check user activity**: Review the actions performed by the user `2fede99b-5ec7-4274-b990-469b4110f7ba` around the time the process was stopped.\n3. **Analyze host behavior**: Examine the host `e4d4dc93-754e-4282-ac84-94fe72071ab1` for any other suspicious activities or anomalies.\n\n#### Triage Steps\n- **Review Process Details**:\n  - Verify the legitimacy of the process `biomesyncd`.\n  - Check the process arguments and executable path.\n- **User Activity Analysis**:\n  - Investigate the user `2fede99b-5ec7-4274-b990-469b4110f7ba` for any unusual behavior.\n- **Host Analysis**:\n  - Check for other suspicious processes or activities on the host `e4d4dc93-754e-4282-ac84-94fe72071ab1`.\n\n#### MITRE ATT&CK Context\n- **Technique**: [T1059.001 - Command and Scripting Interpreter: PowerShell](https://attack.mitre.org/techniques/T1059/001/)\n- **Tactic**: Execution\n\n#### Elastic Security Features\n- **Endpoint Response Actions**: Use Elastic Security's endpoint response actions to isolate the host or terminate suspicious processes.\n- **Elastic Agent OSQuery Manager Integration**: Utilize OSQuery to gather more information about the host and processes.\n  - Example OSQuery Query:\n    ```sql\n    SELECT * FROM processes WHERE name = 'biomesyncd';\n    ```\n- **Timelines**: Create a timeline to visualize the sequence of events and correlate with other activities.\n- **Entity Analytics**: Use entity analytics to assess the risk score of the user and host.\n\n#### Elastic Security Documentation\n- [Endpoint Security](https://www.elastic.co/guide/en/security/current/endpoint-security.html)\n- [OSQuery Manager](https://www.elastic.co/guide/en/security/current/osquery-manager.html)\n- [Timelines](https://www.elastic.co/guide/en/security/current/timelines.html)\n- [Entity Analytics](https://www.elastic.co/guide/en/security/current/entity-analytics.html)\n\n### ESQL Query\n```sql\nFROM process\nWHERE process.name == \"biomesyncd\"\n  AND process.pid == 69516\n  AND user.name == \"2fede99b-5ec7-4274-b990-469b4110f7ba\"\n  AND host.name == \"e4d4dc93-754e-4282-ac84-94fe72071ab1\"\n  AND host.os.version == \"14.5\"\n```\n\nThis query can be used in an Elastic Security timeline or detection rule to detect the stopping of the `biomesyncd` process by the specified user on the specified host.",
-    "trace_data": {
-        "transactionId": "293ad93379ace883",
-        "traceId": "eeedce3430c9ded8fb8dc38dcfd96eb4"
-    },
-    "replacements": {
-        "dc00f5d9-bdf3-4517-b7ef-de5a89f0d071": "macOS",
-        "e4d4dc93-754e-4282-ac84-94fe72071ab1": "test-MBP",
-        "2fede99b-5ec7-4274-b990-469b4110f7ba": "usertest",
-        "661a7e8f-42c3-4f8c-a1bc-6ff1aa750034": "system"
-    },
-    "status": "ok",
-    "conversationId": "df071e68-3c8e-4c0d-b0e7-1557e80c0319"
-}
+  "connector_id": "my-gpt4o-ai",
+  "data": "### Elastic Security Case: Process Stopped Event\n\n#### Description\nA process named `biomesyncd` with PID `69516` was stopped by the user `2fede99b-5ec7-4274-b990-469b4110f7ba` on the host `e4d4dc93-754e-4282-ac84-94fe72071ab1` running `dc00f5d9-bdf3-4517-b7ef-de5a89f0d071` version `14.5`. The executable path for the process is `/usr/libexec/biomesyncd`.\n\n#### Recommended Actions\n1. **Investigate the process**: Determine if the process `biomesyncd` is legitimate or potentially malicious.\n2. **Check user activity**: Review the actions performed by the user `2fede99b-5ec7-4274-b990-469b4110f7ba` around the time the process was stopped.\n3. **Analyze host behavior**: Examine the host `e4d4dc93-754e-4282-ac84-94fe72071ab1` for any other suspicious activities or anomalies.\n\n#### Triage Steps\n- **Review Process Details**:\n  - Verify the legitimacy of the process `biomesyncd`.\n  - Check the process arguments and executable path.\n- **User Activity Analysis**:\n  - Investigate the user `2fede99b-5ec7-4274-b990-469b4110f7ba` for any unusual behavior.\n- **Host Analysis**:\n  - Check for other suspicious processes or activities on the host `e4d4dc93-754e-4282-ac84-94fe72071ab1`.\n\n#### MITRE ATT&CK Context\n- **Technique**: [T1059.001 - Command and Scripting Interpreter: PowerShell](https://attack.mitre.org/techniques/T1059/001/)\n- **Tactic**: Execution\n\n#### Elastic Security Features\n- **Endpoint Response Actions**: Use Elastic Security's endpoint response actions to isolate the host or terminate suspicious processes.\n- **Elastic Agent OSQuery Manager Integration**: Utilize OSQuery to gather more information about the host and processes.\n  - Example OSQuery Query:\n    ```sql\n    SELECT * FROM processes WHERE name = 'biomesyncd';\n    ```\n- **Timelines**: Create a timeline to visualize the sequence of events and correlate with other activities.\n- **Entity Analytics**: Use entity analytics to assess the risk score of the user and host.\n\n#### Elastic Security Documentation\n- [Endpoint Security](https://www.elastic.co/guide/en/security/current/endpoint-security.html)\n- [OSQuery Manager](https://www.elastic.co/guide/en/security/current/osquery-manager.html)\n- [Timelines](https://www.elastic.co/guide/en/security/current/timelines.html)\n- [Entity Analytics](https://www.elastic.co/guide/en/security/current/entity-analytics.html)\n\n### ESQL Query\n```sql\nFROM process\nWHERE process.name == \"biomesyncd\"\n  AND process.pid == 69516\n  AND user.name == \"2fede99b-5ec7-4274-b990-469b4110f7ba\"\n  AND host.name == \"e4d4dc93-754e-4282-ac84-94fe72071ab1\"\n  AND host.os.version == \"14.5\"\n```\n\nThis query can be used in an Elastic Security timeline or detection rule to detect the stopping of the `biomesyncd` process by the specified user on the specified host.",
+  "trace_data": {
+    "transactionId": "293ad93379ace883",
+    "traceId": "eeedce3430c9ded8fb8dc38dcfd96eb4"
+  },
+  "replacements": {
+    "dc00f5d9-bdf3-4517-b7ef-de5a89f0d071": "macOS",
+    "e4d4dc93-754e-4282-ac84-94fe72071ab1": "test-MBP",
+    "2fede99b-5ec7-4274-b990-469b4110f7ba": "usertest",
+    "661a7e8f-42c3-4f8c-a1bc-6ff1aa750034": "system"
+  },
+  "status": "ok",
+  "conversationId": "df071e68-3c8e-4c0d-b0e7-1557e80c0319"
 }
 --------------------------------------------------
 
