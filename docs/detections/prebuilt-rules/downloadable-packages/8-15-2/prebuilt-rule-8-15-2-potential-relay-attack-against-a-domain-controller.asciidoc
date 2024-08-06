@@ -1,0 +1,82 @@
+[[prebuilt-rule-8-15-2-potential-relay-attack-against-a-domain-controller]]
+=== Potential Relay Attack against a Domain Controller
+
+Identifies potential relay attacks against a domain controller (DC) by identifying authentication events using the domain controller computer account coming from other hosts to the DC that owns the account. Attackers may relay the DC hash after capturing it using forced authentication.
+
+*Rule type*: eql
+
+*Rule indices*: 
+
+* logs-system.security-*
+* logs-windows.forwarded*
+
+*Severity*: low
+
+*Risk score*: 21
+
+*Runs every*: 5m
+
+*Searches indices from*: now-9m ({ref}/common-options.html#date-math[Date Math format], see also <<rule-schedule, `Additional look-back time`>>)
+
+*Maximum alerts per execution*: 100
+
+*References*: 
+
+* https://github.com/p0dalirius/windows-coerced-authentication-methods
+* https://www.thehacker.recipes/a-d/movement/mitm-and-coerced-authentications
+* https://attack.mitre.org/techniques/T1187/
+
+*Tags*: 
+
+* Domain: Endpoint
+* OS: Windows
+* Use Case: Threat Detection
+* Tactic: Credential Access
+* Data Source: Elastic Defend
+* Data Source: Active Directory
+* Use Case: Active Directory Monitoring
+
+*Version*: 1
+
+*Rule authors*: 
+
+* Elastic
+
+*Rule license*: Elastic License v2
+
+
+==== Rule query
+
+
+[source, js]
+----------------------------------
+authentication where host.os.type == "windows" and event.code in ("4624", "4625") and endswith~(user.name, "$") and
+    winlog.event_data.AuthenticationPackageName : "NTLM" and winlog.logon.type : "network" and
+
+    /* Filter for a machine account that matches the hostname */
+    startswith~(host.name, substring(user.name, 0, -1)) and
+    
+    /* Verify if the Source IP belongs to the host */
+    not endswith(string(source.ip), string(host.ip)) and
+    source.ip != null and source.ip != "::1" and source.ip != "127.0.0.1"
+
+----------------------------------
+
+*Framework*: MITRE ATT&CK^TM^
+
+* Tactic:
+** Name: Credential Access
+** ID: TA0006
+** Reference URL: https://attack.mitre.org/tactics/TA0006/
+* Technique:
+** Name: Forced Authentication
+** ID: T1187
+** Reference URL: https://attack.mitre.org/techniques/T1187/
+* Technique:
+** Name: Adversary-in-the-Middle
+** ID: T1557
+** Reference URL: https://attack.mitre.org/techniques/T1557/
+* Sub-technique:
+** Name: LLMNR/NBT-NS Poisoning and SMB Relay
+** ID: T1557.001
+** Reference URL: https://attack.mitre.org/techniques/T1557/001/
