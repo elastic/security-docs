@@ -1,0 +1,87 @@
+[[prebuilt-rule-8-12-19-aws-ec2-instance-console-login-via-assumed-role]]
+=== AWS EC2 Instance Console Login via Assumed Role
+
+Identifies a successful console login activity by an EC2 instance profile using an assumed role. This is uncommon behavior and could indicate an attacker using compromised credentials to further exploit an environment. An EC2 instance assumes a role using their EC2 ID as the session name. This rule looks for the pattern "i-" which is the beginning pattern for assumed role sessions started by an EC2 instance and a successful `ConsoleLogin` or `GetSigninToken` API call.
+
+*Rule type*: eql
+
+*Rule indices*: 
+
+* filebeat-*
+* logs-aws.cloudtrail-*
+
+*Severity*: high
+
+*Risk score*: 73
+
+*Runs every*: 5m
+
+*Searches indices from*: now-6m ({ref}/common-options.html#date-math[Date Math format], see also <<rule-schedule, `Additional look-back time`>>)
+
+*Maximum alerts per execution*: 100
+
+*References*: 
+
+* https://redcanary.com/blog/aws-sts/
+* https://docs.aws.amazon.com/IAM/latest/UserGuide/id_roles_providers_enable-console-custom-url.html/
+
+*Tags*: 
+
+* Domain: Cloud
+* Data Source: AWS
+* Data Source: Amazon Web Services
+* Data Source: AWS EC2
+* Data Source: AWS STS
+* Use Case: Identity and Access Audit
+* Tactic: Lateral Movement
+* Tactic: Credential Access
+
+*Version*: 1
+
+*Rule authors*: 
+
+* Elastic
+
+*Rule license*: Elastic License v2
+
+
+==== Rule query
+
+
+[source, js]
+----------------------------------
+any where event.dataset == "aws.cloudtrail"
+   and event.provider == "signin.amazonaws.com"
+   and event.action in ("ConsoleLogin", "GetSigninToken") 
+   and event.outcome == "success"
+   and aws.cloudtrail.user_identity.type == "AssumedRole"
+   and stringContains (user.id, ":i-")
+
+----------------------------------
+
+*Framework*: MITRE ATT&CK^TM^
+
+* Tactic:
+** Name: Lateral Movement
+** ID: TA0008
+** Reference URL: https://attack.mitre.org/tactics/TA0008/
+* Technique:
+** Name: Remote Services
+** ID: T1021
+** Reference URL: https://attack.mitre.org/techniques/T1021/
+* Sub-technique:
+** Name: Cloud Services
+** ID: T1021.007
+** Reference URL: https://attack.mitre.org/techniques/T1021/007/
+* Technique:
+** Name: Use Alternate Authentication Material
+** ID: T1550
+** Reference URL: https://attack.mitre.org/techniques/T1550/
+* Sub-technique:
+** Name: Application Access Token
+** ID: T1550.001
+** Reference URL: https://attack.mitre.org/techniques/T1550/001/
+* Tactic:
+** Name: Credential Access
+** ID: TA0006
+** Reference URL: https://attack.mitre.org/tactics/TA0006/

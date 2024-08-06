@@ -1,0 +1,81 @@
+[[outlook-home-page-registry-modification]]
+=== Outlook Home Page Registry Modification
+
+Identifies modifications in registry keys associated with abuse of the Outlook Home Page functionality for command and control or persistence.
+
+*Rule type*: eql
+
+*Rule indices*: 
+
+* winlogbeat-*
+* logs-endpoint.events.registry-*
+* logs-windows.sysmon_operational-*
+* endgame-*
+
+*Severity*: medium
+
+*Risk score*: 47
+
+*Runs every*: 5m
+
+*Searches indices from*: now-9m ({ref}/common-options.html#date-math[Date Math format], see also <<rule-schedule, `Additional look-back time`>>)
+
+*Maximum alerts per execution*: 100
+
+*References*: 
+
+* https://cloud.google.com/blog/topics/threat-intelligence/breaking-the-rules-tough-outlook-for-home-page-attacks/
+* https://github.com/trustedsec/specula
+
+*Tags*: 
+
+* Domain: Endpoint
+* OS: Windows
+* Use Case: Threat Detection
+* Tactic: Command and Control
+* Tactic: Persistence
+* Data Source: Elastic Endgame
+* Data Source: Elastic Defend
+* Data Source: Sysmon
+
+*Version*: 1
+
+*Rule authors*: 
+
+* Elastic
+
+*Rule license*: Elastic License v2
+
+
+==== Rule query
+
+
+[source, js]
+----------------------------------
+registry where host.os.type == "windows" and event.action != "deletion" and registry.value : "URL" and
+    registry.path : (
+        "HKEY_USERS\\*\\SOFTWARE\\Microsoft\\Office\\*\\Outlook\\Webview\\Inbox\\URL",
+        "HKU\\*\\SOFTWARE\\Microsoft\\Office\\*\\Outlook\\Webview\\Inbox\\URL",
+        "\\REGISTRY\\USER\\*\\SOFTWARE\\Microsoft\\Office\\*\\Outlook\\Webview\\Inbox\\URL"
+    ) and registry.data.strings : "*http*"
+
+----------------------------------
+
+*Framework*: MITRE ATT&CK^TM^
+
+* Tactic:
+** Name: Command and Control
+** ID: TA0011
+** Reference URL: https://attack.mitre.org/tactics/TA0011/
+* Tactic:
+** Name: Persistence
+** ID: TA0003
+** Reference URL: https://attack.mitre.org/tactics/TA0003/
+* Technique:
+** Name: Office Application Startup
+** ID: T1137
+** Reference URL: https://attack.mitre.org/techniques/T1137/
+* Sub-technique:
+** Name: Outlook Home Page
+** ID: T1137.004
+** Reference URL: https://attack.mitre.org/techniques/T1137/004/
