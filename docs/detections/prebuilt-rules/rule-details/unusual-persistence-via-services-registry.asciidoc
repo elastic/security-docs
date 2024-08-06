@@ -34,7 +34,7 @@ Identifies processes modifying the services registry key directly, instead of th
 * Data Source: Elastic Defend
 * Data Source: Sysmon
 
-*Version*: 108
+*Version*: 109
 
 *Rule authors*: 
 
@@ -49,6 +49,7 @@ Identifies processes modifying the services registry key directly, instead of th
 [source, js]
 ----------------------------------
 registry where host.os.type == "windows" and event.type == "change" and
+  registry.value : ("ServiceDLL", "ImagePath") and
   registry.path : (
       "HKLM\\SYSTEM\\ControlSet*\\Services\\*\\ServiceDLL",
       "HKLM\\SYSTEM\\ControlSet*\\Services\\*\\ImagePath",
@@ -58,6 +59,7 @@ registry where host.os.type == "windows" and event.type == "change" and
       "?:\\windows\\system32\\Drivers\\*.sys",
       "\\SystemRoot\\System32\\drivers\\*.sys",
       "\\??\\?:\\Windows\\system32\\Drivers\\*.SYS",
+      "\\??\\?:\\Windows\\syswow64\\*.sys",
       "system32\\DRIVERS\\USBSTOR") and
   not (process.name : "procexp??.exe" and registry.data.strings : "?:\\*\\procexp*.sys") and
   not process.executable : (
@@ -68,7 +70,9 @@ registry where host.os.type == "windows" and event.type == "change" and
       "?:\\Windows\\System32\\drvinst.exe",
       "?:\\Windows\\System32\\services.exe",
       "?:\\Windows\\System32\\msiexec.exe",
-      "?:\\Windows\\System32\\regsvr32.exe")
+      "?:\\Windows\\System32\\regsvr32.exe",
+      "?:\\Windows\\System32\\WaaSMedicAgent.exe"
+  )
 
 ----------------------------------
 
