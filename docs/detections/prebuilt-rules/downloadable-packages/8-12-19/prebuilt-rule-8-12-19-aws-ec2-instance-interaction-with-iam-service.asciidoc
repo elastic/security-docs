@@ -1,0 +1,88 @@
+[[prebuilt-rule-8-12-19-aws-ec2-instance-interaction-with-iam-service]]
+=== AWS EC2 Instance Interaction with IAM Service
+
+Identifies when an EC2 instance interacts with the AWS IAM service via an assumed role. This is uncommon behavior and could indicate an attacker using compromised credentials to further exploit an environment. For example, an assumed role could be used to create new users for persistence or add permissions for privilege escalation. An EC2 instance assumes a role using their EC2 ID as the session name. This rule looks for the pattern "i-" which is the beginning pattern for assumed role sessions started by an EC2 instance.
+
+*Rule type*: eql
+
+*Rule indices*: 
+
+* filebeat-*
+* logs-aws.cloudtrail-*
+
+*Severity*: medium
+
+*Risk score*: 47
+
+*Runs every*: 5m
+
+*Searches indices from*: now-6m ({ref}/common-options.html#date-math[Date Math format], see also <<rule-schedule, `Additional look-back time`>>)
+
+*Maximum alerts per execution*: 100
+
+*References*: 
+
+* https://redcanary.com/blog/aws-sts/
+
+*Tags*: 
+
+* Domain: Cloud
+* Data Source: AWS
+* Data Source: Amazon Web Services
+* Data Source: AWS EC2
+* Data Source: AWS IAM
+* Use Case: Identity and Access Audit
+* Tactic: Privilege Escalation
+* Tactic: Persistence
+
+*Version*: 1
+
+*Rule authors*: 
+
+* Elastic
+
+*Rule license*: Elastic License v2
+
+
+==== Rule query
+
+
+[source, js]
+----------------------------------
+any where event.dataset == "aws.cloudtrail"
+   and event.provider == "iam.amazonaws.com"
+   and aws.cloudtrail.user_identity.type == "AssumedRole"
+   and stringContains (user.id, ":i-")
+
+----------------------------------
+
+*Framework*: MITRE ATT&CK^TM^
+
+* Tactic:
+** Name: Persistence
+** ID: TA0003
+** Reference URL: https://attack.mitre.org/tactics/TA0003/
+* Technique:
+** Name: Account Manipulation
+** ID: T1098
+** Reference URL: https://attack.mitre.org/techniques/T1098/
+* Sub-technique:
+** Name: Additional Cloud Credentials
+** ID: T1098.001
+** Reference URL: https://attack.mitre.org/techniques/T1098/001/
+* Sub-technique:
+** Name: Additional Cloud Roles
+** ID: T1098.003
+** Reference URL: https://attack.mitre.org/techniques/T1098/003/
+* Technique:
+** Name: Valid Accounts
+** ID: T1078
+** Reference URL: https://attack.mitre.org/techniques/T1078/
+* Sub-technique:
+** Name: Cloud Accounts
+** ID: T1078.004
+** Reference URL: https://attack.mitre.org/techniques/T1078/004/
+* Tactic:
+** Name: Privilege Escalation
+** ID: TA0004
+** Reference URL: https://attack.mitre.org/tactics/TA0004/
