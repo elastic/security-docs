@@ -1,0 +1,87 @@
+---
+slug: /serverless/security/automatic-import
+title: Automatic Import
+description: Use Automatic Import to quickly normalize and ingest third-party data.
+tags: [ 'serverless', 'security', 'how-to' ]
+status: in review
+---
+
+<DocBadge template="technical preview" />
+
+<DocCallOut title="Technical preview" color="warning">
+This feature is in technical preview. It may change in the future, and you should exercise caution when using it in production environments. Elastic will work to fix any issues, but features in technical preview are not subject to the support SLA of GA features.
+</DocCallOut>
+
+Automatic Import helps you quickly parse, ingest, and create [ECS mappings](https://www.elastic.co/elasticsearch/common-schema) for data from sources that don't yet have prebuilt Elastic integrations. This can accelerate your migration to ((elastic-sec)), and help you quickly add new data sources to an existing SIEM solution in ((elastic-sec)). Automatic Import uses a large language model (LLM) with specialized instructions to quickly analyze your source data and create a custom integration. 
+
+While Elastic has 400+ [prebuilt data integrations](((integrations-docs))), Automatic Import helps you extend data coverage to other security-relevant technologies and applications. Elastic integrations (including those created by Automatic Import) normalize data to [the Elastic Common Schema (ECS)](https://www.elastic.co/guide/en/ecs/current/ecs-reference.html), which creates uniformity across dashboards, search, alerts, machine learning, and more. 
+
+
+<DocCallOut title="Tip">
+Click [here](https://elastic.navattic.com/automatic-import) to access an interactive demo that shows the feature in action, before setting it up yourself.
+</DocCallOut>
+
+<DocCallOut title="Requirements">
+
+- A working <DocLink slug="/serverless/security/connect-to-bedrock" text="Amazon Bedrock connector"/>. Automatic Import currently works with all variants of Claude 3. Other models are not supported in this technical preview, but will be supported in future versions.
+- A [Security Analytics Complete](https://www.elastic.co/pricing/serverless-security) subscription.
+- A sample of the data you want to import, in JSON or NDJSON format. 
+
+</DocCallOut>
+
+<DocCallOut color="warning" title="Important">
+Using Automatic Import allows users to create new third-party data integrations through the use of third-party generative AI models (“GAI models”). Any third-party GAI models that you choose to use are owned and operated by their respective providers. Elastic does not own or control these third-party GAI models, nor does it influence their design, training, or data-handling practices. Using third-party GAI models with Elastic solutions, and using your data with third-party GAI models is at your discretion. Elastic bears no responsibility or liability for the content, operation, or use of these third-party GAI models, nor for any potential loss or damage arising from their use. Users are advised to exercise caution when using GAI models with personal, sensitive, or confidential information, as data submitted may be used to train the models or for other purposes. Elastic recommends familiarizing yourself with the development practices and terms of use of any third-party GAI models before use.
+
+You are responsible for ensuring that your use of Automatic Import complies with the terms and conditions of any third-party platform you connect with.
+</DocCallOut>
+
+
+## Create a new custom integration
+
+1. In ((elastic-sec)), click **Add integrations**.
+2. Under **Can't find an integration?** click **Create new integration**.
+
+    <DocImage url="images/auto-import-create-new-integration-button.png" alt="The Integrations page with the Create new integration button highlighted" />
+
+3. Click **Create integration**.
+4. Select an <DocLink slug="/serverless/security/connect-to-bedrock" text="Amazon Bedrock connector"/>. 
+5. Define how your new integration will appear on the Integrations page by providing a **Title**, **Description**, and **Logo**.  Click **Next**.
+6. Define your integration's package name, which will prefix the imported event fields. 
+7. Define your **Data stream title**, **Data stream description**, and **Data stream name**. These fields appear on the integration's configuration page to help identify the data stream it writes to.
+8. Select your [**Data collection method**](https://www.elastic.co/guide/en/beats/filebeat/current/configuration-filebeat-options.html). This determines how your new integration will ingest the data (for example, from an S3 bucket, an HTTP endpoint, or a file stream).
+9. Upload a sample of your data in JSON or NDJSON format. Make sure to include all the types of events that you want the new integration to handle. 
+<DocCallOut title="Best practices for sample data"> 
+- The file extension (`.JSON` or `.NDJSON`) must match the file format.
+- Only the first 10 events in the sample are analyzed. In this technical preview, additional data is truncated. 
+- Ensure each JSON or NDJSON object represents an event, and avoid deeply nested object structures. 
+- The more variety in your sample, the more accurate the pipeline will be (for example, include 10 unique log entries instead of the same type of entry 10 times).
+- Ideally, each field name should describe what the field does.
+</DocCallOut>
+10. Click **Analyze logs**, then wait for processing to complete. This may take several minutes.
+11. After processing is complete, the pipeline's field mappings appear, including ECS and custom fields.
+
+    <DocImage url="images/auto-import-review-integration-page.png" alt="The Automatic Import Review page showing proposed field mappings" />
+
+12. (Optional) After reviewing the proposed pipeline, you can fine-tune it by clicking **Edit pipeline**. Refer to the [((elastic-sec)) ECS reference](https://www.elastic.co/guide/en/security/current/siem-field-reference.html) to learn more about formatting field mappings. When you're satisfied with your changes, click **Save**. 
+
+    <DocImage url="images/auto-import-edit-pipeline.gif" alt="A gif showing the user clicking the edit pipeline button and viewing the ingest pipeline flyout" />
+
+13. Click **Add to Elastic**. After the **Success** message appears, your new integration will be available on the Integrations page. 
+
+    <DocImage url="images/auto-import-success-message.png" alt="The Automatic Import success message" />
+
+14. Click **Add to an agent** to deploy your new integration and start collecting data, or click **View integration** to view detailed information about your new integration. 
+
+<DocCallOut title="Note">
+Once you've added an integration, you can't edit any details other than the ingest pipeline, which you can edit by going to **Project Settings → Stack Management → Ingest Pipelines**. 
+</DocCallOut>
+
+<DocCallOut title="Tip">
+You can use the <DocLink slug="/serverless/security/data-quality-dash" text="Data Quality dashboard"/> to check the health of your data ingest pipelines and field mappings.
+</DocCallOut>
+
+
+
+
+
+
