@@ -1,0 +1,78 @@
+[[asset-criticality-api-bulk-upsert]]
+=== Bulk upsert (create or update) asset criticality records
+
+Create or update asset criticality records for multiple entities.
+
+If asset criticality records already exist for the entities specified in the request, this API overwrites those records with the specified values.
+
+If asset criticality records don't exist for the specified entities, new records are created.
+
+==== Request URL
+
+`POST <kibana host>:<port>/api/asset_criticality/bulk`
+
+==== Request body
+
+A JSON object defining the asset criticality records.
+
+[width="100%",options="header"]
+|==============================================
+|Name |Type |Description |Required
+|`records` |Array |Array of asset criticality records to be created or updated. The maximum number of records is 1000.
+|Yes
+|`records.id_field` |String |The field that contains the entity ID. This must be either `user.name` or `host.name`.
+|Yes
+|`records.id_value` |String |The ID (host name or user name) of the entity specified in the `records.id_field` field.
+|Yes
+|`records.criticality_level` |String a|The asset criticality level to assign, which must be one of the following:
+
+* `low_impact`
+* `medium_impact`
+* `high_impact`
+* `extreme_impact`
+
+For example, you can assign `extreme_impact` to business-critical entities, or `low_impact` to entities that pose minimal risk to your security posture.
+|Yes
+|==============================================
+
+===== Example requests
+
+[source,console]
+--------------------------------------------------
+POST /api/asset_criticality/bulk
+{
+  "records": [
+    {
+      "id_field": "host.name",
+      "id_value": "my_host",
+      "criticality_level": "medium_impact"
+    },
+    {
+      "id_field": "host.name",
+      "id_value": "my_other_host",
+      "criticality_level": "low_impact"
+    }
+  ]
+}
+--------------------------------------------------
+
+==== Response code
+
+`200`::
+    Indicates a successful call.
+
+==== Example response
+
+Successful response
+
+[source,json]
+--------------------------------------------------
+{
+  "errors": [],
+  "stats": {
+    "successful": 2,
+    "failed": 0,
+    "total": 2
+  }
+}
+--------------------------------------------------
