@@ -1,0 +1,246 @@
+[[bulk-actions-anonymization-fields-api]]
+=== Bulk prompts actions
+
+Applies a bulk action to multiple prompts. The bulk action is applied to all prompts that match the filter or to the list of prompts by their IDs.
+
+[discrete]
+===== Request URL
+
+`POST  <kibana host>:<port>/api/security_ai_assistant/prompts/_bulk_action`
+
+[discrete]
+===== Request body
+
+A JSON object with the following properties:
+
+[width="100%",options="header"]
+|==============================================
+|Name |Type |Description |Required
+| `create` | <<bulk-create-object-schema, BulkCreateAction[]>> |  Array of prompts objects to create. | No
+| `delete` | String[] |  Array of prompts IDs to which a bulk action will be applied. | No
+| `update` | <<bulk-update-object-schema, BulkUpdateAction[]>> |  Array of prompts objects with the fields to update. | No
+
+|==============================================
+
+
+[[bulk-create-object-schema]]
+[discrete]
+==== BulkCreateAction object
+
+[width="100%",options="header"]
+|==============================================
+|Name |Type |Description |Required
+
+|`connectorId` |String |Kibana connector ID. |Yes
+|`actionTypeId` |String |Kibana connector action type ID. |Yes
+|`defaultSystemPromptId` |String |Default system prompt ID. |Yes
+|`model` |String |Specific LLM name. |No
+|==============================================
+
+
+[discrete]
+[[bulk-update-object-schema]]
+===== `BulkUpdateAction` schema
+
+[width="100%",options="header"]
+|==============================================
+|Name |Type |Description |Required
+
+|`connectorId` |String |Kibana connector ID. |Yes
+|`actionTypeId` |String |Kibana connector action type ID. |Yes
+|`defaultSystemPromptId` |String |Default system prompt ID. |Yes
+|`model` |String |Specific LLM name. |No
+|==============================================
+
+
+[discrete]
+===== Example requests
+
+*Example 1*
+
+The following request create prompt:
+
+[source,console]
+--------------------------------------------------
+POST api/security_ai_assistant/prompts/_bulk_action
+{
+   "create":[
+      {
+         "name":"test",
+         "id":"test",
+         "content":"some test content",
+         "color":"#D36086",
+         "categories":[],
+         "promptType":"quick",
+         "consumer":"securitySolutionUI"
+      }
+   ]
+}
+--------------------------------------------------
+
+[discrete]
+===== Response code
+
+`200`::
+    Indicates a successful call.
+
+[discrete]
+===== Response payload
+
+JSON object containing the action's outcome:
+
+- `attributes.summary.total`: Total number of prompts matching the bulk action
+- `attributes.summary.succeeded`: Number of successful outcomes (number of prompts that were created, deleted, or updated)
+- `attributes.summary.failed`: Number of failed outcomes
+- `attributes.summary.skipped`: Number of prompts that were skipped due to various reasons (explained below)
+- `attributes.results.created`: Prompt objects that were created during the action's execution
+- `attributes.results.updated`: Prompt objects that were updated during the action's execution
+- `attributes.results.deleted`: Prompt objects that were deleted during the action's execution
+- `attributes.results.skipped`: Prompt that were skipped during the action's execution
+
+A prompt can only be `skipped` when the bulk action to be performed on it results in nothing being done. For example, if the `update` action is used to add a filed to a prompt that already has that value. Objects returned in `attributes.results.skipped` will only include prompts' `id`, `name`, and `skip_reason`.
+
+[source,json]
+--------------------------------------------------
+{
+    "success": true,
+    "prompts_count": 1,
+    "attributes": {
+        "results": {
+            "updated": [],
+            "created": [
+                {
+                    "timestamp": "2024-08-13T20:24:08.610Z",
+                    "users": [
+                        {
+                            "id": "testuser",
+                            "name": "elastic"
+                        }
+                    ],
+                    "content": "dasdas",
+                    "updatedAt": "2024-08-13T20:24:08.610Z",
+                    "id": "0B1pTZEBYaDeA-NhjHej",
+                    "name": "test",
+                    "promptType": "quick",
+                    "color": "#D36086",
+                    "categories": [],
+                    "consumer": "securitySolutionUI"
+                }
+            ],
+            "deleted": [],
+            "skipped": []
+        },
+        "summary": {
+            "failed": 0,
+            "succeeded": 1,
+            "skipped": 0,
+            "total": 1
+        }
+    }
+}
+--------------------------------------------------
+
+*Example 2, Partial failure*
+
+The following request adds tags `tag-1` and `tag-2` to the rules that have the IDs sent in the payload:
+[source,console]
+--------------------------------------------------
+POST api/security_ai_assistant/prompts/_bulk_action
+{
+  "delete": {
+    ids: [
+      "8bc7dad0-9320-11ec-9265-8b772383a08d"
+    ]
+  },
+   "update":[
+      {
+         "timestamp":"2024-08-13T01:59:56.053Z",
+         "users":[
+            {
+               "id":"testuser",
+               "name":"elastic"
+            }
+         ],
+         "content":"As an expert in security operations and incident response, provide a breakdown of the attached alert and summarize what it might mean for my organization.",
+         "isDefault":true,
+         "updatedAt":"2024-08-13T01:59:56.053Z",
+         "id":"-R12SZEBYaDeA-NhnUyW",
+         "name":"Alert summarization",
+         "promptType":"quick",
+         "color":"#F68FBE",
+         "categories":[
+            "alert"
+         ],
+         "consumer":"securitySolutionUI"
+      }
+   ]
+}
+--------------------------------------------------
+
+[discrete]
+===== Response code
+
+`500`::
+    Indicates partial bulk action failure.
+
+[discrete]
+===== Response payload
+
+If processing of any rule fails, a partial error outputs the ID and/or name of the affected rule and the corresponding error, as well as successfully processed rules (in the same format as a successful 200 request).
+
+[discrete]
+==== Example payload
+
+[source,json]
+--------------------------------------------------
+{
+    "message": "Bulk delete partially failed",
+    "status_code": 500,
+    "attributes": {
+        "errors": [
+            {
+                "message": "Some error happened here",
+                "status_code": 500,
+                "prompts": [
+                    {
+                        "id": "8bc7dad0-9320-11ec-9265-8b772383a08d",
+                        "name": "Prompt title"
+                    }
+                ]
+            }
+        ],
+        "results": {
+            "updated": [
+                {
+                    "timestamp": "2024-08-13T01:59:56.053Z",
+                    "users": [
+                        {
+                            "id": "u_mGBROF_q5bmFCATbLXAcCwKa0k8JvONAwSruelyKA5E_0",
+                            "name": "elastic"
+                        }
+                    ],
+                    "content": "As an expert in security operations and incident response, provide a breakdown of the attached alert and summarize what it might mean for my organization.",
+                    "isDefault": true,
+                    "updatedAt": "2024-08-13T20:45:14.763Z",
+                    "name": "Alert summarization",
+                    "promptType": "quick",
+                    "color": "#F68FBE",
+                    "categories": [
+                        "alert"
+                    ],
+                    "consumer": "securitySolutionUI"
+                }
+            ],
+            "created": [],
+            "deleted": [],
+            "skipped": [],
+        },
+        "summary": {
+            "failed": 1,
+            "succeeded": 1,
+            "skipped": 0,
+            "total": 2
+        }
+    }
+}
+--------------------------------------------------
