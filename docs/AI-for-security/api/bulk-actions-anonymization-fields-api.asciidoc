@@ -1,12 +1,12 @@
 [[bulk-actions-anonymization-fields-api]]
-=== Bulk prompts actions
+=== Bulk anonymization fields actions
 
-Applies a bulk action to multiple prompts. The bulk action is applied to all prompts that match the filter or to the list of prompts by their IDs.
+Applies a bulk action to multiple anonymization fields. The bulk action is applied to all anonymization fields that match the filter or to the list of anonymization fields by their IDs.
 
 [discrete]
 ===== Request URL
 
-`POST  <kibana host>:<port>/api/security_ai_assistant/prompts/_bulk_action`
+`POST  <kibana host>:<port>/api/security_ai_assistant/anonymization_fields/_bulk_action`
 
 [discrete]
 ===== Request body
@@ -16,9 +16,9 @@ A JSON object with the following properties:
 [width="100%",options="header"]
 |==============================================
 |Name |Type |Description |Required
-| `create` | <<bulk-create-object-schema, BulkCreateAction[]>> |  Array of prompts objects to create. | No
-| `delete` | String[] |  Array of prompts IDs to which a bulk action will be applied. | No
-| `update` | <<bulk-update-object-schema, BulkUpdateAction[]>> |  Array of prompts objects with the fields to update. | No
+| `create` | <<bulk-create-object-schema, BulkCreateAction[]>> |  Array of anonymization fields objects to create. | No
+| `delete` | String[] |  Array of anonymization fields IDs to which a bulk action will be applied. | No
+| `update` | <<bulk-update-object-schema, BulkUpdateAction[]>> |  Array of anonymization fields objects with the fields to update. | No
 
 |==============================================
 
@@ -31,10 +31,9 @@ A JSON object with the following properties:
 |==============================================
 |Name |Type |Description |Required
 
-|`connectorId` |String |Kibana connector ID. |Yes
-|`actionTypeId` |String |Kibana connector action type ID. |Yes
-|`defaultSystemPromptId` |String |Default system prompt ID. |Yes
-|`model` |String |Specific LLM name. |No
+|`field` |String |Field name in the document which will be send to LLM. |Yes
+|`allowed` |Boolean |Identify if the field should be included to the list of the fields which will be send to LLM. |Yes
+|`anonymized` |Boolean |Indentify if the field should be anonymized. By default is `false` |Yes
 |==============================================
 
 
@@ -46,10 +45,8 @@ A JSON object with the following properties:
 |==============================================
 |Name |Type |Description |Required
 
-|`connectorId` |String |Kibana connector ID. |Yes
-|`actionTypeId` |String |Kibana connector action type ID. |Yes
-|`defaultSystemPromptId` |String |Default system prompt ID. |Yes
-|`model` |String |Specific LLM name. |No
+|`allowed` |Boolean |Identify if the field should be included to the list of the fields which will be send to LLM. |No
+|`anonymized` |Boolean |Indentify if the field should be anonymized. By default is `false` |No
 |==============================================
 
 
@@ -58,24 +55,26 @@ A JSON object with the following properties:
 
 *Example 1*
 
-The following request create prompt:
+The following request create 2 anonymization fields:
 
 [source,console]
 --------------------------------------------------
-POST api/security_ai_assistant/prompts/_bulk_action
+POST api/security_ai_assistant/anonymization_fields/_bulk_action
 {
    "create":[
       {
-         "name":"test",
-         "id":"test",
-         "content":"some test content",
-         "color":"#D36086",
-         "categories":[],
-         "promptType":"quick",
-         "consumer":"securitySolutionUI"
+         "field":"agent.type",
+         "allowed":true,
+         "anonymized":false
+      },
+      {
+         "field":"agent.name",
+         "allowed":true,
+         "anonymized":true
       }
-   ]
+   ],
 }
+
 --------------------------------------------------
 
 [discrete]
@@ -89,42 +88,43 @@ POST api/security_ai_assistant/prompts/_bulk_action
 
 JSON object containing the action's outcome:
 
-- `attributes.summary.total`: Total number of prompts matching the bulk action
-- `attributes.summary.succeeded`: Number of successful outcomes (number of prompts that were created, deleted, or updated)
+- `attributes.summary.total`: Total number of anonymization fields matching the bulk action
+- `attributes.summary.succeeded`: Number of successful outcomes (number of anonymization fields that were created, deleted, or updated)
 - `attributes.summary.failed`: Number of failed outcomes
-- `attributes.summary.skipped`: Number of prompts that were skipped due to various reasons (explained below)
-- `attributes.results.created`: Prompt objects that were created during the action's execution
-- `attributes.results.updated`: Prompt objects that were updated during the action's execution
-- `attributes.results.deleted`: Prompt objects that were deleted during the action's execution
-- `attributes.results.skipped`: Prompt that were skipped during the action's execution
+- `attributes.summary.skipped`: Number of anonymization fields that were skipped due to various reasons (explained below)
+- `attributes.results.created`: Anonymization field objects that were created during the action's execution
+- `attributes.results.updated`: Anonymization field objects that were updated during the action's execution
+- `attributes.results.deleted`: Anonymization field objects that were deleted during the action's execution
+- `attributes.results.skipped`: Anonymization field that were skipped during the action's execution
 
-A prompt can only be `skipped` when the bulk action to be performed on it results in nothing being done. For example, if the `update` action is used to add a filed to a prompt that already has that value. Objects returned in `attributes.results.skipped` will only include prompts' `id`, `name`, and `skip_reason`.
+An anonymization field can only be `skipped` when the bulk action to be performed on it results in nothing being done. For example, if the `update` action is used to add a filed to a prompt that already has that value. Objects returned in `attributes.results.skipped` will only include prompts' `id`, `name`, and `skip_reason`.
 
 [source,json]
 --------------------------------------------------
 {
     "success": true,
-    "prompts_count": 1,
+    "anonymization_fields_count": 2,
     "attributes": {
         "results": {
             "updated": [],
             "created": [
                 {
-                    "timestamp": "2024-08-13T20:24:08.610Z",
-                    "users": [
-                        {
-                            "id": "testuser",
-                            "name": "elastic"
-                        }
-                    ],
-                    "content": "dasdas",
-                    "updatedAt": "2024-08-13T20:24:08.610Z",
-                    "id": "0B1pTZEBYaDeA-NhjHej",
-                    "name": "test",
-                    "promptType": "quick",
-                    "color": "#D36086",
-                    "categories": [],
-                    "consumer": "securitySolutionUI"
+                    "timestamp": "2024-08-13T20:54:23.125Z",
+                    "createdAt": "2024-08-13T20:54:23.125Z",
+                    "field": "agent.type",
+                    "allowed": true,
+                    "anonymized": false,
+                    "updatedAt": "2024-08-13T20:54:23.125Z",
+                    "id": "cB2FTZEBYaDeA-NhPHqW"
+                },
+                {
+                    "timestamp": "2024-08-13T20:54:23.125Z",
+                    "createdAt": "2024-08-13T20:54:23.125Z",
+                    "field": "agent.name",
+                    "allowed": true,
+                    "anonymized": true,
+                    "updatedAt": "2024-08-13T20:54:23.125Z",
+                    "id": "cR2FTZEBYaDeA-NhPHqW"
                 }
             ],
             "deleted": [],
@@ -132,9 +132,9 @@ A prompt can only be `skipped` when the bulk action to be performed on it result
         },
         "summary": {
             "failed": 0,
-            "succeeded": 1,
+            "succeeded": 2,
             "skipped": 0,
-            "total": 1
+            "total": 2
         }
     }
 }
@@ -145,33 +145,21 @@ A prompt can only be `skipped` when the bulk action to be performed on it result
 The following request adds tags `tag-1` and `tag-2` to the rules that have the IDs sent in the payload:
 [source,console]
 --------------------------------------------------
-POST api/security_ai_assistant/prompts/_bulk_action
+POST api/security_ai_assistant/anonymization_fields/_bulk_action
 {
   "delete": {
     ids: [
-      "8bc7dad0-9320-11ec-9265-8b772383a08d"
+      "cR2FTZEBYaDeA-NhPHqW"
     ]
   },
    "update":[
       {
-         "timestamp":"2024-08-13T01:59:56.053Z",
-         "users":[
-            {
-               "id":"testuser",
-               "name":"elastic"
-            }
-         ],
-         "content":"As an expert in security operations and incident response, provide a breakdown of the attached alert and summarize what it might mean for my organization.",
-         "isDefault":true,
-         "updatedAt":"2024-08-13T01:59:56.053Z",
-         "id":"-R12SZEBYaDeA-NhnUyW",
-         "name":"Alert summarization",
-         "promptType":"quick",
-         "color":"#F68FBE",
-         "categories":[
-            "alert"
-         ],
-         "consumer":"securitySolutionUI"
+         "id":"lh12SZEBYaDeA-NhmkwG",
+         "allowed":false
+      },
+      {
+         "id":"lR12SZEBYaDeA-NhmkwG",
+         "anonymized":true
       }
    ]
 }
@@ -201,10 +189,10 @@ If processing of any rule fails, a partial error outputs the ID and/or name of t
             {
                 "message": "Some error happened here",
                 "status_code": 500,
-                "prompts": [
+                "anonymization_fields": [
                     {
-                        "id": "8bc7dad0-9320-11ec-9265-8b772383a08d",
-                        "name": "Prompt title"
+                        "id": "cR2FTZEBYaDeA-NhPHqW",
+                        "field": "test"
                     }
                 ]
             }
@@ -212,23 +200,22 @@ If processing of any rule fails, a partial error outputs the ID and/or name of t
         "results": {
             "updated": [
                 {
-                    "timestamp": "2024-08-13T01:59:56.053Z",
-                    "users": [
-                        {
-                            "id": "u_mGBROF_q5bmFCATbLXAcCwKa0k8JvONAwSruelyKA5E_0",
-                            "name": "elastic"
-                        }
-                    ],
-                    "content": "As an expert in security operations and incident response, provide a breakdown of the attached alert and summarize what it might mean for my organization.",
-                    "isDefault": true,
-                    "updatedAt": "2024-08-13T20:45:14.763Z",
-                    "name": "Alert summarization",
-                    "promptType": "quick",
-                    "color": "#F68FBE",
-                    "categories": [
-                        "alert"
-                    ],
-                    "consumer": "securitySolutionUI"
+                    "timestamp": "2024-08-13T01:59:55.141Z",
+                    "createdAt": "2024-08-13T01:59:55.141Z",
+                    "field": "@timestamp",
+                    "allowed": false,
+                    "anonymized": false,
+                    "updatedAt": "2024-08-13T21:00:37.502Z",
+                    "namespace": "default"
+                },
+                {
+                    "timestamp": "2024-08-13T01:59:55.141Z",
+                    "createdAt": "2024-08-13T01:59:55.141Z",
+                    "field": "_id",
+                    "allowed": true,
+                    "anonymized": true,
+                    "updatedAt": "2024-08-13T21:00:37.502Z",
+                    "namespace": "default"
                 }
             ],
             "created": [],
