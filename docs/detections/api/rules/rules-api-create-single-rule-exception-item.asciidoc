@@ -6,6 +6,8 @@ A default exception list contains exceptions that are associated with a single r
 
 If a default exception list doesn't exist, one is automatically created associated with the rule.
 
+TIP: For more information about creating exceptions that are used by multiple rules, refer to <<exceptions-api-create-exception-item>>. For more information about creating exception items from a list, such as a list of IP addresses or hosts names, refer to <<lists-api-overview>>.
+
 ==== Request URL
 
 `POST <kibana host>:<port>/api/detection_engine/rules/<id>/exceptions`
@@ -30,9 +32,101 @@ A JSON object with an array of exception items, where each exception item has th
 |==============================================
 |Name |Type |Description |Required
 
-|`items` |String | Specify an array of exception list items to create. |Yes 
+|`items` |String[] | Specify an array of exception list items to create. |Yes 
+|`comments` |Object[] a|Array of `comment` fields. Default value is [] (empty):
+
+* `comment` (string): Comments about the exception item. 
+
+|No
+
+|`description` |String |Describes the exception item. |Yes
+|`entries` |<<entries-object-schema-single-rule-exceptions, entries[]>> |Array containing the
+exception queries. Boolean `AND` logic is used to evaluate the relationship
+between array elements. If you want to use `OR` logic, create a separate
+exception item. |Yes
+|`expire_time` |String |The exception item's expiration date, in ISO format. This field is only available for regular exception items, not endpoint exceptions. |No
+|`list_id` |String |ID of the associated <<exceptions-api-create-container, exception container>>. |Yes
+|`item_id` |String |Unique identifier of the exception item. |No, automatically
+created when it is not provided.
+|`meta` |Object |Placeholder for metadata about the exception item. |No
+|`name` |String |The exception item's name. |Yes
+|`namespace_type` |String a|Determines whether the exception item is available
+in all {kib} spaces or just the space in which it is created, where:
+
+* `single`: Only available in the {kib} space in which it is created.
+* `agnostic`: Available in all {kib} spaces.
+
+Must be the same value as its associated exception container. Default value is `single`.
+
+|No
+|`os_types` |String[] a|Defines the OS on which the
+exception is implemented. Valid values are:
+
+* `os:windows`: Windows OS
+* `os:linux`: Linux OS
+* `os:macos`: Mac OS 
+
+Default value is [] (empty).
+
+|No
+|`tags` |String[] |String array containing words and phrases to help categorize
+exception items. |No
+|`type` |String a|Exception query type, must be `simple`. |Yes
 
 |==============================================
+
+
+[[entries-object-schema-single-rule-exceptions]]
+===== `entries` schema
+
+[width="100%",options="header"]
+|==============================================
+|Name |Type |Description |Required
+
+|`field` |String |The source event field used to define the exception. Cannot
+be an empty string. |Yes
+|`operator` |String a|The operator used to determine when the exception is used.
+Can be:
+
+* `included`: The `field` has the specified value or values.
+* `excluded`: The `field` does not have specified value or values.
+
+|Yes
+
+|`type` |String a|The `type` of query:
+
+* `match`: Must be an exact match of the defined value.
+* `match_any`: Matches any of the defined values.
+* `exists`: The field exists.
+* `list`: The field matches values in a list container.
+* `wildcard`: Matches `value` using wildcards, such as `C:\path\*\app.exe`. Use `?` to match one character and `*` to match zero or more characters. The `field` data type must be {ref}/keyword.html#keyword-field-type[keyword], {ref}/text.html#text-field-type[text], or {ref}/keyword.html#wildcard-field-type[wildcard].
+* `nested`: Array of `entries` objects. Nested conditions are required for
+excluding some Endpoint fields (<<nested-field-ex-api, refer to example below>>).
+<<ex-nested-conditions>> lists all Endpoint fields that require the `nested`
+type.
+
+|Yes
+
+|`value`
+a|String
+
+String[]
+
+a|Field value or values:
+
+* String: When the `type` is `match` or `wildcard`.
+* String[]: When the `type` is `match_any`.
+
+|Yes, except when `type` is `exists` or `list`.
+
+|==============================================
+
+IMPORTANT: When you use <<lists-api-create-container, list containers>>
+(`"type": "list"`), you cannot use other types in the `entries` array (`match`,
+`match_any`, `exists`, or `nested`).
+
+For endpoint exceptions, you cannot create exception items based on excluded
+values (`"operator": "excluded"`).
 
 ===== Example requests
 
