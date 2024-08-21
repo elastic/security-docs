@@ -1,0 +1,119 @@
+[[prebuilt-rule-8-12-20-mounting-hidden-or-webdav-remote-shares]]
+=== Mounting Hidden or WebDav Remote Shares
+
+Identifies the use of net.exe to mount a WebDav or hidden remote share. This may indicate lateral movement or preparation for data exfiltration.
+
+*Rule type*: eql
+
+*Rule indices*: 
+
+* logs-endpoint.events.process-*
+* winlogbeat-*
+* logs-windows.*
+* endgame-*
+* logs-system.security*
+
+*Severity*: medium
+
+*Risk score*: 47
+
+*Runs every*: 5m
+
+*Searches indices from*: now-9m ({ref}/common-options.html#date-math[Date Math format], see also <<rule-schedule, `Additional look-back time`>>)
+
+*Maximum alerts per execution*: 100
+
+*References*: None
+
+*Tags*: 
+
+* Domain: Endpoint
+* OS: Windows
+* Use Case: Threat Detection
+* Tactic: Initial Access
+* Tactic: Lateral Movement
+* Data Source: Elastic Endgame
+* Data Source: Elastic Defend
+* Data Source: System
+
+*Version*: 110
+
+*Rule authors*: 
+
+* Elastic
+
+*Rule license*: Elastic License v2
+
+
+==== Setup
+
+
+
+*Setup*
+
+
+If enabling an EQL rule on a non-elastic-agent index (such as beats) for versions <8.2,
+events will not define `event.ingested` and default fallback for EQL rules was not added until version 8.2.
+Hence for this rule to work effectively, users will need to add a custom ingest pipeline to populate
+`event.ingested` to @timestamp.
+For more details on adding a custom ingest pipeline refer - https://www.elastic.co/guide/en/fleet/current/data-streams-pipeline-tutorial.html
+
+
+==== Rule query
+
+
+[source, js]
+----------------------------------
+process where host.os.type == "windows" and event.type == "start" and
+ ((process.name : "net.exe" or ?process.pe.original_file_name == "net.exe") or ((process.name : "net1.exe" or ?process.pe.original_file_name == "net1.exe") and
+ not process.parent.name : "net.exe")) and
+ process.args : "use" and
+ /* including hidden and webdav based online shares such as onedrive  */
+ process.args : ("\\\\*\\*$*", "\\\\*@SSL\\*", "http*") and
+ /* excluding shares deletion operation */
+ not process.args : "/d*"
+
+----------------------------------
+
+*Framework*: MITRE ATT&CK^TM^
+
+* Tactic:
+** Name: Lateral Movement
+** ID: TA0008
+** Reference URL: https://attack.mitre.org/tactics/TA0008/
+* Technique:
+** Name: Remote Services
+** ID: T1021
+** Reference URL: https://attack.mitre.org/techniques/T1021/
+* Sub-technique:
+** Name: SMB/Windows Admin Shares
+** ID: T1021.002
+** Reference URL: https://attack.mitre.org/techniques/T1021/002/
+* Tactic:
+** Name: Initial Access
+** ID: TA0001
+** Reference URL: https://attack.mitre.org/tactics/TA0001/
+* Technique:
+** Name: Valid Accounts
+** ID: T1078
+** Reference URL: https://attack.mitre.org/techniques/T1078/
+* Sub-technique:
+** Name: Local Accounts
+** ID: T1078.003
+** Reference URL: https://attack.mitre.org/techniques/T1078/003/
+* Tactic:
+** Name: Discovery
+** ID: TA0007
+** Reference URL: https://attack.mitre.org/tactics/TA0007/
+* Technique:
+** Name: Account Discovery
+** ID: T1087
+** Reference URL: https://attack.mitre.org/techniques/T1087/
+* Sub-technique:
+** Name: Local Account
+** ID: T1087.001
+** Reference URL: https://attack.mitre.org/techniques/T1087/001/
+* Sub-technique:
+** Name: Domain Account
+** ID: T1087.002
+** Reference URL: https://attack.mitre.org/techniques/T1087/002/
