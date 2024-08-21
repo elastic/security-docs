@@ -35,7 +35,7 @@ Identifies script engines creating files in the Startup folder, or the creation 
 * Data Source: Elastic Defend
 * Data Source: Sysmon
 
-*Version*: 111
+*Version*: 112
 
 *Rule authors*: 
 
@@ -50,6 +50,12 @@ Identifies script engines creating files in the Startup folder, or the creation 
 
 *Triage and analysis*
 
+
+
+*Performance*
+
+
+This rule may have low to medium performance impact due to the generic nature of VBS and JS scripts being loaded by Windows script engines.
 
 
 *Investigating Persistent Scripts in the Startup Directory*
@@ -116,20 +122,6 @@ This rule looks for shortcuts created by wscript.exe or cscript.exe, or js/vbs s
 - Using the incident response data, update logging and audit policies to improve the mean time to detect (MTTD) and the mean time to respond (MTTR).
 
 
-==== Setup
-
-
-
-*Setup*
-
-
-If enabling an EQL rule on a non-elastic-agent index (such as beats) for versions <8.2,
-events will not define `event.ingested` and default fallback for EQL rules was not added until version 8.2.
-Hence for this rule to work effectively, users will need to add a custom ingest pipeline to populate
-`event.ingested` to @timestamp.
-For more details on adding a custom ingest pipeline refer - https://www.elastic.co/guide/en/fleet/current/data-streams-pipeline-tutorial.html
-
-
 ==== Rule query
 
 
@@ -137,19 +129,16 @@ For more details on adding a custom ingest pipeline refer - https://www.elastic.
 ----------------------------------
 file where host.os.type == "windows" and event.type != "deletion" and
 
-  file.extension : ("lnk", "vbs", "vbe", "wsh", "wsf", "js") and
-  not (startsWith(user.domain, "NT") or endsWith(user.domain, "NT")) and
+  /* Call attention to file extensions that may be used for malicious purposes */
+  /* Optionally, Windows scripting engine processes targeting shortcut files */
+  (
+    file.extension : ("vbs", "vbe", "wsh", "wsf", "js") or
+   process.name : ("wscript.exe", "cscript.exe")
+  ) and not (startsWith(user.domain, "NT") or endsWith(user.domain, "NT"))
 
-  /* detect shortcuts created by wscript.exe or cscript.exe */
-  (file.path : "C:\\*\\Programs\\Startup\\*.lnk" and
-     process.name : ("wscript.exe", "cscript.exe")) or
-
-  /* detect vbs or js files created by any process */
-  file.path : ("C:\\*\\Programs\\Startup\\*.vbs",
-               "C:\\*\\Programs\\Startup\\*.vbe",
-               "C:\\*\\Programs\\Startup\\*.wsh",
-               "C:\\*\\Programs\\Startup\\*.wsf",
-               "C:\\*\\Programs\\Startup\\*.js")
+  /* Identify files created or changed in the startup folder */
+  and file.path : ("?:\\Users\\*\\AppData\\Roaming\\Microsoft\\Windows\\Start Menu\\Programs\\Startup\\*",
+               "?:\\ProgramData\\Microsoft\\Windows\\Start Menu\\Programs\\StartUp\\*")
 
 ----------------------------------
 
