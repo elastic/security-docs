@@ -3,7 +3,7 @@
 
 Detects the modification of Group Policy Object attributes to execute a scheduled task in the objects controlled by the GPO.
 
-*Rule type*: query
+*Rule type*: eql
 
 *Rule indices*: 
 
@@ -39,8 +39,9 @@ Detects the modification of Group Policy Object attributes to execute a schedule
 * Data Source: Active Directory
 * Resources: Investigation Guide
 * Use Case: Active Directory Monitoring
+* Data Source: System
 
-*Version*: 111
+*Version*: 112
 
 *Rule authors*: 
 
@@ -137,11 +138,22 @@ Audit Directory Service Changes (Success,Failure)
 
 [source, js]
 ----------------------------------
-(event.code: "5136" and winlog.event_data.AttributeLDAPDisplayName:("gPCMachineExtensionNames" or "gPCUserExtensionNames") and
-   winlog.event_data.AttributeValue:(*CAB54552-DEEA-4691-817E-ED4A4D1AFC72* and *AADCED64-746C-4633-A97C-D61349046527*))
-or
-(event.code: "5145" and winlog.event_data.ShareName: "\\\\*\\SYSVOL" and winlog.event_data.RelativeTargetName: *ScheduledTasks.xml and
-  (message: WriteData or winlog.event_data.AccessList: *%%4417*))
+any where host.os.type == "windows" and event.code in ("5136", "5145") and
+(
+  (
+    winlog.event_data.AttributeLDAPDisplayName : (
+      "gPCMachineExtensionNames",
+      "gPCUserExtensionNames"
+    ) and
+    winlog.event_data.AttributeValue : "*CAB54552-DEEA-4691-817E-ED4A4D1AFC72*" and
+    winlog.event_data.AttributeValue : "*AADCED64-746C-4633-A97C-D61349046527*"
+  ) or
+  (
+    winlog.event_data.ShareName : "\\\\*\\SYSVOL" and
+    winlog.event_data.RelativeTargetName : "*ScheduledTasks.xml" and
+    winlog.event_data.AccessList:"*%%4417*"
+  )
+)
 
 ----------------------------------
 

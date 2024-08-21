@@ -34,7 +34,7 @@ Identifies the execution of a file that was created by the virtual system proces
 * Data Source: Elastic Endgame
 * Data Source: Elastic Defend
 
-*Version*: 111
+*Version*: 112
 
 *Rule authors*: 
 
@@ -124,8 +124,16 @@ sequence with maxspan=1m
       /* PDQ related processes */
       (
         process.name : (
-          "PDQInventoryScanner.exe", "PDQInventoryMonitor.exe", "PDQInventory-Scanner-?.exe", "PDQInventoryWakeCommand-?.exe"
+          "PDQInventoryScanner.exe", "PDQInventoryMonitor.exe", "PDQInventory-Scanner-?.exe",
+          "PDQInventoryWakeCommand-?.exe", "PDQDeployRunner-?.exe"
         ) and process.code_signature.trusted == true and process.code_signature.subject_name : "PDQ.com Corporation"
+      ) or
+      /* CrowdStrike related processes */
+      (
+        (process.executable : "?:\\Windows\\System32\\drivers\\CrowdStrike\\*-WindowsSensor.*.exe" and 
+         process.code_signature.trusted == true and process.code_signature.subject_name : "CrowdStrike, Inc.") or
+        (process.executable : "?:\\Windows\\System32\\drivers\\CrowdStrike\\*-CsInstallerService.exe" and 
+         process.code_signature.trusted == true and process.code_signature.subject_name : "Microsoft Windows Hardware Compatibility Publisher")
       )
     )
   ] by host.id, process.executable
