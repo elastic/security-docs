@@ -1,0 +1,95 @@
+[[prebuilt-rule-8-15-3-active-directory-forced-authentication-from-linux-host-smb-named-pipes]]
+=== Active Directory Forced Authentication from Linux Host - SMB Named Pipes
+
+Identifies a potential forced authentication using related SMB named pipes. Attackers may attempt to force targets to authenticate to a host controlled by them to capture hashes or enable relay attacks.
+
+*Rule type*: eql
+
+*Rule indices*: 
+
+* logs-endpoint.events.network-*
+* logs-system.security-*
+* winlogbeat-*
+
+*Severity*: medium
+
+*Risk score*: 47
+
+*Runs every*: 5m
+
+*Searches indices from*: now-9m ({ref}/common-options.html#date-math[Date Math format], see also <<rule-schedule, `Additional look-back time`>>)
+
+*Maximum alerts per execution*: 100
+
+*References*: 
+
+* https://github.com/p0dalirius/windows-coerced-authentication-methods
+* https://www.thehacker.recipes/a-d/movement/mitm-and-coerced-authentications
+* https://attack.mitre.org/techniques/T1187/
+
+*Tags*: 
+
+* Domain: Endpoint
+* OS: Windows
+* OS: Linux
+* Use Case: Threat Detection
+* Tactic: Credential Access
+* Data Source: Elastic Defend
+* Data Source: Active Directory
+* Use Case: Active Directory Monitoring
+* Data Source: System
+
+*Version*: 2
+
+*Rule authors*: 
+
+* Elastic
+
+*Rule license*: Elastic License v2
+
+
+==== Setup
+
+
+
+*Setup*
+
+
+This rule uses Elastic Endpoint network events from Linux hosts and system integration events from Domain controllers
+for correlation. Both data sources should be collected from the hosts for this detection to work.
+
+The 'Audit Detailed File Share' audit policy must be configured (Success Failure).
+Steps to implement the logging policy with Advanced Audit Configuration:
+```
+Computer Configuration >
+Policies >
+Windows Settings >
+Security Settings >
+Advanced Audit Policies Configuration >
+Audit Policies >
+Object Access >
+Audit Detailed File Share (Success,Failure)
+```
+
+
+==== Rule query
+
+
+[source, js]
+----------------------------------
+sequence with maxspan=15s
+[network where host.os.type == "linux" and event.action == "connection_attempted" and destination.port == 445] by host.ip
+[file where host.os.type == "windows" and event.code == "5145" and file.name : ("Spoolss", "netdfs", "lsarpc", "lsass", "netlogon", "samr", "efsrpc", "FssagentRpc")] by source.ip
+
+----------------------------------
+
+*Framework*: MITRE ATT&CK^TM^
+
+* Tactic:
+** Name: Credential Access
+** ID: TA0006
+** Reference URL: https://attack.mitre.org/tactics/TA0006/
+* Technique:
+** Name: Forced Authentication
+** ID: T1187
+** Reference URL: https://attack.mitre.org/techniques/T1187/
