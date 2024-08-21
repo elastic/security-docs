@@ -1,0 +1,137 @@
+[[prebuilt-rule-8-12-20-potential-privilege-escalation-via-service-imagepath-modification]]
+=== Potential Privilege Escalation via Service ImagePath Modification
+
+Identifies registry modifications to default services that could enable privilege escalation to SYSTEM. Attackers with privileges from groups like Server Operators may change the ImagePath of services to executables under their control or to execute commands.
+
+*Rule type*: eql
+
+*Rule indices*: 
+
+* logs-endpoint.events.registry-*
+* logs-windows.sysmon_operational-*
+* winlogbeat-*
+
+*Severity*: medium
+
+*Risk score*: 47
+
+*Runs every*: 5m
+
+*Searches indices from*: now-9m ({ref}/common-options.html#date-math[Date Math format], see also <<rule-schedule, `Additional look-back time`>>)
+
+*Maximum alerts per execution*: 100
+
+*References*: 
+
+* https://cube0x0.github.io/Pocing-Beyond-DA/
+
+*Tags*: 
+
+* Domain: Endpoint
+* OS: Windows
+* Use Case: Threat Detection
+* Tactic: Execution
+* Tactic: Privilege Escalation
+* Data Source: Elastic Defend
+* Data Source: Sysmon
+
+*Version*: 2
+
+*Rule authors*: 
+
+* Elastic
+
+*Rule license*: Elastic License v2
+
+
+==== Rule query
+
+
+[source, js]
+----------------------------------
+registry where host.os.type == "windows" and event.type == "change" and process.executable != null and 
+  event.action == "modification" and registry.value == "ImagePath" and
+  registry.key : (
+    "*\\ADWS", "*\\AppHostSvc", "*\\AppReadiness", "*\\AudioEndpointBuilder", "*\\AxInstSV", "*\\camsvc", "*\\CertSvc",
+    "*\\COMSysApp", "*\\CscService", "*\\defragsvc", "*\\DeviceAssociationService", "*\\DeviceInstall", "*\\DevQueryBroker",
+    "*\\Dfs", "*\\DFSR", "*\\diagnosticshub.standardcollector.service", "*\\DiagTrack", "*\\DmEnrollmentSvc", "*\\DNS",
+    "*\\dot3svc", "*\\Eaphost", "*\\GraphicsPerfSvc", "*\\hidserv", "*\\HvHost", "*\\IISADMIN", "*\\IKEEXT",
+    "*\\InstallService", "*\\iphlpsvc", "*\\IsmServ", "*\\LanmanServer", "*\\MSiSCSI", "*\\NcbService", "*\\Netlogon",
+    "*\\Netman", "*\\NtFrs", "*\\PlugPlay", "*\\Power", "*\\PrintNotify", "*\\ProfSvc", "*\\PushToInstall", "*\\RSoPProv",
+    "*\\sacsvr", "*\\SENS", "*\\SensorDataService", "*\\SgrmBroker", "*\\ShellHWDetection", "*\\shpamsvc", "*\\StorSvc",
+    "*\\svsvc", "*\\swprv", "*\\SysMain", "*\\Themes", "*\\TieringEngineService", "*\\TokenBroker", "*\\TrkWks",
+    "*\\UALSVC", "*\\UserManager", "*\\vm3dservice", "*\\vmicguestinterface", "*\\vmicheartbeat", "*\\vmickvpexchange",
+    "*\\vmicrdv", "*\\vmicshutdown", "*\\vmicvmsession", "*\\vmicvss", "*\\vmvss", "*\\VSS", "*\\w3logsvc", "*\\W3SVC",
+    "*\\WalletService", "*\\WAS", "*\\wercplsupport", "*\\WerSvc", "*\\Winmgmt", "*\\wisvc", "*\\wmiApSrv",
+    "*\\WPDBusEnum", "*\\WSearch"
+  ) and
+  not (
+    registry.data.strings : (
+        "?:\\Windows\\system32\\*.exe",
+        "%systemroot%\\system32\\*.exe",
+        "%windir%\\system32\\*.exe",
+        "%SystemRoot%\\system32\\svchost.exe -k *",
+        "%windir%\\system32\\svchost.exe -k *"
+    ) and
+        not registry.data.strings : (
+            "*\\cmd.exe",
+            "*\\cscript.exe",
+            "*\\ieexec.exe",
+            "*\\iexpress.exe",
+            "*\\installutil.exe",
+            "*\\Microsoft.Workflow.Compiler.exe",
+            "*\\msbuild.exe",
+            "*\\mshta.exe",
+            "*\\msiexec.exe",
+            "*\\msxsl.exe",
+            "*\\net.exe",
+            "*\\powershell.exe",
+            "*\\pwsh.exe",
+            "*\\reg.exe",
+            "*\\RegAsm.exe",
+            "*\\RegSvcs.exe",
+            "*\\regsvr32.exe",
+            "*\\rundll32.exe",
+            "*\\vssadmin.exe",
+            "*\\wbadmin.exe",
+            "*\\wmic.exe",
+            "*\\wscript.exe"
+        )
+  )
+
+----------------------------------
+
+*Framework*: MITRE ATT&CK^TM^
+
+* Tactic:
+** Name: Privilege Escalation
+** ID: TA0004
+** Reference URL: https://attack.mitre.org/tactics/TA0004/
+* Technique:
+** Name: Create or Modify System Process
+** ID: T1543
+** Reference URL: https://attack.mitre.org/techniques/T1543/
+* Sub-technique:
+** Name: Windows Service
+** ID: T1543.003
+** Reference URL: https://attack.mitre.org/techniques/T1543/003/
+* Technique:
+** Name: Hijack Execution Flow
+** ID: T1574
+** Reference URL: https://attack.mitre.org/techniques/T1574/
+* Sub-technique:
+** Name: Services Registry Permissions Weakness
+** ID: T1574.011
+** Reference URL: https://attack.mitre.org/techniques/T1574/011/
+* Tactic:
+** Name: Execution
+** ID: TA0002
+** Reference URL: https://attack.mitre.org/tactics/TA0002/
+* Technique:
+** Name: System Services
+** ID: T1569
+** Reference URL: https://attack.mitre.org/techniques/T1569/
+* Sub-technique:
+** Name: Service Execution
+** ID: T1569.002
+** Reference URL: https://attack.mitre.org/techniques/T1569/002/
