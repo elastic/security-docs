@@ -1,0 +1,75 @@
+[[prebuilt-rule-8-15-3-active-directory-group-modification-by-system]]
+=== Active Directory Group Modification by SYSTEM
+
+Identifies a user being added to an active directory group by the SYSTEM (S-1-5-18) user. This behavior can indicate that the attacker has achieved SYSTEM privileges in a domain controller, which attackers can obtain by exploiting vulnerabilities or abusing default group privileges (e.g., Server Operators), and is attempting to pivot to a domain account.
+
+*Rule type*: eql
+
+*Rule indices*: 
+
+* winlogbeat-*
+* logs-system.security*
+* logs-windows.forwarded*
+
+*Severity*: medium
+
+*Risk score*: 47
+
+*Runs every*: 5m
+
+*Searches indices from*: now-9m ({ref}/common-options.html#date-math[Date Math format], see also <<rule-schedule, `Additional look-back time`>>)
+
+*Maximum alerts per execution*: 100
+
+*References*: None
+
+*Tags*: 
+
+* Domain: Endpoint
+* OS: Windows
+* Use Case: Threat Detection
+* Tactic: Persistence
+* Use Case: Active Directory Monitoring
+* Data Source: Active Directory
+* Data Source: System
+
+*Version*: 2
+
+*Rule authors*: 
+
+* Elastic
+
+*Rule license*: Elastic License v2
+
+
+==== Rule query
+
+
+[source, js]
+----------------------------------
+iam where winlog.api == "wineventlog" and event.code == "4728" and
+winlog.event_data.SubjectUserSid : "S-1-5-18" and
+
+/* DOMAIN_USERS and local groups */
+not group.id : "S-1-5-21-*-513"
+
+----------------------------------
+
+*Framework*: MITRE ATT&CK^TM^
+
+* Tactic:
+** Name: Persistence
+** ID: TA0003
+** Reference URL: https://attack.mitre.org/tactics/TA0003/
+* Technique:
+** Name: Account Manipulation
+** ID: T1098
+** Reference URL: https://attack.mitre.org/techniques/T1098/
+* Tactic:
+** Name: Privilege Escalation
+** ID: TA0004
+** Reference URL: https://attack.mitre.org/tactics/TA0004/
+* Technique:
+** Name: Account Manipulation
+** ID: T1098
+** Reference URL: https://attack.mitre.org/techniques/T1098/
