@@ -3,7 +3,7 @@
 
 Detects attempts to exploit privilege escalation vulnerabilities related to the Print Spooler service. For more information refer to the following CVE's - CVE-2020-1048, CVE-2020-1337 and CVE-2020-1300 and verify that the impacted system is patched.
 
-*Rule type*: eql
+*Rule type*: new_terms
 
 *Rule indices*: 
 
@@ -12,9 +12,9 @@ Detects attempts to exploit privilege escalation vulnerabilities related to the 
 * logs-windows.sysmon_operational-*
 * endgame-*
 
-*Severity*: high
+*Severity*: low
 
-*Risk score*: 73
+*Risk score*: 21
 
 *Runs every*: 5m
 
@@ -38,7 +38,7 @@ Detects attempts to exploit privilege escalation vulnerabilities related to the 
 * Data Source: Elastic Defend
 * Data Source: Sysmon
 
-*Version*: 108
+*Version*: 109
 
 *Rule authors*: 
 
@@ -47,38 +47,13 @@ Detects attempts to exploit privilege escalation vulnerabilities related to the 
 *Rule license*: Elastic License v2
 
 
-==== Setup
-
-
-
-*Setup*
-
-
-If enabling an EQL rule on a non-elastic-agent index (such as beats) for versions <8.2,
-events will not define `event.ingested` and default fallback for EQL rules was not added until version 8.2.
-Hence for this rule to work effectively, users will need to add a custom ingest pipeline to populate
-`event.ingested` to @timestamp.
-For more details on adding a custom ingest pipeline refer - https://www.elastic.co/guide/en/fleet/current/data-streams-pipeline-tutorial.html
-
-
 ==== Rule query
 
 
 [source, js]
 ----------------------------------
-file where host.os.type == "windows" and event.type == "creation" and
-  process.name : "spoolsv.exe" and file.extension : "dll" and
-  file.path : ("?:\\Windows\\System32\\*", "?:\\Windows\\SysWOW64\\*") and
-  not file.path : (
-    "?:\\WINDOWS\\SysWOW64\\PrintConfig.dll",
-    "?:\\WINDOWS\\system32\\x5lrs.dll",
-    "?:\\WINDOWS\\sysWOW64\\x5lrs.dll",
-    "?:\\WINDOWS\\system32\\PrintConfig.dll",
-    "?:\\WINDOWS\\system32\\spool\\DRIVERS\\x64\\*.dll",
-    "?:\\WINDOWS\\system32\\spool\\DRIVERS\\W32X86\\*.dll",
-    "?:\\WINDOWS\\system32\\spool\\PRTPROCS\\x64\\*.dll",
-    "?:\\WINDOWS\\system32\\spool\\{????????-????-????-????-????????????}\\*.dll"
-  )
+event.category : "file" and host.os.type : "windows" and event.type : "creation" and
+  process.name : "spoolsv.exe" and file.extension : "dll"
 
 ----------------------------------
 
