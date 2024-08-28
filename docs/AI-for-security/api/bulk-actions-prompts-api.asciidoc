@@ -1,0 +1,238 @@
+[[bulk-actions-prompts-api]]
+=== Bulk prompt actions
+
+Apply a bulk action (create, update, or delete) to multiple prompts. The bulk action is applied to all prompts that match the filter or to the list of prompts by their IDs.
+
+[discrete]
+===== Request URL
+
+`POST <kibana host>:<port>/api/security_ai_assistant/prompts/_bulk_action`
+
+[discrete]
+===== Request body
+
+A JSON object with the following properties:
+
+[width="100%",options="header"]
+|==============================================
+|Name |Type |Description |Required
+| `create` | <<bulk-create-object-schema, BulkCreateAction[]>> |  Array of prompt objects to create. | No
+| `delete` | String[] |  Array of IDs of the prompts to delete. | No
+| `update` | <<bulk-update-object-schema, BulkUpdateAction[]>> |  Array of prompt objects with the fields to update. | No
+
+|==============================================
+
+
+[[bulk-create-object-schema]]
+[discrete]
+==== BulkCreateAction object
+
+[width="100%",options="header"]
+|==============================================
+|Name |Type |Description |Required
+
+|`name` |String |Short prompt title. |Yes
+|`id` |String |Prompt ID. |Yes
+|`promptType` |String a|Prompt type. Valid values are:
+
+* `system`
+* `quick`
+|Yes
+|`consumer` |String |Solution application that the prompt belongs to. For example `securitySolutionUI`, `ml` |Yes
+|`content` |String |Prompt text to send to LLM. |Yes
+|`color` |String |Sets the display color for quick prompts in the UI. |No
+|`categories` |String[] |Array of prompt categories. |No
+|==============================================
+
+
+[discrete]
+[[bulk-update-object-schema]]
+==== BulkUpdateAction object
+
+[width="100%",options="header"]
+|==============================================
+|Name |Type |Description |Required
+
+|`id` |String |Prompt ID. |Yes
+|`content` |String |Prompt text to send to LLM. |No
+|`color` |String |Sets the display color for quick prompts in the UI. |No
+|`categories` |String[] |Array of prompts categories. |No
+|==============================================
+
+
+[discrete]
+===== Example requests
+
+*Example 1*
+
+The following request creates a new quick prompt:
+
+[source,console]
+--------------------------------------------------
+POST api/security_ai_assistant/prompts/_bulk_action
+{
+  "create": [
+    {
+      "name": "test",
+      "id": "test",
+      "content": "some test content",
+      "color": "#D36086",
+      "categories": [],
+      "promptType": "quick",
+      "consumer": "securitySolutionUI"
+    }
+  ]
+}
+--------------------------------------------------
+
+[discrete]
+===== Response code
+
+`200`::
+    Indicates a successful call.
+
+[discrete]
+===== Response payload
+
+JSON object containing the action's outcome:
+
+- `attributes.summary.total`: Total number of prompts matching the bulk action
+- `attributes.summary.succeeded`: Number of successful outcomes (number of prompts that were created, deleted, or updated)
+- `attributes.summary.failed`: Number of failed outcomes
+- `attributes.summary.skipped`: Number of prompts that were skipped due to various reasons (explained below)
+- `attributes.results.created`: Prompt objects that were created during the action's execution
+- `attributes.results.updated`: Prompt objects that were updated during the action's execution
+- `attributes.results.deleted`: Prompt objects that were deleted during the action's execution
+- `attributes.results.skipped`: Prompt that were skipped during the action's execution
+
+A prompt can only be `skipped` when the bulk action to be performed on it results in nothing being done. For example, if the `update` action is used to update a field that already has the specified value. Objects returned in `attributes.results.skipped` only include a prompt's `id`, `name`, and `skip_reason`.
+
+[source,json]
+--------------------------------------------------
+{
+  "success": true,
+  "prompts_count": 1,
+  "attributes": {
+    "results": {
+      "updated": [],
+      "created": [
+        {
+          "timestamp": "2024-08-13T20:24:08.610Z",
+          "users": [
+            {
+              "id": "testuser",
+              "name": "elastic"
+            }
+          ],
+          "content": "some test content",
+          "updatedAt": "2024-08-13T20:24:08.610Z",
+          "id": "0B1pTZEBYaDeA-NhjHej",
+          "name": "test",
+          "promptType": "quick",
+          "color": "#D36086",
+          "categories": [],
+          "consumer": "securitySolutionUI"
+        }
+      ],
+      "deleted": [],
+      "skipped": []
+    },
+    "summary": {
+      "failed": 0,
+      "succeeded": 1,
+      "skipped": 0,
+      "total": 1
+    }
+  }
+}
+--------------------------------------------------
+
+*Example 2: Partial failure*
+
+The following request deletes prompt by ID "8bc7dad0-9320-11ec-9265-8b772383a08d" and updates another prompt by ID "2-R12SZEBYaDeA-NhnUyW" with the new values for content, color and categories:
+[source,console]
+--------------------------------------------------
+POST api/security_ai_assistant/prompts/_bulk_action
+{
+  "delete": {
+    "ids": [
+      "8bc7dad0-9320-11ec-9265-8b772383a08d"
+    ]
+  },
+  "update": [
+    {
+      "content": "As an expert in security operations and incident response, provide a breakdown of the attached alert and summarize what it might mean for my organization.",
+      "id": "2-R12SZEBYaDeA-NhnUyW",
+      "color": "#F68FBE",
+      "categories": [
+        "alert"
+      ]
+    }
+  ]
+}
+--------------------------------------------------
+
+[discrete]
+===== Response code
+
+`500`::
+    Indicates partial bulk action failure.
+
+[discrete]
+===== Response payload
+
+If the processing of any prompts fails, the response outputs a partial error, with the ID and/or name of the affected prompt and the corresponding error message. The response also includes successfully processed prompts, in the same format as a successful `200` request.
+
+[source,json]
+--------------------------------------------------
+{
+  "message": "Bulk delete partially failed",
+  "status_code": 500,
+  "attributes": {
+    "errors": [
+      {
+        "message": "Some error happened here",
+        "status_code": 500,
+        "prompts": [
+          {
+            "id": "8bc7dad0-9320-11ec-9265-8b772383a08d",
+            "name": "Prompt title"
+          }
+        ]
+      }
+    ],
+    "results": {
+      "updated": [
+        {
+          "timestamp": "2024-08-13T01:59:56.053Z",
+          "users": [
+            {
+              "id": "u_mGBROF_q5bmFCATbLXAcCwKa0k8JvONAwSruelyKA5E_0",
+              "name": "elastic"
+            }
+          ],
+          "content": "As an expert in security operations and incident response, provide a breakdown of the attached alert and summarize what it might mean for my organization.",
+          "isDefault": true,
+          "updatedAt": "2024-08-13T20:45:14.763Z",
+          "name": "Alert summarization",
+          "promptType": "quick",
+          "color": "#F68FBE",
+          "categories": [
+            "alert"
+          ],
+          "consumer": "securitySolutionUI"
+        }
+      ],
+      "created": [],
+      "deleted": [],
+      "skipped": []
+    },
+    "summary": {
+      "failed": 1,
+      "succeeded": 1,
+      "skipped": 0,
+      "total": 2
+    }
+  }
+}
+--------------------------------------------------

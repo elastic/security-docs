@@ -1,0 +1,234 @@
+[[bulk-actions-anonymization-fields-api]]
+=== Bulk anonymization field actions
+
+Apply a bulk action (create, update, or delete) to multiple anonymization fields. The bulk action is applied to all anonymization fields that match the filter or to the list of anonymization fields by their IDs.
+
+[discrete]
+===== Request URL
+
+`POST <kibana host>:<port>/api/security_ai_assistant/anonymization_fields/_bulk_action`
+
+[discrete]
+===== Request body
+
+A JSON object with the following properties:
+
+[width="100%",options="header"]
+|==============================================
+|Name |Type |Description |Required
+| `create` | <<bulk-create-anonymization-fields-schema, BulkCreateAction[]>> |  Array of anonymization field objects to create. | No
+| `delete` | String[] |  Array of IDs of the anonymization fields to delete. | No
+| `update` | <<bulk-update-anonymization-fields-schema, BulkUpdateAction[]>> |  Array of anonymization field objects with the fields to update. | No
+
+|==============================================
+
+
+[[bulk-create-anonymization-fields-schema]]
+[discrete]
+==== BulkCreateAction object
+
+[width="100%",options="header"]
+|==============================================
+|Name |Type |Description |Required
+
+|`field` |String |A field's name. |Yes
+|`allowed` |Boolean |Defines whether the field will get sent to the LLM. |Yes
+|`anonymized` |Boolean |Defines whether the field will be anonymized if sent to the LLM. Defaults to `false`. |Yes
+|==============================================
+
+
+[discrete]
+[[bulk-update-anonymization-fields-schema]]
+==== BulkUpdateAction object
+
+[width="100%",options="header"]
+|==============================================
+|Name |Type |Description |Required
+
+|`allowed` |Boolean |Defines whether the field will get sent to the LLM.  |No
+|`anonymized` |Boolean |Defines whether the field will be anonymized if sent to the LLM. Defaults to `false`.  |No
+|==============================================
+
+
+[discrete]
+===== Example requests
+
+*Example 1*
+
+The following request creates two anonymization fields:
+
+[source,console]
+--------------------------------------------------
+POST api/security_ai_assistant/anonymization_fields/_bulk_action
+{
+  "create": [
+    {
+      "field": "agent.type",
+      "allowed": true,
+      "anonymized": false
+    },
+    {
+      "field": "agent.name",
+      "allowed": true,
+      "anonymized": true
+    }
+  ]
+}
+--------------------------------------------------
+
+[discrete]
+===== Response code
+
+`200`::
+    Indicates a successful call.
+
+[discrete]
+===== Response payload
+
+JSON object containing the action's outcome:
+
+- `attributes.summary.total`: Total number of anonymization fields matching the bulk action
+- `attributes.summary.succeeded`: Number of successful outcomes (number of anonymization fields that were created, deleted, or updated)
+- `attributes.summary.failed`: Number of failed outcomes
+- `attributes.summary.skipped`: Number of anonymization fields that were skipped due to various reasons (explained below)
+- `attributes.results.created`: Anonymization field objects that were created during the action's execution
+- `attributes.results.updated`: Anonymization field objects that were updated during the action's execution
+- `attributes.results.deleted`: Anonymization field objects that were deleted during the action's execution
+- `attributes.results.skipped`: Anonymization fields that were skipped during the action's execution
+
+An anonymization field can only be `skipped` when the bulk action to be performed on it results in nothing being done. For example, if the `update` action is used to update a field that already has the specified value. Objects returned in `attributes.results.skipped` will only include an anonymization field's `id`, `name`, and `skip_reason`.
+
+[source,json]
+--------------------------------------------------
+{
+  "success": true,
+  "anonymization_fields_count": 2,
+  "attributes": {
+    "results": {
+      "updated": [],
+      "created": [
+        {
+          "timestamp": "2024-08-13T20:54:23.125Z",
+          "createdAt": "2024-08-13T20:54:23.125Z",
+          "field": "agent.type",
+          "allowed": true,
+          "anonymized": false,
+          "updatedAt": "2024-08-13T20:54:23.125Z",
+          "id": "cB2FTZEBYaDeA-NhPHqW"
+        },
+        {
+          "timestamp": "2024-08-13T20:54:23.125Z",
+          "createdAt": "2024-08-13T20:54:23.125Z",
+          "field": "agent.name",
+          "allowed": true,
+          "anonymized": true,
+          "updatedAt": "2024-08-13T20:54:23.125Z",
+          "id": "cR2FTZEBYaDeA-NhPHqW"
+        }
+      ],
+      "deleted": [],
+      "skipped": []
+    },
+    "summary": {
+      "failed": 0,
+      "succeeded": 2,
+      "skipped": 0,
+      "total": 2
+    }
+  }
+}
+--------------------------------------------------
+
+*Example 2: Partial failure*
+
+The following request:
+
+* deletes the anonymization field with the ID value of `cR2FTZEBYaDeA-NhPHqW`
+* updates the `allowed` value for the anonymization field with the ID of `lh12SZEBYaDeA-NhmkwG`
+* updates the `anonymized` value for the anonymization field with the ID of `lR12SZEBYaDeA-NhmkwG`
+
+[source,console]
+--------------------------------------------------
+POST api/security_ai_assistant/anonymization_fields/_bulk_action
+{
+  "delete": {
+    "ids": [
+      "cR2FTZEBYaDeA-NhPHqW"
+    ]
+  },
+  "update": [
+    {
+      "id": "lh12SZEBYaDeA-NhmkwG",
+      "allowed": false
+    },
+    {
+      "id": "lR12SZEBYaDeA-NhmkwG",
+      "anonymized": true
+    }
+  ]
+}
+--------------------------------------------------
+
+[discrete]
+===== Response code
+
+`500`::
+    Indicates partial bulk action failure.
+
+[discrete]
+===== Response payload
+
+If the processing of any anonymization fields fails, the response outputs a partial error, with the ID and/or name of the affected anonymization field and the corresponding error message. The response also includes successfully processed anonymization fields, in the same format as a successful `200` request.
+
+[source,json]
+--------------------------------------------------
+{
+  "message": "Bulk delete partially failed",
+  "status_code": 500,
+  "attributes": {
+    "errors": [
+      {
+        "message": "Some error happened here",
+        "status_code": 500,
+        "anonymization_fields": [
+          {
+            "id": "cR2FTZEBYaDeA-NhPHqW",
+            "field": "test"
+          }
+        ]
+      }
+    ],
+    "results": {
+      "updated": [
+        {
+          "timestamp": "2024-08-13T01:59:55.141Z",
+          "createdAt": "2024-08-13T01:59:55.141Z",
+          "field": "@timestamp",
+          "allowed": false,
+          "anonymized": false,
+          "updatedAt": "2024-08-13T21:00:37.502Z",
+          "namespace": "default"
+        },
+        {
+          "timestamp": "2024-08-13T01:59:55.141Z",
+          "createdAt": "2024-08-13T01:59:55.141Z",
+          "field": "_id",
+          "allowed": true,
+          "anonymized": true,
+          "updatedAt": "2024-08-13T21:00:37.502Z",
+          "namespace": "default"
+        }
+      ],
+      "created": [],
+      "deleted": [],
+      "skipped": []
+    },
+    "summary": {
+      "failed": 1,
+      "succeeded": 1,
+      "skipped": 0,
+      "total": 2
+    }
+  }
+}
+--------------------------------------------------
