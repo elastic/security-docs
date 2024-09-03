@@ -1,0 +1,71 @@
+[[prebuilt-rule-8-15-4-aws-signin-single-factor-console-login-with-federated-user]]
+=== AWS Signin Single Factor Console Login with Federated User
+
+Identifies when a federated user logs into the AWS Management Console without using multi-factor authentication (MFA). Federated users are typically given temporary credentials to access AWS services. If a federated user logs into the AWS Management Console without using MFA, it may indicate a security risk, as MFA adds an additional layer of security to the authentication process. This could also indicate the abuse of STS tokens to bypass MFA requirements.
+
+*Rule type*: esql
+
+*Rule indices*: None
+
+*Severity*: medium
+
+*Risk score*: 47
+
+*Runs every*: 5m
+
+*Searches indices from*: now-9m ({ref}/common-options.html#date-math[Date Math format], see also <<rule-schedule, `Additional look-back time`>>)
+
+*Maximum alerts per execution*: 100
+
+*References*: 
+
+* https://hackingthe.cloud/aws/post_exploitation/create_a_console_session_from_iam_credentials/
+
+*Tags*: 
+
+* Domain: Cloud
+* Data Source: Amazon Web Services
+* Data Source: AWS
+* Data Source: AWS Sign-In
+* Use Case: Threat Detection
+* Tactic: Initial Access
+
+*Version*: 1
+
+*Rule authors*: 
+
+* Elastic
+
+*Rule license*: Elastic License v2
+
+
+==== Rule query
+
+
+[source, js]
+----------------------------------
+from logs-aws.cloudtrail-*
+| where
+    event.provider == "signin.amazonaws.com"
+    and event.action == "GetSigninToken"
+    and aws.cloudtrail.event_type == "AwsConsoleSignIn"
+    and aws.cloudtrail.user_identity.type == "FederatedUser"
+| dissect aws.cloudtrail.additional_eventdata "{%{?mobile_version_key}=%{mobile_version}, %{?mfa_used_key}=%{mfa_used}}"
+| where mfa_used == "No"
+
+----------------------------------
+
+*Framework*: MITRE ATT&CK^TM^
+
+* Tactic:
+** Name: Initial Access
+** ID: TA0001
+** Reference URL: https://attack.mitre.org/tactics/TA0001/
+* Technique:
+** Name: Valid Accounts
+** ID: T1078
+** Reference URL: https://attack.mitre.org/techniques/T1078/
+* Sub-technique:
+** Name: Cloud Accounts
+** ID: T1078.004
+** Reference URL: https://attack.mitre.org/techniques/T1078/004/
