@@ -3,7 +3,6 @@ slug: /serverless/security/detections-requirements
 title: Detections requirements
 description: Requirements for setting up and configuring the detections feature.
 tags: [ 'serverless', 'security', 'reference','manage' ]
-status: in review
 ---
 
 <DocBadge template="technical preview" />
@@ -18,16 +17,140 @@ configure <DocLink slug="/serverless/security/value-lists-exceptions">value list
 
 <div id="enable-detections-ui"></div>
 
-
-{/* We're removing a lot of the information below because it's only relevant to classic, but retaining it for reference. We will replace it with serverless-specific equivalents once that information is available and useable. */}
 ## Enable and access detections
-To use the Detections feature, it must be enabled and you must have the appropriate role to access rules and alerts. If your role does not have the privileges needed to enable this feature, you can request someone who has these privileges to visit your Security project{/* Kibana space */}, which will turn it on for you. {/* The following table describes the required privileges to access the Detections page, including rules and alerts. */}
 
-{/* The reference to the Detections page might be a bug in classic and serverless docs. Might need to change it to Alerts and Rules, or something different like "pages that use the Detections feature". If update this para, will need to update the table below as well. */} 
+{/* TO-DO: Remove the DocIf conditionals once the feature is available in production. */}
+
+{/* TEMPORARY: Commenting out conditionals so we can create a PR preview: */}
+<DocIf condition={"((serverlessCustomRoles))" === "false"}>
+To use the Detections feature, it must be enabled and you must have the appropriate <DocLink slug="/serverless/general/assign-user-roles">predefined Security user role</DocLink> to access rules and alerts. If your role doesn't have the privileges needed to enable this feature, you can request someone who has these privileges to visit your ((kib)) space, which will turn it on for you.
 
 <DocCallOut title="Note">
-For instructions about using Machine Learning jobs and rules, refer to <DocLink slug="/serverless/security/ml-requirements">Machine learning job and rule requirements</DocLink>.
+For instructions about using ((ml)) jobs and rules, refer to <DocLink slug="/serverless/security/ml-requirements">Machine learning job and rule requirements</DocLink>.
 </DocCallOut>
+</DocIf>
+
+
+
+
+
+<DocIf condition={"((serverlessCustomRoles))" === "true"}>
+To use the Detections feature, it must be enabled and you must have either the appropriate <DocLink slug="/serverless/general/assign-user-roles">predefined Security user role</DocLink> or a <DocLink slug="/serverless/custom-roles">custom role</DocLink> with privileges to access rules and alerts. If your role doesn't have the privileges needed to enable this feature, you can request someone who has these privileges to visit your ((kib)) space, which will turn it on for you. 
+
+<DocCallOut title="Note">
+For instructions about using ((ml)) jobs and rules, refer to <DocLink slug="/serverless/security/ml-requirements">Machine learning job and rule requirements</DocLink>.
+</DocCallOut>
+
+### Custom role privileges
+
+The following table describes the required custom role privileges to access the Detections feature, including rules and alerts. For more information on ((kib)) privileges, refer to <DocLink slug="/serverless/custom-roles" />.
+
+<DocTable columns={[{ title: "Action", width: "20%" }, { title: "Cluster Privilege", width: "17%" }, { title: "Index Privileges" }, { title: "((kib)) Privileges" }]}>
+    <DocRow>
+        <DocCell>Enable detections in your space</DocCell>
+        <DocCell>`manage`</DocCell>
+        <DocCell>
+            `manage`, `write`, `read`, and `view_index_metadata` for these system indices and data streams, where `<space-id>` is the space name:
+
+            * `.alerts-security.alerts-<space-id>`
+            * `.lists-<space-id>`
+            * `.items-<space-id>`
+        </DocCell>
+        <DocCell>`All` for the `Security` feature</DocCell>
+    </DocRow>
+    <DocRow>
+        <DocCell>
+            Enable detections in all spaces
+
+            **NOTE:** To turn on detections, visit the Rules and Alerts pages for each space.
+        </DocCell>
+        <DocCell>`manage`</DocCell>
+        <DocCell>
+            `manage`, `write`, `read`, and `view_index_metadata` for these system indices and data streams:
+
+            * `.alerts-security.alerts-<space-id>`
+            * `.lists-<space-id>`
+            * `.items-<space-id>`
+        </DocCell>
+        <DocCell>`All` for the `Security` feature</DocCell>
+    </DocRow>
+    <DocRow>
+        <DocCell>Preview rules</DocCell>
+        <DocCell>N/A</DocCell>
+        <DocCell>
+            `read` for these indices:
+
+            * `.preview.alerts-security.alerts-<space-id>`
+            * `.internal.preview.alerts-security.alerts-<space-id>-*`
+        </DocCell>
+        <DocCell>`All` for the `Security` feature</DocCell>
+    </DocRow>
+    <DocRow>
+        <DocCell>Manage rules</DocCell>
+        <DocCell>N/A</DocCell>
+        <DocCell>
+            `manage`, `write`, `read`, and `view_index_metadata` for these system indices and data streams, where `<space-id>` is the space name:
+
+            * `.alerts-security.alerts-<space-id`
+            * `.lists-<space-id>`
+            * `.items-<space-id>`
+        </DocCell>
+        <DocCell>
+            `All` for the `Security` feature
+
+            **NOTE:** You need additional `Action and Connectors` feature privileges (**Management → Action and Connectors**) to manage rules with actions and connectors:
+
+            * To provide full access to rule actions and connectors, give your role `All` privileges. With `Read` privileges, you can edit rule actions, but will have limited capabilities to manage connectors. For example, `Read` privileges allow you to add or remove an existing connector from a rule, but does not allow you to create a new connector.
+
+            * To import rules with actions, you need at least `Read` privileges for the `Action and Connectors` feature. To overwrite or add new connectors, you need `All` privileges for the `Actions and Connectors` feature. To import rules without actions,  you don't need `Actions and Connectors` privileges.
+        </DocCell>
+    </DocRow>
+    <DocRow>
+        <DocCell>
+            Manage alerts
+
+            **NOTE**: Allows you to manage alerts, but not modify rules.    
+        </DocCell>
+        <DocCell>N/A</DocCell>
+        <DocCell>
+            `maintenance`, `write`, `read`, and `view_index_metadata` for these system indices and data streams, where `<space-id>` is the space name:
+
+            * `.alerts-security.alerts-<space-id>`
+            * `.internal.alerts-security.alerts-<space-id>-*`
+            * `.lists-<space-id>`
+            * `.items-<space-id>`
+        </DocCell>
+        <DocCell>`Read` for the `Security` feature</DocCell>
+    </DocRow>
+    <DocRow>
+        <DocCell>
+            Create the `.lists` and `.items` data streams in your space
+
+            **NOTE**: To initiate the process that creates the data streams, you must visit the Rules page for each appropriate space.
+        </DocCell>
+        <DocCell>`manage`</DocCell>
+        <DocCell>
+            `manage`, `write`, `read`, and `view_index_metadata` for these data streams, where `<space-id>` is the space name:
+
+            * `.lists-<space-id>`
+            * `.items-<space-id>`
+        </DocCell>
+        <DocCell>`All` for the `Security` and `Saved Objects Management` features</DocCell>
+    </DocRow>
+</DocTable>
+
+
+
+
+
+
+
+
+
+
+
+</DocIf>
+
 
 <div id="alerting-auth-model"></div>
 
@@ -40,37 +163,3 @@ Rules, including all background detection and the actions they generate, are aut
 If a rule requires certain privileges to run, such as index privileges, keep in mind that if a user without those privileges updates the rule, the rule will no longer function.
 
 </DocCallOut>
-
-{/* Hiding the section below as it does not sound possible in serverless yet. But might be enabled soonish, so don't want to remove it entirely. */}
-{/* <div id="adv-list-settings"></div>
-
-## Configure list upload limits
-
-You can set limits to the number of bytes and the buffer size used to upload
-<DocLink slug="/serverless/security/value-lists-exceptions">value lists</DocLink> to ((elastic-sec)).
-
-To set the value:
-
-1. Open `kibana.yml` [configuration file](((kibana-ref))/settings.html) or edit your
-    ((kib)) cloud instance.
-
-1. Add any of these settings and their required values:
-   * `xpack.lists.maxImportPayloadBytes`: Sets the number of bytes allowed for
-    uploading ((elastic-sec)) value lists (default `9000000`, maximum
-    `100000000`). For every 10 megabytes, it is recommended to have an additional 1
-    gigabyte of RAM reserved for Kibana.
-
-     For example, on a Kibana instance with 2 gigabytes of RAM, you can set this value up to 20000000 (20 megabytes).
-
-   * `xpack.lists.importBufferSize`: Sets the buffer size used for uploading
-    ((elastic-sec)) value lists (default `1000`). Change the value if you're
-    experiencing slow upload speeds or larger than wanted memory usage when
-    uploading value lists. Set to a higher value to increase throughput at the
-    expense of using more Kibana memory, or a lower value to decrease throughput and
-    reduce memory usage.
-
-<DocCallOut title="Note">
-For information on how to configure Elastic Cloud deployments, refer to
-[Add Kibana user settings](((cloud))/ec-manage-kibana-settings.html).
-</DocCallOut> */}
-
