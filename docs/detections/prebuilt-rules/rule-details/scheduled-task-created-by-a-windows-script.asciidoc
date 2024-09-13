@@ -5,70 +5,72 @@ A scheduled task was created by a Windows script via cscript.exe, wscript.exe or
 
 *Rule type*: eql
 
-*Rule indices*:
+*Rule indices*: 
 
 * winlogbeat-*
-* logs-endpoint.events.*
-* logs-windows.*
+* logs-endpoint.events.registry-*
+* logs-endpoint.events.library-*
+* logs-windows.sysmon_operational-*
+* endgame-*
 
 *Severity*: medium
 
 *Risk score*: 47
 
-*Runs every*: 5 minutes
+*Runs every*: 5m
 
 *Searches indices from*: now-9m ({ref}/common-options.html#date-math[Date Math format], see also <<rule-schedule, `Additional look-back time`>>)
 
 *Maximum alerts per execution*: 100
 
-*Tags*:
+*References*: None
+
+*Tags*: 
+
+* Domain: Endpoint
+* OS: Windows
+* Use Case: Threat Detection
+* Tactic: Persistence
+* Tactic: Execution
+* Data Source: Elastic Endgame
+* Data Source: Elastic Defend
+* Data Source: Sysmon
+
+*Version*: 108
+
+*Rule authors*: 
 
 * Elastic
-* Host
-* Windows
-* Threat Detection
-* Persistence
-
-*Version*: 100 (<<scheduled-task-created-by-a-windows-script-history, version history>>)
-
-*Added ({stack} release)*: 7.11.0
-
-*Last modified ({stack} release)*: 8.5.0
-
-*Rule authors*: Elastic
 
 *Rule license*: Elastic License v2
 
-==== Potential false positives
-
-Legitimate scheduled tasks may be created during installation of new software.
 
 ==== Investigation guide
 
 
-[source,markdown]
-----------------------------------
-## Triage and analysis
+
+*Triage and analysis*
+
 
 Decode the base64 encoded Tasks Actions registry value to investigate the task's configured action.
-----------------------------------
-
 
 ==== Rule query
 
 
-[source,js]
+[source, js]
 ----------------------------------
-sequence by host.id with maxspan = 30s [any where (event.category ==
-"library" or (event.category == "process" and event.action : "Image
-loaded*")) and (dll.name : "taskschd.dll" or file.name :
-"taskschd.dll") and process.name : ("cscript.exe", "wscript.exe",
-"powershell.exe", "pwsh.exe", "powershell_ise.exe")] [registry where
-registry.path : "HKLM\\SOFTWARE\\Microsoft\\Windows
-NT\\CurrentVersion\\Schedule\\TaskCache\\Tasks\\*\\Actions"]
-----------------------------------
+sequence by host.id with maxspan = 30s
+  [any where host.os.type == "windows" and 
+    (event.category : ("library", "driver") or (event.category == "process" and event.action : "Image loaded*")) and
+    (?dll.name : "taskschd.dll" or file.name : "taskschd.dll") and
+    process.name : ("cscript.exe", "wscript.exe", "powershell.exe", "pwsh.exe", "powershell_ise.exe")]
+  [registry where host.os.type == "windows" and event.type == "change" and registry.value : "Actions" and
+    registry.path : (
+      "HKLM\\SOFTWARE\\Microsoft\\Windows NT\\CurrentVersion\\Schedule\\TaskCache\\Tasks\\*\\Actions",
+      "\\REGISTRY\\MACHINE\\SOFTWARE\\Microsoft\\Windows NT\\CurrentVersion\\Schedule\\TaskCache\\Tasks\\*\\Actions"
+  )]
 
-==== Threat mapping
+----------------------------------
 
 *Framework*: MITRE ATT&CK^TM^
 
@@ -80,49 +82,23 @@ NT\\CurrentVersion\\Schedule\\TaskCache\\Tasks\\*\\Actions"]
 ** Name: Scheduled Task/Job
 ** ID: T1053
 ** Reference URL: https://attack.mitre.org/techniques/T1053/
-
-[[scheduled-task-created-by-a-windows-script-history]]
-==== Rule version history
-
-Version 100 (8.5.0 release)::
-* Formatting only
-
-Version 7 (8.4.0 release)::
-* Updated query, changed from:
-+
-[source, js]
-----------------------------------
-sequence by host.id with maxspan = 30s [library where dll.name :
-"taskschd.dll" and process.name : ("cscript.exe", "wscript.exe",
-"powershell.exe", "pwsh.exe", "powershell_ise.exe")] [registry where
-registry.path : "HKLM\\SOFTWARE\\Microsoft\\Windows
-NT\\CurrentVersion\\Schedule\\TaskCache\\Tasks\\*\\Actions"]
-----------------------------------
-
-Version 5 (7.16.0 release)::
-* Updated query, changed from:
-+
-[source, js]
-----------------------------------
-sequence by host.id with maxspan = 30s [library where dll.name :
-"taskschd.dll" and process.name : ("cscript.exe", "wscript.exe",
-"powershell.exe")] [registry where registry.path :
-"HKLM\\SOFTWARE\\Microsoft\\Windows
-NT\\CurrentVersion\\Schedule\\TaskCache\\Tasks\\*\\Actions"]
-----------------------------------
-
-Version 3 (7.13.0 release)::
-* Formatting only
-
-Version 2 (7.12.0 release)::
-* Updated query, changed from:
-+
-[source, js]
-----------------------------------
-sequence by host.id with maxspan = 30s [library where file.name :
-"taskschd.dll" and process.name : ("cscript.exe", "wscript.exe",
-"powershell.exe")] [registry where registry.path :
-"HKLM\\SOFTWARE\\Microsoft\\Windows
-NT\\CurrentVersion\\Schedule\\TaskCache\\Tasks\\*\\Actions"]
-----------------------------------
-
+* Sub-technique:
+** Name: Scheduled Task
+** ID: T1053.005
+** Reference URL: https://attack.mitre.org/techniques/T1053/005/
+* Tactic:
+** Name: Execution
+** ID: TA0002
+** Reference URL: https://attack.mitre.org/tactics/TA0002/
+* Technique:
+** Name: Command and Scripting Interpreter
+** ID: T1059
+** Reference URL: https://attack.mitre.org/techniques/T1059/
+* Sub-technique:
+** Name: PowerShell
+** ID: T1059.001
+** Reference URL: https://attack.mitre.org/techniques/T1059/001/
+* Sub-technique:
+** Name: Visual Basic
+** ID: T1059.005
+** Reference URL: https://attack.mitre.org/techniques/T1059/005/

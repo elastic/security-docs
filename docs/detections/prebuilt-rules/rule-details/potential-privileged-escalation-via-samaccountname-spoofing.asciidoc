@@ -5,22 +5,23 @@ Identifies a suspicious computer account name rename event, which may indicate a
 
 *Rule type*: eql
 
-*Rule indices*:
+*Rule indices*: 
 
 * winlogbeat-*
 * logs-system.*
+* logs-windows.*
 
 *Severity*: high
 
 *Risk score*: 73
 
-*Runs every*: 5 minutes
+*Runs every*: 5m
 
 *Searches indices from*: now-9m ({ref}/common-options.html#date-math[Date Math format], see also <<rule-schedule, `Additional look-back time`>>)
 
 *Maximum alerts per execution*: 100
 
-*References*:
+*References*: 
 
 * https://support.microsoft.com/en-us/topic/kb5008102-active-directory-security-accounts-manager-hardening-changes-cve-2021-42278-5975b463-4c95-45e1-831a-d120004e258e
 * https://cloudbrothers.info/en/exploit-kerberos-samaccountname-spoofing/
@@ -28,46 +29,51 @@ Identifies a suspicious computer account name rename event, which may indicate a
 * https://twitter.com/exploitph/status/1469157138928914432
 * https://exploit.ph/cve-2021-42287-cve-2021-42278-weaponisation.html
 
-*Tags*:
+*Tags*: 
+
+* Domain: Endpoint
+* OS: Windows
+* Use Case: Threat Detection
+* Tactic: Persistence
+* Tactic: Privilege Escalation
+* Use Case: Active Directory Monitoring
+* Data Source: Active Directory
+* Use Case: Vulnerability
+* Data Source: System
+
+*Version*: 109
+
+*Rule authors*: 
 
 * Elastic
-* Host
-* Windows
-* Threat Detection
-* Persistence
-* Privilege Escalation
-
-*Version*: 100 (<<potential-privileged-escalation-via-samaccountname-spoofing-history, version history>>)
-
-*Added ({stack} release)*: 8.1.0
-
-*Last modified ({stack} release)*: 8.5.0
-
-*Rule authors*: Elastic
 
 *Rule license*: Elastic License v2
 
-==== Investigation guide
+
+==== Setup
 
 
-[source,markdown]
-----------------------------------
 
-----------------------------------
+*Setup*
+
+
+If enabling an EQL rule on a non-elastic-agent index (such as beats) for versions <8.2,
+events will not define `event.ingested` and default fallback for EQL rules was not added until version 8.2.
+Hence for this rule to work effectively, users will need to add a custom ingest pipeline to populate
+`event.ingested` to @timestamp.
+For more details on adding a custom ingest pipeline refer - https://www.elastic.co/guide/en/fleet/current/data-streams-pipeline-tutorial.html
 
 
 ==== Rule query
 
 
-[source,js]
+[source, js]
 ----------------------------------
-iam where event.action == "renamed-user-account" and /* machine
-account name renamed to user like account name */
-winlog.event_data.OldTargetUserName : "*$" and not
-winlog.event_data.NewTargetUserName : "*$"
-----------------------------------
+iam where event.action == "renamed-user-account" and
+  /* machine account name renamed to user like account name */
+  winlog.event_data.OldTargetUserName : "*$" and not winlog.event_data.NewTargetUserName : "*$"
 
-==== Threat mapping
+----------------------------------
 
 *Framework*: MITRE ATT&CK^TM^
 
@@ -76,11 +82,17 @@ winlog.event_data.NewTargetUserName : "*$"
 ** ID: TA0004
 ** Reference URL: https://attack.mitre.org/tactics/TA0004/
 * Technique:
+** Name: Exploitation for Privilege Escalation
+** ID: T1068
+** Reference URL: https://attack.mitre.org/techniques/T1068/
+* Technique:
 ** Name: Valid Accounts
 ** ID: T1078
 ** Reference URL: https://attack.mitre.org/techniques/T1078/
-
-
+* Sub-technique:
+** Name: Domain Accounts
+** ID: T1078.002
+** Reference URL: https://attack.mitre.org/techniques/T1078/002/
 * Tactic:
 ** Name: Persistence
 ** ID: TA0003
@@ -89,16 +101,3 @@ winlog.event_data.NewTargetUserName : "*$"
 ** Name: Account Manipulation
 ** ID: T1098
 ** Reference URL: https://attack.mitre.org/techniques/T1098/
-
-[[potential-privileged-escalation-via-samaccountname-spoofing-history]]
-==== Rule version history
-
-Version 100 (8.5.0 release)::
-* Formatting only
-
-Version 4 (8.4.0 release)::
-* Formatting only
-
-Version 2 (8.2.0 release)::
-* Formatting only
-
