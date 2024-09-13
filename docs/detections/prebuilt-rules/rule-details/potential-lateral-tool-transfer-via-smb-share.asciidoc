@@ -5,58 +5,59 @@ Identifies the creation or change of a Windows executable file over network shar
 
 *Rule type*: eql
 
-*Rule indices*:
+*Rule indices*: 
 
-* logs-endpoint.events.*
-* winlogbeat-*
-* logs-windows.*
+* logs-endpoint.events.file-*
+* logs-endpoint.events.network-*
 
 *Severity*: medium
 
 *Risk score*: 47
 
-*Runs every*: 5 minutes
+*Runs every*: 5m
 
 *Searches indices from*: now-9m ({ref}/common-options.html#date-math[Date Math format], see also <<rule-schedule, `Additional look-back time`>>)
 
 *Maximum alerts per execution*: 100
 
-*Tags*:
+*References*: None
+
+*Tags*: 
+
+* Domain: Endpoint
+* OS: Windows
+* Use Case: Threat Detection
+* Tactic: Lateral Movement
+* Resources: Investigation Guide
+* Data Source: Elastic Defend
+
+*Version*: 108
+
+*Rule authors*: 
 
 * Elastic
-* Host
-* Windows
-* Threat Detection
-* Lateral Movement
-* Investigation Guide
-
-*Version*: 102 (<<potential-lateral-tool-transfer-via-smb-share-history, version history>>)
-
-*Added ({stack} release)*: 7.11.0
-
-*Last modified ({stack} release)*: 8.6.0
-
-*Rule authors*: Elastic
 
 *Rule license*: Elastic License v2
+
 
 ==== Investigation guide
 
 
-[source,markdown]
-----------------------------------
-## Triage and analysis
 
-### Investigating Potential Lateral Tool Transfer via SMB Share
+*Triage and analysis*
 
-Adversaries can use network shares to host tooling to support the compromise of other hosts in the environment. These tools
-can include discovery utilities, credential dumpers, malware, etc. Attackers can also leverage file shares that employees
-frequently access to host malicious files to gain a foothold in other machines.
 
-#### Possible investigation steps
 
-- Investigate the process execution chain (parent process tree) for unknown processes. Examine their executable files
-for prevalence, whether they are located in expected locations, and if they are signed with valid digital signatures.
+*Investigating Potential Lateral Tool Transfer via SMB Share*
+
+
+Adversaries can use network shares to host tooling to support the compromise of other hosts in the environment. These tools can include discovery utilities, credential dumpers, malware, etc. Attackers can also leverage file shares that employees frequently access to host malicious files to gain a foothold in other machines.
+
+
+*Possible investigation steps*
+
+
+- Investigate the process execution chain (parent process tree) for unknown processes. Examine their executable files for prevalence, whether they are located in expected locations, and if they are signed with valid digital signatures.
 - Identify the user account that performed the action and whether it should perform this kind of action.
 - Contact the account owner and confirm whether they are aware of this activity.
 - Investigate other alerts associated with the user/host during the past 48 hours.
@@ -70,11 +71,15 @@ for prevalence, whether they are located in expected locations, and if they are 
   - Use the PowerShell `Get-FileHash` cmdlet to get the files' SHA-256 hash values.
     - Search for the existence and reputation of the hashes in resources like VirusTotal, Hybrid-Analysis, CISCO Talos, Any.run, etc.
 
-### False positive analysis
+
+*False positive analysis*
+
 
 - This activity can happen legitimately. Consider adding exceptions if it is expected and noisy in your environment.
 
-### Response and remediation
+
+*Response and remediation*
+
 
 - Initiate the incident response process based on the outcome of the triage.
 - Isolate the involved host to prevent further post-compromise behavior.
@@ -82,35 +87,29 @@ for prevalence, whether they are located in expected locations, and if they are 
   - Implement temporary network rules, procedures, and segmentation to contain the malware.
   - Stop suspicious processes.
   - Immediately block the identified indicators of compromise (IoCs).
-  - Inspect the affected systems for additional malware backdoors like reverse shells, reverse proxies, or droppers that
-  attackers could use to reinfect the system.
+  - Inspect the affected systems for additional malware backdoors like reverse shells, reverse proxies, or droppers that attackers could use to reinfect the system.
 - Remove and block malicious artifacts identified during triage.
 - Review the privileges needed to write to the network share and restrict write access as needed.
-- Run a full antimalware scan. This may reveal additional artifacts left in the system, persistence mechanisms, and
-malware components.
+- Run a full antimalware scan. This may reveal additional artifacts left in the system, persistence mechanisms, and malware components.
 - Determine the initial vector abused by the attacker and take action to prevent reinfection through the same vector.
-- Using the incident response data, update logging and audit policies to improve the mean time to detect (MTTD) and the
-mean time to respond (MTTR).
-
-----------------------------------
+- Using the incident response data, update logging and audit policies to improve the mean time to detect (MTTD) and the mean time to respond (MTTR).
 
 
 ==== Rule query
 
 
-[source,js]
+[source, js]
 ----------------------------------
-sequence by host.id with maxspan=30s [network where event.type ==
-"start" and process.pid == 4 and destination.port == 445 and
-network.direction : ("incoming", "ingress") and network.transport
-== "tcp" and source.ip != "127.0.0.1" and source.ip != "::1" ] by
-process.entity_id /* add more executable extensions here if they are
-not noisy in your environment */ [file where event.type in
-("creation", "change") and process.pid == 4 and file.extension :
-("exe", "dll", "bat", "cmd")] by process.entity_id
-----------------------------------
+sequence by host.id with maxspan=30s
+  [network where host.os.type == "windows" and event.type == "start" and process.pid == 4 and destination.port == 445 and
+   network.direction : ("incoming", "ingress") and
+   network.transport == "tcp" and source.ip != "127.0.0.1" and source.ip != "::1"
+  ] by process.entity_id
+  /* add more executable extensions here if they are not noisy in your environment */
+  [file where host.os.type == "windows" and event.type in ("creation", "change") and process.pid == 4 and 
+   (file.Ext.header_bytes : "4d5a*" or file.extension : ("exe", "scr", "pif", "com", "dll"))] by process.entity_id
 
-==== Threat mapping
+----------------------------------
 
 *Framework*: MITRE ATT&CK^TM^
 
@@ -119,54 +118,14 @@ not noisy in your environment */ [file where event.type in
 ** ID: TA0008
 ** Reference URL: https://attack.mitre.org/tactics/TA0008/
 * Technique:
+** Name: Remote Services
+** ID: T1021
+** Reference URL: https://attack.mitre.org/techniques/T1021/
+* Sub-technique:
+** Name: SMB/Windows Admin Shares
+** ID: T1021.002
+** Reference URL: https://attack.mitre.org/techniques/T1021/002/
+* Technique:
 ** Name: Lateral Tool Transfer
 ** ID: T1570
 ** Reference URL: https://attack.mitre.org/techniques/T1570/
-
-[[potential-lateral-tool-transfer-via-smb-share-history]]
-==== Rule version history
-
-Version 102 (8.6.0 release)::
-* Formatting only
-
-Version 101 (8.5.0 release)::
-* Formatting only
-
-Version 6 (8.4.0 release)::
-* Formatting only
-
-Version 5 (8.3.0 release)::
-* Rule name changed from: Lateral Tool Transfer
-Version 4 (8.0.0 release)::
-* Updated query, changed from:
-+
-[source, js]
-----------------------------------
-sequence by host.id with maxspan=30s [network where event.type ==
-"start" and process.pid == 4 and destination.port == 445 and
-network.direction : ("incoming", "ingress") and network.transport ==
-"tcp" and source.address != "127.0.0.1" and source.address != "::1"
-] by process.entity_id /* add more executable extensions here if
-they are not noisy in your environment */ [file where event.type in
-("creation", "change") and process.pid == 4 and file.extension :
-("exe", "dll", "bat", "cmd")] by process.entity_id
-----------------------------------
-
-Version 3 (7.16.0 release)::
-* Updated query, changed from:
-+
-[source, js]
-----------------------------------
-sequence by host.id with maxspan=30s [network where event.type ==
-"start" and process.pid == 4 and destination.port == 445 and
-network.direction == "incoming" and network.transport == "tcp" and
-source.address != "127.0.0.1" and source.address != "::1" ] by
-process.entity_id /* add more executable extensions here if they are
-not noisy in your environment */ [file where event.type in
-("creation", "change") and process.pid == 4 and file.extension :
-("exe", "dll", "bat", "cmd")] by process.entity_id
-----------------------------------
-
-Version 2 (7.12.0 release)::
-* Formatting only
-

@@ -3,56 +3,52 @@
 
 An instance of MSBuild, the Microsoft Build Engine, created a thread in another process. This technique is sometimes used to evade detection or elevate privileges.
 
-*Rule type*: query
+*Rule type*: eql
 
-*Rule indices*:
+*Rule indices*: 
 
 * winlogbeat-*
-* logs-windows.*
+* logs-windows.sysmon_operational-*
 
 *Severity*: low
 
 *Risk score*: 21
 
-*Runs every*: 5 minutes
+*Runs every*: 5m
 
-*Searches indices from*: now-6m ({ref}/common-options.html#date-math[Date Math format], see also <<rule-schedule, `Additional look-back time`>>)
+*Searches indices from*: None ({ref}/common-options.html#date-math[Date Math format], see also <<rule-schedule, `Additional look-back time`>>)
 
 *Maximum alerts per execution*: 100
 
-*Tags*:
+*References*: None
+
+*Tags*: 
+
+* Domain: Endpoint
+* OS: Windows
+* Use Case: Threat Detection
+* Tactic: Defense Evasion
+* Tactic: Privilege Escalation
+* Data Source: Sysmon
+
+*Version*: 107
+
+*Rule authors*: 
 
 * Elastic
-* Host
-* Windows
-* Threat Detection
-* Defense Evasion
-* Sysmon Only
-
-*Version*: 101 (<<process-injection-by-the-microsoft-build-engine-history, version history>>)
-
-*Added ({stack} release)*: 7.7.0
-
-*Last modified ({stack} release)*: 8.6.0
-
-*Rule authors*: Elastic
 
 *Rule license*: Elastic License v2
 
-==== Potential false positives
-
-The Build Engine is commonly used by Windows developers but use by non-engineers is unusual.
 
 ==== Rule query
 
 
-[source,js]
+[source, js]
 ----------------------------------
-process.name:MSBuild.exe and event.action:"CreateRemoteThread detected
-(rule: CreateRemoteThread)"
-----------------------------------
+process where host.os.type == "windows" and process.name: "MSBuild.exe" and
+    event.action:("CreateRemoteThread detected (rule: CreateRemoteThread)", "CreateRemoteThread")
 
-==== Threat mapping
+----------------------------------
 
 *Framework*: MITRE ATT&CK^TM^
 
@@ -64,8 +60,14 @@ process.name:MSBuild.exe and event.action:"CreateRemoteThread detected
 ** Name: Process Injection
 ** ID: T1055
 ** Reference URL: https://attack.mitre.org/techniques/T1055/
-
-
+* Technique:
+** Name: Trusted Developer Utilities Proxy Execution
+** ID: T1127
+** Reference URL: https://attack.mitre.org/techniques/T1127/
+* Sub-technique:
+** Name: MSBuild
+** ID: T1127.001
+** Reference URL: https://attack.mitre.org/techniques/T1127/001/
 * Tactic:
 ** Name: Privilege Escalation
 ** ID: TA0004
@@ -74,28 +76,3 @@ process.name:MSBuild.exe and event.action:"CreateRemoteThread detected
 ** Name: Process Injection
 ** ID: T1055
 ** Reference URL: https://attack.mitre.org/techniques/T1055/
-
-[[process-injection-by-the-microsoft-build-engine-history]]
-==== Rule version history
-
-Version 101 (8.6.0 release)::
-* Formatting only
-
-Version 100 (8.5.0 release)::
-* Formatting only
-
-Version 6 (8.4.0 release)::
-* Formatting only
-
-Version 5 (7.12.0 release)::
-* Formatting only
-
-Version 4 (7.11.2 release)::
-* Formatting only
-
-Version 3 (7.10.0 release)::
-* Formatting only
-
-Version 2 (7.9.0 release)::
-* Formatting only
-

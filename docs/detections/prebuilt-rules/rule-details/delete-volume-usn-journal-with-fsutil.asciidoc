@@ -5,62 +5,102 @@ Identifies use of the fsutil.exe to delete the volume USNJRNL. This technique is
 
 *Rule type*: eql
 
-*Rule indices*:
+*Rule indices*: 
 
 * winlogbeat-*
-* logs-endpoint.events.*
+* logs-endpoint.events.process-*
 * logs-windows.*
 * endgame-*
+* logs-system.security*
 
 *Severity*: low
 
 *Risk score*: 21
 
-*Runs every*: 5 minutes
+*Runs every*: 5m
 
 *Searches indices from*: now-9m ({ref}/common-options.html#date-math[Date Math format], see also <<rule-schedule, `Additional look-back time`>>)
 
 *Maximum alerts per execution*: 100
 
-*Tags*:
+*References*: None
+
+*Tags*: 
+
+* Domain: Endpoint
+* OS: Windows
+* Use Case: Threat Detection
+* Tactic: Defense Evasion
+* Data Source: Elastic Endgame
+* Resources: Investigation Guide
+* Data Source: Elastic Defend
+* Data Source: System
+
+*Version*: 110
+
+*Rule authors*: 
 
 * Elastic
-* Host
-* Windows
-* Threat Detection
-* Defense Evasion
-* Elastic Endgame
-
-*Version*: 102 (<<delete-volume-usn-journal-with-fsutil-history, version history>>)
-
-*Added ({stack} release)*: 7.6.0
-
-*Last modified ({stack} release)*: 8.6.0
-
-*Rule authors*: Elastic
 
 *Rule license*: Elastic License v2
+
 
 ==== Investigation guide
 
 
-[source,markdown]
-----------------------------------
 
-----------------------------------
+*Triage and analysis*
+
+
+
+*Investigating Delete Volume USN Journal with Fsutil*
+
+
+The Update Sequence Number (USN) Journal is a feature in the NTFS file system used by Microsoft Windows operating systems to keep track of changes made to files and directories on a disk volume. The journal records metadata for changes such as file creation, deletion, modification, and permission changes. It is used by the operating system for various purposes, including backup and recovery, file indexing, and file replication.
+
+This artifact can provide valuable information in forensic analysis, such as programs executed (prefetch file operations), file modification events in suspicious directories, deleted files, etc. Attackers may delete this artifact in an attempt to cover their tracks, and this rule identifies the usage of the `fsutil.exe` utility to accomplish it.
+
+Consider using the Elastic Defend integration instead of USN Journal, as the Elastic Defend integration provides more visibility and context in the file operations it records.
+
+
+*Possible investigation steps*
+
+
+- Investigate the process execution chain (parent process tree) for unknown processes. Examine their executable files for prevalence, whether they are located in expected locations, and if they are signed with valid digital signatures.
+- Identify the user account that performed the action and whether it should perform this kind of action.
+- Contact the account owner and confirm whether they are aware of this activity.
+- Investigate other alerts associated with the user/host during the past 48 hours.
+  - Verify if any other anti-forensics behaviors were observed.
+- Review file operation logs from Elastic Defend for suspicious activity the attacker tried to hide.
+
+
+*False positive analysis*
+
+
+- This activity is unlikely to happen legitimately. Benign true positives (B-TPs) can be added as exceptions if necessary.
+
+
+*Response and remediation*
+
+
+- Initiate the incident response process based on the outcome of the triage.
+- Isolate the involved host to prevent further post-compromise behavior.
+- Investigate credential exposure on systems compromised or used by the attacker to ensure all compromised accounts are identified. Reset passwords for these accounts and other potentially compromised credentials, such as email, business systems, and web services.
+- Run a full antimalware scan. This may reveal additional artifacts left in the system, persistence mechanisms, and malware components.
+- Determine the initial vector abused by the attacker and take action to prevent reinfection through the same vector.
+- Using the incident response data, update logging and audit policies to improve the mean time to detect (MTTD) and the mean time to respond (MTTR).
 
 
 ==== Rule query
 
 
-[source,js]
+[source, js]
 ----------------------------------
-process where event.type == "start" and (process.name : "fsutil.exe"
-or process.pe.original_file_name == "fsutil.exe") and process.args :
-"deletejournal" and process.args : "usn"
-----------------------------------
+process where host.os.type == "windows" and event.type == "start" and
+  (process.name : "fsutil.exe" or ?process.pe.original_file_name == "fsutil.exe") and
+  process.args : "deletejournal" and process.args : "usn"
 
-==== Threat mapping
+----------------------------------
 
 *Framework*: MITRE ATT&CK^TM^
 
@@ -69,80 +109,10 @@ or process.pe.original_file_name == "fsutil.exe") and process.args :
 ** ID: TA0005
 ** Reference URL: https://attack.mitre.org/tactics/TA0005/
 * Technique:
-** Name: Indicator Removal on Host
+** Name: Indicator Removal
 ** ID: T1070
 ** Reference URL: https://attack.mitre.org/techniques/T1070/
-
-[[delete-volume-usn-journal-with-fsutil-history]]
-==== Rule version history
-
-Version 102 (8.6.0 release)::
-* Formatting only
-
-Version 101 (8.5.0 release)::
-* Updated query, changed from:
-+
-[source, js]
-----------------------------------
-process where event.type in ("start", "process_started") and
-(process.name : "fsutil.exe" or process.pe.original_file_name ==
-"fsutil.exe") and process.args : "deletejournal" and process.args :
-"usn"
-----------------------------------
-
-Version 12 (8.4.0 release)::
-* Updated query, changed from:
-+
-[source, js]
-----------------------------------
-process where event.type in ("start", "process_started") and
-(process.name : "fsutil.exe" or process.pe.original_file_name ==
-"fsutil.exe") and process.args : "deletejournal" and process.args :
-"usn"
-----------------------------------
-
-Version 10 (8.2.0 release)::
-* Formatting only
-
-Version 9 (7.13.0 release)::
-* Updated query, changed from:
-+
-[source, js]
-----------------------------------
-event.category:process and event.type:(start or process_started) and
-process.name:fsutil.exe and process.args:(deletejournal and usn)
-----------------------------------
-
-Version 8 (7.12.0 release)::
-* Formatting only
-
-Version 7 (7.11.2 release)::
-* Formatting only
-
-Version 6 (7.11.0 release)::
-* Formatting only
-
-Version 5 (7.10.0 release)::
-* Formatting only
-
-Version 4 (7.9.1 release)::
-* Formatting only
-
-Version 3 (7.9.0 release)::
-* Updated query, changed from:
-+
-[source, js]
-----------------------------------
-event.action:"Process Create (rule: ProcessCreate)" and
-process.name:fsutil.exe and process.args:(deletejournal and usn)
-----------------------------------
-
-Version 2 (7.7.0 release)::
-* Updated query, changed from:
-+
-[source, js]
-----------------------------------
-event.action:"Process Create (rule: ProcessCreate)" and
-process.name:"fsutil.exe" and process.args:("usn" and "deletejournal")
-----------------------------------
-
+* Sub-technique:
+** Name: File Deletion
+** ID: T1070.004
+** Reference URL: https://attack.mitre.org/techniques/T1070/004/

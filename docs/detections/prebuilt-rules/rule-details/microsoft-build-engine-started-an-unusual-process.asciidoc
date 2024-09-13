@@ -3,72 +3,71 @@
 
 An instance of MSBuild, the Microsoft Build Engine, started a PowerShell script or the Visual C# Command Line Compiler. This technique is sometimes used to deploy a malicious payload using the Build Engine.
 
-*Rule type*: eql
+*Rule type*: new_terms
 
-*Rule indices*:
+*Rule indices*: 
 
 * winlogbeat-*
-* logs-endpoint.events.*
+* logs-endpoint.events.process-*
 * logs-windows.*
-* endgame-*
+* logs-system.security*
 
 *Severity*: low
 
 *Risk score*: 21
 
-*Runs every*: 5 minutes
+*Runs every*: 5m
 
 *Searches indices from*: now-9m ({ref}/common-options.html#date-math[Date Math format], see also <<rule-schedule, `Additional look-back time`>>)
 
 *Maximum alerts per execution*: 100
 
-*References*:
+*References*: 
 
 * https://blog.talosintelligence.com/2020/02/building-bypass-with-msbuild.html
 
-*Tags*:
+*Tags*: 
+
+* Domain: Endpoint
+* OS: Windows
+* Use Case: Threat Detection
+* Tactic: Defense Evasion
+* Tactic: Execution
+* Data Source: Elastic Defend
+* Data Source: System
+
+*Version*: 212
+
+*Rule authors*: 
 
 * Elastic
-* Host
-* Windows
-* Threat Detection
-* Defense Evasion
-* Elastic Endgame
-
-*Version*: 102 (<<microsoft-build-engine-started-an-unusual-process-history, version history>>)
-
-*Added ({stack} release)*: 7.7.0
-
-*Last modified ({stack} release)*: 8.6.0
-
-*Rule authors*: Elastic
 
 *Rule license*: Elastic License v2
 
-==== Potential false positives
 
-The Build Engine is commonly used by Windows developers but use by non-engineers is unusual. If a build system triggers this rule it can be exempted by process, user or host name.
-
-==== Investigation guide
+==== Setup
 
 
-[source,markdown]
-----------------------------------
 
-----------------------------------
+*Setup*
+
+
+If enabling an EQL rule on a non-elastic-agent index (such as beats) for versions <8.2,
+events will not define `event.ingested` and default fallback for EQL rules was not added until version 8.2.
+Hence for this rule to work effectively, users will need to add a custom ingest pipeline to populate
+`event.ingested` to @timestamp.
+For more details on adding a custom ingest pipeline refer - https://www.elastic.co/guide/en/fleet/current/data-streams-pipeline-tutorial.html
 
 
 ==== Rule query
 
 
-[source,js]
+[source, js]
 ----------------------------------
-process where event.type == "start" and process.parent.name :
-"MSBuild.exe" and process.name : ("csc.exe", "iexplore.exe",
-"powershell.exe")
-----------------------------------
+host.os.type:windows and event.category:process and event.type:start and process.parent.name:("MSBuild.exe" or "msbuild.exe") and
+process.name:("csc.exe" or "iexplore.exe" or "powershell.exe")
 
-==== Threat mapping
+----------------------------------
 
 *Framework*: MITRE ATT&CK^TM^
 
@@ -80,60 +79,15 @@ process where event.type == "start" and process.parent.name :
 ** Name: Obfuscated Files or Information
 ** ID: T1027
 ** Reference URL: https://attack.mitre.org/techniques/T1027/
-
-[[microsoft-build-engine-started-an-unusual-process-history]]
-==== Rule version history
-
-Version 102 (8.6.0 release)::
-* Formatting only
-
-Version 101 (8.5.0 release)::
-* Updated query, changed from:
-+
-[source, js]
-----------------------------------
-process where event.type in ("start", "process_started") and
-process.parent.name : "MSBuild.exe" and process.name : ("csc.exe",
-"iexplore.exe", "powershell.exe")
-----------------------------------
-
-Version 11 (8.4.0 release)::
-* Formatting only
-
-Version 9 (8.2.0 release)::
-* Formatting only
-
-Version 8 (7.13.0 release)::
-* Updated query, changed from:
-+
-[source, js]
-----------------------------------
-event.category:process and event.type:(start or process_started) and
-process.parent.name:MSBuild.exe and process.name:(csc.exe or
-iexplore.exe or powershell.exe)
-----------------------------------
-
-Version 7 (7.12.0 release)::
-* Formatting only
-
-Version 6 (7.11.2 release)::
-* Formatting only
-
-Version 5 (7.11.0 release)::
-* Formatting only
-
-Version 4 (7.10.0 release)::
-* Formatting only
-
-Version 3 (7.9.1 release)::
-* Formatting only
-
-Version 2 (7.9.0 release)::
-* Updated query, changed from:
-+
-[source, js]
-----------------------------------
-process.parent.name:MSBuild.exe and process.name:(csc.exe or
-iexplore.exe or powershell.exe)
-----------------------------------
-
+* Sub-technique:
+** Name: Compile After Delivery
+** ID: T1027.004
+** Reference URL: https://attack.mitre.org/techniques/T1027/004/
+* Technique:
+** Name: Trusted Developer Utilities Proxy Execution
+** ID: T1127
+** Reference URL: https://attack.mitre.org/techniques/T1127/
+* Sub-technique:
+** Name: MSBuild
+** ID: T1127.001
+** Reference URL: https://attack.mitre.org/techniques/T1127/001/

@@ -5,7 +5,7 @@ A user has initiated a session impersonation granting them access to the environ
 
 *Rule type*: query
 
-*Rule indices*:
+*Rule indices*: 
 
 * filebeat-*
 * logs-okta*
@@ -14,56 +14,86 @@ A user has initiated a session impersonation granting them access to the environ
 
 *Risk score*: 73
 
-*Runs every*: 15 minutes
+*Runs every*: 15m
 
 *Searches indices from*: now-30m ({ref}/common-options.html#date-math[Date Math format], see also <<rule-schedule, `Additional look-back time`>>)
 
 *Maximum alerts per execution*: 100
 
-*References*:
+*References*: 
 
 * https://blog.cloudflare.com/cloudflare-investigation-of-the-january-2022-okta-compromise/
 * https://www.elastic.co/security-labs/testing-okta-visibility-and-detection-dorothy
 
-*Tags*:
+*Tags*: 
+
+* Use Case: Identity and Access Audit
+* Tactic: Credential Access
+* Data Source: Okta
+
+*Version*: 207
+
+*Rule authors*: 
 
 * Elastic
-* Identity
-* Okta
-* Continuous Monitoring
-* SecOps
-* Identity and Access
-* Credential Access
-
-*Version*: 102 (<<okta-user-session-impersonation-history, version history>>)
-
-*Added ({stack} release)*: 8.2.0
-
-*Last modified ({stack} release)*: 8.6.0
-
-*Rule authors*: Elastic
 
 *Rule license*: Elastic License v2
+
 
 ==== Investigation guide
 
 
-[source,markdown]
-----------------------------------
 
-----------------------------------
+*Triage and analysis*
 
+
+
+*Investigating Okta User Session Impersonation*
+
+
+The detection of an Okta User Session Impersonation indicates that a user has initiated a session impersonation which grants them access with the permissions of the user they are impersonating. This type of activity typically indicates Okta administrative access and should only ever occur if requested and expected.
+
+
+*Possible investigation steps*
+
+
+- Identify the actor associated with the impersonation event by checking the `okta.actor.id`, `okta.actor.type`, `okta.actor.alternate_id`, or `okta.actor.display_name` fields.
+- Review the `event.action` field to confirm the initiation of the impersonation event.
+- Check the `event.time` field to understand the timing of the event.
+- Check the `okta.target.id`, `okta.target.type`, `okta.target.alternate_id`, or `okta.target.display_name` to identify the user who was impersonated.
+- Review any activities that occurred during the impersonation session. Look for any activities related to the impersonated user's account during and after the impersonation event.
+
+
+*False positive analysis*
+
+
+- Verify if the session impersonation was part of an approved activity. Check if it was associated with any documented administrative tasks or troubleshooting efforts.
+- Ensure that the impersonation session was initiated by an authorized individual. You can check this by verifying the `okta.actor.id` or `okta.actor.display_name` against the list of approved administrators.
+
+
+*Response and remediation*
+
+
+- If the impersonation was not authorized, consider it as a breach. Suspend the user account of the impersonator immediately.
+- Reset the user session and invalidate any active sessions related to the impersonated user.
+- If a specific impersonation technique was used, ensure that systems are patched or configured to prevent such techniques.
+- Conduct a thorough investigation to understand the extent of the breach and the potential impact on the systems and data.
+- Review and update your security policies to prevent such incidents in the future.
+- Implement additional monitoring and logging of Okta events to improve visibility of user actions.
+
+==== Setup
+
+
+The Okta Fleet integration, Filebeat module, or similarly structured data is required to be compatible with this rule.
 
 ==== Rule query
 
 
-[source,js]
+[source, js]
 ----------------------------------
-event.dataset:okta.system and
-event.action:user.session.impersonation.initiate
-----------------------------------
+event.dataset:okta.system and event.action:user.session.impersonation.initiate
 
-==== Threat mapping
+----------------------------------
 
 *Framework*: MITRE ATT&CK^TM^
 
@@ -71,16 +101,3 @@ event.action:user.session.impersonation.initiate
 ** Name: Credential Access
 ** ID: TA0006
 ** Reference URL: https://attack.mitre.org/tactics/TA0006/
-
-[[okta-user-session-impersonation-history]]
-==== Rule version history
-
-Version 102 (8.6.0 release)::
-* Formatting only
-
-Version 100 (8.5.0 release)::
-* Formatting only
-
-Version 3 (8.4.0 release)::
-* Formatting only
-
