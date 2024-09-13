@@ -9,7 +9,7 @@ Documentation Manager: Janeen Roberts (Github: `@jmikell821`)
 
 ## Contributing to Elastic Security docs
 
-If you're an Elastic employee, you can open an issue using the appropriate [template](https://github.com/elastic/security-docs/issues/new/choose) (to report known issues that need to be documented, use the template in our [private repo](https://github.com/elastic/security-docs-internal/issues)). To contribute directly to Elastic Security documentation:
+If you're an Elastic employee, you can open an issue using the appropriate [template](https://github.com/elastic/security-docs/issues/new/choose) (please report any **known issues** that need to be documented by creating an issue in our [private repo](https://github.com/elastic/security-docs-internal/issues) using the known issue template). To contribute directly to Elastic Security documentation:
 
 1. Please fork and clone the `security-docs` repo. 
 1. Check out the `main` branch and fetch the latest changes. 
