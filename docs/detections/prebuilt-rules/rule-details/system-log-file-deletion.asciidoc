@@ -5,66 +5,126 @@ Identifies the deletion of sensitive Linux system logs. This may indicate an att
 
 *Rule type*: eql
 
-*Rule indices*:
+*Rule indices*: 
 
 * auditbeat-*
 * logs-endpoint.events.*
+* endgame-*
 
 *Severity*: medium
 
 *Risk score*: 47
 
-*Runs every*: 5 minutes
+*Runs every*: 5m
 
 *Searches indices from*: now-9m ({ref}/common-options.html#date-math[Date Math format], see also <<rule-schedule, `Additional look-back time`>>)
 
 *Maximum alerts per execution*: 100
 
-*References*:
+*References*: 
 
 * https://www.fireeye.com/blog/threat-research/2020/11/live-off-the-land-an-overview-of-unc1945.html
 
-*Tags*:
+*Tags*: 
+
+* Domain: Endpoint
+* OS: Linux
+* Use Case: Threat Detection
+* Tactic: Defense Evasion
+* Data Source: Elastic Endgame
+* Data Source: Elastic Defend
+
+*Version*: 111
+
+*Rule authors*: 
 
 * Elastic
-* Host
-* Linux
-* Threat Detection
-* Defense Evasion
-
-*Version*: 101 (<<system-log-file-deletion-history, version history>>)
-
-*Added ({stack} release)*: 7.11.0
-
-*Last modified ({stack} release)*: 8.6.0
-
-*Rule authors*: Elastic
 
 *Rule license*: Elastic License v2
 
-==== Investigation guide
+
+==== Setup
 
 
-[source,markdown]
-----------------------------------
 
-----------------------------------
+*Setup*
+
+
+This rule requires data coming in from one of the following integrations:
+- Elastic Defend
+- Auditbeat
+
+
+*Elastic Defend Integration Setup*
+
+Elastic Defend is integrated into the Elastic Agent using Fleet. Upon configuration, the integration allows the Elastic Agent to monitor events on your host and send data to the Elastic Security app.
+
+
+*Prerequisite Requirements:*
+
+- Fleet is required for Elastic Defend.
+- To configure Fleet Server refer to the https://www.elastic.co/guide/en/fleet/current/fleet-server.html[documentation].
+
+
+*The following steps should be executed in order to add the Elastic Defend integration on a Linux System:*
+
+- Go to the Kibana home page and click "Add integrations".
+- In the query bar, search for "Elastic Defend" and select the integration to see more details about it.
+- Click "Add Elastic Defend".
+- Configure the integration name and optionally add a description.
+- Select the type of environment you want to protect, either "Traditional Endpoints" or "Cloud Workloads".
+- Select a configuration preset. Each preset comes with different default settings for Elastic Agent, you can further customize these later by configuring the Elastic Defend integration policy. https://www.elastic.co/guide/en/security/current/configure-endpoint-integration-policy.html[Helper guide].
+- We suggest selecting "Complete EDR (Endpoint Detection and Response)" as a configuration setting, that provides "All events; all preventions"
+- Enter a name for the agent policy in "New agent policy name". If other agent policies already exist, you can click the "Existing hosts" tab and select an existing policy instead.
+For more details on Elastic Agent configuration settings, refer to the https://www.elastic.co/guide/en/fleet/8.10/agent-policy.html[helper guide].
+- Click "Save and Continue".
+- To complete the integration, select "Add Elastic Agent to your hosts" and continue to the next section to install the Elastic Agent on your hosts.
+For more details on Elastic Defend refer to the https://www.elastic.co/guide/en/security/current/install-endpoint.html[helper guide].
+
+
+*Auditbeat Setup*
+
+Auditbeat is a lightweight shipper that you can install on your servers to audit the activities of users and processes on your systems. For example, you can use Auditbeat to collect and centralize audit events from the Linux Audit Framework. You can also use Auditbeat to detect changes to critical files, like binaries and configuration files, and identify potential security policy violations.
+
+
+*The following steps should be executed in order to add the Auditbeat on a Linux System:*
+
+- Elastic provides repositories available for APT and YUM-based distributions. Note that we provide binary packages, but no source packages.
+- To install the APT and YUM repositories follow the setup instructions in this https://www.elastic.co/guide/en/beats/auditbeat/current/setup-repositories.html[helper guide].
+- To run Auditbeat on Docker follow the setup instructions in the https://www.elastic.co/guide/en/beats/auditbeat/current/running-on-docker.html[helper guide].
+- To run Auditbeat on Kubernetes follow the setup instructions in the https://www.elastic.co/guide/en/beats/auditbeat/current/running-on-kubernetes.html[helper guide].
+- For complete “Setup and Run Auditbeat” information refer to the https://www.elastic.co/guide/en/beats/auditbeat/current/setting-up-and-running.html[helper guide].
+
+
+*Custom Ingest Pipeline*
+
+For versions <8.2, you need to add a custom ingest pipeline to populate `event.ingested` with @timestamp for non-elastic-agent indexes, like auditbeats/filebeat/winlogbeat etc. For more details to add a custom ingest pipeline refer to the https://www.elastic.co/guide/en/fleet/current/data-streams-pipeline-tutorial.html[guide].
 
 
 ==== Rule query
 
 
-[source,js]
+[source, js]
 ----------------------------------
-file where event.type == "deletion" and file.path : (
-"/var/run/utmp", "/var/log/wtmp", "/var/log/btmp",
-"/var/log/lastlog", "/var/log/faillog", "/var/log/syslog",
-"/var/log/messages", "/var/log/secure", "/var/log/auth.log",
-"/var/log/boot.log", "/var/log/kern.log" ) and not
-process.name : ("gzip")
-----------------------------------
+file where host.os.type == "linux" and event.type == "deletion" and
+  file.path :
+    (
+    "/var/run/utmp",
+    "/var/log/wtmp",
+    "/var/log/btmp",
+    "/var/log/lastlog",
+    "/var/log/faillog",
+    "/var/log/syslog",
+    "/var/log/messages",
+    "/var/log/secure",
+    "/var/log/auth.log",
+    "/var/log/boot.log",
+    "/var/log/kern.log",
+    "/var/log/dmesg"
+    ) and
+    not process.name in ("gzip", "executor", "dockerd")
 
-==== Threat mapping
+----------------------------------
 
 *Framework*: MITRE ATT&CK^TM^
 
@@ -73,46 +133,10 @@ process.name : ("gzip")
 ** ID: TA0005
 ** Reference URL: https://attack.mitre.org/tactics/TA0005/
 * Technique:
-** Name: Indicator Removal on Host
+** Name: Indicator Removal
 ** ID: T1070
 ** Reference URL: https://attack.mitre.org/techniques/T1070/
-
-[[system-log-file-deletion-history]]
-==== Rule version history
-
-Version 101 (8.6.0 release)::
-* Updated query, changed from:
-+
-[source, js]
-----------------------------------
-file where event.type == "deletion" and file.path : (
-"/var/run/utmp", "/var/log/wtmp", "/var/log/btmp",
-"/var/log/lastlog", "/var/log/faillog", "/var/log/syslog",
-"/var/log/messages", "/var/log/secure", "/var/log/auth.log"
-) and not process.name : ("gzip")
-----------------------------------
-
-Version 100 (8.5.0 release)::
-* Formatting only
-
-Version 6 (8.4.0 release)::
-* Updated query, changed from:
-+
-[source, js]
-----------------------------------
-file where event.type == "deletion" and file.path : (
-"/var/run/utmp", "/var/log/wtmp", "/var/log/btmp",
-"/var/log/lastlog", "/var/log/faillog", "/var/log/syslog",
-"/var/log/messages", "/var/log/secure", "/var/log/auth.log"
-)
-----------------------------------
-
-Version 4 (8.2.0 release)::
-* Formatting only
-
-Version 3 (7.12.0 release)::
-* Formatting only
-
-Version 2 (7.11.2 release)::
-* Formatting only
-
+* Sub-technique:
+** Name: Clear Linux or Mac System Logs
+** ID: T1070.002
+** Reference URL: https://attack.mitre.org/techniques/T1070/002/
