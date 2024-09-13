@@ -5,72 +5,75 @@ Identifies when a user enables DNS-over-HTTPS. This can be used to hide internet
 
 *Rule type*: eql
 
-*Rule indices*:
+*Rule indices*: 
 
 * winlogbeat-*
-* logs-endpoint.events.*
-* logs-windows.*
+* logs-endpoint.events.registry-*
+* logs-windows.sysmon_operational-*
 * endgame-*
 
 *Severity*: low
 
 *Risk score*: 21
 
-*Runs every*: 5 minutes
+*Runs every*: 5m
 
 *Searches indices from*: now-9m ({ref}/common-options.html#date-math[Date Math format], see also <<rule-schedule, `Additional look-back time`>>)
 
 *Maximum alerts per execution*: 100
 
-*References*:
+*References*: 
 
 * https://www.tenforums.com/tutorials/151318-how-enable-disable-dns-over-https-doh-microsoft-edge.html
 * https://chromeenterprise.google/policies/?policy=DnsOverHttpsMode
 
-*Tags*:
+*Tags*: 
 
-* Elastic
-* Host
-* Windows
-* Threat Detection
-* Defense Evasion
-* Elastic Endgame
+* Domain: Endpoint
+* OS: Windows
+* Use Case: Threat Detection
+* Tactic: Defense Evasion
+* Data Source: Elastic Endgame
+* Data Source: Elastic Defend
+* Data Source: Sysmon
 
-*Version*: 101 (<<dns-over-https-enabled-via-registry-history, version history>>)
+*Version*: 111
 
-*Added ({stack} release)*: 7.16.0
+*Rule authors*: 
 
-*Last modified ({stack} release)*: 8.6.0
-
-*Rule authors*: Austin Songer
+* Austin Songer
 
 *Rule license*: Elastic License v2
 
-==== Investigation guide
+
+==== Setup
 
 
-[source,markdown]
-----------------------------------
 
-----------------------------------
+*Setup*
+
+
+If enabling an EQL rule on a non-elastic-agent index (such as beats) for versions <8.2,
+events will not define `event.ingested` and default fallback for EQL rules was not added until version 8.2.
+Hence for this rule to work effectively, users will need to add a custom ingest pipeline to populate
+`event.ingested` to @timestamp.
+For more details on adding a custom ingest pipeline refer - https://www.elastic.co/guide/en/fleet/current/data-streams-pipeline-tutorial.html
 
 
 ==== Rule query
 
 
-[source,js]
+[source, js]
 ----------------------------------
-registry where event.type in ("creation", "change") and
-(registry.path :
-"*\\SOFTWARE\\Policies\\Microsoft\\Edge\\BuiltInDnsClientEnabled" and
-registry.data.strings : "1") or (registry.path :
-"*\\SOFTWARE\\Google\\Chrome\\DnsOverHttpsMode" and
-registry.data.strings : "secure") or (registry.path :
-"*\\SOFTWARE\\Policies\\Mozilla\\Firefox\\DNSOverHTTPS" and
-registry.data.strings : "1")
-----------------------------------
+registry where host.os.type == "windows" and event.type == "change" and
+  (registry.path : "*\\SOFTWARE\\Policies\\Microsoft\\Edge\\BuiltInDnsClientEnabled" and
+  registry.data.strings : "1") or
+  (registry.path : "*\\SOFTWARE\\Google\\Chrome\\DnsOverHttpsMode" and
+  registry.data.strings : "secure") or
+  (registry.path : "*\\SOFTWARE\\Policies\\Mozilla\\Firefox\\DNSOverHTTPS" and
+  registry.data.strings : "1")
 
-==== Threat mapping
+----------------------------------
 
 *Framework*: MITRE ATT&CK^TM^
 
@@ -79,25 +82,10 @@ registry.data.strings : "1")
 ** ID: TA0005
 ** Reference URL: https://attack.mitre.org/tactics/TA0005/
 * Technique:
+** Name: Modify Registry
+** ID: T1112
+** Reference URL: https://attack.mitre.org/techniques/T1112/
+* Technique:
 ** Name: Impair Defenses
 ** ID: T1562
 ** Reference URL: https://attack.mitre.org/techniques/T1562/
-
-[[dns-over-https-enabled-via-registry-history]]
-==== Rule version history
-
-Version 101 (8.6.0 release)::
-* Formatting only
-
-Version 100 (8.5.0 release)::
-* Formatting only
-
-Version 5 (8.4.0 release)::
-* Formatting only
-
-Version 3 (8.2.0 release)::
-* Formatting only
-
-Version 2 (8.0.0 release)::
-* Formatting only
-
