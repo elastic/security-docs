@@ -1,0 +1,82 @@
+[[prebuilt-rule-8-14-11-msiexec-service-child-process-with-network-connection]]
+=== MsiExec Service Child Process With Network Connection
+
+Identifies the execution of an MsiExec service child process followed by network or dns lookup activity. Adversaries may abuse Windows Installers for initial access and delivery of malware.
+
+*Rule type*: eql
+
+*Rule indices*: 
+
+* logs-endpoint.events.process-*
+* logs-endpoint.events.network-*
+* logs-windows.sysmon_operational-*
+* logs-sentinel_one_cloud_funnel.*
+
+*Severity*: medium
+
+*Risk score*: 47
+
+*Runs every*: 5m
+
+*Searches indices from*: now-9m ({ref}/common-options.html#date-math[Date Math format], see also <<rule-schedule, `Additional look-back time`>>)
+
+*Maximum alerts per execution*: 100
+
+*References*: None
+
+*Tags*: 
+
+* Domain: Endpoint
+* OS: Windows
+* Use Case: Threat Detection
+* Tactic: Defense Evasion
+* Data Source: Elastic Defend
+* Data Source: Sysmon
+* Data Source: SentinelOne
+
+*Version*: 101
+
+*Rule authors*: 
+
+* Elastic
+
+*Rule license*: Elastic License v2
+
+
+==== Rule query
+
+
+[source, js]
+----------------------------------
+sequence by process.entity_id with maxspan=1m
+ [process where host.os.type == "windows" and event.type : "start" and
+  process.parent.name : "msiexec.exe" and process.parent.args : "/v" and
+  not process.executable :
+        ("?:\\Windows\\System32\\msiexec.exe",
+         "?:\\Windows\\sysWOW64\\msiexec.exe",
+         "?:\\Windows\\system32\\srtasks.exe",
+         "?:\\Windows\\syswow64\\srtasks.exe",
+         "?:\\Windows\\sys*\\taskkill.exe",
+         "?:\\Program Files\\*.exe",
+         "?:\\Program Files (x86)\\*.exe",
+         "?:\\Windows\\Installer\\MSI*.tmp",
+         "?:\\Windows\\Microsoft.NET\\Framework*\\RegSvcs.exe") and
+ not (process.name : ("rundll32.exe", "regsvr32.exe") and process.args : ("?:\\Program Files\\*", "?:\\Program Files (x86)\\*"))]
+[any where host.os.type == "windows" and event.category in ("network", "dns") and process.name != null]
+
+----------------------------------
+
+*Framework*: MITRE ATT&CK^TM^
+
+* Tactic:
+** Name: Defense Evasion
+** ID: TA0005
+** Reference URL: https://attack.mitre.org/tactics/TA0005/
+* Technique:
+** Name: System Binary Proxy Execution
+** ID: T1218
+** Reference URL: https://attack.mitre.org/techniques/T1218/
+* Sub-technique:
+** Name: Msiexec
+** ID: T1218.007
+** Reference URL: https://attack.mitre.org/techniques/T1218/007/

@@ -1,0 +1,90 @@
+[[prebuilt-rule-8-14-11-persistence-via-a-windows-installer]]
+=== Persistence via a Windows Installer
+
+Identifies when the Windows installer process msiexec.exe creates a new persistence entry via scheduled tasks or startup.
+
+*Rule type*: eql
+
+*Rule indices*: 
+
+* logs-endpoint.events.registry-*
+* logs-endpoint.events.file-*
+
+*Severity*: medium
+
+*Risk score*: 47
+
+*Runs every*: 5m
+
+*Searches indices from*: now-9m ({ref}/common-options.html#date-math[Date Math format], see also <<rule-schedule, `Additional look-back time`>>)
+
+*Maximum alerts per execution*: 100
+
+*References*: None
+
+*Tags*: 
+
+* Domain: Endpoint
+* OS: Windows
+* Use Case: Threat Detection
+* Tactic: Persistence
+* Tactic: Defense Evasion
+* Data Source: Elastic Defend
+
+*Version*: 1
+
+*Rule authors*: 
+
+* Elastic
+
+*Rule license*: Elastic License v2
+
+
+==== Rule query
+
+
+[source, js]
+----------------------------------
+any where host.os.type == "windows" and 
+ (process.name : "msiexec.exe" or Effective_process.name : "msiexec.exe") and
+ (
+  (event.category == "file" and event.action == "creation" and
+   file.path : ("?:\\Windows\\System32\\Tasks\\*",
+                "?:\\programdata\\microsoft\\windows\\start menu\\programs\\startup\\*",
+                "?:\\Users\\*\\AppData\\Roaming\\Microsoft\\Windows\\Start Menu\\Programs\\Startup\\*")) or
+
+  (event.category == "registry" and event.action == "modification" and
+   registry.path : ("H*\\Software\\Microsoft\\Windows\\CurrentVersion\\Run\\*",
+                    "H*\\Software\\WOW6432Node\\Microsoft\\Windows\\CurrentVersion\\Run\\*",
+                    "H*\\Software\\Microsoft\\Windows\\CurrentVersion\\Policies\\Explorer\\Run\\*",
+                    "H*\\Software\\WOW6432Node\\Microsoft\\Windows\\CurrentVersion\\Policies\\Explorer\\Run\\*"))
+  )
+
+----------------------------------
+
+*Framework*: MITRE ATT&CK^TM^
+
+* Tactic:
+** Name: Persistence
+** ID: TA0003
+** Reference URL: https://attack.mitre.org/tactics/TA0003/
+* Technique:
+** Name: Scheduled Task/Job
+** ID: T1053
+** Reference URL: https://attack.mitre.org/techniques/T1053/
+* Sub-technique:
+** Name: Scheduled Task
+** ID: T1053.005
+** Reference URL: https://attack.mitre.org/techniques/T1053/005/
+* Tactic:
+** Name: Defense Evasion
+** ID: TA0005
+** Reference URL: https://attack.mitre.org/tactics/TA0005/
+* Technique:
+** Name: System Binary Proxy Execution
+** ID: T1218
+** Reference URL: https://attack.mitre.org/techniques/T1218/
+* Sub-technique:
+** Name: Msiexec
+** ID: T1218.007
+** Reference URL: https://attack.mitre.org/techniques/T1218/007/
