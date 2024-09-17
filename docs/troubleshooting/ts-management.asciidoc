@@ -1,7 +1,10 @@
 [[ts-management]]
-== Endpoint management
+== Troubleshoot {elastic-defend}
+++++
+<titleabbrev>{elastic-defend}</titleabbrev>
+++++
 
-This topic covers common troubleshooting issues when using {elastic-sec} <<sec-manage-intro, endpoint management tools>>.
+This topic covers common troubleshooting issues when using {elastic-defend}'s <<sec-manage-intro, endpoint management tools>>.
 
 [discrete]
 [[ts-endpoints]]
@@ -142,4 +145,81 @@ To debug and resolve the issue, follow these steps:
 ** `ping -4 -c 1 localhost` (Linux)
 ** `ping -c 1 localhost` (macOS)
 ** `ping -4 localhost` (Windows)
+====
+
+[discrete]
+[[defend-deployment]]
+.{elastic-defend} deployment issues
+[%collapsible]
+====
+
+After deploying {elastic-defend}, you might encounter warnings or errors in the endpoint's **Policy status** in {fleet} if your mobile device management (MDM) is misconfigured or certain permissions for {elastic-endpoint} aren't granted. The following sections explain issues that can cause warnings or failures in the endpoint's policy status.
+
+[float]
+==== Connect Kernel has failed
+
+This means that the system extension or kernel extension was not approved. Consult the following topics for approving the system extension with or without MDM:
+
+* <<system-extension-jamf, Approve the system extension with MDM>>
+* <<system-extension-endpoint, Approve the system extension without MDM>>
+
+You can validate the system extension is loaded by running:
+
+[source,shell]
+----------------------------------
+sudo systemextensionsctl list | grep co.elastic.systemextension
+----------------------------------
+
+In the command output, the system extension should be marked as "active enabled".
+
+[float]
+==== Connect Kernel has failed and the system extension is loaded
+
+If the system extension is loaded and kernel connection still fails, this means that Full Disk Access was not granted. {elastic-endpoint} requires Full Disk Access to subscribe to system events through the {elastic-defend} framework, which is one of the primary sources of eventing information used by {elastic-endpoint}. Consult the following topics for granting Full Disk Access with or without MDM:
+
+* <<fda-jamf, Enable Full Disk Access with MDM>>
+* <<enable-fda-endpoint-ven, Enable Full Disk Access without MDM>>
+
+You can validate that Full Disk Access is approved by running
+
+[source,shell]
+----------------------------------
+sudo /Library/Elastic/Endpoint/elastic-endpoint test install
+----------------------------------
+
+If the command output doesn't contain a message about enabling Full Disk Access, the approval was successful.
+
+[float]
+==== Detect Network Events has failed
+
+This means that the network extension content filtering was not approved. Consult the following topics for approving network content filtering with or without MDM:
+
+* <<content-filtering-jamf, Approve network content filtering with MDM>>
+* <<allow-filter-content-ven, Approve network content filtering without MDM>>
+
+You can validate that network content filtering is approved by running
+
+[source,shell]
+----------------------------------
+sudo /Library/Elastic/Endpoint/elastic-endpoint test install
+----------------------------------
+If the command output doesn't contain a message about approving network content filtering, the approval was successful.
+
+[float]
+==== Full Disk Access has a warning
+
+This means that Full Disk Access was not granted for one or all {elastic-endpoint} components. Consult the following topics for granting Full Disk Access with or without MDM:
+
+* <<fda-jamf, Enable Full Disk Access with MDM>>
+* <<enable-fda-endpoint-ven, Enable Full Disk Access without MDM>>
+
+You can validate that Full Disk Access is approved by running
+
+[source,shell]
+----------------------------------
+sudo /Library/Elastic/Endpoint/elastic-endpoint test install
+----------------------------------
+
+If the command output doesn't contain a message about enabling Full Disk Access, the approval was successful.
+
 ====
