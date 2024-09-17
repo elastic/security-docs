@@ -1,0 +1,110 @@
+[[script-execution-via-microsoft-html-application]]
+=== Script Execution via Microsoft HTML Application
+
+Identifies the execution of scripts via HTML applications using Windows utilities rundll32.exe or mshta.exe. Adversaries may bypass process and/or signature-based defenses by proxying execution of malicious content with signed binaries.
+
+*Rule type*: eql
+
+*Rule indices*: 
+
+* winlogbeat-*
+* logs-windows.*
+* logs-system.security*
+* logs-windows.sysmon_operational-*
+* logs-sentinel_one_cloud_funnel.*
+* logs-m365_defender.event-*
+
+*Severity*: high
+
+*Risk score*: 73
+
+*Runs every*: 5m
+
+*Searches indices from*: now-9m ({ref}/common-options.html#date-math[Date Math format], see also <<rule-schedule, `Additional look-back time`>>)
+
+*Maximum alerts per execution*: 100
+
+*References*: None
+
+*Tags*: 
+
+* Domain: Endpoint
+* OS: Windows
+* Use Case: Threat Detection
+* Tactic: Defense Evasion
+* Data Source: System
+* Data Source: Sysmon
+* Data Source: SentinelOne
+* Data Source: Microsoft Defender for Endpoint
+
+*Version*: 101
+
+*Rule authors*: 
+
+* Elastic
+
+*Rule license*: Elastic License v2
+
+
+==== Rule query
+
+
+[source, js]
+----------------------------------
+process where host.os.type == "windows" and event.type == "start" and
+ process.name : ("rundll32.exe", "mshta.exe") and
+  (
+     (process.command_line :
+        (
+        "*script*eval(*",
+         "*script*GetObject*",
+         "*.regread(*",
+         "*WScript.Shell*",
+         "*.run(*",
+         "*).Exec()*",
+         "*mshta*http*",
+         "*mshtml*RunHTMLApplication*",
+         "*mshtml*,#135*",
+         "*StrReverse*",
+         "*.RegWrite*",
+         /* Issue #379 */
+         "*window.close(*",
+         "* Chr(*"
+         )
+     and not process.parent.executable :
+                  ("?:\\Program Files (x86)\\Citrix\\System32\\wfshell.exe",
+                   "?:\\Program Files (x86)\\Microsoft Office\\Office*\\MSACCESS.EXE",
+                   "?:\\Program Files\\Quokka.Works GTInstaller\\GTInstaller.exe")
+     ) or
+
+    (process.name : "mshta.exe" and
+     not process.command_line : ("*.hta*", "*.htm*", "-Embedding") and process.args_count >=2) or
+
+     /* Execution of HTA file downloaded from the internet */
+     (process.name : "mshta.exe" and process.command_line : "*\\Users\\*\\Downloads\\*.hta*") or
+
+     /* Execution of HTA file from archive */
+     (process.name : "mshta.exe" and
+      process.args : ("?:\\Users\\*\\Temp\\7z*", "?:\\Users\\*\\Temp\\Rar$*", "?:\\Users\\*\\Temp\\Temp?_*", "?:\\Users\\*\\Temp\\BNZ.*"))
+   )
+
+----------------------------------
+
+*Framework*: MITRE ATT&CK^TM^
+
+* Tactic:
+** Name: Defense Evasion
+** ID: TA0005
+** Reference URL: https://attack.mitre.org/tactics/TA0005/
+* Technique:
+** Name: System Binary Proxy Execution
+** ID: T1218
+** Reference URL: https://attack.mitre.org/techniques/T1218/
+* Sub-technique:
+** Name: Mshta
+** ID: T1218.005
+** Reference URL: https://attack.mitre.org/techniques/T1218/005/
+* Sub-technique:
+** Name: Rundll32
+** ID: T1218.011
+** Reference URL: https://attack.mitre.org/techniques/T1218/011/
