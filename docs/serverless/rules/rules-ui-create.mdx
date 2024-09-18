@@ -15,7 +15,7 @@ To create a new detection rule, follow these steps:
 1. Configure basic rule settings.
 1. Configure advanced rule settings (optional).
 1. Set the rule's schedule.
-1. Set up alert notifications (optional).
+1. Set up rule actions (optional).
 1. Set up response actions (optional).
 
 <DocCallOut title="Requirements">
@@ -48,6 +48,12 @@ To create or edit ((ml)) rules, you need an appropriate user role. Additionally,
         </DocCallOut>
 
     1. The anomaly score threshold above which alerts are created.
+
+1. <DocBadge template="technical preview" /> (Optional) Use **Suppress alerts by** to reduce the number of repeated or duplicate alerts created by the rule. Refer to <DocLink slug="/serverless/security/alert-suppression">Suppress detection alerts</DocLink> for more information.
+
+    <DocCallOut title="Note">
+    Because ((ml)) rules generate alerts from anomalies, which don't contain source event fields, you can only use anomaly fields when configuring alert suppression.
+    </DocCallOut>
 
     {/* The following steps are repeated across multiple rule types. If you change anything 
     in these steps or sub-steps, apply the change to the other rule types, too. */}
@@ -245,7 +251,7 @@ To create or edit ((ml)) rules, you need an appropriate user role. Additionally,
     1. **Indicator index patterns**: The indicator index patterns containing field values for which you want to generate alerts. This field is automatically populated with indices specified in the `securitySolution:defaultThreatIndex` advanced setting. For more information, see <DocLink slug="/serverless/security/advanced-settings" section="update-default-elastic-security-threat-intelligence-indices">Update default Elastic Security threat intelligence indices</DocLink>.
 
         <DocCallOut title="Important" color="warning">
-        Data in indicator indices must be <DocLink slug="/serverless/security/overview" section="ecs-compliance-data-requirements">ECS compatible</DocLink>, and so it must contain a `@timestamp` field.
+        Data in indicator indices must be <DocLink slug="/serverless/security/siem-field-reference">ECS compatible</DocLink>, and so it must contain a `@timestamp` field.
         </DocCallOut>
 
     1. **Indicator index query**: The query and filters used to filter the fields from
@@ -383,6 +389,8 @@ To create an ((esql)) rule:
     Click the help icon (<DocIcon type="iInCircle" title="Click the ES|QL help icon" />) to open the in-product reference documentation for all ((esql)) commands and functions.
     </DocCallOut>
 
+1. <DocBadge template="technical preview" /> (Optional) Use **Suppress alerts by** to reduce the number of repeated or duplicate alerts created by the rule. Refer to <DocLink slug="/serverless/security/alert-suppression">Suppress detection alerts</DocLink> for more information.
+
     {/* The following steps are repeated across multiple rule types. If you change anything 
     in these steps or sub-steps, apply the change to the other rule types, too. */}
 1. (Optional) Create a list of **Required fields** that the rule needs to function. This list is informational only, to help users understand the rule; it doesn't affect how the rule actually runs.
@@ -499,6 +507,8 @@ When writing your query, consider the following:
     If the `LIMIT` value and **Max alerts per run** value are different, the rule uses the lower value to determine the maximum number of alerts the rule generates.
 
 - When writing an aggregating query, use the [`STATS...BY`](((ref))/esql-commands.html#esql-stats-by) command with fields that you want to search and filter for after alerts are created. For example, using the `host.name`, `user.name`, `process.name` fields with the `BY` operator of the `STATS...BY` command returns these fields in alert documents, and allows you to search and filter for them from the Alerts table. 
+
+- When configuring alert suppression on a non-aggregating query, we recommend sorting results by ascending `@timestamp` order. Doing so ensures that alerts are properly suppressed, especially if the number of alerts generated is higher than the **Max alerts per run** value.
 
 <div id="esql-rule-limitations"></div>
 
@@ -652,8 +662,6 @@ When configuring an ((esql)) rule's **<DocLink slug="/serverless/security/rules-
 
 1. Click **Continue**. The **Rule actions** pane is displayed.
 
-    ![Available connector types](../images/rules-ui-create/-detections-available-action-types.png)
-
 1. Do either of the following:
 
     * Continue onto <DocLink slug="/serverless/security/rules-create" section="set-up-alert-notifications-optional">setting up alert notifications</DocLink> and <DocLink slug="/serverless/security/rules-create" section="set-up-response-actions-optional">Response Actions</DocLink> (optional).
@@ -661,12 +669,12 @@ When configuring an ((esql)) rule's **<DocLink slug="/serverless/security/rules-
 
 <div id="rule-notifications"></div>
 
-## Set up alert notifications (optional)
+## Set up rule actions (optional)
 
-Use Actions to set up notifications sent via other systems when alerts are generated.
+Use actions to set up notifications sent via other systems when alerts are generated.
 
 <DocCallOut title="Note">
-To use Actions for alert notifications, you need the appropriate user role. For more information, see <DocLink slug="/serverless/security/cases-requirements">Cases requirements</DocLink>.
+To use actions for alert notifications, you need the appropriate user role. For more information, see <DocLink slug="/serverless/security/cases-requirements">Cases requirements</DocLink>.
 </DocCallOut>
 
 1. Select a connector type to determine how notifications are sent. For example, if you select the ((jira)) connector, notifications are sent to your ((jira)) system.
@@ -676,9 +684,9 @@ To use Actions for alert notifications, you need the appropriate user role. For 
     information required to send the notification from the external system. You can
     configure connectors while creating the rule or in **Project settings** → **Management** → **((connectors-ui))**. For more
     information, see [Action and connector types](((kibana-ref))/action-types.html).
-    </DocCallOut>
 
-    ![Available connector types](../images/rules-ui-create/-detections-available-action-types.png)
+    Some connectors that perform actions require less configuration. For example, you do not need to set the action frequency or variables for the [Cases connector](((kibana-ref))/cases-action-type.html).
+    </DocCallOut>
 
 1. After you select a connector, set its action frequency to define when notifications are sent:
 
@@ -822,8 +830,8 @@ Example using the mustache "current element" notation `{{.}}` to output all the 
 
 <div id="rule-response-action"></div>
 
-## Set up response actions (optional)
-Use Response Actions to set up additional functionality that will run whenever a rule executes:
+### Set up response actions (optional)
+Use response actions to set up additional functionality that will run whenever a rule executes:
 
 * **Osquery**: Include live Osquery queries with a custom query rule. When an alert is generated, Osquery automatically collects data on the system related to the alert. Refer to <DocLink slug="/serverless/security/osquery-response-action">Add Osquery Response Actions</DocLink> to learn more.
 
@@ -832,8 +840,6 @@ Use Response Actions to set up additional functionality that will run whenever a
 <DocCallOut title="Important" color="warning">
 Host isolation involves quarantining a host from the network to prevent further spread of threats and limit potential damage. Be aware that automatic host isolation can cause unintended consequences, such as disrupting legitimate user activities or blocking critical business processes.
 </DocCallOut>
-
-![Shows available response actions](../images/rules-ui-create/-detections-available-response-actions.png)
 
 <div id="preview-rules"></div>
 
