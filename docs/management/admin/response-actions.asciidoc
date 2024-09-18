@@ -69,6 +69,7 @@ Example: `release --comment "Release host, everything looks OK"`
 Show information about the host's status, including: {agent} status and version, the {elastic-defend} integration's policy status, and when the host was last active.
  
 [discrete]
+[[processes]]
 === `processes`
 Show a list of all processes running on the host. This action may take a minute or so to complete.
 
@@ -81,7 +82,10 @@ Use this command to get current PID or entity ID values, which are required for 
 Entity IDs may be more reliable than PIDs, because entity IDs are unique values on the host, while PID values can be reused by the operating system.
 ====
 
+NOTE: Running this command on third-party-protected hosts might return the process list in a different format. Refer to <<third-party-actions>> for more information.
+
 [discrete]
+[[kill-process]]
 === `kill-process`
 
 Terminate a process. You must include one of the following parameters to identify the process to terminate:
@@ -92,6 +96,13 @@ Terminate a process. You must include one of the following parameters to identif
 Required privilege: *Process Operations*
 
 Example: `kill-process --pid 123 --comment "Terminate suspicious process"`
+
+[NOTE]
+====
+For SentinelOne-enrolled hosts, you must use the parameter `--processName` to identify the process to terminate. `--pid` and `--entityId` are not supported.
+
+Example: `kill-process --processName cat --comment "Terminate suspicious process"`
+====
 
 [discrete]
 === `suspend-process`
@@ -111,12 +122,7 @@ Example: `suspend-process --pid 123 --comment "Suspend suspicious process"`
 
 Retrieve a file from a host. Files are downloaded in a password-protected `.zip` archive to prevent the file from running. Use password `elastic` to open the `.zip` in a safe environment.
 
-[NOTE]
-====
-Files retrieved from third-party-protected hosts require a different password. Refer to the following:
-
-* <<sentinelone-response-actions>>
-====
+NOTE: Files retrieved from third-party-protected hosts require a different password. Refer to <<third-party-actions>> for your system's password.
 
 You must include the following parameter to specify the file's location on the host:
 
@@ -171,12 +177,12 @@ Example: `upload --file --comment "Upload remediation script"`
 
 TIP: You can follow this with the `execute` response action to upload and run scripts for mitigation or other purposes.
 
-NOTE: The default file size maximum is 25 MB, configurable in `kibana.yml` with the `maxUploadResponseActionFileBytes` setting. You must enter the value in bytes (the maximum is `104857600` bytes, or 100 MB).
+NOTE: The default file size maximum is 25 MB, configurable in `kibana.yml` with the `xpack.securitySolution.maxUploadResponseActionFileBytes` setting. You must enter the value in bytes (the maximum is `104857600` bytes, or 100 MB).
 
 [discrete]
 === `scan`
 
-Scan a specific file or directory on the host for malware. The scan uses the <<malware-protection,malware protection settings>> (such as **Detect** or **Prevent** options, or enabling the blocklist) as configured in the host's associated {elastic-defend} integration policy. Use these parameters:
+Scan a specific file or directory on the host for malware. This uses the <<malware-protection,malware protection settings>> (such as **Detect** or **Prevent** options, or enabling the blocklist) as configured in the host's associated {elastic-defend} integration policy. Use these parameters:
 
 * `--path` : (Required) The absolute path to a file or directory to be scanned.
 
