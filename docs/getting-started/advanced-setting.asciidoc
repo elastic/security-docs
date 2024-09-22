@@ -179,8 +179,49 @@ The `securitySolution:alertTags` field determines which options display in the a
 
 [discrete]
 [[exclude-cold-frozen-data-rule-executions]]
-== Exclude cold and frozen data tiers from rule executions 
+== Exclude cold and frozen data from rule executions 
 
-Set the `excludedDataTiersForRuleExecution` field to ensure that events from cold and frozen {ref}/data-tiers.html[data tiers] aren't searched during rule executions. Excluding data from cold and frozen tiers might help to improve rule performance or reduce execution time. 
+To ensure rules don't search cold and frozen data when executing, specify cold and frozen {ref}/data-tiers.html[data tiers] in the `excludedDataTiersForRuleExecution` field. Multiple data tiers must be separated by commas, for example: `data_frozen`, `data_cold`. This setting is turned off by default; turning it on can improve rule performance and reduce execution time. 
 
-If you specify multiple data tiers, values must be separated by commas, for example: `data_frozen`, `data_cold`. This setting is turned off by default.
+The `excludedDataTiersForRuleExecution` setting does not apply to {esql} or {ml} rules. 
+
+[TIP]
+====
+
+The `excludedDataTiersForRuleExecution` setting applies to all rules in a {kib} space. To only exclude cold and frozen data from specific rules, add a {ref}/sql-rest-filtering.html[Query DSL] filter to the rules you want affected. Add the filter when creating a new rule or updating an existing one. 
+
+Here is a sample Query DSL filter that excludes frozen tier data from a rule's execution:
+
+[source,console]
+----
+{
+   "bool":{
+      "must_not":{
+         "terms":{
+            "_tier":[
+               "data_frozen"
+            ]
+         }
+      }
+   }
+}
+----
+
+Here is another sample Query DSL filter that excludes cold and frozen tier data from a rule's execution:
+
+[source,console]
+----
+{
+   "bool":{
+      "must_not":{
+         "terms":{
+            "_tier":[
+               "data_frozen", "data_cold"
+            ]
+         }
+      }
+   }
+}
+----
+
+====
