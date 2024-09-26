@@ -11,7 +11,8 @@ Documentation Manager: Janeen Roberts (Github: `@jmikell821`)
 
 You can open an issue using the appropriate [template](https://github.com/elastic/security-docs/issues/new/choose). 
 
-[!NOTE] 
+[!NOTE]
+
 Please report any **known issues** that need to be documented by creating an issue in our [private repo](https://github.com/elastic/security-docs-internal/issues) using the known issue template. 
 
 To contribute directly to Elastic Security documentation:
