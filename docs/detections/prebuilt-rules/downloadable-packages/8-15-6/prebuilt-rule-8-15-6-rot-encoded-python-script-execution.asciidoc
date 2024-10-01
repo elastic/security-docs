@@ -1,0 +1,75 @@
+[[prebuilt-rule-8-15-6-rot-encoded-python-script-execution]]
+=== ROT Encoded Python Script Execution
+
+Identifies the execution of a Python script that uses the ROT cipher for letters substitution. Adversaries may use this method to encode and obfuscate part of their malicious code in legit python packages.
+
+*Rule type*: eql
+
+*Rule indices*: 
+
+* logs-endpoint.events.process-*
+* logs-endpoint.events.file-*
+
+*Severity*: medium
+
+*Risk score*: 47
+
+*Runs every*: 5m
+
+*Searches indices from*: now-9m ({ref}/common-options.html#date-math[Date Math format], see also <<rule-schedule, `Additional look-back time`>>)
+
+*Maximum alerts per execution*: 100
+
+*References*: 
+
+* https://www.elastic.co/security-labs/dprk-code-of-conduct
+* https://www.reversinglabs.com/blog/fake-recruiter-coding-tests-target-devs-with-malicious-python-packages
+
+*Tags*: 
+
+* Domain: Endpoint
+* OS: Windows
+* OS: macOS
+* Use Case: Threat Detection
+* Tactic: Defense Evasion
+* Data Source: Elastic Defend
+
+*Version*: 1
+
+*Rule authors*: 
+
+* Elastic
+
+*Rule license*: Elastic License v2
+
+
+==== Rule query
+
+
+[source, js]
+----------------------------------
+sequence by process.entity_id with maxspan=1m
+ [process where host.os.type in ("windows", "macos") and event.type == "start" and process.name : "python*"]
+ [file where host.os.type in ("windows", "macos") and
+  event.action != "deletion" and process.name : "python*" and file.name : "rot_??.cpython-*.pyc*"]
+
+----------------------------------
+
+*Framework*: MITRE ATT&CK^TM^
+
+* Tactic:
+** Name: Defense Evasion
+** ID: TA0005
+** Reference URL: https://attack.mitre.org/tactics/TA0005/
+* Technique:
+** Name: Deobfuscate/Decode Files or Information
+** ID: T1140
+** Reference URL: https://attack.mitre.org/techniques/T1140/
+* Technique:
+** Name: Obfuscated Files or Information
+** ID: T1027
+** Reference URL: https://attack.mitre.org/techniques/T1027/
+* Sub-technique:
+** Name: Encrypted/Encoded File
+** ID: T1027.013
+** Reference URL: https://attack.mitre.org/techniques/T1027/013/
