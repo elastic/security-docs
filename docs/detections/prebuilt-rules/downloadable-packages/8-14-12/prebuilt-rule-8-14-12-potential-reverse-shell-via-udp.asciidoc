@@ -1,0 +1,141 @@
+[[prebuilt-rule-8-14-12-potential-reverse-shell-via-udp]]
+=== Potential Reverse Shell via UDP
+
+This detection rule identifies suspicious network traffic patterns associated with UDP reverse shell activity. This activity consists of a sample of an execve, socket and connect syscall executed by the same process, where the auditd.data.a0-1 indicate a UDP connection, ending with an egress connection event. An attacker may establish a Linux UDP reverse shell to bypass traditional firewall restrictions and gain remote access to a target system covertly.
+
+*Rule type*: eql
+
+*Rule indices*: 
+
+* auditbeat-*
+* logs-auditd_manager.auditd-*
+
+*Severity*: medium
+
+*Risk score*: 47
+
+*Runs every*: 5m
+
+*Searches indices from*: now-9m ({ref}/common-options.html#date-math[Date Math format], see also <<rule-schedule, `Additional look-back time`>>)
+
+*Maximum alerts per execution*: 100
+
+*References*: 
+
+* https://github.com/swisskyrepo/PayloadsAllTheThings/blob/master/Methodology%20and%20Resources/Reverse%20Shell%20Cheatsheet.md
+* https://www.elastic.co/security-labs/primer-on-persistence-mechanisms
+* https://www.elastic.co/security-labs/linux-detection-engineering-with-auditd
+
+*Tags*: 
+
+* Data Source: Auditd Manager
+* Domain: Endpoint
+* OS: Linux
+* Use Case: Threat Detection
+* Tactic: Execution
+
+*Version*: 7
+
+*Rule authors*: 
+
+* Elastic
+
+*Rule license*: Elastic License v2
+
+
+==== Setup
+
+
+
+*Setup*
+
+
+This rule requires data coming in from one of the following integrations:
+- Auditbeat
+- Auditd Manager
+
+
+*Auditbeat Setup*
+
+Auditbeat is a lightweight shipper that you can install on your servers to audit the activities of users and processes on your systems. For example, you can use Auditbeat to collect and centralize audit events from the Linux Audit Framework. You can also use Auditbeat to detect changes to critical files, like binaries and configuration files, and identify potential security policy violations.
+
+
+*The following steps should be executed in order to add the Auditbeat on a Linux System:*
+
+- Elastic provides repositories available for APT and YUM-based distributions. Note that we provide binary packages, but no source packages.
+- To install the APT and YUM repositories follow the setup instructions in this https://www.elastic.co/guide/en/beats/auditbeat/current/setup-repositories.html[helper guide].
+- To run Auditbeat on Docker follow the setup instructions in the https://www.elastic.co/guide/en/beats/auditbeat/current/running-on-docker.html[helper guide].
+- To run Auditbeat on Kubernetes follow the setup instructions in the https://www.elastic.co/guide/en/beats/auditbeat/current/running-on-kubernetes.html[helper guide].
+- For complete “Setup and Run Auditbeat” information refer to the https://www.elastic.co/guide/en/beats/auditbeat/current/setting-up-and-running.html[helper guide].
+
+
+*Auditd Manager Integration Setup*
+
+The Auditd Manager Integration receives audit events from the Linux Audit Framework which is a part of the Linux kernel.
+Auditd Manager provides a user-friendly interface and automation capabilities for configuring and monitoring system auditing through the auditd daemon. With `auditd_manager`, administrators can easily define audit rules, track system events, and generate comprehensive audit reports, improving overall security and compliance in the system.
+
+
+*The following steps should be executed in order to add the Elastic Agent System integration "auditd_manager" on a Linux System:*
+
+- Go to the Kibana home page and click “Add integrations”.
+- In the query bar, search for “Auditd Manager” and select the integration to see more details about it.
+- Click “Add Auditd Manager”.
+- Configure the integration name and optionally add a description.
+- Review optional and advanced settings accordingly.
+- Add the newly installed “auditd manager” to an existing or a new agent policy, and deploy the agent on a Linux system from which auditd log files are desirable.
+- Click “Save and Continue”.
+- For more details on the integration refer to the https://docs.elastic.co/integrations/auditd_manager[helper guide].
+
+
+*Rule Specific Setup Note*
+
+Auditd Manager subscribes to the kernel and receives events as they occur without any additional configuration.
+However, if more advanced configuration is required to detect specific behavior, audit rules can be added to the integration in either the "audit rules" configuration box or the "auditd rule files" box by specifying a file to read the audit rules from.
+- For this detection rule no additional audit rules are required to be added to the integration.
+
+
+==== Rule query
+
+
+[source, js]
+----------------------------------
+sample by host.id, process.pid, process.parent.pid
+  [process where host.os.type == "linux" and event.type == "start" and event.action == "executed" and process.name : (
+    "bash", "dash", "sh", "tcsh", "csh", "zsh", "ksh", "fish", "perl", "python*", "nc", "ncat", "netcat", "php*",
+    "ruby", "openssl", "awk", "telnet", "lua*", "socat"
+    )]
+  [process where host.os.type == "linux" and auditd.data.syscall == "socket" and process.name : (
+    "bash", "dash", "sh", "tcsh", "csh", "zsh", "ksh", "fish", "perl", "python*", "nc", "ncat", "netcat", "php*",
+    "ruby", "openssl", "awk", "telnet", "lua*", "socat"
+    ) and auditd.data.a1 == "2"]
+  [network where host.os.type == "linux" and event.type == "start" and event.action == "connected-to" and
+   process.name : (
+    "bash", "dash", "sh", "tcsh", "csh", "zsh", "ksh", "fish", "perl", "python*", "nc", "ncat", "netcat", "php*",
+    "ruby", "openssl", "awk", "telnet", "lua*", "socat"
+    ) and network.direction == "egress" and destination.ip != null and
+   not cidrmatch(destination.ip, "127.0.0.0/8", "169.254.0.0/16", "224.0.0.0/4", "::1")]
+
+----------------------------------
+
+*Framework*: MITRE ATT&CK^TM^
+
+* Tactic:
+** Name: Execution
+** ID: TA0002
+** Reference URL: https://attack.mitre.org/tactics/TA0002/
+* Technique:
+** Name: Command and Scripting Interpreter
+** ID: T1059
+** Reference URL: https://attack.mitre.org/techniques/T1059/
+* Sub-technique:
+** Name: Unix Shell
+** ID: T1059.004
+** Reference URL: https://attack.mitre.org/techniques/T1059/004/
+* Tactic:
+** Name: Command and Control
+** ID: TA0011
+** Reference URL: https://attack.mitre.org/tactics/TA0011/
+* Technique:
+** Name: Application Layer Protocol
+** ID: T1071
+** Reference URL: https://attack.mitre.org/techniques/T1071/
