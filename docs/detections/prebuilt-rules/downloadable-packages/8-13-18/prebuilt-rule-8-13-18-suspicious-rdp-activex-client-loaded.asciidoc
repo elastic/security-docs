@@ -1,0 +1,106 @@
+[[prebuilt-rule-8-13-18-suspicious-rdp-activex-client-loaded]]
+=== Suspicious RDP ActiveX Client Loaded
+
+Identifies suspicious Image Loading of the Remote Desktop Services ActiveX Client (mstscax), this may indicate the presence of RDP lateral movement capability.
+
+*Rule type*: eql
+
+*Rule indices*: 
+
+* logs-endpoint.events.library-*
+* winlogbeat-*
+* logs-windows.sysmon_operational-*
+* endgame-*
+
+*Severity*: medium
+
+*Risk score*: 47
+
+*Runs every*: 5m
+
+*Searches indices from*: now-9m ({ref}/common-options.html#date-math[Date Math format], see also <<rule-schedule, `Additional look-back time`>>)
+
+*Maximum alerts per execution*: 100
+
+*References*: 
+
+* https://posts.specterops.io/revisiting-remote-desktop-lateral-movement-8fb905cb46c3
+* https://www.elastic.co/security-labs/hunting-for-lateral-movement-using-event-query-language
+
+*Tags*: 
+
+* Domain: Endpoint
+* OS: Windows
+* Use Case: Threat Detection
+* Tactic: Lateral Movement
+* Data Source: Elastic Endgame
+* Data Source: Elastic Defend
+* Data Source: Sysmon
+
+*Version*: 110
+
+*Rule authors*: 
+
+* Elastic
+
+*Rule license*: Elastic License v2
+
+
+==== Setup
+
+
+
+*Setup*
+
+
+If enabling an EQL rule on a non-elastic-agent index (such as beats) for versions <8.2,
+events will not define `event.ingested` and default fallback for EQL rules was not added until version 8.2.
+Hence for this rule to work effectively, users will need to add a custom ingest pipeline to populate
+`event.ingested` to @timestamp.
+For more details on adding a custom ingest pipeline refer - https://www.elastic.co/guide/en/fleet/current/data-streams-pipeline-tutorial.html
+
+
+==== Rule query
+
+
+[source, js]
+----------------------------------
+any where host.os.type == "windows" and
+ (event.category : ("library", "driver") or (event.category == "process" and event.action : "Image loaded*")) and
+ (?dll.name : "mstscax.dll" or file.name : "mstscax.dll") and
+   /* depending on noise in your env add here extra paths  */
+  process.executable : (
+    "C:\\Windows\\*",
+    "C:\\Users\\Public\\*",
+    "C:\\Users\\Default\\*",
+    "C:\\Intel\\*",
+    "C:\\PerfLogs\\*",
+    "C:\\ProgramData\\*",
+    "\\Device\\Mup\\*",
+    "\\\\*"
+  ) and
+  /* add here FPs */
+  not process.executable : (
+    "?:\\Windows\\System32\\mstsc.exe",
+    "?:\\Windows\\SysWOW64\\mstsc.exe",
+    "?:\\Windows\\System32\\vmconnect.exe",
+    "?:\\Windows\\System32\\WindowsSandboxClient.exe",
+    "?:\\Windows\\System32\\hvsirdpclient.exe"
+  )
+
+----------------------------------
+
+*Framework*: MITRE ATT&CK^TM^
+
+* Tactic:
+** Name: Lateral Movement
+** ID: TA0008
+** Reference URL: https://attack.mitre.org/tactics/TA0008/
+* Technique:
+** Name: Remote Services
+** ID: T1021
+** Reference URL: https://attack.mitre.org/techniques/T1021/
+* Sub-technique:
+** Name: Remote Desktop Protocol
+** ID: T1021.001
+** Reference URL: https://attack.mitre.org/techniques/T1021/001/
