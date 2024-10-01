@@ -1,0 +1,80 @@
+[[prebuilt-rule-8-12-23-multiple-okta-sessions-detected-for-a-single-user]]
+=== Multiple Okta Sessions Detected for a Single User
+
+Detects when a user has started multiple Okta sessions with the same user account and different session IDs. This may indicate that an attacker has stolen the user's session cookie and is using it to access the user's account from a different location.
+
+*Rule type*: threshold
+
+*Rule indices*: 
+
+* filebeat-*
+* logs-okta*
+
+*Severity*: medium
+
+*Risk score*: 47
+
+*Runs every*: 60m
+
+*Searches indices from*: now-30m ({ref}/common-options.html#date-math[Date Math format], see also <<rule-schedule, `Additional look-back time`>>)
+
+*Maximum alerts per execution*: 100
+
+*References*: 
+
+* https://developer.okta.com/docs/reference/api/system-log/
+* https://developer.okta.com/docs/reference/api/event-types/
+* https://www.elastic.co/security-labs/testing-okta-visibility-and-detection-dorothy
+* https://sec.okta.com/articles/2023/08/cross-tenant-impersonation-prevention-and-detection
+* https://www.elastic.co/security-labs/monitoring-okta-threats-with-elastic-security
+* https://www.elastic.co/security-labs/starter-guide-to-understanding-okta
+
+*Tags*: 
+
+* Use Case: Identity and Access Audit
+* Data Source: Okta
+* Tactic: Lateral Movement
+
+*Version*: 3
+
+*Rule authors*: 
+
+* Elastic
+
+*Rule license*: Elastic License v2
+
+
+==== Investigation guide
+
+
+
+
+==== Setup
+
+
+The Okta Fleet integration, Filebeat module, or similarly structured data is required to be compatible with this rule.
+
+==== Rule query
+
+
+[source, js]
+----------------------------------
+event.dataset:okta.system and okta.event_type:user.session.start and okta.authentication_context.external_session_id:*
+    and not (okta.actor.id: okta* or okta.actor.display_name: okta*)
+
+----------------------------------
+
+*Framework*: MITRE ATT&CK^TM^
+
+* Tactic:
+** Name: Lateral Movement
+** ID: TA0008
+** Reference URL: https://attack.mitre.org/tactics/TA0008/
+* Technique:
+** Name: Use Alternate Authentication Material
+** ID: T1550
+** Reference URL: https://attack.mitre.org/techniques/T1550/
+* Sub-technique:
+** Name: Web Session Cookie
+** ID: T1550.004
+** Reference URL: https://attack.mitre.org/techniques/T1550/004/
