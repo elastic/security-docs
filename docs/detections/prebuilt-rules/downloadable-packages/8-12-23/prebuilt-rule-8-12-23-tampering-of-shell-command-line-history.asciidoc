@@ -1,0 +1,96 @@
+[[prebuilt-rule-8-12-23-tampering-of-shell-command-line-history]]
+=== Tampering of Shell Command-Line History
+
+Adversaries may attempt to clear or disable the Bash command-line history in an attempt to evade detection or forensic investigations.
+
+*Rule type*: eql
+
+*Rule indices*: 
+
+* logs-endpoint.events.*
+* endgame-*
+* auditbeat-*
+* logs-auditd_manager.auditd-*
+
+*Severity*: medium
+
+*Risk score*: 47
+
+*Runs every*: 5m
+
+*Searches indices from*: now-9m ({ref}/common-options.html#date-math[Date Math format], see also <<rule-schedule, `Additional look-back time`>>)
+
+*Maximum alerts per execution*: 100
+
+*References*: 
+
+* https://www.elastic.co/security-labs/detecting-log4j2-with-elastic-security
+
+*Tags*: 
+
+* Domain: Endpoint
+* OS: Linux
+* OS: macOS
+* Use Case: Threat Detection
+* Tactic: Defense Evasion
+* Data Source: Elastic Defend
+* Data Source: Elastic Endgame
+* Data Source: Auditd Manager
+
+*Version*: 107
+
+*Rule authors*: 
+
+* Elastic
+
+*Rule license*: Elastic License v2
+
+
+==== Setup
+
+
+
+*Setup*
+
+
+If enabling an EQL rule on a non-elastic-agent index (such as beats) for versions <8.2,
+events will not define `event.ingested` and default fallback for EQL rules was not added until version 8.2.
+Hence for this rule to work effectively, users will need to add a custom ingest pipeline to populate
+`event.ingested` to @timestamp.
+For more details on adding a custom ingest pipeline refer - https://www.elastic.co/guide/en/fleet/current/data-streams-pipeline-tutorial.html
+
+
+==== Rule query
+
+
+[source, js]
+----------------------------------
+process where event.action in ("exec", "exec_event", "executed", "process_started") and event.type == "start" and
+ (
+  ((process.args : ("rm", "echo") or
+    (process.args : "ln" and process.args : "-sf" and process.args : "/dev/null") or
+    (process.args : "truncate" and process.args : "-s0"))
+    and process.args : (".bash_history", "/root/.bash_history", "/home/*/.bash_history","/Users/.bash_history", "/Users/*/.bash_history",
+                        ".zsh_history", "/root/.zsh_history", "/home/*/.zsh_history", "/Users/.zsh_history", "/Users/*/.zsh_history")) or
+  (process.args : "history" and process.args : "-c") or
+  (process.args : "export" and process.args : ("HISTFILE=/dev/null", "HISTFILESIZE=0")) or
+  (process.args : "unset" and process.args : "HISTFILE") or
+  (process.args : "set" and process.args : "history" and process.args : "+o")
+ )
+
+----------------------------------
+
+*Framework*: MITRE ATT&CK^TM^
+
+* Tactic:
+** Name: Defense Evasion
+** ID: TA0005
+** Reference URL: https://attack.mitre.org/tactics/TA0005/
+* Technique:
+** Name: Indicator Removal
+** ID: T1070
+** Reference URL: https://attack.mitre.org/techniques/T1070/
+* Sub-technique:
+** Name: Clear Command History
+** ID: T1070.003
+** Reference URL: https://attack.mitre.org/techniques/T1070/003/
