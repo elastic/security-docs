@@ -1,0 +1,138 @@
+[[prebuilt-rule-8-13-18-google-workspace-custom-gmail-route-created-or-modified]]
+=== Google Workspace Custom Gmail Route Created or Modified
+
+Detects when a custom Gmail route is added or modified in Google Workspace. Adversaries can add a custom e-mail route for outbound mail to route these e-mails to their own inbox of choice for data gathering. This allows adversaries to capture sensitive information from e-mail and potential attachments, such as invoices or payment documents. By default, all email from current Google Workspace users with accounts are routed through a domain's mail server for inbound and outbound mail.
+
+*Rule type*: query
+
+*Rule indices*: 
+
+* filebeat-*
+* logs-google_workspace*
+
+*Severity*: medium
+
+*Risk score*: 47
+
+*Runs every*: 10m
+
+*Searches indices from*: now-130m ({ref}/common-options.html#date-math[Date Math format], see also <<rule-schedule, `Additional look-back time`>>)
+
+*Maximum alerts per execution*: 100
+
+*References*: 
+
+* https://support.google.com/a/answer/2685650?hl=en
+* https://www.elastic.co/security-labs/google-workspace-attack-surface-part-one
+* https://www.elastic.co/security-labs/google-workspace-attack-surface-part-two
+
+*Tags*: 
+
+* Domain: Cloud
+* Data Source: Google Workspace
+* Tactic: Collection
+* Resources: Investigation Guide
+
+*Version*: 107
+
+*Rule authors*: 
+
+* Elastic
+
+*Rule license*: Elastic License v2
+
+
+==== Investigation guide
+
+
+
+*Triage and analysis*
+
+
+
+*Investigating Google Workspace Custom Gmail Route Created or Modified*
+
+
+Gmail is a popular cloud-based email service developed and managed by Google. Gmail is one of many services available for users with Google Workspace accounts.
+
+Threat actors often send phishing emails containing malicious URL links or attachments to corporate Gmail accounts. Google Workspace identity relies on the corporate user Gmail account and if stolen, allows threat actors to further their intrusion efforts from valid user accounts.
+
+This rule identifies the creation of a custom global Gmail route by an administrator from the Google Workspace admin console. Custom email routes could indicate an attempt to secretly forward sensitive emails to unintentional recipients.
+
+
+*Possible investigation steps*
+
+
+- Identify the user account that created the custom email route and verify that they should have administrative privileges.
+- Review the added recipients from the custom email route and confidentiality of potential email contents.
+- Identify the user account, then review `event.action` values for related activity within the last 48 hours.
+- If the Google Workspace license is Enterprise Plus or Education Plus, search for emails matching the route filters. To find the Gmail event logs, go to `Reporting > Audit and investigation > Gmail log events`.
+- If existing emails have been sent and match the custom route criteria, review the sender and contents for malicious URL links and attachments.
+- Identified URLs or attachments can be submitted to VirusTotal for reputational services.
+
+
+*False positive analysis*
+
+
+- This rule searches for domain-wide custom email routes created in the admin console of Google Workspace. Administrators might create custom email routes to fulfill organizational requirements.
+
+
+*Response and remediation*
+
+
+- Initiate the incident response process based on the outcome of the triage.
+- Disable or limit the account during the investigation and response.
+- Identify the possible impact of the incident and prioritize accordingly; the following actions can help you gain context:
+    - Identify the account role in the cloud environment.
+    - Assess the criticality of affected services and servers.
+    - Work with your IT team to identify and minimize the impact on users.
+    - Identify if the attacker is moving laterally and compromising other accounts, servers, or services.
+    - Identify any regulatory or legal ramifications related to this activity.
+- Investigate credential exposure on systems compromised or used by the attacker to ensure all compromised accounts are identified. Reset passwords or delete API keys as needed to revoke the attacker's access to the environment. Work with your IT teams to minimize the impact on business operations during these actions.
+- Review the permissions assigned to the implicated user to ensure that the least privilege principle is being followed.
+- Implement security best practices https://support.google.com/a/answer/7587183[outlined] by Google.
+- Determine the initial vector abused by the attacker and take action to prevent reinfection via the same vector.
+- Using the incident response data, update logging and audit policies to improve the mean time to detect (MTTD) and the mean time to respond (MTTR).
+
+
+
+
+*Important Information Regarding Google Workspace Event Lag Times*
+
+- As per Google's documentation, Google Workspace administrators may observe lag times ranging from minutes up to 3 days between the time of an event's occurrence and the event being visible in the Google Workspace admin/audit logs.
+- This rule is configured to run every 10 minutes with a lookback time of 130 minutes.
+- To reduce the risk of false negatives, consider reducing the interval that the Google Workspace (formerly G Suite) Filebeat module polls Google's reporting API for new events.
+- By default, `var.interval` is set to 2 hours (2h). Consider changing this interval to a lower value, such as 10 minutes (10m).
+- See the following references for further information:
+  - https://support.google.com/a/answer/7061566
+  - https://www.elastic.co/guide/en/beats/filebeat/current/filebeat-module-google_workspace.html
+
+==== Setup
+
+
+The Google Workspace Fleet integration, Filebeat module, or similarly structured data is required to be compatible with this rule.
+
+==== Rule query
+
+
+[source, js]
+----------------------------------
+event.dataset:"google_workspace.admin" and event.action:("CREATE_GMAIL_SETTING" or "CHANGE_GMAIL_SETTING")
+  and google_workspace.event.type:"EMAIL_SETTINGS" and google_workspace.admin.setting.name:("EMAIL_ROUTE" or "MESSAGE_SECURITY_RULE")
+
+----------------------------------
+
+*Framework*: MITRE ATT&CK^TM^
+
+* Tactic:
+** Name: Collection
+** ID: TA0009
+** Reference URL: https://attack.mitre.org/tactics/TA0009/
+* Technique:
+** Name: Email Collection
+** ID: T1114
+** Reference URL: https://attack.mitre.org/techniques/T1114/
+* Sub-technique:
+** Name: Email Forwarding Rule
+** ID: T1114.003
+** Reference URL: https://attack.mitre.org/techniques/T1114/003/
