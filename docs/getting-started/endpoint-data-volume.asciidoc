@@ -1,12 +1,56 @@
 [[endpoint-data-volume]]
-= Configure {elastic-endpoint}'s data volume
+= Configure data volume for {elastic-endpoint}
 ++++
 <titleabbrev>Configure data volume</titleabbrev>
 ++++
 
+{elastic-endpoint}, the installed component that performs {elastic-defend}'s threat monitoring and prevention, has been optimized to reduce data volume and CPU usage. You can disable or modify some of these optimizations by reconfiguring the following <<adv-policy-settings,advanced settings>> in the {elastic-defend} integration policy.
 
-[sidebar]
---
-[.text-center]
-**This is a placeholder for future documentation.**
---
+IMPORTANT: Modifying these advanced settings from their defaults will increase the volume of data that {elastic-endpoint} processes and ingests, and increase {elastic-endpoint}'s CPU usage. Make sure you're aware of how these changes will affect your storage capabilities and performance.
+
+Each setting has several OS-specific variants, represented by `[linux|mac|windows]` in the names listed below. Use the variant relevant to your hosts' operating system (for example, `windows.advanced.events.deduplicate_network_events` to configure network event deduplication for Windows hosts).
+
+[discrete]
+[[network-event-deduplication]]
+== Network event deduplication
+
+added:[8.15] When repeated network connections are detected from the same process, {elastic-endpoint} will not produce network events for subsequent connections. To disable or reduce deduplication of network events, use these advanced settings:
+
+`[linux|mac|windows].advanced.events.deduplicate_network_events`:: Enter `false` to completely disable network event deduplication. Default: `true`
+
+`[linux|mac|windows].advanced.events.deduplicate_network_events_below_bytes`:: Enter a transfer size threshold (in bytes) for events you want to deduplicate. Connections below the threshold are deduplicated, and connections above it are not deduplicated. This allows you to suppress repeated connections for smaller data transfers but always generate events for larger transfers. Default: `1048576` (1MB)
+
+[discrete]
+[[host-fields]]
+== Data in `host.*` fields
+
+added:[8.16] {elastic-endpoint} includes only a small subset of the data in the `host.*` fieldset in event documents. Full `host.*` information is still included in documents written to the `metrics-*` index pattern and in {elastic-endpoint} alerts. To override this behavior and include all `host.*` data for events, use this advanced setting:
+
+// TO DO: Still need to get setting name and values. Also the note callout needs more information.
+
+`[linux|mac|windows].advanced.setting.NAME`:: Enter `VALUE` to include all `host.*` event data. Default: `OTHER-VALUE`
+
+NOTE: Users should take note of how a lack of some `host.*` information may affect their <<event-filters,event filters>>.
+
+[discrete]
+[[merged-process-network]]
+== Merged process and network events
+
+added:[8.16] {elastic-endpoint} merges process `create`/`terminate` events (Windows) and `fork`/`exec`/`end` events (macOS/Linux) when possible. This means for short-lived processes only a single event is generated, containing the process details from when the process terminated. {elastic-endpoint} also merges network connection/termination events (Windows/macOS/Linux) when possible for short-lived connections. To disable this behavior, use these advanced settings:
+
+
+`[linux|mac|windows].advanced.events.aggregate_process`:: Enter `false` to disable merging of process events. Default: `true`
+
+`[linux|mac|windows].advanced.events.aggregate_network`:: Enter `false` to disable merging of network events. Default: `true`
+
+NOTE: Merged events can affect the results of <<event-filters,event filters>>. For merged events, `event.action` is an array containing all actions merged into the single event, such as `event.action=[fork, exec, end]`. If your event filter omits all fork events (`event.action : fork`), it will also filter out all merged events that include a `fork` action. You'll need to modify the event filter to target only original `fork` events.
+
+[discrete]
+[[md5-sha1-hashes]]
+== MD5 and SHA-1 hashes
+
+added:[8.16] {elastic-endpoint} does not report MD5 and SHA-1 hashes in event data by default. These will still be reported if any <<trusted-apps-ov,trusted applications>>, <<blocklist,blocklist entries>>, <<event-filters,event filters>>, or <<detections-ui-exceptions,rule exceptions>> require them. To include these hashes in all event data, use these advanced settings:
+
+`[linux|mac|windows].advanced.alerts.hash.md5`:: Enter `true` to compute and include MD5 hashes for processes and libraries in events. Default: `false`
+
+`[linux|mac|windows].advanced.alerts.hash.sha1`:: Enter `true` to compute and include SHA-1 hashes for processes and libraries in events. Default: `false`
