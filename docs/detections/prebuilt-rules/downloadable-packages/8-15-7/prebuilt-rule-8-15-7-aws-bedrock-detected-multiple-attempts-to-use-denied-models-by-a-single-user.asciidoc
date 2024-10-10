@@ -1,7 +1,7 @@
-[[unusual-high-confidence-misconduct-blocks-detected]]
-=== Unusual High Confidence Misconduct Blocks Detected
+[[prebuilt-rule-8-15-7-aws-bedrock-detected-multiple-attempts-to-use-denied-models-by-a-single-user]]
+=== AWS Bedrock Detected Multiple Attempts to use Denied Models by a Single User
 
-Detects repeated high-confidence 'BLOCKED' actions coupled with specific violation codes such as 'MISCONDUCT', indicating persistent misuse or attempts to probe the model's ethical boundaries.
+Identifies multiple successive failed attempts to use denied model resources within AWS Bedrock. This could indicated attempts to bypass limitations of other approved models, or to force an impact on the environment by incurring exhorbitant costs.
 
 *Rule type*: esql
 
@@ -20,8 +20,8 @@ Detects repeated high-confidence 'BLOCKED' actions coupled with specific violati
 *References*: 
 
 * https://docs.aws.amazon.com/bedrock/latest/userguide/guardrails-components.html
-* https://atlas.mitre.org/techniques/AML.T0051
-* https://atlas.mitre.org/techniques/AML.T0054
+* https://atlas.mitre.org/techniques/AML.T0015
+* https://atlas.mitre.org/techniques/AML.T0034
 * https://www.elastic.co/security-labs/elastic-advances-llm-security
 
 *Tags*: 
@@ -29,9 +29,10 @@ Detects repeated high-confidence 'BLOCKED' actions coupled with specific violati
 * Domain: LLM
 * Data Source: AWS Bedrock
 * Data Source: AWS S3
+* Resources: Investigation Guide
 * Use Case: Policy Violation
-* Mitre Atlas: T0051
-* Mitre Atlas: T0054
+* Mitre Atlas: T0015
+* Mitre Atlas: T0034
 
 *Version*: 2
 
@@ -60,10 +61,10 @@ https://docs.aws.amazon.com/bedrock/latest/userguide/guardrails-create.html
 [source, js]
 ----------------------------------
 from logs-aws_bedrock.invocation-*
-| where gen_ai.policy.confidence == "HIGH" and gen_ai.policy.action == "BLOCKED" and gen_ai.compliance.violation_code == "MISCONDUCT"
-| keep gen_ai.policy.confidence, gen_ai.policy.action, gen_ai.compliance.violation_code, user.id
-| stats high_confidence_blocks = count() by user.id
-| where high_confidence_blocks > 5
-| sort high_confidence_blocks desc
+| where gen_ai.response.error_code == "AccessDeniedException"
+| keep user.id, gen_ai.request.model.id, cloud.account.id, gen_ai.response.error_code
+| stats total_denials = count(*) by user.id, gen_ai.request.model.id, cloud.account.id
+| where total_denials > 3
+| sort total_denials desc
 
 ----------------------------------
