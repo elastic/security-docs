@@ -1,29 +1,29 @@
-[[okta-user-sessions-started-from-different-geolocations]]
-=== Okta User Sessions Started from Different Geolocations
+[[prebuilt-rule-8-13-19-high-number-of-okta-device-token-cookies-generated-for-authentication]]
+=== High Number of Okta Device Token Cookies Generated for Authentication
 
-Detects when a specific Okta actor has multiple sessions started from different geolocations. Adversaries may attempt to launch an attack by using a list of known usernames and passwords to gain unauthorized access to user accounts from different locations.
+Detects when an Okta client address has a certain threshold of Okta user authentication events with multiple device token hashes generated for single user authentication. Adversaries may attempt to launch a credential stuffing or password spraying attack from the same device by using a list of known usernames and passwords to gain unauthorized access to user accounts.
 
 *Rule type*: esql
 
 *Rule indices*: None
 
-*Severity*: medium
+*Severity*: low
 
-*Risk score*: 47
+*Risk score*: 21
 
-*Runs every*: 15m
+*Runs every*: 5m
 
-*Searches indices from*: now-30m ({ref}/common-options.html#date-math[Date Math format], see also <<rule-schedule, `Additional look-back time`>>)
+*Searches indices from*: now-9m ({ref}/common-options.html#date-math[Date Math format], see also <<rule-schedule, `Additional look-back time`>>)
 
 *Maximum alerts per execution*: 100
 
 *References*: 
 
-* https://developer.okta.com/docs/reference/api/system-log/
+* https://support.okta.com/help/s/article/How-does-the-Device-Token-work?language=en_US
 * https://developer.okta.com/docs/reference/api/event-types/
 * https://www.elastic.co/security-labs/testing-okta-visibility-and-detection-dorothy
 * https://sec.okta.com/articles/2023/08/cross-tenant-impersonation-prevention-and-detection
-* https://www.rezonate.io/blog/okta-logs-decoded-unveiling-identity-threats-through-threat-hunting/
+* https://www.okta.com/resources/whitepaper-how-adaptive-mfa-can-help-in-mitigating-brute-force-attacks/
 * https://www.elastic.co/security-labs/monitoring-okta-threats-with-elastic-security
 * https://www.elastic.co/security-labs/starter-guide-to-understanding-okta
 
@@ -31,9 +31,9 @@ Detects when a specific Okta actor has multiple sessions started from different 
 
 * Use Case: Identity and Access Audit
 * Data Source: Okta
-* Tactic: Initial Access
+* Tactic: Credential Access
 
-*Version*: 103
+*Version*: 3
 
 *Rule authors*: 
 
@@ -46,28 +46,32 @@ Detects when a specific Okta actor has multiple sessions started from different 
 
 
 
-
 *Triage and analysis*
 
 
 
-*Investigating Okta User Sessions Started from Different Geolocations*
+*Investigating High Number of Okta Device Token Cookies Generated for Authentication*
 
 
-This rule detects when a specific Okta actor has multiple sessions started from different geolocations. Adversaries may attempt to launch an attack by using a list of known usernames and passwords to gain unauthorized access to user accounts from different locations.
+This rule detects when a certain threshold of Okta user authentication events are reported for multiple users from the same client address. Adversaries may attempt to launch a credential stuffing attack from the same device by using a list of known usernames and passwords to gain unauthorized access to user accounts. Note that Okta does not log unrecognized usernames supplied during authentication attempts, so this rule may not detect all credential stuffing attempts or may indicate a targeted attack.
 
 
 *Possible investigation steps:*
 
-- Since this is an ES|QL rule, the `okta.actor.alternate_id` and `okta.client.id` values can be used to pivot into the raw authentication events related to this alert.
+- Since this is an ES|QL rule, the `okta.actor.alternate_id` and `okta.client.ip` values can be used to pivot into the raw authentication events related to this activity.
 - Identify the users involved in this action by examining the `okta.actor.id`, `okta.actor.type`, `okta.actor.alternate_id`, and `okta.actor.display_name` fields.
 - Determine the device client used for these actions by analyzing `okta.client.ip`, `okta.client.user_agent.raw_user_agent`, `okta.client.zone`, `okta.client.device`, and `okta.client.id` fields.
+- Review the `okta.security_context.is_proxy` field to determine if the device is a proxy.
+    - If the device is a proxy, this may indicate that a user is using a proxy to access multiple accounts for password spraying.
+- With the list of `okta.actor.alternate_id` values, review `event.outcome` results to determine if the authentication was successful.
+    - If the authentication was successful for any user, pivoting to `event.action` values for those users may provide additional context.
 - With Okta end users identified, review the `okta.debug_context.debug_data.dt_hash` field.
     - Historical analysis should indicate if this device token hash is commonly associated with the user.
 - Review the `okta.event_type` field to determine the type of authentication event that occurred.
     - If the event type is `user.authentication.sso`, the user may have legitimately started a session via a proxy for security or privacy reasons.
     - If the event type is `user.authentication.password`, the user may be using a proxy to access multiple accounts for password spraying.
     - If the event type is `user.session.start`, the source may have attempted to establish a session via the Okta authentication API.
+- Examine the `okta.outcome.result` field to determine if the authentication was successful.
 - Review the past activities of the actor(s) involved in this action by checking their previous actions.
 - Evaluate the actions that happened just before and after this event in the `okta.event_type` field to help understand the full context of the activity.
     - This may help determine the authentication and authorization actions that occurred between the user, Okta and application.
@@ -75,11 +79,16 @@ This rule detects when a specific Okta actor has multiple sessions started from 
 
 *False positive analysis:*
 
-- It is very rare that a legitimate user would have multiple sessions started from different geo-located countries in a short time frame.
+- A user may have legitimately started a session via a proxy for security or privacy reasons.
+- Users may share an endpoint related to work or personal use in which separate Okta accounts are used.
+    - Architecturally, this shared endpoint may leverage a proxy for security or privacy reasons.
+    - Shared systems such as Kiosks and conference room computers may be used by multiple users.
+    - Shared working spaces may have a single endpoint that is used by multiple users.
 
 
 *Response and remediation:*
 
+- Review the profile of the users involved in this action to determine if proxy usage may be expected.
 - If the user is legitimate and the authentication behavior is not suspicious based on device analysis, no action is required.
 - If the user is legitimate but the authentication behavior is suspicious, consider resetting passwords for the users involves and enabling multi-factor authentication (MFA).
     - If MFA is already enabled, consider resetting MFA for the users.
@@ -100,7 +109,6 @@ This rule detects when a specific Okta actor has multiple sessions started from 
 
 The Okta Fleet integration, Filebeat module, or similarly structured data is required to be compatible with this rule.
 
-
 ==== Rule query
 
 
@@ -110,28 +118,38 @@ FROM logs-okta*
 | WHERE
     event.dataset == "okta.system"
     AND (event.action RLIKE "user\\.authentication(.*)" OR event.action == "user.session.start")
-    AND okta.security_context.is_proxy != true and okta.actor.id != "unknown"
-    AND event.outcome == "success"
-| KEEP event.action, okta.security_context.is_proxy, okta.actor.id, event.outcome, client.geo.country_name, okta.actor.alternate_id
+    AND okta.debug_context.debug_data.request_uri == "/api/v1/authn"
+    AND okta.outcome.reason == "INVALID_CREDENTIALS"
+| KEEP event.action, okta.debug_context.debug_data.dt_hash, okta.client.ip, okta.actor.alternate_id, okta.debug_context.debug_data.request_uri, okta.outcome.reason
 | STATS
-    geo_auth_counts = COUNT_DISTINCT(client.geo.country_name)
-    BY okta.actor.id, okta.actor.alternate_id
+    source_auth_count = COUNT_DISTINCT(okta.debug_context.debug_data.dt_hash)
+    BY okta.client.ip, okta.actor.alternate_id
 | WHERE
-    geo_auth_counts >= 2
+    source_auth_count >= 30
+| SORT
+    source_auth_count DESC
 
 ----------------------------------
 
 *Framework*: MITRE ATT&CK^TM^
 
 * Tactic:
-** Name: Initial Access
-** ID: TA0001
-** Reference URL: https://attack.mitre.org/tactics/TA0001/
+** Name: Credential Access
+** ID: TA0006
+** Reference URL: https://attack.mitre.org/tactics/TA0006/
 * Technique:
-** Name: Valid Accounts
-** ID: T1078
-** Reference URL: https://attack.mitre.org/techniques/T1078/
+** Name: Brute Force
+** ID: T1110
+** Reference URL: https://attack.mitre.org/techniques/T1110/
 * Sub-technique:
-** Name: Cloud Accounts
-** ID: T1078.004
-** Reference URL: https://attack.mitre.org/techniques/T1078/004/
+** Name: Password Spraying
+** ID: T1110.003
+** Reference URL: https://attack.mitre.org/techniques/T1110/003/
+* Technique:
+** Name: Brute Force
+** ID: T1110
+** Reference URL: https://attack.mitre.org/techniques/T1110/
+* Sub-technique:
+** Name: Credential Stuffing
+** ID: T1110.004
+** Reference URL: https://attack.mitre.org/techniques/T1110/004/
