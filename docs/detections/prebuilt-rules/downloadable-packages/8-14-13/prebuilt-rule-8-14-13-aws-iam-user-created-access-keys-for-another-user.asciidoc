@@ -1,7 +1,7 @@
-[[aws-iam-administratoraccess-policy-attached-to-user]]
-=== AWS IAM AdministratorAccess Policy Attached to User
+[[prebuilt-rule-8-14-13-aws-iam-user-created-access-keys-for-another-user]]
+=== AWS IAM User Created Access Keys For Another User
 
-An adversary with access to a set of compromised credentials may attempt to persist or escalate privileges by attaching additional permissions to compromised user accounts. This rule looks for use of the IAM `AttachUserPolicy` API operation to attach the highly permissive `AdministratorAccess` AWS managed policy to an existing IAM user.
+An adversary with access to a set of compromised credentials may attempt to persist or escalate privileges by creating a new set of credentials for an existing user. This rule looks for use of the IAM `CreateAccessKey` API operation to create new programmatic access keys for another IAM user.
 
 *Rule type*: esql
 
@@ -19,9 +19,10 @@ An adversary with access to a set of compromised credentials may attempt to pers
 
 *References*: 
 
-* https://docs.aws.amazon.com/IAM/latest/APIReference/API_AttachUserPolicy.html
-* https://docs.aws.amazon.com/aws-managed-policy/latest/reference/AdministratorAccess.html
-* https://hackingthe.cloud/aws/exploitation/iam_privilege_escalation/
+* https://hackingthe.cloud/aws/exploitation/iam_privilege_escalation/#iamcreateaccesskey
+* https://cloud.hacktricks.xyz/pentesting-cloud/aws-security/aws-persistence/aws-iam-persistence
+* https://permiso.io/blog/lucr-3-scattered-spider-getting-saas-y-in-the-cloud
+* https://docs.aws.amazon.com/IAM/latest/APIReference/API_CreateAccessKey.html
 
 *Tags*: 
 
@@ -51,25 +52,25 @@ An adversary with access to a set of compromised credentials may attempt to pers
 
 
 
-*Investigating AWS IAM AdministratorAccess Policy Attached to User*
+*Investigating AWS IAM User Created Access Keys For Another User*
 
 
-The AWS IAM `AdministratorAccess` managed policy provides full access to all AWS services and resources.
-With access to the `iam:AttachUserPolicy` permission, a set of compromised credentials could be used to attach
-this policy to the current user for privilege escalation or another user as a means of persistence. This rule uses https://www.elastic.co/guide/en/security/master/rules-ui-create.html#create-esql-rule[ES|QL]
-to look for use of the `AttachUserPolicy` operation along with request_parameters where the policyName is `AdministratorAccess`.
+AWS access keys created for IAM users or root user are long-term credentials that provide programmatic access to AWS.
+With access to the `iam:CreateAccessKey` permission, a set of compromised credentials could be used to create a new
+set of credentials for another user for privilege escalation or as a means of persistence. This rule uses https://www.elastic.co/guide/en/security/master/rules-ui-create.html#create-esql-rule[ES|QL]
+to look for use of the `CreateAccessKey` operation where the user.name is different from the user.target.name.
 
 
 
 *Possible investigation steps*
 
 
-- Identify the account and its role in the environment.
-- Review IAM permission policies for the user identity.
-- Identify the applications or users that should use this account.
-- Investigate other alerts associated with the account during the past 48 hours.
+- Identify both related accounts and their role in the environment.
+- Review IAM permission policies for the user identities.
+- Identify the applications or users that should use these accounts.
+- Investigate other alerts associated with the accounts during the past 48 hours.
 - Investigate abnormal values in the `user_agent.original` field by comparing them with the intended and authorized usage and historical data. Suspicious user agent values include non-SDK, AWS CLI, custom user agents, etc.
-- Contact the account owner and confirm whether they are aware of this activity.
+- Contact the account owners and confirm whether they are aware of this activity.
 - Considering the source IP address and geolocation of the user who issued the command:
     - Do they look normal for the calling user?
     - If the source is an EC2 IP address, is it associated with an EC2 instance in one of your accounts or is the source IP from an EC2 instance that's not under your control?
@@ -82,7 +83,7 @@ to look for use of the `AttachUserPolicy` operation along with request_parameter
 *False positive analysis*
 
 
-- False positives may occur due to the intended usage of the IAM `AdministratorAccess` managed policy. Verify the `aws.cloudtrail.user_identity.arn` should have the `iam:AttachUserPolicy` permission and that the `target.userName` should be given full administrative access.
+- False positives may occur due to the intended usage of the IAM `CreateAccessKey` operation. Verify the `aws.cloudtrail.user_identity.arn` should use this operation against the `user.target.name` account.
 
 
 *Response and remediation*
@@ -91,7 +92,7 @@ to look for use of the `AttachUserPolicy` operation along with request_parameter
 - Initiate the incident response process based on the outcome of the triage.
 - Disable or limit the account during the investigation and response.
     - Rotate user credentials
-    - Remove the `AdministratorAccess` policy from the affected user(s)
+    - Remove the newly created credentials from the affected user(s)
 - Identify the possible impact of the incident and prioritize accordingly; the following actions can help you gain context:
     - Identify the account role in the cloud environment.
     - Assess the criticality of affected services and servers.
@@ -101,7 +102,7 @@ to look for use of the `AttachUserPolicy` operation along with request_parameter
 - Investigate credential exposure on systems compromised or used by the attacker to ensure all compromised accounts are identified.
     - Rotate secrets or delete API keys as needed to revoke the attacker's access to the environment.
     - Work with your IT teams to minimize the impact on business operations during these actions.
-- Check if unauthorized new users were created, remove unauthorized new accounts, and request password resets for other IAM users.
+- Remove unauthorized new accounts, and request password resets for other IAM users.
 - Consider enabling multi-factor authentication for users.
 - Review the permissions assigned to the implicated user to ensure that the least privilege principle is being followed.
 - Implement security best practices https://aws.amazon.com/premiumsupport/knowledge-center/security-best-practices/[outlined] by AWS.
@@ -116,27 +117,16 @@ to look for use of the `AttachUserPolicy` operation along with request_parameter
 [source, js]
 ----------------------------------
 from logs-aws.cloudtrail-* metadata _id, _version, _index
-| where event.provider == "iam.amazonaws.com" and event.action == "AttachUserPolicy" and event.outcome == "success"
-| dissect aws.cloudtrail.request_parameters "{%{?policyArn}=%{?arn}:%{?aws}:%{?iam}::%{?aws}:%{?policy}/%{policyName},%{?userName}=%{target.userName}}"
-| where policyName == "AdministratorAccess"
-| keep @timestamp, event.provider, event.action, event.outcome, policyName, target.userName
+| where event.provider == "iam.amazonaws.com"
+    and event.action == "CreateAccessKey"
+    and event.outcome == "success"
+    and user.name != user.target.name
+| keep @timestamp, event.provider, event.action, event.outcome, user.name, user.target.name
 
 ----------------------------------
 
 *Framework*: MITRE ATT&CK^TM^
 
-* Tactic:
-** Name: Privilege Escalation
-** ID: TA0004
-** Reference URL: https://attack.mitre.org/tactics/TA0004/
-* Technique:
-** Name: Account Manipulation
-** ID: T1098
-** Reference URL: https://attack.mitre.org/techniques/T1098/
-* Sub-technique:
-** Name: Additional Cloud Roles
-** ID: T1098.003
-** Reference URL: https://attack.mitre.org/techniques/T1098/003/
 * Tactic:
 ** Name: Persistence
 ** ID: TA0003
@@ -146,6 +136,18 @@ from logs-aws.cloudtrail-* metadata _id, _version, _index
 ** ID: T1098
 ** Reference URL: https://attack.mitre.org/techniques/T1098/
 * Sub-technique:
-** Name: Additional Cloud Roles
-** ID: T1098.003
-** Reference URL: https://attack.mitre.org/techniques/T1098/003/
+** Name: Additional Cloud Credentials
+** ID: T1098.001
+** Reference URL: https://attack.mitre.org/techniques/T1098/001/
+* Tactic:
+** Name: Privilege Escalation
+** ID: TA0004
+** Reference URL: https://attack.mitre.org/tactics/TA0004/
+* Technique:
+** Name: Account Manipulation
+** ID: T1098
+** Reference URL: https://attack.mitre.org/techniques/T1098/
+* Sub-technique:
+** Name: Additional Cloud Credentials
+** ID: T1098.001
+** Reference URL: https://attack.mitre.org/techniques/T1098/001/

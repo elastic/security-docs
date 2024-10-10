@@ -1,7 +1,7 @@
-[[azure-entra-sign-in-brute-force-against-microsoft-365-accounts]]
-=== Azure Entra Sign-in Brute Force against Microsoft 365 Accounts
+[[prebuilt-rule-8-14-13-azure-entra-sign-in-brute-force-microsoft-365-accounts-by-repeat-source]]
+=== Azure Entra Sign-in Brute Force Microsoft 365 Accounts by Repeat Source
 
-Identifies potential brute-force attempts against Microsoft 365 user accounts by detecting a high number of failed interactive or non-interactive login attempts within a 30-minute window. Attackers may attempt to brute force user accounts to gain unauthorized access to Microsoft 365 services via different services such as Exchange, SharePoint, or Teams.
+Identifies potential brute-force attempts against Microsoft 365 user accounts by detecting a high number of failed interactive or non-interactive login attempts within a 30-minute window from a single source. Attackers may attempt to brute force user accounts to gain unauthorized access to Microsoft 365 services via different services such as Exchange, SharePoint, or Teams.
 
 *Rule type*: esql
 
@@ -13,7 +13,7 @@ Identifies potential brute-force attempts against Microsoft 365 user accounts by
 
 *Runs every*: 10m
 
-*Searches indices from*: now-60m ({ref}/common-options.html#date-math[Date Math format], see also <<rule-schedule, `Additional look-back time`>>)
+*Searches indices from*: now-30m ({ref}/common-options.html#date-math[Date Math format], see also <<rule-schedule, `Additional look-back time`>>)
 
 *Maximum alerts per execution*: 100
 
@@ -53,27 +53,25 @@ This rule relies on Azure Entra ID sign-in logs, but filters for Microsoft 365 r
 [source, js]
 ----------------------------------
 from logs-azure.signinlogs*
-// truncate the timestamp to a 30-minute window
-| eval target_time_window = DATE_TRUNC(30 minutes, @timestamp)
 | WHERE
   event.dataset == "azure.signinlogs"
   and event.category == "authentication"
   and to_lower(azure.signinlogs.properties.resource_display_name) rlike "(.*)365(.*)"
   and azure.signinlogs.category in ("NonInteractiveUserSignInLogs", "SignInLogs")
   and event.outcome != "success"
-  // for tuning review azure.signinlogs.properties.status.error_code
+
+  // For tuning, review azure.signinlogs.properties.status.error_code
   // https://learn.microsoft.com/en-us/entra/identity-platform/reference-error-codes
 
 // keep only relevant fields
-| keep target_time_window, event.dataset, event.category, azure.signinlogs.properties.resource_display_name, azure.signinlogs.category, event.outcome, azure.signinlogs.properties.user_principal_name, source.ip
+| keep event.dataset, event.category, azure.signinlogs.properties.resource_display_name, azure.signinlogs.category, event.outcome, azure.signinlogs.properties.user_principal_name, source.ip
 
-// count the number of login sources and failed login attempts
+// Count the number of unique targets per source IP
 | stats
-  login_source_count = count(source.ip),
-  failed_login_count = count(*) by target_time_window, azure.signinlogs.properties.user_principal_name
+  target_count = count_distinct(azure.signinlogs.properties.user_principal_name) by source.ip
 
-// filter for users with more than 20 login sources or failed login attempts
-| where (login_source_count >= 20 or failed_login_count >= 20)
+// Filter for at least 10 distinct failed login attempts from a single source
+| where target_count >= 10
 
 ----------------------------------
 
