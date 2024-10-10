@@ -30,7 +30,7 @@ Identifies when a single AWS resource is making `DescribeInstances` API calls in
 * Use Case: Threat Detection
 * Tactic: Discovery
 
-*Version*: 1
+*Version*: 2
 
 *Rule authors*: 
 
@@ -51,6 +51,9 @@ from logs-aws.cloudtrail-*
 
 // truncate the timestamp to a 30-second window
 | eval target_time_window = DATE_TRUNC(30 seconds, @timestamp)
+
+// keep only the relevant fields
+| keep target_time_window, aws.cloudtrail.user_identity.arn, cloud.region
 
 // count the number of unique regions and total API calls within the 30-second window
 | stats region_count = count_distinct(cloud.region), window_count = count(*) by target_time_window, aws.cloudtrail.user_identity.arn
