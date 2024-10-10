@@ -1,7 +1,7 @@
-[[aws-iam-administratoraccess-policy-attached-to-user]]
-=== AWS IAM AdministratorAccess Policy Attached to User
+[[prebuilt-rule-8-15-7-aws-iam-administratoraccess-policy-attached-to-group]]
+=== AWS IAM AdministratorAccess Policy Attached to Group
 
-An adversary with access to a set of compromised credentials may attempt to persist or escalate privileges by attaching additional permissions to compromised user accounts. This rule looks for use of the IAM `AttachUserPolicy` API operation to attach the highly permissive `AdministratorAccess` AWS managed policy to an existing IAM user.
+An adversary with access to a set of compromised credentials may attempt to persist or escalate privileges by attaching additional permissions to user groups the compromised user account belongs to. This rule looks for use of the IAM `AttachGroupPolicy` API operation to attach the highly permissive `AdministratorAccess` AWS managed policy to an existing IAM user group.
 
 *Rule type*: esql
 
@@ -19,7 +19,7 @@ An adversary with access to a set of compromised credentials may attempt to pers
 
 *References*: 
 
-* https://docs.aws.amazon.com/IAM/latest/APIReference/API_AttachUserPolicy.html
+* https://docs.aws.amazon.com/IAM/latest/APIReference/API_AttachGroupPolicy.html
 * https://docs.aws.amazon.com/aws-managed-policy/latest/reference/AdministratorAccess.html
 * https://hackingthe.cloud/aws/exploitation/iam_privilege_escalation/
 
@@ -51,13 +51,13 @@ An adversary with access to a set of compromised credentials may attempt to pers
 
 
 
-*Investigating AWS IAM AdministratorAccess Policy Attached to User*
+*Investigating AWS IAM AdministratorAccess Policy Attached to Group*
 
 
 The AWS IAM `AdministratorAccess` managed policy provides full access to all AWS services and resources.
-With access to the `iam:AttachUserPolicy` permission, a set of compromised credentials could be used to attach
-this policy to the current user for privilege escalation or another user as a means of persistence. This rule uses https://www.elastic.co/guide/en/security/master/rules-ui-create.html#create-esql-rule[ES|QL]
-to look for use of the `AttachUserPolicy` operation along with request_parameters where the policyName is `AdministratorAccess`.
+With access to the `iam:AttachGroupPolicy` permission, a set of compromised credentials could be used to attach
+this policy to the current user's groups for privilege escalation or as a means of persistence. This rule uses https://www.elastic.co/guide/en/security/master/rules-ui-create.html#create-esql-rule[ES|QL]
+to look for use of the `AttachGroupPolicy` operation along with request_parameters where the policyName is `AdministratorAccess`.
 
 
 
@@ -91,7 +91,7 @@ to look for use of the `AttachUserPolicy` operation along with request_parameter
 - Initiate the incident response process based on the outcome of the triage.
 - Disable or limit the account during the investigation and response.
     - Rotate user credentials
-    - Remove the `AdministratorAccess` policy from the affected user(s)
+    - Remove the `AdministratorAccess` policy from the affected group(s)
 - Identify the possible impact of the incident and prioritize accordingly; the following actions can help you gain context:
     - Identify the account role in the cloud environment.
     - Assess the criticality of affected services and servers.
@@ -116,10 +116,10 @@ to look for use of the `AttachUserPolicy` operation along with request_parameter
 [source, js]
 ----------------------------------
 from logs-aws.cloudtrail-* metadata _id, _version, _index
-| where event.provider == "iam.amazonaws.com" and event.action == "AttachUserPolicy" and event.outcome == "success"
-| dissect aws.cloudtrail.request_parameters "{%{?policyArn}=%{?arn}:%{?aws}:%{?iam}::%{?aws}:%{?policy}/%{policyName},%{?userName}=%{target.userName}}"
+| where event.provider == "iam.amazonaws.com" and event.action == "AttachGroupPolicy" and event.outcome == "success"
+| dissect aws.cloudtrail.request_parameters "{%{?policyArn}=%{?arn}:%{?aws}:%{?iam}::%{?aws}:%{?policy}/%{policyName},%{?groupName}=%{group.name}}"
 | where policyName == "AdministratorAccess"
-| keep @timestamp, event.provider, event.action, event.outcome, policyName, target.userName
+| keep @timestamp, event.provider, event.action, event.outcome, policyName, group.name
 
 ----------------------------------
 

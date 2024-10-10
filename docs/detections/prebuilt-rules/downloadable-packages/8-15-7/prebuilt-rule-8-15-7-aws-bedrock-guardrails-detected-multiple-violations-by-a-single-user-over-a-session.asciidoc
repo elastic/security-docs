@@ -1,15 +1,15 @@
-[[aws-bedrock-guardrails-detected-multiple-policy-violations-within-a-single-blocked-request]]
-=== AWS Bedrock Guardrails Detected Multiple Policy Violations Within a Single Blocked Request
+[[prebuilt-rule-8-15-7-aws-bedrock-guardrails-detected-multiple-violations-by-a-single-user-over-a-session]]
+=== AWS Bedrock Guardrails Detected Multiple Violations by a Single User Over a Session
 
-Identifies multiple violations of AWS Bedrock guardrails within a single request, resulting in a block action, increasing the likelihood of malicious intent. Multiple violations implies that a user may be intentionally attempting to cirvumvent security controls, access sensitive information, or possibly exploit a vulnerability in the system.
+Identifies multiple violations of AWS Bedrock guardrails by the same user in the same account over a session. Multiple violations implies that a user may be intentionally attempting to cirvumvent security controls, access sensitive information, or possibly exploit a vulnerability in the system.
 
 *Rule type*: esql
 
 *Rule indices*: None
 
-*Severity*: low
+*Severity*: medium
 
-*Risk score*: 21
+*Risk score*: 47
 
 *Runs every*: 10m
 
@@ -34,7 +34,7 @@ Identifies multiple violations of AWS Bedrock guardrails within a single request
 * Mitre Atlas: T0051
 * Mitre Atlas: T0054
 
-*Version*: 2
+*Version*: 3
 
 *Rule authors*: 
 
@@ -61,11 +61,10 @@ https://docs.aws.amazon.com/bedrock/latest/userguide/guardrails-create.html
 [source, js]
 ----------------------------------
 from logs-aws_bedrock.invocation-*
-| where gen_ai.policy.action == "BLOCKED"
-| eval policy_violations = mv_count(gen_ai.policy.name)
-| where policy_violations > 1
-| keep gen_ai.policy.action, policy_violations, user.id, gen_ai.request.model.id, cloud.account.id, user.id
-| stats total_unique_request_violations = count(*) by policy_violations, user.id, gen_ai.request.model.id, cloud.account.id
-| sort total_unique_request_violations desc
+| where gen_ai.compliance.violation_detected
+| keep user.id, gen_ai.request.model.id, cloud.account.id
+| stats violations = count(*) by user.id, gen_ai.request.model.id, cloud.account.id
+| where violations > 1
+| sort violations desc
 
 ----------------------------------

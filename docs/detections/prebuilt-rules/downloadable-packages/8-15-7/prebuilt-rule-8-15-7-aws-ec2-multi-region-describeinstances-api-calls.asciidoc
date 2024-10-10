@@ -1,7 +1,7 @@
-[[aws-service-quotas-multi-region-getservicequota-requests]]
-=== AWS Service Quotas Multi-Region `GetServiceQuota` Requests
+[[prebuilt-rule-8-15-7-aws-ec2-multi-region-describeinstances-api-calls]]
+=== AWS EC2 Multi-Region DescribeInstances API Calls
 
-Identifies when a single AWS resource is making `GetServiceQuota` API calls for the EC2 service quota L-1216C47A in more than 10 regions within a 30-second window. Quota code L-1216C47A represents on-demand instances which are used by adversaries to deploy malware and mine cryptocurrency. This could indicate a potential threat actor attempting to discover the AWS infrastructure across multiple regions using compromised credentials or a compromised instance.
+Identifies when a single AWS resource is making `DescribeInstances` API calls in more than 10 regions within a 30-second window. This could indicate a potential threat actor attempting to discover the AWS infrastructure across multiple regions using compromised credentials or a compromised instance. Adversaries may use this information to identify potential targets for further exploitation or to gain a better understanding of the target's infrastructure.
 
 *Rule type*: esql
 
@@ -20,14 +20,13 @@ Identifies when a single AWS resource is making `GetServiceQuota` API calls for 
 *References*: 
 
 * https://www.sentinelone.com/labs/exploring-fbot-python-based-malware-targeting-cloud-and-payment-services/
-* https://docs.aws.amazon.com/servicequotas/2019-06-24/apireference/API_GetServiceQuota.html
+* https://docs.aws.amazon.com/AWSEC2/latest/APIReference/API_DescribeInstances.html
 
 *Tags*: 
 
 * Domain: Cloud
 * Data Source: AWS
-* Data Source: Amazon Web Services
-* Data Source: AWS Service Quotas
+* Data Source: AWS EC2
 * Use Case: Threat Detection
 * Tactic: Discovery
 
@@ -47,20 +46,14 @@ Identifies when a single AWS resource is making `GetServiceQuota` API calls for 
 ----------------------------------
 from logs-aws.cloudtrail-*
 
-// filter for GetServiceQuota API calls
-| where event.dataset == "aws.cloudtrail" and event.provider == "servicequotas.amazonaws.com" and event.action == "GetServiceQuota"
+// filter for DescribeInstances API calls
+| where event.dataset == "aws.cloudtrail" and event.provider == "ec2.amazonaws.com" and event.action == "DescribeInstances"
 
 // truncate the timestamp to a 30-second window
 | eval target_time_window = DATE_TRUNC(30 seconds, @timestamp)
 
-// pre-process the request parameters to extract the service code and quota code
-| dissect aws.cloudtrail.request_parameters "{%{?service_code_key}=%{service_code}, %{?quota_code_key}=%{quota_code}}"
-
-// filter for EC2 service quota L-1216C47A (vCPU on-demand instances)
-| where service_code == "ec2" and quota_code == "L-1216C47A"
-
 // keep only the relevant fields
-| keep target_time_window, aws.cloudtrail.user_identity.arn, cloud.region, service_code, quota_code
+| keep target_time_window, aws.cloudtrail.user_identity.arn, cloud.region
 
 // count the number of unique regions and total API calls within the 30-second window
 | stats region_count = count_distinct(cloud.region), window_count = count(*) by target_time_window, aws.cloudtrail.user_identity.arn
