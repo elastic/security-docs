@@ -26,11 +26,12 @@ Identifies when a single AWS resource is making `GetServiceQuota` API calls for 
 
 * Domain: Cloud
 * Data Source: AWS
+* Data Source: Amazon Web Services
 * Data Source: AWS Service Quotas
 * Use Case: Threat Detection
 * Tactic: Discovery
 
-*Version*: 1
+*Version*: 2
 
 *Rule authors*: 
 
@@ -47,7 +48,7 @@ Identifies when a single AWS resource is making `GetServiceQuota` API calls for 
 from logs-aws.cloudtrail-*
 
 // filter for GetServiceQuota API calls
-| where event.dataset == "aws.cloudtrail" and event.provider = "servicequotas.amazonaws.com" and event.action == "GetServiceQuota"
+| where event.dataset == "aws.cloudtrail" and event.provider == "servicequotas.amazonaws.com" and event.action == "GetServiceQuota"
 
 // truncate the timestamp to a 30-second window
 | eval target_time_window = DATE_TRUNC(30 seconds, @timestamp)
@@ -57,6 +58,9 @@ from logs-aws.cloudtrail-*
 
 // filter for EC2 service quota L-1216C47A (vCPU on-demand instances)
 | where service_code == "ec2" and quota_code == "L-1216C47A"
+
+// keep only the relevant fields
+| keep target_time_window, aws.cloudtrail.user_identity.arn, cloud.region, service_code, quota_code
 
 // count the number of unique regions and total API calls within the 30-second window
 | stats region_count = count_distinct(cloud.region), window_count = count(*) by target_time_window, aws.cloudtrail.user_identity.arn

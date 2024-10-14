@@ -1,0 +1,83 @@
+[[prebuilt-rule-8-15-6-suid-sgid-bit-set]]
+=== SUID/SGID Bit Set
+
+An adversary may add the setuid or setgid bit to a file or directory in order to run a file with the privileges of the owning user or group. An adversary can take advantage of this to either do a shell escape or exploit a vulnerability in an application with the setuid or setgid bit to get code running in a different user’s context. Additionally, adversaries can use this mechanism on their own malware to make sure they're able to execute in elevated contexts in the future.
+
+*Rule type*: eql
+
+*Rule indices*: 
+
+* auditbeat-*
+* logs-endpoint.events.*
+
+*Severity*: low
+
+*Risk score*: 21
+
+*Runs every*: 5m
+
+*Searches indices from*: now-9m ({ref}/common-options.html#date-math[Date Math format], see also <<rule-schedule, `Additional look-back time`>>)
+
+*Maximum alerts per execution*: 33
+
+*References*: 
+
+* https://www.elastic.co/security-labs/primer-on-persistence-mechanisms
+
+*Tags*: 
+
+* Domain: Endpoint
+* OS: Linux
+* OS: macOS
+* Use Case: Threat Detection
+* Tactic: Privilege Escalation
+* Data Source: Elastic Defend
+
+*Version*: 105
+
+*Rule authors*: 
+
+* Elastic
+
+*Rule license*: Elastic License v2
+
+
+==== Rule query
+
+
+[source, js]
+----------------------------------
+process where host.os.type == "linux" and event.type == "start" and event.action == "exec" and (
+  (process.name == "chmod" and (process.args : ("+s", "u+s", "g+s") or process.args regex "[24][0-9]{3}")) or
+  (process.name == "install" and process.args : "-m" and
+  (process.args : ("+s", "u+s", "g+s") or process.args regex "[24][0-9]{3}"))
+) and not (
+  process.parent.executable : (
+    "/usr/NX/*", "/var/lib/docker/*", "/var/lib/dpkg/info*", "/tmp/newroot/*",
+    "/System/Library/PrivateFrameworks/PackageKit.framework/Versions/A/XPCServices/package_script_service.xpc/Contents/MacOS/package_script_service"
+  ) or
+  process.args : (
+    "/run/*", "/var/run/*", "/usr/bin/keybase-redirector", "/usr/local/share/fonts", "/usr/bin/ssh-agent"
+  )
+)
+
+----------------------------------
+
+*Framework*: MITRE ATT&CK^TM^
+
+* Tactic:
+** Name: Privilege Escalation
+** ID: TA0004
+** Reference URL: https://attack.mitre.org/tactics/TA0004/
+* Technique:
+** Name: Abuse Elevation Control Mechanism
+** ID: T1548
+** Reference URL: https://attack.mitre.org/techniques/T1548/
+* Sub-technique:
+** Name: Setuid and Setgid
+** ID: T1548.001
+** Reference URL: https://attack.mitre.org/techniques/T1548/001/
+* Tactic:
+** Name: Persistence
+** ID: TA0003
+** Reference URL: https://attack.mitre.org/tactics/TA0003/

@@ -24,6 +24,8 @@ Detects when a high number of Okta user authentication events are reported for m
 * https://www.elastic.co/security-labs/testing-okta-visibility-and-detection-dorothy
 * https://sec.okta.com/articles/2023/08/cross-tenant-impersonation-prevention-and-detection
 * https://www.okta.com/resources/whitepaper-how-adaptive-mfa-can-help-in-mitigating-brute-force-attacks/
+* https://www.elastic.co/security-labs/monitoring-okta-threats-with-elastic-security
+* https://www.elastic.co/security-labs/starter-guide-to-understanding-okta
 
 *Tags*: 
 
@@ -31,7 +33,7 @@ Detects when a high number of Okta user authentication events are reported for m
 * Data Source: Okta
 * Tactic: Credential Access
 
-*Version*: 1
+*Version*: 3
 
 *Rule authors*: 
 
@@ -115,6 +117,7 @@ FROM logs-okta*
     AND (event.action RLIKE "user\\.authentication(.*)" OR event.action == "user.session.start")
     AND okta.debug_context.debug_data.dt_hash != "-"
     AND okta.outcome.reason == "INVALID_CREDENTIALS"
+| KEEP event.action, okta.debug_context.debug_data.dt_hash, okta.actor.id, okta.actor.alternate_id, okta.outcome.reason
 | STATS
     target_auth_count = COUNT_DISTINCT(okta.actor.id)
     BY okta.debug_context.debug_data.dt_hash, okta.actor.alternate_id

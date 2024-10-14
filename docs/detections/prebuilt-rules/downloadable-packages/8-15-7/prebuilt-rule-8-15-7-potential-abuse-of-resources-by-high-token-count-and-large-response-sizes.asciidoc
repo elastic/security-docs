@@ -1,0 +1,74 @@
+[[prebuilt-rule-8-15-7-potential-abuse-of-resources-by-high-token-count-and-large-response-sizes]]
+=== Potential Abuse of Resources by High Token Count and Large Response Sizes
+
+Detects potential resource exhaustion or data breach attempts by monitoring for users who consistently generate high input token counts, submit numerous requests, and receive large responses. This behavior could indicate an attempt to overload the system or extract an unusually large amount of data, possibly revealing sensitive information or causing service disruptions.
+
+*Rule type*: esql
+
+*Rule indices*: None
+
+*Severity*: medium
+
+*Risk score*: 47
+
+*Runs every*: 10m
+
+*Searches indices from*: now-60m ({ref}/common-options.html#date-math[Date Math format], see also <<rule-schedule, `Additional look-back time`>>)
+
+*Maximum alerts per execution*: 100
+
+*References*: 
+
+* https://atlas.mitre.org/techniques/AML.T0051
+* https://owasp.org/www-project-top-10-for-large-language-model-applications/
+* https://www.elastic.co/security-labs/elastic-advances-llm-security
+
+*Tags*: 
+
+* Domain: LLM
+* Data Source: AWS Bedrock
+* Data Source: Amazon Web Services
+* Data Source: AWS S3
+* Use Case: Potential Overload
+* Use Case: Resource Exhaustion
+* Mitre Atlas: LLM04
+
+*Version*: 2
+
+*Rule authors*: 
+
+* Elastic
+
+*Rule license*: Elastic License v2
+
+
+==== Setup
+
+
+
+*Setup*
+
+
+This rule requires that guardrails are configured in AWS Bedrock. For more information, see the AWS Bedrock documentation:
+
+https://docs.aws.amazon.com/bedrock/latest/userguide/guardrails-create.html
+
+
+==== Rule query
+
+
+[source, js]
+----------------------------------
+from logs-aws_bedrock.invocation-*
+| keep user.id, gen_ai.usage.prompt_tokens, gen_ai.usage.completion_tokens
+| stats max_tokens = max(gen_ai.usage.prompt_tokens),
+         total_requests = count(*),
+         avg_response_size = avg(gen_ai.usage.completion_tokens)
+  by user.id
+// tokens count depends on specific LLM, as is related to how embeddings are generated.
+| where max_tokens > 5000 and total_requests > 10 and avg_response_size > 500
+| eval risk_factor = (max_tokens / 1000) * total_requests * (avg_response_size / 500)
+| where risk_factor > 10
+| sort risk_factor desc
+
+----------------------------------
