@@ -32,7 +32,7 @@ Identifies a high number of failed S3 operations from a single source and accoun
 * Use Case: Log Auditing
 * Tactic: Impact
 
-*Version*: 2
+*Version*: 3
 
 *Rule authors*: 
 
@@ -112,6 +112,8 @@ Attackers may attempt to enumerate names until a valid bucket is discovered and 
 ----------------------------------
 from logs-aws.cloudtrail*
 | where event.provider == "s3.amazonaws.com" and aws.cloudtrail.error_code == "AccessDenied"
+// keep only relevant fields
+| keep tls.client.server_name, source.address, cloud.account.id
 | stats failed_requests = count(*) by tls.client.server_name, source.address, cloud.account.id
   // can modify the failed request count or tweak time window to fit environment
   // can add `not cloud.account.id in (KNOWN)` or specify in exceptions

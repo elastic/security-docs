@@ -30,7 +30,7 @@ Identifies when a federated user logs into the AWS Management Console without us
 * Use Case: Threat Detection
 * Tactic: Initial Access
 
-*Version*: 1
+*Version*: 2
 
 *Rule authors*: 
 
@@ -44,7 +44,7 @@ Identifies when a federated user logs into the AWS Management Console without us
 
 [source, js]
 ----------------------------------
-from logs-aws.cloudtrail-*
+from logs-aws.cloudtrail-* metadata _id, _version, _index
 | where
     event.provider == "signin.amazonaws.com"
     and event.action == "GetSigninToken"
@@ -52,6 +52,7 @@ from logs-aws.cloudtrail-*
     and aws.cloudtrail.user_identity.type == "FederatedUser"
 | dissect aws.cloudtrail.additional_eventdata "{%{?mobile_version_key}=%{mobile_version}, %{?mfa_used_key}=%{mfa_used}}"
 | where mfa_used == "No"
+| keep @timestamp, event.action, aws.cloudtrail.event_type, aws.cloudtrail.user_identity.type
 
 ----------------------------------
 

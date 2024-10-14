@@ -34,7 +34,7 @@ Identifies `CopyObject` events within an S3 bucket using an AWS KMS key from an 
 * Use Case: Threat Detection
 * Tactic: Impact
 
-*Version*: 1
+*Version*: 2
 
 *Rule authors*: 
 
@@ -106,12 +106,12 @@ AWS S3 data event types need to be enabled in the CloudTrail trail configuration
 
 [source, js]
 ----------------------------------
-from logs-aws.cloudtrail-*
+from logs-aws.cloudtrail-* metadata _id, _version, _index
 
 // any successful copy event
-| where event.dataset == "aws.cloudtrail" 
-    and event.provider == "s3.amazonaws.com" 
-    and event.action == "CopyObject" 
+| where event.dataset == "aws.cloudtrail"
+    and event.provider == "s3.amazonaws.com"
+    and event.action == "CopyObject"
     and event.outcome == "success"
 
 // abstract key account id, key id, encrypted object bucket name and object name
@@ -119,7 +119,10 @@ from logs-aws.cloudtrail-*
 
 // filter for s3 objects whose account id is different from the encryption key's account id
 // add exceptions based on key.account.id or keyId for known external accounts or encryption keys
-| where cloud.account.id != key.account.id 
+| where cloud.account.id != key.account.id
+
+// keep relevant fields
+| keep @timestamp, aws.cloudtrail.user_identity.arn, cloud.account.id, event.action, target.bucketName, key.account.id, keyId, target.objectName
 
 ----------------------------------
 

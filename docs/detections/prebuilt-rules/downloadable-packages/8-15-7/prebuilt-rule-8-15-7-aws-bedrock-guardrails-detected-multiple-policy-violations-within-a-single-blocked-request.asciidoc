@@ -1,0 +1,71 @@
+[[prebuilt-rule-8-15-7-aws-bedrock-guardrails-detected-multiple-policy-violations-within-a-single-blocked-request]]
+=== AWS Bedrock Guardrails Detected Multiple Policy Violations Within a Single Blocked Request
+
+Identifies multiple violations of AWS Bedrock guardrails within a single request, resulting in a block action, increasing the likelihood of malicious intent. Multiple violations implies that a user may be intentionally attempting to cirvumvent security controls, access sensitive information, or possibly exploit a vulnerability in the system.
+
+*Rule type*: esql
+
+*Rule indices*: None
+
+*Severity*: low
+
+*Risk score*: 21
+
+*Runs every*: 10m
+
+*Searches indices from*: now-60m ({ref}/common-options.html#date-math[Date Math format], see also <<rule-schedule, `Additional look-back time`>>)
+
+*Maximum alerts per execution*: 100
+
+*References*: 
+
+* https://docs.aws.amazon.com/bedrock/latest/userguide/guardrails-components.html
+* https://atlas.mitre.org/techniques/AML.T0051
+* https://atlas.mitre.org/techniques/AML.T0054
+* https://www.elastic.co/security-labs/elastic-advances-llm-security
+
+*Tags*: 
+
+* Domain: LLM
+* Data Source: AWS Bedrock
+* Data Source: AWS S3
+* Resources: Investigation Guide
+* Use Case: Policy Violation
+* Mitre Atlas: T0051
+* Mitre Atlas: T0054
+
+*Version*: 2
+
+*Rule authors*: 
+
+* Elastic
+
+*Rule license*: Elastic License v2
+
+
+==== Setup
+
+
+
+*Setup*
+
+
+This rule requires that guardrails are configured in AWS Bedrock. For more information, see the AWS Bedrock documentation:
+
+https://docs.aws.amazon.com/bedrock/latest/userguide/guardrails-create.html
+
+
+==== Rule query
+
+
+[source, js]
+----------------------------------
+from logs-aws_bedrock.invocation-*
+| where gen_ai.policy.action == "BLOCKED"
+| eval policy_violations = mv_count(gen_ai.policy.name)
+| where policy_violations > 1
+| keep gen_ai.policy.action, policy_violations, user.id, gen_ai.request.model.id, cloud.account.id, user.id
+| stats total_unique_request_violations = count(*) by policy_violations, user.id, gen_ai.request.model.id, cloud.account.id
+| sort total_unique_request_violations desc
+
+----------------------------------
