@@ -11,6 +11,8 @@ User Account Control (UAC) can help mitigate the impact of malware on Windows ho
 * logs-endpoint.events.registry-*
 * logs-windows.sysmon_operational-*
 * endgame-*
+* logs-m365_defender.event-*
+* logs-sentinel_one_cloud_funnel.*
 
 *Severity*: medium
 
@@ -39,8 +41,10 @@ User Account Control (UAC) can help mitigate the impact of malware on Windows ho
 * Data Source: Elastic Endgame
 * Data Source: Elastic Defend
 * Data Source: Sysmon
+* Data Source: Microsoft Defender for Endpoint
+* Data Source: SentinelOne
 
-*Version*: 112
+*Version*: 212
 
 *Rule authors*: 
 
@@ -110,20 +114,6 @@ Attackers may disable UAC to execute code directly in high integrity. This rule 
 - Using the incident response data, update logging and audit policies to improve the mean time to detect (MTTD) and the mean time to respond (MTTR).
 
 
-==== Setup
-
-
-
-*Setup*
-
-
-If enabling an EQL rule on a non-elastic-agent index (such as beats) for versions <8.2,
-events will not define `event.ingested` and default fallback for EQL rules was not added until version 8.2.
-Hence for this rule to work effectively, users will need to add a custom ingest pipeline to populate
-`event.ingested` to @timestamp.
-For more details on adding a custom ingest pipeline refer - https://www.elastic.co/guide/en/fleet/current/data-streams-pipeline-tutorial.html
-
-
 ==== Rule query
 
 
@@ -137,7 +127,10 @@ registry where host.os.type == "windows" and event.type == "change" and
       "HKLM\\SOFTWARE\\Microsoft\\Windows\\CurrentVersion\\Policies\\System\\PromptOnSecureDesktop",
       "\\REGISTRY\\MACHINE\\SOFTWARE\\Microsoft\\Windows\\CurrentVersion\\Policies\\System\\EnableLUA",
       "\\REGISTRY\\MACHINE\\SOFTWARE\\Microsoft\\Windows\\CurrentVersion\\Policies\\System\\ConsentPromptBehaviorAdmin",
-      "\\REGISTRY\\MACHINE\\SOFTWARE\\Microsoft\\Windows\\CurrentVersion\\Policies\\System\\PromptOnSecureDesktop"
+      "\\REGISTRY\\MACHINE\\SOFTWARE\\Microsoft\\Windows\\CurrentVersion\\Policies\\System\\PromptOnSecureDesktop",
+      "MACHINE\\SOFTWARE\\Microsoft\\Windows\\CurrentVersion\\Policies\\System\\EnableLUA",
+      "MACHINE\\SOFTWARE\\Microsoft\\Windows\\CurrentVersion\\Policies\\System\\ConsentPromptBehaviorAdmin",
+      "MACHINE\\SOFTWARE\\Microsoft\\Windows\\CurrentVersion\\Policies\\System\\PromptOnSecureDesktop"
     ) and
   registry.data.strings : ("0", "0x00000000")
 
