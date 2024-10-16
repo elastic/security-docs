@@ -10,6 +10,8 @@ Microsoft Office Products offer options for users and developers to control the 
 * winlogbeat-*
 * logs-windows.sysmon_operational-*
 * endgame-*
+* logs-m365_defender.event-*
+* logs-sentinel_one_cloud_funnel.*
 
 *Severity*: medium
 
@@ -32,8 +34,10 @@ Microsoft Office Products offer options for users and developers to control the 
 * Resources: Investigation Guide
 * Data Source: Elastic Endgame
 * Data Source: Sysmon
+* Data Source: Microsoft Defender for Endpoint
+* Data Source: SentinelOne
 
-*Version*: 108
+*Version*: 208
 
 *Rule authors*: 
 
@@ -103,20 +107,6 @@ This rule looks for registry changes affecting the conditions above.
 - Using the incident response data, update logging and audit policies to improve the mean time to detect (MTTD) and the mean time to respond (MTTR).
 
 
-==== Setup
-
-
-
-*Setup*
-
-
-If enabling an EQL rule on a non-elastic-agent index (such as beats) for versions <8.2,
-events will not define `event.ingested` and default fallback for EQL rules was not added until version 8.2.
-Hence for this rule to work effectively, users will need to add a custom ingest pipeline to populate
-`event.ingested` to @timestamp.
-For more details on adding a custom ingest pipeline refer - https://www.elastic.co/guide/en/fleet/current/data-streams-pipeline-tutorial.html
-
-
 ==== Rule query
 
 
@@ -124,14 +114,26 @@ For more details on adding a custom ingest pipeline refer - https://www.elastic.
 ----------------------------------
 registry where host.os.type == "windows" and event.type == "change" and registry.value : ("AccessVBOM", "VbaWarnings") and
     registry.path : (
+        /* Sysmon */
         "HKU\\S-1-5-21-*\\SOFTWARE\\Microsoft\\Office\\*\\Security\\AccessVBOM",
         "HKU\\S-1-5-21-*\\SOFTWARE\\Microsoft\\Office\\*\\Security\\VbaWarnings",
         "HKU\\S-1-12-1-*\\SOFTWARE\\Microsoft\\Office\\*\\Security\\AccessVBOM",
         "HKU\\S-1-12-1-*\\SOFTWARE\\Microsoft\\Office\\*\\Security\\VbaWarnings",
+        /* MDE */
+        "HKCU\\S-1-5-21-*\\SOFTWARE\\Microsoft\\Office\\*\\Security\\AccessVBOM",
+        "HKCU\\S-1-5-21-*\\SOFTWARE\\Microsoft\\Office\\*\\Security\\VbaWarnings",
+        "HKCU\\S-1-12-1-*\\SOFTWARE\\Microsoft\\Office\\*\\Security\\AccessVBOM",
+        "HKCU\\S-1-12-1-*\\SOFTWARE\\Microsoft\\Office\\*\\Security\\VbaWarnings",
+        /* Endgame */
         "\\REGISTRY\\USER\\S-1-5-21-*\\SOFTWARE\\Microsoft\\Office\\*\\Security\\AccessVBOM",
         "\\REGISTRY\\USER\\S-1-5-21-*\\SOFTWARE\\Microsoft\\Office\\*\\Security\\VbaWarnings",
         "\\REGISTRY\\USER\\S-1-12-1-*\\SOFTWARE\\Microsoft\\Office\\*\\Security\\AccessVBOM",
-        "\\REGISTRY\\USER\\S-1-12-1-*\\SOFTWARE\\Microsoft\\Office\\*\\Security\\VbaWarnings"
+        "\\REGISTRY\\USER\\S-1-12-1-*\\SOFTWARE\\Microsoft\\Office\\*\\Security\\VbaWarnings",
+        /* SentinelOne */
+        "USER\\S-1-5-21-*\\SOFTWARE\\Microsoft\\Office\\*\\Security\\AccessVBOM",
+        "USER\\S-1-5-21-*\\SOFTWARE\\Microsoft\\Office\\*\\Security\\VbaWarnings",
+        "USER\\S-1-12-1-*\\SOFTWARE\\Microsoft\\Office\\*\\Security\\AccessVBOM",
+        "USER\\S-1-12-1-*\\SOFTWARE\\Microsoft\\Office\\*\\Security\\VbaWarnings"
         ) and
     registry.data.strings : ("0x00000001", "1")
 
