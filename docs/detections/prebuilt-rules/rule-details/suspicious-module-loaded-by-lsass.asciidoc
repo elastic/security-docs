@@ -8,6 +8,7 @@ Identifies LSASS loading an unsigned or untrusted DLL. Windows Security Support 
 *Rule indices*: 
 
 * logs-endpoint.events.library-*
+* endgame-*
 
 *Severity*: medium
 
@@ -31,8 +32,9 @@ Identifies LSASS loading an unsigned or untrusted DLL. Windows Security Support 
 * Use Case: Threat Detection
 * Tactic: Credential Access
 * Data Source: Elastic Defend
+* Data Source: Elastic Endgame
 
-*Version*: 8
+*Version*: 9
 
 *Rule authors*: 
 
@@ -41,26 +43,13 @@ Identifies LSASS loading an unsigned or untrusted DLL. Windows Security Support 
 *Rule license*: Elastic License v2
 
 
-==== Setup
-
-
-
-*Setup*
-
-
-If enabling an EQL rule on a non-elastic-agent index (such as beats) for versions <8.2,
-events will not define `event.ingested` and default fallback for EQL rules was not added until version 8.2.
-Hence for this rule to work effectively, users will need to add a custom ingest pipeline to populate
-`event.ingested` to @timestamp.
-For more details on adding a custom ingest pipeline refer - https://www.elastic.co/guide/en/fleet/current/data-streams-pipeline-tutorial.html
-
-
 ==== Rule query
 
 
 [source, js]
 ----------------------------------
-library where host.os.type == "windows" and process.executable : "?:\\Windows\\System32\\lsass.exe" and
+any where event.category in ("library", "driver") and host.os.type == "windows" and
+  process.executable : "?:\\Windows\\System32\\lsass.exe" and
   not (dll.code_signature.subject_name :
                ("Microsoft Windows",
                 "Microsoft Corporation",
