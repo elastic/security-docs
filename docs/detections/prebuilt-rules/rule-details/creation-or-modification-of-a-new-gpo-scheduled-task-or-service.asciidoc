@@ -11,6 +11,8 @@ Detects the creation or modification of a new Group Policy based scheduled task 
 * logs-endpoint.events.file-*
 * logs-windows.sysmon_operational-*
 * endgame-*
+* logs-m365_defender.event-*
+* logs-sentinel_one_cloud_funnel.*
 
 *Severity*: low
 
@@ -34,8 +36,10 @@ Detects the creation or modification of a new Group Policy based scheduled task 
 * Data Source: Elastic Endgame
 * Data Source: Elastic Defend
 * Data Source: Sysmon
+* Data Source: Microsoft Defender for Endpoint
+* Data Source: SentinelOne
 
-*Version*: 110
+*Version*: 310
 
 *Rule authors*: 
 
@@ -44,29 +48,18 @@ Detects the creation or modification of a new Group Policy based scheduled task 
 *Rule license*: Elastic License v2
 
 
-==== Setup
-
-
-
-*Setup*
-
-
-If enabling an EQL rule on a non-elastic-agent index (such as beats) for versions <8.2,
-events will not define `event.ingested` and default fallback for EQL rules was not added until version 8.2.
-Hence for this rule to work effectively, users will need to add a custom ingest pipeline to populate
-`event.ingested` to @timestamp.
-For more details on adding a custom ingest pipeline refer - https://www.elastic.co/guide/en/fleet/current/data-streams-pipeline-tutorial.html
-
-
 ==== Rule query
 
 
 [source, js]
 ----------------------------------
-file where host.os.type == "windows" and event.type != "deletion" and
-  file.path : ("?:\\Windows\\SYSVOL\\domain\\Policies\\*\\MACHINE\\Preferences\\ScheduledTasks\\ScheduledTasks.xml",
-               "?:\\Windows\\SYSVOL\\domain\\Policies\\*\\MACHINE\\Preferences\\Services\\Services.xml") and
-  not process.name : "dfsrs.exe"
+file where host.os.type == "windows" and event.type != "deletion" and event.action != "open" and 
+ file.name : ("ScheduledTasks.xml", "Services.xml") and 
+  file.path : (
+    "?:\\Windows\\SYSVOL\\domain\\Policies\\*\\MACHINE\\Preferences\\ScheduledTasks\\ScheduledTasks.xml",
+    "?:\\Windows\\SYSVOL\\domain\\Policies\\*\\MACHINE\\Preferences\\Services\\Services.xml"
+  ) and
+  not process.executable : "C:\\Windows\\System32\\dfsrs.exe"
 
 ----------------------------------
 
