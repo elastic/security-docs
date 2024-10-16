@@ -1,0 +1,89 @@
+[[prebuilt-rule-8-14-14-untrusted-dll-loaded-by-azure-ad-sync-service]]
+=== Untrusted DLL Loaded by Azure AD Sync Service
+
+Identifies the load of a DLL without a valid code signature by the Azure AD Sync process, which may indicate an attempt to persist or collect sensitive credentials passing through the Azure AD synchronization server.
+
+*Rule type*: eql
+
+*Rule indices*: 
+
+* winlogbeat-*
+* logs-endpoint.events.library*
+* logs-windows.sysmon_operational-*
+
+*Severity*: high
+
+*Risk score*: 73
+
+*Runs every*: 5m
+
+*Searches indices from*: now-9m ({ref}/common-options.html#date-math[Date Math format], see also <<rule-schedule, `Additional look-back time`>>)
+
+*Maximum alerts per execution*: 100
+
+*References*: 
+
+* https://blog.xpnsec.com/azuread-connect-for-redteam/
+* https://medium.com/@breakingmhet/detect-azure-pass-through-authentication-abuse-azure-hybrid-environments-ed4274784252
+* https://learn.microsoft.com/en-us/azure/active-directory/hybrid/tshoot-connect-pass-through-authentication
+
+*Tags*: 
+
+* Domain: Endpoint
+* OS: Windows
+* Use Case: Threat Detection
+* Tactic: Credential Access
+* Data Source: Elastic Defend
+* Data Source: Sysmon
+
+*Version*: 101
+
+*Rule authors*: 
+
+* Elastic
+* Matteo Potito Giorgio
+
+*Rule license*: Elastic License v2
+
+
+==== Rule query
+
+
+[source, js]
+----------------------------------
+any where host.os.type == "windows" and process.name : "AzureADConnectAuthenticationAgentService.exe" and 
+(
+ (event.category == "library" and event.action == "load") or 
+ (event.category == "process" and event.action : "Image loaded*")
+) and 
+
+not (?dll.code_signature.trusted == true or file.code_signature.status == "Valid") and not 
+
+  (
+   /* Elastic defend DLL path */
+   ?dll.path :
+         ("?:\\Windows\\assembly\\NativeImages*",
+          "?:\\Windows\\Microsoft.NET\\*",
+          "?:\\Windows\\WinSxS\\*",
+          "?:\\Windows\\System32\\DriverStore\\FileRepository\\*") or 
+          
+   /* Sysmon DLL path is mapped to file.path */
+   file.path :
+         ("?:\\Windows\\assembly\\NativeImages*",
+          "?:\\Windows\\Microsoft.NET\\*",
+          "?:\\Windows\\WinSxS\\*",
+          "?:\\Windows\\System32\\DriverStore\\FileRepository\\*")
+  )
+
+----------------------------------
+
+*Framework*: MITRE ATT&CK^TM^
+
+* Tactic:
+** Name: Credential Access
+** ID: TA0006
+** Reference URL: https://attack.mitre.org/tactics/TA0006/
+* Technique:
+** Name: OS Credential Dumping
+** ID: T1003
+** Reference URL: https://attack.mitre.org/techniques/T1003/

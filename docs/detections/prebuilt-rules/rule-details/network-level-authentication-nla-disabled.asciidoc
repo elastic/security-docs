@@ -9,6 +9,9 @@ Identifies the attempt to disable Network-Level Authentication (NLA) via registr
 
 * logs-endpoint.events.registry-*
 * endgame-*
+* logs-m365_defender.event-*
+* logs-sentinel_one_cloud_funnel.*
+* logs-windows.sysmon_operational-*
 
 *Severity*: low
 
@@ -32,8 +35,11 @@ Identifies the attempt to disable Network-Level Authentication (NLA) via registr
 * Tactic: Defense Evasion
 * Data Source: Elastic Defend
 * Data Source: Elastic Endgame
+* Data Source: Microsoft Defender for Endpoint
+* Data Source: SentinelOne
+* Data Source: Sysmon
 
-*Version*: 3
+*Version*: 203
 
 *Rule authors*: 
 
@@ -47,11 +53,12 @@ Identifies the attempt to disable Network-Level Authentication (NLA) via registr
 
 [source, js]
 ----------------------------------
-registry where host.os.type == "windows" and event.action != "deletion" and
-  registry.path :
-       ("HKLM\\SYSTEM\\ControlSet*\\Control\\Terminal Server\\WinStations\\RDP-Tcp\\UserAuthentication", 
-        "\\REGISTRY\\MACHINE\\SYSTEM\\*ControlSet*\\Control\\Terminal Server\\WinStations\\RDP-Tcp\\UserAuthentication" ) and
-  registry.data.strings : "0"
+registry where host.os.type == "windows" and event.action != "deletion" and registry.value : "UserAuthentication" and
+  registry.path : (
+    "HKLM\\SYSTEM\\ControlSet*\\Control\\Terminal Server\\WinStations\\RDP-Tcp\\UserAuthentication",
+    "\\REGISTRY\\MACHINE\\SYSTEM\\*ControlSet*\\Control\\Terminal Server\\WinStations\\RDP-Tcp\\UserAuthentication",
+    "MACHINE\\SYSTEM\\*ControlSet*\\Control\\Terminal Server\\WinStations\\RDP-Tcp\\UserAuthentication"
+  ) and registry.data.strings :  ("0", "0x00000000")
 
 ----------------------------------
 
