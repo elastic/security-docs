@@ -8,10 +8,11 @@ Identifies Service Control (sc.exe) spawning from script interpreter processes t
 *Rule indices*: 
 
 * logs-endpoint.events.process-*
-* logs-system.*
+* logs-system.security*
 * winlogbeat-*
-* logs-windows.*
+* logs-windows.forwarded*
 * endgame-*
+* logs-m365_defender.event-*
 
 *Severity*: low
 
@@ -39,8 +40,9 @@ Identifies Service Control (sc.exe) spawning from script interpreter processes t
 * Resources: Investigation Guide
 * Data Source: Elastic Defend
 * Data Source: System
+* Data Source: Microsoft Defender for Endpoint
 
-*Version*: 111
+*Version*: 112
 
 *Rule authors*: 
 
@@ -110,7 +112,7 @@ The `sc.exe` command line utility is used to manage and control Windows services
 /* This rule is not compatible with Sysmon due to user.id issues */
 
 process where host.os.type == "windows" and event.type == "start" and
-  (process.name : "sc.exe" or process.pe.original_file_name == "sc.exe") and
+  (process.name : "sc.exe" or ?process.pe.original_file_name == "sc.exe") and
   process.parent.name : ("cmd.exe", "wscript.exe", "rundll32.exe", "regsvr32.exe",
                          "wmic.exe", "mshta.exe","powershell.exe", "pwsh.exe") and
   process.args:("config", "create", "start", "delete", "stop", "pause") and
