@@ -1,0 +1,99 @@
+[[prebuilt-rule-8-14-14-suspicious-endpoint-security-parent-process]]
+=== Suspicious Endpoint Security Parent Process
+
+A suspicious Endpoint Security parent process was detected. This may indicate a process hollowing or other form of code injection.
+
+*Rule type*: eql
+
+*Rule indices*: 
+
+* winlogbeat-*
+* logs-endpoint.events.process-*
+* logs-windows.forwarded*
+* logs-windows.sysmon_operational-*
+* endgame-*
+* logs-system.security*
+* logs-m365_defender.event-*
+* logs-sentinel_one_cloud_funnel.*
+
+*Severity*: medium
+
+*Risk score*: 47
+
+*Runs every*: 5m
+
+*Searches indices from*: now-9m ({ref}/common-options.html#date-math[Date Math format], see also <<rule-schedule, `Additional look-back time`>>)
+
+*Maximum alerts per execution*: 100
+
+*References*: None
+
+*Tags*: 
+
+* Domain: Endpoint
+* OS: Windows
+* Use Case: Threat Detection
+* Tactic: Defense Evasion
+* Data Source: Elastic Endgame
+* Data Source: Elastic Defend
+* Data Source: System
+* Data Source: Microsoft Defender for Endpoint
+* Data Source: Sysmon
+* Data Source: SentinelOne
+
+*Version*: 313
+
+*Rule authors*: 
+
+* Elastic
+
+*Rule license*: Elastic License v2
+
+
+==== Rule query
+
+
+[source, js]
+----------------------------------
+process where host.os.type == "windows" and event.type == "start" and
+  process.name : ("esensor.exe", "elastic-endpoint.exe") and
+  process.parent.executable != null and
+  /* add FPs here */
+  not process.parent.executable : (
+        "?:\\Program Files\\Elastic\\*",
+        "?:\\Windows\\System32\\services.exe",
+        "?:\\Windows\\System32\\WerFault*.exe",
+        "?:\\Windows\\System32\\wermgr.exe",
+        "?:\\Windows\\explorer.exe"
+  ) and
+  not (
+    process.parent.executable : (
+        "?:\\Windows\\System32\\cmd.exe",
+        "?:\\Windows\\System32\\SecurityHealthHost.exe",
+        "?:\\Windows\\System32\\WindowsPowerShell\\v1.0\\powershell.exe"
+    ) and
+    process.args : (
+        "test", "version",
+        "top", "run",
+        "*help", "status",
+        "upgrade", "/launch",
+        "/enable"
+    )
+  )
+
+----------------------------------
+
+*Framework*: MITRE ATT&CK^TM^
+
+* Tactic:
+** Name: Defense Evasion
+** ID: TA0005
+** Reference URL: https://attack.mitre.org/tactics/TA0005/
+* Technique:
+** Name: Masquerading
+** ID: T1036
+** Reference URL: https://attack.mitre.org/techniques/T1036/
+* Sub-technique:
+** Name: Match Legitimate Name or Location
+** ID: T1036.005
+** Reference URL: https://attack.mitre.org/techniques/T1036/005/
