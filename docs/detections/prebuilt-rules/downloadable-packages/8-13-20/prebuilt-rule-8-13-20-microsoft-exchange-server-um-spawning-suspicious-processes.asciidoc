@@ -1,0 +1,96 @@
+[[prebuilt-rule-8-13-20-microsoft-exchange-server-um-spawning-suspicious-processes]]
+=== Microsoft Exchange Server UM Spawning Suspicious Processes
+
+Identifies suspicious processes being spawned by the Microsoft Exchange Server Unified Messaging (UM) service. This activity has been observed exploiting CVE-2021-26857.
+
+*Rule type*: eql
+
+*Rule indices*: 
+
+* logs-endpoint.events.process-*
+* winlogbeat-*
+* logs-windows.forwarded*
+* logs-windows.sysmon_operational-*
+* endgame-*
+* logs-system.security*
+* logs-m365_defender.event-*
+* logs-sentinel_one_cloud_funnel.*
+
+*Severity*: medium
+
+*Risk score*: 47
+
+*Runs every*: 5m
+
+*Searches indices from*: now-9m ({ref}/common-options.html#date-math[Date Math format], see also <<rule-schedule, `Additional look-back time`>>)
+
+*Maximum alerts per execution*: 100
+
+*References*: 
+
+* https://www.microsoft.com/security/blog/2021/03/02/hafnium-targeting-exchange-servers
+* https://www.volexity.com/blog/2021/03/02/active-exploitation-of-microsoft-exchange-zero-day-vulnerabilities
+
+*Tags*: 
+
+* Domain: Endpoint
+* OS: Windows
+* Use Case: Threat Detection
+* Tactic: Initial Access
+* Tactic: Lateral Movement
+* Data Source: Elastic Endgame
+* Use Case: Vulnerability
+* Data Source: Elastic Defend
+* Data Source: System
+* Data Source: Microsoft Defender for Endpoint
+* Data Source: Sysmon
+* Data Source: SentinelOne
+
+*Version*: 210
+
+*Rule authors*: 
+
+* Elastic
+* Austin Songer
+
+*Rule license*: Elastic License v2
+
+
+==== Rule query
+
+
+[source, js]
+----------------------------------
+process where host.os.type == "windows" and event.type == "start" and
+  process.parent.name : ("UMService.exe", "UMWorkerProcess.exe") and
+    not process.executable :
+              ("?:\\Windows\\System32\\werfault.exe",
+               "?:\\Windows\\System32\\wermgr.exe",
+               "?:\\Program Files\\Microsoft\\Exchange Server\\V??\\Bin\\UMWorkerProcess.exe",
+               "?:\\Program Files\\Microsoft\\Exchange Server\\Bin\\UMWorkerProcess.exe",
+               "D:\\Exchange 2016\\Bin\\UMWorkerProcess.exe",
+               "E:\\ExchangeServer\\Bin\\UMWorkerProcess.exe",
+               "D:\\Exchange\\Bin\\UMWorkerProcess.exe",
+               "D:\\Exchange Server\\Bin\\UMWorkerProcess.exe",
+               "E:\\Exchange Server\\V15\\Bin\\UMWorkerProcess.exe")
+
+----------------------------------
+
+*Framework*: MITRE ATT&CK^TM^
+
+* Tactic:
+** Name: Initial Access
+** ID: TA0001
+** Reference URL: https://attack.mitre.org/tactics/TA0001/
+* Technique:
+** Name: Exploit Public-Facing Application
+** ID: T1190
+** Reference URL: https://attack.mitre.org/techniques/T1190/
+* Tactic:
+** Name: Lateral Movement
+** ID: TA0008
+** Reference URL: https://attack.mitre.org/tactics/TA0008/
+* Technique:
+** Name: Exploitation of Remote Services
+** ID: T1210
+** Reference URL: https://attack.mitre.org/techniques/T1210/
