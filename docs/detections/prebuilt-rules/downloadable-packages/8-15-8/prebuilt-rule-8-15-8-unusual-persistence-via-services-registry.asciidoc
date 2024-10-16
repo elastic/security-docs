@@ -1,0 +1,107 @@
+[[prebuilt-rule-8-15-8-unusual-persistence-via-services-registry]]
+=== Unusual Persistence via Services Registry
+
+Identifies processes modifying the services registry key directly, instead of through the expected Windows APIs. This could be an indication of an adversary attempting to stealthily persist through abnormal service creation or modification of an existing service.
+
+*Rule type*: eql
+
+*Rule indices*: 
+
+* logs-endpoint.events.registry-*
+* endgame-*
+* logs-windows.sysmon_operational-*
+* winlogbeat-*
+* logs-m365_defender.event-*
+* logs-sentinel_one_cloud_funnel.*
+
+*Severity*: low
+
+*Risk score*: 21
+
+*Runs every*: 5m
+
+*Searches indices from*: now-9m ({ref}/common-options.html#date-math[Date Math format], see also <<rule-schedule, `Additional look-back time`>>)
+
+*Maximum alerts per execution*: 100
+
+*References*: None
+
+*Tags*: 
+
+* Domain: Endpoint
+* OS: Windows
+* Use Case: Threat Detection
+* Tactic: Persistence
+* Tactic: Defense Evasion
+* Data Source: Elastic Endgame
+* Data Source: Elastic Defend
+* Data Source: Sysmon
+* Data Source: Microsoft Defender for Endpoint
+* Data Source: SentinelOne
+
+*Version*: 310
+
+*Rule authors*: 
+
+* Elastic
+
+*Rule license*: Elastic License v2
+
+
+==== Rule query
+
+
+[source, js]
+----------------------------------
+registry where host.os.type == "windows" and event.type == "change" and
+  registry.value : ("ServiceDLL", "ImagePath") and
+  registry.path : (
+      "HKLM\\SYSTEM\\ControlSet*\\Services\\*\\ServiceDLL",
+      "HKLM\\SYSTEM\\ControlSet*\\Services\\*\\ImagePath",
+      "\\REGISTRY\\MACHINE\\SYSTEM\\ControlSet*\\Services\\*\\ServiceDLL",
+      "\\REGISTRY\\MACHINE\\SYSTEM\\ControlSet*\\Services\\*\\ImagePath",
+      "MACHINE\\SYSTEM\\ControlSet*\\Services\\*\\ServiceDLL",
+      "MACHINE\\SYSTEM\\ControlSet*\\Services\\*\\ImagePath"
+  ) and not registry.data.strings : (
+      "?:\\windows\\system32\\Drivers\\*.sys",
+      "\\SystemRoot\\System32\\drivers\\*.sys",
+      "\\??\\?:\\Windows\\system32\\Drivers\\*.SYS",
+      "\\??\\?:\\Windows\\syswow64\\*.sys",
+      "system32\\DRIVERS\\USBSTOR") and
+  not (process.name : "procexp??.exe" and registry.data.strings : "?:\\*\\procexp*.sys") and
+  not process.executable : (
+      "?:\\Program Files\\*.exe",
+      "?:\\Program Files (x86)\\*.exe",
+      "?:\\Windows\\System32\\svchost.exe",
+      "?:\\Windows\\winsxs\\*\\TiWorker.exe",
+      "?:\\Windows\\System32\\drvinst.exe",
+      "?:\\Windows\\System32\\services.exe",
+      "?:\\Windows\\System32\\msiexec.exe",
+      "?:\\Windows\\System32\\regsvr32.exe",
+      "?:\\Windows\\System32\\WaaSMedicAgent.exe"
+  )
+
+----------------------------------
+
+*Framework*: MITRE ATT&CK^TM^
+
+* Tactic:
+** Name: Persistence
+** ID: TA0003
+** Reference URL: https://attack.mitre.org/tactics/TA0003/
+* Technique:
+** Name: Create or Modify System Process
+** ID: T1543
+** Reference URL: https://attack.mitre.org/techniques/T1543/
+* Sub-technique:
+** Name: Windows Service
+** ID: T1543.003
+** Reference URL: https://attack.mitre.org/techniques/T1543/003/
+* Tactic:
+** Name: Defense Evasion
+** ID: TA0005
+** Reference URL: https://attack.mitre.org/tactics/TA0005/
+* Technique:
+** Name: Modify Registry
+** ID: T1112
+** Reference URL: https://attack.mitre.org/techniques/T1112/
