@@ -31,31 +31,43 @@ This page explains how to get started monitoring the security posture of your cl
 
 ## Set up CSPM for AWS
 
-You can set up CSPM for AWS either by enrolling a single cloud account, or by enrolling an organization containing multiple accounts. Either way, first you will add the CSPM integration, then enable cloud account access.
+You can set up CSPM for AWS either by enrolling a single cloud account, or by enrolling an organization containing multiple accounts. Either way, first you will add the CSPM integration, then enable cloud account access. Two deployment technologies are available: agentless, and agent-based. <DocLink slug="/serverless/security/cspm-get-started" section="cspm-aws-agentless"> Agentless deployment </DocLink> allows you to collect cloud posture data without having to manage the deployment of an agent in your cloud. <DocLink slug="/serverless/security/cspm-get-started" section="cspm-aws-agent-based"> Agent-based deployment </DocLink> requires you to deploy and manage an agent in the cloud account you want to monitor. 
+
+<div id="cspm-aws-agentless"></div>
+
+## Agentless deployment 
+<DocBadge template="beta" />
+
+. From the Elastic Security *Get started* page, click *Add integrations*.
+. Search for `CSPM`, then click on the result.
+. Click *Add Cloud Security Posture Management (CSPM)*.
+. Select *AWS*, then either *AWS Organization* to onboard multiple accounts, or *Single Account* to onboard an individual account.
+. Give your integration a name that matches the purpose or team of the AWS account/organization you want to monitor, for example, `dev-aws-account`.
+. Click **Advanced options** then select **Agentless (BETA)**.
+. Next, you'll need to authenticate to AWS. Two methods are available:
+.. Option 1: Direct access keys / CloudFormation (Recommended). Under **Preferred method** select **Direct access keys**. Expand the **Steps to Generate AWS Account Credentials** section, then follow the instructions that appear to automatically create the necessary credentials using CloudFormation.
+.. Option 2: Temporary keys. To authenticate using temporary keys, refer to the instructions for <DocLink slug="/serverless/security/cspm-get-started" section="option-3-temporary-security-credentials">Temporary keys</DocLink>
+. Once you've selected an authentication method and provided all necessary credentials, click **Save and continue** to finish deployment. Your data should start to appear within a few minutes.
+
+<div id="cspm-aws-agent-based"></div>
+
+## Agent-based deployment 
 
 <div id="cspm-add-and-name-integration"></div>
 
-## Add the CSPM integration
+### Add the CSPM integration
 1. From the Elastic Security **Get started** page, click **Add integrations**.
 1. Search for `CSPM`, then click on the result.
 1. Click **Add Cloud Security Posture Management (CSPM)**.
 1. Select **AWS**, then either **AWS Organization** to onboard multiple accounts, or **Single Account** to onboard an individual account.
 1. Give your integration a name that matches the purpose or team of the AWS account/organization you want to monitor, for example, `dev-aws-account`.
-1. <DocBadge template="beta" /> (Optional) Click **Advanced settings** to deploy the integration using agentless technology. 
-
 
 <div id="cspm-set-up-cloud-access-section"></div>
 
-## Set up cloud account access
+### Set up cloud account access
 The CSPM integration requires access to AWS's built-in [`SecurityAudit` IAM policy](https://docs.aws.amazon.com/IAM/latest/UserGuide/access_policies_job-functions.html#jf_security-auditor) in order to discover and evaluate resources in your cloud account. There are several ways to provide access.
 
 For most use cases, the simplest option is to use AWS CloudFormation to automatically provision the necessary resources and permissions in your AWS account. This method, as well as several manual options, are described below.
-
-<DocCallOut title="Note">
-<DocBadge template="beta" /> Agentless deployments support two authentication methods: 
-<DocLink slug="/serverless/security/cspm-get-started" section="option-2-direct-access-keys">Direct access keys</DocLink> and <DocLink slug="/serverless/security/cspm-get-started" section="option-3-temporary-security-credentials">Temporary keys</DocLink>.
-</DocCallOut>
-
 
 <div id="cspm-set-up-cloudformation"></div>
 
@@ -185,7 +197,7 @@ When deploying to an organization using any of the authentication methods below,
 
 <div id="cspm-set-up-manual"></div>
 
-## Manual authentication methods
+### Manual authentication methods
 
 * <DocLink slug="/serverless/security/cspm-get-started" section="option-1-default-instance-role">Default instance role (recommended)</DocLink>
 * <DocLink slug="/serverless/security/cspm-get-started" section="option-2-direct-access-keys">Direct access keys</DocLink>
@@ -199,7 +211,7 @@ Whichever method you use to authenticate, make sure AWS’s built-in [`SecurityA
 
 <div id="cspm-use-instance-role"></div>
 
-### Option 1 - Default instance role
+#### Option 1 - Default instance role
 
 <DocCallOut title="Note">
 If you are deploying to an AWS organization instead of an AWS account, you should already have <DocLink slug="/serverless/security/cspm-get-started" section="manual-authentication-for-organization-level-onboarding">created a new role</DocLink>, `cloudbeat-root`. Skip to step 2 "Attach your new IAM role to an EC2 instance", and attach this role. You can use either an existing or new EC2 instance.
@@ -230,12 +242,12 @@ Follow AWS's [IAM roles for Amazon EC2](https://docs.aws.amazon.com/AWSEC2/lates
     1. Return to ((kib)) and <DocLink slug="/serverless/security/cspm-get-started" section="finish-manual-setup">finish manual setup</DocLink>.
 
 <DocCallOut title="Important" color="warning">
-Make sure to deploy the CSPM integration to this EC2 instance. When completing setup in Kibana, in the **Setup Access** section, select **Assume role**. Leave **Role ARN** empty unless you want to specify a role the ((agent)) should assume instead of the default role for your EC2 instance. Click **Save and continue**.
+Make sure to deploy the CSPM integration to this EC2 instance. When completing setup in ((kib)), in the **Setup Access** section, select **Assume role**. Leave **Role ARN** empty for agentless deployments. For agent-based deployments, leave it empty unless you want to specify a role the ((agent)) should assume instead of the default role for your EC2 instance. Click **Save and continue**.
 </DocCallOut>
 
 <div id="cspm-use-keys-directly"></div>
 
-### Option 2 - Direct access keys
+#### Option 2 - Direct access keys
 Access keys are long-term credentials for an IAM user or AWS account root user. To use access keys as credentials, you must provide the `Access key ID` and the `Secret Access Key`. After you provide credentials, <DocLink slug="/serverless/security/cspm-get-started" section="finish-manual-setup">finish manual setup</DocLink>.
 
 For more details, refer to [Access Keys and Secret Access Keys](https://docs.aws.amazon.com/general/latest/gr/aws-sec-cred-types.html).
@@ -246,8 +258,8 @@ You must select **Programmatic access** when creating the IAM user.
 
 <div id="cspm-use-temp-credentials"></div>
 
-### Option 3 - Temporary security credentials
-You can configure temporary security credentials in AWS to last for a specified duration. They consist of an access key ID, a secret access key, and a security token, which is typically found using `GetSessionToken`.
+#### Option 3 - Temporary security credentials
+You can configure temporary security credentials in AWS to last for a specified duration. They consist of an access key ID, a secret access key, and a session token, which is typically found using `GetSessionToken`.
 
 Because temporary security credentials are short term, once they expire, you will need to generate new ones and manually update the integration's configuration to continue collecting cloud posture data. Update the credentials before they expire to avoid data loss.
 
@@ -271,7 +283,7 @@ After you provide credentials, <DocLink slug="/serverless/security/cspm-get-star
 
 <div id="cspm-use-a-shared-credentials-file"></div>
 
-### Option 4 - Shared credentials file
+#### Option 4 - Shared credentials file
 If you use different AWS credentials for different tools or applications, you can use profiles to define multiple access keys in the same configuration file. For more details, refer to AWS' [Shared Credentials Files](https://docs.aws.amazon.com/sdkref/latest/guide/file-format.html) documentation.
 
 Instead of providing the `Access key ID` and `Secret Access Key` to the integration, provide the information required to locate the access keys within the shared credentials file:
@@ -290,7 +302,7 @@ After providing credentials, <DocLink slug="/serverless/security/cspm-get-starte
 
 <div id="cspm-use-iam-arn"></div>
 
-### Option 5 - IAM role Amazon Resource Name (ARN)
+#### Option 5 - IAM role Amazon Resource Name (ARN)
 An IAM role Amazon Resource Name (ARN) is an IAM identity that you can create in your AWS account. You define the role's permissions. Roles do not have standard long-term credentials such as passwords or access keys. Instead, when you assume a role, it provides temporary security credentials for your session.
 
 To use an IAM role ARN, select **Assume role** under **Preferred manual method**, enter the ARN, and continue to Finish manual setup.
