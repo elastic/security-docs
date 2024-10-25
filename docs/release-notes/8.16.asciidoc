@@ -34,6 +34,19 @@
 * Adds RBAC for Attack Discovery ({kibana-pull}188788[#188788]).
 * Adds historical results to the Data Quality dashboard and updates its UI ({kibana-pull}191898[#191898], {kibana-pull}196127[#196127]). 
 * Enables agentless deployment for Elastic's Cloud Security Posture Management integration ({kibana-pull}191557[#191557]).
+//The following are Defend/Endpoint PRs. Still need to clean them up.
+* Host field size reduction is now disabled by default.  Host field size reduction can be enabled via and advanced config directive `[os].advanced.set_extended_host_information`
+* To reduce CPU usage, I/O, and event sizes, users can now opt into aggregation of process events.  Related process events occurring in rapid succession will be combined into fewer aggregate events.  Use `advanced.events.aggregate_process` in advanced policy to enable it.
+* See 15114. 
+//This ^ is for Endpoint PR 14937
+* Events.
+* Users can now opt into the collection of SHA-256 file hashes in file events. These events come with several caveats, including:
+** This can greatly increase Endpoint's CPU and I/O utilization, impacting system responsiveness.
+** This can significantly delay event enrichment, leading to Behavioral Protection rules firing too late to effectively stop malicious behavior.
+** This can cause event processing queues to overflow, leading to dropped events.
+** Many file events will not contain hashes. Hash collection is best-effort and not guaranteed to be present in every event. Hashes are collected asynchronously, shortly after the file activity. Hashes may be missing if the file was rapidly renamed, moved, deleted, or (on Windows) opened by another process without [read sharing](https://learn.microsoft.com/en-us/windows/win32/fileio/creating-and-opening-files).
+* Enables the use of dynamic topics for the kafka output. Refer to https://www.elastic.co/guide/en/beats/filebeat/current/kafka-output.html#topic-option-kafka for more information.
+* Integrates a new Event Tracing for Windows (ETW) provider (Microsoft-Windows-WMI-Activity) to create new event types that can be used by prebuilt endpoint rules to detect malicious WMI activity.
 
 [discrete]
 [[enhancements-8.16.0]]
@@ -62,7 +75,22 @@
 * Adds the `IS` operator as an option when configuring a Windows signature blocklist entry ({kibana-pull}190515[#190515]). 
 * Allows you to disable the defend hardware call stacks feature ({kibana-pull}190553[#190553]). 
 * Improves network previews in the Alert details flyout ({kibana-pull}190560[#190560]). 
-
+//The following are Defend/Endpoint PRs. Still need to clean them up.
+* Improved `call_stack_final_user_module` attribution where potential `proxy_call` modules are encountered during Windows call stack analysis.
+* Adds additional fields to Defend API events to improve context for the triage of Behavior Alerts. The new `call_stack_final_user_module` fields are  `allocation_private_bytes`, `protection`, `protection_provenance_path`, and `reason`.
+* Add a new Defend API event for [`DeviceIoControl`](https://learn.microsoft.com/en-us/windows/win32/api/ioapiset/nf-ioapiset-deviceiocontrol) calls to support detection of driver abuse. This feature is only supported on Windows 11 Desktop versions.
+* Upon start Endpoint service will update security artifacts before arming itself with policy.
+* Events. 
+//Not sure what this ^ is for
+* Adds user password sock5 proxy authentication support embedded in URL: socks5:// : @.
+* Improve error messages when Endpoint receives invalid or unsupported cryptographic keys via policy.
+* If Defend loses connectivity to Agent for an extended period of time, it will notify Fleet that it is "orphaned." Fleet can use this information to provide additional context to the user.
+* Adds SOCKS5 proxy support to Logstash output.
+* On Windows, Defend will now use [Intel CET and AMD Shadow Stacks](https://www.elastic.co/security-labs/finding-truth-in-the-shadows) to collect call stacks, where supported.  This improves performance and enables detection of certain defense evasions.
+* Restore Defend support for Windows Server 2012, which was removed in 8.13.0.
+* Improvements to Defend's caching to reduce memory usage on Windows.
+* Reduced size of process events by default, reducing excessive process ancestry entries and shortening the entity id.
+* Improve reliability and system resource usage of Defend's Windows network driver.
 
 [discrete]
 [[bug-fixes-8.16.0]]
@@ -75,3 +103,12 @@
 * Improves the Alerts table's performance ({kibana-pull}192827[#192827]). 
 * Removes the requirement that you have unnecessary {kib} {fleet} privileges to access some cloud security posture Findings ({kibana-pull}194069[#194069]).
 * Fixes an issue that could cause fields for all indices to appear when you tried to add a rule filter ({kibana-pull}194678[#194678]).
+//The following are Defend/Endpoint PRs. Still need to clean them up.
+* Fixed a bug where network event deduplication logic could incorrectly drop Linux network events.
+* Fixes a bug where Windows API events may be dropped if they contain Unicode characters that cannot be converted to ANSI.
+* Track loopback (part 3).
+* If Defend is unable to enrich a memory region in an API event, it will now remove that field instead of emitting an empty `memory_region`.
+* Fix a bug where Defend can fail to properly enrich Windows API events for short-lived processes on older operating systems that don't natively include this telemetry, such as Windows Server 2019.  This may result in dropped or unattributed API events.
+* When requested to use fqdn in the `host.name` field, endpoint will now report the fqdn exactly  as the os reports it, rather than lowercasing by default.  This will ensure host name uniformity with beats products.
+* Fixes a bug in behavior protection alerts, where prevention alerts could mistakenly be labeled as detection alerts.
+* Fixed an issue where a busy Kafka connection could lead to an Endpoint crash.
