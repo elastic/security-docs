@@ -39,10 +39,10 @@ On August 1, 2024, it was discovered that Elastic AI Assistant's responses when 
 // * Introduces a new API route for listing Entity Store entities: `GET /api/entity_store/entities/list` ({kibana-pull}192806[#192806]).
 * Enables detection rules to automatically execute system actions such as opening a case ({kibana-pull}183937[#183937]). 
 * Adds syntax validation for {esql} queries ({kibana-pull}189780[#189780]).
-* Creates an option for {esql} and EQL rule previews `Show {es} requests, ran during rule executions`. When enabled, {es} queries that run during rule execution appear under "Preview logged requests" in the rule preview ({kibana-pull}191107[#191107]).
+* Provides a way to view {es} queries that run during rule execution. This option is provided for {esql} and EQL rules only ({kibana-pull}191107[#191107]).
 * Allows you to create and update a rule even when some data-related validation errors are present in the query field ({kibana-pull}191487[#191487]).
-* Creates a new advanced setting `securitySolution:enableVisualizationsInFlyout`. When enabled, a "Visualizations" section with Analyzer and Session view previews appears in the alerts and events flyouts ({kibana-pull}194012[#194012], {kibana-pull}192531[#192531]).
-* Creates a new advanced setting `securitySolution:excludedDataTiersForRuleExecution` that allows you to exclude cold and frozen data tiers from search during rule execution (does not apply to {esql} or Machine learning rules) ({kibana-pull}186908[#186908]). 
+* Introduces a new advanced setting `securitySolution:enableVisualizationsInFlyout`. When enabled, you can examine alerts and events in the **Visualize** tab, which provides a more detailed view of the event analyzer and Session View ({kibana-pull}194012[#194012], {kibana-pull}192531[#192531]).
+* Creates a new advanced setting `securitySolution:excludedDataTiersForRuleExecution` that allows you to exclude cold and frozen data from rule execution. This setting does not apply to {ml} rules ({kibana-pull}186908[#186908]). 
 * Adds an "Insights" section containing any available misconfiguration and vulnerabilities findings to the alert and event flyouts ({kibana-pull}195509[#195509]).
 * Removes the `securitySolution:enableAssetCriticality` advanced setting and enables <<asset-criticality, Asset Criticality>> workflows by default ({kibana-pull}196270[#196270])
 * Adds an {elastic-defend} integration policy advanced setting that, when enabled, adds file hashes to file events ({kibana-pull}192037[#192037]).
@@ -50,14 +50,14 @@ On August 1, 2024, it was discovered that Elastic AI Assistant's responses when 
 * Adds RBAC for Attack Discovery ({kibana-pull}188788[#188788]).
 * Adds historical results to the Data Quality dashboard and updates its UI ({kibana-pull}191898[#191898], {kibana-pull}196127[#196127]). 
 * Enables agentless deployment for Elastic's Cloud Security Posture Management integration ({kibana-pull}191557[#191557]).
-* Host field size reduction is now turned off by default on the {elastic-defend} integration policy. To turn it on, configure the `[os].advanced.set_extended_host_information` <<adv-policy-settings,advanced policy setting>>.
+* The host field size reduction setting on {elastic-defend}'s integration policy is now turned off by default. To turn it on, configure the `[os].advanced.set_extended_host_information` <<adv-policy-settings,advanced policy setting>>.
 * To reduce CPU usage, I/O, and event sizes, you can turn on process event aggregation when configuring your {elastic-defend} integration policy. Related process events that occur in rapid succession are combined into fewer aggregate events. To turn on process event aggregation, configure the `advanced.events.aggregate_process` <<adv-policy-settings,advanced policy setting>>.
 * To reduce CPU usage, I/O, and event sizes, you can now turn off of MD5, SHA-1, and SHA-256 hashes in events when configuring your {elastic-defend} integration policy. Example fields include `process.hash.md5` and `file.hash.sha1. 
 * You can now configure your {elastic-defend} integration policy to allow the collection of SHA-256 file hashes in file events. Before doing so, consider the following caveats: 
 ** This can greatly increase {elastic-defend}'s CPU and I/O utilization, and impact system responsiveness.
 ** This can significantly delay event enrichment, and lead to Behavioral Protection rules firing too late to effectively stop malicious behavior.
 ** This can cause event processing queues to overflow, and lead to dropped events.
-** Many file events won't contain hashes. Hash collection is best effort and not guaranteed to be present in every event. Hashes are collected asynchronously, and shortly after the file activity. Hashes might be missing if the file was rapidly renamed, moved, deleted, or (on Windows) opened by another process without (https://learn.microsoft.com/en-us/windows/win32/fileio/creating-and-opening-files)[read sharing].
+** Many file events won't contain hashes. Hash collection is best effort and not guaranteed to be present in every event. Hashes are collected asynchronously, and shortly after the file activity. Hashes might be missing if the file was rapidly renamed, moved, deleted, or (on Windows) opened by another process without https://learn.microsoft.com/en-us/windows/win32/fileio/creating-and-opening-files[read sharing].
 * Improves {elastic-defend} enabling the use of dynamic {filebeat-ref}/kafka-output.html#topic-option-kafka[topics] for the kafka output.
 * Improves {elastic-defend} by integrating a new Event Tracing for Windows (ETW) provider (Microsoft-Windows-WMI-Activity) to create new event types that can be used by prebuilt endpoint rules to detect malicious WMI activity.
 
@@ -65,8 +65,8 @@ On August 1, 2024, it was discovered that Elastic AI Assistant's responses when 
 [[enhancements-8.16.0]]
 ==== Enhancements
 * Enables you to open the Rule details flyout from the Alerts table ({kibana-pull}191764[#191764]).
-* Enables you to resize expanded flyouts ({kibana-pull}192906[#192906]).
-* Enables a settings menu for flyouts that lets you select between `Overlay` and `Push` display modes ({kibana-pull}182615[#182615]).
+* Allows you to resize the alert and event details flyouts ({kibana-pull}192906[#192906]).
+* Allows you display the alert and event details flyouts over the Alerts table or next to it ({kibana-pull}182615[#182615]).
 * Allows you to enable entity risk scoring in multiple {kib} spaces ({kibana-pull}192671[#192671]).
 * Creates a new API endpoint for cleaning up entity risk scoring data: `DELETE /api/risk_score/engine/dangerously_delete_data` ({kibana-pull}191843[#191843], {kibana-pull}189872[#189872]). 
 * Removes Elastic AI Assistant's default system prompts. The instructions previously contained in those prompts are now automatically included without user interaction, so Elastic AI Assistant will remain focused on relevant topics. Custom system prompts are still available ({kibana-pull}191847[#191847]). 
@@ -90,12 +90,12 @@ On August 1, 2024, it was discovered that Elastic AI Assistant's responses when 
 * Improves network previews in the Alert details flyout ({kibana-pull}190560[#190560]). 
 * Enhances {elastic-defend} by improving the `call_stack_final_user_module` attribution where potential `proxy_call` modules are encountered during Windows call stack analysis.
 * Adds new fields to {elastic-defend} API events to improve context for the triage of Behavior Alerts. The new `call_stack_final_user_module` fields are `allocation_private_bytes`, `protection`, `protection_provenance_path`, and `reason`.
-* Adds a new {elastic-defend} API event for (https://learn.microsoft.com/en-us/windows/win32/api/ioapiset/nf-ioapiset-deviceiocontrol)[`DeviceIoControl`] calls to support the detection of driver abuse. This feature is only supported on Windows 11 Desktop versions.
+* Adds a new {elastic-defend} API event for https://learn.microsoft.com/en-us/windows/win32/api/ioapiset/nf-ioapiset-deviceiocontrol[`DeviceIoControl`] calls to support the detection of driver abuse. This feature is only supported on Windows 11 Desktop versions.
 * Ensures security artifacts are updated when the {elastic-defend} service starts.
 * Improves error messages that are returned when {elastic-defend} receives invalid or unsupported cryptographic keys from the {elastic-defend} policy. 
 * Ensures that {elastic-defend} tells {fleet} that it's `orphaned` if the connection between {elastic-defend} and {agent} stops for an extended period of time. {fleet} uses this information to provide you with additional troubleshooting context.
 * Adds SOCKS5 proxy support to {ls}'s output.
-* Ensures that on Windows, {elastic-defend} uses (https://www.elastic.co/security-labs/finding-truth-in-the-shadows)[Intel CET and AMD Shadow Stacks] to collect call stacks, where supported. This improves performance and enables detection of certain defense evasions.
+* Ensures that on Windows, {elastic-defend} uses https://www.elastic.co/security-labs/finding-truth-in-the-shadows[Intel CET and AMD Shadow Stacks] to collect call stacks, where supported. This improves performance and enables detection of certain defense evasions.
 * Restore {elastic-defend}'s support for Windows Server 2012, which was removed in 8.13.0.
 * Improves {elastic-defend}'s caching to reduce memory usage on Windows.
 * Enhances {elastic-defend} by reducing the size of process events, which reduces excessive process ancestry entries and shortens the entity ID.
@@ -106,8 +106,8 @@ On August 1, 2024, it was discovered that Elastic AI Assistant's responses when 
 ==== Bug fixes
 
 * Prevents an empty warning message from appearing for rule executions ({kibana-pull}186096[#186096]). 
-* Fixes an error that could occur during rule execution when the source index had a text field that was noncompliant with ECS ({kibana-pull}187673[#187673]). 
-* Removes unnecessary empty space below the Open Timeline modal's title ({kibana-pull}188837[#188837]). 
+* Fixes an error that could occur during rule execution when the source index had a non-ECS-compliant text field ({kibana-pull}187673[#187673]). 
+* Removes unnecessary empty space below the title of the Open Timeline modal ({kibana-pull}188837[#188837]). 
 * Added a tag that was missing from an FTR suite ({kibana-pull}189661[#189661]). 
 * Improves the Alerts table's performance ({kibana-pull}192827[#192827]). 
 * Removes the requirement that you have unnecessary {kib} {fleet} privileges to access some cloud security posture Findings ({kibana-pull}194069[#194069]).
@@ -116,6 +116,6 @@ On August 1, 2024, it was discovered that Elastic AI Assistant's responses when 
 * Fixes an {elastic-defend} bug where Windows API events might be dropped if they contain Unicode characters that can't be converted to ANSI.
 * Ensures that {elastic-defend} does not emit an empty `memory_region` if it can't enrich a memory region in an API event. With this fix, {elastic-defend} removes these fields.
 * Fixes an {elastic-defend} bug where {elastic-defend} doesn't properly enrich Windows API events for short-lived processes on older operating systems that don't natively include this telemetry, such as Windows Server 2019. This might result in dropped or unattributed API events.
-* If you request for {elastic-defend} use the fully qualified domain name (FQDN) in the `host.name` field, {elastic-defend} now reports the FQDN exactly as the OS reports it, instead of lowercasing by default. This ensures host name uniformity with {beats} products.
+* Fixes a bug that prevented host name uniformity with {beats} products. If you request for {elastic-defend} use the fully qualified domain name (FQDN) in the `host.name` field, {elastic-defend} now reports the FQDN exactly as the OS reports it, instead of lowercasing by default.
 * Fixes an {elastic-defend} bug in behavior protection alerts, where prevention alerts could mistakenly be labeled as detection alerts.
-* Prevents {elastic-defend} from crashing if a Kafka connection is busy.
+* Fixes a bug that caused {elastic-defend} to crash if a Kafka connection is busy.
