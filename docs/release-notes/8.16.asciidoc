@@ -50,16 +50,15 @@ On August 1, 2024, it was discovered that Elastic AI Assistant's responses when 
 * Adds RBAC for Attack Discovery ({kibana-pull}188788[#188788]).
 * Adds historical results to the Data Quality dashboard and updates its UI ({kibana-pull}191898[#191898], {kibana-pull}196127[#196127]). 
 * Enables agentless deployment for Elastic's Cloud Security Posture Management integration ({kibana-pull}191557[#191557]).
-//The following are Defend/Endpoint PRs. Still need to clean them up.
 * Host field size reduction is now turned off by default on the {elastic-defend} integration policy. To turn it on, configure the `[os].advanced.set_extended_host_information` <<adv-policy-settings,advanced policy setting>>.
-* To reduce CPU usage, I/O, and event sizes, users can now opt into process event aggregation when configuring an {elastic-defend} integration policy. Related process events that occur in rapid succession aer combined into fewer aggregate events. To turn on process event aggregation, configure the `advanced.events.aggregate_process` <<adv-policy-settings,advanced policy setting>>.
-* To reduce CPU usage, I/O, and event sizes, users can now opt out of MD5, SHA-1, and/or SHA-256 hashes in events when configuring an {elastic-defend} integration policy. Example fields include `process.hash.md5` and `file.hash.sha1. 
-* Users can now opt into the collection of SHA-256 file hashes in file events when configuring an {elastic-defend} integration policy. If you choose to opt in, consider the following caveats: 
-** This can greatly increase {elastic-defend}'s CPU and I/O utilization, impacting system responsiveness.
-** This can significantly delay event enrichment, leading to Behavioral Protection rules firing to late to effectively stop malicious behavior.
-** This can cause event processing queues to overflow, leading to dropped events.
-** Many file events won't contain hashes. Hash collection is best effort and not guaranteed to be present in every event. Hashes are collected asynchronously, shortly after the file activity. Hashes may be missing if the file was rapidly renamed, moved, deleted, or (on Windows) opened by another process without (https://learn.microsoft.com/en-us/windows/win32/fileio/creating-and-opening-files)[read sharing].
-* Improves {elastic-defend} by supporting the use of dynamic topics for the kafka output. Refer to {filebeat-ref}/kafka-output.html#topic-option-kafka[topic] for more information.
+* To reduce CPU usage, I/O, and event sizes, you can turn on process event aggregation when configuring your {elastic-defend} integration policy. Related process events that occur in rapid succession are combined into fewer aggregate events. To turn on process event aggregation, configure the `advanced.events.aggregate_process` <<adv-policy-settings,advanced policy setting>>.
+* To reduce CPU usage, I/O, and event sizes, you can now turn off of MD5, SHA-1, and SHA-256 hashes in events when configuring your {elastic-defend} integration policy. Example fields include `process.hash.md5` and `file.hash.sha1. 
+* You can now configure your {elastic-defend} integration policy to allow the collection of SHA-256 file hashes in file events. Before doing so, consider the following caveats: 
+** This can greatly increase {elastic-defend}'s CPU and I/O utilization, and impact system responsiveness.
+** This can significantly delay event enrichment, and lead to Behavioral Protection rules firing too late to effectively stop malicious behavior.
+** This can cause event processing queues to overflow, and lead to dropped events.
+** Many file events won't contain hashes. Hash collection is best effort and not guaranteed to be present in every event. Hashes are collected asynchronously, and shortly after the file activity. Hashes might be missing if the file was rapidly renamed, moved, deleted, or (on Windows) opened by another process without (https://learn.microsoft.com/en-us/windows/win32/fileio/creating-and-opening-files)[read sharing].
+* Improves {elastic-defend} enabling the use of dynamic {filebeat-ref}/kafka-output.html#topic-option-kafka[topics] for the kafka output.
 * Improves {elastic-defend} by integrating a new Event Tracing for Windows (ETW) provider (Microsoft-Windows-WMI-Activity) to create new event types that can be used by prebuilt endpoint rules to detect malicious WMI activity.
 
 [discrete]
@@ -89,19 +88,18 @@ On August 1, 2024, it was discovered that Elastic AI Assistant's responses when 
 * Adds the `IS` operator as an option when configuring a Windows signature blocklist entry ({kibana-pull}190515[#190515]). 
 * Allows you to disable the defend hardware call stacks feature ({kibana-pull}190553[#190553]). 
 * Improves network previews in the Alert details flyout ({kibana-pull}190560[#190560]). 
-//The following are Defend/Endpoint PRs. Still need to clean them up.
-* Improved `call_stack_final_user_module` attribution where potential `proxy_call` modules are encountered during Windows call stack analysis.
-* Adds additional fields to {elastic-defend} API events to improve context for the triage of Behavior Alerts. The new `call_stack_final_user_module` fields are `allocation_private_bytes`, `protection`, `protection_provenance_path`, and `reason`.
-* Add a new {elastic-defend} API event for (https://learn.microsoft.com/en-us/windows/win32/api/ioapiset/nf-ioapiset-deviceiocontrol)[`DeviceIoControl`] calls to support detection of driver abuse. This feature is only supported on Windows 11 Desktop versions.
-* Upon start, Endpoint service will update security artifacts before arming itself with policy.
-* Improves error messages when {elastic-defend} receives invalid or unsupported cryptographic keys via policy.
-* If {elastic-defend} loses connectivity to {agent} for an extended period of time, it will notify {fleet} that it is "orphaned." {fleet} can use this information to provide additional context to the user.
-* Adds SOCKS5 proxy support to {ls} output.
-* On Windows, Defend will now use (https://www.elastic.co/security-labs/finding-truth-in-the-shadows)[Intel CET and AMD Shadow Stacks] to collect call stacks, where supported.  This improves performance and enables detection of certain defense evasions.
-* Restore {elastic-defend} support for Windows Server 2012, which was removed in 8.13.0.
-* Improvements to {elastic-defend}'s caching to reduce memory usage on Windows.
-* Reduced size of process events by default, reducing excessive process ancestry entries and shortening the entity id.
-* Improve reliability and system resource usage of {elastic-defend}'s Windows network driver.
+* Enhances {elastic-defend} by improving the `call_stack_final_user_module` attribution where potential `proxy_call` modules are encountered during Windows call stack analysis.
+* Adds new fields to {elastic-defend} API events to improve context for the triage of Behavior Alerts. The new `call_stack_final_user_module` fields are `allocation_private_bytes`, `protection`, `protection_provenance_path`, and `reason`.
+* Adds a new {elastic-defend} API event for (https://learn.microsoft.com/en-us/windows/win32/api/ioapiset/nf-ioapiset-deviceiocontrol)[`DeviceIoControl`] calls to support the detection of driver abuse. This feature is only supported on Windows 11 Desktop versions.
+* Ensures security artifacts are updated when the {elastic-defend} service starts.
+* Improves error messages that are returned when {elastic-defend} receives invalid or unsupported cryptographic keys from the {elastic-defend} policy. 
+* Ensures that {elastic-defend} tells {fleet} that it's `orphaned` if the connection between {elastic-defend} and {agent} stops for an extended period of time. {fleet} uses this information to provide you with additional troubleshooting context.
+* Adds SOCKS5 proxy support to {ls}'s output.
+* Ensures that on Windows, {elastic-defend} uses (https://www.elastic.co/security-labs/finding-truth-in-the-shadows)[Intel CET and AMD Shadow Stacks] to collect call stacks, where supported. This improves performance and enables detection of certain defense evasions.
+* Restore {elastic-defend}'s support for Windows Server 2012, which was removed in 8.13.0.
+* Improves {elastic-defend}'s caching to reduce memory usage on Windows.
+* Enhances {elastic-defend} by reducing the size of process events, which reduces excessive process ancestry entries and shortens the entity ID.
+* Improves the reliability and system resource usage of {elastic-defend}'s Windows network driver.
 
 [discrete]
 [[bug-fixes-8.16.0]]
@@ -114,11 +112,10 @@ On August 1, 2024, it was discovered that Elastic AI Assistant's responses when 
 * Improves the Alerts table's performance ({kibana-pull}192827[#192827]). 
 * Removes the requirement that you have unnecessary {kib} {fleet} privileges to access some cloud security posture Findings ({kibana-pull}194069[#194069]).
 * Fixes an issue that could cause fields for all indices to appear when you tried to add a rule filter ({kibana-pull}194678[#194678]).
-//The following are Defend/Endpoint PRs. Still need to clean them up.
-* Fixed a bug where network event deduplication logic could incorrectly drop Linux network events.
-* Fixes a bug where Windows API events may be dropped if they contain Unicode characters that cannot be converted to ANSI.
-* If {elastic-defend} is unable to enrich a memory region in an API event, it will now remove that field instead of emitting an empty `memory_region`.
-* Fix a bug where {elastic-defend} can fail to properly enrich Windows API events for short-lived processes on older operating systems that don't natively include this telemetry, such as Windows Server 2019.  This may result in dropped or unattributed API events.
-* When requested to use fqdn in the `host.name` field, endpoint will now report the fqdn exactly  as the os reports it, rather than lowercasing by default. This will ensure host name uniformity with beats products.
-* Fixes a bug in behavior protection alerts, where prevention alerts could mistakenly be labeled as detection alerts.
-* Fixed an issue where a busy Kafka connection could lead to {elastic-defend} crashing.
+* Fixes an {elastic-defend} bug where network event deduplication logic could incorrectly drop Linux network events.
+* Fixes an {elastic-defend} bug where Windows API events might be dropped if they contain Unicode characters that can't be converted to ANSI.
+* Ensures that {elastic-defend} does not emit an empty `memory_region` if it can't enrich a memory region in an API event. With this fix, {elastic-defend} removes these fields.
+* Fixes an {elastic-defend} bug where {elastic-defend} doesn't properly enrich Windows API events for short-lived processes on older operating systems that don't natively include this telemetry, such as Windows Server 2019. This might result in dropped or unattributed API events.
+* If you request for {elastic-defend} use the fully qualified domain name (FQDN) in the `host.name` field, {elastic-defend} now reports the FQDN exactly as the OS reports it, instead of lowercasing by default. This ensures host name uniformity with {beats} products.
+* Fixes an {elastic-defend} bug in behavior protection alerts, where prevention alerts could mistakenly be labeled as detection alerts.
+* Prevents {elastic-defend} from crashing if a Kafka connection is busy.
