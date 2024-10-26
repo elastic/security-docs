@@ -1,0 +1,74 @@
+[[threat-intelligence]]
+= Enable threat intelligence integrations
+
+:description: Use threat indicators to detect known threats and malicious activity.
+:keywords: serverless, security, how-to
+
+preview:[]
+
+The Threat Intelligence view provides a streamlined way to collect threat intelligence data that you can use for threat detection and matching. Threat intelligence data consists of  <<ti-indicators,threat indicators>> ingested from third-party threat intelligence sources.
+
+Threat indicators describe potential threats, unusual behavior, or malicious activity on a network or in an environment. They are commonly used in indicator match rules to detect and match known threats. When an indicator match rule generates an alert, it includes information about the matched threat indicator.
+
+[NOTE]
+====
+To learn more about alerts with threat intelligence, visit <<view-alert-details,View alert details>>.
+====
+
+Refer to the following sections to learn how to connect to threat intelligence sources using an <<agent-ti-integration,{agent} integration>>, the <<ti-mod-integration,Threat Intel module>>, or a <<custom-ti-integration,custom integration>>.
+
+[role="screenshot"]
+image::images/es-threat-intel-integrations/-getting-started-threat-intelligence-view.png[The Threat Intelligence view on the Overview dashboard]
+
+There are a few scenarios when data won't display in the Threat Intelligence view:
+
+* If you've chosen a time range that doesn't contain threat indicator event data, you are prompted to choose a different range. Use the date and time picker in the {security-app} to select a new range to analyze.
+* If the {agent} or {filebeat} agent hasn't ingested Threat Intel module data yet, the threat indicator event counts won't load. You can wait for data to be ingested or reach out to your administrator for help resolving this.
+
+[discrete]
+[[agent-ti-integration]]
+== Add an {agent} integration
+
+. Install a {fleet-guide}/install-fleet-managed-elastic-agent.html[{fleet}-managed {agent}] on the hosts you want to monitor.
+. In the Threat Intelligence view, click **Enable sources** to view the Integrations page. Scroll down and select **Elastic Agent only** to filter by {agent} integrations.
++
+[TIP]
+====
+If you know the name of {agent} integration you want to install, you can search for it directly. Alternatively, choose the **Threat Intelligence** category to display a list of available {integrations-docs}/threat-intelligence-intro[threat intelligence integrations].
+====
+. Select an {agent} integration, then complete the installation steps.
+. Return to the Threat Intelligence view on the Overview dashboard. If indicator data isn't displaying, refresh the page or refer to these <<troubleshoot-indicators-page,troubleshooting steps>>.
+
+[discrete]
+[[ti-mod-integration]]
+== Add a {filebeat} Threat Intel module integration
+
+. Set up the {filebeat-ref}/filebeat-installation-configuration.html[{filebeat} agent] and enable the Threat Intel module.
++
+[NOTE]
+====
+For more information about enabling available threat intelligence filesets, refer to {filebeat-ref}/filebeat-module-threatintel.html[Threat Intel module].
+====
+. Update the `securitySolution:defaultThreatIndex` <<update-threat-intel-indices,advanced setting>> by adding the appropriate index pattern name after the default {fleet} threat intelligence index pattern (`logs-ti*`):
++
+.. If you're _only_ using {filebeat} version 8.x, add the appropriate {filebeat} threat intelligence index pattern. For example, `logs-ti*`, `filebeat-8*`.
+.. If you're using a previous version of Filebeat _and_ a current one, differentiate between the threat intelligence indices by using unique index pattern names. For example, if you’re using {filebeat} version 7.0.0 and 8.0.0, update the setting to `logs-ti*`,`filebeat-7*`,`filebeat-8*`.
+. Return to the Threat Intelligence view on the Overview dashboard. Refresh the page if indicator data isn't displaying.
+
+[discrete]
+[[custom-ti-integration]]
+== Add a custom integration
+
+. Set up a way to <<ingest-data,ingest data>> into your system.
+. Update the `securitySolution:defaultThreatIndex` <<update-threat-intel-indices,advanced setting>> by adding the appropriate index pattern name after the default {fleet} threat intelligence index pattern (`logs-ti*`), for example, `logs-ti*`,`custom-ti-index*`.
++
+[NOTE]
+====
+Threat intelligence indices aren’t required to be ECS compatible. However, we strongly recommend compatibility if you’d like your alerts to be enriched with relevant threat indicator information. You can find a list of ECS-compliant threat intelligence fields at {ecs-ref}/ecs-threat.html[Threat Fields].
+====
+. Return to the Threat Intelligence view on the Overview dashboard (**Dashboards** → **Overview**). Refresh the page if indicator data isn't displaying.
++
+[NOTE]
+====
+The Threat Intelligence view searches for a `threat.feed.name` field value to define the source name in the **Name** column. If a custom source doesn't have the `threat.feed.name` field or hasn't defined a `threat.feed.name` field value, it's considered unnamed and labeled as **Other**. Dashboards aren't created for unnamed sources unless the `threat.feed.dashboard_id` field is defined.
+====
