@@ -29,7 +29,7 @@ This rule monitors for the creation of a file, followed by its execution and sel
 * Tactic: Execution
 * Data Source: Elastic Defend
 
-*Version*: 4
+*Version*: 5
 
 *Rule authors*: 
 
@@ -86,7 +86,11 @@ sequence by host.id, user.id with maxspan=1m
    file.path : ("/dev/shm/*", "/run/shm/*", "/tmp/*", "/var/tmp/*",
      "/run/*", "/var/run/*", "/var/www/*", "/proc/*/fd/*")] by file.name
   [process where host.os.type == "linux" and event.type == "start" and event.action == "exec" and 
-   process.parent.name in ("bash", "dash", "ash", "sh", "tcsh", "csh", "zsh", "ksh", "fish")] by process.name
+   process.parent.name in ("bash", "dash", "ash", "sh", "tcsh", "csh", "zsh", "ksh", "fish") and
+   not process.parent.executable like (
+     "/tmp/VeeamApp*", "/tmp/rajh/spack-stage/*", "plz-out/bin/vault/bridge/test/e2e/base/bridge-dev",
+     "/usr/bin/ranlib", "/usr/bin/ar", "plz-out/bin/vault/bridge/test/e2e/base/local-k8s"  
+   )] by process.name
   [file where host.os.type == "linux" and event.action == "deletion" and not process.name in ("rm", "ld") and 
    file.path : ("/dev/shm/*", "/run/shm/*", "/tmp/*", "/var/tmp/*",
      "/run/*", "/var/run/*", "/var/www/*", "/proc/*/fd/*")] by file.name

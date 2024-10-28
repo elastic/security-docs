@@ -29,7 +29,7 @@ Identifies instances where a process (granted CAP_SETUID and/or CAP_SETGID capab
 * Tactic: Privilege Escalation
 * Data Source: Elastic Defend
 
-*Version*: 3
+*Version*: 4
 
 *Rule authors*: 
 
@@ -88,12 +88,17 @@ sequence by host.id, process.entity_id with maxspan=1s
      process.parent.executable : ("/tmp/newroot/*", "/opt/carbonblack*") or
      process.parent.executable in (
        "/opt/SolarWinds/Agent/bin/Plugins/JobEngine/SolarWinds.Agent.JobEngine.Plugin", "/usr/bin/vmware-toolbox-cmd",
-       "/usr/bin/dbus-daemon", "/usr/bin/update-notifier", "/usr/share/language-tools/language-options"
+       "/usr/bin/dbus-daemon", "/usr/bin/update-notifier", "/usr/share/language-tools/language-options",
+       "/opt/SolarWinds/Agent/*", "/usr/local/sbin/lynis.sh"
      ) or
-     process.executable : ("/opt/dynatrace/*", "/tmp/newroot/*") or
+     process.executable : ("/opt/dynatrace/*", "/tmp/newroot/*", "/opt/SolarWinds/Agent/*") or
      process.executable in (
        "/bin/fgrep", "/usr/bin/sudo", "/usr/bin/pkexec", "/usr/lib/cockpit/cockpit-session", "/usr/sbin/suexec"
-     )
+     ) or
+     process.parent.name in ("update-notifier", "language-options", "osqueryd", "saposcol", "dbus-daemon", "osqueryi", "sdbrun") or
+     process.command_line like ("sudo*BECOME-SUCCESS*", "/bin/sh*sapsysinfo.sh*", "sudo su", "sudo su -") or
+     process.name == "sudo" or
+     process.parent.command_line like "/usr/bin/python*ansible*"
    )]
   [process where host.os.type == "linux" and event.action == "uid_change" and event.type == "change" and 
    (process.thread.capabilities.effective : "CAP_SET?ID" or process.thread.capabilities.permitted : "CAP_SET?ID")
