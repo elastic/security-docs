@@ -1,0 +1,78 @@
+[[prebuilt-rule-8-13-21-potential-non-standard-port-ssh-connection]]
+=== Potential Non-Standard Port SSH connection
+
+Identifies potentially malicious processes communicating via a port paring typically not associated with SSH. For example, SSH over port 2200 or port 2222 as opposed to the traditional port 22. Adversaries may make changes to the standard port a protocol uses to bypass filtering or muddle analysis/parsing of network data.
+
+*Rule type*: eql
+
+*Rule indices*: 
+
+* logs-endpoint.events.*
+
+*Severity*: low
+
+*Risk score*: 21
+
+*Runs every*: 5m
+
+*Searches indices from*: now-9m ({ref}/common-options.html#date-math[Date Math format], see also <<rule-schedule, `Additional look-back time`>>)
+
+*Maximum alerts per execution*: 100
+
+*References*: 
+
+* https://attack.mitre.org/techniques/T1571/
+
+*Tags*: 
+
+* Domain: Endpoint
+* OS: Linux
+* Use Case: Threat Detection
+* Tactic: Command and Control
+* OS: macOS
+* Data Source: Elastic Defend
+
+*Version*: 6
+
+*Rule authors*: 
+
+* Elastic
+
+*Rule license*: Elastic License v2
+
+
+==== Rule query
+
+
+[source, js]
+----------------------------------
+sequence by process.entity_id with maxspan=1m
+  [process where event.action == "exec" and process.name in ("ssh", "sshd") and not process.parent.name in (
+   "rsync", "pyznap", "git", "ansible-playbook", "scp", "pgbackrest", "git-lfs", "expect", "Sourcetree", "ssh-copy-id",
+   "run"
+   )
+  ]
+  [network where process.name:"ssh" and event.action in ("connection_attempted", "connection_accepted") and 
+   destination.port != 22 and network.transport == "tcp" and not (
+     destination.ip == null or destination.ip == "0.0.0.0" or cidrmatch(
+       destination.ip, "10.0.0.0/8", "127.0.0.0/8", "169.254.0.0/16", "172.16.0.0/12", "192.0.0.0/24", "192.0.0.0/29",
+       "192.0.0.8/32", "192.0.0.9/32", "192.0.0.10/32", "192.0.0.170/32", "192.0.0.171/32", "192.0.2.0/24",
+       "192.31.196.0/24", "192.52.193.0/24", "192.168.0.0/16", "192.88.99.0/24", "224.0.0.0/4", "100.64.0.0/10",
+       "192.175.48.0/24","198.18.0.0/15", "198.51.100.0/24", "203.0.113.0/24", "240.0.0.0/4", "::1", "FE80::/10",
+       "FF00::/8"
+     )
+   )
+  ]
+
+----------------------------------
+
+*Framework*: MITRE ATT&CK^TM^
+
+* Tactic:
+** Name: Command and Control
+** ID: TA0011
+** Reference URL: https://attack.mitre.org/tactics/TA0011/
+* Technique:
+** Name: Non-Standard Port
+** ID: T1571
+** Reference URL: https://attack.mitre.org/techniques/T1571/
