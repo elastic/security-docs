@@ -34,7 +34,7 @@ This rule monitors for (ana)cron jobs being created or renamed. Linux cron jobs 
 * Tactic: Execution
 * Data Source: Elastic Defend
 
-*Version*: 13
+*Version*: 14
 
 *Rule authors*: 
 
@@ -188,14 +188,17 @@ event.action in ("rename", "creation") and file.path : (
     "/opt/puppetlabs/puppet/bin/ruby", "/usr/libexec/platform-python", "/opt/imunify360/venv/bin/python3",
     "/opt/eset/efs/lib/utild", "/usr/sbin/anacron", "/usr/bin/podman", "/kaniko/kaniko-executor"
   ) or
-  file.path : "/var/spool/cron/crontabs/tmp.*" or
+  file.path like ("/var/spool/cron/crontabs/tmp.*", "/etc/cron.d/jumpcloud-updater") or
   file.extension in ("swp", "swpx", "swx", "dpkg-remove") or
   file.Ext.original.extension == "dpkg-new" or
   process.executable : (
     "/nix/store/*", "/var/lib/dpkg/*", "/tmp/vmis.*", "/snap/*", "/dev/fd/*", "/usr/libexec/platform-python*"
   ) or
   process.executable == null or
-  process.name in ("crontab", "crond", "executor", "puppet", "droplet-agent.postinst", "cf-agent") or
+  process.name in (
+    "crond", "executor", "puppet", "droplet-agent.postinst", "cf-agent", "schedd", "imunify-notifier", "perl",
+    "jumpcloud-agent", "crio", "dnf_install", "utild"
+  ) or
   (process.name == "sed" and file.name : "sed*") or
   (process.name == "perl" and file.name : "e2scrub_all.tmp*") 
 )
