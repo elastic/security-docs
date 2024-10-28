@@ -1,0 +1,119 @@
+[[prebuilt-rule-8-15-9-potential-shadow-file-read-via-command-line-utilities]]
+=== Potential Shadow File Read via Command Line Utilities
+
+Identifies access to the /etc/shadow file via the commandline using standard system utilities. After elevating privileges to root, threat actors may attempt to read or dump this file in order to gain valid credentials. They may utilize these to move laterally undetected and access additional resources.
+
+*Rule type*: new_terms
+
+*Rule indices*: 
+
+* logs-endpoint.events.*
+* endgame-*
+
+*Severity*: medium
+
+*Risk score*: 47
+
+*Runs every*: 5m
+
+*Searches indices from*: now-9m ({ref}/common-options.html#date-math[Date Math format], see also <<rule-schedule, `Additional look-back time`>>)
+
+*Maximum alerts per execution*: 100
+
+*References*: 
+
+* https://www.cyberciti.biz/faq/unix-linux-password-cracking-john-the-ripper/
+
+*Tags*: 
+
+* Domain: Endpoint
+* OS: Linux
+* Use Case: Threat Detection
+* Tactic: Privilege Escalation
+* Tactic: Credential Access
+* Data Source: Elastic Endgame
+* Data Source: Elastic Defend
+
+*Version*: 209
+
+*Rule authors*: 
+
+* Elastic
+
+*Rule license*: Elastic License v2
+
+
+==== Setup
+
+
+
+*Setup*
+
+
+This rule requires data coming in from Elastic Defend.
+
+
+*Elastic Defend Integration Setup*
+
+Elastic Defend is integrated into the Elastic Agent using Fleet. Upon configuration, the integration allows the Elastic Agent to monitor events on your host and send data to the Elastic Security app.
+
+
+*Prerequisite Requirements:*
+
+- Fleet is required for Elastic Defend.
+- To configure Fleet Server refer to the https://www.elastic.co/guide/en/fleet/current/fleet-server.html[documentation].
+
+
+*The following steps should be executed in order to add the Elastic Defend integration on a Linux System:*
+
+- Go to the Kibana home page and click "Add integrations".
+- In the query bar, search for "Elastic Defend" and select the integration to see more details about it.
+- Click "Add Elastic Defend".
+- Configure the integration name and optionally add a description.
+- Select the type of environment you want to protect, either "Traditional Endpoints" or "Cloud Workloads".
+- Select a configuration preset. Each preset comes with different default settings for Elastic Agent, you can further customize these later by configuring the Elastic Defend integration policy. https://www.elastic.co/guide/en/security/current/configure-endpoint-integration-policy.html[Helper guide].
+- We suggest selecting "Complete EDR (Endpoint Detection and Response)" as a configuration setting, that provides "All events; all preventions"
+- Enter a name for the agent policy in "New agent policy name". If other agent policies already exist, you can click the "Existing hosts" tab and select an existing policy instead.
+For more details on Elastic Agent configuration settings, refer to the https://www.elastic.co/guide/en/fleet/8.10/agent-policy.html[helper guide].
+- Click "Save and Continue".
+- To complete the integration, select "Add Elastic Agent to your hosts" and continue to the next section to install the Elastic Agent on your hosts.
+For more details on Elastic Defend refer to the https://www.elastic.co/guide/en/security/current/install-endpoint.html[helper guide].
+
+
+==== Rule query
+
+
+[source, js]
+----------------------------------
+host.os.type : "linux" and event.category : "process" and event.action : ("exec" or "exec_event") and
+(process.args : "/etc/shadow" or (process.working_directory: "/etc" and process.args: "shadow")) and not (
+  (process.executable : ("/bin/chown" or "/usr/bin/chown") and process.args : "root:shadow") or
+  (process.executable : ("/bin/chmod" or "/usr/bin/chmod") and process.args : "640") or
+  process.executable:(/vz/* or /var/lib/docker/* or /run/containerd/* or /tmp/.criu* or /tmp/newroot/*) or
+  process.parent.name:(gen_passwd_sets or scc_* or wazuh-modulesd)
+)
+
+----------------------------------
+
+*Framework*: MITRE ATT&CK^TM^
+
+* Tactic:
+** Name: Privilege Escalation
+** ID: TA0004
+** Reference URL: https://attack.mitre.org/tactics/TA0004/
+* Technique:
+** Name: Exploitation for Privilege Escalation
+** ID: T1068
+** Reference URL: https://attack.mitre.org/techniques/T1068/
+* Tactic:
+** Name: Credential Access
+** ID: TA0006
+** Reference URL: https://attack.mitre.org/tactics/TA0006/
+* Technique:
+** Name: OS Credential Dumping
+** ID: T1003
+** Reference URL: https://attack.mitre.org/techniques/T1003/
+* Sub-technique:
+** Name: /etc/passwd and /etc/shadow
+** ID: T1003.008
+** Reference URL: https://attack.mitre.org/techniques/T1003/008/
