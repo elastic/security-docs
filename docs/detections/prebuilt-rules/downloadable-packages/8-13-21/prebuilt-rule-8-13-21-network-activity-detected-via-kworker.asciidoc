@@ -1,0 +1,124 @@
+[[prebuilt-rule-8-13-21-network-activity-detected-via-kworker]]
+=== Network Activity Detected via Kworker
+
+This rule monitors for network connections from a kworker process. kworker, or kernel worker, processes are part of the kernel's workqueue mechanism. They are responsible for executing work that has been scheduled to be done in kernel space, which might include tasks like handling interrupts, background activities, and other kernel-related tasks. Attackers may attempt to evade detection by masquerading as a kernel worker process.
+
+*Rule type*: new_terms
+
+*Rule indices*: 
+
+* logs-endpoint.events.*
+
+*Severity*: low
+
+*Risk score*: 21
+
+*Runs every*: 5m
+
+*Searches indices from*: now-9m ({ref}/common-options.html#date-math[Date Math format], see also <<rule-schedule, `Additional look-back time`>>)
+
+*Maximum alerts per execution*: 100
+
+*References*: None
+
+*Tags*: 
+
+* Domain: Endpoint
+* OS: Linux
+* Use Case: Threat Detection
+* Tactic: Command and Control
+* Data Source: Elastic Defend
+
+*Version*: 6
+
+*Rule authors*: 
+
+* Elastic
+
+*Rule license*: Elastic License v2
+
+
+==== Setup
+
+
+
+*Setup*
+
+
+This rule requires data coming in from Elastic Defend.
+
+
+*Elastic Defend Integration Setup*
+
+Elastic Defend is integrated into the Elastic Agent using Fleet. Upon configuration, the integration allows
+the Elastic Agent to monitor events on your host and send data to the Elastic Security app.
+
+
+*Prerequisite Requirements:*
+
+- Fleet is required for Elastic Defend.
+- To configure Fleet Server refer to the https://www.elastic.co/guide/en/fleet/current/fleet-server.html[documentation].
+
+
+*The following steps should be executed in order to add the Elastic Defend integration on a Linux System:*
+
+- Go to the Kibana home page and click "Add integrations".
+- In the query bar, search for "Elastic Defend" and select the integration to see more details about it.
+- Click "Add Elastic Defend".
+- Configure the integration name and optionally add a description.
+- Select the type of environment you want to protect, either "Traditional Endpoints" or "Cloud Workloads".
+- Select a configuration preset. Each preset comes with different default settings for Elastic Agent, you can further customize these later by configuring the Elastic Defend integration policy. https://www.elastic.co/guide/en/security/current/configure-endpoint-integration-policy.html[Helper guide].
+- We suggest to select "Complete EDR (Endpoint Detection and Response)" as a configuration setting, that provides "All events; all preventions"
+- Enter a name for the agent policy in "New agent policy name". If other agent policies already exist, you can click the "Existing hosts" tab and select an existing policy instead.
+For more details on Elastic Agent configuration settings, refer to the https://www.elastic.co/guide/en/fleet/8.10/agent-policy.html[helper guide].
+- Click "Save and Continue".
+- To complete the integration, select "Add Elastic Agent to your hosts" and continue to the next section to install the Elastic Agent on your hosts.
+For more details on Elastic Defend refer to the https://www.elastic.co/guide/en/security/current/install-endpoint.html[helper guide].
+
+
+==== Rule query
+
+
+[source, js]
+----------------------------------
+host.os.type:linux and event.category:network and event.action:(connection_attempted or connection_accepted) and 
+process.name:kworker* and not destination.ip:(
+  10.0.0.0/8 or
+  127.0.0.0/8 or
+  169.254.0.0/16 or
+  172.16.0.0/12 or
+  192.168.0.0/16 or
+  224.0.0.0/4 or
+  "::1" or
+  "FE80::/10" or
+  "FF00::/8"
+) and not destination.port:("2049" or "111" or "892" or "597")
+
+----------------------------------
+
+*Framework*: MITRE ATT&CK^TM^
+
+* Tactic:
+** Name: Command and Control
+** ID: TA0011
+** Reference URL: https://attack.mitre.org/tactics/TA0011/
+* Tactic:
+** Name: Defense Evasion
+** ID: TA0005
+** Reference URL: https://attack.mitre.org/tactics/TA0005/
+* Technique:
+** Name: Rootkit
+** ID: T1014
+** Reference URL: https://attack.mitre.org/techniques/T1014/
+* Technique:
+** Name: Masquerading
+** ID: T1036
+** Reference URL: https://attack.mitre.org/techniques/T1036/
+* Tactic:
+** Name: Exfiltration
+** ID: TA0010
+** Reference URL: https://attack.mitre.org/tactics/TA0010/
+* Technique:
+** Name: Exfiltration Over C2 Channel
+** ID: T1041
+** Reference URL: https://attack.mitre.org/techniques/T1041/
