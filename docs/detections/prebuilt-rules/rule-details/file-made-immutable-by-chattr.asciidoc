@@ -32,7 +32,7 @@ Detects a file being made immutable using the chattr binary. Making a file immut
 * Data Source: Elastic Endgame
 * Data Source: Elastic Defend
 
-*Version*: 111
+*Version*: 112
 
 *Rule authors*: 
 
@@ -104,10 +104,14 @@ For versions <8.2, you need to add a custom ingest pipeline to populate `event.i
 
 [source, js]
 ----------------------------------
-process where host.os.type == "linux" and event.type == "start" and user.id == "0" and
-  process.executable : "/usr/bin/chattr" and process.args : ("-*i*", "+*i*") and
-  not process.parent.executable: ("/lib/systemd/systemd", "/usr/local/uems_agent/bin/*", "/usr/lib/systemd/systemd") and
-  not process.parent.name in ("systemd", "cf-agent", "ntpdate", "xargs", "px", "preinst", "auth")
+process where host.os.type == "linux" and event.type == "start" and process.parent.executable != null and
+process.executable : "/usr/bin/chattr" and process.args : ("-*i*", "+*i*") and not (
+  process.parent.executable: ("/lib/systemd/systemd", "/usr/local/uems_agent/bin/*", "/usr/lib/systemd/systemd") or
+  process.parent.name in (
+    "systemd", "cf-agent", "ntpdate", "xargs", "px", "preinst", "auth", "cf-agent", "dcservice", "dcagentupgrader",
+    "sudo", "ephemeral-disk-warning"
+  )
+)
 
 ----------------------------------
 
