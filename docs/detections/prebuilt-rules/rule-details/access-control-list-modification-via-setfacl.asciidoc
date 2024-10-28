@@ -1,7 +1,7 @@
 [[access-control-list-modification-via-setfacl]]
 === Access Control List Modification via setfacl
 
-This building block rule (BBR) detects Linux Access Control List (ACL) modification via the setfacl command.
+This rule detects Linux Access Control List (ACL) modification via the setfacl command.
 
 *Rule type*: eql
 
@@ -32,12 +32,11 @@ This building block rule (BBR) detects Linux Access Control List (ACL) modificat
 * OS: Linux
 * Use Case: Threat Detection
 * Tactic: Defense Evasion
-* Rule Type: BBR
 * Data Source: Elastic Defend
 * Data Source: Elastic Endgame
 * Data Source: Auditd Manager
 
-*Version*: 1
+*Version*: 2
 
 *Rule authors*: 
 
@@ -53,7 +52,10 @@ This building block rule (BBR) detects Linux Access Control List (ACL) modificat
 ----------------------------------
 process where host.os.type == "linux" and event.type == "start" and
 event.action in ("exec", "exec_event", "executed", "process_started") and
-process.name == "setfacl"
+process.name == "setfacl" and not (
+  process.command_line == "/bin/setfacl --restore=-" or
+  process.args == "/var/log/journal/"
+)
 
 ----------------------------------
 

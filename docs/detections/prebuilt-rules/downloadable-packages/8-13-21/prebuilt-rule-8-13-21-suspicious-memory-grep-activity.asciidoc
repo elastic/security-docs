@@ -1,0 +1,64 @@
+[[prebuilt-rule-8-13-21-suspicious-memory-grep-activity]]
+=== Suspicious Memory grep Activity
+
+Monitors for grep activity related to memory mapping. The /proc/*/maps file in Linux provides a memory map for a specific process, detailing the memory segments, permissions, and what files are mapped to these segments. Attackers may read a process's memory map to identify memory addresses for code injection or process hijacking.
+
+*Rule type*: eql
+
+*Rule indices*: 
+
+* logs-endpoint.events.*
+* endgame-*
+
+*Severity*: low
+
+*Risk score*: 21
+
+*Runs every*: 5m
+
+*Searches indices from*: now-9m ({ref}/common-options.html#date-math[Date Math format], see also <<rule-schedule, `Additional look-back time`>>)
+
+*Maximum alerts per execution*: 100
+
+*References*: 
+
+* https://github.com/arget13/DDexec
+
+*Tags*: 
+
+* Domain: Endpoint
+* OS: Linux
+* Use Case: Threat Detection
+* Tactic: Discovery
+* Data Source: Elastic Defend
+* Data Source: Elastic Endgame
+
+*Version*: 3
+
+*Rule authors*: 
+
+* Elastic
+
+*Rule license*: Elastic License v2
+
+
+==== Rule query
+
+
+[source, js]
+----------------------------------
+process where host.os.type == "linux" and event.type == "start" and event.action in ("exec", "exec_event") and
+process.name in ("grep", "egrep", "fgrep", "rgrep") and process.args in ("[stack]", "[vdso]", "[heap]")
+
+----------------------------------
+
+*Framework*: MITRE ATT&CK^TM^
+
+* Tactic:
+** Name: Discovery
+** ID: TA0007
+** Reference URL: https://attack.mitre.org/tactics/TA0007/
+* Technique:
+** Name: Process Discovery
+** ID: T1057
+** Reference URL: https://attack.mitre.org/techniques/T1057/

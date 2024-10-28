@@ -1,0 +1,71 @@
+[[prebuilt-rule-8-13-21-unusual-high-confidence-misconduct-blocks-detected]]
+=== Unusual High Confidence Misconduct Blocks Detected
+
+Detects repeated high-confidence 'BLOCKED' actions coupled with specific violation codes such as 'MISCONDUCT', indicating persistent misuse or attempts to probe the model's ethical boundaries.
+
+*Rule type*: esql
+
+*Rule indices*: None
+
+*Severity*: high
+
+*Risk score*: 73
+
+*Runs every*: 10m
+
+*Searches indices from*: now-60m ({ref}/common-options.html#date-math[Date Math format], see also <<rule-schedule, `Additional look-back time`>>)
+
+*Maximum alerts per execution*: 100
+
+*References*: 
+
+* https://docs.aws.amazon.com/bedrock/latest/userguide/guardrails-components.html
+* https://atlas.mitre.org/techniques/AML.T0051
+* https://atlas.mitre.org/techniques/AML.T0054
+* https://www.elastic.co/security-labs/elastic-advances-llm-security
+
+*Tags*: 
+
+* Domain: LLM
+* Data Source: AWS Bedrock
+* Data Source: AWS S3
+* Use Case: Policy Violation
+* Mitre Atlas: T0051
+* Mitre Atlas: T0054
+
+*Version*: 3
+
+*Rule authors*: 
+
+* Elastic
+
+*Rule license*: Elastic License v2
+
+
+==== Setup
+
+
+
+*Setup*
+
+
+This rule requires that guardrails are configured in AWS Bedrock. For more information, see the AWS Bedrock documentation:
+
+https://docs.aws.amazon.com/bedrock/latest/userguide/guardrails-create.html
+
+
+==== Rule query
+
+
+[source, js]
+----------------------------------
+from logs-aws_bedrock.invocation-*
+| MV_EXPAND gen_ai.compliance.violation_code
+| MV_EXPAND gen_ai.policy.confidence
+| where gen_ai.policy.action == "BLOCKED" and gen_ai.policy.confidence LIKE "HIGH" and gen_ai.compliance.violation_code LIKE "MISCONDUCT"
+| keep user.id
+| stats high_confidence_blocks = count() by user.id
+| where high_confidence_blocks > 5
+| sort high_confidence_blocks desc
+
+----------------------------------

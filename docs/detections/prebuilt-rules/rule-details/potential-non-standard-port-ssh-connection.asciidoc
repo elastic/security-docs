@@ -32,7 +32,7 @@ Identifies potentially malicious processes communicating via a port paring typic
 * OS: macOS
 * Data Source: Elastic Defend
 
-*Version*: 5
+*Version*: 6
 
 *Rule authors*: 
 
@@ -47,13 +47,21 @@ Identifies potentially malicious processes communicating via a port paring typic
 [source, js]
 ----------------------------------
 sequence by process.entity_id with maxspan=1m
-  [process where event.action == "exec" and process.name:"ssh" and not process.parent.name in (
+  [process where event.action == "exec" and process.name in ("ssh", "sshd") and not process.parent.name in (
    "rsync", "pyznap", "git", "ansible-playbook", "scp", "pgbackrest", "git-lfs", "expect", "Sourcetree", "ssh-copy-id",
    "run"
    )
   ]
   [network where process.name:"ssh" and event.action in ("connection_attempted", "connection_accepted") and 
-   destination.port != 22 and destination.ip != "127.0.0.1" and network.transport: "tcp"
+   destination.port != 22 and network.transport == "tcp" and not (
+     destination.ip == null or destination.ip == "0.0.0.0" or cidrmatch(
+       destination.ip, "10.0.0.0/8", "127.0.0.0/8", "169.254.0.0/16", "172.16.0.0/12", "192.0.0.0/24", "192.0.0.0/29",
+       "192.0.0.8/32", "192.0.0.9/32", "192.0.0.10/32", "192.0.0.170/32", "192.0.0.171/32", "192.0.2.0/24",
+       "192.31.196.0/24", "192.52.193.0/24", "192.168.0.0/16", "192.88.99.0/24", "224.0.0.0/4", "100.64.0.0/10",
+       "192.175.48.0/24","198.18.0.0/15", "198.51.100.0/24", "203.0.113.0/24", "240.0.0.0/4", "::1", "FE80::/10",
+       "FF00::/8"
+     )
+   )
   ]
 
 ----------------------------------
