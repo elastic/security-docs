@@ -33,7 +33,7 @@ Detects repeated high-confidence 'BLOCKED' actions coupled with specific violati
 * Mitre Atlas: T0051
 * Mitre Atlas: T0054
 
-*Version*: 2
+*Version*: 3
 
 *Rule authors*: 
 
@@ -60,8 +60,10 @@ https://docs.aws.amazon.com/bedrock/latest/userguide/guardrails-create.html
 [source, js]
 ----------------------------------
 from logs-aws_bedrock.invocation-*
-| where gen_ai.policy.confidence == "HIGH" and gen_ai.policy.action == "BLOCKED" and gen_ai.compliance.violation_code == "MISCONDUCT"
-| keep gen_ai.policy.confidence, gen_ai.policy.action, gen_ai.compliance.violation_code, user.id
+| MV_EXPAND gen_ai.compliance.violation_code
+| MV_EXPAND gen_ai.policy.confidence
+| where gen_ai.policy.action == "BLOCKED" and gen_ai.policy.confidence LIKE "HIGH" and gen_ai.compliance.violation_code LIKE "MISCONDUCT"
+| keep user.id
 | stats high_confidence_blocks = count() by user.id
 | where high_confidence_blocks > 5
 | sort high_confidence_blocks desc
