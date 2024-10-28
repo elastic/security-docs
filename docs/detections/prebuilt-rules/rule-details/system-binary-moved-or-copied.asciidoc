@@ -32,7 +32,7 @@ This rule monitors for the copying or moving of a system binary. Adversaries may
 * Tactic: Defense Evasion
 * Data Source: Elastic Defend
 
-*Version*: 12
+*Version*: 13
 
 *Rule authors*: 
 
@@ -83,7 +83,7 @@ For more details on Elastic Defend refer to the https://www.elastic.co/guide/en/
 
 [source, js]
 ----------------------------------
-file where host.os.type == "linux" and event.type == "change" and event.action == "rename" and
+file where host.os.type == "linux" and event.type == "change" and event.action == "rename" and process.name != null and
 file.Ext.original.path : (
   "/bin/*", "/usr/bin/*", "/usr/local/bin/*", "/sbin/*", "/usr/sbin/*", "/usr/local/sbin/*"
 ) and not (
@@ -102,6 +102,11 @@ file.Ext.original.path : (
     "/usr/local/bin/pip", "/usr/libexec/platform-python", "/usr/bin/platform-python", "/bin/platform-python",
     "/usr/lib/systemd/systemd", "/usr/sbin/sshd", "/sbin/sshd", "/usr/local/sbin/sshd", "/usr/sbin/crond", "/sbin/crond",
     "/usr/local/sbin/crond", "/usr/sbin/gdm"
+  ) or
+  process.name like (
+    "python*", "packagekitd", "systemd", "ln", "platform-python", "dnf_install", "runc", "apt-get", "ssm-agent-worker",
+    "convert-usrmerge", "updatenow.static-cpanelsync", "apk", "exe", "php", "containerd-shim-runc-v2", "dpkg", "sed",
+    "platform-python*", "gedit", "crond", "sshd", "ruby", "sudo", "chainctl", "update-alternatives", "pip*"
   ) or
   file.Ext.original.path : (
     "/bin/*.tmp", "/usr/bin/*.tmp", "/usr/local/bin/*.tmp", "/sbin/*.tmp", "/usr/sbin/*.tmp", "/usr/local/sbin/*.tmp"
