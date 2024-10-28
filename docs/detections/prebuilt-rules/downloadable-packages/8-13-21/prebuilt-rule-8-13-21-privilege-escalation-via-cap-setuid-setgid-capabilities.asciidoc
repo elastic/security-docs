@@ -1,0 +1,126 @@
+[[prebuilt-rule-8-13-21-privilege-escalation-via-cap-setuid-setgid-capabilities]]
+=== Privilege Escalation via CAP_SETUID/SETGID Capabilities
+
+Identifies instances where a process (granted CAP_SETUID and/or CAP_SETGID capabilities) is executed, after which the user's access is elevated to UID/GID 0 (root). In Linux, the CAP_SETUID and CAP_SETGID capabilities allow a process to change its UID and GID, respectively, providing control over user and group identity management. Attackers may leverage a misconfiguration for exploitation in order to escalate their privileges to root.
+
+*Rule type*: eql
+
+*Rule indices*: 
+
+* logs-endpoint.events.*
+
+*Severity*: medium
+
+*Risk score*: 47
+
+*Runs every*: 5m
+
+*Searches indices from*: now-9m ({ref}/common-options.html#date-math[Date Math format], see also <<rule-schedule, `Additional look-back time`>>)
+
+*Maximum alerts per execution*: 100
+
+*References*: None
+
+*Tags*: 
+
+* Domain: Endpoint
+* OS: Linux
+* Use Case: Threat Detection
+* Tactic: Privilege Escalation
+* Data Source: Elastic Defend
+
+*Version*: 4
+
+*Rule authors*: 
+
+* Elastic
+
+*Rule license*: Elastic License v2
+
+
+==== Setup
+
+
+
+*Setup*
+
+
+
+This rule requires data coming in from Elastic Defend.
+
+
+*Elastic Defend Integration Setup*
+
+Elastic Defend is integrated into the Elastic Agent using Fleet. Upon configuration, the integration allows the Elastic Agent to monitor events on your host and send data to the Elastic Security app.
+
+
+*Prerequisite Requirements:*
+
+- Fleet is required for Elastic Defend.
+- To configure Fleet Server refer to the https://www.elastic.co/guide/en/fleet/current/fleet-server.html[documentation].
+
+
+*The following steps should be executed in order to add the Elastic Defend integration on a Linux System:*
+
+- Go to the Kibana home page and click "Add integrations".
+- In the query bar, search for "Elastic Defend" and select the integration to see more details about it.
+- Click "Add Elastic Defend".
+- Configure the integration name and optionally add a description.
+- Select the type of environment you want to protect, either "Traditional Endpoints" or "Cloud Workloads".
+- Select a configuration preset. Each preset comes with different default settings for Elastic Agent, you can further customize these later by configuring the Elastic Defend integration policy. https://www.elastic.co/guide/en/security/current/configure-endpoint-integration-policy.html[Helper guide].
+- We suggest selecting "Complete EDR (Endpoint Detection and Response)" as a configuration setting, that provides "All events; all preventions"
+- Enter a name for the agent policy in "New agent policy name". If other agent policies already exist, you can click the "Existing hosts" tab and select an existing policy instead.
+For more details on Elastic Agent configuration settings, refer to the https://www.elastic.co/guide/en/fleet/8.10/agent-policy.html[helper guide].
+- Click "Save and Continue".
+- To complete the integration, select "Add Elastic Agent to your hosts" and continue to the next section to install the Elastic Agent on your hosts.
+For more details on Elastic Defend refer to the https://www.elastic.co/guide/en/security/current/install-endpoint.html[helper guide].
+
+
+==== Rule query
+
+
+[source, js]
+----------------------------------
+sequence by host.id, process.entity_id with maxspan=1s
+  [process where host.os.type == "linux" and event.type == "start" and event.action == "exec" and process.name != null and
+   (process.thread.capabilities.effective : "CAP_SET?ID" or process.thread.capabilities.permitted : "CAP_SET?ID") and 
+   user.id != "0" and not (
+     process.parent.executable : ("/tmp/newroot/*", "/opt/carbonblack*") or
+     process.parent.executable in (
+       "/opt/SolarWinds/Agent/bin/Plugins/JobEngine/SolarWinds.Agent.JobEngine.Plugin", "/usr/bin/vmware-toolbox-cmd",
+       "/usr/bin/dbus-daemon", "/usr/bin/update-notifier", "/usr/share/language-tools/language-options",
+       "/opt/SolarWinds/Agent/*", "/usr/local/sbin/lynis.sh"
+     ) or
+     process.executable : ("/opt/dynatrace/*", "/tmp/newroot/*", "/opt/SolarWinds/Agent/*") or
+     process.executable in (
+       "/bin/fgrep", "/usr/bin/sudo", "/usr/bin/pkexec", "/usr/lib/cockpit/cockpit-session", "/usr/sbin/suexec"
+     ) or
+     process.parent.name in ("update-notifier", "language-options", "osqueryd", "saposcol", "dbus-daemon", "osqueryi", "sdbrun") or
+     process.command_line like ("sudo*BECOME-SUCCESS*", "/bin/sh*sapsysinfo.sh*", "sudo su", "sudo su -") or
+     process.name == "sudo" or
+     process.parent.command_line like "/usr/bin/python*ansible*"
+   )]
+  [process where host.os.type == "linux" and event.action == "uid_change" and event.type == "change" and 
+   (process.thread.capabilities.effective : "CAP_SET?ID" or process.thread.capabilities.permitted : "CAP_SET?ID")
+   and user.id == "0"]
+
+----------------------------------
+
+*Framework*: MITRE ATT&CK^TM^
+
+* Tactic:
+** Name: Privilege Escalation
+** ID: TA0004
+** Reference URL: https://attack.mitre.org/tactics/TA0004/
+* Technique:
+** Name: Exploitation for Privilege Escalation
+** ID: T1068
+** Reference URL: https://attack.mitre.org/techniques/T1068/
+* Technique:
+** Name: Abuse Elevation Control Mechanism
+** ID: T1548
+** Reference URL: https://attack.mitre.org/techniques/T1548/
+* Sub-technique:
+** Name: Setuid and Setgid
+** ID: T1548.001
+** Reference URL: https://attack.mitre.org/techniques/T1548/001/

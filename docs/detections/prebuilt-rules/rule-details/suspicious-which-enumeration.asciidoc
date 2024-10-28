@@ -31,7 +31,7 @@ This rule monitors for the usage of the which command with an unusual amount of 
 * Data Source: Elastic Defend
 * Data Source: Elastic Endgame
 
-*Version*: 6
+*Version*: 7
 
 *Rule authors*: 
 
@@ -46,8 +46,11 @@ This rule monitors for the usage of the which command with an unusual amount of 
 [source, js]
 ----------------------------------
 process where host.os.type == "linux" and event.type == "start" and event.action in ("exec", "exec_event") and 
-process.name == "which" and process.args_count >= 10 and not process.parent.name == "jem" and 
-not process.args == "--tty-only"
+process.name == "which" and process.args_count >= 10 and not (
+  process.parent.name == "jem" or
+  process.parent.executable like ("/vz/root/*", "/var/lib/docker/*") or
+  process.args == "--tty-only"
+)
 
 /* potential tuning if rule would turn out to be noisy
 and process.args in ("nmap", "nc", "ncat", "netcat", nc.traditional", "gcc", "g++", "socat") and 

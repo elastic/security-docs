@@ -31,7 +31,7 @@ This rule monitors for suspicious activities that may indicate an attacker attem
 * Data Source: Elastic Endgame
 * Data Source: Elastic Defend
 
-*Version*: 6
+*Version*: 7
 
 *Rule authors*: 
 
@@ -82,11 +82,15 @@ For more details on Elastic Defend refer to the https://www.elastic.co/guide/en/
 
 [source, js]
 ----------------------------------
-process where host.os.type == "linux" and event.type == "start" and event.action in ("exec", "exec_event", "fork", "fork_event") and 
-user.name == "postgres" and (
+process where host.os.type == "linux" and event.type == "start" and
+event.action in ("exec", "exec_event", "fork", "fork_event") and user.name == "postgres" and (
   (process.parent.args : "*sh" and process.parent.args : "echo*") or 
   (process.args : "*sh" and process.args : "echo*")
-) and not process.parent.name : "puppet"
+) and not (
+  process.parent.name == "puppet" or
+  process.command_line like "*BECOME-SUCCESS-*" or
+  process.parent.command_line like "*BECOME-SUCCESS-*"
+)
 
 ----------------------------------
 
