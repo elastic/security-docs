@@ -29,7 +29,7 @@ This rule monitors a sequence involving a program compilation event followed by 
 * Tactic: Execution
 * Data Source: Elastic Defend
 
-*Version*: 5
+*Version*: 6
 
 *Rule authors*: 
 
@@ -85,8 +85,10 @@ sequence by host.id with maxspan=1m
    process.name in ("gcc", "g++", "cc")] by process.args
   [file where host.os.type == "linux" and event.action == "creation" and process.name == "ld"] by file.name
   [process where host.os.type == "linux" and event.type == "start" and event.action == "exec"] by process.name
-  [network where host.os.type == "linux" and event.action == "connection_attempted" and destination.ip != null and 
-   not cidrmatch(destination.ip, "127.0.0.0/8", "169.254.0.0/16", "224.0.0.0/4", "::1")] by process.name
+  [network where host.os.type == "linux" and event.action == "connection_attempted" and destination.ip != null and not (
+     cidrmatch(destination.ip, "127.0.0.0/8", "169.254.0.0/16", "224.0.0.0/4", "::1") or
+     process.name in ("simpleX", "conftest", "ssh", "python", "ispnull", "pvtui")
+   )] by process.name
 
 ----------------------------------
 
