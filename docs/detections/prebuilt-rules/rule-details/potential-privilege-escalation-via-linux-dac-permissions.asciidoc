@@ -29,7 +29,7 @@ Identifies potential privilege escalation exploitation of DAC (Discretionary acc
 * Tactic: Privilege Escalation
 * Data Source: Elastic Defend
 
-*Version*: 2
+*Version*: 3
 
 *Rule authors*: 
 
@@ -83,7 +83,17 @@ For more details on Elastic Defend refer to the https://www.elastic.co/guide/en/
 ----------------------------------
 event.category:process and host.os.type:linux and event.type:start and event.action:exec and
 (process.thread.capabilities.permitted:CAP_DAC_* or process.thread.capabilities.effective: CAP_DAC_*) and
-process.command_line:(*sudoers* or *passwd* or *shadow* or */root/*) and not user.id:"0"
+process.command_line:(*sudoers* or *passwd* or *shadow* or */root/*) and not (
+  user.id : "0" or
+  process.name : (
+    "tar" or "getent" or "su" or "stat" or "dirname" or "chown" or "sudo" or "dpkg-split" or "dpkg-deb" or "dpkg" or
+    "podman" or "awk" or "passwd" or "dpkg-maintscript-helper" or "mutt_dotlock" or "nscd" or "logger" or "gpasswd"
+  ) or
+  process.executable : /usr/lib/*/lxc/rootfs/* or
+  process.parent.name : (
+    "dpkg" or "java" or *postinst or "dpkg-preconfigure" or "gnome-shell"
+  )
+)
 
 ----------------------------------
 
