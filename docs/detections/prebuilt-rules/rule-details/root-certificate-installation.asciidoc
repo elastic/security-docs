@@ -31,7 +31,7 @@ This rule detects the installation of root certificates on a Linux system. Adver
 * Tactic: Defense Evasion
 * Data Source: Elastic Defend
 
-*Version*: 1
+*Version*: 2
 
 *Rule authors*: 
 
@@ -84,10 +84,11 @@ For more details on Elastic Defend refer to the https://www.elastic.co/guide/en/
 ----------------------------------
 process where host.os.type == "linux" and event.type == "start" and event.action == "exec" and
 process.name in ("update-ca-trust", "update-ca-certificates") and not (
-  process.parent.name : (
-    "ca-certificates.postinst", "ca-certificates-*.trigger", "pacman", "pamac-daemon", "autofirma.postinst"
+  process.parent.name like (
+    "ca-certificates.postinst", "ca-certificates-*.trigger", "pacman", "pamac-daemon", "autofirma.postinst",
+    "ipa-client-install", "su", "platform-python", "python*", "kesl", "execd"
   ) or
-  process.parent.args : "/var/tmp/rpm*" or
+  process.parent.args like "/var/tmp/rpm*" or
   (process.parent.name in ("sh", "bash", "zsh") and process.args == "-e")
 )
 

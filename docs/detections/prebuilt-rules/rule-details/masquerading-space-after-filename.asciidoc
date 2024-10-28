@@ -33,7 +33,7 @@ This rules identifies a process created from an executable with a space appended
 * Tactic: Defense Evasion
 * Data Source: Elastic Defend
 
-*Version*: 6
+*Version*: 7
 
 *Rule authors*: 
 
@@ -61,10 +61,14 @@ For more details on adding a custom ingest pipeline refer - https://www.elastic.
 
 [source, js]
 ----------------------------------
-process where host.os.type:("linux","macos") and
-  event.type == "start" and
-  (process.executable regex~ """/[a-z0-9\s_\-\\./]+\s""") and not
-  process.name in ("ls", "find", "grep", "xkbcomp")
+process where host.os.type:("linux","macos") and event.type == "start" and
+process.executable regex~ """/[a-z0-9\s_\-\\./]+\s""" and not (
+  process.name in ("ls", "find", "grep", "xkbcomp") or
+  process.executable like ("/opt/nessus_agent/*", "/opt/gitlab/sv/gitlab-exporter/*", "/tmp/ansible-admin/*") or
+  process.parent.args in (
+    "./check_rubrik", "/usr/bin/check_mk_agent", "/etc/rubrik/start_stop_bootstrap.sh", "/etc/rubrik/start_stop_agent.sh"
+  )
+)
 
 ----------------------------------
 

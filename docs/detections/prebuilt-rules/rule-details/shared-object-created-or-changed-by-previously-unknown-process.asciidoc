@@ -33,7 +33,7 @@ This rule monitors the creation of shared object files by previously unknown pro
 * Data Source: Elastic Endgame
 * Data Source: Elastic Defend
 
-*Version*: 8
+*Version*: 9
 
 *Rule authors*: 
 
@@ -162,9 +162,14 @@ For more details on Elastic Defend refer to the https://www.elastic.co/guide/en/
 ----------------------------------
 host.os.type:linux and event.action:(creation or file_create_event or file_rename_event or rename) and 
 file.path:(/dev/shm/* or /usr/lib/*) and file.extension:so and process.name:* and not (
-  process.name:("dockerd" or "dpkg" or "rpm" or "snapd" or "yum" or "vmis-launcher" or "pacman" or
-  "apt-get" or "dnf" or "podman" or "platform-python") or 
-  (process.name:vmware-install.pl and file.path:/usr/lib/vmware-tools/*)
+  process.name:(
+    "dockerd" or "dpkg" or "rpm" or "snapd" or "yum" or "vmis-launcher" or "pacman" or "apt-get" or "dnf" or "podman" or
+    platform-python* or "dnf-automatic" or "unattended-upgrade" or "apk" or "snap-update-ns" or "install" or "exe" or
+    "systemd" or "root" or "sshd" or "pip" or "jlink" or python* or "update-alternatives" or pip* or
+    "installer.bin.inst" or "uninstall-bin" or "linux_agent.inst"
+  ) or 
+  (process.name:vmware-install.pl and file.path:/usr/lib/vmware-tools/*) or
+  process.executable : (/dev/fd/* or "/" or "/kaniko/executor" or "/usr/bin/buildah")
 )
 
 ----------------------------------

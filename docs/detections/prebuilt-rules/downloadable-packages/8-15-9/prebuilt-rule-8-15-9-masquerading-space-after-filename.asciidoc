@@ -1,0 +1,88 @@
+[[prebuilt-rule-8-15-9-masquerading-space-after-filename]]
+=== Masquerading Space After Filename
+
+This rules identifies a process created from an executable with a space appended to the end of the filename. This may indicate an attempt to masquerade a malicious file as benign to gain user execution. When a space is added to the end of certain files, the OS will execute the file according to it's true filetype instead of it's extension. Adversaries can hide a program's true filetype by changing the extension of the file. They can then add a space to the end of the name so that the OS automatically executes the file when it's double-clicked.
+
+*Rule type*: eql
+
+*Rule indices*: 
+
+* auditbeat-*
+* logs-endpoint.events.*
+
+*Severity*: medium
+
+*Risk score*: 47
+
+*Runs every*: 5m
+
+*Searches indices from*: now-9m ({ref}/common-options.html#date-math[Date Math format], see also <<rule-schedule, `Additional look-back time`>>)
+
+*Maximum alerts per execution*: 100
+
+*References*: 
+
+* https://www.picussecurity.com/resource/blog/picus-10-critical-mitre-attck-techniques-t1036-masquerading
+
+*Tags*: 
+
+* Domain: Endpoint
+* OS: Linux
+* OS: macOS
+* Use Case: Threat Detection
+* Tactic: Defense Evasion
+* Data Source: Elastic Defend
+
+*Version*: 7
+
+*Rule authors*: 
+
+* Elastic
+
+*Rule license*: Elastic License v2
+
+
+==== Setup
+
+
+
+*Setup*
+
+
+If enabling an EQL rule on a non-elastic-agent index (such as beats) for versions <8.2,
+events will not define `event.ingested` and default fallback for EQL rules was not added until version 8.2.
+Hence for this rule to work effectively, users will need to add a custom ingest pipeline to populate
+`event.ingested` to @timestamp.
+For more details on adding a custom ingest pipeline refer - https://www.elastic.co/guide/en/fleet/current/data-streams-pipeline-tutorial.html
+
+
+==== Rule query
+
+
+[source, js]
+----------------------------------
+process where host.os.type:("linux","macos") and event.type == "start" and
+process.executable regex~ """/[a-z0-9\s_\-\\./]+\s""" and not (
+  process.name in ("ls", "find", "grep", "xkbcomp") or
+  process.executable like ("/opt/nessus_agent/*", "/opt/gitlab/sv/gitlab-exporter/*", "/tmp/ansible-admin/*") or
+  process.parent.args in (
+    "./check_rubrik", "/usr/bin/check_mk_agent", "/etc/rubrik/start_stop_bootstrap.sh", "/etc/rubrik/start_stop_agent.sh"
+  )
+)
+
+----------------------------------
+
+*Framework*: MITRE ATT&CK^TM^
+
+* Tactic:
+** Name: Defense Evasion
+** ID: TA0005
+** Reference URL: https://attack.mitre.org/tactics/TA0005/
+* Technique:
+** Name: Masquerading
+** ID: T1036
+** Reference URL: https://attack.mitre.org/techniques/T1036/
+* Sub-technique:
+** Name: Space after Filename
+** ID: T1036.006
+** Reference URL: https://attack.mitre.org/techniques/T1036/006/
