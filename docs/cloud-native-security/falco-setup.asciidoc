@@ -1,0 +1,58 @@
+[[ingest-falco]]
+= Ingest Sysdig Falco data
+
+Sysdig Falco (Falco) is an open-source runtime security tool that detects anomalous activity in Linux hosts and containers. You can ingest Falco alerts into {es} to view them on {kib}'s Alerts page and incorporate them into your {elastic-sec} workflows.
+
+First, you'll need to configure {elastic-sec} to receive data from Falco, then you'll need to configure Falco and Falcosidekick to send data to {es}.
+
+[discrete]
+[[ingest-falco-setup-kibana]]
+== Configure {elastic-sec} to receive Falco data
+
+In {elastic-sec}:
+
+. Click **Add integrations**.
+. Search the Integrations page for `Falco`, then select it.
+. Go to the Falco integration's **Settings** tab. 
+. Click **Install Falco**, then confirm by clicking **Install Falco** again. Installation should take less than a minute. 
+
+image::images/falco-kibana-setup.gif[A gif showing the steps to set up Falco in Kibana]
+
+{elastic-sec} is now ready to receive data from Falco. The Falco integration page now has an **Assets** tab where you can inspect the newly installed assets that help to ingest Falco data.
+
+Next, to make alerts from Falco appear on {kib}'s Alerts page:
+
+. Find the **Rules** page in the main menu or by using the <<kibana-navigation-search,global search field>>.
+. Click **Detection rules (SIEM)**.
+. Search for a rule called `External Alerts`. Enable it using the **Enabled** toggle on the right.
+
+image::images/falco-external-alerts-rule.gif[A gif showing the steps to enable the External Alerts rule]
+
+[discrete]
+[[ingest-falco-setup-falco]]
+== Configure Falco and Falcosidekick
+
+Multiple methods for configuring Falco to send data to {es} are available. This guide uses the https://github.com/falcosecurity/falcosidekick/blob/master/docs/outputs/elasticsearch.md[Falco sidekick on Docker using environment variables] method. (Falcosidekick is a proxy forwarder which can send alerts from your Falco deployments to {es}.)
+
+[discrete]
+=== Configure Falco:
+
+. Refer to Falco's documentation to https://falco.org/docs/setup/packages/[install Falco on the Linux VMs you wish to monitor]. 
+. Once Falco is installed, update its configuration `.yaml` as follows:
+.. Enable JSON output: `json_output=TRUE`
+.. Enable HTTP output: `http_output=TRUE`
+.. In the `http_output` section, for the `url` value, enter the port where Falcosidekick will listen.
+
+[discrete]
+=== Configure Falcosidekick:
+
+. Refer to Falcosidekick's documentation to https://github.com/falcosecurity/falcosidekick?tab=readme-ov-file#installation[install Falcosidekick].
+. Use the https://github.com/falcosecurity/falcosidekick?tab=readme-ov-file#installation[Falcosidekick on Docker using environment variables] method and set your environment variables as follows:
+.. `ELASTICSEARCH_HOSTPORT`: your {es} endpoint URL, which can be found under **Connection details** on the upper right of the **Integrations** page in {kib}.
+.. `ELASTICSEARCH_INDEX`: the {es} index where you want to store Falco logs.
+.. `ELASTICSEARCH_SUFFIX`: The frequency with which you want the {es} index suffix to change. Either `daily`, `monthly`, `annually`, or `none`. 
+.. `ELASTICSEARCH_USERNAME` and `ELASTICSEARCH_PASSWORD`: the username and password for an account on your {es} instance, with at least the following permissions: Which permissions, Nick?
+
+After installing and configuring Falcosidekick, restart docker with `sudo systemctl restart falco`. Falcosidekick should start sending alerts to {es}.
+
+
