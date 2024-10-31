@@ -24,7 +24,7 @@ WARNING: The Elastic AI Assistant is designed to enhance your analysis with smar
 
 * To set up AI Assistant, you need the **Actions and Connectors : All** {kibana-ref}/kibana-privileges.html[privilege].
 
-* You need an account with a third-party generative AI provider, which AI Assistant uses to generate responses. Supported providers are OpenAI, Azure OpenAI Service, and Amazon Bedrock.
+* You need an account with a third-party generative AI provider, which AI Assistant uses to generate responses. Supported providers are OpenAI, Azure OpenAI Service, Google Vertex, and Amazon Bedrock. Local open-source models are also supported.
 --
 
 [discrete]
@@ -68,7 +68,7 @@ You can also chat with AI Assistant from several particular pages in {elastic-se
 * <<data-quality-dash, Data Quality dashboard>>: Select the *Incompatible fields* tab, then click *Chat*. (This is only available for fields marked red, indicating they're incompatible).
 * <<timelines-ui, Timeline>>: Select the *Security Assistant* tab.
 
-NOTE: Each user's chat history and custom quick prompts are automatically saved, so you can leave {elastic-sec} and return to pick up a conversation later.
+NOTE: Each user's chat history (up to the 99 most recent conversations) and custom quick prompts are automatically saved, so you can leave {elastic-sec} and return to a conversation later. Chat history appears to the left of the AI Assistant chat window, and on the Conversations tab of the AI Assistant settings menu. To access the settings menu, use the global search field to search for "AI Assistant for Security".
 
 [discrete]
 [[interact-with-assistant]]
@@ -76,19 +76,17 @@ NOTE: Each user's chat history and custom quick prompts are automatically saved,
 
 Use these features to adjust and act on your conversations with AI Assistant:
 
-* Select a _system prompt_ at the beginning of a conversation to establish how detailed and technical you want AI Assistant's answers to be.
-+
-[role="screenshot"]
-image::images/system-prompt.gif[The system prompt drop-down menu,90%]
-+
-System prompts provide context to the model, informing its response. To create a custom system prompt, open the system prompts dropdown menu and click *+ Add new system prompt...*.
-
+* (Optional) Select a _system prompt_ at the beginning of a conversation by using the **Select Prompt** menu. System prompts provide context to the model, informing its response. To create a system prompt, open the system prompts dropdown menu and click *+ Add new system prompt...*.
 * Select a _quick prompt_ at the bottom of the chat window to get help writing a prompt for a specific purpose, such as summarizing an alert or converting a query from a legacy SIEM to {elastic-sec}.
 +
 [role="screenshot"]
 image::images/quick-prompts.png[Quick prompts highlighted below a conversation,90%]
 +
-Quick prompt availability varies based on context — for example, the **Alert summarization** quick prompt appears when you open AI Assistant while viewing an alert. To customize existing quick prompts and create new ones, click *Add Quick prompt*.
+* System Prompts and Quick Prompts can also be configured from the corresponding tabs in the Security AI settings menu.
++
+image::images/assistant-settings-system-prompts.png[The Security AI settings menu's System Prompts tab,90%]
++
+* Quick prompt availability varies based on context — for example, the **Alert summarization** quick prompt appears when you open AI Assistant while viewing an alert. To customize existing quick prompts and create new ones, click *Add Quick prompt*.
 
 * In an active conversation, you can use the inline actions that appear on messages to incorporate AI Assistant's responses into your workflows:
 
@@ -104,22 +102,16 @@ TIP: AI Assistant can remember particular information you tell it to remember. F
 [discrete]
 [[configure-ai-assistant]]
 == Configure AI Assistant
-The *Settings* menu (image:images/icon-settings.png[Settings icon,17,17]) allows you to configure default conversations, quick prompts, system prompts, and data anonymization.
+The *Security AI settings* menu allows you to configure AI Assistant. To access it, use the global search field to search for "AI Assistant for Security".
 
-[role="screenshot"]
-image::images/assistant-settings-menu.png[AI Assistant's settings menu, open to the Conversations tab]
+It has the following tabs:
 
-The *Settings* menu has the following tabs:
-
-* **Conversations:** When you open AI Assistant from certain pages, such as Timeline or Alerts, it defaults to the relevant conversation type. Choose the default system prompt for each conversation type, the connector, and model (if applicable). The **Streaming** setting controls whether AI Assistant's responses appear word-by-word (streamed), or as a complete block of text. Streaming is currently only available for OpenAI models.
-* **Quick Prompts:** Modify existing quick prompts or create new ones. To create a new quick prompt, type a unique name in the *Name* field, then press *enter*. Under *Prompt*, enter or update the quick prompt's text. 
+* **Connectors:** Manage all LLM connectors.
+* **Conversations:** When you open AI Assistant from certain pages, such as Timeline or Alerts, it defaults to the relevant conversation type. Choose the default system prompt for each conversation type, the default connector, and the default model (if applicable). The **Streaming** setting controls whether AI Assistant's responses appear word-by-word (streamed), or as a complete block of text. Streaming is currently only available for OpenAI models.
 * **System Prompts:** Edit existing system prompts or create new ones. To create a new system prompt, type a unique name in the *Name* field, then press *enter*. Under *Prompt*, enter or update the system prompt's text. Under *Contexts*, select where the system prompt should appear.
-+
-NOTE: To delete a custom prompt, open the *Name* drop-down menu, hover over the prompt you want to delete, and click the *X* that appears. You cannot delete the default prompts.
-
+* **Quick Prompts:** Modify existing quick prompts or create new ones. To create a new quick prompt, type a unique name in the *Name* field, then press *enter*. Under *Prompt*, enter or update the quick prompt's text. 
 * **Anonymization:** Select fields to include as plaintext, to obfuscate, and to not send when you provide events to AI Assistant as context. <<ai-assistant-anonymization, Learn more>>.
-
-* **Knowledge base:** Provide additional context to AI Assistant so it can answer questions about {esql} and alerts in your environment. <<ai-assistant-knowledge-base, Learn more>>.
+* **Knowledge base:** Provide additional context to AI Assistant. <<ai-assistant-knowledge-base, Learn more>>.
 
 [discrete]
 [[ai-assistant-anonymization]]
@@ -131,7 +123,7 @@ NOTE: To delete a custom prompt, open the *Name* drop-down menu, hover over the 
 To modify Anonymization settings, you need the **Elastic AI Assistant: All** privilege, with **Customize sub-feature privileges** enabled.
 --
 
-The **Anonymization** tab of the AI Assistant settings menu allows you to define default data anonymization behavior for events you send to AI Assistant. Fields with **Allowed** toggled on are included in events provided to AI Assistant. **Allowed** fields with **Anonymized** set to **Yes** are included, but with their values obfuscated.
+The **Anonymization** tab of the Security AI settings menu allows you to define default data anonymization behavior for events you send to AI Assistant. Fields with **Allowed** toggled on are included in events provided to AI Assistant. **Allowed** fields with **Anonymized** set to **Yes** are included, but with their values obfuscated.
 
 [role="screenshot"]
 image::images/assistant-anonymization-menu.png[AI Assistant's settings menu, open to the Anonymization tab]
@@ -143,49 +135,17 @@ The *Show anonymized* toggle controls whether you see the obfuscated or plaintex
 When you include a particular event as context, such as an alert from the Alerts page, you can adjust anonymization behavior for the specific event. Be sure the anonymization behavior meets your specifications before sending a message with the event attached.
 
 [discrete]
-[[ai-assistant-knowledge-base]]
+[[ai-assistant-page-knowledge-base]]
 === Knowledge base
-beta::[]
 
-The **Knowledge base** tab of the AI Assistant settings menu allows you to enable AI Assistant to answer questions about the Elastic Search Query Language ({esql}), and about alerts in your environment. To use knowledge base, you must <<ml-requirements, enable machine learning>>.
-
-[discrete]
-[[rag-for-esql]]
-==== Knowledge base for {esql}
-
-NOTE: {esql} is enabled by default in {kib}. It can be
-disabled using the `enableESQL` setting from the
-{kibana-ref}/advanced-options.html[Advanced Settings]. This will hide the {esql} user interface from various applications. However, users will be able to access existing {esql} artifacts like saved searches and visualizations.
-
-IMPORTANT: {esql} queries generated by AI Assistant might require additional validation. To ensure they're correct, refer to the {ref}/esql-language.html[{esql} documentation]. 
-
-When this feature is enabled, AI Assistant can help you write an {esql} query for a particular use case, or answer general questions about {esql} syntax and usage. To enable AI Assistant to answer questions about {esql}:
-
-. Turn on the knowledge base by clicking **Setup**. If the **Setup** button doesn't appear, knowledge base is already enabled.
-. Click *Save*. The knowledge base is now active. A quick prompt for {esql} queries becomes available, which provides a good starting point for your {esql} conversations and questions. 
-
-NOTE: AI Assistant's knowledge base gets additional context from {ml-docs}/ml-nlp-elser.html#download-deploy-elser[Elastic Learned Sparse EncodeR (ELSER)].
-
-[discrete]
-[[rag-for-alerts]]
-==== Knowledge base for alerts
-When this feature is enabled, AI Assistant will receive multiple alerts as context for each of your prompts. It will receive alerts from the last 24 hours that have a status of `open` or `acknowledged`, ordered first by risk score, then by recency. Building block alerts are excluded. This enables it to answer questions about multiple alerts in your environment, rather than just the individual alerts you choose to include as context. 
-
-To enable RAG for alerts:
-
-. Turn on the knowledge base by clicking **Setup**. If the **Setup** button doesn't appear, knowledge base is already enabled.
-. Use the slider to select the number of alerts to send to AI Assistant. Click **Save**.
-+
-[role="screenshot"]
-image::images/knowledge-base-settings.png["AI Assistant's settings menu open to the Knowledge Base tab",75%]
-
-NOTE: Including a large number of alerts may cause your request to exceed the maximum token length of your third-party generative AI provider. If this happens, try selecting a lower number of alerts to send.
+The **Knowledge base** tab of the Security AI settings menu allows you to enable AI Assistant to remember specified information, and use it as context to improve response quality. To learn more, refer to <<ai-assistant-knowledge-base>>.
 
 [discrete]
 [[ai-assistant-queries]]
+[[rag-for-esql]]
 ### Get the most from your queries
 
-Elastic AI Assistant helps you take full advantage of the {elastic-sec} platform to improve your security operations. Its ability to assist you depends on the specificity and detail of your questions. The more context and detail you provide, the more tailored and useful its responses will be. 
+Elastic AI Assistant helps you take full advantage of the {elastic-sec} platform to improve your security operations, such as by helping you write an {esql} query for a particular use case, or answering general questions about how to use the platform. Its ability to assist you depends on the specificity and detail of your questions. The more context and detail you provide, the more tailored and useful its responses will be. 
 
 To maximize its usefulness, consider using more detailed prompts or asking for additional information. For instance, after asking for an {esql} query example, you could ask a follow-up question like, “Could you give me some other examples?” You can also ask for clarification or further exposition, for example "Please provide comments explaining the query you just gave."
 
