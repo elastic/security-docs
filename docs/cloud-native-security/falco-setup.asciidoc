@@ -47,7 +47,7 @@ Multiple methods for configuring Falco to send data from VMs to {es} are availab
 === Configure Falco for VMs:
 
 . Refer to Falco's documentation to https://falco.org/docs/setup/packages/[install Falco on the Linux VMs you wish to monitor]. 
-. Once Falco is installed, update its configuration `.yaml` as follows:
+. Once Falco is installed, update `/etc/falco/falco.yaml` as follows:
 .. Enable JSON output: `json_output: true`
 .. Enable HTTP output, and under `http_output`, for the `url` value, enter the `url:port` where Falcosidekick will listen. For example if Falcosidekick is running on localhost:
 +
@@ -62,12 +62,15 @@ http_output:
 === Configure Falcosidekick for VMs:
 
 . Refer to Falcosidekick's documentation to https://github.com/falcosecurity/falcosidekick?tab=readme-ov-file#installation[install Falcosidekick].
-. Use the https://github.com/falcosecurity/falcosidekick?tab=readme-ov-file#installation[Falcosidekick on Docker using environment variables] method and set your environment variables as follows:
+. Use the https://github.com/falcosecurity/falcosidekick/blob/master/docs/outputs/elasticsearch.md[Falcosidekick on Docker using environment variables] method and set your environment variables as follows:
 .. `ELASTICSEARCH_HOSTPORT`: your {es} endpoint URL, which can be found under **Connection details** on the upper right of the **Integrations** page in {kib}.
-.. `ELASTICSEARCH_INDEX`: the {es} index where you want to store Falco logs. This must match `logs-falco.alerts-*`.
+.. `ELASTICSEARCH_INDEX`: the {es} index where you want to store Falco logs. 
++
+IMPORTANT: Your `ELASTICSEARCH_INDEX` value must match `logs-falco.alerts-*`.
++
 .. `ELASTICSEARCH_SUFFIX`: The frequency with which you want the {es} index suffix to change. Either `daily`, `monthly`, `annually`, or `none`. 
 .. `ELASTICSEARCH_APIKEY`: The recommended way to authenticate to {es}, by providing an {kibana-ref}/api-keys.html[API key]. Note that support for this environment variable starts with Falcosidekick version 2.30. You can access the latest version on Falcosidekick's https://hub.docker.com/r/falcosecurity/falcosidekick[Docker Hub].
-.. `ELASTICSEARCH_USERNAME` and `ELASTICSEARCH_PASSWORD`: the username and password for an account on your {es} instance. Authentication using these environment variables is not supported on {ecloud}.
+.. `ELASTICSEARCH_USERNAME` and `ELASTICSEARCH_PASSWORD`: the username and password for an account on your {es} instance. Authentication using these environment variables is not supported on {ecloud} Serverless.
 
 For example:
 
@@ -83,21 +86,21 @@ docker run -d -p 2801:2801
 
 IMPORTANT: The {es} account used to authenticate Falcosidekick only needs sufficient privileges to create and write to new indices. We recommend following the principle of least privilege when provisioning this account.
 
-After installing and configuring Falcosidekick, restart docker with `sudo systemctl restart falco`. Falcosidekick should start sending alerts to {es}.
+After installing and configuring Falcosidekick, restart Falco with `sudo systemctl restart falco`. Falcosidekick should start sending alerts to {es}.
 
 
 [discrete]
 [[ingest-falco-setup-falco-kubernetes]]
 == Configure Falco and Falcosidekick for Kubernetes
 
-First, add the Falco https://helm.sh/docs/topics/charts/[Helm charts]:
+First, add the Falco https://github.com/falcosecurity/charts/blob/master/README.md[Helm charts]:
 
 ```
 helm repo add falcosecurity https://falcosecurity.github.io/charts
 helm repo update
 ```
 
-Next, install Falco and Falcosidekick using the `falcosecurity/falco` Helm chart with <<falco-config-falco-for-vms, appropriate values>> for each of the `falcosidekick.config.elasticsearch.*` fields:
+Next, install Falco and Falcosidekick using the `falcosecurity/falco` Helm chart with https://github.com/falcosecurity/falcosidekick/blob/master/docs/outputs/elasticsearch.md[appropriate values] for each of the `falcosidekick.config.elasticsearch.*` fields:
 
 ```
 helm install falco falcosecurity/falco \
