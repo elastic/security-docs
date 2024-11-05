@@ -1,0 +1,110 @@
+[[security-detections-requirements]]
+= Detections requirements
+
+// :description: Requirements for setting up and configuring the detections feature.
+// :keywords: serverless, security, reference, manage
+
+preview:[]
+
+To use the <<security-detection-engine-overview,Detections feature>>, you first need to
+configure a few settings. You also need the appropriate role to send
+<<security-rules-create,notifications>> when detection alerts are generated.
+
+Additionally, there are some <<security-detections-requirements,advanced settings>> used to
+configure <<security-value-lists-exceptions,value list>> upload limits.
+
+[discrete]
+[[enable-detections-ui]]
+== Enable and access detections
+
+To use the Detections feature, it must be enabled and you must have either the appropriate <<general-assign-user-roles,predefined Security user role>> or a <<custom-roles,custom role>> with privileges to access rules and alerts. If your role doesn't have the privileges needed to enable this feature, you can request someone who has these privileges to visit your {kib} space, which will turn it on for you.
+
+[NOTE]
+====
+For instructions about using {ml} jobs and rules, refer to <<security-ml-requirements,Machine learning job and rule requirements>>.
+====
+
+[discrete]
+[[security-detections-requirements-custom-role-privileges]]
+=== Custom role privileges
+
+The following table describes the required custom role privileges to access the Detections feature, including rules and alerts. For more information on {kib} privileges, refer to <<custom-roles>>.
+
+|===
+| Action | Cluster Privilege | Index Privileges | {kib} Privileges
+
+| Enable detections in your space
+| `manage`
+a| `manage`, `write`, `read`, and `view_index_metadata` for these system indices and data streams, where `<space-id>` is the space name:
+
+* `.alerts-security.alerts-<space-id>`
+* `.lists-<space-id>`
+* `.items-<space-id>`
+| `All` for the `Security` feature
+
+a| Enable detections in all spaces
+
+**NOTE:** To turn on detections, visit the Rules and Alerts pages for each space.
+| `manage`
+a| `manage`, `write`, `read`, and `view_index_metadata` for these system indices and data streams:
+
+* `.alerts-security.alerts-<space-id>`
+* `.lists-<space-id>`
+* `.items-<space-id>`
+| `All` for the `Security` feature
+
+| Preview rules
+| N/A
+a| `read` for these indices:
+
+* `.preview.alerts-security.alerts-<space-id>`
+* `.internal.preview.alerts-security.alerts-<space-id>-*`
+| `All` for the `Security` feature
+
+| Manage rules
+| N/A
+a| `manage`, `write`, `read`, and `view_index_metadata` for these system indices and data streams, where `<space-id>` is the space name:
+
+* `.alerts-security.alerts-<space-id`
+* `.lists-<space-id>`
+* `.items-<space-id>`
+a| `All` for the `Security` feature
+
+**NOTE:** You need additional `Action and Connectors` feature privileges (**Management → Action and Connectors**) to manage rules with actions and connectors:
+
+* To provide full access to rule actions and connectors, give your role `All` privileges. With `Read` privileges, you can edit rule actions, but will have limited capabilities to manage connectors. For example, `Read` privileges allow you to add or remove an existing connector from a rule, but does not allow you to create a new connector.
+* To import rules with actions, you need at least `Read` privileges for the `Action and Connectors` feature. To overwrite or add new connectors, you need `All` privileges for the `Actions and Connectors` feature. To import rules without actions,  you don't need `Actions and Connectors` privileges.
+
+a| Manage alerts
+
+**NOTE**: Allows you to manage alerts, but not modify rules.
+| N/A
+a| `maintenance`, `write`, `read`, and `view_index_metadata` for these system indices and data streams, where `<space-id>` is the space name:
+
+* `.alerts-security.alerts-<space-id>`
+* `.internal.alerts-security.alerts-<space-id>-*`
+* `.lists-<space-id>`
+* `.items-<space-id>`
+| `Read` for the `Security` feature
+
+a| Create the `.lists` and `.items` data streams in your space
+
+**NOTE**: To initiate the process that creates the data streams, you must visit the Rules page for each appropriate space.
+| `manage`
+a| `manage`, `write`, `read`, and `view_index_metadata` for these data streams, where `<space-id>` is the space name:
+
+* `.lists-<space-id>`
+* `.items-<space-id>`
+| `All` for the `Security` and `Saved Objects Management` features
+|===
+
+[discrete]
+[[alerting-auth-model]]
+=== Authorization
+
+Rules, including all background detection and the actions they generate, are authorized using an {kibana-ref}/api-keys.html[API key] associated with the last user to edit the rule. Upon creating or modifying a rule, an API key is generated for that user, capturing a snapshot of their privileges. The API key is then used to run all background tasks associated with the rule including detection checks and executing actions.
+
+[IMPORTANT]
+====
+If a rule requires certain privileges to run, such as index privileges, keep in mind that if a user without those privileges updates the rule, the rule will no longer function.
+====
