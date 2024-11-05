@@ -1,7 +1,7 @@
 [[ai-assistant-knowledge-base]]
 = AI Assistant Knowledge Base
 
-AI Assistant's knowledge base feature enables it to recall specific documents and other specified information, and to use it as context when responding to your queries. This page describes how to enable and add information to knowledge base.
+AI Assistant's Knowledge Base feature enables AI Assistant to recall specific documents and other specified information. This information, which can include everything from the location of your datacenters to the latest threat research, provides additional context that can improve the quality of AI Assistant's responses to your queries. This topic describes how to enable and add information to Knowledge Base.
 
 NOTE: When you upgrade from {elastic-sec} version 8.15 to a newer version, information previously stored by AI Assistant will be lost. 
 
@@ -9,47 +9,55 @@ NOTE: When you upgrade from {elastic-sec} version 8.15 to a newer version, infor
 [sidebar]
 --
 
-* To use knowledge base, you need the `Elastic AI Assistant: All` privilege. To edit global knowledge base entries (information that will affect the AI Assistant experience for other users in the {kib} space), you need the `Allow Changes to Global Entries` privilege. 
-* To use knowledge base, you must <<ml-requirements, enable machine learning>> with a minimum ML node size of 4GB.
+* To use Knowledge Base, you need the `Elastic AI Assistant: All` privilege. To edit global Knowledge Base entries (information that will affect the AI Assistant experience for other users in the {kib} space), you need the `Allow Changes to Global Entries` privilege. 
+* You must <<ml-requirements, enable machine learning>> with a minimum ML node size of 4 GB.
 
 --
 
 [discrete]
-[[enable-knowledge-base]]
-== Enable knowledge base
+[[knowledge-base-rbac]]
+== Role-based access control (RBAC) for Knowledge Base
 
-There are two ways to enable knowledge base.
+The `Elastic AI Assistant: All` role privilege allows you to use AI Assistant and access its settings. It has two sub-privileges, `Field Selection and Anonymization`, which allows you to customize which alert fields are sent to AI Assistant and Attack Discovery, and `Knowledge Base`, which allows you to edit and create new Knowledge Base entries.
 
-NOTE: You must individually enable knowledge base for each {kib} space where you want to use it.
+image::images/knowledge-base-rbac.png[Knowledge base's RBAC settings,60%]
 
 [discrete]
-=== Option 1 — enable knowledge base from an AI Assistant conversation
+[[enable-knowledge-base]]
+== Enable Knowledge Base
 
-Open a conversation with AI Assistant, select a large language model, then click **Setup Knowledge Base**. If the button doesn't appear, knowledge base is already enabled.
+There are two ways to enable Knowledge Base.
+
+NOTE: You must individually enable Knowledge Base for each {kib} space where you want to use it.
+
+[discrete]
+=== Option 1: Enable Knowledge Base from an AI Assistant conversation
+
+Open a conversation with AI Assistant, select a large language model, then click **Setup Knowledge Base**. If the button doesn't appear, Knowledge Base is already enabled.
 
 image::images/knowledge-base-assistant-setup-button.png[An AI Assistant conversation showing the Setup Knowledge Base button]
 
-Knowledge base setup may take several minutes. It will continue in the background if you close the conversation. After setup is complete, you can access knowledge base settings from the conversation settings menu.
+Knowledge base setup may take several minutes. It will continue in the background if you close the conversation. After setup is complete, you can access Knowledge Base settings from AI Assistant's conversation settings menu (access the conversation settings menu by clicking the three dots button next to the model selection dropdown).
 
-image::images/knowledge-base-assistant-menu-dropdown.png[AI Assistant's dropdown menu with the knowledge base option highlighted]
+image::images/knowledge-base-assistant-menu-dropdown.png[AI Assistant's dropdown menu with the Knowledge Base option highlighted]
 
 [discrete]
-=== Option 2 — enable knowledge base from the Security AI settings menu
+=== Option 2: Enable Knowledge Base from the Security AI settings
 
-. To open Security AI settings, use the {kibana-ref}/introduction.html#kibana-navigation-search[global search field] to find "AI assistant for security".
-. Click **Setup Knowledge Base**. If the button doesn't appear, knowledge base is already enabled.
+. To open Security AI settings, use the {kibana-ref}/introduction.html#kibana-navigation-search[global search field] to find "AI Assistant for Security."
+. Click **Setup Knowledge Base**. If the button doesn't appear, Knowledge Base is already enabled.
 
-image::images/knowledge-base-assistant-settings-kb-tab.png[AI Assistant's settings menu open to the knowledge base tab]
+image::images/knowledge-base-assistant-settings-kb-tab.png[AI Assistant's settings menu open to the Knowledge Base tab]
 
 [discrete]
 [[rag-for-alerts]]
 == Knowledge base for alerts
-When knowledge base is enabled, AI Assistant receives alerts from your environment as context for each of your prompts. It will receive alerts from the last 24 hours that have a status of `open` or `acknowledged`, ordered first by risk score, then by recency. Building block alerts are excluded. This enables it to answer questions about multiple alerts in your environment, rather than just the individual alerts you choose to include as context. 
+When Knowledge Base is enabled, AI Assistant receives alerts from your environment from the last 24 hours which have a status of `open` or `acknowledged`. It uses these as context for each of your prompts. This enables it to answer questions about multiple alerts in your environment rather than just about individual alerts you choose to send it. It receives alerts ordered by risk score, then by the most recently generated. Building block alerts are excluded. 
 
-To enable knowledge base for alerts:
+To enable Knowledge Base for alerts:
 
-. Make sure that knowledge base is <<enable-knowledge-base, enabled>>.
-. Use the slider on the Security AI settings menu's Knowledge Base tab to select the number of alerts to send to AI Assistant. Click **Save**.
+. Ensure that knowledge base is <<enable-knowledge-base, enabled>>.
+. Use the slider on the Security AI settings' Knowledge Base tab to select the number of alerts to send to AI Assistant. Click **Save**.
 
 NOTE: Including a large number of alerts may cause your request to exceed the maximum token length of your third-party generative AI provider. If this happens, try selecting a lower number of alerts to send.
 
@@ -57,26 +65,25 @@ NOTE: Including a large number of alerts may cause your request to exceed the ma
 [[knowledge-base-add-knowledge]]
 == Add knowledge 
 
-To view all knowledge base entries, go to the Security AI settings menu's Knowledge Base tab. You can add either individual documents, or entire indices containing multiple documents. Each entry in the knowledge base (a document or index) has a **Sharing** setting of either `private` or `global`. Private entries do not affect other users in the {kib} space, whereas global entries affect all users. Each entry can also be `Required knowledge`, which means it will be included as context to every message to AI Assistant. 
+To view all knowledge base entries, go to the Security AI settings and select the **Knowledge Base** tab. You can add individual documents or entire indices containing multiple documents. Each entry in the Knowledge Base (a document or index) has a **Sharing** setting of `private` or `global`. Private entries apply to the current user only and do not affect other users in the {kib} space, whereas global entries affect all users. Each entry can also have a `Required knowledge` setting, which means it will be included as context for every message sent to AI Assistant. 
 
-NOTE: When you enable knowledge base, it comes pre-populated with articles from https://www.elastic.co/security-labs[Elastic Security Labs], current through September 30, 2024, which allows AI Assistant to leverage Elastic's security research during your conversations. This enables it to answer questions such as, “Are there any new tactics used against Windows hosts that I should be aware of when investigating my alerts?”
+NOTE: When you enable Knowledge Base, it comes pre-populated with articles from https://www.elastic.co/security-labs[Elastic Security Labs], current through September 30, 2024, which allows AI Assistant to leverage Elastic's security research during your conversations. This enables it to answer questions such as, “Are there any new tactics used against Windows hosts that I should be aware of when investigating my alerts?”
 
 [discrete]
 [[knowledge-base-add-knowledge-document]]
 === Add an individual document
 
-Add an individual document to knowledge base when you want AI Assistant to remember a specific piece of information.
+Add an individual document to Knowledge Base when you want AI Assistant to remember a specific piece of information.
 
-. To open Security AI settings, use the {kibana-ref}/introduction.html#kibana-navigation-search[global search field] to find "AI assistant for security". Go to the Knowledge Base tab.
-. Click **New → Document**. 
-. Name the knowledge document.
+. To open Security AI settings, use the {kibana-ref}/introduction.html#kibana-navigation-search[global search field] to find "AI Assistant for Security." Select the **Knowledge Base** tab.
+. Click **New → Document** and give it a name. 
 . Under **Sharing**, select whether this knowledge should be **Global** or **Private**.
 . Write the knowledge in the **Markdown text** field.
-. Decide whether to make it **Required knowledge**.
-
+. In the **Markdown text** field, enter the information you want AI Assistant to remember. 
+. If it should be **Required knowledge**, select the option. Otherwise, leave it blank. 
 Alternatively, you can simply send a message to AI Assistant that instructs it to "Remember" the information. For example, "Remember that I changed my password today, October 24, 2024", or "Remember we always use the Threat Hunting Timeline template when investigating potential threats". Entries created in this way are private to you. By default they are not required knowledge, but you can make them required by instructing AI Assistant to "Always remember", for example "Always remember to address me as madam", or "Always remember that our primary data center is located in Austin, Texas".
 
-Refer to the following video for an example of adding a document to knowledge base from the settings menu.
+Refer to the following video for an example of adding a document to Knowledge Base from the settings menu.
 
 =======
 ++++
@@ -99,9 +106,9 @@ Refer to the following video for an example of adding a document to knowledge ba
 
 Add an index as a knowledge source when you want new information added to that index to automatically inform AI Assistant's responses. Common security examples include asset inventories, network configuration information, on-call matrices, threat intelligence reports, and vulnerability scans. 
 
-IMPORTANT: Indexes added to knowledge base must have at least one field mapped as {ref}/semantic-text.html[semantic text].
+IMPORTANT: Indices added to Knowledge Base must have at least one field mapped as {ref}/semantic-text.html[semantic text].
 
-. To open Security AI settings, use the {kibana-ref}/introduction.html#kibana-navigation-search[global search field] to find "AI assistant for security". Go to the Knowledge Base tab.
+. To open Security AI settings, use the {kibana-ref}/introduction.html#kibana-navigation-search[global search field] to find "AI Assistant for Security." Select the **Knowledge Base** tab.
 . Click **New → Index**.
 . Name the knowledge source.
 . Under **Sharing**, select whether this knowledge should be **Global** or **Private**.
@@ -111,9 +118,9 @@ IMPORTANT: Indexes added to knowledge base must have at least one field mapped a
 . Under **Query Instruction**, describe how AI Assistant should query this index to retrieve relevant information.
 . Under **Output Fields**, list the fields which should be sent to AI Assistant. If none are listed, all fields will be sent.
 
-image::images/knowledge-base-add-index-config.png[Knowledge base's Edit index entry menu]
+image::images/knowledge-base-add-index-config.png[Knowledge base's Edit index entry menu,80%]
 
-Refer to the following video for an example of adding an index to knowledge base.
+Refer to the following video for an example of adding an index to Knowledge Base.
 
 =======
 ++++
@@ -129,11 +136,3 @@ Refer to the following video for an example of adding an index to knowledge base
 </br>
 ++++
 =======
-
-[discrete]
-[[knowledge-base-rbac]]
-== Role-based access control (RBAC) for knowledge base
-
-The `Elastic AI Assistant: All` role privilege allows you to use AI Assistant and access its settings. It has two sub-privileges, `Field Selection and Anonymization`, which allows you to customize which alert fields are sent to AI Assistant and Attack Discovery, and `Knowledge Base`, which allows you to edit and create new knowledge base entries.
-
-image::images/knowledge-base-rbac.png[Knowledge base's RBAC settings]
