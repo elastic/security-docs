@@ -8,18 +8,17 @@ The Entity Analytics dashboard provides a centralized view of emerging insider t
 [sidebar]
 --
 
-* A https://www.elastic.co/pricing/[Platinum subscription] or higher is required.
-* To display host and user risk scores, you must <<turn-on-risk-engine, turn on the risk scoring engine>>.
+A https://www.elastic.co/pricing/[Platinum subscription] or higher is required.
 
 --
 
 The dashboard includes the following sections:
 
 * <<entity-kpis>>
-* <<entity-host-risk-scores>>
 * <<entity-user-risk-scores>>
-* <<entity-anomalies>> 
-
+* <<entity-host-risk-scores>>
+* <<entity-entities>>
+* <<entity-anomalies>>
 
 [role="screenshot"]
 image::images/entity-dashboard.png[Entity dashboard]
@@ -28,11 +27,42 @@ image::images/entity-dashboard.png[Entity dashboard]
 [float]
 == Entity KPIs (key performance indicators)
 
-Displays the total number of critical hosts, critical users, and anomalies. Select a link to jump to the Host risk table, User risk table, or Anomalies table. 
+Displays the total number of critical hosts, critical users, and anomalies. Select a link to jump to the **Hosts** page, **Users** page, or **Anomalies** table. 
+
+[[entity-user-risk-scores]]
+[float]
+== User Risk Scores
+
+.Requirements
+[sidebar]
+-- 
+To display user risk scores, you must <<turn-on-risk-engine, turn on the risk scoring engine>>.
+-- 
+
+Displays user risk score data for your environment, including the total number of users, and the five most recently recorded user risk scores, with their associated user names, risk data, and number of detection alerts. Like host risk scores, user risk scores are calculated using a weighted sum on a scale of 0 (lowest) to 100 (highest). 
+
+[role="screenshot"]
+image::images/user-score-data.png[User risk table]
+
+Interact with the table to filter data, view more details, and take action:
+
+* Select the *User risk level* menu to filter the chart by the selected level. 
+* Click a user name link to open the user details flyout. 
+* Hover over a user name link to display inline actions: *Add to timeline*, which adds the selected value to Timeline, and *Copy to Clipboard*, which copies the user name value for you to paste later. 
+* Click *View all* in the upper-right to display all user risk information on the Users page. 
+* Click the number link in the *Alerts* column to view the alerts on the Alerts page. Hover over the number and select *Investigate in timeline* (image:images/timeline-button-osquery.png[Investigate in timeline icon,20,20]) to launch Timeline with a query that includes the associated user name value.
+
+For more information about user risk scores, refer to <<entity-risk-scoring>>. 
 
 [[entity-host-risk-scores]]
 [float]
 == Host Risk Scores
+
+.Requirements
+[sidebar]
+-- 
+To display host risk scores, you must <<turn-on-risk-engine, turn on the risk scoring engine>>.
+-- 
 
 Displays host risk score data for your environment, including the total number of hosts, and the five most recently recorded host risk scores, with their associated host names, risk data, and number of detection alerts. Host risk scores are calculated using a weighted sum on a scale of 0 (lowest) to 100 (highest). 
 
@@ -50,24 +80,42 @@ Interact with the table to filter data, view more details, and take action:
 
 For more information about host risk scores, refer to <<entity-risk-scoring>>. 
 
-[[entity-user-risk-scores]]
+[[entity-entities]]
 [float]
-== User Risk Scores
+== Entities
 
-Displays user risk score data for your environment, including the total number of users, and the five most recently recorded user risk scores, with their associated user names, risk data, and number of detection alerts. Like host risk scores, user risk scores are calculated using a weighted sum on a scale of 0 (lowest) to 100 (highest). 
+preview::[]
+
+.Requirements
+[sidebar]
+-- 
+To display the **Entities** section, you must <<enable-entity-store,enable the entity store>>.
+-- 
+
+The **Entities** section provides a centralized view of all hosts and users in your environment. It displays entities from the <<entity-store, entity store>>, which meet any of the following criteria:
+
+* Have been observed by {elastic-sec}
+* Have an asset criticality assignment
+* Have been added to {elastic-sec} through an integration, such Active Directory or Okta
+
+NOTE: The **Entities** table only shows a subset of the data available for each entity. You can query the `.entities.v1.latest.security_user_<space-id>` and `.entities.v1.latest.security_host_<space-id>` indices to see all the fields for each entity in the entity store.
 
 [role="screenshot"]
-image::images/user-score-data.png[User risk table]
+image::images/entities-section.png[Entities section] 
 
-Interact with the table to filter data, view more details, and take action:
+Entity data from different sources appears in the **Entities** section based on the following timelines:
 
-* Select the *User risk level* menu to filter the chart by the selected level. 
-* Click a user name link to open the user details flyout. 
-* Hover over a user name link to display inline actions: *Add to timeline*, which adds the selected value to Timeline, and *Copy to Clipboard*, which copies the user name value for you to paste later. 
-* Click *View all* in the upper-right to display all user risk information on the Users page. 
-* Click the number link in the *Alerts* column to view the alerts on the Alerts page. Hover over the number and select *Investigate in timeline* (image:images/timeline-button-osquery.png[Investigate in timeline icon,20,20]) to launch Timeline with a query that includes the associated user name value.
+* When you first enable the entity store, only data stored in the last 24 hours is processed. After that, data is processed continuously.
+* Observed events from the {elastic-sec} default data view are processed in near real-time.
+* Entity Analytics data, such as entity risk scores and asset criticality (including bulk asset criticality upload), is also processed in near real-time.
+* The availability of entities extracted from Entity Analytics integrations depends on the specific integration. Refer to {integrations-docs}/entityanalytics_ad[Active Directory Entity Analytics], {integrations-docs}/entityanalytics_entra_id[Microsoft Entra ID Entity Analytics], and {integrations-docs}/entityanalytics_okta[Okta Entity Analytics] for more details.
 
-For more information about user risk scores, refer to <<entity-risk-scoring>>. 
+Interact with the table to filter data and view more details:
+
+* Select the **Risk level** dropdown to filter the table by the selected user or host risk level.
+* Select the **Criticality** dropdown to filter the table by the selected asset criticality level.
+* Select the **Source** dropdown to filter the table by the data source.
+* Click the **View details** icon (image:detections/images/view-details-icon.png[View details icon,16,15]) to open the entity details flyout.
 
 [[entity-anomalies]]
 [float]
