@@ -15,6 +15,7 @@ Identifies execution from a directory masquerading as the Windows Program Files 
 * logs-system.security*
 * logs-m365_defender.event-*
 * logs-sentinel_one_cloud_funnel.*
+* logs-crowdstrike.fdr*
 
 *Severity*: medium
 
@@ -40,8 +41,9 @@ Identifies execution from a directory masquerading as the Windows Program Files 
 * Data Source: Microsoft Defender for Endpoint
 * Data Source: Sysmon
 * Data Source: SentinelOne
+* Data Source: Crowdstrike
 
-*Version*: 311
+*Version*: 312
 
 *Rule authors*: 
 
@@ -56,7 +58,10 @@ Identifies execution from a directory masquerading as the Windows Program Files 
 [source, js]
 ----------------------------------
 process where host.os.type == "windows" and event.type == "start" and
-  process.executable : "C:\\*Program*Files*\\*.exe" and
+  process.executable : (
+    "C:\\*Program*Files*\\*.exe",
+    "\\Device\\HarddiskVolume?\\*Program*Files*\\*.exe"
+  ) and
   not process.executable : (
         "?:\\Program Files\\*.exe",
         "?:\\Program Files (x86)\\*.exe",
@@ -65,6 +70,18 @@ process where host.os.type == "windows" and event.type == "start" and
         "?:\\Windows\\Downloaded Program Files\\*.exe",
         "?:\\Windows\\Temp\\.opera\\????????????\\CProgram?FilesOpera*\\*.exe",
         "?:\\Windows\\Temp\\.opera\\????????????\\CProgram?Files?(x86)Opera*\\*.exe"
+  ) and
+  not (
+    event.dataset == "crowdstrike.fdr" and
+      process.executable : (
+        "\\Device\\HarddiskVolume?\\Program Files\\*.exe",
+        "\\Device\\HarddiskVolume?\\Program Files (x86)\\*.exe",
+        "\\Device\\HarddiskVolume?\\Users\\*.exe",
+        "\\Device\\HarddiskVolume?\\ProgramData\\*.exe",
+        "\\Device\\HarddiskVolume?\\Windows\\Downloaded Program Files\\*.exe",
+        "\\Device\\HarddiskVolume?\\Windows\\Temp\\.opera\\????????????\\CProgram?FilesOpera*\\*.exe",
+        "\\Device\\HarddiskVolume?\\Windows\\Temp\\.opera\\????????????\\CProgram?Files?(x86)Opera*\\*.exe"
+      )
   )
 
 ----------------------------------
