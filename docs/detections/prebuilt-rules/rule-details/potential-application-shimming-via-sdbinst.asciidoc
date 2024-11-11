@@ -5,60 +5,64 @@ The Application Shim was created to allow for backward compatibility of software
 
 *Rule type*: eql
 
-*Rule indices*:
+*Rule indices*: 
 
 * winlogbeat-*
-* logs-endpoint.events.*
-* logs-windows.*
+* logs-endpoint.events.process-*
+* logs-windows.forwarded*
+* logs-windows.sysmon_operational-*
+* endgame-*
+* logs-system.security*
+* logs-m365_defender.event-*
+* logs-sentinel_one_cloud_funnel.*
+* logs-crowdstrike.fdr*
 
 *Severity*: low
 
 *Risk score*: 21
 
-*Runs every*: 5 minutes
+*Runs every*: 5m
 
 *Searches indices from*: now-9m ({ref}/common-options.html#date-math[Date Math format], see also <<rule-schedule, `Additional look-back time`>>)
 
 *Maximum alerts per execution*: 100
 
-*Tags*:
+*References*: None
+
+*Tags*: 
+
+* Domain: Endpoint
+* OS: Windows
+* Use Case: Threat Detection
+* Tactic: Persistence
+* Data Source: Elastic Endgame
+* Data Source: Elastic Defend
+* Data Source: System
+* Data Source: Microsoft Defender for Endpoint
+* Data Source: Sysmon
+* Data Source: SentinelOne
+* Data Source: Crowdstrike
+
+*Version*: 312
+
+*Rule authors*: 
 
 * Elastic
-* Host
-* Windows
-* Threat Detection
-* Persistence
-
-*Version*: 102 (<<potential-application-shimming-via-sdbinst-history, version history>>)
-
-*Added ({stack} release)*: 7.6.0
-
-*Last modified ({stack} release)*: 8.6.0
-
-*Rule authors*: Elastic
 
 *Rule license*: Elastic License v2
-
-==== Investigation guide
-
-
-[source,markdown]
-----------------------------------
-
-----------------------------------
 
 
 ==== Rule query
 
 
-[source,js]
+[source, js]
 ----------------------------------
-process where event.type == "start" and process.name : "sdbinst.exe"
-and not (process.args : "-m" and process.args : "-bg") and not
-process.args : "-mm"
-----------------------------------
+process where host.os.type == "windows" and event.type == "start" and process.name : "sdbinst.exe" and
+  process.args : "?*" and
+  not (process.args : "-m" and process.args : "-bg") and
+  not process.args : "-mm"
 
-==== Threat mapping
+----------------------------------
 
 *Framework*: MITRE ATT&CK^TM^
 
@@ -70,8 +74,10 @@ process.args : "-mm"
 ** Name: Event Triggered Execution
 ** ID: T1546
 ** Reference URL: https://attack.mitre.org/techniques/T1546/
-
-
+* Sub-technique:
+** Name: Application Shimming
+** ID: T1546.011
+** Reference URL: https://attack.mitre.org/techniques/T1546/011/
 * Tactic:
 ** Name: Privilege Escalation
 ** ID: TA0004
@@ -80,62 +86,7 @@ process.args : "-mm"
 ** Name: Event Triggered Execution
 ** ID: T1546
 ** Reference URL: https://attack.mitre.org/techniques/T1546/
-
-[[potential-application-shimming-via-sdbinst-history]]
-==== Rule version history
-
-Version 102 (8.6.0 release)::
-* Updated query, changed from:
-+
-[source, js]
-----------------------------------
-process where event.type == "start" and process.name : "sdbinst.exe"
-----------------------------------
-
-Version 101 (8.5.0 release)::
-* Updated query, changed from:
-+
-[source, js]
-----------------------------------
-process where event.type in ("start", "process_started") and
-process.name : "sdbinst.exe"
-----------------------------------
-
-Version 11 (8.4.0 release)::
-* Formatting only
-
-Version 9 (8.2.0 release)::
-* Formatting only
-
-Version 8 (7.13.0 release)::
-* Updated query, changed from:
-+
-[source, js]
-----------------------------------
-event.category:process and event.type:(start or process_started) and
-process.name:sdbinst.exe
-----------------------------------
-
-Version 7 (7.12.0 release)::
-* Formatting only
-
-Version 6 (7.11.2 release)::
-* Formatting only
-
-Version 5 (7.11.0 release)::
-* Formatting only
-
-Version 4 (7.10.0 release)::
-* Updated query, changed from:
-+
-[source, js]
-----------------------------------
-event.code:1 and process.name:sdbinst.exe
-----------------------------------
-
-Version 3 (7.9.0 release)::
-* Formatting only
-
-Version 2 (7.7.0 release)::
-* Formatting only
-
+* Sub-technique:
+** Name: Application Shimming
+** ID: T1546.011
+** Reference URL: https://attack.mitre.org/techniques/T1546/011/
