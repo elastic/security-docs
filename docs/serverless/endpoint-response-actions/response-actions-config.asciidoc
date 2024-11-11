@@ -1,0 +1,165 @@
+[[security-response-actions-config]]
+= Configure third-party response actions
+
+// :description: Configure {elastic-sec} to perform response actions on hosts protected by third-party systems.
+// :keywords: serverless, security, how-to, configure
+
+preview:[]
+
+preview::[]
+
+You can direct third-party endpoint protection systems to perform response actions on enrolled hosts, such as isolating a suspicious endpoint from your network, without leaving the {elastic-sec} UI. This page explains the configuration steps needed to enable response actions for these third-party systems:
+
+* CrowdStrike
+* SentinelOne
+
+Check out <<security-third-party-actions>> to learn which response actions are supported for each system.
+
+.Prerequisites
+[NOTE]
+====
+* <<elasticsearch-manage-project,Project features add-on>>: Endpoint Protection Complete
+* <<general-assign-user-roles,User roles>>: **SOC manager** or **Endpoint operations analyst**
+* Endpoints must have actively running third-party agents installed.
+====
+
+Select a tab below for your endpoint security system:
+
+++++
+<div class="tabs" data-tab-group="endpoint-response-actions-response-actions-config">
+  <div role="tablist" aria-label="endpoint-response-actions-response-actions-config">
+    <button role="tab" aria-selected="true" aria-controls="endpoint-response-actions-response-actions-config-crowdstrike-panel" id="endpoint-response-actions-response-actions-config-crowdstrike-button">
+      CrowdStrike
+    </button>
+    <button role="tab" aria-selected="false" aria-controls="endpoint-response-actions-response-actions-config-sentinelone-panel" id="endpoint-response-actions-response-actions-config-sentinelone-button" tabindex="-1">
+      SentinelOne
+    </button>
+  </div>
+  <div tabindex="0" role="tabpanel" id="endpoint-response-actions-response-actions-config-crowdstrike-panel" aria-labelledby="endpoint-response-actions-response-actions-config-crowdstrike-button">
+++++
+////
+/* NOTE TO CONTRIBUTORS: These DocTabs have very similar content. If you change anything
+  in this tab, apply the change to the other tabs, too. */
+////
+
+To configure response actions for CrowdStrike-enrolled hosts:
+
+. **Enable API access in CrowdStrike.** Create an API client in CrowdStrike to allow access to the system. Refer to CrowdStrike's docs for instructions.
++
+** Give the API client the minimum privilege required to read CrowdStrike data and perform actions on enrolled hosts. Consider creating separate API clients for reading data and performing actions, to limit privileges allowed by each API client.
+*** To isolate and release hosts, the API client must have `Read` access for Alerts, and `Read` and `Write` access for Hosts.
+** Take note of the client ID, client secret, and base URL; you'll need them in later steps when you configure {elastic-sec} components to access CrowdStrike.
+** The base URL varies depending on your CrowdStrike account type:
+*** US-1:  `https://api.crowdstrike.com`
+*** US-2: `https://api.us-2.crowdstrike.com`
+*** EU-1: `https://api.eu-1.crowdstrike.com`
+*** US-GOV-1: `https://api.laggar.gcw.crowdstrike.com`
+. **Install the CrowdStrike integration and {agent}.** Elastic's {integrations-docs}/crowdstrike[CrowdStrike integration] collects and ingests logs into {elastic-sec}.
++
+.. Go to **Project Settings** → **Integrations**, search for and select **CrowdStrike**, then select **Add CrowdStrike**.
+.. Configure the integration with an **Integration name** and optional **Description**.
+.. Select **Collect CrowdStrike logs via API**, and enter the required **Settings**:
++
+*** **Client ID**: Client ID for the API client used to read CrowdStrike data.
+*** **Client Secret**: Client secret allowing you access to CrowdStrike.
+*** **URL**: The base URL of the CrowdStrike API.
+.. Select the **Falcon Alerts** and **Hosts** sub-options under **Collect CrowdStrike logs via API**.
+.. Scroll down and enter a name for the agent policy in **New agent policy name**. If other agent policies already exist, you can click the **Existing hosts** tab and select an existing policy instead. For more details on {agent} configuration settings, refer to {fleet-guide}/agent-policy.html[{agent} policies].
+.. Click **Save and continue**.
+.. Select **Add {agent} to your hosts** and continue with the <<enroll-agent,{agent} installation steps>> to install {agent} on a resource in your network (such as a server or VM). {agent} will act as a bridge collecting data from CrowdStrike and sending it back to {elastic-sec}.
+. **Create a CrowdStrike connector.** Elastic's {kibana-ref}/crowdstrike-action-type.html[CrowdStrike connector] enables {elastic-sec} to perform actions on CrowdStrike-enrolled hosts.
++
+[IMPORTANT]
+====
+Do not create more than one CrowdStrike connector.
+====
++
+.. Go to **Stack Management** → **Connectors**, then select **Create connector**.
+.. Select the **CrowdStrike** connector.
+.. Enter the configuration information:
++
+*** **Connector name**: A name to identify the connector.
+*** **CrowdStrike API URL**: The base URL of the CrowdStrike API.
+*** **CrowdStrike Client ID**: Client ID for the API client used to perform actions in CrowdStrike.
+*** **Client Secret**: Client secret allowing you access to CrowdStrike.
+.. Click **Save**.
+. **Create and enable detection rules to generate {elastic-sec} alerts.** (Optional) Create <<security-rules-create,detection rules>> to generate {elastic-sec} alerts based on CrowdStrike events and data. The {integrations-docs}/crowdstrike[CrowdStrike integration docs] list the available ingested logs and fields you can use to build a rule query.
++
+This gives you visibility into CrowdStrike without needing to leave {elastic-sec}. You can perform supported endpoint response actions directly from alerts that a rule creates, by using the **Take action** menu in the alert details flyout.
+
+++++
+  </div>
+  <div tabindex="0" role="tabpanel" id="endpoint-response-actions-response-actions-config-sentinelone-panel" aria-labelledby="endpoint-response-actions-response-actions-config-sentinelone-button" hidden="">
+++++
+////
+/* NOTE TO CONTRIBUTORS: These DocTabs have very similar content. If you change anything
+  in this tab, apply the change to the other tabs, too. */
+////
+
+To configure response actions for SentinelOne-enrolled hosts:
+
+. **Generate API access tokens in SentinelOne.** You'll need these tokens in later steps, and they allow {elastic-sec} to collect data and perform actions in SentinelOne.
++
+Create two API tokens in SentinelOne, and give them the minimum privilege required by the Elastic components that will use them:
++
+** SentinelOne integration: Permission to read SentinelOne data.
+** SentinelOne connector: Permission to read SentinelOne data and perform actions on enrolled hosts (for example, isolating and releasing an endpoint).
++
+Refer to the {integrations-docs}/sentinel_one[SentinelOne integration docs] or SentinelOne's docs for details on generating API tokens.
+. **Install the SentinelOne integration and {agent}.** Elastic's {integrations-docs}/sentinel_one[SentinelOne integration] collects and ingests logs into {elastic-sec}.
++
+.. Go to **Project Settings** → **Integrations**, search for and select **SentinelOne**, then select **Add SentinelOne**.
+.. Configure the integration with an **Integration name** and optional **Description**.
+.. Ensure that **Collect SentinelOne logs via API** is selected, and enter the required **Settings**:
++
+*** **URL**: The SentinelOne console URL.
+*** **API Token**: The SentinelOne API access token you generated previously, with permission to read SentinelOne data.
+.. Scroll down and enter a name for the agent policy in **New agent policy name**. If other agent policies already exist, you can click the **Existing hosts** tab and select an existing policy instead. For more details on {agent} configuration settings, refer to {fleet-guide}/agent-policy.html[{agent} policies].
+.. Click **Save and continue**.
+.. Select **Add {agent} to your hosts** and continue with the <<enroll-agent,{agent} installation steps>> to install {agent} on a resource in your network (such as a server or VM). {agent} will act as a bridge collecting data from SentinelOne and sending it back to {elastic-sec}.
+. **Create a SentinelOne connector.** Elastic's {kibana-ref}/sentinelone-action-type.html[SentinelOne connector] enables {elastic-sec} to perform actions on SentinelOne-enrolled hosts.
++
+[IMPORTANT]
+====
+Do not create more than one SentinelOne connector.
+====
++
+.. Go to **Stack Management** → **Connectors**, then select **Create connector**.
+.. Select the **SentinelOne** connector.
+.. Enter the configuration information:
++
+*** **Connector name**: A name to identify the connector.
+*** **SentinelOne tenant URL**: The SentinelOne tenant URL.
+*** **API token**: The SentinelOne API access token you generated previously, with permission to read SentinelOne data and perform actions on enrolled hosts.
+.. Click **Save**.
+. **Create and enable detection rules to generate {elastic-sec} alerts.** (Optional) Create <<security-rules-create,detection rules>> to generate {elastic-sec} alerts based on SentinelOne events and data.
++
+This gives you visibility into SentinelOne without needing to leave {elastic-sec}. You can perform supported endpoint response actions directly from alerts that a rule creates, by using the **Take action** menu in the alert details flyout.
++
+When creating a rule, you can target any event containing a SentinelOne agent ID field. Use one or more of these index patterns:
++
+|===
+| Index pattern| SentinelOne agent ID field
+
+| `logs-sentinel_one.alert*`
+| `sentinel_one.alert.agent.id`
+
+| `logs-sentinel_one.threat*`
+| `sentinel_one.threat.agent.id`
+
+| `logs-sentinel_one.activity*`
+| `sentinel_one.activity.agent.id`
+
+| `logs-sentinel_one.agent*`
+| `sentinel_one.agent.agent.id`
+|===
++
+[NOTE]
+====
+Do not include any other index patterns.
+====
+
+++++
+  </div>
+</div>
+++++
