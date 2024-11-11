@@ -1,0 +1,91 @@
+[[service-dacl-modification-via-sc-exe]]
+=== Service DACL Modification via sc.exe
+
+Identifies DACL modifications to deny access to a service, making it unstoppable, or hide it from system and users.
+
+*Rule type*: eql
+
+*Rule indices*: 
+
+* winlogbeat-*
+* logs-endpoint.events.process-*
+* logs-windows.sysmon_operational-*
+* endgame-*
+* logs-sentinel_one_cloud_funnel.*
+* logs-m365_defender.event-*
+* logs-crowdstrike.fdr*
+
+*Severity*: medium
+
+*Risk score*: 47
+
+*Runs every*: 5m
+
+*Searches indices from*: now-9m ({ref}/common-options.html#date-math[Date Math format], see also <<rule-schedule, `Additional look-back time`>>)
+
+*Maximum alerts per execution*: 100
+
+*References*: 
+
+* https://blogs.jpcert.or.jp/en/2024/07/mirrorface-attack-against-japanese-organisations.html
+* https://github.com/SigmaHQ/sigma/blob/master/rules/windows/process_creation/proc_creation_win_sc_sdset_deny_service_access.yml
+* https://learn.microsoft.com/en-us/windows/win32/secauthz/sid-strings
+* https://www.sans.org/blog/red-team-tactics-hiding-windows-services/
+
+*Tags*: 
+
+* Domain: Endpoint
+* OS: Windows
+* Use Case: Threat Detection
+* Tactic: Defense Evasion
+* Resources: Investigation Guide
+* Data Source: Elastic Endgame
+* Data Source: Elastic Defend
+* Data Source: Sysmon
+* Data Source: SentinelOne
+* Data Source: Microsoft Defender for Endpoint
+* Data Source: Crowdstrike
+
+*Version*: 204
+
+*Rule authors*: 
+
+* Elastic
+
+*Rule license*: Elastic License v2
+
+
+==== Rule query
+
+
+[source, js]
+----------------------------------
+process where host.os.type == "windows" and event.type == "start" and
+  (process.name : "sc.exe" or ?process.pe.original_file_name : "sc.exe") and
+  process.args : "sdset" and process.args : "*D;*" and
+  process.args : ("*;IU*", "*;SU*", "*;BA*", "*;SY*", "*;WD*")
+
+----------------------------------
+
+*Framework*: MITRE ATT&CK^TM^
+
+* Tactic:
+** Name: Defense Evasion
+** ID: TA0005
+** Reference URL: https://attack.mitre.org/tactics/TA0005/
+* Technique:
+** Name: Hide Artifacts
+** ID: T1564
+** Reference URL: https://attack.mitre.org/techniques/T1564/
+* Tactic:
+** Name: Persistence
+** ID: TA0003
+** Reference URL: https://attack.mitre.org/tactics/TA0003/
+* Technique:
+** Name: Create or Modify System Process
+** ID: T1543
+** Reference URL: https://attack.mitre.org/techniques/T1543/
+* Sub-technique:
+** Name: Windows Service
+** ID: T1543.003
+** Reference URL: https://attack.mitre.org/techniques/T1543/003/

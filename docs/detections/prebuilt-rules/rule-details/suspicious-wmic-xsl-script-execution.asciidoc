@@ -5,56 +5,58 @@ Identifies WMIC allowlist bypass techniques by alerting on suspicious execution 
 
 *Rule type*: eql
 
-*Rule indices*:
+*Rule indices*: 
 
 * winlogbeat-*
-* logs-endpoint.events.*
-* logs-windows.*
+* logs-endpoint.events.process-*
+* logs-endpoint.events.library-*
+* logs-windows.sysmon_operational-*
 
 *Severity*: medium
 
 *Risk score*: 47
 
-*Runs every*: 5 minutes
+*Runs every*: 5m
 
 *Searches indices from*: now-9m ({ref}/common-options.html#date-math[Date Math format], see also <<rule-schedule, `Additional look-back time`>>)
 
 *Maximum alerts per execution*: 100
 
-*Tags*:
+*References*: None
+
+*Tags*: 
+
+* Domain: Endpoint
+* OS: Windows
+* Use Case: Threat Detection
+* Tactic: Defense Evasion
+* Tactic: Execution
+* Data Source: Elastic Defend
+* Data Source: Sysmon
+
+*Version*: 209
+
+*Rule authors*: 
 
 * Elastic
-* Host
-* Windows
-* Threat Detection
-* Defense Evasion
-
-*Version*: 101 (<<suspicious-wmic-xsl-script-execution-history, version history>>)
-
-*Added ({stack} release)*: 7.10.0
-
-*Last modified ({stack} release)*: 8.5.0
-
-*Rule authors*: Elastic
 
 *Rule license*: Elastic License v2
+
 
 ==== Rule query
 
 
-[source,js]
+[source, js]
 ----------------------------------
-sequence by process.entity_id with maxspan = 2m [process where
-event.type == "start" and (process.name : "WMIC.exe" or
-process.pe.original_file_name : "wmic.exe") and process.args :
-("format*:*", "/format*:*", "*-format*:*") and not
-process.command_line : "* /format:table *"] [any where (event.category
-== "library" or (event.category == "process" and event.action : "Image
-loaded*")) and (dll.name : ("jscript.dll", "vbscript.dll") or
-file.name : ("jscript.dll", "vbscript.dll"))]
-----------------------------------
+sequence by process.entity_id with maxspan = 2m
+[process where host.os.type == "windows" and event.type == "start" and
+   (process.name : "WMIC.exe" or process.pe.original_file_name : "wmic.exe") and
+   process.args : ("format*:*", "/format*:*", "*-format*:*") and
+   not process.command_line : ("* /format:table *", "* /format:table")]
+[any where host.os.type == "windows" and (event.category == "library" or (event.category == "process" and event.action : "Image loaded*")) and
+ (?dll.name : ("jscript.dll", "vbscript.dll") or file.name : ("jscript.dll", "vbscript.dll"))]
 
-==== Threat mapping
+----------------------------------
 
 *Framework*: MITRE ATT&CK^TM^
 
@@ -66,52 +68,11 @@ file.name : ("jscript.dll", "vbscript.dll"))]
 ** Name: XSL Script Processing
 ** ID: T1220
 ** Reference URL: https://attack.mitre.org/techniques/T1220/
-
-[[suspicious-wmic-xsl-script-execution-history]]
-==== Rule version history
-
-Version 101 (8.5.0 release)::
-* Updated query, changed from:
-+
-[source, js]
-----------------------------------
-sequence by process.entity_id with maxspan = 2m [process where
-event.type in ("start", "process_started") and (process.name :
-"WMIC.exe" or process.pe.original_file_name : "wmic.exe") and
-process.args : ("format*:*", "/format*:*", "*-format*:*") and not
-process.command_line : "* /format:table *"] [any where (event.category
-== "library" or (event.category == "process" and event.action : "Image
-loaded*")) and (dll.name : ("jscript.dll", "vbscript.dll") or
-file.name : ("jscript.dll", "vbscript.dll"))]
-----------------------------------
-
-Version 5 (8.4.0 release)::
-* Updated query, changed from:
-+
-[source, js]
-----------------------------------
-sequence by process.entity_id with maxspan = 2m [process where
-event.type in ("start", "process_started") and (process.name :
-"WMIC.exe" or process.pe.original_file_name : "wmic.exe") and
-process.args : ("format*:*", "/format*:*", "*-format*:*") and not
-process.command_line : "* /format:table *"] [library where event.type
-== "start" and dll.name : ("jscript.dll", "vbscript.dll")]
-----------------------------------
-
-Version 3 (8.1.0 release)::
-* Formatting only
-
-Version 2 (7.12.0 release)::
-* Updated query, changed from:
-+
-[source, js]
-----------------------------------
-sequence by process.entity_id with maxspan=2m [process where
-event.type in ("start", "process_started") and (process.name :
-"WMIC.exe" or process.pe.original_file_name == "wmic.exe") and
-wildcard(process.args, "format*:*", "/format*:*", "*-format*:*") and
-not wildcard(process.command_line, "* /format:table *")] [library
-where event.type == "start" and file.name in ("jscript.dll",
-"vbscript.dll")]
-----------------------------------
-
+* Tactic:
+** Name: Execution
+** ID: TA0002
+** Reference URL: https://attack.mitre.org/tactics/TA0002/
+* Technique:
+** Name: Windows Management Instrumentation
+** ID: T1047
+** Reference URL: https://attack.mitre.org/techniques/T1047/

@@ -1,0 +1,114 @@
+[[prebuilt-rule-8-16-1-suspicious-lsass-process-access]]
+=== Suspicious Lsass Process Access
+
+Identifies access attempts to LSASS handle, this may indicate an attempt to dump credentials from Lsass memory.
+
+*Rule type*: eql
+
+*Rule indices*: 
+
+* winlogbeat-*
+* logs-windows.sysmon_operational-*
+
+*Severity*: medium
+
+*Risk score*: 47
+
+*Runs every*: 5m
+
+*Searches indices from*: now-9m ({ref}/common-options.html#date-math[Date Math format], see also <<rule-schedule, `Additional look-back time`>>)
+
+*Maximum alerts per execution*: 100
+
+*References*: 
+
+* https://github.com/redcanaryco/atomic-red-team/blob/master/atomics/T1003.001/T1003.001.md
+
+*Tags*: 
+
+* Domain: Endpoint
+* OS: Windows
+* Use Case: Threat Detection
+* Tactic: Credential Access
+* Data Source: Sysmon
+
+*Version*: 208
+
+*Rule authors*: 
+
+* Elastic
+
+*Rule license*: Elastic License v2
+
+
+==== Setup
+
+
+
+*Setup*
+
+
+If enabling an EQL rule on a non-elastic-agent index (such as beats) for versions <8.2,
+events will not define `event.ingested` and default fallback for EQL rules was not added until version 8.2.
+Hence for this rule to work effectively, users will need to add a custom ingest pipeline to populate
+`event.ingested` to @timestamp.
+For more details on adding a custom ingest pipeline refer - https://www.elastic.co/guide/en/fleet/current/data-streams-pipeline-tutorial.html
+
+
+==== Rule query
+
+
+[source, js]
+----------------------------------
+process where host.os.type == "windows" and event.code == "10" and
+  winlog.event_data.TargetImage : "?:\\WINDOWS\\system32\\lsass.exe" and
+  not winlog.event_data.GrantedAccess :
+                ("0x1000", "0x1400", "0x101400", "0x101000", "0x101001", "0x100000", "0x100040", "0x3200", "0x40", "0x3200") and
+  not process.name : ("procexp64.exe", "procmon.exe", "procexp.exe", "Microsoft.Identity.AadConnect.Health.AadSync.Host.ex") and
+  not process.executable : (
+        "?:\\ProgramData\\Microsoft\\Windows Defender\\platform\\*",
+        "?:\\ProgramData\\WebEx\\webex\\*",
+        "?:\\Program Files (x86)\\*",
+        "?:\\Program Files\\*",
+        "?:\\Windows\\CCM\\CcmExec.exe",
+        "?:\\Windows\\LTSvc\\LTSVC.exe",
+        "?:\\Windows\\Sysmon.exe",
+        "?:\\Windows\\Sysmon64.exe",
+        "C:\\Windows\\CynetMS.exe",
+        "?:\\Windows\\system32\\csrss.exe",
+        "?:\\Windows\\System32\\lsm.exe",
+        "?:\\Windows\\system32\\MRT.exe",
+        "?:\\Windows\\System32\\msiexec.exe",
+        "?:\\Windows\\system32\\wbem\\wmiprvse.exe",
+        "?:\\Windows\\system32\\wininit.exe",
+        "?:\\Windows\\SystemTemp\\GUM*.tmp\\GoogleUpdate.exe",
+        "?:\\Windows\\sysWOW64\\wbem\\wmiprvse.exe", 
+        "C:\\oracle\\64\\02\\instantclient_19_13\\sqlplus.exe", 
+        "C:\\oracle\\64\\02\\instantclient_19_13\\sqlldr.exe",
+        "d:\\oracle\\product\\19\\dbhome1\\bin\\ORACLE.EXE",
+        "C:\\wamp\\bin\\apache\\apache*\\bin\\httpd.exe",
+        "C:\\Windows\\system32\\netstat.exe", 
+        "C:\\PROGRA~1\\INFORM~1\\apps\\jdk\\*\\jre\\bin\\java.exe", 
+        "C:\\PROGRA~2\\CyberCNSAgentV2\\osqueryi.exe",
+        "C:\\Utilityw2k19\\packetbeat\\packetbeat.exe",
+        "C:\\ProgramData\\Cisco\\Cisco AnyConnect Secure Mobility Client\\Temp\\CloudUpdate\\vpndownloader.exe", 
+        "C:\\ProgramData\\Cisco\\Cisco Secure Client\\Temp\\CloudUpdate\\vpndownloader.exe"
+  ) and
+  not winlog.event_data.CallTrace : ("*mpengine.dll*", "*appresolver.dll*", "*sysmain.dll*")
+
+----------------------------------
+
+*Framework*: MITRE ATT&CK^TM^
+
+* Tactic:
+** Name: Credential Access
+** ID: TA0006
+** Reference URL: https://attack.mitre.org/tactics/TA0006/
+* Technique:
+** Name: OS Credential Dumping
+** ID: T1003
+** Reference URL: https://attack.mitre.org/techniques/T1003/
+* Sub-technique:
+** Name: LSASS Memory
+** ID: T1003.001
+** Reference URL: https://attack.mitre.org/techniques/T1003/001/

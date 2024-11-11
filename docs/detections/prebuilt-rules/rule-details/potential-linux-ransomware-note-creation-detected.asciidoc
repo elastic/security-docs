@@ -1,0 +1,110 @@
+[[potential-linux-ransomware-note-creation-detected]]
+=== Potential Linux Ransomware Note Creation Detected
+
+This rule identifies a sequence of a mass file encryption event in conjunction with the creation of a .txt file with a file name containing ransomware keywords executed by the same process in a 1 second timespan. Ransomware is a type of malware that encrypts a victim's files or systems and demands payment (usually in cryptocurrency) in exchange for the decryption key. One important indicator of a ransomware attack is the mass encryption of the file system, after which a new file extension is added to the file.
+
+*Rule type*: eql
+
+*Rule indices*: 
+
+* logs-endpoint.events.*
+
+*Severity*: medium
+
+*Risk score*: 47
+
+*Runs every*: 5m
+
+*Searches indices from*: now-9m ({ref}/common-options.html#date-math[Date Math format], see also <<rule-schedule, `Additional look-back time`>>)
+
+*Maximum alerts per execution*: 100
+
+*References*: None
+
+*Tags*: 
+
+* Domain: Endpoint
+* OS: Linux
+* Use Case: Threat Detection
+* Tactic: Impact
+* Data Source: Elastic Defend
+
+*Version*: 10
+
+*Rule authors*: 
+
+* Elastic
+
+*Rule license*: Elastic License v2
+
+
+==== Setup
+
+
+
+*Setup*
+
+
+This rule requires data coming in from Elastic Defend.
+
+
+*Elastic Defend Integration Setup*
+
+Elastic Defend is integrated into the Elastic Agent using Fleet. Upon configuration, the integration allows the Elastic Agent to monitor events on your host and send data to the Elastic Security app.
+
+
+*Prerequisite Requirements:*
+
+- Fleet is required for Elastic Defend.
+- To configure Fleet Server refer to the https://www.elastic.co/guide/en/fleet/current/fleet-server.html[documentation].
+
+
+*The following steps should be executed in order to add the Elastic Defend integration on a Linux System:*
+
+- Go to the Kibana home page and click "Add integrations".
+- In the query bar, search for "Elastic Defend" and select the integration to see more details about it.
+- Click "Add Elastic Defend".
+- Configure the integration name and optionally add a description.
+- Select the type of environment you want to protect, either "Traditional Endpoints" or "Cloud Workloads".
+- Select a configuration preset. Each preset comes with different default settings for Elastic Agent, you can further customize these later by configuring the Elastic Defend integration policy. https://www.elastic.co/guide/en/security/current/configure-endpoint-integration-policy.html[Helper guide].
+- We suggest selecting "Complete EDR (Endpoint Detection and Response)" as a configuration setting, that provides "All events; all preventions"
+- Enter a name for the agent policy in "New agent policy name". If other agent policies already exist, you can click the "Existing hosts" tab and select an existing policy instead.
+For more details on Elastic Agent configuration settings, refer to the https://www.elastic.co/guide/en/fleet/8.10/agent-policy.html[helper guide].
+- Click "Save and Continue".
+- To complete the integration, select "Add Elastic Agent to your hosts" and continue to the next section to install the Elastic Agent on your hosts.
+For more details on Elastic Defend refer to the https://www.elastic.co/guide/en/security/current/install-endpoint.html[helper guide].
+
+
+==== Rule query
+
+
+[source, js]
+----------------------------------
+sequence by process.entity_id, host.id with maxspan=1s 
+  [file where host.os.type == "linux" and event.type == "change" and event.action == "rename" and file.extension : "?*" 
+   and process.executable : ("./*", "/tmp/*", "/var/tmp/*", "/dev/shm/*", "/var/run/*", "/boot/*") and
+   file.path : (
+     "/home/*/Downloads/*", "/home/*/Documents/*", "/root/*", "/bin/*", "/usr/bin/*", "/var/log/*", "/var/lib/log/*",
+     "/var/backup/*", "/var/www/*") and
+   not process.name : (
+     "dpkg", "yum", "dnf", "rpm", "dockerd", "go", "java", "pip*", "python*", "node", "containerd", "php", "p4d",
+     "conda", "chrome", "imap", "cmake", "firefox", "semanage", "semodule", "ansible-galaxy", "fc-cache", "jammy", "git",
+     "systemsettings", "vmis-launcher", "bundle", "kudu-tserver", "suldownloader", "rustup-init"
+    )
+  ] with runs=25
+  [file where host.os.type == "linux" and event.action == "creation" and
+   file.name : ("*restore*", "*lock*", "*recovery*", "*read*", "*instruction*", "*how_to*", "*ransom*")
+  ]
+
+----------------------------------
+
+*Framework*: MITRE ATT&CK^TM^
+
+* Tactic:
+** Name: Impact
+** ID: TA0040
+** Reference URL: https://attack.mitre.org/tactics/TA0040/
+* Technique:
+** Name: Data Encrypted for Impact
+** ID: T1486
+** Reference URL: https://attack.mitre.org/techniques/T1486/
