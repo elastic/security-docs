@@ -1,0 +1,114 @@
+[[prebuilt-rule-8-14-16-unusual-interactive-shell-launched-from-system-user]]
+=== Unusual Interactive Shell Launched from System User
+
+This rule detects interactive shells launched from system users. System users typically do not require interactive shells, and their presence may indicate malicious activity.
+
+*Rule type*: new_terms
+
+*Rule indices*: 
+
+* logs-endpoint.events.process*
+
+*Severity*: low
+
+*Risk score*: 21
+
+*Runs every*: 5m
+
+*Searches indices from*: now-9m ({ref}/common-options.html#date-math[Date Math format], see also <<rule-schedule, `Additional look-back time`>>)
+
+*Maximum alerts per execution*: 100
+
+*References*: None
+
+*Tags*: 
+
+* Domain: Endpoint
+* OS: Linux
+* Use Case: Threat Detection
+* Tactic: Defense Evasion
+* Data Source: Elastic Defend
+
+*Version*: 1
+
+*Rule authors*: 
+
+* Elastic
+
+*Rule license*: Elastic License v2
+
+
+==== Setup
+
+
+
+*Setup*
+
+
+This rule requires data coming in from Elastic Defend.
+
+
+*Elastic Defend Integration Setup*
+
+Elastic Defend is integrated into the Elastic Agent using Fleet. Upon configuration, the integration allows the Elastic Agent to monitor events on your host and send data to the Elastic Security app.
+
+
+*Prerequisite Requirements:*
+
+- Fleet is required for Elastic Defend.
+- To configure Fleet Server refer to the https://www.elastic.co/guide/en/fleet/current/fleet-server.html[documentation].
+
+
+*The following steps should be executed in order to add the Elastic Defend integration on a Linux System:*
+
+- Go to the Kibana home page and click "Add integrations".
+- In the query bar, search for "Elastic Defend" and select the integration to see more details about it.
+- Click "Add Elastic Defend".
+- Configure the integration name and optionally add a description.
+- Select the type of environment you want to protect, either "Traditional Endpoints" or "Cloud Workloads".
+- Select a configuration preset. Each preset comes with different default settings for Elastic Agent, you can further customize these later by configuring the Elastic Defend integration policy. https://www.elastic.co/guide/en/security/current/configure-endpoint-integration-policy.html[Helper guide].
+- We suggest selecting "Complete EDR (Endpoint Detection and Response)" as a configuration setting, that provides "All events; all preventions"
+- Enter a name for the agent policy in "New agent policy name". If other agent policies already exist, you can click the "Existing hosts" tab and select an existing policy instead.
+
+For more details on Elastic Agent configuration settings, refer to the https://www.elastic.co/guide/en/fleet/8.10/agent-policy.html[helper guide].
+- Click "Save and Continue".
+- To complete the integration, select "Add Elastic Agent to your hosts" and continue to the next section to install the Elastic Agent on your hosts.
+
+For more details on Elastic Defend refer to the https://www.elastic.co/guide/en/security/current/install-endpoint.html[helper guide].
+
+
+==== Rule query
+
+
+[source, js]
+----------------------------------
+event.category:process and host.os.type:linux and event.type:start and event.action:exec and user.name:(
+   daemon or bin or sys or sync or games or man or mail or news or uucp or proxy or backup or list or irc
+   or gnats or _apt or Debian-exim or systemd-timesync or messagebus or uuidd or _chrony or sshd or
+   gamer or shutdown or halt or dbus or polkitd or rtkit or pipewire or tcpdump or clevis or
+   libstoreagemgmt or geoclue or tss or sssd or gnome-initial-setup or pesign or dnsmasq or chrony 
+) and process.interactive:true and process.parent.executable:* and not (
+  process.parent.name:(
+    apt-key or apt-config or gpgv or gpgconf or man-db.postinst or sendmail or rpm or nullmailer-inject
+  ) or
+  process.args:(/etc/apt/trusted.gpg.d/* or /tmp/apt-key-gpg*) or
+  process.name:(awk or apt-config or dpkg or grep or gpgv or sed) or
+  (user.name:daemon and process.name:at)
+)
+
+----------------------------------
+
+*Framework*: MITRE ATT&CK^TM^
+
+* Tactic:
+** Name: Defense Evasion
+** ID: TA0005
+** Reference URL: https://attack.mitre.org/tactics/TA0005/
+* Technique:
+** Name: Hide Artifacts
+** ID: T1564
+** Reference URL: https://attack.mitre.org/techniques/T1564/
+* Sub-technique:
+** Name: Hidden Users
+** ID: T1564.002
+** Reference URL: https://attack.mitre.org/techniques/T1564/002/

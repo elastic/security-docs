@@ -1,0 +1,72 @@
+[[prebuilt-rule-8-14-16-first-occurrence-of-entra-id-auth-via-devicecode-protocol]]
+=== First Occurrence of Entra ID Auth via DeviceCode Protocol
+
+Identifies when a user is observed for the first time in the last 14 days authenticating using the deviceCode protocol. The device code authentication flow can be abused by attackers to phish users and steal access tokens to impersonate the victim. By its very nature, device code should only be used when logging in to devices without keyboards, where it is difficult to enter emails and passwords.
+
+*Rule type*: new_terms
+
+*Rule indices*: 
+
+* filebeat-*
+* logs-azure.signinlogs-*
+* logs-azure.activitylogs-*
+
+*Severity*: medium
+
+*Risk score*: 47
+
+*Runs every*: 5m
+
+*Searches indices from*: now-9m ({ref}/common-options.html#date-math[Date Math format], see also <<rule-schedule, `Additional look-back time`>>)
+
+*Maximum alerts per execution*: 100
+
+*References*: 
+
+* https://aadinternals.com/post/phishing/
+* https://www.blackhillsinfosec.com/dynamic-device-code-phishing/
+
+*Tags*: 
+
+* Domain: Cloud
+* Data Source: Azure
+* Data Source: Microsoft Entra ID
+* Use Case: Identity and Access Audit
+* Tactic: Credential Access
+
+*Version*: 1
+
+*Rule authors*: 
+
+* Elastic
+* Matteo Potito Giorgio
+
+*Rule license*: Elastic License v2
+
+
+==== Setup
+
+
+This rule optionally requires Azure Sign-In logs from the Azure integration. Ensure that the Azure integration is correctly set up and that the required data is being collected.
+
+
+==== Rule query
+
+
+[source, js]
+----------------------------------
+ event.dataset:(azure.activitylogs or azure.signinlogs) and 
+     (azure.signinlogs.properties.authentication_protocol:deviceCode or azure.activitylogs.properties.authentication_protocol:deviceCode) and event.outcome:success
+
+----------------------------------
+
+*Framework*: MITRE ATT&CK^TM^
+
+* Tactic:
+** Name: Credential Access
+** ID: TA0006
+** Reference URL: https://attack.mitre.org/tactics/TA0006/
+* Technique:
+** Name: Steal Application Access Token
+** ID: T1528
+** Reference URL: https://attack.mitre.org/techniques/T1528/

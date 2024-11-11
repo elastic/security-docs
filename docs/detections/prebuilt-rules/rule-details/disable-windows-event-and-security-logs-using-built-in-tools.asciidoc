@@ -15,6 +15,7 @@ Identifies attempts to disable EventLog via the logman Windows utility, PowerShe
 * logs-system.security*
 * logs-m365_defender.event-*
 * logs-sentinel_one_cloud_funnel.*
+* logs-crowdstrike.fdr*
 
 *Severity*: low
 
@@ -44,8 +45,9 @@ Identifies attempts to disable EventLog via the logman Windows utility, PowerShe
 * Data Source: Microsoft Defender for Endpoint
 * Data Source: Sysmon
 * Data Source: SentinelOne
+* Data Source: Crowdstrike
 
-*Version*: 313
+*Version*: 314
 
 *Rule authors*: 
 
@@ -108,14 +110,20 @@ This rule looks for the usage of different utilities to disable the EventLog ser
 ----------------------------------
 process where host.os.type == "windows" and event.type == "start" and
 (
-  ((process.name:"logman.exe" or ?process.pe.original_file_name == "Logman.exe") and
-      process.args : "EventLog-*" and process.args : ("stop", "delete")) or
-
-  ((process.name : ("pwsh.exe", "powershell.exe", "powershell_ise.exe") or ?process.pe.original_file_name in
-      ("pwsh.exe", "powershell.exe", "powershell_ise.exe")) and
-	process.args : "Set-Service" and process.args: "EventLog" and process.args : "Disabled")  or
-
-  ((process.name:"auditpol.exe" or ?process.pe.original_file_name == "AUDITPOL.EXE") and process.args : "/success:disable")
+  (
+    (process.name:"logman.exe" or ?process.pe.original_file_name == "Logman.exe") and
+    process.args : "EventLog-*" and process.args : ("stop", "delete")
+  ) or
+  (
+    (
+      process.name : ("pwsh.exe", "powershell.exe", "powershell_ise.exe") or
+      ?process.pe.original_file_name in ("pwsh.exe", "powershell.exe", "powershell_ise.exe")
+    ) and
+	  process.args : "Set-Service" and process.args: "EventLog" and process.args : "Disabled"
+  )  or
+  (
+    (process.name:"auditpol.exe" or ?process.pe.original_file_name == "AUDITPOL.EXE") and process.args : "/success:disable"
+  )
 )
 
 ----------------------------------
