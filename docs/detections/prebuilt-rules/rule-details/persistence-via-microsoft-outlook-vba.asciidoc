@@ -5,68 +5,60 @@ Detects attempts to establish persistence on an endpoint by installing a rogue M
 
 *Rule type*: eql
 
-*Rule indices*:
+*Rule indices*: 
 
-* logs-endpoint.events.*
+* logs-endpoint.events.file-*
 * winlogbeat-*
-* logs-windows.*
+* logs-windows.sysmon_operational-*
+* endgame-*
+* logs-m365_defender.event-*
+* logs-sentinel_one_cloud_funnel.*
 
 *Severity*: medium
 
 *Risk score*: 47
 
-*Runs every*: 5 minutes
+*Runs every*: 5m
 
 *Searches indices from*: now-9m ({ref}/common-options.html#date-math[Date Math format], see also <<rule-schedule, `Additional look-back time`>>)
 
 *Maximum alerts per execution*: 100
 
-*References*:
+*References*: 
 
 * https://www.mdsec.co.uk/2020/11/a-fresh-outlook-on-mail-based-persistence/
 * https://www.linkedin.com/pulse/outlook-backdoor-using-vba-samir-b-/
 
-*Tags*:
+*Tags*: 
+
+* Domain: Endpoint
+* OS: Windows
+* Use Case: Threat Detection
+* Tactic: Persistence
+* Data Source: Elastic Endgame
+* Data Source: Elastic Defend
+* Data Source: Sysmon
+* Data Source: Microsoft Defender for Endpoint
+* Data Source: SentinelOne
+
+*Version*: 307
+
+*Rule authors*: 
 
 * Elastic
-* Host
-* Windows
-* Threat Detection
-* Persistence
-
-*Version*: 100 (<<persistence-via-microsoft-outlook-vba-history, version history>>)
-
-*Added ({stack} release)*: 7.11.0
-
-*Last modified ({stack} release)*: 8.5.0
-
-*Rule authors*: Elastic
 
 *Rule license*: Elastic License v2
-
-==== Potential false positives
-
-A legitimate VBA for Outlook is usually configured interactively via OUTLOOK.EXE.
-
-==== Investigation guide
-
-
-[source,markdown]
-----------------------------------
-
-----------------------------------
 
 
 ==== Rule query
 
 
-[source,js]
+[source, js]
 ----------------------------------
-file where event.type != "deletion" and file.path :
-"C:\\Users\\*\\AppData\\Roaming\\Microsoft\\Outlook\\VbaProject.OTM"
-----------------------------------
+file where host.os.type == "windows" and event.type != "deletion" and
+ file.path : "C:\\Users\\*\\AppData\\Roaming\\Microsoft\\Outlook\\VbaProject.OTM"
 
-==== Threat mapping
+----------------------------------
 
 *Framework*: MITRE ATT&CK^TM^
 
@@ -78,28 +70,3 @@ file where event.type != "deletion" and file.path :
 ** Name: Office Application Startup
 ** ID: T1137
 ** Reference URL: https://attack.mitre.org/techniques/T1137/
-
-[[persistence-via-microsoft-outlook-vba-history]]
-==== Rule version history
-
-Version 100 (8.5.0 release)::
-* Formatting only
-
-Version 6 (8.4.0 release)::
-* Formatting only
-
-Version 4 (8.2.0 release)::
-* Formatting only
-
-Version 3 (7.12.0 release)::
-* Updated query, changed from:
-+
-[source, js]
-----------------------------------
-file where event.type != "deletion" and wildcard(file.path,
-"C:\\Users\\*\\AppData\\Roaming\\Microsoft\\Outlook\\VbaProject.OTM")
-----------------------------------
-
-Version 2 (7.11.2 release)::
-* Formatting only
-

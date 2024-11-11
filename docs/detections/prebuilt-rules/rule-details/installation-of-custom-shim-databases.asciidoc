@@ -5,54 +5,67 @@ Identifies the installation of custom Application Compatibility Shim databases. 
 
 *Rule type*: eql
 
-*Rule indices*:
+*Rule indices*: 
 
-* logs-endpoint.events.*
+* logs-endpoint.events.registry-*
 * winlogbeat-*
-* logs-windows.*
+* logs-windows.sysmon_operational-*
+* logs-m365_defender.event-*
+* logs-sentinel_one_cloud_funnel.*
+* endgame-*
 
 *Severity*: medium
 
 *Risk score*: 47
 
-*Runs every*: 5 minutes
+*Runs every*: 5m
 
 *Searches indices from*: now-9m ({ref}/common-options.html#date-math[Date Math format], see also <<rule-schedule, `Additional look-back time`>>)
 
 *Maximum alerts per execution*: 100
 
-*Tags*:
+*References*: None
+
+*Tags*: 
+
+* Domain: Endpoint
+* OS: Windows
+* Use Case: Threat Detection
+* Tactic: Persistence
+* Data Source: Elastic Defend
+* Data Source: Sysmon
+* Data Source: Microsoft Defender for Endpoint
+* Data Source: SentinelOne
+* Data Source: Elastic Endgame
+
+*Version*: 309
+
+*Rule authors*: 
 
 * Elastic
-* Host
-* Windows
-* Threat Detection
-* Persistence
-
-*Version*: 101 (<<installation-of-custom-shim-databases-history, version history>>)
-
-*Added ({stack} release)*: 7.10.0
-
-*Last modified ({stack} release)*: 8.5.0
-
-*Rule authors*: Elastic
 
 *Rule license*: Elastic License v2
+
 
 ==== Rule query
 
 
-[source,js]
+[source, js]
 ----------------------------------
-sequence by process.entity_id with maxspan = 5m [process where
-event.type == "start" and not (process.name : "sdbinst.exe" and
-process.parent.name : "msiexec.exe")] [registry where event.type in
-("creation", "change") and registry.path :
-"HKLM\\SOFTWARE\\Microsoft\\Windows
-NT\\CurrentVersion\\AppCompatFlags\\Custom\\*.sdb"]
-----------------------------------
+registry where host.os.type == "windows" and event.type == "change" and
+    registry.path : (
+        "HKLM\\SOFTWARE\\Microsoft\\Windows NT\\CurrentVersion\\AppCompatFlags\\Custom\\*.sdb",
+        "\\REGISTRY\\MACHINE\\SOFTWARE\\Microsoft\\Windows NT\\CurrentVersion\\AppCompatFlags\\Custom\\*.sdb",
+        "MACHINE\\SOFTWARE\\Microsoft\\Windows NT\\CurrentVersion\\AppCompatFlags\\Custom\\*.sdb"
+    ) and
+    not process.executable : 
+                       ("?:\\Program Files (x86)\\DesktopCentral_Agent\\swrepository\\1\\swuploads\\SAP-SLC\\SAPSetupSLC02_14-80001954\\Setup\\NwSapSetup.exe", 
+                        "?:\\$WINDOWS.~BT\\Sources\\SetupPlatform.exe", 
+                         "?:\\Program Files (x86)\\SAP\\SAPsetup\\setup\\NwSapSetup.exe", 
+                         "?:\\Program Files (x86)\\SAP\\SapSetup\\OnRebootSvc\\NWSAPSetupOnRebootInstSvc.exe", 
+                         "?:\\Program Files (x86)\\Kaspersky Lab\\Kaspersky Security for Windows Server\\kavfs.exe")
 
-==== Threat mapping
+----------------------------------
 
 *Framework*: MITRE ATT&CK^TM^
 
@@ -64,39 +77,7 @@ NT\\CurrentVersion\\AppCompatFlags\\Custom\\*.sdb"]
 ** Name: Event Triggered Execution
 ** ID: T1546
 ** Reference URL: https://attack.mitre.org/techniques/T1546/
-
-[[installation-of-custom-shim-databases-history]]
-==== Rule version history
-
-Version 101 (8.5.0 release)::
-* Updated query, changed from:
-+
-[source, js]
-----------------------------------
-sequence by process.entity_id with maxspan = 5m [process where
-event.type in ("start", "process_started") and not (process.name :
-"sdbinst.exe" and process.parent.name : "msiexec.exe")] [registry
-where event.type in ("creation", "change") and registry.path :
-"HKLM\\SOFTWARE\\Microsoft\\Windows
-NT\\CurrentVersion\\AppCompatFlags\\Custom\\*.sdb"]
-----------------------------------
-
-Version 4 (8.4.0 release)::
-* Formatting only
-
-Version 3 (7.12.0 release)::
-* Updated query, changed from:
-+
-[source, js]
-----------------------------------
-sequence by process.entity_id with maxspan=5m [process where
-event.type in ("start", "process_started") and not (process.name
-: "sdbinst.exe" and process.parent.name : "msiexec.exe")] [registry
-where event.type in ("creation", "change") and
-wildcard(registry.path, "HKLM\\SOFTWARE\\Microsoft\\Windows
-NT\\CurrentVersion\\AppCompatFlags\\Custom\\*.sdb")]
-----------------------------------
-
-Version 2 (7.11.0 release)::
-* Formatting only
-
+* Sub-technique:
+** Name: Application Shimming
+** ID: T1546.011
+** Reference URL: https://attack.mitre.org/techniques/T1546/011/

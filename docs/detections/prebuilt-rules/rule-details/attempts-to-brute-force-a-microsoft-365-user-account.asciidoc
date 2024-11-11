@@ -1,76 +1,99 @@
 [[attempts-to-brute-force-a-microsoft-365-user-account]]
 === Attempts to Brute Force a Microsoft 365 User Account
 
-Identifies attempts to brute force a Microsoft 365 user account. An adversary may attempt a brute force attack to obtain unauthorized access to user accounts.
+Identifies potential brute-force attempts against Microsoft 365 user accounts by detecting a high number of failed login attempts or login sources within a 30-minute window. Attackers may attempt to brute force user accounts to gain unauthorized access to Microsoft 365 services.
 
-*Rule type*: threshold
+*Rule type*: esql
 
-*Rule indices*:
+*Rule indices*: None
 
-* filebeat-*
-* logs-o365*
+*Severity*: medium
 
-*Severity*: high
+*Risk score*: 47
 
-*Risk score*: 73
+*Runs every*: 5m
 
-*Runs every*: 5 minutes
-
-*Searches indices from*: now-30m ({ref}/common-options.html#date-math[Date Math format], see also <<rule-schedule, `Additional look-back time`>>)
+*Searches indices from*: now-9m ({ref}/common-options.html#date-math[Date Math format], see also <<rule-schedule, `Additional look-back time`>>)
 
 *Maximum alerts per execution*: 100
 
-*References*:
+*References*: 
 
 * https://blueteamblog.com/7-ways-to-monitor-your-office-365-logs-using-siem
+* https://learn.microsoft.com/en-us/purview/audit-log-detailed-properties
 
-*Tags*:
+*Tags*: 
+
+* Domain: Cloud
+* Domain: SaaS
+* Data Source: Microsoft 365
+* Use Case: Identity and Access Audit
+* Use Case: Threat Detection
+* Tactic: Credential Access
+
+*Version*: 311
+
+*Rule authors*: 
 
 * Elastic
-* Cloud
-* Microsoft 365
-* Continuous Monitoring
-* SecOps
-* Identity and Access
-
-*Version*: 101 (<<attempts-to-brute-force-a-microsoft-365-user-account-history, version history>>)
-
-*Added ({stack} release)*: 7.11.0
-
-*Last modified ({stack} release)*: 8.6.0
-
-*Rule authors*: Elastic, Willem D'Haese, Austin Songer
+* Willem D'Haese
+* Austin Songer
 
 *Rule license*: Elastic License v2
-
-==== Potential false positives
-
-Automated processes that attempt to authenticate using expired credentials and unbounded retries may lead to false positives.
-
-==== Investigation guide
-
-
-[source,markdown]
-----------------------------------
-
-----------------------------------
 
 
 ==== Rule query
 
 
-[source,js]
+[source, js]
 ----------------------------------
-event.dataset:o365.audit and event.provider:(AzureActiveDirectory or
-Exchange) and event.category:authentication and
-event.action:(UserLoginFailed or
-PasswordLogonInitialAuthUsingPassword) and not
-o365.audit.LogonError:(UserAccountNotFound or
-EntitlementGrantsNotFound or UserStrongAuthEnrollmentRequired or
-UserStrongAuthClientAuthNRequired or InvalidReplyTo)
-----------------------------------
+from logs-o365.audit-*
+// truncate the timestamp to a 30-minute window
+| eval target_time_window = DATE_TRUNC(30 minutes, @timestamp)
+| mv_expand event.category
+| where event.dataset == "o365.audit"
+  and event.category == "authentication"
 
-==== Threat mapping
+  // filter only on Entra ID or Exchange audit logs in O365 integration
+  and event.provider in ("AzureActiveDirectory", "Exchange")
+
+  // filter only for UserLoginFailed or partial failures
+  and event.action in ("UserLoginFailed", "PasswordLogonInitialAuthUsingPassword")
+
+  // ignore specific logon errors
+  and not o365.audit.LogonError in (
+    "EntitlementGrantsNotFound",
+    "UserStrongAuthEnrollmentRequired",
+    "UserStrongAuthClientAuthNRequired",
+    "InvalidReplyTo",
+    "SsoArtifactExpiredDueToConditionalAccess",
+    "PasswordResetRegistrationRequiredInterrupt",
+    "SsoUserAccountNotFoundInResourceTenant",
+    "UserStrongAuthExpired",
+    "CmsiInterrupt"
+)
+
+  // ignore unavailable
+  and o365.audit.UserId != "Not Available"
+
+  // filters out non user or application logins based on target
+  and o365.audit.Target.Type in ("0", "2", "3", "5", "6", "10")
+
+  // filters only for logins from user or application, ignoring oauth:token
+  and to_lower(o365.audit.ExtendedProperties.RequestType) rlike "(.*)login(.*)"
+
+// keep only relevant fields
+| keep event.provider, event.dataset, event.category, o365.audit.UserId, event.action, source.ip, o365.audit.LogonError, o365.audit.ExtendedProperties.RequestType, o365.audit.Target.Type, target_time_window
+
+// count the number of login sources and failed login attempts
+| stats
+  login_source_count = count(source.ip),
+  failed_login_count = count(*) by target_time_window, o365.audit.UserId
+
+// filter for users with more than 20 login sources or failed login attempts
+| where (login_source_count >= 20 or failed_login_count >= 20)
+
+----------------------------------
 
 *Framework*: MITRE ATT&CK^TM^
 
@@ -82,62 +105,3 @@ UserStrongAuthClientAuthNRequired or InvalidReplyTo)
 ** Name: Brute Force
 ** ID: T1110
 ** Reference URL: https://attack.mitre.org/techniques/T1110/
-
-[[attempts-to-brute-force-a-microsoft-365-user-account-history]]
-==== Rule version history
-
-Version 101 (8.6.0 release)::
-* Formatting only
-
-Version 100 (8.5.0 release)::
-* Formatting only
-
-Version 9 (8.4.0 release)::
-* Formatting only
-
-Version 7 (8.3.0 release)::
-* Updated query, changed from:
-+
-[source, js]
-----------------------------------
-event.dataset:o365.audit and event.provider:(AzureActiveDirectory or
-Exchange) and event.category:authentication and
-event.action:(UserLoginFailed or
-PasswordLogonInitialAuthUsingPassword) and not
-o365.audit.LogonError:(UserAccountNotFound or
-EntitlementGrantsNotFound or UserStrongAuthEnrollmentRequired or
-UserStrongAuthClientAuthNRequired or InvalidReplyTo) and
-event.outcome:success
-----------------------------------
-
-Version 6 (8.1.0 release)::
-* Updated query, changed from:
-+
-[source, js]
-----------------------------------
-event.dataset:o365.audit and event.provider:(AzureActiveDirectory or
-Exchange) and event.category:authentication and
-event.action:(UserLoginFailed or
-PasswordLogonInitialAuthUsingPassword) and not
-o365.audit.LogonError:(UserAccountNotFound or
-EntitlementGrantsNotFound or UserStrongAuthEnrollmentRequired or
-UserStrongAuthClientAuthNRequired or InvalidReplyTo) and
-event.outcome:failure
-----------------------------------
-
-Version 5 (7.14.0 release)::
-* Updated query, changed from:
-+
-[source, js]
-----------------------------------
-event.dataset:o365.audit and event.provider:AzureActiveDirectory and
-event.category:authentication and event.action:UserLoginFailed and
-event.outcome:failure
-----------------------------------
-
-Version 3 (7.13.0 release)::
-* Formatting only
-
-Version 2 (7.12.0 release)::
-* Formatting only
-

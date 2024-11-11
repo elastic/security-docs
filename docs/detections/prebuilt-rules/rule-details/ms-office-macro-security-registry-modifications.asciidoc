@@ -5,75 +5,74 @@ Microsoft Office Products offer options for users and developers to control the 
 
 *Rule type*: eql
 
-*Rule indices*:
+*Rule indices*: 
 
 * winlogbeat-*
-* logs-windows.*
+* logs-windows.sysmon_operational-*
 * endgame-*
+* logs-m365_defender.event-*
+* logs-sentinel_one_cloud_funnel.*
 
 *Severity*: medium
 
 *Risk score*: 47
 
-*Runs every*: 5 minutes
+*Runs every*: 5m
 
 *Searches indices from*: now-9m ({ref}/common-options.html#date-math[Date Math format], see also <<rule-schedule, `Additional look-back time`>>)
 
 *Maximum alerts per execution*: 100
 
-*Tags*:
+*References*: None
+
+*Tags*: 
+
+* Domain: Endpoint
+* OS: Windows
+* Use Case: Threat Detection
+* Tactic: Defense Evasion
+* Resources: Investigation Guide
+* Data Source: Elastic Endgame
+* Data Source: Sysmon
+* Data Source: Microsoft Defender for Endpoint
+* Data Source: SentinelOne
+
+*Version*: 308
+
+*Rule authors*: 
 
 * Elastic
-* Host
-* Windows
-* Threat Detection
-* Defense Evasion
-* Investigation Guide
-* Elastic Endgame
-
-*Version*: 102 (<<ms-office-macro-security-registry-modifications-history, version history>>)
-
-*Added ({stack} release)*: 8.1.0
-
-*Last modified ({stack} release)*: 8.6.0
-
-*Rule authors*: Elastic
 
 *Rule license*: Elastic License v2
+
 
 ==== Investigation guide
 
 
-[source,markdown]
-----------------------------------
-## Triage and analysis
 
-### Investigating MS Office Macro Security Registry Modifications
+*Triage and analysis*
 
-Macros are small programs that are used to automate repetitive tasks in Microsoft Office applications.
-Historically, macros have been used for a variety of reasons -- from automating part of a job, to
-building entire processes and data flows. Macros are written in Visual Basic for Applications (VBA) and are saved as
-part of Microsoft Office files.
 
-Macros are often created for legitimate reasons, but they can also be written by attackers to gain access, harm a
-system, or bypass other security controls such as application allow listing. In fact, exploitation from malicious macros
-is one of the top ways that organizations are compromised today. These attacks are often conducted through phishing or
-spear phishing campaigns.
 
-Attackers can convince victims to modify Microsoft Office security settings, so their macros are trusted by default and
-no warnings are displayed when they are executed. These settings include:
+*Investigating MS Office Macro Security Registry Modifications*
 
-* *Trust access to the VBA project object model* - When enabled, Microsoft Office will trust all macros and run any code
-without showing a security warning or requiring user permission.
-* *VbaWarnings* - When set to 1, Microsoft Office will trust all macros and run any code without showing a security
-warning or requiring user permission.
+
+Macros are small programs that are used to automate repetitive tasks in Microsoft Office applications. Historically, macros have been used for a variety of reasons -- from automating part of a job, to building entire processes and data flows. Macros are written in Visual Basic for Applications (VBA) and are saved as part of Microsoft Office files.
+
+Macros are often created for legitimate reasons, but they can also be written by attackers to gain access, harm a system, or bypass other security controls such as application allow listing. In fact, exploitation from malicious macros is one of the top ways that organizations are compromised today. These attacks are often conducted through phishing or spear phishing campaigns.
+
+Attackers can convince victims to modify Microsoft Office security settings, so their macros are trusted by default and no warnings are displayed when they are executed. These settings include:
+
+- *Trust access to the VBA project object model* - When enabled, Microsoft Office will trust all macros and run any code without showing a security warning or requiring user permission.
+- *VbaWarnings* - When set to 1, Microsoft Office will trust all macros and run any code without showing a security warning or requiring user permission.
 
 This rule looks for registry changes affecting the conditions above.
 
-#### Possible investigation steps
 
-- Investigate the process execution chain (parent process tree) for unknown processes. Examine their executable files
-for prevalence, whether they are located in expected locations, and if they are signed with valid digital signatures.
+*Possible investigation steps*
+
+
+- Investigate the process execution chain (parent process tree) for unknown processes. Examine their executable files for prevalence, whether they are located in expected locations, and if they are signed with valid digital signatures.
 - Identify the user account that performed the action and whether it should perform this kind of action.
 - Contact the user and check if the change was done manually.
 - Verify whether malicious macros were executed after the registry change.
@@ -88,50 +87,57 @@ for prevalence, whether they are located in expected locations, and if they are 
   - Use the PowerShell Get-FileHash cmdlet to get the files' SHA-256 hash values.
     - Search for the existence and reputation of the hashes in resources like VirusTotal, Hybrid-Analysis, CISCO Talos, Any.run, etc.
 
-### False positive analysis
 
-- This activity should not happen legitimately. The security team should address any potential benign true
-positives (B-TPs), as this configuration can put the user and the domain at risk.
+*False positive analysis*
 
-### Response and remediation
+
+- This activity should not happen legitimately. The security team should address any potential benign true positive (B-TP), as this configuration can put the user and the domain at risk.
+
+
+*Response and remediation*
+
 
 - Initiate the incident response process based on the outcome of the triage.
 - Reset the registry key value.
 - Isolate the involved host to prevent further post-compromise behavior.
-- Investigate credential exposure on systems compromised or used by the attacker to ensure all compromised accounts are
-identified. Reset passwords for these accounts and other potentially compromised credentials, such as email, business
-systems, and web services.
+- Investigate credential exposure on systems compromised or used by the attacker to ensure all compromised accounts are identified. Reset passwords for these accounts and other potentially compromised credentials, such as email, business systems, and web services.
 - Explore using GPOs to manage security settings for Microsoft Office macros.
-- Run a full antimalware scan. This may reveal additional artifacts left in the system, persistence mechanisms, and
-malware components.
+- Run a full antimalware scan. This may reveal additional artifacts left in the system, persistence mechanisms, and malware components.
 - Determine the initial vector abused by the attacker and take action to prevent reinfection through the same vector.
-- Using the incident response data, update logging and audit policies to improve the mean time to detect (MTTD) and the
-mean time to respond (MTTR).
-----------------------------------
+- Using the incident response data, update logging and audit policies to improve the mean time to detect (MTTD) and the mean time to respond (MTTR).
 
 
 ==== Rule query
 
 
-[source,js]
+[source, js]
 ----------------------------------
-registry where event.type == "change" and registry.path : (
-"HKU\\S-1-5-21-*\\SOFTWARE\\Microsoft\\Office\\*\\Security\\AccessVBOM
-", "HKU\\S-1-5-21-*\\SOFTWARE\\Microsoft\\Office\\*\\Security\
-\VbaWarnings", "HKU\\S-1-12-1-*\\SOFTWARE\\Microsoft\\Office\\
-*\\Security\\AccessVBOM", "HKU\\S-1-12-1-*\\SOFTWARE\\Microsof
-t\\Office\\*\\Security\\VbaWarnings", "\\REGISTRY\\USER\\S-1-5
--21-*\\SOFTWARE\\Microsoft\\Office\\*\\Security\\AccessVBOM", 
-"\\REGISTRY\\USER\\S-1-5-21-*\\SOFTWARE\\Microsoft\\Office\\*\\Securit
-y\\VbaWarnings", "\\REGISTRY\\USER\\S-1-12-1-*\\SOFTWARE\\Micr
-osoft\\Office\\*\\Security\\AccessVBOM", "\\REGISTRY\\USER\\S-
-1-12-1-*\\SOFTWARE\\Microsoft\\Office\\*\\Security\\VbaWarnings"
-) and registry.data.strings : ("0x00000001", "1") and
-process.name : ("cscript.exe", "wscript.exe", "mshta.exe",
-"mshta.exe", "winword.exe", "excel.exe")
-----------------------------------
+registry where host.os.type == "windows" and event.type == "change" and registry.value : ("AccessVBOM", "VbaWarnings") and
+    registry.path : (
+        /* Sysmon */
+        "HKU\\S-1-5-21-*\\SOFTWARE\\Microsoft\\Office\\*\\Security\\AccessVBOM",
+        "HKU\\S-1-5-21-*\\SOFTWARE\\Microsoft\\Office\\*\\Security\\VbaWarnings",
+        "HKU\\S-1-12-1-*\\SOFTWARE\\Microsoft\\Office\\*\\Security\\AccessVBOM",
+        "HKU\\S-1-12-1-*\\SOFTWARE\\Microsoft\\Office\\*\\Security\\VbaWarnings",
+        /* MDE */
+        "HKCU\\S-1-5-21-*\\SOFTWARE\\Microsoft\\Office\\*\\Security\\AccessVBOM",
+        "HKCU\\S-1-5-21-*\\SOFTWARE\\Microsoft\\Office\\*\\Security\\VbaWarnings",
+        "HKCU\\S-1-12-1-*\\SOFTWARE\\Microsoft\\Office\\*\\Security\\AccessVBOM",
+        "HKCU\\S-1-12-1-*\\SOFTWARE\\Microsoft\\Office\\*\\Security\\VbaWarnings",
+        /* Endgame */
+        "\\REGISTRY\\USER\\S-1-5-21-*\\SOFTWARE\\Microsoft\\Office\\*\\Security\\AccessVBOM",
+        "\\REGISTRY\\USER\\S-1-5-21-*\\SOFTWARE\\Microsoft\\Office\\*\\Security\\VbaWarnings",
+        "\\REGISTRY\\USER\\S-1-12-1-*\\SOFTWARE\\Microsoft\\Office\\*\\Security\\AccessVBOM",
+        "\\REGISTRY\\USER\\S-1-12-1-*\\SOFTWARE\\Microsoft\\Office\\*\\Security\\VbaWarnings",
+        /* SentinelOne */
+        "USER\\S-1-5-21-*\\SOFTWARE\\Microsoft\\Office\\*\\Security\\AccessVBOM",
+        "USER\\S-1-5-21-*\\SOFTWARE\\Microsoft\\Office\\*\\Security\\VbaWarnings",
+        "USER\\S-1-12-1-*\\SOFTWARE\\Microsoft\\Office\\*\\Security\\AccessVBOM",
+        "USER\\S-1-12-1-*\\SOFTWARE\\Microsoft\\Office\\*\\Security\\VbaWarnings"
+        ) and
+    registry.data.strings : ("0x00000001", "1")
 
-==== Threat mapping
+----------------------------------
 
 *Framework*: MITRE ATT&CK^TM^
 
@@ -143,8 +149,6 @@ process.name : ("cscript.exe", "wscript.exe", "mshta.exe",
 ** Name: Modify Registry
 ** ID: T1112
 ** Reference URL: https://attack.mitre.org/techniques/T1112/
-
-
 * Tactic:
 ** Name: Execution
 ** ID: TA0002
@@ -153,42 +157,7 @@ process.name : ("cscript.exe", "wscript.exe", "mshta.exe",
 ** Name: User Execution
 ** ID: T1204
 ** Reference URL: https://attack.mitre.org/techniques/T1204/
-
-[[ms-office-macro-security-registry-modifications-history]]
-==== Rule version history
-
-Version 102 (8.6.0 release)::
-* Updated query, changed from:
-+
-[source, js]
-----------------------------------
-registry where event.type == "change" and registry.path : (
-"HKU\\S-1-5-21-*\\SOFTWARE\\Microsoft\\Office\\*\\Security\\AccessVBOM
-", "HKU\\S-1-5-21-*\\SOFTWARE\\Microsoft\\Office\\*\\Security\
-\VbaWarnings" ) and registry.data.strings == "0x00000001"
-and process.name : ("cscript.exe", "wscript.exe", "mshta.exe",
-"mshta.exe", "winword.exe", "excel.exe")
-----------------------------------
-
-Version 101 (8.5.0 release)::
-* Formatting only
-
-Version 5 (8.4.0 release)::
-* Updated query, changed from:
-+
-[source, js]
-----------------------------------
-registry where event.type == "change" and registry.path : (
-"HKU\\S-1-5-21-*\\SOFTWARE\\Microsoft\\Office\\*\\Security\\AccessVBOM
-", "HKU\\S-1-5-21-*\\SOFTWARE\\Microsoft\\Office\\*\\Security\
-\VbaWarnings" ) and registry.data.strings == "0x00000001"
-and process.name : ("cscript.exe", "wscript.exe", "mshta.exe",
-"mshta.exe", "winword.exe", "excel.exe")
-----------------------------------
-
-Version 3 (8.3.0 release)::
-* Formatting only
-
-Version 2 (8.2.0 release)::
-* Formatting only
-
+* Sub-technique:
+** Name: Malicious File
+** ID: T1204.002
+** Reference URL: https://attack.mitre.org/techniques/T1204/002/

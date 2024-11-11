@@ -5,59 +5,60 @@ Identifies the use of Distributed Component Object Model (DCOM) to execute comma
 
 *Rule type*: eql
 
-*Rule indices*:
+*Rule indices*: 
 
 * winlogbeat-*
-* logs-endpoint.events.*
-* logs-windows.*
+* logs-endpoint.events.process-*
+* logs-endpoint.events.network-*
+* logs-windows.sysmon_operational-*
 
 *Severity*: high
 
 *Risk score*: 73
 
-*Runs every*: 5 minutes
+*Runs every*: 5m
 
 *Searches indices from*: now-9m ({ref}/common-options.html#date-math[Date Math format], see also <<rule-schedule, `Additional look-back time`>>)
 
 *Maximum alerts per execution*: 100
 
-*References*:
+*References*: 
 
 * https://codewhitesec.blogspot.com/2018/07/lethalhta.html
 
-*Tags*:
+*Tags*: 
+
+* Domain: Endpoint
+* OS: Windows
+* Use Case: Threat Detection
+* Tactic: Lateral Movement
+* Data Source: Elastic Defend
+* Data Source: Sysmon
+
+*Version*: 207
+
+*Rule authors*: 
 
 * Elastic
-* Host
-* Windows
-* Threat Detection
-* Lateral Movement
-
-*Version*: 101 (<<incoming-dcom-lateral-movement-via-mshta-history, version history>>)
-
-*Added ({stack} release)*: 7.11.0
-
-*Last modified ({stack} release)*: 8.5.0
-
-*Rule authors*: Elastic
 
 *Rule license*: Elastic License v2
+
 
 ==== Rule query
 
 
-[source,js]
+[source, js]
 ----------------------------------
-sequence with maxspan=1m [process where event.type == "start" and
-process.name : "mshta.exe" and process.args : "-Embedding" ] by
-host.id, process.entity_id [network where event.type == "start" and
-process.name : "mshta.exe" and network.direction : ("incoming",
-"ingress") and network.transport == "tcp" and source.port > 49151
-and destination.port > 49151 and source.ip != "127.0.0.1" and
-source.ip != "::1" ] by host.id, process.entity_id
-----------------------------------
+sequence with maxspan=1m
+  [process where host.os.type == "windows" and event.type == "start" and
+     process.name : "mshta.exe" and process.args : "-Embedding"
+  ] by host.id, process.entity_id
+  [network where host.os.type == "windows" and event.type == "start" and process.name : "mshta.exe" and
+     network.direction : ("incoming", "ingress") and network.transport == "tcp" and
+     source.port > 49151 and destination.port > 49151 and source.ip != "127.0.0.1" and source.ip != "::1"
+  ] by host.id, process.entity_id
 
-==== Threat mapping
+----------------------------------
 
 *Framework*: MITRE ATT&CK^TM^
 
@@ -69,8 +70,10 @@ source.ip != "::1" ] by host.id, process.entity_id
 ** Name: Remote Services
 ** ID: T1021
 ** Reference URL: https://attack.mitre.org/techniques/T1021/
-
-
+* Sub-technique:
+** Name: Distributed Component Object Model
+** ID: T1021.003
+** Reference URL: https://attack.mitre.org/techniques/T1021/003/
 * Tactic:
 ** Name: Defense Evasion
 ** ID: TA0005
@@ -79,73 +82,7 @@ source.ip != "::1" ] by host.id, process.entity_id
 ** Name: System Binary Proxy Execution
 ** ID: T1218
 ** Reference URL: https://attack.mitre.org/techniques/T1218/
-
-[[incoming-dcom-lateral-movement-via-mshta-history]]
-==== Rule version history
-
-Version 101 (8.5.0 release)::
-* Updated query, changed from:
-+
-[source, js]
-----------------------------------
-sequence with maxspan=1m [process where event.type in ("start",
-"process_started") and process.name : "mshta.exe" and
-process.args : "-Embedding" ] by host.id, process.entity_id
-[network where event.type == "start" and process.name : "mshta.exe"
-and network.direction : ("incoming", "ingress") and
-network.transport == "tcp" and source.port > 49151 and
-destination.port > 49151 and source.ip != "127.0.0.1" and source.ip !=
-"::1" ] by host.id, process.entity_id
-----------------------------------
-
-Version 8 (8.4.0 release)::
-* Updated query, changed from:
-+
-[source, js]
-----------------------------------
-sequence with maxspan=1m [process where event.type in ("start",
-"process_started") and process.name : "mshta.exe" and
-process.args : "-Embedding" ] by host.id, process.entity_id
-[network where event.type == "start" and process.name : "mshta.exe"
-and network.direction : ("incoming", "ingress") and
-network.transport == "tcp" and source.port > 49151 and
-destination.port > 49151 and source.ip != "127.0.0.1" and source.ip !=
-"::1" ] by host.id, process.entity_id
-----------------------------------
-
-Version 6 (8.2.0 release)::
-* Formatting only
-
-Version 5 (8.0.0 release)::
-* Updated query, changed from:
-+
-[source, js]
-----------------------------------
-sequence with maxspan=1m [process where event.type in ("start",
-"process_started") and process.name : "mshta.exe" and
-process.args : "-Embedding" ] by host.id, process.entity_id
-[network where event.type == "start" and process.name : "mshta.exe"
-and network.direction : ("incoming", "ingress") and
-network.transport == "tcp" and source.port > 49151 and
-destination.port > 49151 and not source.address in ("127.0.0.1",
-"::1") ] by host.id, process.entity_id
-----------------------------------
-
-Version 4 (7.16.0 release)::
-* Updated query, changed from:
-+
-[source, js]
-----------------------------------
-sequence with maxspan=1m [process where event.type in ("start",
-"process_started") and process.name : "mshta.exe" and
-process.args : "-Embedding" ] by host.id, process.entity_id
-[network where event.type == "start" and process.name : "mshta.exe"
-and network.direction == "incoming" and network.transport ==
-"tcp" and source.port > 49151 and destination.port > 49151 and
-not source.address in ("127.0.0.1", "::1") ] by host.id,
-process.entity_id
-----------------------------------
-
-Version 2 (7.12.0 release)::
-* Formatting only
-
+* Sub-technique:
+** Name: Mshta
+** ID: T1218.005
+** Reference URL: https://attack.mitre.org/techniques/T1218/005/

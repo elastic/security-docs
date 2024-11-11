@@ -1,0 +1,87 @@
+[[prebuilt-rule-8-16-1-remote-desktop-file-opened-from-suspicious-path]]
+=== Remote Desktop File Opened from Suspicious Path
+
+Identifies attempts to open a remote desktop file from suspicious paths. Adversaries may abuse RDP files for initial access.
+
+*Rule type*: eql
+
+*Rule indices*: 
+
+* winlogbeat-*
+* logs-endpoint.events.process-*
+* logs-windows.forwarded*
+* logs-windows.sysmon_operational-*
+* endgame-*
+* logs-system.security*
+* logs-m365_defender.event-*
+* logs-sentinel_one_cloud_funnel.*
+
+*Severity*: medium
+
+*Risk score*: 47
+
+*Runs every*: 5m
+
+*Searches indices from*: now-9m ({ref}/common-options.html#date-math[Date Math format], see also <<rule-schedule, `Additional look-back time`>>)
+
+*Maximum alerts per execution*: 100
+
+*References*: 
+
+* https://www.microsoft.com/en-us/security/blog/2024/10/29/midnight-blizzard-conducts-large-scale-spear-phishing-campaign-using-rdp-files/
+* https://www.blackhillsinfosec.com/rogue-rdp-revisiting-initial-access-methods/
+* https://shorsec.io/blog/malrdp-implementing-rouge-rdp-manually/
+
+*Tags*: 
+
+* Domain: Endpoint
+* OS: Windows
+* Use Case: Threat Detection
+* Tactic: Initial Access
+* Tactic: Command and Control
+* Data Source: Elastic Endgame
+* Data Source: Elastic Defend
+* Data Source: System
+* Data Source: Microsoft Defender for Endpoint
+* Data Source: Sysmon
+* Data Source: SentinelOne
+
+*Version*: 1
+
+*Rule authors*: 
+
+* Elastic
+
+*Rule license*: Elastic License v2
+
+
+==== Rule query
+
+
+[source, js]
+----------------------------------
+process where host.os.type == "windows" and event.type == "start" and  
+ process.name : "mstsc.exe" and
+ process.args : ("?:\\Users\\*\\Downloads\\*.rdp", 
+                 "?:\\Users\\*\\AppData\\Local\\Temp\\Temp?_*.rdp", 
+                 "?:\\Users\\*\\AppData\\Local\\Temp\\7z*.rdp", 
+                 "?:\\Users\\*\\AppData\\Local\\Temp\\Rar$*\\*.rdp", 
+                 "?:\\Users\\*\\AppData\\Local\\Temp\\BNZ.*.rdp",
+                 "C:\\Users\\*\\AppData\\Local\\Microsoft\\Windows\\INetCache\\Content.Outlook\\*.rdp")
+
+----------------------------------
+
+*Framework*: MITRE ATT&CK^TM^
+
+* Tactic:
+** Name: Initial Access
+** ID: TA0001
+** Reference URL: https://attack.mitre.org/tactics/TA0001/
+* Technique:
+** Name: Phishing
+** ID: T1566
+** Reference URL: https://attack.mitre.org/techniques/T1566/
+* Sub-technique:
+** Name: Spearphishing Attachment
+** ID: T1566.001
+** Reference URL: https://attack.mitre.org/techniques/T1566/001/
