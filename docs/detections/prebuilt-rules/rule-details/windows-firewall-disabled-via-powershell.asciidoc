@@ -15,6 +15,7 @@ Identifies when the Windows Firewall is disabled using PowerShell cmdlets, which
 * logs-system.security*
 * logs-m365_defender.event-*
 * logs-sentinel_one_cloud_funnel.*
+* logs-crowdstrike.fdr*
 
 *Severity*: medium
 
@@ -47,8 +48,9 @@ Identifies when the Windows Firewall is disabled using PowerShell cmdlets, which
 * Data Source: Microsoft Defender for Endpoint
 * Data Source: Sysmon
 * Data Source: SentinelOne
+* Data Source: Crowdstrike
 
-*Version*: 310
+*Version*: 311
 
 *Rule authors*: 
 
@@ -109,11 +111,14 @@ This rule identifies patterns related to disabling the Windows firewall or its r
 
 [source, js]
 ----------------------------------
-process where host.os.type == "windows" and event.action == "start" and
-  (process.name : ("powershell.exe", "pwsh.exe", "powershell_ise.exe") or ?process.pe.original_file_name == "PowerShell.EXE") and
-   process.args : "*Set-NetFirewallProfile*" and
-   process.args : "*-Enabled*" and process.args : "*False*" and
-   process.args : ("*-All*", "*Public*", "*Domain*", "*Private*")
+process where host.os.type == "windows" and event.type == "start" and
+  (
+    process.name : ("powershell.exe", "pwsh.exe", "powershell_ise.exe") or
+    ?process.pe.original_file_name in ("powershell.exe", "pwsh.dll", "powershell_ise.exe")
+  ) and
+  process.args : "*Set-NetFirewallProfile*" and
+  process.args : "*-Enabled*" and process.args : "*False*" and
+  process.args : ("*-All*", "*Public*", "*Domain*", "*Private*")
 
 ----------------------------------
 
