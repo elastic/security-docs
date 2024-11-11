@@ -5,69 +5,64 @@ Identifies attempts to enable the Windows scheduled tasks AT command via the reg
 
 *Rule type*: eql
 
-*Rule indices*:
+*Rule indices*: 
 
 * winlogbeat-*
-* logs-endpoint.events.*
-* logs-windows.*
+* logs-endpoint.events.registry-*
+* logs-windows.sysmon_operational-*
 * endgame-*
+* logs-m365_defender.event-*
+* logs-sentinel_one_cloud_funnel.*
 
 *Severity*: medium
 
 *Risk score*: 47
 
-*Runs every*: 5 minutes
+*Runs every*: 5m
 
 *Searches indices from*: now-9m ({ref}/common-options.html#date-math[Date Math format], see also <<rule-schedule, `Additional look-back time`>>)
 
 *Maximum alerts per execution*: 100
 
-*References*:
+*References*: 
 
 * https://docs.microsoft.com/en-us/windows/win32/cimwin32prov/win32-scheduledjob
 
-*Tags*:
+*Tags*: 
+
+* Domain: Endpoint
+* OS: Windows
+* Use Case: Threat Detection
+* Tactic: Defense Evasion
+* Tactic: Execution
+* Data Source: Elastic Endgame
+* Data Source: Elastic Defend
+* Data Source: Sysmon
+* Data Source: Microsoft Defender for Endpoint
+* Data Source: SentinelOne
+
+*Version*: 210
+
+*Rule authors*: 
 
 * Elastic
-* Host
-* Windows
-* Threat Detection
-* Defense Evasion
-* Elastic Endgame
-
-*Version*: 101 (<<scheduled-tasks-at-command-enabled-history, version history>>)
-
-*Added ({stack} release)*: 7.11.0
-
-*Last modified ({stack} release)*: 8.6.0
-
-*Rule authors*: Elastic
 
 *Rule license*: Elastic License v2
-
-==== Investigation guide
-
-
-[source,markdown]
-----------------------------------
-
-----------------------------------
 
 
 ==== Rule query
 
 
-[source,js]
+[source, js]
 ----------------------------------
-registry where registry.path : (
-"HKLM\\SOFTWARE\\Microsoft\\Windows
-NT\\CurrentVersion\\Schedule\\Configuration\\EnableAt",
-"\\REGISTRY\\MACHINE\\SOFTWARE\\Microsoft\\Windows
-NT\\CurrentVersion\\Schedule\\Configuration\\EnableAt" ) and
-registry.data.strings : ("1", "0x00000001")
-----------------------------------
+registry where host.os.type == "windows" and event.type == "change" and
+  registry.path : (
+    "HKLM\\SOFTWARE\\Microsoft\\Windows NT\\CurrentVersion\\Schedule\\Configuration\\EnableAt",
+    "\\REGISTRY\\MACHINE\\SOFTWARE\\Microsoft\\Windows NT\\CurrentVersion\\Schedule\\Configuration\\EnableAt",
+    "MACHINE\\SOFTWARE\\Microsoft\\Windows NT\\CurrentVersion\\Schedule\\Configuration\\EnableAt"
+  ) and registry.data.strings : ("1", "0x00000001")
 
-==== Threat mapping
+----------------------------------
 
 *Framework*: MITRE ATT&CK^TM^
 
@@ -79,49 +74,19 @@ registry.data.strings : ("1", "0x00000001")
 ** Name: Impair Defenses
 ** ID: T1562
 ** Reference URL: https://attack.mitre.org/techniques/T1562/
-
-[[scheduled-tasks-at-command-enabled-history]]
-==== Rule version history
-
-Version 101 (8.6.0 release)::
-* Updated query, changed from:
-+
-[source, js]
-----------------------------------
-registry where registry.path : "HKLM\\SOFTWARE\\Microsoft\\Windows
-NT\\CurrentVersion\\Schedule\\Configuration\\EnableAt" and
-registry.data.strings : ("1", "0x00000001")
-----------------------------------
-
-Version 100 (8.5.0 release)::
-* Formatting only
-
-Version 7 (8.4.0 release)::
-* Updated query, changed from:
-+
-[source, js]
-----------------------------------
-registry where registry.path : "HKLM\\SOFTWARE\\Microsoft\\Windows
-NT\\CurrentVersion\\Schedule\\Configuration\\EnableAt" and
-registry.data.strings : ("1", "0x00000001")
-----------------------------------
-
-Version 5 (8.2.0 release)::
-* Formatting only
-
-Version 4 (8.1.0 release)::
-* Updated query, changed from:
-+
-[source, js]
-----------------------------------
-registry where registry.path : "HKLM\\SOFTWARE\\Microsoft\\Windows
-NT\\CurrentVersion\\Schedule\\Configuration\\EnableAt" and
-registry.data.strings == "1"
-----------------------------------
-
-Version 3 (7.12.0 release)::
-* Formatting only
-
-Version 2 (7.11.2 release)::
-* Formatting only
-
+* Sub-technique:
+** Name: Disable or Modify Tools
+** ID: T1562.001
+** Reference URL: https://attack.mitre.org/techniques/T1562/001/
+* Tactic:
+** Name: Execution
+** ID: TA0002
+** Reference URL: https://attack.mitre.org/tactics/TA0002/
+* Technique:
+** Name: Scheduled Task/Job
+** ID: T1053
+** Reference URL: https://attack.mitre.org/techniques/T1053/
+* Sub-technique:
+** Name: At
+** ID: T1053.002
+** Reference URL: https://attack.mitre.org/techniques/T1053/002/

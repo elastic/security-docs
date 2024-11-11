@@ -5,68 +5,74 @@ Identifies scrobj.dll loaded into unusual Microsoft processes. This usually mean
 
 *Rule type*: eql
 
-*Rule indices*:
+*Rule indices*: 
 
-* logs-endpoint.events.*
+* logs-endpoint.events.library-*
+* logs-windows.sysmon_operational-*
+* winlogbeat-*
+* endgame-*
 
 *Severity*: medium
 
 *Risk score*: 47
 
-*Runs every*: 5 minutes
+*Runs every*: 5m
 
 *Searches indices from*: now-9m ({ref}/common-options.html#date-math[Date Math format], see also <<rule-schedule, `Additional look-back time`>>)
 
 *Maximum alerts per execution*: 100
 
-*Tags*:
+*References*: None
+
+*Tags*: 
+
+* Domain: Endpoint
+* OS: Windows
+* Use Case: Threat Detection
+* Tactic: Defense Evasion
+* Data Source: Elastic Defend
+* Data Source: Elastic Endgame
+* Data Source: Sysmon
+
+*Version*: 109
+
+*Rule authors*: 
 
 * Elastic
-* Host
-* Windows
-* Threat Detection
-* Defense Evasion
-
-*Version*: 100 (<<suspicious-script-object-execution-history, version history>>)
-
-*Added ({stack} release)*: 7.10.0
-
-*Last modified ({stack} release)*: 8.5.0
-
-*Rule authors*: Elastic
 
 *Rule license*: Elastic License v2
+
 
 ==== Rule query
 
 
-[source,js]
+[source, js]
 ----------------------------------
-sequence by process.entity_id with maxspan=2m [process where
-event.type == "start" and (process.code_signature.subject_name in
-("Microsoft Corporation", "Microsoft Windows") and
-process.code_signature.trusted == true) and not
-process.executable : ( "?:\\Windows\\System32\\cscript.exe",
-"?:\\Windows\\SysWOW64\\cscript.exe", "?:\\Program Files
-(x86)\\Internet Explorer\\iexplore.exe", "?:\\Program
-Files\\Internet Explorer\\iexplore.exe", "?:\\Windows\\SystemAp
-ps\\Microsoft.MicrosoftEdge_*\\MicrosoftEdge.exe",
-"?:\\Windows\\system32\\msiexec.exe",
-"?:\\Windows\\SysWOW64\\msiexec.exe",
-"?:\\Windows\\System32\\smartscreen.exe",
-"?:\\Windows\\system32\\taskhostw.exe",
-"?:\\windows\\system32\\inetsrv\\w3wp.exe",
-"?:\\windows\\SysWOW64\\inetsrv\\w3wp.exe",
-"?:\\Windows\\system32\\wscript.exe",
-"?:\\Windows\\SysWOW64\\wscript.exe",
-"?:\\Windows\\system32\\mobsync.exe",
-"?:\\Windows\\SysWOW64\\mobsync.exe",
-"?:\\Windows\\System32\\cmd.exe",
-"?:\\Windows\\SysWOW64\\cmd.exe")] [library where event.type ==
-"start" and dll.name : "scrobj.dll"]
-----------------------------------
+any where host.os.type == "windows" and 
+ (event.category : ("library", "driver") or (event.category == "process" and event.action : "Image loaded*")) and 
+ (?dll.name : "scrobj.dll" or ?file.name : "scrobj.dll") and 
+ process.executable : ("?:\\Windows\\System32\\*.exe", "?:\\Windows\\SysWOW64\\*.exe") and 
+ not process.executable : (
+       "?:\\Windows\\System32\\cscript.exe",
+       "?:\\Windows\\SysWOW64\\cscript.exe",
+       "?:\\Windows\\system32\\msiexec.exe",
+       "?:\\Windows\\SysWOW64\\msiexec.exe",
+       "?:\\Windows\\System32\\smartscreen.exe",
+       "?:\\Windows\\system32\\taskhostw.exe",
+       "?:\\windows\\system32\\inetsrv\\w3wp.exe",
+       "?:\\windows\\SysWOW64\\inetsrv\\w3wp.exe",
+       "?:\\Windows\\system32\\wscript.exe",
+       "?:\\Windows\\SysWOW64\\wscript.exe",
+       "?:\\Windows\\System32\\mshta.exe",
+       "?:\\Windows\\system32\\mobsync.exe",
+       "?:\\Windows\\SysWOW64\\mobsync.exe",
+       "?:\\Windows\\System32\\cmd.exe",
+       "?:\\Windows\\SysWOW64\\cmd.exe", 
+       "?:\\Windows\\System32\\OpenWith.exe",
+       "?:\\Windows\\System32\\wbem\\WMIADAP.exe",
+       "?:\\Windows\\System32\\WindowsPowerShell\\v1.0\\powershell.exe")
 
-==== Threat mapping
+----------------------------------
 
 *Framework*: MITRE ATT&CK^TM^
 
@@ -78,79 +84,7 @@ ps\\Microsoft.MicrosoftEdge_*\\MicrosoftEdge.exe",
 ** Name: System Binary Proxy Execution
 ** ID: T1218
 ** Reference URL: https://attack.mitre.org/techniques/T1218/
-
-[[suspicious-script-object-execution-history]]
-==== Rule version history
-
-Version 100 (8.5.0 release)::
-* Formatting only
-
-Version 6 (8.4.0 release)::
-* Updated query, changed from:
-+
-[source, js]
-----------------------------------
-sequence by process.entity_id with maxspan=2m [process where
-event.type == "start" and (process.code_signature.subject_name in
-("Microsoft Corporation", "Microsoft Windows") and
-process.code_signature.trusted == true) and not
-process.executable : ( "?:\\Windows\\System32\\cscript.exe",
-"?:\\Windows\\SysWOW64\\cscript.exe", "?:\\Program Files
-(x86)\\Internet Explorer\\iexplore.exe", "?:\\Program
-Files\\Internet Explorer\\iexplore.exe", "?:\\Windows\\SystemAp
-ps\\Microsoft.MicrosoftEdge_*\\MicrosoftEdge.exe",
-"?:\\Windows\\system32\\msiexec.exe",
-"?:\\Windows\\SysWOW64\\msiexec.exe",
-"?:\\Windows\\System32\\smartscreen.exe",
-"?:\\Windows\\system32\\taskhostw.exe",
-"?:\\windows\\system32\\inetsrv\\w3wp.exe",
-"?:\\windows\\SysWOW64\\inetsrv\\w3wp.exe",
-"?:\\Windows\\system32\\wscript.exe",
-"?:\\Windows\\SysWOW64\\wscript.exe",
-"?:\\Windows\\system32\\mobsync.exe",
-"?:\\Windows\\SysWOW64\\mobsync.exe",
-"?:\\Windows\\System32\\cmd.exe",
-"?:\\Windows\\SysWOW64\\cmd.exe")] [library where event.type ==
-"start" and dll.name : "scrobj.dll"]
-----------------------------------
-
-Version 4 (7.13.0 release)::
-* Rule name changed from: Windows Suspicious Script Object Execution
-+
-* Updated query, changed from:
-+
-[source, js]
-----------------------------------
-/* add winlogbeat-* when process.code_signature.* fields are populated
-*/ sequence by process.entity_id with maxspan = 2m [process where
-event.type in ("start", "process_started") and /* uncomment once
-in winlogbeat */ /* process.code_signature.subject_name :
-"Microsoft Corporation" and process.code_signature.trusted : true and
-*/ not process.name : ( "cscript.exe",
-"iexplore.exe", "MicrosoftEdge.exe", "msiexec.exe",
-"smartscreen.exe", "taskhostw.exe", "w3wp.exe",
-"wscript.exe")] [library where event.type == "start" and dll.name :
-"scrobj.dll"]
-----------------------------------
-
-Version 3 (7.12.0 release)::
-* Updated query, changed from:
-+
-[source, js]
-----------------------------------
-/* add winlogbeat-* when process.code_signature.* fields are populated
-*/ sequence by process.entity_id with maxspan=2m [process where
-event.type in ("start", "process_started") and /* uncomment once
-in winlogbeat */ /* process.code_signature.subject_name ==
-"Microsoft Corporation" and process.code_signature.trusted == true and
-*/ not (process.name : "cscript.exe" or process.name :
-"iexplore.exe" or process.name : "MicrosoftEdge.exe" or
-process.name : "msiexec.exe" or process.name :
-"smartscreen.exe" or process.name : "taskhostw.exe" or
-process.name : "w3wp.exe" or process.name : "wscript.exe")]
-[library where event.type == "start" and file.name : "scrobj.dll"]
-----------------------------------
-
-Version 2 (7.11.0 release)::
-* Formatting only
-
+* Sub-technique:
+** Name: Regsvr32
+** ID: T1218.010
+** Reference URL: https://attack.mitre.org/techniques/T1218/010/

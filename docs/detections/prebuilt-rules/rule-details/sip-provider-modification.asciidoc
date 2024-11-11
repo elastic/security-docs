@@ -5,60 +5,67 @@ Identifies modifications to the registered Subject Interface Package (SIP) provi
 
 *Rule type*: eql
 
-*Rule indices*:
+*Rule indices*: 
 
-* logs-endpoint.events.*
+* logs-endpoint.events.registry-*
 * endgame-*
+* logs-windows.sysmon_operational-*
+* winlogbeat-*
+* logs-m365_defender.event-*
+* logs-sentinel_one_cloud_funnel.*
 
 *Severity*: medium
 
 *Risk score*: 47
 
-*Runs every*: 5 minutes
+*Runs every*: 5m
 
 *Searches indices from*: now-9m ({ref}/common-options.html#date-math[Date Math format], see also <<rule-schedule, `Additional look-back time`>>)
 
 *Maximum alerts per execution*: 100
 
-*References*:
+*References*: 
 
 * https://github.com/mattifestation/PoCSubjectInterfacePackage
 
-*Tags*:
+*Tags*: 
+
+* Domain: Endpoint
+* OS: Windows
+* Use Case: Threat Detection
+* Tactic: Defense Evasion
+* Data Source: Elastic Endgame
+* Data Source: Elastic Defend
+* Data Source: Sysmon
+* Data Source: Microsoft Defender for Endpoint
+* Data Source: SentinelOne
+
+*Version*: 210
+
+*Rule authors*: 
 
 * Elastic
-* Host
-* Windows
-* Threat Detection
-* Defense Evasion
-* Elastic Endgame
-
-*Version*: 101 (<<sip-provider-modification-history, version history>>)
-
-*Added ({stack} release)*: 7.12.0
-
-*Last modified ({stack} release)*: 8.6.0
-
-*Rule authors*: Elastic
 
 *Rule license*: Elastic License v2
+
 
 ==== Rule query
 
 
-[source,js]
+[source, js]
 ----------------------------------
-registry where event.type:"change" and registry.path: (
-"*\\SOFTWARE\\Microsoft\\Cryptography\\OID\\EncodingType
-0\\CryptSIPDllPutSignedDataMsg\\{*}\\Dll",
-"*\\SOFTWARE\\WOW6432Node\\Microsoft\\Cryptography\\OID\\EncodingType
-0\\CryptSIPDllPutSignedDataMsg\\{*}\\Dll", "*\\SOFTWARE\\Microsoft
-\\Cryptography\\Providers\\Trust\\FinalPolicy\\{*}\\$Dll", "*\\SOF
-TWARE\\WOW6432Node\\Microsoft\\Cryptography\\Providers\\Trust\\FinalPo
-licy\\{*}\\$Dll" ) and registry.data.strings:"*.dll"
-----------------------------------
+registry where host.os.type == "windows" and event.type == "change" and registry.value : ("Dll", "$Dll") and
+  registry.path: (
+    "*\\SOFTWARE\\Microsoft\\Cryptography\\OID\\EncodingType 0\\CryptSIPDllPutSignedDataMsg\\{*}\\Dll",
+    "*\\SOFTWARE\\WOW6432Node\\Microsoft\\Cryptography\\OID\\EncodingType 0\\CryptSIPDllPutSignedDataMsg\\{*}\\Dll",
+    "*\\SOFTWARE\\Microsoft\\Cryptography\\Providers\\Trust\\FinalPolicy\\{*}\\$Dll",
+    "*\\SOFTWARE\\WOW6432Node\\Microsoft\\Cryptography\\Providers\\Trust\\FinalPolicy\\{*}\\$Dll"
+    ) and
+  registry.data.strings:"*.dll" and
+  not (process.name : "msiexec.exe" and registry.data.strings : "mso.dll") and
+  not (process.name : "regsvr32.exe" and registry.data.strings == "WINTRUST.DLL")
 
-==== Threat mapping
+----------------------------------
 
 *Framework*: MITRE ATT&CK^TM^
 
@@ -70,31 +77,7 @@ licy\\{*}\\$Dll" ) and registry.data.strings:"*.dll"
 ** Name: Subvert Trust Controls
 ** ID: T1553
 ** Reference URL: https://attack.mitre.org/techniques/T1553/
-
-[[sip-provider-modification-history]]
-==== Rule version history
-
-Version 101 (8.6.0 release)::
-* Updated query, changed from:
-+
-[source, js]
-----------------------------------
-registry where event.type:"change" and registry.path: (
-"HKLM\\SOFTWARE\\Microsoft\\Cryptography\\OID\\EncodingType
-0\\CryptSIPDllPutSignedDataMsg\\{*}\\Dll", "HKLM\\SOFTWARE\\WOW643
-2Node\\Microsoft\\Cryptography\\OID\\EncodingType
-0\\CryptSIPDllPutSignedDataMsg\\{*}\\Dll", "HKLM\\SOFTWARE\\Micros
-oft\\Cryptography\\Providers\\Trust\\FinalPolicy\\{*}\\$Dll", "HKL
-M\\SOFTWARE\\WOW6432Node\\Microsoft\\Cryptography\\Providers\\Trust\\F
-inalPolicy\\{*}\\$Dll" ) and registry.data.strings:"*.dll"
-----------------------------------
-
-Version 100 (8.5.0 release)::
-* Formatting only
-
-Version 3 (8.4.0 release)::
-* Formatting only
-
-Version 2 (8.1.0 release)::
-* Formatting only
-
+* Sub-technique:
+** Name: SIP and Trust Provider Hijacking
+** ID: T1553.003
+** Reference URL: https://attack.mitre.org/techniques/T1553/003/

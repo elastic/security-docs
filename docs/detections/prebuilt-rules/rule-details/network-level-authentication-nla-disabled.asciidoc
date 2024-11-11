@@ -1,0 +1,78 @@
+[[network-level-authentication-nla-disabled]]
+=== Network-Level Authentication (NLA) Disabled
+
+Identifies the attempt to disable Network-Level Authentication (NLA) via registry modification. Network Level Authentication (NLA) is a feature on Windows that provides an extra layer of security for Remote Desktop (RDP) connections, as it requires users to authenticate before allowing a full RDP session. Attackers can disable NLA to enable persistence methods that require access to the Windows sign-in screen without authenticating, such as Accessibility Features persistence methods, like Sticky Keys.
+
+*Rule type*: eql
+
+*Rule indices*: 
+
+* logs-endpoint.events.registry-*
+* endgame-*
+* logs-m365_defender.event-*
+* logs-sentinel_one_cloud_funnel.*
+* logs-windows.sysmon_operational-*
+
+*Severity*: low
+
+*Risk score*: 21
+
+*Runs every*: 5m
+
+*Searches indices from*: now-9m ({ref}/common-options.html#date-math[Date Math format], see also <<rule-schedule, `Additional look-back time`>>)
+
+*Maximum alerts per execution*: 100
+
+*References*: 
+
+* https://www.microsoft.com/en-us/security/blog/2023/08/24/flax-typhoon-using-legitimate-software-to-quietly-access-taiwanese-organizations/
+
+*Tags*: 
+
+* Domain: Endpoint
+* OS: Windows
+* Use Case: Threat Detection
+* Tactic: Defense Evasion
+* Data Source: Elastic Defend
+* Data Source: Elastic Endgame
+* Data Source: Microsoft Defender for Endpoint
+* Data Source: SentinelOne
+* Data Source: Sysmon
+
+*Version*: 103
+
+*Rule authors*: 
+
+* Elastic
+
+*Rule license*: Elastic License v2
+
+
+==== Rule query
+
+
+[source, js]
+----------------------------------
+registry where host.os.type == "windows" and event.action != "deletion" and registry.value : "UserAuthentication" and
+  registry.path : (
+    "HKLM\\SYSTEM\\ControlSet*\\Control\\Terminal Server\\WinStations\\RDP-Tcp\\UserAuthentication",
+    "\\REGISTRY\\MACHINE\\SYSTEM\\*ControlSet*\\Control\\Terminal Server\\WinStations\\RDP-Tcp\\UserAuthentication",
+    "MACHINE\\SYSTEM\\*ControlSet*\\Control\\Terminal Server\\WinStations\\RDP-Tcp\\UserAuthentication"
+  ) and registry.data.strings :  ("0", "0x00000000")
+
+----------------------------------
+
+*Framework*: MITRE ATT&CK^TM^
+
+* Tactic:
+** Name: Defense Evasion
+** ID: TA0005
+** Reference URL: https://attack.mitre.org/tactics/TA0005/
+* Technique:
+** Name: Modify Registry
+** ID: T1112
+** Reference URL: https://attack.mitre.org/techniques/T1112/
+* Technique:
+** Name: Impair Defenses
+** ID: T1562
+** Reference URL: https://attack.mitre.org/techniques/T1562/

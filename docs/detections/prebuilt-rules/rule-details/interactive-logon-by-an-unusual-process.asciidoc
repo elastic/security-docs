@@ -1,0 +1,99 @@
+[[interactive-logon-by-an-unusual-process]]
+=== Interactive Logon by an Unusual Process
+
+Identifies interactive logon attempt with alternate credentials and by an unusual process. Adversaries may create a new token to escalate privileges and bypass access controls.
+
+*Rule type*: eql
+
+*Rule indices*: 
+
+* winlogbeat-*
+* logs-system.*
+* logs-windows.*
+
+*Severity*: high
+
+*Risk score*: 73
+
+*Runs every*: 5m
+
+*Searches indices from*: now-9m ({ref}/common-options.html#date-math[Date Math format], see also <<rule-schedule, `Additional look-back time`>>)
+
+*Maximum alerts per execution*: 100
+
+*References*: 
+
+* https://attack.mitre.org/techniques/T1134/002/
+
+*Tags*: 
+
+* Domain: Endpoint
+* OS: Windows
+* Use Case: Threat Detection
+* Tactic: Privilege Escalation
+* Data Source: System
+
+*Version*: 4
+
+*Rule authors*: 
+
+* Elastic
+
+*Rule license*: Elastic License v2
+
+
+==== Setup
+
+
+
+*Setup*
+
+
+Audit event 4624 is needed to trigger this rule.
+
+If enabling an EQL rule on a non-elastic-agent index (such as beats) for versions <8.2,
+events will not define `event.ingested` and default fallback for EQL rules was not added until version 8.2.
+Hence for this rule to work effectively, users will need to add a custom ingest pipeline to populate
+`event.ingested` to @timestamp.
+For more details on adding a custom ingest pipeline refer - https://www.elastic.co/guide/en/fleet/current/data-streams-pipeline-tutorial.html
+
+
+==== Rule query
+
+
+[source, js]
+----------------------------------
+authentication where 
+ host.os.type : "windows" and winlog.event_data.LogonProcessName : "Advapi*" and 
+ winlog.logon.type == "Interactive" and winlog.event_data.SubjectUserSid : ("S-1-5-21*", "S-1-12-*") and 
+ winlog.event_data.TargetUserSid : ("S-1-5-21*", "S-1-12-*")  and process.executable : "C:\\*" and 
+ not startswith~(winlog.event_data.SubjectUserSid, winlog.event_data.TargetUserSid) and 
+ not process.executable : 
+            ("?:\\Windows\\System32\\winlogon.exe", 
+             "?:\\Windows\\System32\\wininit.exe", 
+             "?:\\Program Files\\*.exe", 
+             "?:\\Program Files (x86)\\*.exe", 
+             "?:\\Windows\\SysWOW64\\inetsrv\\w3wp.exe", 
+             "?:\\Windows\\System32\\inetsrv\\w3wp.exe", 
+             "?:\\Windows\\SysWOW64\\msiexec.exe")
+
+----------------------------------
+
+*Framework*: MITRE ATT&CK^TM^
+
+* Tactic:
+** Name: Privilege Escalation
+** ID: TA0004
+** Reference URL: https://attack.mitre.org/tactics/TA0004/
+* Technique:
+** Name: Access Token Manipulation
+** ID: T1134
+** Reference URL: https://attack.mitre.org/techniques/T1134/
+* Sub-technique:
+** Name: Create Process with Token
+** ID: T1134.002
+** Reference URL: https://attack.mitre.org/techniques/T1134/002/
+* Sub-technique:
+** Name: Make and Impersonate Token
+** ID: T1134.003
+** Reference URL: https://attack.mitre.org/techniques/T1134/003/

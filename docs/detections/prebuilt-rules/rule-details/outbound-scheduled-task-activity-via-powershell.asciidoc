@@ -5,64 +5,57 @@ Identifies the PowerShell process loading the Task Scheduler COM DLL followed by
 
 *Rule type*: eql
 
-*Rule indices*:
+*Rule indices*: 
 
 * winlogbeat-*
-* logs-endpoint.events.*
-* logs-windows.*
+* logs-endpoint.events.library-*
+* logs-endpoint.events.network-*
+* logs-windows.sysmon_operational-*
 
 *Severity*: medium
 
 *Risk score*: 47
 
-*Runs every*: 5 minutes
+*Runs every*: 5m
 
 *Searches indices from*: now-9m ({ref}/common-options.html#date-math[Date Math format], see also <<rule-schedule, `Additional look-back time`>>)
 
 *Maximum alerts per execution*: 100
 
-*References*:
+*References*: 
 
 * https://www.volexity.com/blog/2020/12/14/dark-halo-leverages-solarwinds-compromise-to-breach-organizations/
+* https://www.elastic.co/security-labs/hunting-for-lateral-movement-using-event-query-language
 
-*Tags*:
+*Tags*: 
+
+* Domain: Endpoint
+* OS: Windows
+* Use Case: Threat Detection
+* Tactic: Execution
+* Data Source: Elastic Defend
+* Data Source: Sysmon
+
+*Version*: 109
+
+*Rule authors*: 
 
 * Elastic
-* Host
-* Windows
-* Threat Detection
-* Execution
-
-*Version*: 100 (<<outbound-scheduled-task-activity-via-powershell-history, version history>>)
-
-*Added ({stack} release)*: 7.11.0
-
-*Last modified ({stack} release)*: 8.5.0
-
-*Rule authors*: Elastic
 
 *Rule license*: Elastic License v2
 
-==== Potential false positives
-
-Legitimate scheduled tasks may be created during installation of new software.
 
 ==== Rule query
 
 
-[source,js]
+[source, js]
 ----------------------------------
-sequence by host.id, process.entity_id with maxspan = 5s [any where
-(event.category == "library" or (event.category == "process" and
-event.action : "Image loaded*")) and (dll.name : "taskschd.dll" or
-file.name : "taskschd.dll") and process.name : ("powershell.exe",
-"pwsh.exe", "powershell_ise.exe")] [network where process.name :
-("powershell.exe", "pwsh.exe", "powershell_ise.exe") and
-destination.port == 135 and not destination.address in ("127.0.0.1",
-"::1")]
-----------------------------------
+sequence by host.id, process.entity_id with maxspan = 5s
+ [any where host.os.type == "windows" and (event.category == "library" or (event.category == "process" and event.action : "Image loaded*")) and
+  (?dll.name : "taskschd.dll" or file.name : "taskschd.dll") and process.name : ("powershell.exe", "pwsh.exe", "powershell_ise.exe")]
+ [network where host.os.type == "windows" and process.name : ("powershell.exe", "pwsh.exe", "powershell_ise.exe") and destination.port == 135 and not destination.address in ("127.0.0.1", "::1")]
 
-==== Threat mapping
+----------------------------------
 
 *Framework*: MITRE ATT&CK^TM^
 
@@ -74,47 +67,15 @@ destination.port == 135 and not destination.address in ("127.0.0.1",
 ** Name: Scheduled Task/Job
 ** ID: T1053
 ** Reference URL: https://attack.mitre.org/techniques/T1053/
-
-[[outbound-scheduled-task-activity-via-powershell-history]]
-==== Rule version history
-
-Version 100 (8.5.0 release)::
-* Formatting only
-
-Version 6 (8.4.0 release)::
-* Updated query, changed from:
-+
-[source, js]
-----------------------------------
-sequence by host.id, process.entity_id with maxspan = 5s [library
-where dll.name : "taskschd.dll" and process.name : ("powershell.exe",
-"pwsh.exe", "powershell_ise.exe")] [network where process.name :
-("powershell.exe", "pwsh.exe", "powershell_ise.exe") and
-destination.port == 135 and not destination.address in ("127.0.0.1",
-"::1")]
-----------------------------------
-
-Version 4 (7.16.0 release)::
-* Updated query, changed from:
-+
-[source, js]
-----------------------------------
-sequence by host.id, process.entity_id with maxspan = 5s [library
-where dll.name : "taskschd.dll" and process.name : ("powershell.exe",
-"pwsh.exe")] [network where process.name : ("powershell.exe",
-"pwsh.exe") and destination.port == 135 and not destination.address in
-("127.0.0.1", "::1")]
-----------------------------------
-
-Version 2 (7.12.0 release)::
-* Updated query, changed from:
-+
-[source, js]
-----------------------------------
-sequence by host.id, process.entity_id with maxspan = 5s [library
-where file.name: "taskschd.dll" and process.name: ("powershell.exe",
-"pwsh.exe")] [network where process.name : ("powershell.exe",
-"pwsh.exe") and destination.port == 135 and not destination.address in
-("127.0.0.1", "::1")]
-----------------------------------
-
+* Sub-technique:
+** Name: Scheduled Task
+** ID: T1053.005
+** Reference URL: https://attack.mitre.org/techniques/T1053/005/
+* Technique:
+** Name: Command and Scripting Interpreter
+** ID: T1059
+** Reference URL: https://attack.mitre.org/techniques/T1059/
+* Sub-technique:
+** Name: PowerShell
+** ID: T1059.001
+** Reference URL: https://attack.mitre.org/techniques/T1059/001/

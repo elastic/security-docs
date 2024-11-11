@@ -5,78 +5,69 @@ Identifies potential abuse of the Microsoft Diagnostics Troubleshooting Wizard (
 
 *Rule type*: eql
 
-*Rule indices*:
+*Rule indices*: 
 
-* logs-endpoint.events.*
+* logs-endpoint.events.process-*
 * winlogbeat-*
-* logs-windows.*
+* logs-windows.sysmon_operational-*
 * endgame-*
+* logs-m365_defender.event-*
 
 *Severity*: high
 
 *Risk score*: 73
 
-*Runs every*: 5 minutes
+*Runs every*: 5m
 
 *Searches indices from*: now-9m ({ref}/common-options.html#date-math[Date Math format], see also <<rule-schedule, `Additional look-back time`>>)
 
 *Maximum alerts per execution*: 100
 
-*References*:
+*References*: 
 
 * https://twitter.com/nao_sec/status/1530196847679401984
 * https://lolbas-project.github.io/lolbas/Binaries/Msdt/
 
-*Tags*:
+*Tags*: 
+
+* Domain: Endpoint
+* OS: Windows
+* Use Case: Threat Detection
+* Tactic: Defense Evasion
+* Data Source: Elastic Endgame
+* Data Source: Elastic Defend
+* Data Source: Microsoft Defender for Endpoint
+* Data Source: Sysmon
+
+*Version*: 110
+
+*Rule authors*: 
 
 * Elastic
-* Host
-* Windows
-* Threat Detection
-* Defense Evasion
-* Elastic Endgame
-
-*Version*: 102 (<<suspicious-microsoft-diagnostics-wizard-execution-history, version history>>)
-
-*Added ({stack} release)*: 8.3.0
-
-*Last modified ({stack} release)*: 8.6.0
-
-*Rule authors*: Elastic
 
 *Rule license*: Elastic License v2
-
-==== Investigation guide
-
-
-[source,markdown]
-----------------------------------
-
-----------------------------------
 
 
 ==== Rule query
 
 
-[source,js]
+[source, js]
 ----------------------------------
-process where event.type == "start" and
-(process.pe.original_file_name == "msdt.exe" or process.name :
-"msdt.exe") and ( process.args : ("IT_RebrowseForFile=*", "ms-
-msdt:/id", "ms-msdt:-id", "*FromBase64*") or (process.args :
-"-af" and process.args : "/skip" and process.parent.name :
-("explorer.exe", "cmd.exe", "powershell.exe", "cscript.exe",
-"wscript.exe", "mshta.exe", "rundll32.exe", "regsvr32.exe") and
-process.args : ("?:\\WINDOWS\\diagnostics\\index\\PCWDiagnostic.xml",
-"PCWDiagnostic.xml", "?:\\Users\\Public\\*", "?:\\Windows\\Temp\\*"))
-or (process.pe.original_file_name == "msdt.exe" and not
-process.name : "msdt.exe" and process.name != null) or
-(process.pe.original_file_name == "msdt.exe" and not
-process.executable : ("?:\\Windows\\system32\\msdt.exe",
-"?:\\Windows\\SysWOW64\\msdt.exe")) )
-----------------------------------
+process where host.os.type == "windows" and event.type == "start" and
+   (process.pe.original_file_name == "msdt.exe" or process.name : "msdt.exe") and
+   (
+    process.args : ("IT_RebrowseForFile=*", "ms-msdt:/id", "ms-msdt:-id", "*FromBase64*") or
 
-==== Threat mapping
+    (process.args : "-af" and process.args : "/skip" and
+     process.parent.name : ("explorer.exe", "cmd.exe", "powershell.exe", "cscript.exe", "wscript.exe", "mshta.exe", "rundll32.exe", "regsvr32.exe") and
+     process.args : ("?:\\WINDOWS\\diagnostics\\index\\PCWDiagnostic.xml", "PCWDiagnostic.xml", "?:\\Users\\Public\\*", "?:\\Windows\\Temp\\*")) or
+
+    (process.pe.original_file_name == "msdt.exe" and not process.name : "msdt.exe" and process.name != null) or
+
+    (process.pe.original_file_name == "msdt.exe" and not process.executable : ("?:\\Windows\\system32\\msdt.exe", "?:\\Windows\\SysWOW64\\msdt.exe"))
+    )
+
+----------------------------------
 
 *Framework*: MITRE ATT&CK^TM^
 
@@ -88,52 +79,3 @@ process.executable : ("?:\\Windows\\system32\\msdt.exe",
 ** Name: System Binary Proxy Execution
 ** ID: T1218
 ** Reference URL: https://attack.mitre.org/techniques/T1218/
-
-[[suspicious-microsoft-diagnostics-wizard-execution-history]]
-==== Rule version history
-
-Version 102 (8.6.0 release)::
-* Formatting only
-
-Version 101 (8.5.0 release)::
-* Updated query, changed from:
-+
-[source, js]
-----------------------------------
-process where event.type in ("start", "process_started") and
-(process.pe.original_file_name == "msdt.exe" or process.name :
-"msdt.exe") and ( process.args : ("IT_RebrowseForFile=*", "ms-
-msdt:/id", "ms-msdt:-id", "*FromBase64*") or (process.args :
-"-af" and process.args : "/skip" and process.parent.name :
-("explorer.exe", "cmd.exe", "powershell.exe", "cscript.exe",
-"wscript.exe", "mshta.exe", "rundll32.exe", "regsvr32.exe") and
-process.args : ("?:\\WINDOWS\\diagnostics\\index\\PCWDiagnostic.xml",
-"PCWDiagnostic.xml", "?:\\Users\\Public\\*", "?:\\Windows\\Temp\\*"))
-or (process.pe.original_file_name == "msdt.exe" and not
-process.name : "msdt.exe" and process.name != null) or
-(process.pe.original_file_name == "msdt.exe" and not
-process.executable : ("?:\\Windows\\system32\\msdt.exe",
-"?:\\Windows\\SysWOW64\\msdt.exe")) )
-----------------------------------
-
-Version 3 (8.4.0 release)::
-* Updated query, changed from:
-+
-[source, js]
-----------------------------------
-process where event.type in ("start", "process_started") and
-(process.pe.original_file_name == "msdt.exe" or process.name :
-"msdt.exe") and ( process.args : ("IT_RebrowseForFile=*", "ms-
-msdt:/id", "ms-msdt:-id", "*FromBase64*") or (process.args :
-"-af" and process.args : "/skip" and process.parent.name :
-("explorer.exe", "cmd.exe", "powershell.exe", "cscript.exe",
-"wscript.exe", "mshta.exe", "rundll32.exe", "regsvr32.exe") and
-process.args : ("?:\\WINDOWS\\diagnostics\\index\\PCWDiagnostic.xml",
-"PCWDiagnostic.xml", "?:\\Users\\Public\\*", "?:\\Windows\\Temp\\*"))
-or (process.pe.original_file_name == "msdt.exe" and not
-process.name : "msdt.exe" and process.name != null) or
-(process.pe.original_file_name == "msdt.exe" and not
-process.executable : ("?:\\Windows\\system32\\msdt.exe",
-"?:\\Windows\\SysWOW64\\msdt.exe")) )
-----------------------------------
-

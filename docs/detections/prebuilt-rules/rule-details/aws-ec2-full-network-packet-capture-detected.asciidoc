@@ -5,70 +5,65 @@ Identifies potential Traffic Mirroring in an Amazon Elastic Compute Cloud (EC2) 
 
 *Rule type*: query
 
-*Rule indices*:
+*Rule indices*: 
 
 * filebeat-*
-* logs-aws*
+* logs-aws.cloudtrail-*
 
 *Severity*: medium
 
 *Risk score*: 47
 
-*Runs every*: 10 minutes
+*Runs every*: 10m
 
 *Searches indices from*: now-60m ({ref}/common-options.html#date-math[Date Math format], see also <<rule-schedule, `Additional look-back time`>>)
 
 *Maximum alerts per execution*: 100
 
-*References*:
+*References*: 
 
 * https://docs.aws.amazon.com/AWSEC2/latest/APIReference/API_TrafficMirrorFilter.html
 * https://github.com/easttimor/aws-incident-response
 
-*Tags*:
+*Tags*: 
+
+* Domain: Cloud
+* Data Source: AWS
+* Data Source: Amazon Web Services
+* Use Case: Network Security Monitoring
+* Tactic: Exfiltration
+* Tactic: Collection
+
+*Version*: 206
+
+*Rule authors*: 
 
 * Elastic
-* Cloud
-* AWS
-* Continuous Monitoring
-* SecOps
-* Network Security
-
-*Version*: 101 (<<aws-ec2-full-network-packet-capture-detected-history, version history>>)
-
-*Added ({stack} release)*: 7.14.0
-
-*Last modified ({stack} release)*: 8.6.0
-
-*Rule authors*: Elastic, Austin Songer
+* Austin Songer
 
 *Rule license*: Elastic License v2
 
-==== Potential false positives
-
-Traffic Mirroring may be done by a system or network administrator. Verify whether the user identity, user agent, and/or hostname should be making changes in your environment. Traffic Mirroring from unfamiliar users or hosts should be investigated. If known behavior is causing false positives, it can be exempted from the rule.
 
 ==== Investigation guide
 
 
-[source,markdown]
-----------------------------------
 
-----------------------------------
 
+==== Setup
+
+
+The AWS Fleet integration, Filebeat module, or similarly structured data is required to be compatible with this rule.
 
 ==== Rule query
 
 
-[source,js]
+[source, js]
 ----------------------------------
 event.dataset:aws.cloudtrail and event.provider:ec2.amazonaws.com and
-event.action:(CreateTrafficMirrorFilter or
-CreateTrafficMirrorFilterRule or CreateTrafficMirrorSession or
-CreateTrafficMirrorTarget) and event.outcome:success
-----------------------------------
+event.action:(CreateTrafficMirrorFilter or CreateTrafficMirrorFilterRule or CreateTrafficMirrorSession or CreateTrafficMirrorTarget) and
+event.outcome:success
 
-==== Threat mapping
+----------------------------------
 
 *Framework*: MITRE ATT&CK^TM^
 
@@ -80,8 +75,6 @@ CreateTrafficMirrorTarget) and event.outcome:success
 ** Name: Automated Exfiltration
 ** ID: T1020
 ** Reference URL: https://attack.mitre.org/techniques/T1020/
-
-
 * Tactic:
 ** Name: Collection
 ** ID: TA0009
@@ -90,27 +83,3 @@ CreateTrafficMirrorTarget) and event.outcome:success
 ** Name: Data Staged
 ** ID: T1074
 ** Reference URL: https://attack.mitre.org/techniques/T1074/
-
-[[aws-ec2-full-network-packet-capture-detected-history]]
-==== Rule version history
-
-Version 101 (8.6.0 release)::
-* Formatting only
-
-Version 100 (8.5.0 release)::
-* Formatting only
-
-Version 4 (8.4.0 release)::
-* Updated query, changed from:
-+
-[source, js]
-----------------------------------
-event.dataset:aws.cloudtrail and event.provider:ec2.amazonaws.com and
-event.action:(CreateTrafficMirrorFilter or
-CreateTrafficMirrorFilterRule or CreateTrafficMirrorSession or
-CreateTrafficMirrorTarget) and event.outcome:success
-----------------------------------
-
-Version 2 (7.15.0 release)::
-* Formatting only
-

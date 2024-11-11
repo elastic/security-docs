@@ -5,62 +5,61 @@ Identifies a suspicious child process of the Windows virtual system process, whi
 
 *Rule type*: eql
 
-*Rule indices*:
+*Rule indices*: 
 
 * winlogbeat-*
-* logs-endpoint.events.*
-* logs-windows.*
+* logs-endpoint.events.process-*
+* logs-windows.forwarded*
+* logs-windows.sysmon_operational-*
 * endgame-*
+* logs-system.security*
+* logs-m365_defender.event-*
+* logs-sentinel_one_cloud_funnel.*
 
 *Severity*: high
 
 *Risk score*: 73
 
-*Runs every*: 5 minutes
+*Runs every*: 5m
 
 *Searches indices from*: now-9m ({ref}/common-options.html#date-math[Date Math format], see also <<rule-schedule, `Additional look-back time`>>)
 
 *Maximum alerts per execution*: 100
 
-*Tags*:
+*References*: None
+
+*Tags*: 
+
+* Domain: Endpoint
+* OS: Windows
+* Use Case: Threat Detection
+* Tactic: Defense Evasion
+* Data Source: Elastic Endgame
+* Data Source: Elastic Defend
+* Data Source: System
+* Data Source: Microsoft Defender for Endpoint
+* Data Source: Sysmon
+* Data Source: SentinelOne
+
+*Version*: 212
+
+*Rule authors*: 
 
 * Elastic
-* Host
-* Windows
-* Threat Detection
-* Defense Evasion
-* Elastic Endgame
-
-*Version*: 102 (<<unusual-child-process-from-a-system-virtual-process-history, version history>>)
-
-*Added ({stack} release)*: 7.10.0
-
-*Last modified ({stack} release)*: 8.6.0
-
-*Rule authors*: Elastic
 
 *Rule license*: Elastic License v2
-
-==== Investigation guide
-
-
-[source,markdown]
-----------------------------------
-
-----------------------------------
 
 
 ==== Rule query
 
 
-[source,js]
+[source, js]
 ----------------------------------
-process where event.type == "start" and process.parent.pid == 4 and
-not process.executable : ("Registry", "MemCompression",
-"?:\\Windows\\System32\\smss.exe")
-----------------------------------
+process where host.os.type == "windows" and event.type == "start" and
+  process.parent.pid == 4 and process.executable : "?*" and
+  not process.executable : ("Registry", "MemCompression", "?:\\Windows\\System32\\smss.exe")
 
-==== Threat mapping
+----------------------------------
 
 *Framework*: MITRE ATT&CK^TM^
 
@@ -72,42 +71,3 @@ not process.executable : ("Registry", "MemCompression",
 ** Name: Process Injection
 ** ID: T1055
 ** Reference URL: https://attack.mitre.org/techniques/T1055/
-
-[[unusual-child-process-from-a-system-virtual-process-history]]
-==== Rule version history
-
-Version 102 (8.6.0 release)::
-* Formatting only
-
-Version 101 (8.5.0 release)::
-* Updated query, changed from:
-+
-[source, js]
-----------------------------------
-process where event.type in ("start", "process_started") and
-process.parent.pid == 4 and not process.executable : ("Registry",
-"MemCompression", "?:\\Windows\\System32\\smss.exe")
-----------------------------------
-
-Version 7 (8.4.0 release)::
-* Formatting only
-
-Version 5 (8.2.0 release)::
-* Formatting only
-
-Version 4 (7.13.0 release)::
-* Updated query, changed from:
-+
-[source, js]
-----------------------------------
-event.category:process and event.type:(start or process_started) and
-process.parent.pid:4 and not process.executable:(Registry or
-MemCompression or "C:\Windows\System32\smss.exe")
-----------------------------------
-
-Version 3 (7.12.0 release)::
-* Formatting only
-
-Version 2 (7.11.2 release)::
-* Formatting only
-

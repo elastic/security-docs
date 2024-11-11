@@ -5,63 +5,62 @@ Identifies execution from the Remote Desktop Protocol (RDP) shared mountpoint ts
 
 *Rule type*: eql
 
-*Rule indices*:
+*Rule indices*: 
 
-* logs-endpoint.events.*
+* logs-endpoint.events.process-*
 * winlogbeat-*
-* logs-windows.*
+* logs-windows.forwarded*
+* logs-windows.sysmon_operational-*
+* endgame-*
+* logs-system.security*
+* logs-m365_defender.event-*
+* logs-sentinel_one_cloud_funnel.*
 
 *Severity*: high
 
 *Risk score*: 73
 
-*Runs every*: 5 minutes
+*Runs every*: 5m
 
 *Searches indices from*: now-9m ({ref}/common-options.html#date-math[Date Math format], see also <<rule-schedule, `Additional look-back time`>>)
 
 *Maximum alerts per execution*: 100
 
-*References*:
+*References*: 
 
 * https://posts.specterops.io/revisiting-remote-desktop-lateral-movement-8fb905cb46c3
+* https://www.elastic.co/security-labs/hunting-for-lateral-movement-using-event-query-language
 
-*Tags*:
+*Tags*: 
+
+* Domain: Endpoint
+* OS: Windows
+* Use Case: Threat Detection
+* Tactic: Lateral Movement
+* Data Source: Elastic Endgame
+* Data Source: Elastic Defend
+* Data Source: System
+* Data Source: Microsoft Defender for Endpoint
+* Data Source: Sysmon
+* Data Source: SentinelOne
+
+*Version*: 212
+
+*Rule authors*: 
 
 * Elastic
-* Host
-* Windows
-* Threat Detection
-* Lateral Movement
-
-*Version*: 101 (<<execution-via-tsclient-mountpoint-history, version history>>)
-
-*Added ({stack} release)*: 7.11.0
-
-*Last modified ({stack} release)*: 8.5.0
-
-*Rule authors*: Elastic
 
 *Rule license*: Elastic License v2
-
-==== Investigation guide
-
-
-[source,markdown]
-----------------------------------
-
-----------------------------------
 
 
 ==== Rule query
 
 
-[source,js]
+[source, js]
 ----------------------------------
-process where event.type == "start" and process.executable :
-"\\Device\\Mup\\tsclient\\*.exe"
-----------------------------------
+process where host.os.type == "windows" and event.type == "start" and process.executable : "\\Device\\Mup\\tsclient\\*.exe"
 
-==== Threat mapping
+----------------------------------
 
 *Framework*: MITRE ATT&CK^TM^
 
@@ -73,28 +72,7 @@ process where event.type == "start" and process.executable :
 ** Name: Remote Services
 ** ID: T1021
 ** Reference URL: https://attack.mitre.org/techniques/T1021/
-
-[[execution-via-tsclient-mountpoint-history]]
-==== Rule version history
-
-Version 101 (8.5.0 release)::
-* Updated query, changed from:
-+
-[source, js]
-----------------------------------
-process where event.type in ("start", "process_started") and
-process.executable : "\\Device\\Mup\\tsclient\\*.exe"
-----------------------------------
-
-Version 6 (8.4.0 release)::
-* Formatting only
-
-Version 4 (8.2.0 release)::
-* Formatting only
-
-Version 3 (7.12.0 release)::
-* Formatting only
-
-Version 2 (7.11.2 release)::
-* Formatting only
-
+* Sub-technique:
+** Name: Remote Desktop Protocol
+** ID: T1021.001
+** Reference URL: https://attack.mitre.org/techniques/T1021/001/

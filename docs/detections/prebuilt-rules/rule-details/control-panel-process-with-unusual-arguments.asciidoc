@@ -5,71 +5,90 @@ Identifies unusual instances of Control Panel with suspicious keywords or paths 
 
 *Rule type*: eql
 
-*Rule indices*:
+*Rule indices*: 
 
-* logs-endpoint.events.*
+* logs-endpoint.events.process-*
 * winlogbeat-*
-* logs-windows.*
+* logs-windows.forwarded*
+* logs-windows.sysmon_operational-*
 * endgame-*
+* logs-system.security*
+* logs-m365_defender.event-*
+* logs-sentinel_one_cloud_funnel.*
 
 *Severity*: high
 
 *Risk score*: 73
 
-*Runs every*: 5 minutes
+*Runs every*: 5m
 
 *Searches indices from*: now-9m ({ref}/common-options.html#date-math[Date Math format], see also <<rule-schedule, `Additional look-back time`>>)
 
 *Maximum alerts per execution*: 100
 
-*References*:
+*References*: 
 
 * https://www.joesandbox.com/analysis/476188/1/html
 
-*Tags*:
+*Tags*: 
+
+* Domain: Endpoint
+* OS: Windows
+* Use Case: Threat Detection
+* Tactic: Defense Evasion
+* Tactic: Execution
+* Data Source: Elastic Endgame
+* Data Source: Elastic Defend
+* Data Source: System
+* Data Source: Microsoft Defender for Endpoint
+* Data Source: Sysmon
+* Data Source: SentinelOne
+
+*Version*: 212
+
+*Rule authors*: 
 
 * Elastic
-* Host
-* Windows
-* Threat Detection
-* Defense Evasion
-* Elastic Endgame
-
-*Version*: 102 (<<control-panel-process-with-unusual-arguments-history, version history>>)
-
-*Added ({stack} release)*: 7.16.0
-
-*Last modified ({stack} release)*: 8.6.0
-
-*Rule authors*: Elastic
 
 *Rule license*: Elastic License v2
 
-==== Investigation guide
+
+==== Setup
 
 
-[source,markdown]
-----------------------------------
 
-----------------------------------
+*Setup*
+
+
+If enabling an EQL rule on a non-elastic-agent index (such as beats) for versions <8.2,
+events will not define `event.ingested` and default fallback for EQL rules was not added until version 8.2.
+Hence for this rule to work effectively, users will need to add a custom ingest pipeline to populate
+`event.ingested` to @timestamp.
+For more details on adding a custom ingest pipeline refer - https://www.elastic.co/guide/en/fleet/current/data-streams-pipeline-tutorial.html
 
 
 ==== Rule query
 
 
-[source,js]
+[source, js]
 ----------------------------------
-process where event.type == "start" and process.executable :
-("?:\\Windows\\SysWOW64\\control.exe",
-"?:\\Windows\\System32\\control.exe") and process.command_line :
-("*.jpg*", "*.png*", "*.gif*",
-"*.bmp*", "*.jpeg*", "*.TIFF*",
-"*.inf*", "*.cpl:*/*", "*../../..*",
-"*/AppData/Local/*", "*:\\Users\\Public\\*",
-"*\\AppData\\Local\\*")
-----------------------------------
+process where host.os.type == "windows" and event.type == "start" and
+ process.executable : ("?:\\Windows\\SysWOW64\\control.exe", "?:\\Windows\\System32\\control.exe") and
+ process.command_line :
+          ("*.jpg*",
+           "*.png*",
+           "*.gif*",
+           "*.bmp*",
+           "*.jpeg*",
+           "*.TIFF*",
+           "*.inf*",
+           "*.cpl:*/*",
+           "*../../..*",
+           "*/AppData/Local/*",
+           "*:\\Users\\Public\\*",
+           "*\\AppData\\Local\\*")
 
-==== Threat mapping
+----------------------------------
 
 *Framework*: MITRE ATT&CK^TM^
 
@@ -81,46 +100,7 @@ process where event.type == "start" and process.executable :
 ** Name: System Binary Proxy Execution
 ** ID: T1218
 ** Reference URL: https://attack.mitre.org/techniques/T1218/
-
-[[control-panel-process-with-unusual-arguments-history]]
-==== Rule version history
-
-Version 102 (8.6.0 release)::
-* Formatting only
-
-Version 101 (8.5.0 release)::
-* Updated query, changed from:
-+
-[source, js]
-----------------------------------
-process where event.type in ("start", "process_started") and
-process.executable : ("?:\\Windows\\SysWOW64\\control.exe",
-"?:\\Windows\\System32\\control.exe") and process.command_line :
-("*.jpg*", "*.png*", "*.gif*",
-"*.bmp*", "*.jpeg*", "*.TIFF*",
-"*.inf*", "*.cpl:*/*", "*../../..*",
-"*/AppData/Local/*", "*:\\Users\\Public\\*",
-"*\\AppData\\Local\\*")
-----------------------------------
-
-Version 5 (8.4.0 release)::
-* Updated query, changed from:
-+
-[source, js]
-----------------------------------
-process where event.type in ("start", "process_started") and
-process.executable : ("?:\\Windows\\SysWOW64\\control.exe",
-"?:\\Windows\\System32\\control.exe") and process.command_line :
-("*.jpg*", "*.png*", "*.gif*",
-"*.bmp*", "*.jpeg*", "*.TIFF*",
-"*.inf*", "*.dat*", "*.cpl:*/*",
-"*../../..*", "*/AppData/Local/*",
-"*:\\Users\\Public\\*", "*\\AppData\\Local\\*")
-----------------------------------
-
-Version 3 (8.2.0 release)::
-* Formatting only
-
-Version 2 (8.0.0 release)::
-* Formatting only
-
+* Sub-technique:
+** Name: Control Panel
+** ID: T1218.002
+** Reference URL: https://attack.mitre.org/techniques/T1218/002/

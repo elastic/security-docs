@@ -1,0 +1,104 @@
+[[potential-active-directory-replication-account-backdoor]]
+=== Potential Active Directory Replication Account Backdoor
+
+Identifies the modification of the nTSecurityDescriptor attribute in a domain object with rights related to DCSync to a user/computer account. Attackers can use this backdoor to re-obtain access to hashes of any user/computer.
+
+*Rule type*: query
+
+*Rule indices*: 
+
+* winlogbeat-*
+* logs-system.security*
+* logs-windows.forwarded*
+
+*Severity*: medium
+
+*Risk score*: 47
+
+*Runs every*: 5m
+
+*Searches indices from*: now-9m ({ref}/common-options.html#date-math[Date Math format], see also <<rule-schedule, `Additional look-back time`>>)
+
+*Maximum alerts per execution*: 100
+
+*References*: 
+
+* https://twitter.com/menasec1/status/1111556090137903104
+* https://www.specterops.io/assets/resources/an_ace_up_the_sleeve.pdf
+* https://github.com/SigmaHQ/sigma/blob/master/rules/windows/builtin/security/win_security_account_backdoor_dcsync_rights.yml
+* https://learn.microsoft.com/en-us/windows/win32/adschema/r-ds-replication-get-changes-all
+* https://learn.microsoft.com/en-us/windows/win32/adschema/r-ds-replication-get-changes
+* https://learn.microsoft.com/en-us/windows/win32/adschema/r-ds-replication-get-changes-in-filtered-set
+
+*Tags*: 
+
+* Domain: Endpoint
+* OS: Windows
+* Use Case: Threat Detection
+* Tactic: Credential Access
+* Data Source: Active Directory
+* Use Case: Active Directory Monitoring
+* Data Source: System
+
+*Version*: 4
+
+*Rule authors*: 
+
+* Elastic
+
+*Rule license*: Elastic License v2
+
+
+==== Investigation guide
+
+
+
+
+==== Setup
+
+
+The 'Audit Directory Service Changes' logging policy must be configured for (Success, Failure).
+Steps to implement the logging policy with Advanced Audit Configuration:
+
+```
+Computer Configuration >
+Policies >
+Windows Settings >
+Security Settings >
+Advanced Audit Policies Configuration >
+Audit Policies >
+DS Access >
+Audit Directory Service Changes (Success,Failure)
+```
+
+==== Rule query
+
+
+[source, js]
+----------------------------------
+event.action:("Directory Service Changes" or "directory-service-object-modified") and event.code:"5136" and
+  winlog.event_data.AttributeLDAPDisplayName:"nTSecurityDescriptor" and
+  winlog.event_data.AttributeValue : (
+    (
+      *1131f6ad-9c07-11d1-f79f-00c04fc2dcd2;;S-1-5-21-* and
+      *1131f6aa-9c07-11d1-f79f-00c04fc2dcd2;;S-1-5-21-* and
+      *89e95b76-444d-4c62-991a-0facbeda640c;;S-1-5-21-*
+    )
+  )
+
+----------------------------------
+
+*Framework*: MITRE ATT&CK^TM^
+
+* Tactic:
+** Name: Credential Access
+** ID: TA0006
+** Reference URL: https://attack.mitre.org/tactics/TA0006/
+* Technique:
+** Name: OS Credential Dumping
+** ID: T1003
+** Reference URL: https://attack.mitre.org/techniques/T1003/
+* Sub-technique:
+** Name: DCSync
+** ID: T1003.006
+** Reference URL: https://attack.mitre.org/techniques/T1003/006/

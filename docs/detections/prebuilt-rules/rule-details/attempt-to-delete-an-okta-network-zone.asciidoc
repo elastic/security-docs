@@ -5,7 +5,7 @@ Detects attempts to delete an Okta network zone. Okta network zones can be confi
 
 *Rule type*: query
 
-*Rule indices*:
+*Rule indices*: 
 
 * filebeat-*
 * logs-okta*
@@ -14,61 +14,92 @@ Detects attempts to delete an Okta network zone. Okta network zones can be confi
 
 *Risk score*: 47
 
-*Runs every*: 5 minutes
+*Runs every*: 5m
 
-*Searches indices from*: now-6m ({ref}/common-options.html#date-math[Date Math format], see also <<rule-schedule, `Additional look-back time`>>)
+*Searches indices from*: None ({ref}/common-options.html#date-math[Date Math format], see also <<rule-schedule, `Additional look-back time`>>)
 
 *Maximum alerts per execution*: 100
 
-*References*:
+*References*: 
 
 * https://help.okta.com/en/prod/Content/Topics/Security/network/network-zones.htm
 * https://developer.okta.com/docs/reference/api/system-log/
 * https://developer.okta.com/docs/reference/api/event-types/
 * https://www.elastic.co/security-labs/testing-okta-visibility-and-detection-dorothy
+* https://www.elastic.co/security-labs/monitoring-okta-threats-with-elastic-security
+* https://www.elastic.co/security-labs/starter-guide-to-understanding-okta
 
-*Tags*:
+*Tags*: 
+
+* Use Case: Identity and Access Audit
+* Data Source: Okta
+* Use Case: Network Security Monitoring
+* Tactic: Defense Evasion
+
+*Version*: 209
+
+*Rule authors*: 
 
 * Elastic
-* Identity
-* Okta
-* Continuous Monitoring
-* SecOps
-* Network Security
-* Defense Evasion
-
-*Version*: 102 (<<attempt-to-delete-an-okta-network-zone-history, version history>>)
-
-*Added ({stack} release)*: 7.11.0
-
-*Last modified ({stack} release)*: 8.6.0
-
-*Rule authors*: Elastic
 
 *Rule license*: Elastic License v2
 
-==== Potential false positives
-
-Consider adding exceptions to this rule to filter false positives if Oyour organization's Okta network zones are regularly deleted.
 
 ==== Investigation guide
 
 
-[source,markdown]
-----------------------------------
 
-----------------------------------
+*Triage and analysis*
 
+
+
+*Investigating Attempt to Delete an Okta Network Zone*
+
+
+Okta network zones can be configured to limit or restrict access to a network based on IP addresses or geolocations. Deleting a network zone in Okta might remove or weaken the security controls of an organization, which might be an indicator of an adversary's attempt to evade defenses.
+
+
+*Possible investigation steps:*
+
+
+- Identify the actor associated with the alert by examining the `okta.actor.id`, `okta.actor.type`, `okta.actor.alternate_id`, or `okta.actor.display_name` fields.
+- Examine the `event.action` field to confirm the deletion of a network zone.
+- Investigate the `okta.target.id`, `okta.target.type`, `okta.target.alternate_id`, or `okta.target.display_name` fields to identify the network zone that was deleted.
+- Review the `event.time` field to understand when the event happened.
+- Check the actor's activities before and after the event to understand the context of this event.
+
+
+*False positive analysis:*
+
+
+- Verify the `okta.client.user_agent.raw_user_agent` field to understand the device and software used by the actor. If these match the actor's typical behavior, it might be a false positive.
+- Check if the actor is a known administrator or a member of the IT team who might have a legitimate reason to delete a network zone.
+- Cross-verify the actor's actions with any known planned changes or maintenance activities.
+
+
+*Response and remediation:*
+
+
+- If unauthorized access or actions are confirmed, immediately lock the affected actor's account and require a password change.
+- If a network zone was deleted without authorization, create a new network zone with similar settings as the deleted one.
+- Review and update the privileges of the actor who initiated the deletion.
+- Identify any gaps in the security policies and procedures and update them as necessary.
+- Implement additional monitoring and logging of Okta events to improve visibility of user actions.
+- Communicate and train the employees about the importance of following proper procedures for modifying network zone settings.
+
+==== Setup
+
+
+The Okta Fleet integration, Filebeat module, or similarly structured data is required to be compatible with this rule.
 
 ==== Rule query
 
 
-[source,js]
+[source, js]
 ----------------------------------
 event.dataset:okta.system and event.action:zone.delete
-----------------------------------
 
-==== Threat mapping
+----------------------------------
 
 *Framework*: MITRE ATT&CK^TM^
 
@@ -80,25 +111,7 @@ event.dataset:okta.system and event.action:zone.delete
 ** Name: Impair Defenses
 ** ID: T1562
 ** Reference URL: https://attack.mitre.org/techniques/T1562/
-
-[[attempt-to-delete-an-okta-network-zone-history]]
-==== Rule version history
-
-Version 102 (8.6.0 release)::
-* Formatting only
-
-Version 100 (8.5.0 release)::
-* Formatting only
-
-Version 6 (8.4.0 release)::
-* Formatting only
-
-Version 4 (7.13.0 release)::
-* Formatting only
-
-Version 3 (7.12.0 release)::
-* Formatting only
-
-Version 2 (7.11.2 release)::
-* Formatting only
-
+* Sub-technique:
+** Name: Disable or Modify Cloud Firewall
+** ID: T1562.007
+** Reference URL: https://attack.mitre.org/techniques/T1562/007/

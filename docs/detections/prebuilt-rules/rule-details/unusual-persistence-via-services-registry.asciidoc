@@ -5,62 +5,83 @@ Identifies processes modifying the services registry key directly, instead of th
 
 *Rule type*: eql
 
-*Rule indices*:
+*Rule indices*: 
 
-* logs-endpoint.events.*
+* logs-endpoint.events.registry-*
+* endgame-*
+* logs-windows.sysmon_operational-*
+* winlogbeat-*
+* logs-m365_defender.event-*
+* logs-sentinel_one_cloud_funnel.*
 
 *Severity*: low
 
 *Risk score*: 21
 
-*Runs every*: 5 minutes
+*Runs every*: 5m
 
 *Searches indices from*: now-9m ({ref}/common-options.html#date-math[Date Math format], see also <<rule-schedule, `Additional look-back time`>>)
 
 *Maximum alerts per execution*: 100
 
-*Tags*:
+*References*: None
+
+*Tags*: 
+
+* Domain: Endpoint
+* OS: Windows
+* Use Case: Threat Detection
+* Tactic: Persistence
+* Tactic: Defense Evasion
+* Data Source: Elastic Endgame
+* Data Source: Elastic Defend
+* Data Source: Sysmon
+* Data Source: Microsoft Defender for Endpoint
+* Data Source: SentinelOne
+
+*Version*: 210
+
+*Rule authors*: 
 
 * Elastic
-* Host
-* Windows
-* Threat Detection
-* Persistence
-
-*Version*: 100 (<<unusual-persistence-via-services-registry-history, version history>>)
-
-*Added ({stack} release)*: 7.11.0
-
-*Last modified ({stack} release)*: 8.5.0
-
-*Rule authors*: Elastic
 
 *Rule license*: Elastic License v2
+
 
 ==== Rule query
 
 
-[source,js]
+[source, js]
 ----------------------------------
-registry where registry.path :
-("HKLM\\SYSTEM\\ControlSet*\\Services\\*\\ServiceDLL",
-"HKLM\\SYSTEM\\ControlSet*\\Services\\*\\ImagePath") and not
-registry.data.strings : ("?:\\windows\\system32\\Drivers\\*.sys",
-"\\SystemRoot\\System32\\drivers\\*.sys",
-"\\??\\?:\\Windows\\system32\\Drivers\\*.SYS",
-"system32\\DRIVERS\\USBSTOR") and not (process.name :
-"procexp??.exe" and registry.data.strings : "?:\\*\\procexp*.sys") and
-not process.executable : ("?:\\Program Files\\*.exe",
-"?:\\Program Files (x86)\\*.exe",
-"?:\\Windows\\System32\\svchost.exe",
-"?:\\Windows\\winsxs\\*\\TiWorker.exe",
-"?:\\Windows\\System32\\drvinst.exe",
-"?:\\Windows\\System32\\services.exe",
-"?:\\Windows\\System32\\msiexec.exe",
-"?:\\Windows\\System32\\regsvr32.exe")
-----------------------------------
+registry where host.os.type == "windows" and event.type == "change" and
+  registry.value : ("ServiceDLL", "ImagePath") and
+  registry.path : (
+      "HKLM\\SYSTEM\\ControlSet*\\Services\\*\\ServiceDLL",
+      "HKLM\\SYSTEM\\ControlSet*\\Services\\*\\ImagePath",
+      "\\REGISTRY\\MACHINE\\SYSTEM\\ControlSet*\\Services\\*\\ServiceDLL",
+      "\\REGISTRY\\MACHINE\\SYSTEM\\ControlSet*\\Services\\*\\ImagePath",
+      "MACHINE\\SYSTEM\\ControlSet*\\Services\\*\\ServiceDLL",
+      "MACHINE\\SYSTEM\\ControlSet*\\Services\\*\\ImagePath"
+  ) and not registry.data.strings : (
+      "?:\\windows\\system32\\Drivers\\*.sys",
+      "\\SystemRoot\\System32\\drivers\\*.sys",
+      "\\??\\?:\\Windows\\system32\\Drivers\\*.SYS",
+      "\\??\\?:\\Windows\\syswow64\\*.sys",
+      "system32\\DRIVERS\\USBSTOR") and
+  not (process.name : "procexp??.exe" and registry.data.strings : "?:\\*\\procexp*.sys") and
+  not process.executable : (
+      "?:\\Program Files\\*.exe",
+      "?:\\Program Files (x86)\\*.exe",
+      "?:\\Windows\\System32\\svchost.exe",
+      "?:\\Windows\\winsxs\\*\\TiWorker.exe",
+      "?:\\Windows\\System32\\drvinst.exe",
+      "?:\\Windows\\System32\\services.exe",
+      "?:\\Windows\\System32\\msiexec.exe",
+      "?:\\Windows\\System32\\regsvr32.exe",
+      "?:\\Windows\\System32\\WaaSMedicAgent.exe"
+  )
 
-==== Threat mapping
+----------------------------------
 
 *Framework*: MITRE ATT&CK^TM^
 
@@ -72,43 +93,15 @@ not process.executable : ("?:\\Program Files\\*.exe",
 ** Name: Create or Modify System Process
 ** ID: T1543
 ** Reference URL: https://attack.mitre.org/techniques/T1543/
-
-[[unusual-persistence-via-services-registry-history]]
-==== Rule version history
-
-Version 100 (8.5.0 release)::
-* Formatting only
-
-Version 6 (8.4.0 release)::
-* Formatting only
-
-Version 5 (8.1.0 release)::
-* Formatting only
-
-Version 4 (7.13.0 release)::
-* Updated query, changed from:
-+
-[source, js]
-----------------------------------
-registry where registry.path :
-("HKLM\\SYSTEM\\ControlSet*\\Services\\*\\ServiceDLL",
-"HKLM\\SYSTEM\\ControlSet*\\Services\\*\\ImagePath") and not
-registry.data.strings : ("C:\\windows\\system32\\Drivers\\*.sys",
-"\\SystemRoot\\System32\\drivers\\*.sys",
-"system32\\DRIVERS\\USBSTOR") and not (process.name :
-"procexp??.exe" and registry.data.strings : "C:\\*\\procexp*.sys") and
-not process.executable : ("C:\\Program Files*\\*.exe",
-"C:\\Windows\\System32\\svchost.exe",
-"C:\\Windows\\winsxs\\*\\TiWorker.exe",
-"C:\\Windows\\System32\\drvinst.exe",
-"C:\\Windows\\System32\\services.exe",
-"C:\\Windows\\System32\\msiexec.exe",
-"C:\\Windows\\System32\\regsvr32.exe")
-----------------------------------
-
-Version 3 (7.12.0 release)::
-* Formatting only
-
-Version 2 (7.11.2 release)::
-* Formatting only
-
+* Sub-technique:
+** Name: Windows Service
+** ID: T1543.003
+** Reference URL: https://attack.mitre.org/techniques/T1543/003/
+* Tactic:
+** Name: Defense Evasion
+** ID: TA0005
+** Reference URL: https://attack.mitre.org/tactics/TA0005/
+* Technique:
+** Name: Modify Registry
+** ID: T1112
+** Reference URL: https://attack.mitre.org/techniques/T1112/

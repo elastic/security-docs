@@ -5,62 +5,102 @@ Identifies suspicious psexec activity which is executing from the psexec service
 
 *Rule type*: eql
 
-*Rule indices*:
+*Rule indices*: 
 
 * winlogbeat-*
-* logs-endpoint.events.*
-* logs-windows.*
+* logs-endpoint.events.process-*
+* logs-windows.sysmon_operational-*
 * endgame-*
+* logs-m365_defender.event-*
 
 *Severity*: medium
 
 *Risk score*: 47
 
-*Runs every*: 5 minutes
+*Runs every*: 5m
 
 *Searches indices from*: now-9m ({ref}/common-options.html#date-math[Date Math format], see also <<rule-schedule, `Additional look-back time`>>)
 
 *Maximum alerts per execution*: 100
 
-*Tags*:
+*References*: None
+
+*Tags*: 
+
+* Domain: Endpoint
+* OS: Windows
+* Use Case: Threat Detection
+* Tactic: Execution
+* Tactic: Defense Evasion
+* Data Source: Elastic Endgame
+* Resources: Investigation Guide
+* Data Source: Elastic Defend
+* Data Source: Sysmon
+* Data Source: Microsoft Defender for Endpoint
+
+*Version*: 112
+
+*Rule authors*: 
 
 * Elastic
-* Host
-* Windows
-* Threat Detection
-* Execution
-* Elastic Endgame
-
-*Version*: 102 (<<suspicious-process-execution-via-renamed-psexec-executable-history, version history>>)
-
-*Added ({stack} release)*: 7.10.0
-
-*Last modified ({stack} release)*: 8.6.0
-
-*Rule authors*: Elastic
 
 *Rule license*: Elastic License v2
+
 
 ==== Investigation guide
 
 
-[source,markdown]
-----------------------------------
 
-----------------------------------
+*Triage and analysis*
+
+
+
+*Investigating Suspicious Process Execution via Renamed PsExec Executable*
+
+
+PsExec is a remote administration tool that enables the execution of commands with both regular and SYSTEM privileges on Windows systems. It operates by executing a service component `Psexecsvc` on a remote system, which then runs a specified process and returns the results to the local system. Microsoft develops PsExec as part of the Sysinternals Suite. Although commonly used by administrators, PsExec is frequently used by attackers to enable lateral movement and execute commands as SYSTEM to disable defenses and bypass security protections.
+
+This rule identifies instances where the PsExec service component is executed using a custom name. This behavior can indicate an attempt to bypass security controls or detections that look for the default PsExec service component name.
+
+
+*Possible investigation steps*
+
+
+- Check if the usage of this tool complies with the organization's administration policy.
+- Investigate other alerts associated with the user/host during the past 48 hours.
+- Identify the user account that performed the action and whether it should perform this kind of action.
+- Identify the target computer and its role in the IT environment.
+- Investigate what commands were run, and assess whether this behavior is prevalent in the environment by looking for similar occurrences across hosts.
+
+
+*False positive analysis*
+
+
+- This mechanism can be used legitimately. As long as the analyst did not identify suspicious activity related to the user or involved hosts, and the tool is allowed by the organization's policy, such alerts can be dismissed.
+
+
+*Response and remediation*
+
+
+- Initiate the incident response process based on the outcome of the triage.
+  - Prioritize cases involving critical servers and users.
+- Isolate the involved hosts to prevent further post-compromise behavior.
+- Investigate credential exposure on systems compromised or used by the attacker to ensure all compromised accounts are identified. Reset passwords for these accounts and other potentially compromised credentials, such as email, business systems, and web services.
+- Run a full antimalware scan. This may reveal additional artifacts left in the system, persistence mechanisms, and malware components.
+- Determine the initial vector abused by the attacker and take action to prevent reinfection through the same vector.
+- Review the privileges assigned to the user to ensure that the least privilege principle is being followed.
+- Using the incident response data, update logging and audit policies to improve the mean time to detect (MTTD) and the mean time to respond (MTTR).
 
 
 ==== Rule query
 
 
-[source,js]
+[source, js]
 ----------------------------------
-process where event.type == "start" and
-process.pe.original_file_name : "psexesvc.exe" and not process.name :
-"PSEXESVC.exe"
-----------------------------------
+process where host.os.type == "windows" and event.type == "start" and
+  process.pe.original_file_name : "psexesvc.exe" and not process.name : "PSEXESVC.exe"
 
-==== Threat mapping
+----------------------------------
 
 *Framework*: MITRE ATT&CK^TM^
 
@@ -72,44 +112,19 @@ process.pe.original_file_name : "psexesvc.exe" and not process.name :
 ** Name: System Services
 ** ID: T1569
 ** Reference URL: https://attack.mitre.org/techniques/T1569/
-
-[[suspicious-process-execution-via-renamed-psexec-executable-history]]
-==== Rule version history
-
-Version 102 (8.6.0 release)::
-* Formatting only
-
-Version 101 (8.5.0 release)::
-* Updated query, changed from:
-+
-[source, js]
-----------------------------------
-process where event.type in ("start", "process_started", "info") and
-process.pe.original_file_name : "psexesvc.exe" and not process.name :
-"PSEXESVC.exe"
-----------------------------------
-
-Version 7 (8.4.0 release)::
-* Formatting only
-
-Version 5 (8.2.0 release)::
-* Formatting only
-
-Version 4 (7.12.0 release)::
-* Formatting only
-
-Version 3 (7.11.2 release)::
-* Formatting only
-
-Version 2 (7.11.0 release)::
-* Updated query, changed from:
-+
-[source, js]
-----------------------------------
-event.category:process and event.type:(start or process_started) and
-(process.pe.original_file_name:(psexesvc.exe or PSEXESVC.exe) or
-winlog.event_data.OriginalFileName:(psexesvc.exe or PSEXESVC.exe)) and
-process.parent.name:services.exe and not process.name:(psexesvc.exe or
-PSEXESVC.exe)
-----------------------------------
-
+* Sub-technique:
+** Name: Service Execution
+** ID: T1569.002
+** Reference URL: https://attack.mitre.org/techniques/T1569/002/
+* Tactic:
+** Name: Defense Evasion
+** ID: TA0005
+** Reference URL: https://attack.mitre.org/tactics/TA0005/
+* Technique:
+** Name: Masquerading
+** ID: T1036
+** Reference URL: https://attack.mitre.org/techniques/T1036/
+* Sub-technique:
+** Name: Rename System Utilities
+** ID: T1036.003
+** Reference URL: https://attack.mitre.org/techniques/T1036/003/

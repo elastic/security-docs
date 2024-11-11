@@ -5,53 +5,72 @@ Identifies a privilege escalation attempt via a rogue Windows directory (Windir)
 
 *Rule type*: eql
 
-*Rule indices*:
+*Rule indices*: 
 
-* logs-endpoint.events.*
+* logs-endpoint.events.registry-*
+* endgame-*
+* logs-windows.sysmon_operational-*
+* winlogbeat-*
+* logs-m365_defender.event-*
+* logs-sentinel_one_cloud_funnel.*
 
 *Severity*: high
 
 *Risk score*: 73
 
-*Runs every*: 5 minutes
+*Runs every*: 5m
 
 *Searches indices from*: now-9m ({ref}/common-options.html#date-math[Date Math format], see also <<rule-schedule, `Additional look-back time`>>)
 
 *Maximum alerts per execution*: 100
 
-*References*:
+*References*: 
 
 * https://www.tiraniddo.dev/2017/05/exploiting-environment-variables-in.html
 
-*Tags*:
+*Tags*: 
+
+* Domain: Endpoint
+* OS: Windows
+* Use Case: Threat Detection
+* Tactic: Privilege Escalation
+* Data Source: Elastic Endgame
+* Data Source: Elastic Defend
+* Data Source: Sysmon
+* Data Source: Microsoft Defender for Endpoint
+* Data Source: SentinelOne
+
+*Version*: 208
+
+*Rule authors*: 
 
 * Elastic
-* Host
-* Windows
-* Threat Detection
-* Privilege Escalation
-
-*Version*: 100 (<<privilege-escalation-via-windir-environment-variable-history, version history>>)
-
-*Added ({stack} release)*: 7.11.0
-
-*Last modified ({stack} release)*: 8.5.0
-
-*Rule authors*: Elastic
 
 *Rule license*: Elastic License v2
+
 
 ==== Rule query
 
 
-[source,js]
+[source, js]
 ----------------------------------
-registry where registry.path : ("HKEY_USERS\\*\\Environment\\windir",
-"HKEY_USERS\\*\\Environment\\systemroot") and not
-registry.data.strings : ("C:\\windows", "%SystemRoot%")
-----------------------------------
+registry where host.os.type == "windows" and event.type == "change" and
+registry.value : ("windir", "systemroot") and
+registry.path : (
+    "HKEY_USERS\\*\\Environment\\windir",
+    "HKEY_USERS\\*\\Environment\\systemroot",
+    "HKU\\*\\Environment\\windir",
+    "HKU\\*\\Environment\\systemroot",
+    "HKCU\\*\\Environment\\windir",
+    "HKCU\\*\\Environment\\systemroot",
+    "\\REGISTRY\\USER\\*\\Environment\\windir",
+    "\\REGISTRY\\USER\\*\\Environment\\systemroot",
+    "USER\\*\\Environment\\windir",
+    "USER\\*\\Environment\\systemroot"
+    ) and
+ not registry.data.strings : ("C:\\windows", "%SystemRoot%")
 
-==== Threat mapping
+----------------------------------
 
 *Framework*: MITRE ATT&CK^TM^
 
@@ -63,29 +82,7 @@ registry.data.strings : ("C:\\windows", "%SystemRoot%")
 ** Name: Hijack Execution Flow
 ** ID: T1574
 ** Reference URL: https://attack.mitre.org/techniques/T1574/
-
-[[privilege-escalation-via-windir-environment-variable-history]]
-==== Rule version history
-
-Version 100 (8.5.0 release)::
-* Updated query, changed from:
-+
-[source, js]
-----------------------------------
-registry where registry.path : ("HKEY_USERS\\*\\Environment\\windir",
-"HKEY_USERS\\*\\Environment\\systemroot") and not
-registry.data.strings : ("C:\\windows", "%SystemRoot%")
-----------------------------------
-
-Version 5 (8.4.0 release)::
-* Formatting only
-
-Version 4 (8.1.0 release)::
-* Formatting only
-
-Version 3 (7.12.0 release)::
-* Formatting only
-
-Version 2 (7.11.2 release)::
-* Formatting only
-
+* Sub-technique:
+** Name: Path Interception by PATH Environment Variable
+** ID: T1574.007
+** Reference URL: https://attack.mitre.org/techniques/T1574/007/

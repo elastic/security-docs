@@ -3,68 +3,63 @@
 
 Detects attempts to exploit privilege escalation vulnerabilities related to the Print Spooler service. For more information refer to the following CVE's - CVE-2020-1048, CVE-2020-1337 and CVE-2020-1300 and verify that the impacted system is patched.
 
-*Rule type*: eql
+*Rule type*: new_terms
 
-*Rule indices*:
+*Rule indices*: 
 
 * winlogbeat-*
-* logs-endpoint.events.*
-* logs-windows.*
+* logs-endpoint.events.file-*
+* logs-windows.sysmon_operational-*
+* endgame-*
+* logs-m365_defender.event-*
+* logs-sentinel_one_cloud_funnel.*
 
-*Severity*: high
+*Severity*: low
 
-*Risk score*: 73
+*Risk score*: 21
 
-*Runs every*: 5 minutes
+*Runs every*: 5m
 
 *Searches indices from*: now-9m ({ref}/common-options.html#date-math[Date Math format], see also <<rule-schedule, `Additional look-back time`>>)
 
 *Maximum alerts per execution*: 100
 
-*References*:
+*References*: 
 
 * https://voidsec.com/cve-2020-1337-printdemon-is-dead-long-live-printdemon/
 * https://www.thezdi.com/blog/2020/7/8/cve-2020-1300-remote-code-execution-through-microsoft-windows-cab-files
 
-*Tags*:
+*Tags*: 
+
+* Domain: Endpoint
+* OS: Windows
+* Use Case: Threat Detection
+* Tactic: Privilege Escalation
+* Data Source: Elastic Endgame
+* Use Case: Vulnerability
+* Data Source: Elastic Defend
+* Data Source: Sysmon
+* Data Source: Microsoft Defender for Endpoint
+* Data Source: SentinelOne
+
+*Version*: 214
+
+*Rule authors*: 
 
 * Elastic
-* Host
-* Windows
-* Threat Detection
-* Privilege Escalation
-
-*Version*: 100 (<<suspicious-printspooler-service-executable-file-creation-history, version history>>)
-
-*Added ({stack} release)*: 7.10.0
-
-*Last modified ({stack} release)*: 8.5.0
-
-*Rule authors*: Elastic
 
 *Rule license*: Elastic License v2
-
-==== Investigation guide
-
-
-[source,markdown]
-----------------------------------
-
-----------------------------------
 
 
 ==== Rule query
 
 
-[source,js]
+[source, js]
 ----------------------------------
-file where event.type != "deletion" and process.name : "spoolsv.exe"
-and file.extension : ("exe", "dll") and not file.path :
-("?:\\Windows\\System32\\spool\\*", "?:\\Windows\\Temp\\*",
-"?:\\Users\\*")
-----------------------------------
+event.category : "file" and host.os.type : "windows" and event.type : "creation" and
+  process.name : "spoolsv.exe" and file.extension : "dll"
 
-==== Threat mapping
+----------------------------------
 
 *Framework*: MITRE ATT&CK^TM^
 
@@ -76,33 +71,3 @@ and file.extension : ("exe", "dll") and not file.path :
 ** Name: Exploitation for Privilege Escalation
 ** ID: T1068
 ** Reference URL: https://attack.mitre.org/techniques/T1068/
-
-[[suspicious-printspooler-service-executable-file-creation-history]]
-==== Rule version history
-
-Version 100 (8.5.0 release)::
-* Formatting only
-
-Version 7 (8.4.0 release)::
-* Formatting only
-
-Version 5 (8.2.0 release)::
-* Formatting only
-
-Version 4 (7.13.0 release)::
-* Updated query, changed from:
-+
-[source, js]
-----------------------------------
-event.category:file and not event.type:deletion and
-process.name:spoolsv.exe and file.extension:(exe or dll) and not
-file.path:(C\:\\Windows\\System32\\spool\\* or C\:\\Windows\\Temp\\*
-or C\:\\Users\\*)
-----------------------------------
-
-Version 3 (7.12.0 release)::
-* Formatting only
-
-Version 2 (7.11.2 release)::
-* Formatting only
-
