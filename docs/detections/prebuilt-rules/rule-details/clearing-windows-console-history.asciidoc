@@ -15,6 +15,7 @@ Identifies when a user attempts to clear console history. An adversary may clear
 * logs-system.security*
 * logs-m365_defender.event-*
 * logs-sentinel_one_cloud_funnel.*
+* logs-crowdstrike.fdr*
 
 *Severity*: medium
 
@@ -46,8 +47,9 @@ Identifies when a user attempts to clear console history. An adversary may clear
 * Data Source: Microsoft Defender for Endpoint
 * Data Source: Sysmon
 * Data Source: SentinelOne
+* Data Source: Crowdstrike
 
-*Version*: 312
+*Version*: 313
 
 *Rule authors*: 
 
@@ -101,30 +103,21 @@ Attackers can try to cover their tracks by clearing PowerShell console history. 
   - Ensure that PowerShell auditing policies and log collection are in place to grant future visibility.
 
 
-==== Setup
-
-
-
-*Setup*
-
-
-If enabling an EQL rule on a non-elastic-agent index (such as beats) for versions <8.2,
-events will not define `event.ingested` and default fallback for EQL rules was not added until version 8.2.
-Hence for this rule to work effectively, users will need to add a custom ingest pipeline to populate
-`event.ingested` to @timestamp.
-For more details on adding a custom ingest pipeline refer - https://www.elastic.co/guide/en/fleet/current/data-streams-pipeline-tutorial.html
-
-
 ==== Rule query
 
 
 [source, js]
 ----------------------------------
 process where host.os.type == "windows" and event.type == "start" and
-  (process.name : ("powershell.exe", "pwsh.exe", "powershell_ise.exe") or ?process.pe.original_file_name == "PowerShell.EXE") and
-     (process.args : "*Clear-History*" or
-     (process.args : ("*Remove-Item*", "rm") and process.args : ("*ConsoleHost_history.txt*", "*(Get-PSReadlineOption).HistorySavePath*")) or
-     (process.args : "*Set-PSReadlineOption*" and process.args : "*SaveNothing*"))
+  (
+    process.name : ("powershell.exe", "pwsh.exe", "powershell_ise.exe") or
+    ?process.pe.original_file_name in ("powershell.exe", "pwsh.dll", "powershell_ise.exe")
+  ) and
+  (
+    process.args : "*Clear-History*" or
+    (process.args : ("*Remove-Item*", "rm") and process.args : ("*ConsoleHost_history.txt*", "*(Get-PSReadlineOption).HistorySavePath*")) or
+    (process.args : "*Set-PSReadlineOption*" and process.args : "*SaveNothing*")
+  )
 
 ----------------------------------
 
