@@ -5,53 +5,55 @@ Identifies InstallUtil.exe making outbound network connections. This may indicat
 
 *Rule type*: eql
 
-*Rule indices*:
+*Rule indices*: 
 
-* logs-endpoint.events.*
+* logs-endpoint.events.process-*
+* logs-endpoint.events.network-*
 * winlogbeat-*
-* logs-windows.*
+* logs-windows.sysmon_operational-*
 
 *Severity*: medium
 
 *Risk score*: 47
 
-*Runs every*: 5 minutes
+*Runs every*: 5m
 
 *Searches indices from*: now-9m ({ref}/common-options.html#date-math[Date Math format], see also <<rule-schedule, `Additional look-back time`>>)
 
 *Maximum alerts per execution*: 100
 
-*Tags*:
+*References*: None
+
+*Tags*: 
+
+* Domain: Endpoint
+* OS: Windows
+* Use Case: Threat Detection
+* Tactic: Defense Evasion
+* Data Source: Elastic Defend
+* Data Source: Sysmon
+
+*Version*: 207
+
+*Rule authors*: 
 
 * Elastic
-* Host
-* Windows
-* Threat Detection
-* Defense Evasion
-
-*Version*: 101 (<<installutil-process-making-network-connections-history, version history>>)
-
-*Added ({stack} release)*: 7.10.0
-
-*Last modified ({stack} release)*: 8.5.0
-
-*Rule authors*: Elastic
 
 *Rule license*: Elastic License v2
+
 
 ==== Rule query
 
 
-[source,js]
+[source, js]
 ----------------------------------
-/* the benefit of doing this as an eql sequence vs kql is this will
-limit to alerting only on the first network connection */ sequence by
-process.entity_id [process where event.type == "start" and
-process.name : "installutil.exe"] [network where process.name :
-"installutil.exe" and network.direction : ("outgoing", "egress")]
-----------------------------------
+/* the benefit of doing this as an eql sequence vs kql is this will limit to alerting only on the first network connection */
 
-==== Threat mapping
+sequence by process.entity_id
+  [process where host.os.type == "windows" and event.type == "start" and process.name : "installutil.exe"]
+  [network where host.os.type == "windows" and process.name : "installutil.exe" and network.direction : ("outgoing", "egress")]
+
+----------------------------------
 
 *Framework*: MITRE ATT&CK^TM^
 
@@ -63,42 +65,7 @@ process.name : "installutil.exe"] [network where process.name :
 ** Name: System Binary Proxy Execution
 ** ID: T1218
 ** Reference URL: https://attack.mitre.org/techniques/T1218/
-
-[[installutil-process-making-network-connections-history]]
-==== Rule version history
-
-Version 101 (8.5.0 release)::
-* Updated query, changed from:
-+
-[source, js]
-----------------------------------
-/* the benefit of doing this as an eql sequence vs kql is this will
-limit to alerting only on the first network connection */ sequence by
-process.entity_id [process where event.type in ("start",
-"process_started") and process.name : "installutil.exe"] [network
-where process.name : "installutil.exe" and network.direction :
-("outgoing", "egress")]
-----------------------------------
-
-Version 6 (8.4.0 release)::
-* Formatting only
-
-Version 4 (7.16.0 release)::
-* Updated query, changed from:
-+
-[source, js]
-----------------------------------
-/* the benefit of doing this as an eql sequence vs kql is this will
-limit to alerting only on the first network connection */ sequence by
-process.entity_id [process where event.type in ("start",
-"process_started") and process.name : "installutil.exe"] [network
-where process.name : "installutil.exe" and network.direction ==
-"outgoing"]
-----------------------------------
-
-Version 3 (7.12.0 release)::
-* Formatting only
-
-Version 2 (7.11.0 release)::
-* Formatting only
-
+* Sub-technique:
+** Name: InstallUtil
+** ID: T1218.004
+** Reference URL: https://attack.mitre.org/techniques/T1218/004/
