@@ -5,71 +5,61 @@ Identifies when an ElastiCache security group has been modified or deleted.
 
 *Rule type*: query
 
-*Rule indices*:
+*Rule indices*: 
 
 * filebeat-*
-* logs-aws*
+* logs-aws.cloudtrail-*
 
 *Severity*: low
 
 *Risk score*: 21
 
-*Runs every*: 10 minutes
+*Runs every*: 10m
 
 *Searches indices from*: now-60m ({ref}/common-options.html#date-math[Date Math format], see also <<rule-schedule, `Additional look-back time`>>)
 
 *Maximum alerts per execution*: 100
 
-*References*:
+*References*: 
 
 * https://docs.aws.amazon.com/AmazonElastiCache/latest/APIReference/Welcome.html
 
-*Tags*:
+*Tags*: 
 
-* Elastic
-* Cloud
-* AWS
-* Continuous Monitoring
-* SecOps
-* Monitoring
+* Domain: Cloud
+* Data Source: AWS
+* Data Source: Amazon Web Services
+* Tactic: Defense Evasion
 
-*Version*: 101 (<<aws-elasticache-security-group-modified-or-deleted-history, version history>>)
+*Version*: 206
 
-*Added ({stack} release)*: 7.16.0
+*Rule authors*: 
 
-*Last modified ({stack} release)*: 8.6.0
-
-*Rule authors*: Austin Songer
+* Austin Songer
 
 *Rule license*: Elastic License v2
 
-==== Potential false positives
-
-A ElastiCache security group deletion may be done by a system or network administrator. Verify whether the user identity, user agent, and/or hostname should be making changes in your environment. Security Group deletions by unfamiliar users or hosts should be investigated. If known behavior is causing false positives, it can be exempted from the rule.
 
 ==== Investigation guide
 
 
-[source,markdown]
-----------------------------------
 
-----------------------------------
 
+==== Setup
+
+
+The AWS Fleet integration, Filebeat module, or similarly structured data is required to be compatible with this rule.
 
 ==== Rule query
 
 
-[source,js]
+[source, js]
 ----------------------------------
-event.dataset:aws.cloudtrail and
-event.provider:elasticache.amazonaws.com and event.action:("Delete
-Cache Security Group" or "Authorize Cache Security Group Ingress" or
-"Revoke Cache Security Group Ingress" or
-"AuthorizeCacheSecurityGroupEgress" or
+event.dataset:aws.cloudtrail and event.provider:elasticache.amazonaws.com and event.action:("Delete Cache Security Group" or
+"Authorize Cache Security Group Ingress" or  "Revoke Cache Security Group Ingress" or "AuthorizeCacheSecurityGroupEgress" or
 "RevokeCacheSecurityGroupEgress") and event.outcome:success
-----------------------------------
 
-==== Threat mapping
+----------------------------------
 
 *Framework*: MITRE ATT&CK^TM^
 
@@ -81,29 +71,7 @@ Cache Security Group" or "Authorize Cache Security Group Ingress" or
 ** Name: Impair Defenses
 ** ID: T1562
 ** Reference URL: https://attack.mitre.org/techniques/T1562/
-
-[[aws-elasticache-security-group-modified-or-deleted-history]]
-==== Rule version history
-
-Version 101 (8.6.0 release)::
-* Formatting only
-
-Version 100 (8.5.0 release)::
-* Formatting only
-
-Version 4 (8.4.0 release)::
-* Updated query, changed from:
-+
-[source, js]
-----------------------------------
-event.dataset:aws.cloudtrail and
-event.provider:elasticache.amazonaws.com and event.action:("Delete
-Cache Security Group" or "Authorize Cache Security Group Ingress" or
-"Revoke Cache Security Group Ingress" or
-"AuthorizeCacheSecurityGroupEgress" or
-"RevokeCacheSecurityGroupEgress") and event.outcome:success
-----------------------------------
-
-Version 2 (8.1.0 release)::
-* Formatting only
-
+* Sub-technique:
+** Name: Disable or Modify Cloud Firewall
+** ID: T1562.007
+** Reference URL: https://attack.mitre.org/techniques/T1562/007/

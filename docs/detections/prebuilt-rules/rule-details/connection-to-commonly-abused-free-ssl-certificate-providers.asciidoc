@@ -5,71 +5,77 @@ Identifies unusual processes connecting to domains using known free SSL certific
 
 *Rule type*: eql
 
-*Rule indices*:
+*Rule indices*: 
 
 * winlogbeat-*
-* logs-endpoint.events.*
-* logs-windows.*
+* logs-endpoint.events.network-*
+* logs-windows.sysmon_operational-*
 
 *Severity*: low
 
 *Risk score*: 21
 
-*Runs every*: 5 minutes
+*Runs every*: 5m
 
 *Searches indices from*: now-9m ({ref}/common-options.html#date-math[Date Math format], see also <<rule-schedule, `Additional look-back time`>>)
 
 *Maximum alerts per execution*: 100
 
-*Tags*:
+*References*: None
+
+*Tags*: 
+
+* Domain: Endpoint
+* OS: Windows
+* Use Case: Threat Detection
+* Tactic: Command and Control
+* Data Source: Elastic Defend
+* Data Source: Sysmon
+
+*Version*: 207
+
+*Rule authors*: 
 
 * Elastic
-* Host
-* Windows
-* Threat Detection
-* Command and Control
-
-*Version*: 100 (<<connection-to-commonly-abused-free-ssl-certificate-providers-history, version history>>)
-
-*Added ({stack} release)*: 7.11.0
-
-*Last modified ({stack} release)*: 8.5.0
-
-*Rule authors*: Elastic
 
 *Rule license*: Elastic License v2
 
-==== Investigation guide
+
+==== Setup
 
 
-[source,markdown]
-----------------------------------
 
-----------------------------------
+*Setup*
+
+
+If enabling an EQL rule on a non-elastic-agent index (such as beats) for versions <8.2,
+events will not define `event.ingested` and default fallback for EQL rules was not added until version 8.2.
+Hence for this rule to work effectively, users will need to add a custom ingest pipeline to populate
+`event.ingested` to @timestamp.
+For more details on adding a custom ingest pipeline refer - https://www.elastic.co/guide/en/fleet/current/data-streams-pipeline-tutorial.html
 
 
 ==== Rule query
 
 
-[source,js]
+[source, js]
 ----------------------------------
-network where network.protocol == "dns" and /* Add new free SSL
-certificate provider domains here */ dns.question.name :
-("*letsencrypt.org", "*.sslforfree.com", "*.zerossl.com",
-"*.freessl.org") and /* Native Windows process paths that are
-unlikely to have network connections to domains secured using free SSL
-certificates */ process.executable :
-("C:\\Windows\\System32\\*.exe",
-"C:\\Windows\\System\\*.exe",
-"C:\\Windows\\SysWOW64\\*.exe",
-"C:\\Windows\\Microsoft.NET\\Framework*\\*.exe",
-"C:\\Windows\\explorer.exe",
-"C:\\Windows\\notepad.exe") and /* Insert noisy false positives
-here */ not process.name : ("svchost.exe", "MicrosoftEdge*.exe",
-"msedge.exe")
-----------------------------------
+network where host.os.type == "windows" and network.protocol == "dns" and
+  /* Add new free SSL certificate provider domains here */
+  dns.question.name : ("*letsencrypt.org", "*.sslforfree.com", "*.zerossl.com", "*.freessl.org") and
 
-==== Threat mapping
+  /* Native Windows process paths that are unlikely to have network connections to domains secured using free SSL certificates */
+  process.executable : ("C:\\Windows\\System32\\*.exe",
+                        "C:\\Windows\\System\\*.exe",
+	                  "C:\\Windows\\SysWOW64\\*.exe",
+		          "C:\\Windows\\Microsoft.NET\\Framework*\\*.exe",
+		          "C:\\Windows\\explorer.exe",
+		          "C:\\Windows\\notepad.exe") and
+
+  /* Insert noisy false positives here */
+  not process.name : ("svchost.exe", "MicrosoftEdge*.exe", "msedge.exe")
+
+----------------------------------
 
 *Framework*: MITRE ATT&CK^TM^
 
@@ -81,40 +87,3 @@ here */ not process.name : ("svchost.exe", "MicrosoftEdge*.exe",
 ** Name: Encrypted Channel
 ** ID: T1573
 ** Reference URL: https://attack.mitre.org/techniques/T1573/
-
-[[connection-to-commonly-abused-free-ssl-certificate-providers-history]]
-==== Rule version history
-
-Version 100 (8.5.0 release)::
-* Formatting only
-
-Version 6 (8.4.0 release)::
-* Updated query, changed from:
-+
-[source, js]
-----------------------------------
-network where network.protocol == "dns" and /* Add new free SSL
-certificate provider domains here */ dns.question.name :
-("*letsencrypt.org", "*.sslforfree.com", "*.zerossl.com",
-"*.freessl.org") and /* Native Windows process paths that are
-unlikely to have network connections to domains secured using free SSL
-certificates */ process.executable :
-("C:\\Windows\\System32\\*.exe",
-"C:\\Windows\\System\\*.exe",
-"C:\\Windows\\SysWOW64\\*.exe",
-"C:\\Windows\\Microsoft.NET\\Framework*\\*.exe",
-"C:\\Windows\\explorer.exe",
-"C:\\Windows\\notepad.exe") and /* Insert noisy false positives
-here */ not process.name : ("svchost.exe", "MicrosoftEdge*.exe",
-"msedge.exe")
-----------------------------------
-
-Version 4 (8.2.0 release)::
-* Formatting only
-
-Version 3 (7.12.0 release)::
-* Formatting only
-
-Version 2 (7.11.2 release)::
-* Formatting only
-
