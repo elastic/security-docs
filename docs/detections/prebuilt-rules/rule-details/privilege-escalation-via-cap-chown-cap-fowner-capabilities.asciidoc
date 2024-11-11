@@ -1,0 +1,111 @@
+[[privilege-escalation-via-cap-chown-cap-fowner-capabilities]]
+=== Privilege Escalation via CAP_CHOWN/CAP_FOWNER Capabilities
+
+Identifies instances where a processes (granted CAP_CHOWN and/or CAP_FOWNER capabilities) is executed, after which the ownership of a suspicious file or binary is changed. In Linux, the CAP_CHOWN capability allows a process to change the owner of a file, while CAP_FOWNER permits it to bypass permission checks on operations that require file ownership (like reading, writing, and executing). Attackers may abuse these capabilities to obtain unauthorized access to files.
+
+*Rule type*: eql
+
+*Rule indices*: 
+
+* logs-endpoint.events.*
+* auditbeat-*
+* logs-auditd_manager.auditd-*
+
+*Severity*: medium
+
+*Risk score*: 47
+
+*Runs every*: 5m
+
+*Searches indices from*: now-9m ({ref}/common-options.html#date-math[Date Math format], see also <<rule-schedule, `Additional look-back time`>>)
+
+*Maximum alerts per execution*: 100
+
+*References*: None
+
+*Tags*: 
+
+* Data Source: Auditd Manager
+* Domain: Endpoint
+* OS: Linux
+* Use Case: Threat Detection
+* Tactic: Privilege Escalation
+* Data Source: Elastic Defend
+
+*Version*: 3
+
+*Rule authors*: 
+
+* Elastic
+
+*Rule license*: Elastic License v2
+
+
+==== Setup
+
+
+
+*Setup*
+
+
+
+This rule requires data coming in from Auditd Manager.
+
+
+*Auditd Manager Integration Setup*
+
+The Auditd Manager Integration receives audit events from the Linux Audit Framework which is a part of the Linux kernel.
+Auditd Manager provides a user-friendly interface and automation capabilities for configuring and monitoring system auditing through the auditd daemon. With `auditd_manager`, administrators can easily define audit rules, track system events, and generate comprehensive audit reports, improving overall security and compliance in the system.
+
+
+*The following steps should be executed in order to add the Elastic Agent System integration "auditd_manager" on a Linux System:*
+
+- Go to the Kibana home page and click “Add integrations”.
+- In the query bar, search for “Auditd Manager” and select the integration to see more details about it.
+- Click “Add Auditd Manager”.
+- Configure the integration name and optionally add a description.
+- Review optional and advanced settings accordingly.
+- Add the newly installed “auditd manager” to an existing or a new agent policy, and deploy the agent on a Linux system from which auditd log files are desirable.
+- Click “Save and Continue”.
+- For more details on the integration refer to the https://docs.elastic.co/integrations/auditd_manager[helper guide].
+
+
+*Rule Specific Setup Note*
+
+Auditd Manager subscribes to the kernel and receives events as they occur without any additional configuration.
+However, if more advanced configuration is required to detect specific behavior, audit rules can be added to the integration in either the "audit rules" configuration box or the "auditd rule files" box by specifying a file to read the audit rules from.
+- For this detection rule the following additional audit rules are required to be added to the integration:
+  -- "-w /etc/ -p rwxa -k audit_recursive_etc"
+  -- "-w /root/ -p rwxa -k audit_root"
+
+
+==== Rule query
+
+
+[source, js]
+----------------------------------
+sequence by host.id, process.pid with maxspan=1s
+  [process where host.os.type == "linux" and event.type == "start" and event.action == "exec" and
+   process.name != null and process.thread.capabilities.effective : ("CAP_CHOWN", "CAP_FOWNER") and
+   process.command_line : ("*sudoers*", "*passwd*", "*shadow*", "*/root/*") and user.id != "0"]
+  [file where host.os.type == "linux" and event.action == "changed-file-ownership-of" and event.type == "change" and
+   event.outcome == "success" and file.path in (
+     "/etc/passwd",
+     "/etc/shadow",
+     "/etc/sudoers",
+     "/root/.ssh/*"
+   ) and user.id != "0"
+  ]
+
+----------------------------------
+
+*Framework*: MITRE ATT&CK^TM^
+
+* Tactic:
+** Name: Privilege Escalation
+** ID: TA0004
+** Reference URL: https://attack.mitre.org/tactics/TA0004/
+* Technique:
+** Name: Exploitation for Privilege Escalation
+** ID: T1068
+** Reference URL: https://attack.mitre.org/techniques/T1068/
