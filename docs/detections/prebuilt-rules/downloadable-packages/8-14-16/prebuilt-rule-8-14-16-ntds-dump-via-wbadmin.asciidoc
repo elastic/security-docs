@@ -1,0 +1,93 @@
+[[prebuilt-rule-8-14-16-ntds-dump-via-wbadmin]]
+=== NTDS Dump via Wbadmin
+
+Identifies the execution of wbadmin to access the NTDS.dit file in a domain controller. Attackers with privileges from groups like Backup Operators can abuse the utility to perform credential access and compromise the domain.
+
+*Rule type*: eql
+
+*Rule indices*: 
+
+* winlogbeat-*
+* logs-endpoint.events.process-*
+* logs-windows.forwarded*
+* logs-windows.sysmon_operational-*
+* endgame-*
+* logs-system.security*
+* logs-m365_defender.event-*
+* logs-sentinel_one_cloud_funnel.*
+* logs-crowdstrike.fdr*
+
+*Severity*: medium
+
+*Risk score*: 47
+
+*Runs every*: 5m
+
+*Searches indices from*: now-9m ({ref}/common-options.html#date-math[Date Math format], see also <<rule-schedule, `Additional look-back time`>>)
+
+*Maximum alerts per execution*: 100
+
+*References*: 
+
+* https://medium.com/r3d-buck3t/windows-privesc-with-sebackupprivilege-65d2cd1eb960
+
+*Tags*: 
+
+* Domain: Endpoint
+* OS: Windows
+* Use Case: Threat Detection
+* Tactic: Credential Access
+* Data Source: Elastic Endgame
+* Data Source: Elastic Defend
+* Data Source: System
+* Data Source: Microsoft Defender for Endpoint
+* Data Source: Sysmon
+* Data Source: SentinelOne
+* Data Source: Crowdstrike
+
+*Version*: 203
+
+*Rule authors*: 
+
+* Elastic
+
+*Rule license*: Elastic License v2
+
+
+==== Rule query
+
+
+[source, js]
+----------------------------------
+process where host.os.type == "windows" and event.type == "start" and
+    (process.name : "wbadmin.exe" or ?process.pe.original_file_name : "wbadmin.exe") and 
+     process.args : "recovery" and process.command_line : "*ntds.dit*"
+
+----------------------------------
+
+*Framework*: MITRE ATT&CK^TM^
+
+* Tactic:
+** Name: Credential Access
+** ID: TA0006
+** Reference URL: https://attack.mitre.org/tactics/TA0006/
+* Technique:
+** Name: OS Credential Dumping
+** ID: T1003
+** Reference URL: https://attack.mitre.org/techniques/T1003/
+* Sub-technique:
+** Name: Security Account Manager
+** ID: T1003.002
+** Reference URL: https://attack.mitre.org/techniques/T1003/002/
+* Sub-technique:
+** Name: NTDS
+** ID: T1003.003
+** Reference URL: https://attack.mitre.org/techniques/T1003/003/
+* Tactic:
+** Name: Defense Evasion
+** ID: TA0005
+** Reference URL: https://attack.mitre.org/tactics/TA0005/
+* Technique:
+** Name: Direct Volume Access
+** ID: T1006
+** Reference URL: https://attack.mitre.org/techniques/T1006/
