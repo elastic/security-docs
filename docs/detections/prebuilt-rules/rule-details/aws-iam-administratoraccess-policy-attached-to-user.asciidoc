@@ -34,7 +34,7 @@ An adversary with access to a set of compromised credentials may attempt to pers
 * Tactic: Persistence
 * Resources: Investigation Guide
 
-*Version*: 3
+*Version*: 4
 
 *Rule authors*: 
 
@@ -119,7 +119,20 @@ from logs-aws.cloudtrail-* metadata _id, _version, _index
 | where event.provider == "iam.amazonaws.com" and event.action == "AttachUserPolicy" and event.outcome == "success"
 | dissect aws.cloudtrail.request_parameters "{%{?policyArn}=%{?arn}:%{?aws}:%{?iam}::%{?aws}:%{?policy}/%{policyName},%{?userName}=%{target.userName}}"
 | where policyName == "AdministratorAccess"
-| keep @timestamp, event.provider, event.action, event.outcome, policyName, target.userName
+| keep
+    @timestamp,
+    cloud.region,
+    event.provider,
+    event.action,
+    event.outcome,
+    policyName,
+    target.userName,
+    aws.cloudtrail.request_parameters,
+    aws.cloudtrail.user_identity.arn,
+    related.user,
+    user_agent.original,
+    user.name,
+    source.address
 
 ----------------------------------
 

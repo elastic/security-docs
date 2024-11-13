@@ -13,6 +13,7 @@ An adversary can use the Windows command line debugging utility cdb.exe to execu
 * logs-sentinel_one_cloud_funnel.*
 * logs-m365_defender.event-*
 * logs-system.security-*
+* logs-crowdstrike.fdr*
 
 *Severity*: medium
 
@@ -39,28 +40,15 @@ An adversary can use the Windows command line debugging utility cdb.exe to execu
 * Data Source: Sysmon
 * Data Source: SentinelOne
 * Data Source: Microsoft Defender for Endpoint
+* Data Source: Crowdstrike
 
-*Version*: 101
+*Version*: 102
 
 *Rule authors*: 
 
 * Elastic
 
 *Rule license*: Elastic License v2
-
-
-==== Setup
-
-
-
-*Setup*
-
-
-If enabling an EQL rule on a non-elastic-agent index (such as beats) for versions <8.2,
-events will not define `event.ingested` and default fallback for EQL rules was not added until version 8.2.
-Hence for this rule to work effectively, users will need to add a custom ingest pipeline to populate
-`event.ingested` to @timestamp.
-For more details on adding a custom ingest pipeline refer - https://www.elastic.co/guide/en/fleet/current/data-streams-pipeline-tutorial.html
 
 
 ==== Rule query
@@ -71,7 +59,12 @@ For more details on adding a custom ingest pipeline refer - https://www.elastic.
 process where host.os.type == "windows" and event.type == "start" and
  (?process.pe.original_file_name == "CDB.Exe" or process.name : "cdb.exe") and
   process.args : ("-cf", "-c", "-pd") and
-  not process.executable : ("?:\\Program Files (x86)\\*\\cdb.exe", "?:\\Program Files\\*\\cdb.exe")
+  not process.executable : (
+        "?:\\Program Files (x86)\\*\\cdb.exe",
+        "?:\\Program Files\\*\\cdb.exe",
+        "\\Device\\HarddiskVolume?\\Program Files (x86)\\*\\cdb.exe",
+        "\\Device\\HarddiskVolume?\\Program Files\\*\\cdb.exe"
+  )
 
 ----------------------------------
 
