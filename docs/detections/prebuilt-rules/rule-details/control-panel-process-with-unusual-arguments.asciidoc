@@ -15,6 +15,7 @@ Identifies unusual instances of Control Panel with suspicious keywords or paths 
 * logs-system.security*
 * logs-m365_defender.event-*
 * logs-sentinel_one_cloud_funnel.*
+* logs-crowdstrike.fdr*
 
 *Severity*: high
 
@@ -43,8 +44,9 @@ Identifies unusual instances of Control Panel with suspicious keywords or paths 
 * Data Source: Microsoft Defender for Endpoint
 * Data Source: Sysmon
 * Data Source: SentinelOne
+* Data Source: Crowdstrike
 
-*Version*: 312
+*Version*: 313
 
 *Rule authors*: 
 
@@ -53,40 +55,23 @@ Identifies unusual instances of Control Panel with suspicious keywords or paths 
 *Rule license*: Elastic License v2
 
 
-==== Setup
-
-
-
-*Setup*
-
-
-If enabling an EQL rule on a non-elastic-agent index (such as beats) for versions <8.2,
-events will not define `event.ingested` and default fallback for EQL rules was not added until version 8.2.
-Hence for this rule to work effectively, users will need to add a custom ingest pipeline to populate
-`event.ingested` to @timestamp.
-For more details on adding a custom ingest pipeline refer - https://www.elastic.co/guide/en/fleet/current/data-streams-pipeline-tutorial.html
-
-
 ==== Rule query
 
 
 [source, js]
 ----------------------------------
 process where host.os.type == "windows" and event.type == "start" and
- process.executable : ("?:\\Windows\\SysWOW64\\control.exe", "?:\\Windows\\System32\\control.exe") and
- process.command_line :
-          ("*.jpg*",
-           "*.png*",
-           "*.gif*",
-           "*.bmp*",
-           "*.jpeg*",
-           "*.TIFF*",
-           "*.inf*",
-           "*.cpl:*/*",
-           "*../../..*",
-           "*/AppData/Local/*",
-           "*:\\Users\\Public\\*",
-           "*\\AppData\\Local\\*")
+  process.name : "control.exe" and 
+  process.command_line : (
+    "*.jpg*", "*.png*",
+    "*.gif*", "*.bmp*",
+    "*.jpeg*", "*.TIFF*",
+    "*.inf*", "*.cpl:*/*",
+    "*../../..*",
+    "*/AppData/Local/*",
+    "*:\\Users\\Public\\*",
+    "*\\AppData\\Local\\*"
+)
 
 ----------------------------------
 
