@@ -1,31 +1,38 @@
-[[deploy-with-mdm]]
+[[security-deploy-with-mdm]]
 = Deploy {elastic-defend} on macOS with mobile device management
+
+// :description: Configure access for deploying {elastic-defend} on macOS with mobile device management.
+// :keywords: security, how-to, secure
+
 ++++
 <titleabbrev>Deploy on macOS with MDM</titleabbrev>
 ++++
 
-To silently install and deploy {elastic-defend}, you need to configure a mobile device management (MDM) profile for {elastic-endpoint}—the installed component that performs {elastic-defend}'s threat monitoring and prevention. This allows you to pre-approve the {elastic-endpoint} system extension and grant Full Disk Access to all the necessary components.
+preview:[]
+
+To silently install and deploy {elastic-defend} without the need for user interaction, you need to configure a mobile device management (MDM) profile for {elastic-endpoint}—the installed component that performs {elastic-defend}'s threat monitoring and prevention. This allows you to pre-approve the {elastic-endpoint} system extension and grant Full Disk Access to all the necessary components.
 
 This page explains how to deploy {elastic-defend} silently using Jamf.
 
 [discrete]
-[[configure-jamf-profile]]
+[[security-deploy-with-mdm-configure-a-jamf-mdm-profile]]
 == Configure a Jamf MDM profile
 
 In Jamf, create a configuration profile for {elastic-endpoint}. Follow these steps to configure the profile:
 
-. <<system-extension-jamf, Approve the system extension.>>
-. <<content-filtering-jamf, Approve network content filtering.>>
-. <<notifications-jamf, Enable notifications.>>
-. <<fda-jamf, Enable Full Disk Access.>>
+. <<security-deploy-with-mdm-approve-the-system-extension,Approve the system extension>>.
+. <<security-deploy-with-mdm-approve-network-content-filtering,Approve network content filtering>>.
+. <<security-deploy-with-mdm-enable-notifications,Enable notifications>>.
+. <<security-deploy-with-mdm-enable-full-disk-access,Enable Full Disk Access>>.
 
 [discrete]
-[[system-extension-jamf]]
+[[security-deploy-with-mdm-approve-the-system-extension]]
 === Approve the system extension
 
-. Select the **System Extensions** option to configure the system extension policy for the {elastic-endpoint} configuration profile. 
-. Make sure that **Allow users to approve system extensions** is selected. 
+. Select the **System Extensions** option to configure the system extension policy for the {elastic-endpoint} configuration profile.
+. Make sure that **Allow users to approve system extensions** is selected.
 . In the **Allowed Team IDs and System Extensions** section, add the {elastic-endpoint} system extension:
++
 .. (Optional) Enter a **Display Name** for the {elastic-endpoint} system extension.
 .. From the **System Extension Types** dropdown, select **Allowed System Extensions**.
 .. Under **Team Identifier**, enter `2BT3HPN62Z`.
@@ -33,44 +40,47 @@ In Jamf, create a configuration profile for {elastic-endpoint}. Follow these ste
 . Save the configuration.
 
 [role="screenshot"]
-image::images/system-extension-jamf.png[]
+image::images/deploy-with-mdm/system-extension-jamf.png[]
 
 [discrete]
-[[content-filtering-jamf]]
+[[security-deploy-with-mdm-approve-network-content-filtering]]
 === Approve network content filtering
 
 . Select the **Content Filter** option to configure the Network Extension policy for the {elastic-endpoint} configuration profile.
 . Under **Filter Name**, enter `ElasticEndpoint`.
 . Under **Identifier**, enter `co.elastic.endpoint`.
 . In the **Socket Filter** section, fill in these fields:
++
 .. **Socket Filter Bundle Identifier**: Enter `co.elastic.systemextension`
 .. **Socket Filter Designated Requirement**: Enter the following:
 +
-[source,shell]
-----------------------------------
+[source,txt]
+----
 identifier "co.elastic.systemextension" and anchor apple generic and certificate 1[field.1.2.840.113635.100.6.2.6] /* exists */ and certificate leaf[field.1.2.840.113635.100.6.1.13] /* exists */ and certificate leaf[subject.OU] = "2BT3HPN62Z"
-----------------------------------
+----
 . In the **Network Filter** section, fill in these fields:
++
 .. **Network Filter Bundle Identifier**: Enter `co.elastic.systemextension`
 .. **Network Filter Designated Requirement**: Enter the following:
 +
-[source,shell]
-----------------------------------
+[source,txt]
+----
 identifier "co.elastic.systemextension" and anchor apple generic and certificate 1[field.1.2.840.113635.100.6.2.6] /* exists */ and certificate leaf[field.1.2.840.113635.100.6.1.13] /* exists */ and certificate leaf[subject.OU] = "2BT3HPN62Z"
-----------------------------------
+----
 . Save the configuration.
 
 [role="screenshot"]
-image::images/content-filtering-jamf.png[]
+image::images/deploy-with-mdm/content-filtering-jamf.png[]
 
 [discrete]
-[[notifications-jamf]]
+[[security-deploy-with-mdm-enable-notifications]]
 === Enable notifications
 
-. Select the **Notifications** option to configure the Notification Center policy for the {elastic-endpoint} configuration profile. 
+. Select the **Notifications** option to configure the Notification Center policy for the {elastic-endpoint} configuration profile.
 . Under **App Name**, enter `Elastic Security.app`.
 . Under **Bundle ID**, enter `co.elastic.alert`.
 . In the **Settings** section, include these options with the following settings:
++
 .. **Critical Alerts**: Enable
 .. **Notifications**: Enable
 .. **Banner alert type**: Persistent
@@ -81,46 +91,52 @@ image::images/content-filtering-jamf.png[]
 . Save the configuration.
 
 [role="screenshot"]
-image::images/notifications-jamf.png[]
+image::images/deploy-with-mdm/notifications-jamf.png[]
 
 [discrete]
-[[fda-jamf]]
+[[security-deploy-with-mdm-enable-full-disk-access]]
 === Enable Full Disk Access
 
 . Select the **Privacy Preferences Policy Control** option to configure the Full Disk Access policy for the {elastic-endpoint} configuration profile.
 . Add a new entry with the following details:
++
 .. Under **Identifier**, enter `co.elastic.systemextension`.
 .. From the **Identifier Type** dropdown, select **Bundle ID**.
 .. Under **Code Requirement**, enter the following:
 +
-[source,shell]
-----------------------------------
+[source,txt]
+----
 identifier "co.elastic.systemextension" and anchor apple generic and certificate 1[field.1.2.840.113635.100.6.2.6] /* exists */ and certificate leaf[field.1.2.840.113635.100.6.1.13] /* exists */ and certificate leaf[subject.OU] = "2BT3HPN62Z"
-----------------------------------
+----
++
 .. Make sure that **Validate the Static Code Requirement** is selected.
 . Add a second entry with the following details:
++
 .. Under **Identifier**, enter `co.elastic.endpoint`.
 .. From the **Identifier Type** dropdown, select **Bundle ID**.
 .. Under **Code Requirement**, enter the following:
 +
-[source,shell]
-----------------------------------
+[source,txt]
+----
 identifier "co.elastic.endpoint" and anchor apple generic and certificate 1[field.1.2.840.113635.100.6.2.6] /* exists */ and certificate leaf[field.1.2.840.113635.100.6.1.13] /* exists */ and certificate leaf[subject.OU] = "2BT3HPN62Z"
-----------------------------------
+----
++
 .. Make sure that **Validate the Static Code Requirement** is selected.
 . Add a third entry with the following details:
++
 .. Under **Identifier**,  enter `co.elastic.elastic-agent`.
 .. From the **Identifier Type** dropdown, select **Bundle ID**.
 .. Under **Code Requirement**, enter the following:
 +
-[source,shell]
-----------------------------------
+[source,txt]
+----
 identifier "co.elastic.elastic-agent" and anchor apple generic and certificate 1[field.1.2.840.113635.100.6.2.6] /* exists */ and certificate leaf[field.1.2.840.113635.100.6.1.13] /* exists */ and certificate leaf[subject.OU] = "2BT3HPN62Z"
-----------------------------------
+----
++
 .. Make sure that **Validate the Static Code Requirement** is selected.
 . Save the configuration.
 
 [role="screenshot"]
-image::images/fda-jamf.png[]
+image::images/deploy-with-mdm/fda-jamf.png[]
 
 After you complete these steps, generate the mobile configuration profile and install it onto the macOS machines. Once the profile is installed, {elastic-defend} can be deployed without the need for user interaction.
