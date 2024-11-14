@@ -1,18 +1,25 @@
 [[exclude-cold-frozen-data-individual-rules]]
-== Exclude cold and frozen data from a rule
+== Exclude cold and frozen data from individual rules
 
 :frontmatter-description: Configure a rule to ignore cold and frozen data during execution. 
 :frontmatter-tags-products: [security]
 :frontmatter-tags-content-type: [how-to]
 :frontmatter-tags-user-goals: [manage]
 
-Rules that query cold and frozen data might perform more slowly. To exclude cold and frozen data, add a Query DSL filter that ignores cold and frozen {ref}/data-tiers.html[data tiers] when executing. You can add the filter when creating a new rule or updating an existing one. 
+Your rule might perform slower or fail if it queries data from cold or frozen {ref}/data-tiers.html[data tiers]. To help Elasticsearch exclude cold and frozen data more efficiently, apply a Query DSL filter that ignores cold and frozen documents when your rule executes. You can add the filter when creating a new rule or updating an existing one.
 
-NOTE: This method is not supported for {esql} and {ml} rules.
+TIP: To ensure that rules in your {kib} space exclude cold and frozen documents when executing, configure the `excludedDataTiersForRuleExecution` <<exclude-cold-frozen-data-rule-executions,advanced setting>>. This setting does not apply to {ml} rules. 
 
-TIP: To ensure that _all_ rules in a {kib} space exclude cold and frozen data when executing, configure the `excludedDataTiersForRuleExecution` <<exclude-cold-frozen-data-rule-executions,advanced setting>>.
+[IMPORTANT]
+====
 
-Here is a sample Query DSL filter that excludes frozen tier data from a rule's execution:
+* This method is not supported for {esql} and {ml} rules.
+* Even when applying this filter, indicator match and event correlation rules may still fail if a frozen or cold shard that matches the rule's specified index pattern is unavailable during rule executions. If failures occur, we recommend modifying the rule's index patterns to only match indices containing hot tier data.
+
+
+====
+
+Here is a sample Query DSL filter that excludes frozen tier documents during rule execution:
 
 [source,console]
 ----
@@ -29,7 +36,7 @@ Here is a sample Query DSL filter that excludes frozen tier data from a rule's e
 }
 ----
 
-Here is another sample Query DSL filter that excludes cold and frozen tier data from a rule's execution:
+Here is another sample Query DSL filter that excludes cold and frozen tier documents during rule execution:
 
 [source,console]
 ----
