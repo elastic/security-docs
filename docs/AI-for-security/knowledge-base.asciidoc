@@ -44,7 +44,7 @@ image::images/knowledge-base-assistant-menu-dropdown.png[AI Assistant's dropdown
 [discrete]
 === Option 2: Enable Knowledge Base from the Security AI settings
 
-. To open Security AI settings, use the {kibana-ref}/introduction.html#kibana-navigation-search[global search field] to find "AI Assistant for Security."
+. To open **Security AI settings**, use the {kibana-ref}/introduction.html#kibana-navigation-search[global search field] to find "AI Assistant for Security."
 . On the **Knowledge Base** tab, click **Setup Knowledge Base**. If the button doesn't appear, Knowledge Base is already enabled.
 
 image::images/knowledge-base-assistant-settings-kb-tab.png[AI Assistant's settings menu open to the Knowledge Base tab]
@@ -57,7 +57,7 @@ When Knowledge Base is enabled, AI Assistant receives `open` or `acknowledged` a
 To enable Knowledge Base for alerts:
 
 . Ensure that knowledge base is <<enable-knowledge-base, enabled>>.
-. Use the slider on the Security AI settings' Knowledge Base tab to select the number of alerts to send to AI Assistant. Click **Save**.
+. On the **Security AI settings** page, go to the **Knowledge Base** tab and use the slider to select the number of alerts to send to AI Assistant. Click **Save**.
 
 NOTE: Including a large number of alerts may cause your request to exceed the maximum token length of your third-party generative AI provider. If this happens, try selecting a lower number of alerts to send.
 
@@ -65,7 +65,7 @@ NOTE: Including a large number of alerts may cause your request to exceed the ma
 [[knowledge-base-add-knowledge]]
 == Add knowledge 
 
-To view all knowledge base entries, go to the Security AI settings and select the **Knowledge Base** tab. You can add individual documents or entire indices containing multiple documents. Each entry in the Knowledge Base (a document or index) has a **Sharing** setting of `private` or `global`. Private entries apply to the current user only and do not affect other users in the {kib} space, whereas global entries affect all users. Each entry can also have a `Required knowledge` setting, which means it will be included as context for every message sent to AI Assistant. 
+To view all knowledge base entries, go to **Security AI settings** and select the **Knowledge Base** tab. You can add individual documents or entire indices containing multiple documents. Each entry in the Knowledge Base (a document or index) has a **Sharing** setting of `private` or `global`. Private entries apply to the current user only and do not affect other users in the {kib} space, whereas global entries affect all users. Each entry can also have a `Required knowledge` setting, which means it will be included as context for every message sent to AI Assistant. 
 
 NOTE: When you enable Knowledge Base, it comes pre-populated with articles from https://www.elastic.co/security-labs[Elastic Security Labs], current through September 30, 2024, which allows AI Assistant to leverage Elastic's security research during your conversations. This enables it to answer questions such as, “Are there any new tactics used against Windows hosts that I should be aware of when investigating my alerts?”
 
@@ -75,7 +75,7 @@ NOTE: When you enable Knowledge Base, it comes pre-populated with articles from 
 
 Add an individual document to Knowledge Base when you want AI Assistant to remember a specific piece of information.
 
-. To open Security AI settings, use the {kibana-ref}/introduction.html#kibana-navigation-search[global search field] to find "AI Assistant for Security." Select the **Knowledge Base** tab.
+. To open **Security AI settings**, use the {kibana-ref}/introduction.html#kibana-navigation-search[global search field] to find "AI Assistant for Security." Select the **Knowledge Base** tab.
 . Click **New → Document** and give it a name. 
 . Under **Sharing**, select whether this knowledge should be **Global** or **Private**.
 . Write the knowledge AI Assistant should remember in the **Markdown text** field.
@@ -108,7 +108,7 @@ Add an index as a knowledge source when you want new information added to that i
 
 IMPORTANT: Indices added to Knowledge Base must have at least one field mapped as {ref}/semantic-text.html[semantic text].
 
-. To open Security AI settings, use the {kibana-ref}/introduction.html#kibana-navigation-search[global search field] to find "AI Assistant for Security." Select the **Knowledge Base** tab.
+. To open **Security AI settings**, use the {kibana-ref}/introduction.html#kibana-navigation-search[global search field] to find "AI Assistant for Security." Select the **Knowledge Base** tab.
 . Click **New → Index**.
 . Name the knowledge source.
 . Under **Sharing**, select whether this knowledge should be **Global** or **Private**.
@@ -130,6 +130,54 @@ Refer to the following video for an example of adding an index to Knowledge Base
   class="vidyard-player-embed"
   src="https://play.vidyard.com/Q5CjXMN4R2GYLGLUy5P177.jpg"
   data-uuid="Q5CjXMN4R2GYLGLUy5P177"
+  data-v="4"
+  data-type="inline"
+/>
+</br>
+++++
+=======
+
+[discrete]
+[[knowledge-base-crawler-or-connector]]
+=== Add knowledge with a connector or web crawler
+
+You can use an {es} connector or web crawler to create an index that contains data you want to add to Knowledge Base. 
+
+This section provides an example of adding a threat intelligence feed to Knowledge Base using a web crawler. For more information on adding data to {es} using a connector, refer to {ref}/es-connectors.html[Ingest data with Elastic connectors]. For more information on web crawlers, refer to {enterprise-search-ref}/crawler.html[Elastic web crawler].
+
+[discrete]
+==== Use a web crawler to add threat intelligence to Knowledge Base
+
+First, you'll need to set up a web crawler to add the desired data to an index, then you'll need to add that index to Knowledge Base.
+
+. From the **Search** section of {kib}, find **Web crawlers** in the navigation menu or use the {kibana-ref}/introduction.html#kibana-navigation-search[global search field]. 
+. Click **New web crawler**.
+.. Under **Index name**, name the index where the data from your new web crawler will be stored, for example `threat_intelligence_feed_1`. Click **Create index**.
+.. Under **Domain URL**, enter the URL where the web crawler should collect data. Click **Validate Domain** to test it, then **Add domain**. 
+. The previous step opens a page with the details of your new index. Go to its **Mappings** tab, then click **Add field**.
++ 
+NOTE: Remember, each index added to Knowledge Base must have at least one semantic text field.
++
+.. Under **Field type**, select `Semantic text`. Under **Select an inference endpoint**, select `elastic-security-ai-assistant-elser2`. Click **Add field**, then **Save mapping**.
+. Go to the **Scheduling** tab. Enable the **Enable recurring crawls with the following schedule** setting, and define your desired schedule.
+. Go to the **Manage Domains** tab. Select the domain associated with your new web crawler, then go the its **Crawl rules** tab and click **Add crawl rule**. For more information, refer to {enterprise-search-ref}/crawler-extraction-rules.html[Web crawler content extraction rules].
+.. Click **Add crawl rule** again. Under **Policy**, select `Disallow`. Under **Rule**, select `Regex`. Under **Path pattern**, enter `.*`. Click **Save**.
+.. Under **Policy**, select `Allow`. Under **Rule**, select `Contains`. Under **Path pattern**, enter your path pattern, for example `threat-intelligence`. Click **Save**. Make sure this rule appears below the rule created in the previous step on the list.
+.. Click **Crawl**, then **Crawl all domains on this index**. A success message appears. The crawl process will take longer for larger data sources. Once it finishes, your new web crawler's index will contain documents provided by the crawler.
+. Finally, follow the instructions to <<knowledge-base-add-knowledge-index, add an index to Knowledge Base>>. Add the index that contains the data from your new web crawler (`threat_intelligence_feed_1` in this example).
+
+Your new threat intelligence data is now included in Knowledge Base and can inform AI Assistant's responses.
+
+Refer to the following video for an example of creating a web crawler to ingest threat intelligence data and adding it to Knowledge Base.
+
+=======
+++++
+<script type="text/javascript" async src="https://play.vidyard.com/embed/v4.js"></script>
+<img
+  style="width: 100%; margin: auto; display: block;"
+  class="vidyard-player-embed"
+  src="https://play.vidyard.com/eYo1e1ZRwT2mjfM7Yr9MuZ.jpg"
+  data-uuid="eYo1e1ZRwT2mjfM7Yr9MuZ"
   data-v="4"
   data-type="inline"
 />
