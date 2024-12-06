@@ -1,5 +1,5 @@
 # Elastic Security docs
- 
+  
 Elastic Security Docs home page: https://www.elastic.co/guide/en/security/current/index.html
 
 Serverless docs: https://docs.elastic.co/serverless/security/what-is-security-serverless
