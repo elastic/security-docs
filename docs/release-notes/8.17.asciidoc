@@ -27,7 +27,7 @@ For custom rules:
 
 For prebuilt rules: 
 
-NOTE: If you only need to fix Endpoint exceptions for the Elastic Endpoint rule, follow the above instructions for fixing custom rule exceptions.
+NOTE: If you only need to fix exceptions for the Elastic Endpoint rule, you can export and re-import its exception list from the <<shared-exception-lists,**Shared Exception Lists**>> page.
 
 . Follow these steps to fetch the affected exception list ID or IDs that are associated with the rule: 
 .. Find the affected rule's ID (`id`). From the **Rules** page, open the details of a rule, go to the page URL, and copy the string at the end. For example, in the URL http://host.name/app/security/rules/id/167a5f6f-2148-4792-8226-b5e7a58ef46e, the string at the end (`167a5f6f-2148-4792-8226-b5e7a58ef46e`) is the `id`.
@@ -35,7 +35,7 @@ NOTE: If you only need to fix Endpoint exceptions for the Elastic Endpoint rule,
 +
 [source,console]
 ----
-curl -H 'kbn-xsrf: true' -H 'elastic-api-version: 2023-10-31' http://localhost:5601/api/detection_engine/rules?id=167a5f6f-2148-4792-8226-b5e7a58ef46e -u elastic:changeme
+curl -H 'Authorization: ApiKey API_KEY_HERE' -H 'kbn-xsrf: true' -H 'elastic-api-version: 2023-10-31' KIBANA_URL/api/detection_engine/rules?id=167a5f6f-2148-4792-8226-b5e7a58ef46e
 ----
 +
 .. The JSON response contains the `id`, `list_id`, and `namespace_type` values within the `exceptions_list` key (as shown below). You need these values when using the Exception list API to retrieve the affected exception list. 
@@ -58,11 +58,11 @@ curl -H 'kbn-xsrf: true' -H 'elastic-api-version: 2023-10-31' http://localhost:5
 +
 [source,console]
 ----
-curl -XPOST -u elastic:changeme -H 'kbn-xsrf: true' -H 'elastic-api-version: 2023-10-31' 'http://localhost:5601/api/exception_lists/_export?list_id=f75aae6f-0229-413f-881d-81cb3abfbe2d&id=490525a2-eb66-4320-95b5-88bdd1302dc4&namespace_type=single' -o list.ndjson
+curl -XPOST -H 'Authorization: ApiKey API_KEY_HERE' -H 'kbn-xsrf: true' -H 'elastic-api-version: 2023-10-31' 'KIBANA_URL/api/exception_lists/_export?list_id=f75aae6f-0229-413f-881d-81cb3abfbe2d&id=490525a2-eb66-4320-95b5-88bdd1302dc4&namespace_type=single' -o list.ndjson
 ----
 +
 . Modify the exception list's `.ndjson` file to ensure `comments[].comment` values don't contain newline characters (`\n`).
-. Re-import the modified exception list using **Import exception lists** option on the **Shared Exception Lists** page (find the page in the navigation menu or by using the {kibana-ref}/introduction.html#kibana-navigation-search[global search field]).
+. Re-import the modified exception list using **Import exception lists** option on the <<shared-exception-lists,**Shared Exception Lists**>> page.
 +
 Note that the import will initially fail because the exception list already exists. After the initial failure, an option to overwrite the existing list will appear. Select the option, then resubmit the request to import the corrected exception list.
 ====
