@@ -3,55 +3,108 @@
 
 Identifies modification of the dynamic linker preload shared object (ld.so.preload). Adversaries may execute malicious payloads by hijacking the dynamic linker used to load libraries.
 
-*Rule type*: query
+*Rule type*: new_terms
 
-*Rule indices*:
+*Rule indices*: 
 
 * auditbeat-*
 * logs-endpoint.events.*
+* endgame-*
 
 *Severity*: medium
 
 *Risk score*: 47
 
-*Runs every*: 5 minutes
+*Runs every*: 5m
 
 *Searches indices from*: now-9m ({ref}/common-options.html#date-math[Date Math format], see also <<rule-schedule, `Additional look-back time`>>)
 
 *Maximum alerts per execution*: 100
 
-*References*:
+*References*: 
 
 * https://www.anomali.com/blog/rocke-evolves-its-arsenal-with-a-new-malware-family-written-in-golang
 
-*Tags*:
+*Tags*: 
+
+* Domain: Endpoint
+* OS: Linux
+* Use Case: Threat Detection
+* Tactic: Privilege Escalation
+* Data Source: Elastic Endgame
+* Data Source: Elastic Defend
+
+*Version*: 209
+
+*Rule authors*: 
 
 * Elastic
-* Host
-* Linux
-* Threat Detection
-* Privilege Escalation
-
-*Version*: 100 (<<modification-of-dynamic-linker-preload-shared-object-history, version history>>)
-
-*Added ({stack} release)*: 7.12.0
-
-*Last modified ({stack} release)*: 8.5.0
-
-*Rule authors*: Elastic
 
 *Rule license*: Elastic License v2
+
+
+==== Setup
+
+
+
+*Setup*
+
+
+This rule requires data coming in from one of the following integrations:
+- Elastic Defend
+- Auditbeat
+
+
+*Elastic Defend Integration Setup*
+
+Elastic Defend is integrated into the Elastic Agent using Fleet. Upon configuration, the integration allows the Elastic Agent to monitor events on your host and send data to the Elastic Security app.
+
+
+*Prerequisite Requirements:*
+
+- Fleet is required for Elastic Defend.
+- To configure Fleet Server refer to the https://www.elastic.co/guide/en/fleet/current/fleet-server.html[documentation].
+
+
+*The following steps should be executed in order to add the Elastic Defend integration on a Linux System:*
+
+- Go to the Kibana home page and click "Add integrations".
+- In the query bar, search for "Elastic Defend" and select the integration to see more details about it.
+- Click "Add Elastic Defend".
+- Configure the integration name and optionally add a description.
+- Select the type of environment you want to protect, either "Traditional Endpoints" or "Cloud Workloads".
+- Select a configuration preset. Each preset comes with different default settings for Elastic Agent, you can further customize these later by configuring the Elastic Defend integration policy. https://www.elastic.co/guide/en/security/current/configure-endpoint-integration-policy.html[Helper guide].
+- We suggest selecting "Complete EDR (Endpoint Detection and Response)" as a configuration setting, that provides "All events; all preventions"
+- Enter a name for the agent policy in "New agent policy name". If other agent policies already exist, you can click the "Existing hosts" tab and select an existing policy instead.
+For more details on Elastic Agent configuration settings, refer to the https://www.elastic.co/guide/en/fleet/8.10/agent-policy.html[helper guide].
+- Click "Save and Continue".
+- To complete the integration, select "Add Elastic Agent to your hosts" and continue to the next section to install the Elastic Agent on your hosts.
+For more details on Elastic Defend refer to the https://www.elastic.co/guide/en/security/current/install-endpoint.html[helper guide].
+
+
+*Auditbeat Setup*
+
+Auditbeat is a lightweight shipper that you can install on your servers to audit the activities of users and processes on your systems. For example, you can use Auditbeat to collect and centralize audit events from the Linux Audit Framework. You can also use Auditbeat to detect changes to critical files, like binaries and configuration files, and identify potential security policy violations.
+
+
+*The following steps should be executed in order to add the Auditbeat on a Linux System:*
+
+- Elastic provides repositories available for APT and YUM-based distributions. Note that we provide binary packages, but no source packages.
+- To install the APT and YUM repositories follow the setup instructions in this https://www.elastic.co/guide/en/beats/auditbeat/current/setup-repositories.html[helper guide].
+- To run Auditbeat on Docker follow the setup instructions in the https://www.elastic.co/guide/en/beats/auditbeat/current/running-on-docker.html[helper guide].
+- To run Auditbeat on Kubernetes follow the setup instructions in the https://www.elastic.co/guide/en/beats/auditbeat/current/running-on-kubernetes.html[helper guide].
+- For complete “Setup and Run Auditbeat” information refer to the https://www.elastic.co/guide/en/beats/auditbeat/current/setting-up-and-running.html[helper guide].
+
 
 ==== Rule query
 
 
-[source,js]
+[source, js]
 ----------------------------------
-event.category:file and not event.type:deletion and
-file.path:/etc/ld.so.preload
-----------------------------------
+host.os.type:linux and event.category:file and event.action:(updated or renamed or rename or file_rename_event) and 
+not event.type:deletion and file.path:/etc/ld.so.preload and not process.name:(wine or oneagentinstallaction)
 
-==== Threat mapping
+----------------------------------
 
 *Framework*: MITRE ATT&CK^TM^
 
@@ -63,16 +116,7 @@ file.path:/etc/ld.so.preload
 ** Name: Hijack Execution Flow
 ** ID: T1574
 ** Reference URL: https://attack.mitre.org/techniques/T1574/
-
-[[modification-of-dynamic-linker-preload-shared-object-history]]
-==== Rule version history
-
-Version 100 (8.5.0 release)::
-* Formatting only
-
-Version 3 (8.4.0 release)::
-* Formatting only
-
-Version 2 (7.15.0 release)::
-* Formatting only
-
+* Sub-technique:
+** Name: Dynamic Linker Hijacking
+** ID: T1574.006
+** Reference URL: https://attack.mitre.org/techniques/T1574/006/

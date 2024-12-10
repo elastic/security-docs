@@ -5,74 +5,128 @@ Identifies when a screensaver plist file is modified by an unexpected process. A
 
 *Rule type*: eql
 
-*Rule indices*:
+*Rule indices*: 
 
-* auditbeat-*
 * logs-endpoint.events.*
 
 *Severity*: medium
 
 *Risk score*: 47
 
-*Runs every*: 5 minutes
+*Runs every*: 5m
 
 *Searches indices from*: now-9m ({ref}/common-options.html#date-math[Date Math format], see also <<rule-schedule, `Additional look-back time`>>)
 
 *Maximum alerts per execution*: 100
 
-*References*:
+*References*: 
 
 * https://posts.specterops.io/saving-your-access-d562bf5bf90b
 * https://github.com/D00MFist/PersistentJXA
 
-*Tags*:
+*Tags*: 
+
+* Domain: Endpoint
+* OS: macOS
+* Use Case: Threat Detection
+* Tactic: Persistence
+* Data Source: Elastic Defend
+
+*Version*: 107
+
+*Rule authors*: 
 
 * Elastic
-* Host
-* macOS
-* Threat Detection
-* Persistence
-
-*Version*: 100 (<<screensaver-plist-file-modified-by-unexpected-process-history, version history>>)
-
-*Added ({stack} release)*: 7.16.0
-
-*Last modified ({stack} release)*: 8.5.0
-
-*Rule authors*: Elastic
 
 *Rule license*: Elastic License v2
+
 
 ==== Investigation guide
 
 
-[source,markdown]
-----------------------------------
-## Triage and analysis
+
+*Triage and analysis*
+
 
 - Analyze the plist file modification event to identify whether the change was expected or not
 - Investigate the process that modified the plist file for malicious code or other suspicious behavior
 - Identify if any suspicious or known malicious screensaver (.saver) files were recently written to or modified on the host
-----------------------------------
+
+
+==== Setup
+
+
+
+*Setup*
+
+
+This rule requires data coming in from Elastic Defend.
+
+
+*Elastic Defend Integration Setup*
+
+Elastic Defend is integrated into the Elastic Agent using Fleet. Upon configuration, the integration allows the Elastic Agent to monitor events on your host and send data to the Elastic Security app.
+
+
+*Prerequisite Requirements:*
+
+- Fleet is required for Elastic Defend.
+- To configure Fleet Server refer to the https://www.elastic.co/guide/en/fleet/current/fleet-server.html[documentation].
+
+
+*The following steps should be executed in order to add the Elastic Defend integration on a macOS System:*
+
+- Go to the Kibana home page and click "Add integrations".
+- In the query bar, search for "Elastic Defend" and select the integration to see more details about it.
+- Click "Add Elastic Defend".
+- Configure the integration name and optionally add a description.
+- Select the type of environment you want to protect, for MacOS it is recommended to select "Traditional Endpoints".
+- Select a configuration preset. Each preset comes with different default settings for Elastic Agent, you can further customize these later by configuring the Elastic Defend integration policy. https://www.elastic.co/guide/en/security/current/configure-endpoint-integration-policy.html[Helper guide].
+- We suggest selecting "Complete EDR (Endpoint Detection and Response)" as a configuration setting, that provides "All events; all preventions"
+- Enter a name for the agent policy in "New agent policy name". If other agent policies already exist, you can click the "Existing hosts" tab and select an existing policy instead.
+For more details on Elastic Agent configuration settings, refer to the https://www.elastic.co/guide/en/fleet/current/agent-policy.html[helper guide].
+- Click "Save and Continue".
+- To complete the integration, select "Add Elastic Agent to your hosts" and continue to the next section to install the Elastic Agent on your hosts.
+For more details on Elastic Defend refer to the https://www.elastic.co/guide/en/security/current/install-endpoint.html[helper guide].
 
 
 ==== Rule query
 
 
-[source,js]
+[source, js]
 ----------------------------------
-file where event.type != "deletion" and file.name:
-"com.apple.screensaver.*.plist" and file.path : (
-"/Users/*/Library/Preferences/ByHost/*", "/Library/Managed
-Preferences/*", "/System/Library/Preferences/*" ) and /*
-Filter OS processes modifying screensaver plist files */ not
-process.executable : ( "/usr/sbin/cfprefsd",
-"/usr/libexec/xpcproxy", "/System/Library/CoreServices/ManagedClie
-nt.app/Contents/Resources/MCXCompositor", "/System/Library/CoreSer
-vices/ManagedClient.app/Contents/MacOS/ManagedClient" )
-----------------------------------
+file where host.os.type == "macos" and event.type != "deletion" and
+  file.name: "com.apple.screensaver.*.plist" and
+   file.path : (
+      "/Users/*/Library/Preferences/ByHost/*",
+      "/Library/Managed Preferences/*",
+      "/System/Library/Preferences/*"
+      ) and
+  (
+    process.code_signature.trusted == false or
+    process.code_signature.exists == false or
 
-==== Threat mapping
+    /* common script interpreters and abused native macOS bins */
+    process.name : (
+      "curl",
+      "mktemp",
+      "tail",
+      "funzip",
+      "python*",
+      "osascript",
+      "perl"
+      )
+   ) and
+
+  /* Filter OS processes modifying screensaver plist files */
+  not process.executable : (
+    "/usr/sbin/cfprefsd",
+    "/usr/libexec/xpcproxy",
+    "/System/Library/CoreServices/ManagedClient.app/Contents/Resources/MCXCompositor",
+    "/System/Library/CoreServices/ManagedClient.app/Contents/MacOS/ManagedClient"
+    )
+
+----------------------------------
 
 *Framework*: MITRE ATT&CK^TM^
 
@@ -84,16 +138,3 @@ vices/ManagedClient.app/Contents/MacOS/ManagedClient" )
 ** Name: Event Triggered Execution
 ** ID: T1546
 ** Reference URL: https://attack.mitre.org/techniques/T1546/
-
-[[screensaver-plist-file-modified-by-unexpected-process-history]]
-==== Rule version history
-
-Version 100 (8.5.0 release)::
-* Formatting only
-
-Version 4 (8.4.0 release)::
-* Formatting only
-
-Version 2 (8.2.0 release)::
-* Formatting only
-

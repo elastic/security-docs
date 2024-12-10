@@ -1,0 +1,105 @@
+[[potential-pspy-process-monitoring-detected]]
+=== Potential Pspy Process Monitoring Detected
+
+This rule leverages auditd to monitor for processes scanning different processes within the /proc directory using the openat syscall. This is a strong indication for the usage of the pspy utility. Attackers may leverage the pspy process monitoring utility to monitor system processes without requiring root permissions, in order to find potential privilege escalation vectors.
+
+*Rule type*: eql
+
+*Rule indices*: 
+
+* logs-auditd_manager.auditd-*
+
+*Severity*: low
+
+*Risk score*: 21
+
+*Runs every*: 5m
+
+*Searches indices from*: now-9m ({ref}/common-options.html#date-math[Date Math format], see also <<rule-schedule, `Additional look-back time`>>)
+
+*Maximum alerts per execution*: 100
+
+*References*: 
+
+* https://github.com/DominicBreuker/pspy
+
+*Tags*: 
+
+* Data Source: Auditd Manager
+* Domain: Endpoint
+* OS: Linux
+* Use Case: Threat Detection
+* Tactic: Discovery
+
+*Version*: 8
+
+*Rule authors*: 
+
+* Elastic
+
+*Rule license*: Elastic License v2
+
+
+==== Setup
+
+
+
+*Setup*
+
+
+This rule requires data coming in from Auditd Manager.
+
+
+*Auditd Manager Integration Setup*
+
+The Auditd Manager Integration receives audit events from the Linux Audit Framework which is a part of the Linux kernel.
+Auditd Manager provides a user-friendly interface and automation capabilities for configuring and monitoring system auditing through the auditd daemon. With `auditd_manager`, administrators can easily define audit rules, track system events, and generate comprehensive audit reports, improving overall security and compliance in the system.
+
+
+*The following steps should be executed in order to add the Elastic Agent System integration "auditd_manager" on a Linux System:*
+
+- Go to the Kibana home page and click “Add integrations”.
+- In the query bar, search for “Auditd Manager” and select the integration to see more details about it.
+- Click “Add Auditd Manager”.
+- Configure the integration name and optionally add a description.
+- Review optional and advanced settings accordingly.
+- Add the newly installed “auditd manager” to an existing or a new agent policy, and deploy the agent on a Linux system from which auditd log files are desirable.
+- Click “Save and Continue”.
+- For more details on the integration refer to the https://docs.elastic.co/integrations/auditd_manager[helper guide].
+
+
+*Rule Specific Setup Note*
+
+Auditd Manager subscribes to the kernel and receives events as they occur without any additional configuration.
+However, if more advanced configuration is required to detect specific behavior, audit rules can be added to the integration in either the "audit rules" configuration box or the "auditd rule files" box by specifying a file to read the audit rules from.
+- For this detection rule the following additional audit rules are required to be added to the integration:
+  -- "-w /proc/ -p r -k audit_proc"
+
+
+==== Rule query
+
+
+[source, js]
+----------------------------------
+sequence by process.pid, host.id with maxspan=5s
+  [file where host.os.type == "linux" and auditd.data.syscall == "openat" and file.path == "/proc" and
+   auditd.data.a0 : ("ffffffffffffff9c", "ffffff9c") and auditd.data.a2 : ("80000", "88000") and
+   not process.name == "agentbeat"
+  ] with runs=10
+
+----------------------------------
+
+*Framework*: MITRE ATT&CK^TM^
+
+* Tactic:
+** Name: Discovery
+** ID: TA0007
+** Reference URL: https://attack.mitre.org/tactics/TA0007/
+* Technique:
+** Name: Process Discovery
+** ID: T1057
+** Reference URL: https://attack.mitre.org/techniques/T1057/
+* Technique:
+** Name: System Information Discovery
+** ID: T1082
+** Reference URL: https://attack.mitre.org/techniques/T1082/

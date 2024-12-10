@@ -1,0 +1,96 @@
+[[suspicious-execution-from-inet-cache]]
+=== Suspicious Execution from INET Cache
+
+Identifies the execution of a process with arguments pointing to the INetCache Folder. Adversaries may deliver malicious content via WININET during initial access.
+
+*Rule type*: eql
+
+*Rule indices*: 
+
+* winlogbeat-*
+* logs-endpoint.events.process-*
+* logs-windows.forwarded*
+* logs-windows.sysmon_operational-*
+* endgame-*
+* logs-system.security*
+* logs-m365_defender.event-*
+* logs-sentinel_one_cloud_funnel.*
+* logs-crowdstrike.fdr*
+
+*Severity*: high
+
+*Risk score*: 73
+
+*Runs every*: 5m
+
+*Searches indices from*: now-9m ({ref}/common-options.html#date-math[Date Math format], see also <<rule-schedule, `Additional look-back time`>>)
+
+*Maximum alerts per execution*: 100
+
+*References*: 
+
+* https://www.trendmicro.com/en_us/research/24/b/cve202421412-water-hydra-targets-traders-with-windows-defender-s.html
+
+*Tags*: 
+
+* Domain: Endpoint
+* OS: Windows
+* Use Case: Threat Detection
+* Tactic: Initial Access
+* Tactic: Command and Control
+* Data Source: Elastic Endgame
+* Data Source: Elastic Defend
+* Data Source: System
+* Data Source: Microsoft Defender for Endpoint
+* Data Source: Sysmon
+* Data Source: SentinelOne
+* Data Source: Crowdstrike
+
+*Version*: 204
+
+*Rule authors*: 
+
+* Elastic
+
+*Rule license*: Elastic License v2
+
+
+==== Rule query
+
+
+[source, js]
+----------------------------------
+process where host.os.type == "windows" and event.type == "start" and  
+  process.parent.name : ("explorer.exe", "winrar.exe", "7zFM.exe", "Bandizip.exe") and
+  (
+    process.args : "?:\\Users\\*\\AppData\\Local\\Microsoft\\Windows\\INetCache\\IE\\*" or
+    process.executable : (
+      "?:\\Users\\*\\AppData\\Local\\Microsoft\\Windows\\INetCache\\IE\\*",
+      "\\Device\\HarddiskVolume?\\Users\\*\\AppData\\Local\\Microsoft\\Windows\\INetCache\\IE\\*"
+    )
+  )
+
+----------------------------------
+
+*Framework*: MITRE ATT&CK^TM^
+
+* Tactic:
+** Name: Initial Access
+** ID: TA0001
+** Reference URL: https://attack.mitre.org/tactics/TA0001/
+* Technique:
+** Name: Phishing
+** ID: T1566
+** Reference URL: https://attack.mitre.org/techniques/T1566/
+* Sub-technique:
+** Name: Spearphishing Attachment
+** ID: T1566.001
+** Reference URL: https://attack.mitre.org/techniques/T1566/001/
+* Tactic:
+** Name: Command and Control
+** ID: TA0011
+** Reference URL: https://attack.mitre.org/tactics/TA0011/
+* Technique:
+** Name: Ingress Tool Transfer
+** ID: T1105
+** Reference URL: https://attack.mitre.org/techniques/T1105/

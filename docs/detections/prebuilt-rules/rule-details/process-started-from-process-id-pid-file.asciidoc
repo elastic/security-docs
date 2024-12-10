@@ -5,75 +5,112 @@ Identifies a new process starting from a process ID (PID), lock or reboot file w
 
 *Rule type*: eql
 
-*Rule indices*:
+*Rule indices*: 
 
 * logs-endpoint.events.*
+* endgame-*
+* auditbeat-*
+* logs-auditd_manager.auditd-*
 
 *Severity*: high
 
 *Risk score*: 73
 
-*Runs every*: 5 minutes
+*Runs every*: 5m
 
 *Searches indices from*: now-9m ({ref}/common-options.html#date-math[Date Math format], see also <<rule-schedule, `Additional look-back time`>>)
 
 *Maximum alerts per execution*: 100
 
-*References*:
+*References*: 
 
 * https://www.sandflysecurity.com/blog/linux-file-masquerading-and-malicious-pids-sandfly-1-2-6-update/
 * https://twitter.com/GossiTheDog/status/1522964028284411907
 * https://exatrack.com/public/Tricephalic_Hellkeeper.pdf
 * https://www.elastic.co/security-labs/a-peek-behind-the-bpfdoor
 
-*Tags*:
+*Tags*: 
+
+* Domain: Endpoint
+* OS: Linux
+* Use Case: Threat Detection
+* Tactic: Execution
+* Threat: BPFDoor
+* Data Source: Elastic Endgame
+* Data Source: Elastic Defend
+* Data Source: Auditd Manager
+
+*Version*: 109
+
+*Rule authors*: 
 
 * Elastic
-* Host
-* Linux
-* Threat Detection
-* Execution
-* BPFDoor
-
-*Version*: 101 (<<process-started-from-process-id-pid-file-history, version history>>)
-
-*Added ({stack} release)*: 8.3.0
-
-*Last modified ({stack} release)*: 8.6.0
-
-*Rule authors*: Elastic
 
 *Rule license*: Elastic License v2
 
-==== Potential false positives
-
-False-Positives (FP) should be at a minimum with this detection as PID files are meant to hold process IDs, not inherently be executables that spawn processes.
 
 ==== Investigation guide
 
 
-[source,markdown]
-----------------------------------
-## Triage and analysis
 
-### Investigating Process Started from Process ID (PID) File
+*Triage and analysis*
+
+
+
+*Investigating Process Started from Process ID (PID) File*
+
 Detection alerts from this rule indicate a process spawned from an executable masqueraded as a legitimate PID file which is very unusual and should not occur. Here are some possible avenues of investigation:
 - Examine parent and child process relationships of the new process to determine if other processes are running.
 - Examine the /var/run directory using Osquery to determine other potential PID files with unsually large file sizes, indicative of it being an executable: "SELECT f.size, f.uid, f.type, f.path from file f WHERE path like '/var/run/%%';"
 - Examine the reputation of the SHA256 hash from the PID file in a database like VirusTotal to identify additional pivots and artifacts for investigation.
-----------------------------------
+
+
+==== Setup
+
+
+
+*Setup*
+
+
+This rule requires data coming in from Elastic Defend.
+
+
+*Elastic Defend Integration Setup*
+
+Elastic Defend is integrated into the Elastic Agent using Fleet. Upon configuration, the integration allows the Elastic Agent to monitor events on your host and send data to the Elastic Security app.
+
+
+*Prerequisite Requirements:*
+
+- Fleet is required for Elastic Defend.
+- To configure Fleet Server refer to the https://www.elastic.co/guide/en/fleet/current/fleet-server.html[documentation].
+
+
+*The following steps should be executed in order to add the Elastic Defend integration on a Linux System:*
+
+- Go to the Kibana home page and click "Add integrations".
+- In the query bar, search for "Elastic Defend" and select the integration to see more details about it.
+- Click "Add Elastic Defend".
+- Configure the integration name and optionally add a description.
+- Select the type of environment you want to protect, either "Traditional Endpoints" or "Cloud Workloads".
+- Select a configuration preset. Each preset comes with different default settings for Elastic Agent, you can further customize these later by configuring the Elastic Defend integration policy. https://www.elastic.co/guide/en/security/current/configure-endpoint-integration-policy.html[Helper guide].
+- We suggest selecting "Complete EDR (Endpoint Detection and Response)" as a configuration setting, that provides "All events; all preventions"
+- Enter a name for the agent policy in "New agent policy name". If other agent policies already exist, you can click the "Existing hosts" tab and select an existing policy instead.
+For more details on Elastic Agent configuration settings, refer to the https://www.elastic.co/guide/en/fleet/8.10/agent-policy.html[helper guide].
+- Click "Save and Continue".
+- To complete the integration, select "Add Elastic Agent to your hosts" and continue to the next section to install the Elastic Agent on your hosts.
+For more details on Elastic Defend refer to the https://www.elastic.co/guide/en/security/current/install-endpoint.html[helper guide].
 
 
 ==== Rule query
 
 
-[source,js]
+[source, js]
 ----------------------------------
-process where event.type == "start" and user.id == "0" and
-process.executable regex~ """/var/run/\w+\.(pid|lock|reboot)"""
-----------------------------------
+process where host.os.type == "linux" and event.type == "start" and user.id == "0" and
+  process.executable regex~ """/var/run/\w+\.(pid|lock|reboot)"""
 
-==== Threat mapping
+----------------------------------
 
 *Framework*: MITRE ATT&CK^TM^
 
@@ -85,16 +122,3 @@ process.executable regex~ """/var/run/\w+\.(pid|lock|reboot)"""
 ** Name: Command and Scripting Interpreter
 ** ID: T1059
 ** Reference URL: https://attack.mitre.org/techniques/T1059/
-
-[[process-started-from-process-id-pid-file-history]]
-==== Rule version history
-
-Version 101 (8.6.0 release)::
-* Formatting only
-
-Version 100 (8.5.0 release)::
-* Formatting only
-
-Version 2 (8.4.0 release)::
-* Formatting only
-
