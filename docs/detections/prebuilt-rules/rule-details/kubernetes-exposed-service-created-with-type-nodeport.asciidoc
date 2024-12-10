@@ -5,7 +5,7 @@ This rule detects an attempt to create or modify a service as type NodePort. The
 
 *Rule type*: query
 
-*Rule indices*:
+*Rule indices*: 
 
 * logs-kubernetes.*
 
@@ -13,62 +13,55 @@ This rule detects an attempt to create or modify a service as type NodePort. The
 
 *Risk score*: 47
 
-*Runs every*: 5 minutes
+*Runs every*: 5m
 
-*Searches indices from*: now-6m ({ref}/common-options.html#date-math[Date Math format], see also <<rule-schedule, `Additional look-back time`>>)
+*Searches indices from*: None ({ref}/common-options.html#date-math[Date Math format], see also <<rule-schedule, `Additional look-back time`>>)
 
 *Maximum alerts per execution*: 100
 
-*References*:
+*References*: 
 
 * https://kubernetes.io/docs/concepts/services-networking/service/#publishing-services-service-types
 * https://kubernetes.io/docs/concepts/services-networking/service/#type-nodeport
 * https://www.tigera.io/blog/new-vulnerability-exposes-kubernetes-to-man-in-the-middle-attacks-heres-how-to-mitigate/
 
-*Tags*:
+*Tags*: 
+
+* Data Source: Kubernetes
+* Tactic: Execution
+* Tactic: Persistence
+
+*Version*: 203
+
+*Rule authors*: 
 
 * Elastic
-* Kubernetes
-* Continuous Monitoring
-* Execution
-* Persistence
-
-*Version*: 200 (<<kubernetes-exposed-service-created-with-type-nodeport-history, version history>>)
-
-*Added ({stack} release)*: 8.4.0
-
-*Last modified ({stack} release)*: 8.6.0
-
-*Rule authors*: Elastic
 
 *Rule license*: Elastic License v2
 
-==== Potential false positives
-
-Developers may have a legitimate use for NodePorts. For frontend parts of an application you may want to expose a Service onto an external IP address without using cloud specific Loadbalancers. NodePort can be used to expose the Service on each Node's IP at a static port (the NodePort). You'll be able to contact the NodePort Service from outside the cluster, by requesting <NodeIP>:<NodePort>. NodePort unlike Loadbalancers, allow the freedom to set up your own load balancing solution, configure environments that aren't fully supported by Kubernetes, or even to expose one or more node's IPs directly.
 
 ==== Investigation guide
 
 
-[source,markdown]
-----------------------------------
 
-----------------------------------
 
+==== Setup
+
+
+The Kubernetes Fleet integration with Audit Logs enabled or similarly structured data is required to be compatible with this rule.
 
 ==== Rule query
 
 
-[source,js]
+[source, js]
 ----------------------------------
-event.dataset : "kubernetes.audit_logs" and
-kubernetes.audit.annotations.authorization_k8s_io/decision:"allow"
-and kubernetes.audit.objectRef.resource:"services" and
-kubernetes.audit.verb:("create" or "update" or "patch") and
-kubernetes.audit.requestObject.spec.type:"NodePort"
-----------------------------------
+event.dataset : "kubernetes.audit_logs"
+  and kubernetes.audit.annotations.authorization_k8s_io/decision:"allow"
+  and kubernetes.audit.objectRef.resource:"services"
+  and kubernetes.audit.verb:("create" or "update" or "patch")
+  and kubernetes.audit.requestObject.spec.type:"NodePort"
 
-==== Threat mapping
+----------------------------------
 
 *Framework*: MITRE ATT&CK^TM^
 
@@ -80,20 +73,3 @@ kubernetes.audit.requestObject.spec.type:"NodePort"
 ** Name: External Remote Services
 ** ID: T1133
 ** Reference URL: https://attack.mitre.org/techniques/T1133/
-
-[[kubernetes-exposed-service-created-with-type-nodeport-history]]
-==== Rule version history
-
-Version 200 (8.6.0 release)::
-* Updated query, changed from:
-+
-[source, js]
-----------------------------------
-kubernetes.audit.objectRef.resource:"services" and
-kubernetes.audit.verb:("create" or "update" or "patch") and
-kubernetes.audit.requestObject.spec.type:"NodePort"
-----------------------------------
-
-Version 100 (8.5.0 release)::
-* Formatting only
-
