@@ -1,0 +1,84 @@
+[[remote-xsl-script-execution-via-com]]
+=== Remote XSL Script Execution via COM
+
+Identifies the execution of a hosted XSL script using the Microsoft.XMLDOM COM interface via Microsoft Office processes. This behavior may indicate adversarial activity to execute malicious JScript or VBScript on the system.
+
+*Rule type*: eql
+
+*Rule indices*: 
+
+* logs-endpoint.events.process-*
+* logs-endpoint.events.library-*
+
+*Severity*: low
+
+*Risk score*: 21
+
+*Runs every*: 5m
+
+*Searches indices from*: now-9m ({ref}/common-options.html#date-math[Date Math format], see also <<rule-schedule, `Additional look-back time`>>)
+
+*Maximum alerts per execution*: 100
+
+*References*: None
+
+*Tags*: 
+
+* Domain: Endpoint
+* OS: Windows
+* Use Case: Threat Detection
+* Tactic: Initial Access
+* Tactic: Defense Evasion
+* Data Source: Elastic Defend
+
+*Version*: 3
+
+*Rule authors*: 
+
+* Elastic
+
+*Rule license*: Elastic License v2
+
+
+==== Rule query
+
+
+[source, js]
+----------------------------------
+sequence with maxspan=1m
+ [library where host.os.type == "windows" and dll.name : "msxml3.dll" and
+  process.name : ("winword.exe", "excel.exe", "powerpnt.exe", "mspub.exe")] by process.entity_id
+ [process where host.os.type == "windows" and event.action == "start" and
+  process.parent.name : ("winword.exe", "excel.exe", "powerpnt.exe", "mspub.exe") and 
+  not process.executable :
+        ("?:\\Windows\\System32\\WerFault.exe",
+         "?:\\Windows\\SysWoW64\\WerFault.exe",
+         "?:\\windows\\splwow64.exe",
+         "?:\\Windows\\System32\\conhost.exe",
+         "?:\\Program Files\\*.exe",
+         "?:\\Program Files (x86)\\*exe")] by process.parent.entity_id
+
+----------------------------------
+
+*Framework*: MITRE ATT&CK^TM^
+
+* Tactic:
+** Name: Initial Access
+** ID: TA0001
+** Reference URL: https://attack.mitre.org/tactics/TA0001/
+* Technique:
+** Name: Phishing
+** ID: T1566
+** Reference URL: https://attack.mitre.org/techniques/T1566/
+* Sub-technique:
+** Name: Spearphishing Link
+** ID: T1566.002
+** Reference URL: https://attack.mitre.org/techniques/T1566/002/
+* Tactic:
+** Name: Defense Evasion
+** ID: TA0005
+** Reference URL: https://attack.mitre.org/tactics/TA0005/
+* Technique:
+** Name: XSL Script Processing
+** ID: T1220
+** Reference URL: https://attack.mitre.org/techniques/T1220/

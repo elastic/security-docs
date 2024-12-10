@@ -1,0 +1,62 @@
+[[mount-launched-inside-a-privileged-container]]
+=== Mount Launched Inside a Privileged Container
+
+This rule detects the use of the mount utility from inside a privileged container. The mount command is used to make a device or file system accessible to the system, and then to connect its root directory to a specified mount point on the local file system. When launched inside a privileged container--a container deployed with all the capabilities of the host machine-- an attacker can access sensitive host level files which could be used for further privilege escalation and container escapes to the host machine. Any usage of mount inside a running privileged container should be further investigated.
+
+*Rule type*: eql
+
+*Rule indices*: 
+
+* logs-cloud_defend*
+
+*Severity*: low
+
+*Risk score*: 21
+
+*Runs every*: 5m
+
+*Searches indices from*: now-6m ({ref}/common-options.html#date-math[Date Math format], see also <<rule-schedule, `Additional look-back time`>>)
+
+*Maximum alerts per execution*: 100
+
+*References*: 
+
+* https://book.hacktricks.xyz/linux-hardening/privilege-escalation/docker-security/docker-breakout-privilege-escalation#privileged
+
+*Tags*: 
+
+* Data Source: Elastic Defend for Containers
+* Domain: Container
+* OS: Linux
+* Use Case: Threat Detection
+* Tactic: Privilege Escalation
+
+*Version*: 1
+
+*Rule authors*: 
+
+* Elastic
+
+*Rule license*: Elastic License v2
+
+
+==== Rule query
+
+
+[source, js]
+----------------------------------
+process where event.module == "cloud_defend" and  event.type== "start" and 
+(process.name== "mount" or process.args== "mount") and container.security_context.privileged == true
+
+----------------------------------
+
+*Framework*: MITRE ATT&CK^TM^
+
+* Tactic:
+** Name: Privilege Escalation
+** ID: TA0004
+** Reference URL: https://attack.mitre.org/tactics/TA0004/
+* Technique:
+** Name: Escape to Host
+** ID: T1611
+** Reference URL: https://attack.mitre.org/techniques/T1611/

@@ -5,67 +5,76 @@ Identifies process creation with alternate credentials. Adversaries may create a
 
 *Rule type*: eql
 
-*Rule indices*:
+*Rule indices*: 
 
 * winlogbeat-*
 * logs-system.*
+* logs-windows.*
 
 *Severity*: medium
 
 *Risk score*: 47
 
-*Runs every*: 5 minutes
+*Runs every*: 5m
 
 *Searches indices from*: now-9m ({ref}/common-options.html#date-math[Date Math format], see also <<rule-schedule, `Additional look-back time`>>)
 
 *Maximum alerts per execution*: 100
 
-*References*:
+*References*: 
 
 * https://attack.mitre.org/techniques/T1134/002/
 
-*Tags*:
+*Tags*: 
+
+* Domain: Endpoint
+* OS: Windows
+* Use Case: Threat Detection
+* Tactic: Privilege Escalation
+* Data Source: System
+
+*Version*: 110
+
+*Rule authors*: 
 
 * Elastic
-* Host
-* Windows
-* Threat Detection
-* Privilege Escalation
-
-*Version*: 2 (<<process-creation-via-secondary-logon-history, version history>>)
-
-*Added ({stack} release)*: 8.5.0
-
-*Last modified ({stack} release)*: 8.6.0
-
-*Rule authors*: Elastic
 
 *Rule license*: Elastic License v2
 
-==== Investigation guide
+
+==== Setup
 
 
-[source,markdown]
-----------------------------------
 
-----------------------------------
+*Setup*
+
+
+Audit events 4624 and 4688 are needed to trigger this rule.
+
+If enabling an EQL rule on a non-elastic-agent index (such as beats) for versions <8.2,
+events will not define `event.ingested` and default fallback for EQL rules was not added until version 8.2.
+Hence for this rule to work effectively, users will need to add a custom ingest pipeline to populate
+`event.ingested` to @timestamp.
+For more details on adding a custom ingest pipeline refer - https://www.elastic.co/guide/en/fleet/current/data-streams-pipeline-tutorial.html
 
 
 ==== Rule query
 
 
-[source,js]
+[source, js]
 ----------------------------------
-sequence by host.id with maxspan=1m [authentication where
-event.action:"logged-in" and event.outcome == "success" and user.id :
-("S-1-5-21-*", "S-1-12-1-*") and /* seclogon service */
-process.name == "svchost.exe" and winlog.event_data.LogonProcessName
-: "seclogo*" and source.ip == "::1" ] by
-winlog.event_data.TargetLogonId [process where event.type == "start"]
-by winlog.event_data.TargetLogonId
-----------------------------------
+sequence by winlog.computer_name with maxspan=1m
 
-==== Threat mapping
+[authentication where event.action:"logged-in" and
+ event.outcome == "success" and user.id : ("S-1-5-21-*", "S-1-12-1-*") and
+
+ /* seclogon service */
+ process.name == "svchost.exe" and
+ winlog.event_data.LogonProcessName : "seclogo*" and source.ip == "::1" ] by winlog.event_data.TargetLogonId
+
+[process where event.type == "start"] by winlog.event_data.TargetLogonId
+
+----------------------------------
 
 *Framework*: MITRE ATT&CK^TM^
 
@@ -77,20 +86,11 @@ by winlog.event_data.TargetLogonId
 ** Name: Access Token Manipulation
 ** ID: T1134
 ** Reference URL: https://attack.mitre.org/techniques/T1134/
-
-[[process-creation-via-secondary-logon-history]]
-==== Rule version history
-
-Version 2 (8.6.0 release)::
-* Updated query, changed from:
-+
-[source, js]
-----------------------------------
-sequence by host.id with maxspan=1m [authentication where
-event.action:"logged-in" and event.outcome == "success" and
-user.id:"S-1-5-21-*" and /* seclogon service */ process.name ==
-"svchost.exe" and winlog.event_data.LogonProcessName : "seclogo*"
-and source.ip == "::1" ] by winlog.event_data.TargetLogonId [process
-where event.type == "start"] by winlog.event_data.TargetLogonId
-----------------------------------
-
+* Sub-technique:
+** Name: Create Process with Token
+** ID: T1134.002
+** Reference URL: https://attack.mitre.org/techniques/T1134/002/
+* Sub-technique:
+** Name: Make and Impersonate Token
+** ID: T1134.003
+** Reference URL: https://attack.mitre.org/techniques/T1134/003/

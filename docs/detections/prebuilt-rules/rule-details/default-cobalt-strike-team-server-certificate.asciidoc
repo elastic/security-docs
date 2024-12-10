@@ -5,24 +5,24 @@ This rule detects the use of the default Cobalt Strike Team Server TLS certifica
 
 *Rule type*: query
 
-*Rule indices*:
+*Rule indices*: 
 
+* packetbeat-*
 * auditbeat-*
 * filebeat-*
-* packetbeat-*
-* logs-endpoint.events.*
+* logs-network_traffic.*
 
 *Severity*: critical
 
 *Risk score*: 99
 
-*Runs every*: 5 minutes
+*Runs every*: 5m
 
 *Searches indices from*: now-9m ({ref}/common-options.html#date-math[Date Math format], see also <<rule-schedule, `Additional look-back time`>>)
 
 *Maximum alerts per execution*: 100
 
-*References*:
+*References*: 
 
 * https://attack.mitre.org/software/S0154/
 * https://www.cobaltstrike.com/help-setup-collaboration
@@ -31,49 +31,42 @@ This rule detects the use of the default Cobalt Strike Team Server TLS certifica
 * https://www.elastic.co/guide/en/beats/filebeat/7.9/filebeat-module-zeek.html
 * https://www.elastic.co/security-labs/collecting-cobalt-strike-beacons-with-the-elastic-stack
 
-*Tags*:
+*Tags*: 
 
-* Command and Control
-* Post-Execution
-* Threat Detection
+* Tactic: Command and Control
+* Threat: Cobalt Strike
+* Use Case: Threat Detection
+* Domain: Endpoint
+
+*Version*: 104
+
+*Rule authors*: 
+
 * Elastic
-* Network
-* Host
-
-*Version*: 101 (<<default-cobalt-strike-team-server-certificate-history, version history>>)
-
-*Added ({stack} release)*: 7.11.0
-
-*Last modified ({stack} release)*: 8.6.0
-
-*Rule authors*: Elastic
 
 *Rule license*: Elastic License v2
+
 
 ==== Investigation guide
 
 
-[source,markdown]
-----------------------------------
-## Threat intel
+
+*Threat intel*
+
 
 While Cobalt Strike is intended to be used for penetration tests and IR training, it is frequently used by actual threat actors (TA) such as APT19, APT29, APT32, APT41, FIN6, DarkHydrus, CopyKittens, Cobalt Group, Leviathan, and many other unnamed criminal TAs. This rule uses high-confidence atomic indicators, so alerts should be investigated rapidly.
-----------------------------------
-
 
 ==== Rule query
 
 
-[source,js]
+[source, js]
 ----------------------------------
-event.category:(network or network_traffic) and
-(tls.server.hash.md5:950098276A495286EB2A2556FBAB6D83 or
-tls.server.hash.sha1:6ECE5ECE4192683D2D84E25B0BA7E04F9CB7EB7C or tls
-.server.hash.sha256:87F2085C32B6A2CC709B365F55873E207A9CAA10BFFECF2FD1
-6D3CF9D94D390C)
-----------------------------------
+(event.dataset: network_traffic.tls or event.category: (network or network_traffic))
+  and (tls.server.hash.md5:950098276A495286EB2A2556FBAB6D83
+  or tls.server.hash.sha1:6ECE5ECE4192683D2D84E25B0BA7E04F9CB7EB7C
+  or tls.server.hash.sha256:87F2085C32B6A2CC709B365F55873E207A9CAA10BFFECF2FD16D3CF9D94D390C)
 
-==== Threat mapping
+----------------------------------
 
 *Framework*: MITRE ATT&CK^TM^
 
@@ -85,40 +78,7 @@ tls.server.hash.sha1:6ECE5ECE4192683D2D84E25B0BA7E04F9CB7EB7C or tls
 ** Name: Application Layer Protocol
 ** ID: T1071
 ** Reference URL: https://attack.mitre.org/techniques/T1071/
-
-[[default-cobalt-strike-team-server-certificate-history]]
-==== Rule version history
-
-Version 101 (8.6.0 release)::
-* Formatting only
-
-Version 100 (8.5.0 release)::
-* Formatting only
-
-Version 7 (8.4.0 release)::
-* Formatting only
-
-Version 6 (7.15.0 release)::
-* Formatting only
-
-Version 5 (7.14.0 release)::
-* Updated query, changed from:
-+
-[source, js]
-----------------------------------
-event.category:(network or network_traffic) and
-(tls.server.hash.md5:950098276A495286EB2A2556FBAB6D83 or
-tls.server.hash.sha1:6ECE5ECE4192683D2D84E25B0BA7E04F9CB7EB7C or tls.s
-erver.hash.sha256:87F2085C32B6A2CC709B365F55873E207A9CAA10BFFECF2FD16D
-3CF9D94D390C)
-----------------------------------
-
-Version 4 (7.13.0 release)::
-* Formatting only
-
-Version 3 (7.12.0 release)::
-* Formatting only
-
-Version 2 (7.11.2 release)::
-* Formatting only
-
+* Sub-technique:
+** Name: Web Protocols
+** ID: T1071.001
+** Reference URL: https://attack.mitre.org/techniques/T1071/001/

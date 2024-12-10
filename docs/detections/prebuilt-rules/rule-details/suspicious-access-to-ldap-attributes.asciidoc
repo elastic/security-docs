@@ -1,0 +1,81 @@
+[[suspicious-access-to-ldap-attributes]]
+=== Suspicious Access to LDAP Attributes
+
+Identify read access to a high number of Active Directory object attributes. The knowledge of objects properties can help adversaries find vulnerabilities, elevate privileges or collect sensitive information.
+
+*Rule type*: eql
+
+*Rule indices*: 
+
+* winlogbeat-*
+* logs-system.security*
+* logs-windows.forwarded*
+
+*Severity*: high
+
+*Risk score*: 73
+
+*Runs every*: 5m
+
+*Searches indices from*: now-9m ({ref}/common-options.html#date-math[Date Math format], see also <<rule-schedule, `Additional look-back time`>>)
+
+*Maximum alerts per execution*: 100
+
+*References*: None
+
+*Tags*: 
+
+* Domain: Endpoint
+* OS: Windows
+* Use Case: Threat Detection
+* Tactic: Discovery
+* Data Source: System
+* Data Source: Active Directory
+* Data Source: Windows
+
+*Version*: 102
+
+*Rule authors*: 
+
+* Elastic
+
+*Rule license*: Elastic License v2
+
+
+==== Setup
+
+
+The 'Audit Directory Service Changes' logging policy must be configured for (Success, Failure).
+Steps to implement the logging policy with Advanced Audit Configuration:
+
+Computer Configuration >
+Policies >
+Windows Settings >
+Security Settings >
+Advanced Audit Policies Configuration >
+Audit Policies >
+DS Access >
+Audit Directory Service Changes (Success,Failure)
+
+
+==== Rule query
+
+
+[source, js]
+----------------------------------
+any where event.action in ("Directory Service Access", "object-operation-performed") and
+ event.code == "4662" and not winlog.event_data.SubjectUserSid : "S-1-5-18" and
+ winlog.event_data.AccessMaskDescription == "Read Property" and length(winlog.event_data.Properties) >= 2000
+
+----------------------------------
+
+*Framework*: MITRE ATT&CK^TM^
+
+* Tactic:
+** Name: Discovery
+** ID: TA0007
+** Reference URL: https://attack.mitre.org/tactics/TA0007/
+* Technique:
+** Name: Permission Groups Discovery
+** ID: T1069
+** Reference URL: https://attack.mitre.org/techniques/T1069/

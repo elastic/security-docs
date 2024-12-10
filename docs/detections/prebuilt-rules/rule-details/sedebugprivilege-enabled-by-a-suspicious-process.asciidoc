@@ -5,78 +5,97 @@ Identifies the creation of a process running as SYSTEM and impersonating a Windo
 
 *Rule type*: eql
 
-*Rule indices*:
+*Rule indices*: 
 
 * winlogbeat-*
 * logs-windows.*
+* logs-system.security*
 
 *Severity*: medium
 
 *Risk score*: 47
 
-*Runs every*: 5 minutes
+*Runs every*: 5m
 
 *Searches indices from*: now-9m ({ref}/common-options.html#date-math[Date Math format], see also <<rule-schedule, `Additional look-back time`>>)
 
 *Maximum alerts per execution*: 100
 
-*References*:
+*References*: 
 
 * https://learn.microsoft.com/en-us/windows/security/threat-protection/auditing/event-4703
 * https://blog.palantir.com/windows-privilege-abuse-auditing-detection-and-defense-3078a403d74e
 
-*Tags*:
+*Tags*: 
+
+* Domain: Endpoint
+* OS: Windows
+* Use Case: Threat Detection
+* Tactic: Privilege Escalation
+* Data Source: System
+
+*Version*: 108
+
+*Rule authors*: 
 
 * Elastic
-* Host
-* Windows
-* Threat Detection
-* Privilege Escalation
-
-*Version*: 1
-
-*Added ({stack} release)*: 8.6.0
-
-*Rule authors*: Elastic
 
 *Rule license*: Elastic License v2
 
-==== Investigation guide
+
+==== Setup
 
 
-[source,markdown]
-----------------------------------
 
-----------------------------------
+*Setup*
+
+
+Windows Event 4703 logs Token Privileges changes and need to be configured (Enable).
+
+Steps to implement the logging policy with Advanced Audit Configuration:
+
+```
+Computer Configuration >
+Policies >
+Windows Settings >
+Security Settings >
+Advanced Audit Policies Configuration >
+Audit Policies >
+Detailed Tracking >
+Token Right Adjusted Events (Success)
+```
 
 
 ==== Rule query
 
 
-[source,js]
+[source, js]
 ----------------------------------
-any where event.provider: "Microsoft-Windows-Security-Auditing" and
-event.action : "Token Right Adjusted Events" and
-winlog.event_data.EnabledPrivilegeList : "SeDebugPrivilege" and /*
-exclude processes with System Integrity */ not
-winlog.event_data.SubjectUserSid : ("S-1-5-18", "S-1-5-19",
-"S-1-5-20") and not winlog.event_data.ProcessName :
-("?:\\Windows\\System32\\msiexec.exe",
-"?:\\Windows\\SysWOW64\\msiexec.exe",
-"?:\\Windows\\System32\\lsass.exe",
-"?:\\Windows\\WinSxS\\*", "?:\\Program Files\\*",
-"?:\\Program Files (x86)\\*",
-"?:\\Windows\\System32\\MRT.exe",
-"?:\\Windows\\System32\\cleanmgr.exe",
-"?:\\Windows\\System32\\taskhostw.exe",
-"?:\\Windows\\System32\\mmc.exe",
-"?:\\Users\\*\\AppData\\Local\\Temp\\*-*\\DismHost.exe",
-"?:\\Windows\\System32\\auditpol.exe",
-"?:\\Windows\\System32\\wbem\\WmiPrvSe.exe",
-"?:\\Windows\\SysWOW64\\wbem\\WmiPrvSe.exe")
-----------------------------------
+any where host.os.type == "windows" and event.provider: "Microsoft-Windows-Security-Auditing" and
+ event.action : "Token Right Adjusted Events" and
 
-==== Threat mapping
+ winlog.event_data.EnabledPrivilegeList : "SeDebugPrivilege" and
+
+ /* exclude processes with System Integrity  */
+ not winlog.event_data.SubjectUserSid : ("S-1-5-18", "S-1-5-19", "S-1-5-20") and
+
+ not winlog.event_data.ProcessName :
+         ("?:\\Windows\\System32\\msiexec.exe",
+          "?:\\Windows\\SysWOW64\\msiexec.exe",
+          "?:\\Windows\\System32\\lsass.exe",
+          "?:\\Windows\\WinSxS\\*",
+          "?:\\Program Files\\*",
+          "?:\\Program Files (x86)\\*",
+          "?:\\Windows\\System32\\MRT.exe",
+          "?:\\Windows\\System32\\cleanmgr.exe",
+          "?:\\Windows\\System32\\taskhostw.exe",
+          "?:\\Windows\\System32\\mmc.exe",
+          "?:\\Users\\*\\AppData\\Local\\Temp\\*-*\\DismHost.exe",
+          "?:\\Windows\\System32\\auditpol.exe",
+          "?:\\Windows\\System32\\wbem\\WmiPrvSe.exe",
+          "?:\\Windows\\SysWOW64\\wbem\\WmiPrvSe.exe")
+
+----------------------------------
 
 *Framework*: MITRE ATT&CK^TM^
 
