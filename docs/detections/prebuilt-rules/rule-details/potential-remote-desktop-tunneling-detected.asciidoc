@@ -5,6 +5,7 @@ Identifies potential use of an SSH utility to establish RDP over a reverse SSH T
 
 *Rule type*: eql
 
+<<<<<<< HEAD
 *Rule indices*: 
 
 * logs-endpoint.events.process-*
@@ -15,17 +16,30 @@ Identifies potential use of an SSH utility to establish RDP over a reverse SSH T
 * logs-sentinel_one_cloud_funnel.*
 * logs-m365_defender.event-*
 * logs-crowdstrike.fdr*
+=======
+*Rule indices*:
+
+* logs-endpoint.events.*
+* winlogbeat-*
+* logs-windows.*
+* endgame-*
+>>>>>>> 7c79a644 (8.17.0 Release notes  (#6224))
 
 *Severity*: high
 
 *Risk score*: 73
 
+<<<<<<< HEAD
 *Runs every*: 5m
+=======
+*Runs every*: 5 minutes
+>>>>>>> 7c79a644 (8.17.0 Release notes  (#6224))
 
 *Searches indices from*: now-9m ({ref}/common-options.html#date-math[Date Math format], see also <<rule-schedule, `Additional look-back time`>>)
 
 *Maximum alerts per execution*: 100
 
+<<<<<<< HEAD
 *References*: 
 
 * https://blog.netspi.com/how-to-access-rdp-over-a-reverse-ssh-tunnel/
@@ -76,19 +90,73 @@ This rule looks for command lines involving the `3389` port, which RDP uses by d
 
 
 - Investigate the process execution chain (parent process tree) for unknown processes. Examine their executable files for prevalence, whether they are located in expected locations, and if they are signed with valid digital signatures.
+=======
+*References*:
+
+* https://blog.netspi.com/how-to-access-rdp-over-a-reverse-ssh-tunnel/
+
+*Tags*:
+
+* Elastic
+* Host
+* Windows
+* Threat Detection
+* Command and Control
+* Investigation Guide
+* Elastic Endgame
+
+*Version*: 102 (<<potential-remote-desktop-tunneling-detected-history, version history>>)
+
+*Added ({stack} release)*: 7.11.0
+
+*Last modified ({stack} release)*: 8.6.0
+
+*Rule authors*: Elastic
+
+*Rule license*: Elastic License v2
+
+==== Investigation guide
+
+
+[source,markdown]
+----------------------------------
+## Triage and analysis
+
+### Investigating Potential Remote Desktop Tunneling Detected
+
+Protocol Tunneling is a mechanism that involves explicitly encapsulating a protocol within another for various use cases,
+ranging from providing an outer layer of encryption (similar to a VPN) to enabling traffic that network appliances would
+filter to reach their destination.
+
+Attackers may tunnel Remote Desktop Protocol (RDP) traffic through other protocols like Secure Shell (SSH) to bypass network restrictions that block incoming RDP
+connections but may be more permissive to other protocols.
+
+This rule looks for command lines involving the `3389` port, which RDP uses by default and options commonly associated
+with tools that perform tunneling.
+
+#### Possible investigation steps
+
+- Investigate the process execution chain (parent process tree) for unknown processes. Examine their executable files
+for prevalence, whether they are located in expected locations, and if they are signed with valid digital signatures.
+>>>>>>> 7c79a644 (8.17.0 Release notes  (#6224))
 - Identify the user account that performed the action and whether it should perform this kind of action.
 - Contact the account and system owners and confirm whether they are aware of this activity.
 - Investigate other alerts associated with the user/host during the past 48 hours.
 - Assess whether this behavior is prevalent in the environment by looking for similar occurrences across hosts.
 - Examine network data to determine if the host communicated with external servers using the tunnel.
 
+<<<<<<< HEAD
 
 *False positive analysis*
 
+=======
+### False positive analysis
+>>>>>>> 7c79a644 (8.17.0 Release notes  (#6224))
 
 - This activity is unlikely to happen legitimately. Benign true positives (B-TPs) can be added as exceptions if necessary.
 - Investigate the command line for the execution of programs that are unrelated to tunneling, like Remote Desktop clients.
 
+<<<<<<< HEAD
 
 *Response and remediation*
 
@@ -100,11 +168,29 @@ This rule looks for command lines involving the `3389` port, which RDP uses by d
 - Run a full antimalware scan. This may reveal additional artifacts left in the system, persistence mechanisms, and malware components.
 - Determine the initial vector abused by the attacker and take action to prevent reinfection through the same vector.
 - Using the incident response data, update logging and audit policies to improve the mean time to detect (MTTD) and the mean time to respond (MTTR).
+=======
+### Response and remediation
+
+- Initiate the incident response process based on the outcome of the triage.
+- Isolate the involved host to prevent further post-compromise behavior.
+- Take the necessary actions to disable the tunneling, which can be a process kill, service deletion, registry key
+modification, etc. Inspect the host to learn which method was used and to determine a response for the case.
+- Investigate credential exposure on systems compromised or used by the attacker to ensure all compromised accounts are
+identified. Reset passwords for these accounts and other potentially compromised credentials, such as email, business
+systems, and web services.
+- Run a full antimalware scan. This may reveal additional artifacts left in the system, persistence mechanisms, and
+malware components.
+- Determine the initial vector abused by the attacker and take action to prevent reinfection through the same vector.
+- Using the incident response data, update logging and audit policies to improve the mean time to detect (MTTD) and the
+mean time to respond (MTTR).
+----------------------------------
+>>>>>>> 7c79a644 (8.17.0 Release notes  (#6224))
 
 
 ==== Rule query
 
 
+<<<<<<< HEAD
 [source, js]
 ----------------------------------
 process where host.os.type == "windows" and event.type == "start" and
@@ -113,6 +199,16 @@ process where host.os.type == "windows" and event.type == "start" and
   process.args : ("-L", "-P", "-R", "-pw", "-ssh")
 
 ----------------------------------
+=======
+[source,js]
+----------------------------------
+process where event.type == "start" and /* RDP port and usual SSH
+tunneling related switches in command line */ process.args :
+"*:3389" and process.args : ("-L", "-P", "-R", "-pw", "-ssh")
+----------------------------------
+
+==== Threat mapping
+>>>>>>> 7c79a644 (8.17.0 Release notes  (#6224))
 
 *Framework*: MITRE ATT&CK^TM^
 
@@ -124,6 +220,7 @@ process where host.os.type == "windows" and event.type == "start" and
 ** Name: Protocol Tunneling
 ** ID: T1572
 ** Reference URL: https://attack.mitre.org/techniques/T1572/
+<<<<<<< HEAD
 * Tactic:
 ** Name: Lateral Movement
 ** ID: TA0008
@@ -136,3 +233,57 @@ process where host.os.type == "windows" and event.type == "start" and
 ** Name: SSH
 ** ID: T1021.004
 ** Reference URL: https://attack.mitre.org/techniques/T1021/004/
+=======
+
+[[potential-remote-desktop-tunneling-detected-history]]
+==== Rule version history
+
+Version 102 (8.6.0 release)::
+* Formatting only
+
+Version 101 (8.5.0 release)::
+* Updated query, changed from:
++
+[source, js]
+----------------------------------
+process where event.type in ("start", "process_started") and /* RDP
+port and usual SSH tunneling related switches in command line */
+process.args : "*:3389" and process.args : ("-L", "-P", "-R", "-pw",
+"-ssh")
+----------------------------------
+
+Version 8 (8.4.0 release)::
+* Formatting only
+
+Version 6 (8.3.0 release)::
+* Formatting only
+
+Version 5 (8.2.0 release)::
+* Formatting only
+
+Version 4 (7.16.0 release)::
+* Formatting only
+
+Version 3 (7.12.0 release)::
+* Updated query, changed from:
++
+[source, js]
+----------------------------------
+process where event.type in ("start", "process_started", "info") and
+/* RDP port and usual SSH tunneling related switches in commandline */
+wildcard(process.args, "*:3389") and wildcard(process.args,"-L", "-P",
+"-R", "-pw", "-ssh")
+----------------------------------
+
+Version 2 (7.11.2 release)::
+* Updated query, changed from:
++
+[source, js]
+----------------------------------
+process where event.type in ("start", "process_started", "info") and
+/* RDP port and usual SSH tunneling related switches in commandline */
+wildcard(process.args, "*:3389") and wildcard(process.args,"-L", "-P",
+"-R", "-pw", "-ssh")
+----------------------------------
+
+>>>>>>> 7c79a644 (8.17.0 Release notes  (#6224))

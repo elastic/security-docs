@@ -5,6 +5,7 @@ Identifies use of bcdedit.exe to delete boot configuration data. This tactic is 
 
 *Rule type*: eql
 
+<<<<<<< HEAD
 *Rule indices*: 
 
 * winlogbeat-*
@@ -16,17 +17,29 @@ Identifies use of bcdedit.exe to delete boot configuration data. This tactic is 
 * logs-m365_defender.event-*
 * logs-sentinel_one_cloud_funnel.*
 * logs-crowdstrike.fdr*
+=======
+*Rule indices*:
+
+* winlogbeat-*
+* logs-endpoint.events.*
+* logs-windows.*
+>>>>>>> 7c79a644 (8.17.0 Release notes  (#6224))
 
 *Severity*: low
 
 *Risk score*: 21
 
+<<<<<<< HEAD
 *Runs every*: 5m
+=======
+*Runs every*: 5 minutes
+>>>>>>> 7c79a644 (8.17.0 Release notes  (#6224))
 
 *Searches indices from*: now-9m ({ref}/common-options.html#date-math[Date Math format], see also <<rule-schedule, `Additional look-back time`>>)
 
 *Maximum alerts per execution*: 100
 
+<<<<<<< HEAD
 *References*: None
 
 *Tags*: 
@@ -65,6 +78,39 @@ Identifies use of bcdedit.exe to delete boot configuration data. This tactic is 
 
 
 Boot entry parameters, or boot parameters, are optional, system-specific settings that represent configuration options. These are stored in a boot configuration data (BCD) store, and administrators can use utilities like `bcdedit.exe` to configure these.
+=======
+*Tags*:
+
+* Elastic
+* Host
+* Windows
+* Threat Detection
+* Impact
+* Investigation Guide
+
+*Version*: 102 (<<modification-of-boot-configuration-history, version history>>)
+
+*Added ({stack} release)*: 7.7.0
+
+*Last modified ({stack} release)*: 8.6.0
+
+*Rule authors*: Elastic
+
+*Rule license*: Elastic License v2
+
+==== Investigation guide
+
+
+[source,markdown]
+----------------------------------
+## Triage and analysis
+
+### Investigating Modification of Boot Configuration
+
+Boot entry parameters, or boot parameters, are optional, system-specific settings that represent configuration options.
+These are stored in a boot configuration data (BCD) store, and administrators can use utilities like `bcdedit.exe` to
+configure these.
+>>>>>>> 7c79a644 (8.17.0 Release notes  (#6224))
 
 This rule identifies the usage of `bcdedit.exe` to:
 
@@ -73,17 +119,25 @@ This rule identifies the usage of `bcdedit.exe` to:
 
 These are common steps in destructive attacks by adversaries leveraging ransomware.
 
+<<<<<<< HEAD
 
 *Possible investigation steps*
 
 
 - Investigate the script execution chain (parent process tree) for unknown processes. Examine their executable files for prevalence, whether they are located in expected locations, and if they are signed with valid digital signatures.
+=======
+#### Possible investigation steps
+
+- Investigate the script execution chain (parent process tree) for unknown processes. Examine their executable files for
+prevalence, whether they are located in expected locations, and if they are signed with valid digital signatures.
+>>>>>>> 7c79a644 (8.17.0 Release notes  (#6224))
 - Identify the user account that performed the action and whether it should perform this kind of action.
 - Contact the account owner and confirm whether they are aware of this activity.
 - Investigate other alerts associated with the user/host during the past 48 hours.
 - Assess whether this behavior is prevalent in the environment by looking for similar occurrences across hosts.
 - Check if any files on the host machine have been encrypted.
 
+<<<<<<< HEAD
 
 *False positive analysis*
 
@@ -106,11 +160,36 @@ These are common steps in destructive attacks by adversaries leveraging ransomwa
 - If any other destructive action was identified on the host, it is recommended to prioritize the investigation and look for ransomware preparation and execution activities.
 - Determine the initial vector abused by the attacker and take action to prevent reinfection through the same vector.
 - Using the incident response data, update logging and audit policies to improve the mean time to detect (MTTD) and the mean time to respond (MTTR).
+=======
+### False positive analysis
+
+- The usage of these options is not inherently malicious. Administrators can modify these configurations to force a
+machine to boot for troubleshooting or data recovery purposes.
+
+### Related rules
+
+- Deleting Backup Catalogs with Wbadmin - 581add16-df76-42bb-af8e-c979bfb39a59
+
+### Response and remediation
+
+- Initiate the incident response process based on the outcome of the triage.
+- Consider isolating the involved host to prevent destructive behavior, which is commonly associated with this activity.
+- Investigate credential exposure on systems compromised or used by the attacker to ensure all compromised accounts are
+identified. Reset passwords for these accounts and other potentially compromised credentials, such as email, business
+systems, and web services.
+- If any other destructive action was identified on the host, it is recommended to prioritize the investigation and look
+for ransomware preparation and execution activities.
+- Determine the initial vector abused by the attacker and take action to prevent reinfection through the same vector.
+- Using the incident response data, update logging and audit policies to improve the mean time to detect (MTTD) and the
+mean time to respond (MTTR).
+----------------------------------
+>>>>>>> 7c79a644 (8.17.0 Release notes  (#6224))
 
 
 ==== Rule query
 
 
+<<<<<<< HEAD
 [source, js]
 ----------------------------------
 process where host.os.type == "windows" and event.type == "start" and
@@ -121,6 +200,18 @@ process where host.os.type == "windows" and event.type == "start" and
     )
 
 ----------------------------------
+=======
+[source,js]
+----------------------------------
+process where event.type == "start" and (process.name :
+"bcdedit.exe" or process.pe.original_file_name == "bcdedit.exe") and
+( (process.args : "/set" and process.args : "bootstatuspolicy"
+and process.args : "ignoreallfailures") or (process.args : "no"
+and process.args : "recoveryenabled") )
+----------------------------------
+
+==== Threat mapping
+>>>>>>> 7c79a644 (8.17.0 Release notes  (#6224))
 
 *Framework*: MITRE ATT&CK^TM^
 
@@ -132,3 +223,81 @@ process where host.os.type == "windows" and event.type == "start" and
 ** Name: Inhibit System Recovery
 ** ID: T1490
 ** Reference URL: https://attack.mitre.org/techniques/T1490/
+<<<<<<< HEAD
+=======
+
+[[modification-of-boot-configuration-history]]
+==== Rule version history
+
+Version 102 (8.6.0 release)::
+* Formatting only
+
+Version 101 (8.5.0 release)::
+* Updated query, changed from:
++
+[source, js]
+----------------------------------
+process where event.type in ("start", "process_started") and
+(process.name : "bcdedit.exe" or process.pe.original_file_name ==
+"bcdedit.exe") and ( (process.args : "/set" and process.args
+: "bootstatuspolicy" and process.args : "ignoreallfailures") or
+(process.args : "no" and process.args : "recoveryenabled") )
+----------------------------------
+
+Version 13 (8.4.0 release)::
+* Updated query, changed from:
++
+[source, js]
+----------------------------------
+process where event.type in ("start", "process_started") and
+(process.name : "bcdedit.exe" or process.pe.original_file_name ==
+"bcdedit.exe") and (process.args : "/set" and process.args :
+"bootstatuspolicy" and process.args : "ignoreallfailures") or
+(process.args : "no" and process.args : "recoveryenabled")
+----------------------------------
+
+Version 11 (8.3.0 release)::
+* Formatting only
+
+Version 10 (8.2.0 release)::
+* Formatting only
+
+Version 9 (7.16.0 release)::
+* Formatting only
+
+Version 8 (7.13.0 release)::
+* Updated query, changed from:
++
+[source, js]
+----------------------------------
+event.category:process and event.type:(start or process_started) and
+process.name:bcdedit.exe and process.args:(/set and (bootstatuspolicy
+and ignoreallfailures or no and recoveryenabled))
+----------------------------------
+
+Version 7 (7.12.0 release)::
+* Formatting only
+
+Version 6 (7.11.2 release)::
+* Formatting only
+
+Version 5 (7.11.0 release)::
+* Formatting only
+
+Version 4 (7.10.0 release)::
+* Formatting only
+
+Version 3 (7.9.1 release)::
+* Formatting only
+
+Version 2 (7.9.0 release)::
+* Updated query, changed from:
++
+[source, js]
+----------------------------------
+event.action:"Process Create (rule: ProcessCreate)" and
+process.name:bcdedit.exe and process.args:(/set and (bootstatuspolicy
+and ignoreallfailures or no and recoveryenabled))
+----------------------------------
+
+>>>>>>> 7c79a644 (8.17.0 Release notes  (#6224))

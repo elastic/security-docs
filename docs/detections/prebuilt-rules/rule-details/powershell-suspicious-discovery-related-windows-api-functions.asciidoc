@@ -5,6 +5,7 @@ This rule detects the use of discovery-related Windows API functions in PowerShe
 
 *Rule type*: query
 
+<<<<<<< HEAD
 *Rule indices*: 
 
 * winlogbeat-*
@@ -15,16 +16,33 @@ This rule detects the use of discovery-related Windows API functions in PowerShe
 *Risk score*: 21
 
 *Runs every*: 5m
+=======
+*Rule indices*:
+
+* winlogbeat-*
+* logs-windows.*
+
+*Severity*: medium
+
+*Risk score*: 47
+
+*Runs every*: 5 minutes
+>>>>>>> 7c79a644 (8.17.0 Release notes  (#6224))
 
 *Searches indices from*: now-9m ({ref}/common-options.html#date-math[Date Math format], see also <<rule-schedule, `Additional look-back time`>>)
 
 *Maximum alerts per execution*: 100
 
+<<<<<<< HEAD
 *References*: 
+=======
+*References*:
+>>>>>>> 7c79a644 (8.17.0 Release notes  (#6224))
 
 * https://github.com/BC-SECURITY/Empire/blob/9259e5106986847d2bb770c4289c0c0f1adf2344/data/module_source/situational_awareness/network/powerview.ps1#L21413
 * https://github.com/atc-project/atc-data/blob/master/docs/Logging_Policies/LP_0109_windows_powershell_script_block_log.md
 
+<<<<<<< HEAD
 *Tags*: 
 
 * Domain: Endpoint
@@ -44,10 +62,35 @@ This rule detects the use of discovery-related Windows API functions in PowerShe
 
 *Rule license*: Elastic License v2
 
+=======
+*Tags*:
+
+* Elastic
+* Host
+* Windows
+* Threat Detection
+* Discovery
+* Investigation Guide
+
+*Version*: 102 (<<powershell-suspicious-discovery-related-windows-api-functions-history, version history>>)
+
+*Added ({stack} release)*: 7.16.0
+
+*Last modified ({stack} release)*: 8.6.0
+
+*Rule authors*: Elastic
+
+*Rule license*: Elastic License v2
+
+==== Potential false positives
+
+Legitimate PowerShell scripts that make use of these functions.
+>>>>>>> 7c79a644 (8.17.0 Release notes  (#6224))
 
 ==== Investigation guide
 
 
+<<<<<<< HEAD
 
 *Triage and analysis*
 
@@ -66,11 +109,32 @@ Attackers can use PowerShell to interact with the Win32 API to bypass command li
 
 - Examine the script content that triggered the detection; look for suspicious DLL imports, collection or exfiltration capabilities, suspicious functions, encoded or compressed data, and other potentially malicious characteristics.
 - Investigate the script execution chain (parent process tree) for unknown processes. Examine their executable files for prevalence, whether they are located in expected locations, and if they are signed with valid digital signatures.
+=======
+[source,markdown]
+----------------------------------
+## Triage and analysis
+
+### Investigating PowerShell Suspicious Discovery Related Windows API Functions
+
+PowerShell is one of the main tools system administrators use for automation, report routines, and other tasks. This
+makes it available for use in various environments, and creates an attractive way for attackers to execute code.
+
+Attackers can use PowerShell to interact with the Win32 API to bypass command line based detections, using libraries
+like PSReflect or Get-ProcAddress Cmdlet.
+
+#### Possible investigation steps
+
+- Examine the script content that triggered the detection; look for suspicious DLL imports, collection or exfiltration
+capabilities, suspicious functions, encoded or compressed data, and other potentially malicious characteristics.
+- Investigate the script execution chain (parent process tree) for unknown processes. Examine their executable files for
+prevalence, whether they are located in expected locations, and if they are signed with valid digital signatures.
+>>>>>>> 7c79a644 (8.17.0 Release notes  (#6224))
 - Examine file or network events from the involved PowerShell process for suspicious behavior.
 - Investigate other alerts associated with the user/host during the past 48 hours.
 - Evaluate whether the user needs to use PowerShell to complete tasks.
 - Check for additional PowerShell and command-line logs that indicate that imported functions were run.
 
+<<<<<<< HEAD
 
 *False positive analysis*
 
@@ -86,11 +150,25 @@ Attackers can use PowerShell to interact with the Win32 API to bypass command li
 
 *Response and remediation*
 
+=======
+### False positive analysis
+
+- Discovery activities themselves are not inherently malicious if occurring in isolation, as long as the script does not
+contain other capabilities, and there are no other alerts related to the user or host; such alerts can be dismissed.
+However, analysts should keep in mind that this is not a common way of getting information, making it suspicious.
+
+### Related rules
+
+- PowerShell PSReflect Script - 56f2e9b5-4803-4e44-a0a4-a52dc79d57fe
+
+### Response and remediation
+>>>>>>> 7c79a644 (8.17.0 Release notes  (#6224))
 
 - Initiate the incident response process based on the outcome of the triage.
 - Isolate the involved hosts to prevent further post-compromise behavior.
 - Restrict PowerShell usage outside of IT and engineering business units using GPOs, AppLocker, Intune, or similar software.
 - Determine the initial vector abused by the attacker and take action to prevent reinfection through the same vector.
+<<<<<<< HEAD
 - Run a full antimalware scan. This may reveal additional artifacts left in the system, persistence mechanisms, and malware components.
 - Using the incident response data, update logging and audit policies to improve the mean time to detect (MTTD) and the mean time to respond (MTTR).
 
@@ -117,11 +195,19 @@ Steps to implement the logging policy via registry:
 ```
 reg add "hklm\SOFTWARE\Policies\Microsoft\Windows\PowerShell\ScriptBlockLogging" /v EnableScriptBlockLogging /t REG_DWORD /d 1
 ```
+=======
+- Run a full antimalware scan. This may reveal additional artifacts left in the system, persistence mechanisms, and
+malware components.
+- Using the incident response data, update logging and audit policies to improve the mean time to detect (MTTD) and the
+mean time to respond (MTTR).
+----------------------------------
+>>>>>>> 7c79a644 (8.17.0 Release notes  (#6224))
 
 
 ==== Rule query
 
 
+<<<<<<< HEAD
 [source, js]
 ----------------------------------
 event.category:process and host.os.type:windows and
@@ -158,6 +244,19 @@ event.category:process and host.os.type:windows and
   )
 
 ----------------------------------
+=======
+[source,js]
+----------------------------------
+event.category:process and powershell.file.script_block_text : (
+NetShareEnum or NetWkstaUserEnum or NetSessionEnum or
+NetLocalGroupEnum or NetLocalGroupGetMembers or DsGetSiteName
+or DsEnumerateDomainTrusts or WTSEnumerateSessionsEx or
+WTSQuerySessionInformation or LsaGetLogonSessionData or
+QueryServiceObjectSecurity )
+----------------------------------
+
+==== Threat mapping
+>>>>>>> 7c79a644 (8.17.0 Release notes  (#6224))
 
 *Framework*: MITRE ATT&CK^TM^
 
@@ -166,6 +265,7 @@ event.category:process and host.os.type:windows and
 ** ID: TA0007
 ** Reference URL: https://attack.mitre.org/tactics/TA0007/
 * Technique:
+<<<<<<< HEAD
 ** Name: Permission Groups Discovery
 ** ID: T1069
 ** Reference URL: https://attack.mitre.org/techniques/T1069/
@@ -189,6 +289,13 @@ event.category:process and host.os.type:windows and
 ** Name: Network Share Discovery
 ** ID: T1135
 ** Reference URL: https://attack.mitre.org/techniques/T1135/
+=======
+** Name: Network Share Discovery
+** ID: T1135
+** Reference URL: https://attack.mitre.org/techniques/T1135/
+
+
+>>>>>>> 7c79a644 (8.17.0 Release notes  (#6224))
 * Tactic:
 ** Name: Execution
 ** ID: TA0002
@@ -197,6 +304,7 @@ event.category:process and host.os.type:windows and
 ** Name: Command and Scripting Interpreter
 ** ID: T1059
 ** Reference URL: https://attack.mitre.org/techniques/T1059/
+<<<<<<< HEAD
 * Sub-technique:
 ** Name: PowerShell
 ** ID: T1059.001
@@ -213,3 +321,50 @@ event.category:process and host.os.type:windows and
 ** Name: Data from Network Shared Drive
 ** ID: T1039
 ** Reference URL: https://attack.mitre.org/techniques/T1039/
+=======
+
+[[powershell-suspicious-discovery-related-windows-api-functions-history]]
+==== Rule version history
+
+Version 102 (8.6.0 release)::
+* Formatting only
+
+Version 101 (8.5.0 release)::
+* Formatting only
+
+Version 8 (8.4.0 release)::
+* Updated query, changed from:
++
+[source, js]
+----------------------------------
+event.category:process and powershell.file.script_block_text : (
+NetShareEnum or NetWkstaUserEnum or NetSessionEnum or
+NetLocalGroupEnum or NetLocalGroupGetMembers or DsGetSiteName
+or DsEnumerateDomainTrusts or WTSEnumerateSessionsEx or
+WTSQuerySessionInformation or LsaGetLogonSessionData or
+QueryServiceObjectSecurity )
+----------------------------------
+
+Version 6 (8.3.0 release)::
+* Formatting only
+
+Version 5 (8.2.0 release)::
+* Formatting only
+
+Version 4 (8.1.0 release)::
+* Formatting only
+
+Version 3 (8.0.0 release)::
+* Updated query, changed from:
++
+[source, js]
+----------------------------------
+event.code:"4104" and powershell.file.script_block_text : (
+NetShareEnum or NetWkstaUserEnum or NetSessionEnum or
+NetLocalGroupEnum or NetLocalGroupGetMembers or DsGetSiteName
+or DsEnumerateDomainTrusts or WTSEnumerateSessionsEx or
+WTSQuerySessionInformation or LsaGetLogonSessionData or
+QueryServiceObjectSecurity )
+----------------------------------
+
+>>>>>>> 7c79a644 (8.17.0 Release notes  (#6224))

@@ -5,7 +5,11 @@ This rule detects a container deployed with one or more dangerously permissive L
 
 *Rule type*: query
 
+<<<<<<< HEAD
 *Rule indices*: 
+=======
+*Rule indices*:
+>>>>>>> 7c79a644 (8.17.0 Release notes  (#6224))
 
 * logs-kubernetes.*
 
@@ -13,6 +17,7 @@ This rule detects a container deployed with one or more dangerously permissive L
 
 *Risk score*: 47
 
+<<<<<<< HEAD
 *Runs every*: 5m
 
 *Searches indices from*: None ({ref}/common-options.html#date-math[Date Math format], see also <<rule-schedule, `Additional look-back time`>>)
@@ -20,12 +25,22 @@ This rule detects a container deployed with one or more dangerously permissive L
 *Maximum alerts per execution*: 100
 
 *References*: 
+=======
+*Runs every*: 5 minutes
+
+*Searches indices from*: now-6m ({ref}/common-options.html#date-math[Date Math format], see also <<rule-schedule, `Additional look-back time`>>)
+
+*Maximum alerts per execution*: 100
+
+*References*:
+>>>>>>> 7c79a644 (8.17.0 Release notes  (#6224))
 
 * https://kubernetes.io/docs/tasks/configure-pod-container/security-context/#set-capabilities-for-a-container
 * https://0xn3va.gitbook.io/cheat-sheets/container/escaping/excessive-capabilities
 * https://man7.org/linux/man-pages/man7/capabilities.7.html
 * https://docs.docker.com/engine/reference/run/#runtime-privilege-and-linux-capabilities
 
+<<<<<<< HEAD
 *Tags*: 
 
 * Data Source: Kubernetes
@@ -40,10 +55,32 @@ This rule detects a container deployed with one or more dangerously permissive L
 
 *Rule license*: Elastic License v2
 
+=======
+*Tags*:
+
+* Elastic
+* Kubernetes
+* Continuous Monitoring
+* Execution
+* Privilege Escalation
+
+*Version*: 1
+
+*Added ({stack} release)*: 8.6.0
+
+*Rule authors*: Elastic
+
+*Rule license*: Elastic License v2
+
+==== Potential false positives
+
+Some container images require the addition of privileged capabilities. This rule leaves space for the exception of trusted container images. To add an exception, add the trusted container image name to the query field, kubernetes.audit.requestObject.spec.containers.image.
+>>>>>>> 7c79a644 (8.17.0 Release notes  (#6224))
 
 ==== Investigation guide
 
 
+<<<<<<< HEAD
 
 *Triage and analysis*
 
@@ -51,10 +88,18 @@ This rule detects a container deployed with one or more dangerously permissive L
 
 *Investigating Kubernetes Container Created with Excessive Linux Capabilities*
 
+=======
+[source,markdown]
+----------------------------------
+## Triage and analysis
+
+### Investigating Kubernetes Container Created with Excessive Linux Capabilities
+>>>>>>> 7c79a644 (8.17.0 Release notes  (#6224))
 
 Linux capabilities were designed to divide root privileges into smaller units. Each capability grants a thread just enough power to perform specific privileged tasks. In Kubernetes, containers are given a set of default capabilities that can be dropped or added to at the time of creation. Added capabilities entitle containers in a pod with additional privileges that can be used to change
 core processes, change network settings of a cluster, or directly access the underlying host. The following have been used in container escape techniques:
 
+<<<<<<< HEAD
 BPF - Allow creating BPF maps, loading BPF Type Format (BTF) data, retrieve JITed code of BPF programs, and more.
 DAC_READ_SEARCH - Bypass file read permission checks and directory read and execute permission checks.
 NET_ADMIN - Perform various network-related operations.
@@ -75,10 +120,28 @@ SYSLOG - Perform privileged syslog(2) operations.
 
 
 The Kubernetes Fleet integration with Audit Logs enabled or similarly structured data is required to be compatible with this rule.
+=======
+BPF - Allow creating BPF maps, loading BPF Type Format (BTF) data, retrieve JITed code of BPF programs, and more. 
+DAC_READ_SEARCH - Bypass file read permission checks and directory read and execute permission checks. 
+NET_ADMIN - Perform various network-related operations. 
+SYS_ADMIN - Perform a range of system administration operations. 
+SYS_BOOT - Use reboot(2) and kexec_load(2), reboot and load a new kernel for later execution. 
+SYS_MODULE - Load and unload kernel modules. 
+SYS_PTRACE - Trace arbitrary processes using ptrace(2).
+SYS_RAWIO - Perform I/O port operations (iopl(2) and ioperm(2)). 
+SYSLOG - Perform privileged syslog(2) operations.
+
+### False positive analysis
+
+- While these capabilities are not included by default in containers, some legitimate images may need to add them. This rule leaves space for the exception of trusted container images. To add an exception, add the trusted container image name to the query field, kubernetes.audit.requestObject.spec.containers.image.
+----------------------------------
+
+>>>>>>> 7c79a644 (8.17.0 Release notes  (#6224))
 
 ==== Rule query
 
 
+<<<<<<< HEAD
 [source, js]
 ----------------------------------
 event.dataset: kubernetes.audit_logs
@@ -89,6 +152,23 @@ event.dataset: kubernetes.audit_logs
   and not kubernetes.audit.requestObject.spec.containers.image : ("docker.elastic.co/beats/elastic-agent:8.4.0" or "rancher/klipper-lb:v0.3.5" or "")
 
 ----------------------------------
+=======
+[source,js]
+----------------------------------
+event.dataset: kubernetes.audit_logs and
+kubernetes.audit.annotations.authorization_k8s_io/decision:"allow"
+and kubernetes.audit.verb: create and
+kubernetes.audit.objectRef.resource: pods and kubernetes.audit.requ
+estObject.spec.containers.securityContext.capabilities.add: ("BPF" or
+"DAC_READ_SEARCH" or "NET_ADMIN" or "SYS_ADMIN" or "SYS_BOOT" or
+"SYS_MODULE" or "SYS_PTRACE" or "SYS_RAWIO" or "SYSLOG") and not
+kubernetes.audit.requestObject.spec.containers.image :
+("docker.elastic.co/beats/elastic-agent:8.4.0" or "rancher/klipper-
+lb:v0.3.5" or "")
+----------------------------------
+
+==== Threat mapping
+>>>>>>> 7c79a644 (8.17.0 Release notes  (#6224))
 
 *Framework*: MITRE ATT&CK^TM^
 
@@ -100,6 +180,11 @@ event.dataset: kubernetes.audit_logs
 ** Name: Escape to Host
 ** ID: T1611
 ** Reference URL: https://attack.mitre.org/techniques/T1611/
+<<<<<<< HEAD
+=======
+
+
+>>>>>>> 7c79a644 (8.17.0 Release notes  (#6224))
 * Tactic:
 ** Name: Execution
 ** ID: TA0002

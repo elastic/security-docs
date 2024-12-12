@@ -5,22 +5,34 @@ Identifies execution of a suspicious program via scheduled tasks by looking at p
 
 *Rule type*: eql
 
+<<<<<<< HEAD
 *Rule indices*: 
 
 * winlogbeat-*
 * logs-endpoint.events.process-*
+=======
+*Rule indices*:
+
+* winlogbeat-*
+* logs-endpoint.events.*
+>>>>>>> 7c79a644 (8.17.0 Release notes  (#6224))
 * logs-windows.*
 
 *Severity*: medium
 
 *Risk score*: 47
 
+<<<<<<< HEAD
 *Runs every*: 5m
+=======
+*Runs every*: 5 minutes
+>>>>>>> 7c79a644 (8.17.0 Release notes  (#6224))
 
 *Searches indices from*: now-9m ({ref}/common-options.html#date-math[Date Math format], see also <<rule-schedule, `Additional look-back time`>>)
 
 *Maximum alerts per execution*: 100
 
+<<<<<<< HEAD
 *References*: 
 
 * https://www.elastic.co/security-labs/elastic-protects-against-data-wiper-malware-targeting-ukraine-hermeticwiper
@@ -55,11 +67,43 @@ events will not define `event.ingested` and default fallback for EQL rules was n
 Hence for this rule to work effectively, users will need to add a custom ingest pipeline to populate
 `event.ingested` to @timestamp.
 For more details on adding a custom ingest pipeline refer - https://www.elastic.co/guide/en/fleet/current/data-streams-pipeline-tutorial.html
+=======
+*Tags*:
+
+* Elastic
+* Host
+* Windows
+* Threat Detection
+* Persistence
+
+*Version*: 100 (<<suspicious-execution-via-scheduled-task-history, version history>>)
+
+*Added ({stack} release)*: 7.11.0
+
+*Last modified ({stack} release)*: 8.5.0
+
+*Rule authors*: Elastic
+
+*Rule license*: Elastic License v2
+
+==== Potential false positives
+
+Legitimate scheduled tasks running third party software.
+
+==== Investigation guide
+
+
+[source,markdown]
+----------------------------------
+
+----------------------------------
+>>>>>>> 7c79a644 (8.17.0 Release notes  (#6224))
 
 
 ==== Rule query
 
 
+<<<<<<< HEAD
 [source, js]
 ----------------------------------
 process where host.os.type == "windows" and event.type == "start" and
@@ -103,6 +147,39 @@ process where host.os.type == "windows" and event.type == "start" and
 
 ----------------------------------
 
+=======
+[source,js]
+----------------------------------
+process where event.type == "start" and /* Schedule service
+cmdline on Win10+ */ process.parent.name : "svchost.exe" and
+process.parent.args : "Schedule" and /* add suspicious programs
+here */ process.pe.original_file_name in
+( "cscript.exe",
+"wscript.exe", "PowerShell.EXE",
+"Cmd.Exe", "MSHTA.EXE",
+"RUNDLL32.EXE", "REGSVR32.EXE",
+"MSBuild.exe", "InstallUtil.exe",
+"RegAsm.exe", "RegSvcs.exe",
+"msxsl.exe", "CONTROL.EXE",
+"EXPLORER.EXE",
+"Microsoft.Workflow.Compiler.exe",
+"msiexec.exe" ) and /* add
+suspicious paths here */ process.args : ( "C:\\Users\\*",
+"C:\\ProgramData\\*", "C:\\Windows\\Temp\\*",
+"C:\\Windows\\Tasks\\*", "C:\\PerfLogs\\*",
+"C:\\Intel\\*", "C:\\Windows\\Debug\\*", "C:\\HP\\*")
+and not (process.name : "cmd.exe" and process.args : "?:\\*.bat"
+and process.working_directory : "?:\\Windows\\System32\\") and
+not (process.name : "cscript.exe" and process.args :
+"?:\\Windows\\system32\\calluxxprovider.vbs") and not
+(process.name : "powershell.exe" and process.args : ("-File",
+"-PSConsoleFile") and user.id : "S-1-5-18") and not (process.name
+: "msiexec.exe" and user.id : "S-1-5-18")
+----------------------------------
+
+==== Threat mapping
+
+>>>>>>> 7c79a644 (8.17.0 Release notes  (#6224))
 *Framework*: MITRE ATT&CK^TM^
 
 * Tactic:
@@ -113,6 +190,7 @@ process where host.os.type == "windows" and event.type == "start" and
 ** Name: Scheduled Task/Job
 ** ID: T1053
 ** Reference URL: https://attack.mitre.org/techniques/T1053/
+<<<<<<< HEAD
 * Sub-technique:
 ** Name: Scheduled Task
 ** ID: T1053.005
@@ -129,3 +207,71 @@ process where host.os.type == "windows" and event.type == "start" and
 ** Name: Scheduled Task
 ** ID: T1053.005
 ** Reference URL: https://attack.mitre.org/techniques/T1053/005/
+=======
+
+[[suspicious-execution-via-scheduled-task-history]]
+==== Rule version history
+
+Version 100 (8.5.0 release)::
+* Updated query, changed from:
++
+[source, js]
+----------------------------------
+process where event.type == "start" and /* Schedule service
+cmdline on Win10+ */ process.parent.name : "svchost.exe" and
+process.parent.args : "Schedule" and /* add suspicious programs
+here */ process.pe.original_file_name in
+( "cscript.exe",
+"wscript.exe", "PowerShell.EXE",
+"Cmd.Exe", "MSHTA.EXE",
+"RUNDLL32.EXE", "REGSVR32.EXE",
+"MSBuild.exe", "InstallUtil.exe",
+"RegAsm.exe", "RegSvcs.exe",
+"msxsl.exe", "CONTROL.EXE",
+"EXPLORER.EXE",
+"Microsoft.Workflow.Compiler.exe",
+"msiexec.exe" ) and /* add
+suspicious paths here */ process.args : ( "C:\\Users\\*",
+"C:\\ProgramData\\*", "C:\\Windows\\Temp\\*",
+"C:\\Windows\\Tasks\\*", "C:\\PerfLogs\\*",
+"C:\\Intel\\*", "C:\\Windows\\Debug\\*", "C:\\HP\\*")
+----------------------------------
+
+Version 7 (8.4.0 release)::
+* Updated query, changed from:
++
+[source, js]
+----------------------------------
+process where event.type == "start" and /* Schedule service
+cmdline on Win10+ */ process.parent.name : "svchost.exe" and
+process.parent.args : "Schedule" and /* add suspicious programs
+here */ process.pe.original_file_name in
+( "cscript.exe",
+"wscript.exe", "PowerShell.EXE",
+"Cmd.Exe", "MSHTA.EXE",
+"RUNDLL32.EXE", "REGSVR32.EXE",
+"MSBuild.exe", "InstallUtil.exe",
+"RegAsm.exe", "RegSvcs.exe",
+"msxsl.exe", "CONTROL.EXE",
+"EXPLORER.EXE",
+"Microsoft.Workflow.Compiler.exe",
+"msiexec.exe" ) and /* add
+suspicious paths here */ process.args : ( "C:\\Users\\*",
+"C:\\ProgramData\\*", "C:\\Windows\\Temp\\*",
+"C:\\Windows\\Tasks\\*", "C:\\PerfLogs\\*",
+"C:\\Intel\\*", "C:\\Windows\\Debug\\*", "C:\\HP\\*")
+----------------------------------
+
+Version 5 (8.2.0 release)::
+* Formatting only
+
+Version 4 (7.16.0 release)::
+* Formatting only
+
+Version 3 (7.12.0 release)::
+* Formatting only
+
+Version 2 (7.11.2 release)::
+* Formatting only
+
+>>>>>>> 7c79a644 (8.17.0 Release notes  (#6224))

@@ -5,27 +5,43 @@ Identifies the remote update to a computer account's DnsHostName attribute. If t
 
 *Rule type*: eql
 
+<<<<<<< HEAD
 *Rule indices*: 
 
 * winlogbeat-*
 * logs-system.*
 * logs-windows.*
+=======
+*Rule indices*:
+
+* winlogbeat-*
+* logs-system.*
+>>>>>>> 7c79a644 (8.17.0 Release notes  (#6224))
 
 *Severity*: high
 
 *Risk score*: 73
 
+<<<<<<< HEAD
 *Runs every*: 5m
+=======
+*Runs every*: 5 minutes
+>>>>>>> 7c79a644 (8.17.0 Release notes  (#6224))
 
 *Searches indices from*: now-9m ({ref}/common-options.html#date-math[Date Math format], see also <<rule-schedule, `Additional look-back time`>>)
 
 *Maximum alerts per execution*: 100
 
+<<<<<<< HEAD
 *References*: 
+=======
+*References*:
+>>>>>>> 7c79a644 (8.17.0 Release notes  (#6224))
 
 * https://research.ifcr.dk/certifried-active-directory-domain-privilege-escalation-cve-2022-26923-9e098fe298f4
 * https://portal.msrc.microsoft.com/en-US/security-guidance/advisory/CVE-2022-26923
 
+<<<<<<< HEAD
 *Tags*: 
 
 * Domain: Endpoint
@@ -61,6 +77,50 @@ iam where event.action == "changed-computer-account" and user.id : ("S-1-5-21-*"
 
 ----------------------------------
 
+=======
+*Tags*:
+
+* Elastic
+* Host
+* Windows
+* Threat Detection
+* Privilege Escalation
+* Active Directory
+
+*Version*: 101 (<<remote-computer-account-dnshostname-update-history, version history>>)
+
+*Added ({stack} release)*: 8.3.0
+
+*Last modified ({stack} release)*: 8.6.0
+
+*Rule authors*: Elastic
+
+*Rule license*: Elastic License v2
+
+==== Rule query
+
+
+[source,js]
+----------------------------------
+sequence by host.id with maxspan=5m [authentication where
+event.action == "logged-in" and winlog.logon.type == "Network" and
+event.outcome == "success" and not user.name == "ANONYMOUS LOGON"
+and not winlog.event_data.SubjectUserName : "*$" and not
+user.domain == "NT AUTHORITY" and source.ip != "127.0.0.1" and
+source.ip !="::1"] by winlog.event_data.TargetLogonId [iam where
+event.action == "changed-computer-account" and /* if DnsHostName
+value equal a DC DNS hostname then it's highly suspicious */
+winlog.event_data.DnsHostName : "??*" and /* exclude FPs
+where DnsHostName starts with the ComputerName that was changed */
+not startswith~(winlog.event_data.DnsHostName,
+substring(winlog.event_data.TargetUserName, 0,
+length(winlog.event_data.TargetUserName) - 1)) ] by
+winlog.event_data.SubjectLogonId
+----------------------------------
+
+==== Threat mapping
+
+>>>>>>> 7c79a644 (8.17.0 Release notes  (#6224))
 *Framework*: MITRE ATT&CK^TM^
 
 * Tactic:
@@ -71,6 +131,7 @@ iam where event.action == "changed-computer-account" and user.id : ("S-1-5-21-*"
 ** Name: Exploitation for Privilege Escalation
 ** ID: T1068
 ** Reference URL: https://attack.mitre.org/techniques/T1068/
+<<<<<<< HEAD
 * Technique:
 ** Name: Valid Accounts
 ** ID: T1078
@@ -79,3 +140,32 @@ iam where event.action == "changed-computer-account" and user.id : ("S-1-5-21-*"
 ** Name: Domain Accounts
 ** ID: T1078.002
 ** Reference URL: https://attack.mitre.org/techniques/T1078/002/
+=======
+
+[[remote-computer-account-dnshostname-update-history]]
+==== Rule version history
+
+Version 101 (8.6.0 release)::
+* Updated query, changed from:
++
+[source, js]
+----------------------------------
+sequence by host.id with maxspan=5m [authentication where
+event.action == "logged-in" and winlog.logon.type == "Network" and
+event.outcome == "success" and not user.name == "ANONYMOUS LOGON"
+and not winlog.event_data.SubjectUserName : "*$" and not
+user.domain == "NT AUTHORITY" and source.ip != "127.0.0.1" and
+source.ip !="::1"] by winlog.event_data.TargetLogonId [iam where
+event.action == "changed-computer-account" and /* if DnsHostName
+value equal a DC DNS hostname then it's highly suspicious */
+winlog.event_data.DnsHostName : "??*"] by
+winlog.event_data.SubjectLogonId
+----------------------------------
+
+Version 100 (8.5.0 release)::
+* Formatting only
+
+Version 2 (8.4.0 release)::
+* Formatting only
+
+>>>>>>> 7c79a644 (8.17.0 Release notes  (#6224))

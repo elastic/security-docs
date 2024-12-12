@@ -5,6 +5,7 @@ Identifies a PowerShell process launched by either cscript.exe or wscript.exe. O
 
 *Rule type*: eql
 
+<<<<<<< HEAD
 *Rule indices*: 
 
 * winlogbeat-*
@@ -13,17 +14,29 @@ Identifies a PowerShell process launched by either cscript.exe or wscript.exe. O
 * endgame-*
 * logs-m365_defender.event-*
 * logs-sentinel_one_cloud_funnel.*
+=======
+*Rule indices*:
+
+* winlogbeat-*
+* logs-endpoint.events.*
+* logs-windows.*
+>>>>>>> 7c79a644 (8.17.0 Release notes  (#6224))
 
 *Severity*: low
 
 *Risk score*: 21
 
+<<<<<<< HEAD
 *Runs every*: 5m
+=======
+*Runs every*: 5 minutes
+>>>>>>> 7c79a644 (8.17.0 Release notes  (#6224))
 
 *Searches indices from*: now-9m ({ref}/common-options.html#date-math[Date Math format], see also <<rule-schedule, `Additional look-back time`>>)
 
 *Maximum alerts per execution*: 100
 
+<<<<<<< HEAD
 *References*: 
 
 * https://www.elastic.co/security-labs/operation-bleeding-bear
@@ -73,6 +86,48 @@ This rule looks for the spawn of the `powershell.exe` process with `cscript.exe`
 
 
 - Investigate the process execution chain (parent process tree) for unknown processes. Examine their executable files for prevalence, whether they are located in expected locations, and if they are signed with valid digital signatures.
+=======
+*Tags*:
+
+* Elastic
+* Host
+* Windows
+* Threat Detection
+* Initial Access
+* Investigation Guide
+
+*Version*: 102 (<<windows-script-executing-powershell-history, version history>>)
+
+*Added ({stack} release)*: 7.6.0
+
+*Last modified ({stack} release)*: 8.6.0
+
+*Rule authors*: Elastic
+
+*Rule license*: Elastic License v2
+
+==== Investigation guide
+
+
+[source,markdown]
+----------------------------------
+## Triage and analysis
+
+### Investigating Windows Script Executing PowerShell
+
+The Windows Script Host (WSH) is an Windows automation technology, which is ideal for non-interactive scripting needs,
+such as logon scripting, administrative scripting, and machine automation.
+
+Attackers commonly use WSH scripts as their initial access method, acting like droppers for second stage payloads, but
+can also use them to download tools and utilities needed to accomplish their goals.
+
+This rule looks for the spawn of the `powershell.exe` process with `cscript.exe` or `wscript.exe` as its parent process.
+
+#### Possible investigation steps
+
+- Investigate the process execution chain (parent process tree) for unknown processes. Examine their executable files
+for prevalence, whether they are located in expected locations, and if they are signed with valid digital signatures.
+>>>>>>> 7c79a644 (8.17.0 Release notes  (#6224))
 - Investigate commands executed by the spawned PowerShell process.
 - If unsigned files are found on the process tree, retrieve them and determine if they are malicious:
   - Use a private sandboxed malware analysis system to perform analysis.
@@ -86,6 +141,7 @@ This rule looks for the spawn of the `powershell.exe` process with `cscript.exe`
 - Determine how the script file was delivered (email attachment, dropped by other processes, etc.).
 - Investigate other alerts associated with the user/host during the past 48 hours.
 
+<<<<<<< HEAD
 
 *False positive analysis*
 
@@ -95,6 +151,14 @@ This rule looks for the spawn of the `powershell.exe` process with `cscript.exe`
 
 *Response and remediation*
 
+=======
+### False positive analysis
+
+- The usage of these script engines by regular users is unlikely. In the case of authorized benign true positives
+(B-TPs), exceptions can be added.
+
+### Response and remediation
+>>>>>>> 7c79a644 (8.17.0 Release notes  (#6224))
 
 - Initiate the incident response process based on the outcome of the triage.
 - Isolate the involved host to prevent further post-compromise behavior.
@@ -102,7 +166,12 @@ This rule looks for the spawn of the `powershell.exe` process with `cscript.exe`
   - Implement temporary network rules, procedures, and segmentation to contain the malware.
   - Stop suspicious processes.
   - Immediately block the identified indicators of compromise (IoCs).
+<<<<<<< HEAD
   - Inspect the affected systems for additional malware backdoors like reverse shells, reverse proxies, or droppers that attackers could use to reinfect the system.
+=======
+  - Inspect the affected systems for additional malware backdoors like reverse shells, reverse proxies, or droppers that
+  attackers could use to reinfect the system.
+>>>>>>> 7c79a644 (8.17.0 Release notes  (#6224))
 - Remove and block malicious artifacts identified during triage.
 - If the malicious file was delivered via phishing:
   - Block the email sender from sending future emails.
@@ -110,14 +179,24 @@ This rule looks for the spawn of the `powershell.exe` process with `cscript.exe`
   - Remove emails from the sender from mailboxes.
   - Consider improvements to the security awareness program.
 - Reimage the host operating system and restore compromised files to clean versions.
+<<<<<<< HEAD
 - Run a full antimalware scan. This may reveal additional artifacts left in the system, persistence mechanisms, and malware components.
 - Determine the initial vector abused by the attacker and take action to prevent reinfection through the same vector.
 - Using the incident response data, update logging and audit policies to improve the mean time to detect (MTTD) and the mean time to respond (MTTR).
+=======
+- Run a full antimalware scan. This may reveal additional artifacts left in the system, persistence mechanisms, and
+malware components.
+- Determine the initial vector abused by the attacker and take action to prevent reinfection through the same vector.
+- Using the incident response data, update logging and audit policies to improve the mean time to detect (MTTD) and the
+mean time to respond (MTTR).
+----------------------------------
+>>>>>>> 7c79a644 (8.17.0 Release notes  (#6224))
 
 
 ==== Rule query
 
 
+<<<<<<< HEAD
 [source, js]
 ----------------------------------
 process where host.os.type == "windows" and event.type == "start" and
@@ -129,6 +208,15 @@ process where host.os.type == "windows" and event.type == "start" and
   )
 
 ----------------------------------
+=======
+[source,js]
+----------------------------------
+process where event.type == "start" and process.parent.name :
+("cscript.exe", "wscript.exe") and process.name : "powershell.exe"
+----------------------------------
+
+==== Threat mapping
+>>>>>>> 7c79a644 (8.17.0 Release notes  (#6224))
 
 *Framework*: MITRE ATT&CK^TM^
 
@@ -140,6 +228,7 @@ process where host.os.type == "windows" and event.type == "start" and
 ** Name: Phishing
 ** ID: T1566
 ** Reference URL: https://attack.mitre.org/techniques/T1566/
+<<<<<<< HEAD
 * Sub-technique:
 ** Name: Spearphishing Attachment
 ** ID: T1566.001
@@ -160,3 +249,76 @@ process where host.os.type == "windows" and event.type == "start" and
 ** Name: Visual Basic
 ** ID: T1059.005
 ** Reference URL: https://attack.mitre.org/techniques/T1059/005/
+=======
+
+[[windows-script-executing-powershell-history]]
+==== Rule version history
+
+Version 102 (8.6.0 release)::
+* Formatting only
+
+Version 101 (8.5.0 release)::
+* Updated query, changed from:
++
+[source, js]
+----------------------------------
+process where event.type in ("start", "process_started") and
+process.parent.name : ("cscript.exe", "wscript.exe") and process.name
+: "powershell.exe"
+----------------------------------
+
+Version 13 (8.4.0 release)::
+* Formatting only
+
+Version 11 (8.3.0 release)::
+* Formatting only
+
+Version 10 (8.2.0 release)::
+* Formatting only
+
+Version 9 (7.13.0 release)::
+* Updated query, changed from:
++
+[source, js]
+----------------------------------
+event.category:process and event.type:(start or process_started) and
+process.parent.name:(cscript.exe or wscript.exe) and
+process.name:powershell.exe
+----------------------------------
+
+Version 8 (7.12.0 release)::
+* Formatting only
+
+Version 7 (7.11.2 release)::
+* Formatting only
+
+Version 6 (7.11.0 release)::
+* Formatting only
+
+Version 5 (7.10.0 release)::
+* Formatting only
+
+Version 4 (7.9.1 release)::
+* Formatting only
+
+Version 3 (7.9.0 release)::
+* Updated query, changed from:
++
+[source, js]
+----------------------------------
+event.action:"Process Create (rule: ProcessCreate)" and
+process.parent.name:(cscript.exe or wscript.exe) and
+process.name:powershell.exe
+----------------------------------
+
+Version 2 (7.7.0 release)::
+* Updated query, changed from:
++
+[source, js]
+----------------------------------
+event.action:"Process Create (rule: ProcessCreate)" and
+process.parent.name:("wscript.exe" or "cscript.exe") and
+process.name:"powershell.exe"
+----------------------------------
+
+>>>>>>> 7c79a644 (8.17.0 Release notes  (#6224))

@@ -5,28 +5,44 @@ Identifies the modification of an account's Kerberos pre-authentication options.
 
 *Rule type*: query
 
+<<<<<<< HEAD
 *Rule indices*: 
 
 * winlogbeat-*
 * logs-system.*
 * logs-windows.*
+=======
+*Rule indices*:
+
+* winlogbeat-*
+* logs-system.*
+>>>>>>> 7c79a644 (8.17.0 Release notes  (#6224))
 
 *Severity*: medium
 
 *Risk score*: 47
 
+<<<<<<< HEAD
 *Runs every*: 5m
+=======
+*Runs every*: 5 minutes
+>>>>>>> 7c79a644 (8.17.0 Release notes  (#6224))
 
 *Searches indices from*: now-9m ({ref}/common-options.html#date-math[Date Math format], see also <<rule-schedule, `Additional look-back time`>>)
 
 *Maximum alerts per execution*: 100
 
+<<<<<<< HEAD
 *References*: 
+=======
+*References*:
+>>>>>>> 7c79a644 (8.17.0 Release notes  (#6224))
 
 * https://harmj0y.medium.com/roasting-as-reps-e6179a65216b
 * https://docs.microsoft.com/en-us/windows/security/threat-protection/auditing/event-4738
 * https://github.com/atc-project/atomic-threat-coverage/blob/master/Atomic_Threat_Coverage/Logging_Policies/LP_0026_windows_audit_user_account_management.md
 
+<<<<<<< HEAD
 *Tags*: 
 
 * Domain: Endpoint
@@ -67,12 +83,55 @@ AS-REP roasting is an attack against Kerberos for user accounts that do not requ
 
 *Possible investigation steps*
 
+=======
+*Tags*:
+
+* Elastic
+* Host
+* Windows
+* Threat Detection
+* Credential Access
+* Investigation Guide
+
+*Version*: 102 (<<kerberos-pre-authentication-disabled-for-user-history, version history>>)
+
+*Added ({stack} release)*: 8.1.0
+
+*Last modified ({stack} release)*: 8.6.0
+
+*Rule authors*: Elastic
+
+*Rule license*: Elastic License v2
+
+==== Investigation guide
+
+
+[source,markdown]
+----------------------------------
+## Triage and analysis
+
+### Investigating Kerberos Pre-authentication Disabled for User
+
+Kerberos pre-authentication is an account protection against offline password cracking. When enabled, a user requesting
+access to a resource initiates communication with the Domain Controller (DC) by sending an Authentication Server Request
+(AS-REQ) message with a timestamp that is encrypted with the hash of their password. If and only if the DC is able to
+successfully decrypt the timestamp with the hash of the user’s password, it will then send an Authentication Server
+Response (AS-REP) message that contains the Ticket Granting Ticket (TGT) to the user. Part of the AS-REP message is
+signed with the user’s password. Microsoft's security monitoring [recommendations](https://docs.microsoft.com/en-us/windows/security/threat-protection/auditing/event-4738) state that `'Don't Require Preauth' – Enabled` should not be enabled for user accounts because it weakens security for the account’s Kerberos authentication.
+
+AS-REP roasting is an attack against Kerberos for user accounts that do not require pre-authentication, which means that
+if the target user has pre-authentication disabled, an attacker can request authentication data for it and get a TGT that
+can be brute-forced offline, similarly to Kerberoasting.
+
+#### Possible investigation steps
+>>>>>>> 7c79a644 (8.17.0 Release notes  (#6224))
 
 - Identify the user account that performed the action and whether it should perform this kind of action.
 - Contact the account owner and confirm whether they are aware of this activity.
 - Determine if the target account is sensitive or privileged.
 - Inspect the account activities for suspicious or abnormal behaviors in the alert timeframe.
 
+<<<<<<< HEAD
 
 *False positive analysis*
 
@@ -82,11 +141,20 @@ AS-REP roasting is an attack against Kerberos for user accounts that do not requ
 
 *Response and remediation*
 
+=======
+### False positive analysis
+
+- Disabling pre-authentication is a bad security practice and should not be allowed in the domain. The security team
+should map and monitor any potential benign true positives (B-TPs), especially if the target account is privileged.
+
+### Response and remediation
+>>>>>>> 7c79a644 (8.17.0 Release notes  (#6224))
 
 - Initiate the incident response process based on the outcome of the triage.
 - Reset the target account's password if there is any risk of TGTs having been retrieved.
 - Re-enable the preauthentication option or disable the target account.
 - Review the privileges assigned to the involved users to ensure that the least privilege principle is being followed.
+<<<<<<< HEAD
 - Investigate credential exposure on systems compromised or used by the attacker to ensure all compromised accounts are identified. Reset passwords for these accounts and other potentially compromised credentials, such as email, business systems, and web services.
 - Using the incident response data, update logging and audit policies to improve the mean time to detect (MTTD) and the mean time to respond (MTTR).
 
@@ -111,16 +179,33 @@ Audit Policies >
 Account Management >
 Audit User Account Management (Success,Failure)
 ```
+=======
+- Investigate credential exposure on systems compromised or used by the attacker to ensure all compromised accounts are
+identified. Reset passwords for these accounts and other potentially compromised credentials, such as email, business
+systems, and web services.
+- Using the incident response data, update logging and audit policies to improve the mean time to detect (MTTD) and the
+mean time to respond (MTTR).
+----------------------------------
+>>>>>>> 7c79a644 (8.17.0 Release notes  (#6224))
 
 
 ==== Rule query
 
 
+<<<<<<< HEAD
 [source, js]
 ----------------------------------
 event.code:4738 and winlog.api:"wineventlog" and message:"'Don't Require Preauth' - Enabled"
 
 ----------------------------------
+=======
+[source,js]
+----------------------------------
+event.code:4738 and message:"'Don't Require Preauth' - Enabled"
+----------------------------------
+
+==== Threat mapping
+>>>>>>> 7c79a644 (8.17.0 Release notes  (#6224))
 
 *Framework*: MITRE ATT&CK^TM^
 
@@ -132,6 +217,7 @@ event.code:4738 and winlog.api:"wineventlog" and message:"'Don't Require Preauth
 ** Name: Steal or Forge Kerberos Tickets
 ** ID: T1558
 ** Reference URL: https://attack.mitre.org/techniques/T1558/
+<<<<<<< HEAD
 * Sub-technique:
 ** Name: AS-REP Roasting
 ** ID: T1558.004
@@ -156,3 +242,23 @@ event.code:4738 and winlog.api:"wineventlog" and message:"'Don't Require Preauth
 ** Name: Domain Accounts
 ** ID: T1078.002
 ** Reference URL: https://attack.mitre.org/techniques/T1078/002/
+=======
+
+[[kerberos-pre-authentication-disabled-for-user-history]]
+==== Rule version history
+
+Version 102 (8.6.0 release)::
+* Formatting only
+
+Version 101 (8.5.0 release)::
+* Formatting only
+
+Version 5 (8.4.0 release)::
+* Formatting only
+
+Version 3 (8.3.0 release)::
+* Formatting only
+
+Version 2 (8.2.0 release)::
+* Rule name changed from: Kerberos Preauthentication Disabled for User
+>>>>>>> 7c79a644 (8.17.0 Release notes  (#6224))

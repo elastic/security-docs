@@ -5,6 +5,7 @@ Identifies unusual child processes of Service Host (svchost.exe) that traditiona
 
 *Rule type*: eql
 
+<<<<<<< HEAD
 *Rule indices*: 
 
 * logs-endpoint.events.process-*
@@ -13,17 +14,29 @@ Identifies unusual child processes of Service Host (svchost.exe) that traditiona
 * endgame-*
 * logs-m365_defender.event-*
 * logs-sentinel_one_cloud_funnel.*
+=======
+*Rule indices*:
+
+* logs-endpoint.events.*
+* winlogbeat-*
+* logs-windows.*
+>>>>>>> 7c79a644 (8.17.0 Release notes  (#6224))
 
 *Severity*: medium
 
 *Risk score*: 47
 
+<<<<<<< HEAD
 *Runs every*: 5m
+=======
+*Runs every*: 5 minutes
+>>>>>>> 7c79a644 (8.17.0 Release notes  (#6224))
 
 *Searches indices from*: now-9m ({ref}/common-options.html#date-math[Date Math format], see also <<rule-schedule, `Additional look-back time`>>)
 
 *Maximum alerts per execution*: 100
 
+<<<<<<< HEAD
 *References*: None
 
 *Tags*: 
@@ -47,10 +60,44 @@ Identifies unusual child processes of Service Host (svchost.exe) that traditiona
 
 *Rule license*: Elastic License v2
 
+=======
+*Tags*:
+
+* Elastic
+* Host
+* Windows
+* Threat Detection
+* Defense Evasion
+* Privilege Escalation
+
+*Version*: 101 (<<unusual-service-host-child-process-childless-service-history, version history>>)
+
+*Added ({stack} release)*: 7.11.0
+
+*Last modified ({stack} release)*: 8.5.0
+
+*Rule authors*: Elastic
+
+*Rule license*: Elastic License v2
+
+==== Potential false positives
+
+Changes to Windows services or a rarely executed child process.
+
+==== Investigation guide
+
+
+[source,markdown]
+----------------------------------
+
+----------------------------------
+
+>>>>>>> 7c79a644 (8.17.0 Release notes  (#6224))
 
 ==== Rule query
 
 
+<<<<<<< HEAD
 [source, js]
 ----------------------------------
 process where host.os.type == "windows" and event.type == "start" and
@@ -82,6 +129,33 @@ process where host.os.type == "windows" and event.type == "start" and
 
 ----------------------------------
 
+=======
+[source,js]
+----------------------------------
+process where event.type == "start" and process.parent.name :
+"svchost.exe" and /* based on svchost service arguments -s
+svcname where the service is known to be childless */
+process.parent.args : ("WdiSystemHost","LicenseManager",
+"StorSvc","CDPSvc","cdbhsvc","BthAvctpSvc","SstpSvc","WdiServiceHost",
+"imgsvc","TrkWks","WpnService","IKEEXT","PolicyAgent","CryptSvc",
+"netprofm","ProfSvc","StateRepository","camsvc","LanmanWorkstation",
+"NlaSvc","EventLog","hidserv","DisplayEnhancementService","ShellHWDete
+ction", "AppHostSvc","fhsvc","CscService","PushToInstall") and
+/* unknown FPs can be added here */ not process.name :
+("WerFault.exe","WerFaultSecure.exe","wermgr.exe") and not
+(process.executable : "?:\\Windows\\System32\\RelPost.exe" and
+process.parent.args : "WdiSystemHost") and not (process.name :
+"rundll32.exe" and process.args :
+"?:\\WINDOWS\\System32\\winethc.dll,ForceProxyDetectionOnNextRun" and
+process.parent.args : "WdiServiceHost") and not
+(process.executable : ("?:\\Program Files\\*", "?:\\Program Files
+(x86)\\*", "?:\\Windows\\System32\\Kodak\\kds_i4x50\\lib\\lexexe.exe")
+and process.parent.args : "imgsvc")
+----------------------------------
+
+==== Threat mapping
+
+>>>>>>> 7c79a644 (8.17.0 Release notes  (#6224))
 *Framework*: MITRE ATT&CK^TM^
 
 * Tactic:
@@ -92,10 +166,15 @@ process where host.os.type == "windows" and event.type == "start" and
 ** Name: Process Injection
 ** ID: T1055
 ** Reference URL: https://attack.mitre.org/techniques/T1055/
+<<<<<<< HEAD
 * Sub-technique:
 ** Name: Process Hollowing
 ** ID: T1055.012
 ** Reference URL: https://attack.mitre.org/techniques/T1055/012/
+=======
+
+
+>>>>>>> 7c79a644 (8.17.0 Release notes  (#6224))
 * Tactic:
 ** Name: Defense Evasion
 ** ID: TA0005
@@ -104,7 +183,69 @@ process where host.os.type == "windows" and event.type == "start" and
 ** Name: Process Injection
 ** ID: T1055
 ** Reference URL: https://attack.mitre.org/techniques/T1055/
+<<<<<<< HEAD
 * Sub-technique:
 ** Name: Process Hollowing
 ** ID: T1055.012
 ** Reference URL: https://attack.mitre.org/techniques/T1055/012/
+=======
+
+[[unusual-service-host-child-process-childless-service-history]]
+==== Rule version history
+
+Version 101 (8.5.0 release)::
+* Updated query, changed from:
++
+[source, js]
+----------------------------------
+process where event.type in ("start", "process_started") and
+process.parent.name : "svchost.exe" and /* based on svchost
+service arguments -s svcname where the service is known to be
+childless */ process.parent.args :
+("WdiSystemHost","LicenseManager",
+"StorSvc","CDPSvc","cdbhsvc","BthAvctpSvc","SstpSvc","WdiServiceHost",
+"imgsvc","TrkWks","WpnService","IKEEXT","PolicyAgent","CryptSvc",
+"netprofm","ProfSvc","StateRepository","camsvc","LanmanWorkstation",
+"NlaSvc","EventLog","hidserv","DisplayEnhancementService","ShellHWDete
+ction", "AppHostSvc","fhsvc","CscService","PushToInstall") and
+/* unknown FPs can be added here */ not process.name :
+("WerFault.exe","WerFaultSecure.exe","wermgr.exe") and not
+(process.executable : "?:\\Windows\\System32\\RelPost.exe" and
+process.parent.args : "WdiSystemHost") and not (process.name :
+"rundll32.exe" and process.args :
+"?:\\WINDOWS\\System32\\winethc.dll,ForceProxyDetectionOnNextRun" and
+process.parent.args : "WdiServiceHost") and not
+(process.executable : ("?:\\Program Files\\*", "?:\\Program Files
+(x86)\\*", "?:\\Windows\\System32\\Kodak\\kds_i4x50\\lib\\lexexe.exe")
+and process.parent.args : "imgsvc")
+----------------------------------
+
+Version 6 (8.4.0 release)::
+* Updated query, changed from:
++
+[source, js]
+----------------------------------
+process where event.type in ("start", "process_started") and
+process.parent.name : "svchost.exe" and /* based on svchost
+service arguments -s svcname where the service is known to be
+childless */ process.parent.args :
+("WdiSystemHost","LicenseManager",
+"StorSvc","CDPSvc","cdbhsvc","BthAvctpSvc","SstpSvc","WdiServiceHost",
+"imgsvc","TrkWks","WpnService","IKEEXT","PolicyAgent","CryptSvc",
+"netprofm","ProfSvc","StateRepository","camsvc","LanmanWorkstation",
+"NlaSvc","EventLog","hidserv","DisplayEnhancementService","ShellHWDete
+ction", "AppHostSvc","fhsvc","CscService","PushToInstall") and
+/* unknown FPs can be added here */ not process.name :
+("WerFault.exe","WerFaultSecure.exe","wermgr.exe")
+----------------------------------
+
+Version 4 (8.2.0 release)::
+* Formatting only
+
+Version 3 (7.12.0 release)::
+* Formatting only
+
+Version 2 (7.11.2 release)::
+* Formatting only
+
+>>>>>>> 7c79a644 (8.17.0 Release notes  (#6224))

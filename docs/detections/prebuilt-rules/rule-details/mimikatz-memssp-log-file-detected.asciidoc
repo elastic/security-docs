@@ -5,6 +5,7 @@ Identifies the password log file from the default Mimikatz memssp module.
 
 *Rule type*: eql
 
+<<<<<<< HEAD
 *Rule indices*: 
 
 * winlogbeat-*
@@ -13,17 +14,30 @@ Identifies the password log file from the default Mimikatz memssp module.
 * endgame-*
 * logs-sentinel_one_cloud_funnel.*
 * logs-m365_defender.event-*
+=======
+*Rule indices*:
+
+* winlogbeat-*
+* logs-endpoint.events.*
+* logs-windows.*
+* endgame-*
+>>>>>>> 7c79a644 (8.17.0 Release notes  (#6224))
 
 *Severity*: high
 
 *Risk score*: 73
 
+<<<<<<< HEAD
 *Runs every*: 5m
+=======
+*Runs every*: 5 minutes
+>>>>>>> 7c79a644 (8.17.0 Release notes  (#6224))
 
 *Searches indices from*: now-9m ({ref}/common-options.html#date-math[Date Math format], see also <<rule-schedule, `Additional look-back time`>>)
 
 *Maximum alerts per execution*: 100
 
+<<<<<<< HEAD
 *References*: 
 
 * https://www.elastic.co/security-labs/detect-credential-access
@@ -72,12 +86,64 @@ This rule looks for the creation of a file named `mimilsa.log`, which is generat
 - Investigate the script execution chain (parent process tree) for unknown processes. Examine their executable files for prevalence, whether they are located in expected locations, and if they are signed with valid digital signatures.
 - Investigate other alerts associated with the user/host during the past 48 hours.
 - Investigate potentially compromised accounts. Analysts can do this by searching for login events (e.g., 4624) to the target host.
+=======
+*References*:
+
+* https://www.elastic.co/security-labs/detect-credential-access
+
+*Tags*:
+
+* Elastic
+* Host
+* Windows
+* Threat Detection
+* Credential Access
+* Investigation Guide
+* Elastic Endgame
+
+*Version*: 102 (<<mimikatz-memssp-log-file-detected-history, version history>>)
+
+*Added ({stack} release)*: 7.10.0
+
+*Last modified ({stack} release)*: 8.6.0
+
+*Rule authors*: Elastic
+
+*Rule license*: Elastic License v2
+
+==== Investigation guide
+
+
+[source,markdown]
+----------------------------------
+## Triage and analysis
+
+### Investigating Mimikatz Memssp Log File Detected
+
+[Mimikatz](https://github.com/gentilkiwi/mimikatz) is an open-source tool used to collect, decrypt, and/or use cached
+credentials. This tool is commonly abused by adversaries during the post-compromise stage where adversaries have gained
+an initial foothold on an endpoint and are looking to elevate privileges and seek out additional authentication objects
+such as tokens/hashes/credentials that can then be used to laterally move and pivot across a network.
+
+This rule looks for the creation of a file named `mimilsa.log`, which is generated when using the Mimikatz misc::memssp
+module, which injects a malicious Windows SSP to collect locally authenticated credentials, which includes the computer
+account password, running service credentials, and any accounts that logon.
+
+#### Possible investigation steps
+
+- Investigate the script execution chain (parent process tree) for unknown processes. Examine their executable files for
+prevalence, whether they are located in expected locations, and if they are signed with valid digital signatures.
+- Investigate other alerts associated with the user/host during the past 48 hours.
+- Investigate potentially compromised accounts. Analysts can do this by searching for login events (e.g., 4624) to the target
+host.
+>>>>>>> 7c79a644 (8.17.0 Release notes  (#6224))
 - Retrieve and inspect the log file contents.
 - Search for DLL files created in the same location as the log file, and retrieve unsigned DLLs.
   - Use the PowerShell Get-FileHash cmdlet to get the SHA-256 hash value of these files.
     - Search for the existence of these files in resources like VirusTotal, Hybrid-Analysis, CISCO Talos, Any.run, etc.
   - Identify the process that created the DLL using file creation events.
 
+<<<<<<< HEAD
 
 *False positive analysis*
 
@@ -93,11 +159,23 @@ This rule looks for the creation of a file named `mimilsa.log`, which is generat
 
 *Response and remediation*
 
+=======
+### False positive analysis
+
+- This file name `mimilsa.log` should not legitimately be created.
+
+### Related rules
+
+- Mimikatz Powershell Module Activity - ac96ceb8-4399-4191-af1d-4feeac1f1f46
+
+### Response and remediation
+>>>>>>> 7c79a644 (8.17.0 Release notes  (#6224))
 
 - Initiate the incident response process based on the outcome of the triage.
 - Isolate the involved hosts to prevent further post-compromise behavior.
 - If the host is a Domain Controller (DC):
   - Activate your incident response plan for total Active Directory compromise.
+<<<<<<< HEAD
   - Review the privileges assigned to users that can access the DCs to ensure that the least privilege principle is being followed and reduce the attack surface.
 - Investigate credential exposure on systems compromised or used by the attacker to ensure all compromised accounts are identified. Reset passwords for these accounts and other potentially compromised credentials, such as email, business systems, and web services.
 - Reboot the host to remove the injected SSP from memory.
@@ -119,16 +197,40 @@ events will not define `event.ingested` and default fallback for EQL rules was n
 Hence for this rule to work effectively, users will need to add a custom ingest pipeline to populate
 `event.ingested` to @timestamp.
 For more details on adding a custom ingest pipeline refer - https://www.elastic.co/guide/en/fleet/current/data-streams-pipeline-tutorial.html
+=======
+  - Review the privileges assigned to users that can access the DCs to ensure that the least privilege principle is
+  being followed and reduce the attack surface.
+- Investigate credential exposure on systems compromised or used by the attacker to ensure all compromised accounts are
+identified. Reset passwords for these accounts and other potentially compromised credentials, such as email, business
+systems, and web services.
+- Reboot the host to remove the injected SSP from memory.
+- Reimage the host operating system or restore compromised files to clean versions.
+- Run a full antimalware scan. This may reveal additional artifacts left in the system, persistence mechanisms, and
+malware components.
+- Determine the initial vector abused by the attacker and take action to prevent reinfection through the same vector.
+- Using the incident response data, update logging and audit policies to improve the mean time to detect (MTTD) and the
+mean time to respond (MTTR).
+----------------------------------
+>>>>>>> 7c79a644 (8.17.0 Release notes  (#6224))
 
 
 ==== Rule query
 
 
+<<<<<<< HEAD
 [source, js]
 ----------------------------------
 file where host.os.type == "windows" and file.name : "mimilsa.log" and process.name : "lsass.exe"
 
 ----------------------------------
+=======
+[source,js]
+----------------------------------
+file where file.name : "mimilsa.log" and process.name : "lsass.exe"
+----------------------------------
+
+==== Threat mapping
+>>>>>>> 7c79a644 (8.17.0 Release notes  (#6224))
 
 *Framework*: MITRE ATT&CK^TM^
 
@@ -140,3 +242,40 @@ file where host.os.type == "windows" and file.name : "mimilsa.log" and process.n
 ** Name: OS Credential Dumping
 ** ID: T1003
 ** Reference URL: https://attack.mitre.org/techniques/T1003/
+<<<<<<< HEAD
+=======
+
+[[mimikatz-memssp-log-file-detected-history]]
+==== Rule version history
+
+Version 102 (8.6.0 release)::
+* Formatting only
+
+Version 101 (8.5.0 release)::
+* Formatting only
+
+Version 8 (8.4.0 release)::
+* Formatting only
+
+Version 6 (8.3.0 release)::
+* Formatting only
+
+Version 5 (8.2.0 release)::
+* Formatting only
+
+Version 4 (7.13.0 release)::
+* Updated query, changed from:
++
+[source, js]
+----------------------------------
+event.category:file and file.name:mimilsa.log and
+process.name:lsass.exe
+----------------------------------
+
+Version 3 (7.12.0 release)::
+* Formatting only
+
+Version 2 (7.11.2 release)::
+* Formatting only
+
+>>>>>>> 7c79a644 (8.17.0 Release notes  (#6224))

@@ -5,22 +5,34 @@ Identifies multiple consecutive logon failures from the same source address and 
 
 *Rule type*: eql
 
+<<<<<<< HEAD
 *Rule indices*: 
 
 * winlogbeat-*
 * logs-system.security*
 * logs-windows.forwarded*
+=======
+*Rule indices*:
+
+* winlogbeat-*
+* logs-system.*
+>>>>>>> 7c79a644 (8.17.0 Release notes  (#6224))
 
 *Severity*: medium
 
 *Risk score*: 47
 
+<<<<<<< HEAD
 *Runs every*: 5m
+=======
+*Runs every*: 5 minutes
+>>>>>>> 7c79a644 (8.17.0 Release notes  (#6224))
 
 *Searches indices from*: now-9m ({ref}/common-options.html#date-math[Date Math format], see also <<rule-schedule, `Additional look-back time`>>)
 
 *Maximum alerts per execution*: 100
 
+<<<<<<< HEAD
 *References*: 
 
 * https://docs.microsoft.com/en-us/windows/security/threat-protection/auditing/event-4625
@@ -124,11 +136,76 @@ This rule identifies potential password guessing/brute force activity from a sin
 
 
 - In some cases the source network address in Windows events 4625/4624 is not populated due to Microsoft logging limitations (examples in the references links). This edge case will break the rule condition and it won't trigger an alert.
+=======
+*References*:
+
+* https://docs.microsoft.com/en-us/windows/security/threat-protection/auditing/event-4625
+
+*Tags*:
+
+* Elastic
+* Host
+* Windows
+* Threat Detection
+* Credential Access
+
+*Version*: 1
+
+*Added ({stack} release)*: 8.5.0
+
+*Rule authors*: Elastic
+
+*Rule license*: Elastic License v2
+
+==== Investigation guide
+
+
+[source,markdown]
+----------------------------------
+## Triage and analysis
+
+#### Possible investigation steps
+
+- Investigate the logon failure reason code and the targeted user names.
+- Investigate the source IP address of the failed Network Logon attempts.
+- Investigate other alerts associated with the user/host during the past 48 hours.
+- Identify the source and the target computer and their roles in the IT environment.
+
+### False positive analysis
+
+- Authentication misconfiguration or obsolete credentials.
+- Service account password expired.
+- Trust relationship between the primary domain and the trusted domain issue.
+- Infrastructure or availability issue.
+
+### Related rules
+
+- Multiple Logon Failure Followed by Logon Success - 4e85dc8a-3e41-40d8-bc28-91af7ac6cf60
+
+### Response and remediation
+
+- Initiate the incident response process based on the outcome of the triage.
+- If the host is a domain controller (DC):
+  - Activate your incident response plan for total Active Directory compromise.
+  - Review the privileges assigned to users that can access the DCs, to ensure that the least privilege principle is
+  being followed and to reduce the attack surface.
+- Isolate the involved hosts to prevent further post-compromise behavior.
+- Investigate credential exposure on systems compromised or used by the attacker to ensure all compromised accounts are
+identified. Reset passwords for these accounts and other potentially compromised credentials, such as email, business
+systems, and web services.
+- Run a full antimalware scan. This may reveal additional artifacts left in the system, persistence mechanisms, and
+malware components.
+- Determine the initial vector abused by the attacker and take action to prevent reinfection through the same vector.
+- Using the incident response data, update logging and audit policies to improve the mean time to detect (MTTD) and the
+mean time to respond (MTTR).
+----------------------------------
+>>>>>>> 7c79a644 (8.17.0 Release notes  (#6224))
 
 
 ==== Rule query
 
 
+<<<<<<< HEAD
 [source, js]
 ----------------------------------
 sequence by winlog.computer_name, source.ip with maxspan=10s
@@ -149,6 +226,28 @@ sequence by winlog.computer_name, source.ip with maxspan=10s
 
 ----------------------------------
 
+=======
+[source,js]
+----------------------------------
+sequence by host.id, source.ip with maxspan=10s [authentication
+where event.action == "logon-failed" and /* event 4625 need to be
+logged */ winlog.logon.type : "Network" and source.ip != null
+and source.ip != "127.0.0.1" and source.ip != "::1" and not
+user.name : ("ANONYMOUS LOGON", "-", "*$") and not user.domain == "NT
+AUTHORITY" and /* noisy failure status codes often
+associated to authentication misconfiguration : 0xC000015B - The
+user has not been granted the requested logon type (also called the
+logon right) at this machine. 0XC000005E - There are currently no
+logon servers available to service the logon request. 0XC0000133
+- Clocks between DC and other computer too far out of sync.
+0XC0000192 An attempt was made to logon, but the Netlogon service was
+not started. */ not winlog.event_data.Status : ("0xC000015B",
+"0XC000005E", "0XC0000133", "0XC0000192")] with runs=10
+----------------------------------
+
+==== Threat mapping
+
+>>>>>>> 7c79a644 (8.17.0 Release notes  (#6224))
 *Framework*: MITRE ATT&CK^TM^
 
 * Tactic:
@@ -159,6 +258,7 @@ sequence by winlog.computer_name, source.ip with maxspan=10s
 ** Name: Brute Force
 ** ID: T1110
 ** Reference URL: https://attack.mitre.org/techniques/T1110/
+<<<<<<< HEAD
 * Sub-technique:
 ** Name: Password Guessing
 ** ID: T1110.001
@@ -167,3 +267,5 @@ sequence by winlog.computer_name, source.ip with maxspan=10s
 ** Name: Password Spraying
 ** ID: T1110.003
 ** Reference URL: https://attack.mitre.org/techniques/T1110/003/
+=======
+>>>>>>> 7c79a644 (8.17.0 Release notes  (#6224))

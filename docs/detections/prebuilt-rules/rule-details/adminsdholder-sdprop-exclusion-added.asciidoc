@@ -5,27 +5,43 @@ Identifies a modification on the dsHeuristics attribute on the bit that holds th
 
 *Rule type*: eql
 
+<<<<<<< HEAD
 *Rule indices*: 
 
 * winlogbeat-*
 * logs-system.*
 * logs-windows.*
+=======
+*Rule indices*:
+
+* winlogbeat-*
+* logs-system.*
+>>>>>>> 7c79a644 (8.17.0 Release notes  (#6224))
 
 *Severity*: high
 
 *Risk score*: 73
 
+<<<<<<< HEAD
 *Runs every*: 5m
+=======
+*Runs every*: 5 minutes
+>>>>>>> 7c79a644 (8.17.0 Release notes  (#6224))
 
 *Searches indices from*: now-9m ({ref}/common-options.html#date-math[Date Math format], see also <<rule-schedule, `Additional look-back time`>>)
 
 *Maximum alerts per execution*: 100
 
+<<<<<<< HEAD
 *References*: 
+=======
+*References*:
+>>>>>>> 7c79a644 (8.17.0 Release notes  (#6224))
 
 * https://www.cert.ssi.gouv.fr/uploads/guide-ad.html#dsheuristics_bad
 * https://petri.com/active-directory-security-understanding-adminsdholder-object
 
+<<<<<<< HEAD
 *Tags*: 
 
 * Domain: Endpoint
@@ -72,6 +88,57 @@ This rule matches changes of the dsHeuristics object where the 16th bit is set t
 
 *Possible investigation steps*
 
+=======
+*Tags*:
+
+* Elastic
+* Host
+* Windows
+* Threat Detection
+* Persistence
+* Active Directory
+* Investigation Guide
+
+*Version*: 102 (<<adminsdholder-sdprop-exclusion-added-history, version history>>)
+
+*Added ({stack} release)*: 8.2.0
+
+*Last modified ({stack} release)*: 8.6.0
+
+*Rule authors*: Elastic
+
+*Rule license*: Elastic License v2
+
+==== Investigation guide
+
+
+[source,markdown]
+----------------------------------
+## Triage and analysis
+
+### Investigating AdminSDHolder SDProp Exclusion Added
+
+The SDProp process compares the permissions on protected objects with those defined on the AdminSDHolder object. If the
+permissions on any of the protected accounts and groups do not match, it resets the permissions on the protected
+accounts and groups to match those defined in the domain AdminSDHolder object.
+
+The dSHeuristics is a Unicode string attribute, in which each character in the string represents a heuristic that is
+used to determine the behavior of Active Directory.
+
+Administrators can use the dSHeuristics attribute to exclude privilege groups from the SDProp process by setting the
+16th bit (dwAdminSDExMask) of the string to a certain value, which represents the group(s):
+
+* For example, to exclude the Account Operators group, an administrator would modify the string, so the 16th character
+is set to 1 (i.e., 0000000001000001).
+
+The usage of this exclusion can leave the accounts unprotected and facilitate the misconfiguration of privileges for the
+excluded groups, enabling attackers to add accounts to these groups to maintain long-term persistence with high
+privileges.
+
+This rule matches changes of the dsHeuristics object where the 16th bit is set to a value other than zero.
+
+#### Possible investigation steps
+>>>>>>> 7c79a644 (8.17.0 Release notes  (#6224))
 
 - Identify the user account that performed the action and whether it should perform this kind of action.
 - Contact the account and system owners and confirm whether they are aware of this activity.
@@ -81,6 +148,7 @@ This rule matches changes of the dsHeuristics object where the 16th bit is set t
     - Server Operators eq 2
     - Print Operators eq 4
     - Backup Operators eq 8
+<<<<<<< HEAD
     The field value can range from 0 to f (15). If more than one group is specified, the values will be summed together; for example, Backup Operators and Print Operators will set the `c` value on the bit.
 
 
@@ -123,11 +191,28 @@ events will not define `event.ingested` and default fallback for EQL rules was n
 Hence for this rule to work effectively, users will need to add a custom ingest pipeline to populate
 `event.ingested` to @timestamp.
 For more details on adding a custom ingest pipeline refer - https://www.elastic.co/guide/en/fleet/current/data-streams-pipeline-tutorial.html
+=======
+    The field value can range from 0 to f (15). If more than one group is specified, the values will be summed together;
+    for example, Backup Operators and Print Operators will set the `c` value on the bit.
+
+### False positive analysis
+
+- While this modification can be done legitimately, it is not a best practice. Any potential benign true positive (B-TP)
+should be mapped and reviewed by the security team for alternatives as this weakens the security of the privileged group.
+
+### Response and remediation
+
+- The change can be reverted by setting the dwAdminSDExMask (16th bit) to 0 in dSHeuristics.
+- Using the incident response data, update logging and audit policies to improve the mean time to detect (MTTD) and the
+mean time to respond (MTTR).
+----------------------------------
+>>>>>>> 7c79a644 (8.17.0 Release notes  (#6224))
 
 
 ==== Rule query
 
 
+<<<<<<< HEAD
 [source, js]
 ----------------------------------
 any where event.action in ("Directory Service Changes", "directory-service-object-modified") and
@@ -137,6 +222,17 @@ any where event.action in ("Directory Service Changes", "directory-service-objec
   winlog.event_data.AttributeValue regex~ "[0-9]{15}([1-9a-f]).*"
 
 ----------------------------------
+=======
+[source,js]
+----------------------------------
+any where event.action == "Directory Service Changes" and event.code
+== "5136" and winlog.event_data.AttributeLDAPDisplayName :
+"dSHeuristics" and length(winlog.event_data.AttributeValue) > 15 and
+winlog.event_data.AttributeValue regex~ "[0-9]{15}([1-9a-f]).*"
+----------------------------------
+
+==== Threat mapping
+>>>>>>> 7c79a644 (8.17.0 Release notes  (#6224))
 
 *Framework*: MITRE ATT&CK^TM^
 
@@ -144,6 +240,7 @@ any where event.action in ("Directory Service Changes", "directory-service-objec
 ** Name: Persistence
 ** ID: TA0003
 ** Reference URL: https://attack.mitre.org/tactics/TA0003/
+<<<<<<< HEAD
 * Technique:
 ** Name: Valid Accounts
 ** ID: T1078
@@ -156,3 +253,28 @@ any where event.action in ("Directory Service Changes", "directory-service-objec
 ** Name: Account Manipulation
 ** ID: T1098
 ** Reference URL: https://attack.mitre.org/techniques/T1098/
+=======
+
+[[adminsdholder-sdprop-exclusion-added-history]]
+==== Rule version history
+
+Version 102 (8.6.0 release)::
+* Formatting only
+
+Version 101 (8.5.0 release)::
+* Formatting only
+
+Version 4 (8.4.0 release)::
+* Formatting only
+
+Version 2 (8.3.0 release)::
+* Updated query, changed from:
++
+[source, js]
+----------------------------------
+any where event.action == "Directory Service Changes" and event.code
+== "5136" and length(winlog.event_data.AttributeValue) > 15 and
+winlog.event_data.AttributeValue regex~ "[0-9]{15}([1-9a-f]).*"
+----------------------------------
+
+>>>>>>> 7c79a644 (8.17.0 Release notes  (#6224))

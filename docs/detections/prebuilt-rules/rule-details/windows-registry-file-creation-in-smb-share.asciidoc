@@ -5,20 +5,31 @@ Identifies the creation or modification of a medium-size registry hive file on a
 
 *Rule type*: eql
 
+<<<<<<< HEAD
 *Rule indices*: 
 
 * logs-endpoint.events.file-*
+=======
+*Rule indices*:
+
+* logs-endpoint.events.*
+>>>>>>> 7c79a644 (8.17.0 Release notes  (#6224))
 
 *Severity*: medium
 
 *Risk score*: 47
 
+<<<<<<< HEAD
 *Runs every*: 5m
+=======
+*Runs every*: 5 minutes
+>>>>>>> 7c79a644 (8.17.0 Release notes  (#6224))
 
 *Searches indices from*: now-9m ({ref}/common-options.html#date-math[Date Math format], see also <<rule-schedule, `Additional look-back time`>>)
 
 *Maximum alerts per execution*: 100
 
+<<<<<<< HEAD
 *References*: 
 
 * https://www.elastic.co/security-labs/detect-credential-access
@@ -60,6 +71,51 @@ Attackers can try to evade detection on the host by transferring this data to a 
 
 *Possible investigation steps*
 
+=======
+*References*:
+
+* https://www.elastic.co/security-labs/detect-credential-access
+
+*Tags*:
+
+* Elastic
+* Host
+* Windows
+* Threat Detection
+* Lateral Movement
+* Credential Access
+* Investigation Guide
+
+*Version*: 102 (<<windows-registry-file-creation-in-smb-share-history, version history>>)
+
+*Added ({stack} release)*: 8.2.0
+
+*Last modified ({stack} release)*: 8.6.0
+
+*Rule authors*: Elastic
+
+*Rule license*: Elastic License v2
+
+==== Investigation guide
+
+
+[source,markdown]
+----------------------------------
+## Triage and analysis
+
+### Investigating Windows Registry File Creation in SMB Share
+
+Dumping registry hives is a common way to access credential information. Some hives store credential material, as is the
+case for the SAM hive, which stores locally cached credentials (SAM secrets), and the SECURITY hive, which stores domain
+cached credentials (LSA secrets). Dumping these hives in combination with the SYSTEM hive enables the attacker to
+decrypt these secrets.
+
+Attackers can try to evade detection on the host by transferring this data to a system that is not
+monitored to be parsed and decrypted. This rule identifies the creation or modification of a medium-size registry hive
+file on an SMB share, which may indicate this kind of exfiltration attempt.
+
+#### Possible investigation steps
+>>>>>>> 7c79a644 (8.17.0 Release notes  (#6224))
 
 - Investigate other alerts associated with the user/source host during the past 48 hours.
 - Identify the user account that performed the action and whether it should perform this kind of action.
@@ -67,6 +123,7 @@ Attackers can try to evade detection on the host by transferring this data to a 
 - Inspect the source host for suspicious or abnormal behaviors in the alert timeframe.
 - Capture the registry file(s) to determine the extent of the credential compromise in an eventual incident response.
 
+<<<<<<< HEAD
 
 *False positive analysis*
 
@@ -90,11 +147,38 @@ Attackers can try to evade detection on the host by transferring this data to a 
 - Run a full antimalware scan. This may reveal additional artifacts left in the system, persistence mechanisms, and malware components.
 - Determine the initial vector abused by the attacker and take action to prevent reinfection through the same vector.
 - Using the incident response data, update logging and audit policies to improve the mean time to detect (MTTD) and the mean time to respond (MTTR).
+=======
+### False positive analysis
+
+- Administrators can export registry hives for backup purposes. Check whether the user should be performing this kind of
+activity and is aware of it.
+
+### Related rules
+
+- Credential Acquisition via Registry Hive Dumping - a7e7bfa3-088e-4f13-b29e-3986e0e756b8
+
+### Response and remediation
+
+- Initiate the incident response process based on the outcome of the triage.
+- Isolate the involved hosts to prevent further post-compromise behavior.
+- Investigate credential exposure on systems compromised or used by the attacker to ensure all compromised accounts are
+identified. Reset passwords for these accounts and other potentially compromised credentials, such as email, business
+systems, and web services.
+- Reimage the host operating system and restore compromised files to clean versions.
+- Run a full antimalware scan. This may reveal additional artifacts left in the system, persistence mechanisms, and
+malware components.
+- Determine the initial vector abused by the attacker and take action to prevent reinfection through the same vector.
+- Using the incident response data, update logging and audit policies to improve the mean time to detect (MTTD) and the
+mean time to respond (MTTR).
+
+----------------------------------
+>>>>>>> 7c79a644 (8.17.0 Release notes  (#6224))
 
 
 ==== Rule query
 
 
+<<<<<<< HEAD
 [source, js]
 ----------------------------------
 file where host.os.type == "windows" and event.type == "creation" and
@@ -110,6 +194,16 @@ file where host.os.type == "windows" and event.type == "creation" and
  )
 
 ----------------------------------
+=======
+[source,js]
+----------------------------------
+file where event.type == "creation" and /* regf file header */
+file.Ext.header_bytes : "72656766*" and file.size >= 30000 and
+process.pid == 4 and user.id : ("S-1-5-21*", "S-1-12-1-*")
+----------------------------------
+
+==== Threat mapping
+>>>>>>> 7c79a644 (8.17.0 Release notes  (#6224))
 
 *Framework*: MITRE ATT&CK^TM^
 
@@ -121,10 +215,15 @@ file where host.os.type == "windows" and event.type == "creation" and
 ** Name: OS Credential Dumping
 ** ID: T1003
 ** Reference URL: https://attack.mitre.org/techniques/T1003/
+<<<<<<< HEAD
 * Sub-technique:
 ** Name: Security Account Manager
 ** ID: T1003.002
 ** Reference URL: https://attack.mitre.org/techniques/T1003/002/
+=======
+
+
+>>>>>>> 7c79a644 (8.17.0 Release notes  (#6224))
 * Tactic:
 ** Name: Lateral Movement
 ** ID: TA0008
@@ -133,7 +232,33 @@ file where host.os.type == "windows" and event.type == "creation" and
 ** Name: Remote Services
 ** ID: T1021
 ** Reference URL: https://attack.mitre.org/techniques/T1021/
+<<<<<<< HEAD
 * Sub-technique:
 ** Name: SMB/Windows Admin Shares
 ** ID: T1021.002
 ** Reference URL: https://attack.mitre.org/techniques/T1021/002/
+=======
+
+[[windows-registry-file-creation-in-smb-share-history]]
+==== Rule version history
+
+Version 102 (8.6.0 release)::
+* Updated query, changed from:
++
+[source, js]
+----------------------------------
+file where event.type == "creation" and /* regf file header */
+file.Ext.header_bytes : "72656766*" and file.size >= 30000 and
+process.pid == 4 and user.id : "s-1-5-21*"
+----------------------------------
+
+Version 101 (8.5.0 release)::
+* Formatting only
+
+Version 3 (8.4.0 release)::
+* Formatting only
+
+Version 2 (8.3.0 release)::
+* Formatting only
+
+>>>>>>> 7c79a644 (8.17.0 Release notes  (#6224))

@@ -5,6 +5,7 @@ Identifies use of the built-in Windows script interpreters (cscript.exe or wscri
 
 *Rule type*: eql
 
+<<<<<<< HEAD
 *Rule indices*: 
 
 * winlogbeat-*
@@ -12,17 +13,29 @@ Identifies use of the built-in Windows script interpreters (cscript.exe or wscri
 * logs-endpoint.events.library-*
 * logs-windows.sysmon_operational-*
 * endgame-*
+=======
+*Rule indices*:
+
+* winlogbeat-*
+* logs-endpoint.events.*
+* logs-windows.*
+>>>>>>> 7c79a644 (8.17.0 Release notes  (#6224))
 
 *Severity*: medium
 
 *Risk score*: 47
 
+<<<<<<< HEAD
 *Runs every*: 5m
+=======
+*Runs every*: 5 minutes
+>>>>>>> 7c79a644 (8.17.0 Release notes  (#6224))
 
 *Searches indices from*: now-9m ({ref}/common-options.html#date-math[Date Math format], see also <<rule-schedule, `Additional look-back time`>>)
 
 *Maximum alerts per execution*: 100
 
+<<<<<<< HEAD
 *References*: None
 
 *Tags*: 
@@ -81,6 +94,48 @@ sequence by host.id with maxspan = 5s
     ]
 
 ----------------------------------
+=======
+*Tags*:
+
+* Elastic
+* Host
+* Windows
+* Threat Detection
+* Initial Access
+
+*Version*: 101 (<<windows-script-interpreter-executing-process-via-wmi-history, version history>>)
+
+*Added ({stack} release)*: 7.11.0
+
+*Last modified ({stack} release)*: 8.5.0
+
+*Rule authors*: Elastic
+
+*Rule license*: Elastic License v2
+
+==== Rule query
+
+
+[source,js]
+----------------------------------
+sequence by host.id with maxspan = 5s [any where (event.category
+== "library" or (event.category == "process" and event.action : "Image
+loaded*")) and (dll.name : "wmiutils.dll" or file.name :
+"wmiutils.dll") and process.name : ("wscript.exe", "cscript.exe")]
+[process where event.type == "start" and process.parent.name :
+"wmiprvse.exe" and user.domain != "NT AUTHORITY" and
+(process.pe.original_file_name : ( "cscript.exe",
+"wscript.exe", "PowerShell.EXE", "Cmd.Exe",
+"MSHTA.EXE", "RUNDLL32.EXE", "REGSVR32.EXE",
+"MSBuild.exe", "InstallUtil.exe", "RegAsm.exe",
+"RegSvcs.exe", "msxsl.exe", "CONTROL.EXE",
+"EXPLORER.EXE", "Microsoft.Workflow.Compiler.exe",
+"msiexec.exe" ) or process.executable :
+("C:\\Users\\*.exe", "C:\\ProgramData\\*.exe") ) ]
+----------------------------------
+
+==== Threat mapping
+>>>>>>> 7c79a644 (8.17.0 Release notes  (#6224))
 
 *Framework*: MITRE ATT&CK^TM^
 
@@ -92,6 +147,7 @@ sequence by host.id with maxspan = 5s
 ** Name: Phishing
 ** ID: T1566
 ** Reference URL: https://attack.mitre.org/techniques/T1566/
+<<<<<<< HEAD
 * Sub-technique:
 ** Name: Spearphishing Attachment
 ** ID: T1566.001
@@ -112,3 +168,75 @@ sequence by host.id with maxspan = 5s
 ** Name: Visual Basic
 ** ID: T1059.005
 ** Reference URL: https://attack.mitre.org/techniques/T1059/005/
+=======
+
+[[windows-script-interpreter-executing-process-via-wmi-history]]
+==== Rule version history
+
+Version 101 (8.5.0 release)::
+* Updated query, changed from:
++
+[source, js]
+----------------------------------
+sequence by host.id with maxspan = 5s [any where (event.category
+== "library" or (event.category == "process" and event.action : "Image
+loaded*")) and (dll.name : "wmiutils.dll" or file.name :
+"wmiutils.dll") and process.name : ("wscript.exe", "cscript.exe")]
+[process where event.type in ("start", "process_started") and
+process.parent.name : "wmiprvse.exe" and user.domain != "NT
+AUTHORITY" and (process.pe.original_file_name : (
+"cscript.exe", "wscript.exe", "PowerShell.EXE",
+"Cmd.Exe", "MSHTA.EXE", "RUNDLL32.EXE",
+"REGSVR32.EXE", "MSBuild.exe", "InstallUtil.exe",
+"RegAsm.exe", "RegSvcs.exe", "msxsl.exe",
+"CONTROL.EXE", "EXPLORER.EXE",
+"Microsoft.Workflow.Compiler.exe", "msiexec.exe" )
+or process.executable : ("C:\\Users\\*.exe",
+"C:\\ProgramData\\*.exe") ) ]
+----------------------------------
+
+Version 4 (8.4.0 release)::
+* Updated query, changed from:
++
+[source, js]
+----------------------------------
+sequence by host.id with maxspan = 5s [library where dll.name :
+"wmiutils.dll" and process.name : ("wscript.exe", "cscript.exe")]
+[process where event.type in ("start", "process_started") and
+process.parent.name : "wmiprvse.exe" and user.domain != "NT
+AUTHORITY" and (process.pe.original_file_name : (
+"cscript.exe", "wscript.exe", "PowerShell.EXE",
+"Cmd.Exe", "MSHTA.EXE", "RUNDLL32.EXE",
+"REGSVR32.EXE", "MSBuild.exe", "InstallUtil.exe",
+"RegAsm.exe", "RegSvcs.exe", "msxsl.exe",
+"CONTROL.EXE", "EXPLORER.EXE",
+"Microsoft.Workflow.Compiler.exe", "msiexec.exe" )
+or process.executable : ("C:\\Users\\*.exe",
+"C:\\ProgramData\\*.exe") ) ]
+----------------------------------
+
+Version 2 (7.12.0 release)::
+* Updated query, changed from:
++
+[source, js]
+----------------------------------
+sequence by host.id with maxspan=5s [library where file.name :
+"wmiutils.dll" and process.name : ("wscript.exe", "cscript.exe")]
+[process where event.type in ("start", "process_started") and
+process.parent.name : "wmiprvse.exe" and user.domain != "NT
+AUTHORITY" and (process.pe.original_file_name in
+( "cscript.exe",
+"wscript.exe", "PowerShell.EXE",
+"Cmd.Exe", "MSHTA.EXE",
+"RUNDLL32.EXE", "REGSVR32.EXE",
+"MSBuild.exe", "InstallUtil.exe",
+"RegAsm.exe", "RegSvcs.exe",
+"msxsl.exe", "CONTROL.EXE",
+"EXPLORER.EXE",
+"Microsoft.Workflow.Compiler.exe",
+"msiexec.exe" ) or
+process.executable : ("C:\\Users\\*.exe", "C:\\ProgramData\\*.exe")
+) ]
+----------------------------------
+
+>>>>>>> 7c79a644 (8.17.0 Release notes  (#6224))

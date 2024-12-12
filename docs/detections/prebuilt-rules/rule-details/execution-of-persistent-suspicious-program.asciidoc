@@ -5,23 +5,36 @@ Identifies execution of suspicious persistent programs (scripts, rundll32, etc.)
 
 *Rule type*: eql
 
+<<<<<<< HEAD
 *Rule indices*: 
 
 * winlogbeat-*
 * logs-endpoint.events.process-*
 * logs-windows.sysmon_operational-*
 * endgame-*
+=======
+*Rule indices*:
+
+* winlogbeat-*
+* logs-endpoint.events.*
+* logs-windows.*
+>>>>>>> 7c79a644 (8.17.0 Release notes  (#6224))
 
 *Severity*: medium
 
 *Risk score*: 47
 
+<<<<<<< HEAD
 *Runs every*: 5m
+=======
+*Runs every*: 5 minutes
+>>>>>>> 7c79a644 (8.17.0 Release notes  (#6224))
 
 *Searches indices from*: now-9m ({ref}/common-options.html#date-math[Date Math format], see also <<rule-schedule, `Additional look-back time`>>)
 
 *Maximum alerts per execution*: 100
 
+<<<<<<< HEAD
 *References*: None
 
 *Tags*: 
@@ -68,6 +81,49 @@ sequence by host.id, user.name with maxspan=1m
    ]
 
 ----------------------------------
+=======
+*Tags*:
+
+* Elastic
+* Host
+* Windows
+* Threat Detection
+* Persistence
+
+*Version*: 101 (<<execution-of-persistent-suspicious-program-history, version history>>)
+
+*Added ({stack} release)*: 7.11.0
+
+*Last modified ({stack} release)*: 8.5.0
+
+*Rule authors*: Elastic
+
+*Rule license*: Elastic License v2
+
+==== Rule query
+
+
+[source,js]
+----------------------------------
+/* userinit followed by explorer followed by early child process of
+explorer (unlikely to be launched interactively) within 1m */ sequence
+by host.id, user.name with maxspan=1m [process where event.type ==
+"start" and process.name : "userinit.exe" and process.parent.name :
+"winlogon.exe"] [process where event.type == "start" and
+process.name : "explorer.exe"] [process where event.type == "start"
+and process.parent.name : "explorer.exe" and /* add suspicious
+programs here */ process.pe.original_file_name in ("cscript.exe",
+"wscript.exe", "PowerShell.EXE",
+"MSHTA.EXE", "RUNDLL32.EXE",
+"REGSVR32.EXE", "RegAsm.exe",
+"MSBuild.exe", "InstallUtil.exe")
+and /* add potential suspicious paths here */ process.args :
+("C:\\Users\\*", "C:\\ProgramData\\*", "C:\\Windows\\Temp\\*",
+"C:\\Windows\\Tasks\\*", "C:\\PerfLogs\\*", "C:\\Intel\\*") ]
+----------------------------------
+
+==== Threat mapping
+>>>>>>> 7c79a644 (8.17.0 Release notes  (#6224))
 
 *Framework*: MITRE ATT&CK^TM^
 
@@ -79,7 +135,43 @@ sequence by host.id, user.name with maxspan=1m
 ** Name: Boot or Logon Autostart Execution
 ** ID: T1547
 ** Reference URL: https://attack.mitre.org/techniques/T1547/
+<<<<<<< HEAD
 * Sub-technique:
 ** Name: Registry Run Keys / Startup Folder
 ** ID: T1547.001
 ** Reference URL: https://attack.mitre.org/techniques/T1547/001/
+=======
+
+[[execution-of-persistent-suspicious-program-history]]
+==== Rule version history
+
+Version 101 (8.5.0 release)::
+* Updated query, changed from:
++
+[source, js]
+----------------------------------
+/* userinit followed by explorer followed by early child process of
+explorer (unlikely to be launched interactively) within 1m */ sequence
+by host.id, user.name with maxspan=1m [process where event.type in
+("start", "process_started") and process.name : "userinit.exe" and
+process.parent.name : "winlogon.exe"] [process where event.type in
+("start", "process_started") and process.name : "explorer.exe"]
+[process where event.type in ("start", "process_started") and
+process.parent.name : "explorer.exe" and /* add suspicious programs
+here */ process.pe.original_file_name in ("cscript.exe",
+"wscript.exe", "PowerShell.EXE",
+"MSHTA.EXE", "RUNDLL32.EXE",
+"REGSVR32.EXE", "RegAsm.exe",
+"MSBuild.exe", "InstallUtil.exe")
+and /* add potential suspicious paths here */ process.args :
+("C:\\Users\\*", "C:\\ProgramData\\*", "C:\\Windows\\Temp\\*",
+"C:\\Windows\\Tasks\\*", "C:\\PerfLogs\\*", "C:\\Intel\\*") ]
+----------------------------------
+
+Version 3 (8.4.0 release)::
+* Formatting only
+
+Version 2 (7.12.0 release)::
+* Formatting only
+
+>>>>>>> 7c79a644 (8.17.0 Release notes  (#6224))

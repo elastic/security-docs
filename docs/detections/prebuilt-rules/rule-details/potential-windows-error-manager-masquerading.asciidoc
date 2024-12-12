@@ -5,28 +5,45 @@ Identifies suspicious instances of the Windows Error Reporting process (WerFault
 
 *Rule type*: eql
 
+<<<<<<< HEAD
 *Rule indices*: 
 
 * winlogbeat-*
 * logs-endpoint.events.process-*
 * logs-endpoint.events.network-*
 * logs-windows.sysmon_operational-*
+=======
+*Rule indices*:
+
+* winlogbeat-*
+* logs-endpoint.events.*
+* logs-windows.*
+>>>>>>> 7c79a644 (8.17.0 Release notes  (#6224))
 
 *Severity*: medium
 
 *Risk score*: 47
 
+<<<<<<< HEAD
 *Runs every*: 5m
+=======
+*Runs every*: 5 minutes
+>>>>>>> 7c79a644 (8.17.0 Release notes  (#6224))
 
 *Searches indices from*: now-9m ({ref}/common-options.html#date-math[Date Math format], see also <<rule-schedule, `Additional look-back time`>>)
 
 *Maximum alerts per execution*: 100
 
+<<<<<<< HEAD
 *References*: 
+=======
+*References*:
+>>>>>>> 7c79a644 (8.17.0 Release notes  (#6224))
 
 * https://twitter.com/SBousseaden/status/1235533224337641473
 * https://www.hexacorn.com/blog/2019/09/20/werfault-command-line-switches-v0-1/
 * https://app.any.run/tasks/26051d84-b68e-4afb-8a9a-76921a271b81/
+<<<<<<< HEAD
 * https://www.elastic.co/security-labs/elastic-security-uncovers-blister-malware-campaign
 
 *Tags*: 
@@ -111,10 +128,35 @@ This rule identifies a potential malicious process masquerading as `wermgr.exe` 
 - Determine the initial vector abused by the attacker and take action to prevent reinfection through the same vector.
 - Using the incident response data, update logging and audit policies to improve the mean time to detect (MTTD) and the mean time to respond (MTTR).
 
+=======
+
+*Tags*:
+
+* Elastic
+* Host
+* Windows
+* Threat Detection
+* Defense Evasion
+
+*Version*: 100 (<<potential-windows-error-manager-masquerading-history, version history>>)
+
+*Added ({stack} release)*: 7.10.0
+
+*Last modified ({stack} release)*: 8.5.0
+
+*Rule authors*: Elastic
+
+*Rule license*: Elastic License v2
+
+==== Potential false positives
+
+Legit Application Crash with rare Werfault commandline value
+>>>>>>> 7c79a644 (8.17.0 Release notes  (#6224))
 
 ==== Rule query
 
 
+<<<<<<< HEAD
 [source, js]
 ----------------------------------
 sequence by host.id, process.entity_id with maxspan = 5s
@@ -124,6 +166,19 @@ sequence by host.id, process.entity_id with maxspan = 5s
   ]
 
 ----------------------------------
+=======
+[source,js]
+----------------------------------
+sequence by host.id, process.entity_id with maxspan = 5s [process
+where event.type:"start" and process.name : ("wermgr.exe",
+"WerFault.exe") and process.args_count == 1] [network where
+process.name : ("wermgr.exe", "WerFault.exe") and network.protocol !=
+"dns" and network.direction : ("outgoing", "egress") and
+destination.ip !="::1" and destination.ip !="127.0.0.1" ]
+----------------------------------
+
+==== Threat mapping
+>>>>>>> 7c79a644 (8.17.0 Release notes  (#6224))
 
 *Framework*: MITRE ATT&CK^TM^
 
@@ -135,7 +190,48 @@ sequence by host.id, process.entity_id with maxspan = 5s
 ** Name: Masquerading
 ** ID: T1036
 ** Reference URL: https://attack.mitre.org/techniques/T1036/
+<<<<<<< HEAD
 * Sub-technique:
 ** Name: Match Legitimate Name or Location
 ** ID: T1036.005
 ** Reference URL: https://attack.mitre.org/techniques/T1036/005/
+=======
+
+[[potential-windows-error-manager-masquerading-history]]
+==== Rule version history
+
+Version 100 (8.5.0 release)::
+* Formatting only
+
+Version 5 (8.4.0 release)::
+* Formatting only
+
+Version 4 (7.16.0 release)::
+* Updated query, changed from:
++
+[source, js]
+----------------------------------
+sequence by host.id, process.entity_id with maxspan = 5s [process
+where event.type:"start" and process.name : ("wermgr.exe",
+"WerFault.exe") and process.args_count == 1] [network where
+process.name : ("wermgr.exe", "WerFault.exe") and network.protocol !=
+"dns" and network.direction == "outgoing" and destination.ip
+!="::1" and destination.ip !="127.0.0.1" ]
+----------------------------------
+
+Version 3 (7.12.0 release)::
+* Formatting only
+
+Version 2 (7.11.0 release)::
+* Rule name changed from: Process Potentially Masquerading as WerFault
++
+* Updated query, changed from:
++
+[source, js]
+----------------------------------
+event.category:process and event.type:(start or process_started) and
+process.name:WerFault.exe and not process.args:((("-u" or "-pss") and
+"-p" and "-s") or ("/h" and "/shared") or ("-k" and "-lcq"))
+----------------------------------
+
+>>>>>>> 7c79a644 (8.17.0 Release notes  (#6224))
