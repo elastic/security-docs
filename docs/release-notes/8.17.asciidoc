@@ -1,0 +1,130 @@
+[[release-notes-header-8.17.0]]
+== 8.17
+
+[discrete]
+[[release-notes-8.17.0]]
+=== 8.17.0
+
+[discrete]
+[[known-issue-8.17.0]]
+==== Known issues
+
+// tag::known-issue[201820]
+[discrete]
+.The **Exceptions** tab won't properly load if exceptions contain comments with newline characters (`\n`)  
+[%collapsible]
+====
+*Details* +
+On December 5, 2024, it was discovered that the **Exceptions** tab won't load properly if any exceptions contain comments with newline characters (`\n`). This issue occurs when you upgrade to 8.16.0 or later ({kibana-issue}201820[#201820]).
+
+*Workaround* + 
+
+For custom rules:
+
+. From the **Rules** page, <<import-export-rules-ui,export>> the rule or rules with the affected exception lists. 
+. Modify the `.ndjson` file so `comments` no longer contain newline characters.
+. Return to the **Rules** page and <<import-export-rules-ui,re-import>> the rules. Ensure you select the **Overwrite existing exception lists with conflicting "list_id"** option.
+
+For prebuilt rules: 
+
+NOTE: If you only need to fix exceptions for the Elastic Endpoint rule, you can export and re-import its exception list from the <<shared-exception-lists,**Shared Exception Lists**>> page.
+
+. Follow these steps to fetch the affected exception list ID or IDs that are associated with the rule: 
+.. Find the affected rule's ID (`id`). From the **Rules** page, open the details of a rule, go to the page URL, and copy the string at the end. For example, in the URL http://host.name/app/security/rules/id/167a5f6f-2148-4792-8226-b5e7a58ef46e, the string at the end (`167a5f6f-2148-4792-8226-b5e7a58ef46e`) is the `id`.
+.. Specify the `id` when fetching the rule's details using the {api-kibana}/operation/operation-readrule[Retrieve a detection rule API]. Here is an example request that includes the `id`:
++
+[source,console]
+----
+curl -H 'Authorization: ApiKey API_KEY_HERE' -H 'kbn-xsrf: true' -H 'elastic-api-version: 2023-10-31' KIBANA_URL/api/detection_engine/rules?id=167a5f6f-2148-4792-8226-b5e7a58ef46e
+----
++
+.. The JSON response contains the `id`, `list_id`, and `namespace_type` values within the `exceptions_list` key (as shown below). You need these values when using the Exception list API to retrieve the affected exception list. 
++
+[source,console]
+----
+{
+  "id": "167a5f6f-2148-4792-8226-b5e7a58ef46e",
+  "exceptions_list": [
+    {
+      "id": "490525a2-eb66-4320-95b5-88bdd1302dc4",
+      "list_id": "f75aae6f-0229-413f-881d-81cb3abfbe2d",
+      "namespace_type": "single"
+    }
+  ]
+}
+----
++
+. Use the export exceptions API to retrieve the affected exception list. Insert the values for the `id`, `list_id`, and `namespace_type` parameters into the following API call:
++
+[source,console]
+----
+curl -XPOST -H 'Authorization: ApiKey API_KEY_HERE' -H 'kbn-xsrf: true' -H 'elastic-api-version: 2023-10-31' 'KIBANA_URL/api/exception_lists/_export?list_id=f75aae6f-0229-413f-881d-81cb3abfbe2d&id=490525a2-eb66-4320-95b5-88bdd1302dc4&namespace_type=single' -o list.ndjson
+----
++
+. Modify the exception list's `.ndjson` file to ensure `comments[].comment` values don't contain newline characters (`\n`).
+. Re-import the modified exception list using **Import exception lists** option on the <<shared-exception-lists,**Shared Exception Lists**>> page. The import will initially fail because the exception list already exists, and an option to overwrite the existing list will appear. Select the option, then resubmit the request to import the corrected exception list.
+====
+// end::known-issue[201820]
+
+// tag::known-issue[]
+[discrete]
+.Duplicate alerts can be produced from manually running threshold rules 
+[%collapsible]
+====
+*Details* +
+On November 12, 2024, it was discovered that manually running threshold rules could produce duplicate alerts if the date range was already covered by a scheduled rule execution.
+
+====
+// end::known-issue[]
+
+// tag::known-issue[]
+[discrete]
+.Manually running custom query rules with suppression could suppress more alerts than expected
+[%collapsible]
+====
+*Details* +
+On November 12, 2024, it was discovered that manually running a custom query rule with suppression could incorrectly inflate the number of suppressed alerts. 
+
+====
+// end::known-issue[]
+
+[discrete]
+[[features-8.17.0]]
+==== New features
+* Adds a signature option for trusted applications on macOS ({kibana-pull}197821[#197821]).
+* Allows you to use alert suppression on EQL sequence alerts ({kibana-pull}189725[#189725]).
+* Adds GA support for the case action feature, which lets rules automatically create cases ({kibana-pull}196973[#196973]).
+
+[discrete]
+[[enhancements-8.17.0]]
+==== Enhancements
+* Checks user permissions before initializing the entity engine ({kibana-pull}198661[#198661]).
+* Updates LangChain dependencies, adding support for the new Bedrock cross-region inference profiles ({kibana-pull}198622[#198622]).
+
+[discrete]
+[[bug-fixes-8.17.0]]
+==== Bug fixes
+* Clears the error on the second entity engine initialization ({kibana-pull}202903[#202903]).
+* Modifies the empty state message that appears when installing prebuilt rules ({kibana-pull}202226[#202226]).
+* Rejects CEF logs from Automatic Import and instead redirects you to the CEF integration ({kibana-pull}201792[#201792], {kibana-pull}202994[#202994]).
+* Fixes a bug in Automatic Import where icons did not display after the integration was installed ({kibana-pull}201139[#201139]).
+* Removes an erroneous duplicate Preserve Original Event flag as one was additionally added from the common settings file ({kibana-pull}201622[#201622]).
+* Turns off the **Install All** button on the **Add Elastic Rules** page while rules are being installed ({kibana-pull}201731[#201731]).
+* Turns off the **Add note** button in the alert details flyout if you don't have the appropriate permission ({kibana-pull}201707[#201707]).
+* Removes fields with an `@` from the script processor ({kibana-pull}201548[#201548]).
+* Fixes an issue that could interfere with Knowledge Base setup ({kibana-pull}201175[#201175]).
+* Fixes an issue with Gemini streaming in the AI Assistant ({kibana-pull}201299[#201299]).
+* Updates LangChain dependencies, adding support for the new Bedrock cross-region inference endpoints ({kibana-pull}198622[#198622]).
+* Fixes a bug with threshold rules that prevented cardinality details from appearing ({kibana-pull}201162[#201162]).
+* Fixes a bug that caused an entity engine to get stuck in the `Installing` status if the default Security data view didn't exist. With this fix, engines now correctly report the `Error` state ({kibana-pull}201140[#201140]).
+* Fixes an issue that prevented you from successfully importing TSV files with asset criticality data if you're on Windows ({kibana-pull}199791[#199791]).
+* Fixes asset criticality index issue when setting up entity engines concurrently ({kibana-pull}199486[#199486]).
+* Fixes a bug where the `@timestamp` field wouldn't update upon asset criticality soft delete ({kibana-pull}196722[#196722]).
+* Fixes a bug that prevented the save notification from displaying on duplicated Timelines with changes ({kibana-pull}198652[#198652]).
+* Improves the flow for the Insights section in the alert details flyout ({kibana-pull}197349[#197349]).
+* Fixes an issue where users without the {fleet} `read` permission were blocked from interacting with any onboarding card ({kibana-pull}202413[#202413]).
+* Improves {elastic-defend} for Linux endpoints by enabling process information enrichment for file and network events when process events are disabled.
+* Improves {elastic-defend} by refactoring the kernel driver to work around a `CRITICAL_PROCESS_DIED` bug check (BSOD) that can occur due to a conflict with CrowdStrike Falcon.
+* Fixes an issue in {elastic-defend} versions 8.15.2 and 8.15.3 which can result in Windows boot failure `0xC000007B` referencing `ElasticElam.sys` or recovery mode prompt at boot. We have only received reports of this happening when {elastic-defend} is installed alongside CrowdStrike Falcon.
+* Fixes an {elastic-defend} bug where the Linux system call (`setsid`) wasn't properly gathered for RHEL 9/CentOS Stream 9 process events.
+* Fixes an issue where {elastic-defend} can enter an infinite loop if an external application opens and retains handles to files within {elastic-defend}s directory while it is processing a `get-file` response action. This can result in {elastic-defend} flooding Elasticsearch with documents until the handles are closed.
