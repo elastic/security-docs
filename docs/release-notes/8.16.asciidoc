@@ -9,6 +9,63 @@
 [[known-issue-8.16.1]]
 ==== Known issues
 
+// tag::known-issue[201820]
+[discrete]
+.The **Exceptions** tab won't properly load if exceptions contain comments with newline characters (`\n`)  
+[%collapsible]
+====
+*Details* +
+On December 5, 2024, it was discovered that the **Exceptions** tab won't load properly if any exceptions contain comments with newline characters (`\n`). This issue occurs when you upgrade to 8.16.0 or later ({kibana-issue}201820[#201820]).
+
+*Workaround* + 
+
+For custom rules:
+
+. From the **Rules** page, <<import-export-rules-ui,export>> the rule or rules with the affected exception lists. 
+. Modify the `.ndjson` file so `comments` no longer contain newline characters.
+. Return to the **Rules** page and <<import-export-rules-ui,re-import>> the rules. Make sure to select the **Overwrite existing exception lists with conflicting "list_id"** option.
+
+For prebuilt rules: 
+
+NOTE: If you only need to fix exceptions for the Elastic Endpoint rule, you can export and re-import its exception list from the <<shared-exception-lists,**Shared Exception Lists**>> page.
+
+. Follow these steps to fetch the affected exception list ID or IDs that are associated with the rule: 
+.. Find the affected rule's ID (`id`). From the **Rules** page, open the details of a rule, go to the page URL, and copy the string at the end. For example, in the URL http://host.name/app/security/rules/id/167a5f6f-2148-4792-8226-b5e7a58ef46e, the string at the end (`167a5f6f-2148-4792-8226-b5e7a58ef46e`) is the `id`.
+.. Specify the `id` when fetching the rule's details using the {api-kibana}/operation/operation-readrule[Retrieve a detection rule API]. Here is an example request that includes the `id`:
++
+[source,console]
+----
+curl -H 'Authorization: ApiKey API_KEY_HERE' -H 'kbn-xsrf: true' -H 'elastic-api-version: 2023-10-31' KIBANA_URL/api/detection_engine/rules?id=167a5f6f-2148-4792-8226-b5e7a58ef46e
+----
++
+.. The JSON response contains the `id`, `list_id`, and `namespace_type` values within the `exceptions_list` key (as shown below). You need these values when using the Exception list API to retrieve the affected exception list. 
++
+[source,console]
+----
+{
+  "id": "167a5f6f-2148-4792-8226-b5e7a58ef46e",
+  "exceptions_list": [
+    {
+      "id": "490525a2-eb66-4320-95b5-88bdd1302dc4",
+      "list_id": "f75aae6f-0229-413f-881d-81cb3abfbe2d",
+      "namespace_type": "single"
+    }
+  ]
+}
+----
++
+. Use the export exceptions API to retrieve the affected exception list. Insert the values for the `id`, `list_id`, and `namespace_type` parameters into the following API call:
++
+[source,console]
+----
+curl -XPOST -H 'Authorization: ApiKey API_KEY_HERE' -H 'kbn-xsrf: true' -H 'elastic-api-version: 2023-10-31' 'KIBANA_URL/api/exception_lists/_export?list_id=f75aae6f-0229-413f-881d-81cb3abfbe2d&id=490525a2-eb66-4320-95b5-88bdd1302dc4&namespace_type=single' -o list.ndjson
+----
++
+. Modify the exception list's `.ndjson` file to ensure `comments[].comment` values don't contain newline characters (`\n`).
+. Re-import the modified exception list using **Import exception lists** option on the <<shared-exception-lists,**Shared Exception Lists**>> page. The import will initially fail because the exception list already exists, and an option to overwrite the existing list will appear. Select the option, then resubmit the request to import the corrected exception list.
+====
+// end::known-issue[201820]
+
 // tag::known-issue[]
 [discrete]
 .Duplicate alerts can be produced from manually running threshold rules 
@@ -49,6 +106,63 @@ On November 12, 2024, it was discovered that manually running a custom query rul
 [discrete]
 [[known-issue-8.16.0]]
 ==== Known issues
+
+// tag::known-issue[201820]
+[discrete]
+.The **Exceptions** tab won't properly load if exceptions contain comments with newline characters (`\n`)  
+[%collapsible]
+====
+*Details* +
+On December 5, 2024, it was discovered that the **Exceptions** tab won't load properly if any exceptions contain comments with newline characters (`\n`). This issue occurs when you upgrade to 8.16.0 or later ({kibana-issue}201820[#201820]). 
+
+*Workaround* + 
+
+For custom rules:
+
+. From the **Rules** page, <<import-export-rules-ui,export>> the rule or rules with the affected exception lists. 
+. Modify the `.ndjson` file so `comments` no longer contain newline characters.
+. Return to the **Rules** page and <<import-export-rules-ui,re-import>> the rules. Make sure to select the **Overwrite existing exception lists with conflicting "list_id"** option.
+
+For prebuilt rules: 
+
+NOTE: If you only need to fix exceptions for the Elastic Endpoint rule, you can export and re-import its exception list from the <<shared-exception-lists,**Shared Exception Lists**>> page.
+
+. Follow these steps to fetch the affected exception list ID or IDs that are associated with the rule: 
+.. Find the affected rule's ID (`id`). From the **Rules** page, open the details of a rule, go to the page URL, and copy the string at the end. For example, in the URL http://host.name/app/security/rules/id/167a5f6f-2148-4792-8226-b5e7a58ef46e, the string at the end (`167a5f6f-2148-4792-8226-b5e7a58ef46e`) is the `id`.
+.. Specify the `id` when fetching the rule's details using the {api-kibana}/operation/operation-readrule[Retrieve a detection rule API]. Here is an example request that includes the `id`:
++
+[source,console]
+----
+curl -H 'Authorization: ApiKey API_KEY_HERE' -H 'kbn-xsrf: true' -H 'elastic-api-version: 2023-10-31' KIBANA_URL/api/detection_engine/rules?id=167a5f6f-2148-4792-8226-b5e7a58ef46e
+----
++
+.. The JSON response contains the `id`, `list_id`, and `namespace_type` values within the `exceptions_list` key (as shown below). You need these values when using the Exception list API to retrieve the affected exception list. 
++
+[source,console]
+----
+{
+  "id": "167a5f6f-2148-4792-8226-b5e7a58ef46e",
+  "exceptions_list": [
+    {
+      "id": "490525a2-eb66-4320-95b5-88bdd1302dc4",
+      "list_id": "f75aae6f-0229-413f-881d-81cb3abfbe2d",
+      "namespace_type": "single"
+    }
+  ]
+}
+----
++
+. Use the export exceptions API to retrieve the affected exception list. Insert the values for the `id`, `list_id`, and `namespace_type` parameters into the following API call:
++
+[source,console]
+----
+curl -XPOST -H 'Authorization: ApiKey API_KEY_HERE' -H 'kbn-xsrf: true' -H 'elastic-api-version: 2023-10-31' 'KIBANA_URL/api/exception_lists/_export?list_id=f75aae6f-0229-413f-881d-81cb3abfbe2d&id=490525a2-eb66-4320-95b5-88bdd1302dc4&namespace_type=single' -o list.ndjson
+----
++
+. Modify the exception list's `.ndjson` file to ensure `comments[].comment` values don't contain newline characters (`\n`).
+. Re-import the modified exception list using **Import exception lists** option on the <<shared-exception-lists,**Shared Exception Lists**>> page. The import will initially fail because the exception list already exists, and an option to overwrite the existing list will appear. Select the option, then resubmit the request to import the corrected exception list.
+====
+// end::known-issue[201820]
 
 // tag::known-issue[]
 [discrete]
