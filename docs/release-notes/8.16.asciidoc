@@ -2,6 +2,26 @@
 == 8.16
 
 [discrete]
+[[release-notes-8.16.2]]
+=== 8.16.2
+
+[discrete]
+[[bug-fixes-8.16.2]]
+==== Bug fixes
+
+* Rejects CEF logs from Automatic Import and redirects you to the CEF integration instead ({kibana-pull}201792[#201792], {kibana-pull}202994[#202994]).
+* Fixes an issue that could interfere with Knowledge Base setup ({kibana-pull}201175[#201175]).
+* Modifies the empty state message that appears when installing prebuilt rules ({kibana-pull}202226[#202226]).
+* Turns off the **Install All** button on the **Add Elastic Rules** page while rules are being installed ({kibana-pull}201731[#201731]).
+* Removes fields with an `@` from the script processor ({kibana-pull}201548[#201548]).
+* Fixes a bug with threshold rules that prevented cardinality details from appearing ({kibana-pull}201162[#201162]).
+* Fixes an exceptions bug that prevented the **Exceptions** tab from properly loading if exceptions contained comments with newline characters (`\n`) ({kibana-pull}202063[#202063]).
+* Fixes a bug that caused an entity engine to get stuck in the `Installing` status if the default Security data view didn't exist. With this fix, engines now correctly report the `Error` state ({kibana-pull}201140[#201140]).
+* Fixes an issue that prevented you from successfully importing TSV files with asset criticality data if you're on Windows ({kibana-pull}199791[#199791]).
+* Improves {elastic-defend} by refactoring the kernel driver to work around a `CRITICAL_PROCESS_DIED` bug check (BSOD) that can occur due to a conflict with CrowdStrike Falcon.
+* Fixes an {elastic-defend} bug that prevented {elastic-sec} from launching when you clicked the **Open Elastic Security** button in the Window Security Center.
+
+[discrete]
 [[release-notes-8.16.1]]
 === 8.16.1
 
@@ -17,7 +37,8 @@
 *Details* +
 On December 5, 2024, it was discovered that the **Exceptions** tab won't load properly if any exceptions contain comments with newline characters (`\n`). This issue occurs when you upgrade to 8.16.0 or later ({kibana-issue}201820[#201820]).
 
-*Workaround* + 
+*Workaround* +
+Upgrade to 8.16.2, or follow the workarounds below.
 
 For custom rules:
 
@@ -35,7 +56,7 @@ NOTE: If you only need to fix exceptions for the Elastic Endpoint rule, you can 
 +
 [source,console]
 ----
-curl -H 'Authorization: ApiKey API_KEY_HERE' -H 'kbn-xsrf: true' -H 'elastic-api-version: 2023-10-31' KIBANA_URL/api/detection_engine/rules?id=167a5f6f-2148-4792-8226-b5e7a58ef46e
+curl -H 'Authorization: ApiKey API_KEY_HERE' -H 'kbn-xsrf: true' -H 'elastic-api-version: 2023-10-31' '${KIBANA_URL}/api/detection_engine/rules?id=167a5f6f-2148-4792-8226-b5e7a58ef46e
 ----
 +
 .. The JSON response contains the `id`, `list_id`, and `namespace_type` values within the `exceptions_list` key (as shown below). You need these values when using the Exception list API to retrieve the affected exception list. 
@@ -58,21 +79,25 @@ curl -H 'Authorization: ApiKey API_KEY_HERE' -H 'kbn-xsrf: true' -H 'elastic-api
 +
 [source,console]
 ----
-curl -XPOST -H 'Authorization: ApiKey API_KEY_HERE' -H 'kbn-xsrf: true' -H 'elastic-api-version: 2023-10-31' 'KIBANA_URL/api/exception_lists/_export?list_id=f75aae6f-0229-413f-881d-81cb3abfbe2d&id=490525a2-eb66-4320-95b5-88bdd1302dc4&namespace_type=single' -o list.ndjson
+curl -XPOST -H 'Authorization: ApiKey API_KEY_HERE' -H 'kbn-xsrf: true' -H 'elastic-api-version: 2023-10-31' '${KIBANA_URL}/api/exception_lists/_export?list_id=f75aae6f-0229-413f-881d-81cb3abfbe2d&id=490525a2-eb66-4320-95b5-88bdd1302dc4&namespace_type=single' -o list.ndjson
 ----
 +
 . Modify the exception list's `.ndjson` file to ensure `comments[].comment` values don't contain newline characters (`\n`).
 . Re-import the modified exception list using **Import exception lists** option on the <<shared-exception-lists,**Shared Exception Lists**>> page. The import will initially fail because the exception list already exists, and an option to overwrite the existing list will appear. Select the option, then resubmit the request to import the corrected exception list.
+
+*Resolved* +
+On December 17, 2024, this issue was resolved.
+
 ====
 // end::known-issue[201820]
 
 // tag::known-issue[]
 [discrete]
-.Duplicate alerts can be produced from manually running threshold rules 
+.Manually running threshold rules may generate duplicate alerts
 [%collapsible]
 ====
 *Details* +
-On November 12, 2024, it was discovered that manually running threshold rules could produce duplicate alerts if the date range was already covered by a scheduled rule execution.
+On November 12, 2024, it was discovered that manually running threshold rules could generate duplicate alerts if the date range was already covered in a scheduled rule execution.
 
 ====
 // end::known-issue[]
@@ -94,6 +119,7 @@ On November 12, 2024, it was discovered that manually running a custom query rul
 * Fixes a bug that caused the **Alerts** page to crash if you upgraded to 8.16 and accessed the page in a non-default {kib} space ({kibana-pull}200058[#200058]).
 * Fixes a bug that caused the Elastic AI Assistant Knowledge Base to fail if the current user had a colon (`:`) in their username and attempted to access Knowledge Base entries ({kibana-pull}200131[#200131]).
 * Fixes a bug that made values unavailable for the Knowledge Base **Index** field, which lets you specify an index as a knowledge source ({kibana-pull}199990[#199990]).
+* Fixes a bug in Automatic Import where icons were not shown after the integration was installed ({kibana-pull}201139[#201139]).
 * Fixes a bug that unset the `required_fields` field if you updated a rule by sending a `PATCH` request that didn't contain the `required_fields` field ({kibana-pull}199901[#199901]).
 * Fixes the entity store initialization error that was caused by risk engine failures. Now, when you upgrade to 8.16.1, or follow the standard flow for initializing the entity store, the risk engine no longer fails while deleting the component template. In addition, the index template will correctly reference the new component template, ensuring the successful initialization of the entity store ({kibana-pull}199734[#199734]).
 * Improves the warning message that displays when asset criticality assignments are duplicated during the bulk assignment flow ({kibana-pull}199651[#199651]).
@@ -115,7 +141,8 @@ On November 12, 2024, it was discovered that manually running a custom query rul
 *Details* +
 On December 5, 2024, it was discovered that the **Exceptions** tab won't load properly if any exceptions contain comments with newline characters (`\n`). This issue occurs when you upgrade to 8.16.0 or later ({kibana-issue}201820[#201820]). 
 
-*Workaround* + 
+*Workaround* +
+Upgrade to 8.16.2, or follow the workarounds below.
 
 For custom rules:
 
@@ -133,7 +160,7 @@ NOTE: If you only need to fix exceptions for the Elastic Endpoint rule, you can 
 +
 [source,console]
 ----
-curl -H 'Authorization: ApiKey API_KEY_HERE' -H 'kbn-xsrf: true' -H 'elastic-api-version: 2023-10-31' KIBANA_URL/api/detection_engine/rules?id=167a5f6f-2148-4792-8226-b5e7a58ef46e
+curl -H 'Authorization: ApiKey API_KEY_HERE' -H 'kbn-xsrf: true' -H 'elastic-api-version: 2023-10-31' '${KIBANA_URL}/api/detection_engine/rules?id=167a5f6f-2148-4792-8226-b5e7a58ef46e
 ----
 +
 .. The JSON response contains the `id`, `list_id`, and `namespace_type` values within the `exceptions_list` key (as shown below). You need these values when using the Exception list API to retrieve the affected exception list. 
@@ -156,11 +183,15 @@ curl -H 'Authorization: ApiKey API_KEY_HERE' -H 'kbn-xsrf: true' -H 'elastic-api
 +
 [source,console]
 ----
-curl -XPOST -H 'Authorization: ApiKey API_KEY_HERE' -H 'kbn-xsrf: true' -H 'elastic-api-version: 2023-10-31' 'KIBANA_URL/api/exception_lists/_export?list_id=f75aae6f-0229-413f-881d-81cb3abfbe2d&id=490525a2-eb66-4320-95b5-88bdd1302dc4&namespace_type=single' -o list.ndjson
+curl -XPOST -H 'Authorization: ApiKey API_KEY_HERE' -H 'kbn-xsrf: true' -H 'elastic-api-version: 2023-10-31' '${KIBANA_URL}/api/exception_lists/_export?list_id=f75aae6f-0229-413f-881d-81cb3abfbe2d&id=490525a2-eb66-4320-95b5-88bdd1302dc4&namespace_type=single' -o list.ndjson
 ----
 +
 . Modify the exception list's `.ndjson` file to ensure `comments[].comment` values don't contain newline characters (`\n`).
 . Re-import the modified exception list using **Import exception lists** option on the <<shared-exception-lists,**Shared Exception Lists**>> page. The import will initially fail because the exception list already exists, and an option to overwrite the existing list will appear. Select the option, then resubmit the request to import the corrected exception list.
+
+*Resolved* +
+On December 17, 2024, this issue was resolved.
+
 ====
 // end::known-issue[201820]
 
@@ -191,11 +222,11 @@ On August 1, 2024, it was discovered that Elastic AI Assistant's responses when 
 
 // tag::known-issue[]
 [discrete]
-.Duplicate alerts can be produced from manually running threshold rules 
+.Manually running threshold rules may generate duplicate alerts
 [%collapsible]
 ====
 *Details* +
-On November 12, 2024, it was discovered that manually running threshold rules could produce duplicate alerts if the date range was already covered by a scheduled rule execution.
+On November 12, 2024, it was discovered that manually running threshold rules could generate duplicate alerts if the date range was already covered in a scheduled rule execution.
 
 ====
 // end::known-issue[]
