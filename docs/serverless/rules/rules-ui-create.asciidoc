@@ -27,6 +27,55 @@ At any step, you can <<preview-rules,preview the rule>> before saving it to see 
 ====
 
 [discrete]
+[[create-custom-rule]]
+== Create a custom query rule
+
+. Go to **Rules** → **Detection rules (SIEM)** → **Create new rule**. The **Create new rule** page displays.
+. To create a rule based on a KQL or Lucene query, select **Custom query**,
+then:
++
+.. Define which {es} indices or data view the rule searches for alerts.
+.. Use the filter and query fields to create the criteria used for detecting
+alerts.
++
+The following example (based on the prebuilt rule Volume Shadow Copy Deleted or Resized via VssAdmin) detects when the `vssadmin delete shadows`
+Windows command is executed:
++
+*** **Index patterns**: `winlogbeat-*`
++
+Winlogbeat ships Windows event logs to {elastic-sec}.
+*** **Custom query**: `event.action:"Process Create (rule: ProcessCreate)" and process.name:"vssadmin.exe" and process.args:("delete" and "shadows")`
++
+Searches the `winlogbeat-*` indices for `vssadmin.exe` executions with
+the `delete` and `shadow` arguments, which are used to delete a volume's shadow
+copies.
++
+[role="screenshot"]
+image::images/rules-ui-create/-detections-rule-query-example.png[Rule query example]
+.. You can use saved queries and queries from saved Timelines (**Import query from saved Timeline**) as rule conditions.
++
+When you use a saved query, the **Load saved query "_query name_" dynamically on each rule execution** check box appears:
++
+*** Select this to use the saved query every time the rule runs. This links the rule to the saved query, and you won't be able to modify the rule's **Custom query** field or filters because the rule will only use settings from the saved query. To make changes, modify the saved query itself.
+*** Deselect this to load the saved query as a one-time way of populating the rule's **Custom query** field and filters. This copies the settings from the saved query to the rule, so you can then further adjust the rule's query and filters as needed. If the saved query is later changed, the rule will not inherit those changes.
+. (Optional) Use **Suppress alerts by** to reduce the number of repeated or duplicate alerts created by the rule. Refer to <<security-alert-suppression,Suppress detection alerts>> for more information.
++
+////
+/* The following steps are repeated across multiple rule types. If you change anything
+in these steps or sub-steps, apply the change to the other rule types, too. */
+////
++
+. (Optional) Create a list of **Required fields** that the rule needs to function. This list is informational only, to help users understand the rule; it doesn't affect how the rule actually runs.
++
+.. Click **Add required field**, then select a field from the index patterns or data view you specified for the rule. You can also start typing a field's name to find it faster, or type in an entirely new custom field.
+.. Enter the field's data type.
+. (Optional) Add **Related integrations** to associate the rule with one or more {integrations-docs}[Elastic integrations]. This indicates the rule's dependency on specific integrations and the data they generate, and allows users to confirm each integration's <<rule-prerequisites,installation status>> when viewing the rule.
++
+.. Click **Add integration**, then select an integration from the list. You can also start typing an integration's name to find it faster.
+.. Enter the version of the integration you want to associate with the rule, using https://semver.org/[semantic versioning]. For version ranges, you must use tilde or caret syntax. For example, `~1.2.3` is from 1.2.3 to any patch version less than 1.3.0, and `^1.2.3` is from 1.2.3 to any minor and patch version less than 2.0.0.
+. Click **Continue** to <<rule-ui-basic-params,configure basic rule settings>>.
+
+[discrete]
 [[create-ml-rule]]
 == Create a machine learning rule
 
@@ -64,55 +113,6 @@ in these steps or sub-steps, apply the change to the other rule types, too. */
 . Click **Continue** to <<rule-ui-basic-params,configure basic rule settings>>.
 
 [discrete]
-[[create-custom-rule]]
-== Create a custom query rule
-
-. Go to **Rules** → **Detection rules (SIEM)** → **Create new rule**. The **Create new rule** page displays.
-. To create a rule based on a KQL or Lucene query, select **Custom query**,
-then:
-+
-.. Define which {es} indices or data view the rule searches for alerts.
-.. Use the filter and query fields to create the criteria used for detecting
-alerts.
-+
-The following example (based on the prebuilt rule Volume Shadow Copy Deleted or Resized via VssAdmin) detects when the `vssadmin delete shadows`
-Windows command is executed:
-+
-*** **Index patterns**: `winlogbeat-*`
-+
-Winlogbeat ships Windows event logs to {elastic-sec}.
-*** **Custom query**: `event.action:"Process Create (rule: ProcessCreate)" and process.name:"vssadmin.exe" and process.args:("delete" and "shadows")`
-+
-Searches the `winlogbeat-*` indices for `vssadmin.exe` executions with
-the `delete` and `shadow` arguments, which are used to delete a volume's shadow
-copies.
-+
-[role="screenshot"]
-image::images/rules-ui-create/-detections-rule-query-example.png[Rule query example]
-.. You can use saved queries (image:images/icons/filterInCircle.svg[Filter]) and queries from saved Timelines (**Import query from saved Timeline**) as rule conditions.
-+
-When you use a saved query, the **Load saved query "_query name_" dynamically on each rule execution** check box appears:
-+
-*** Select this to use the saved query every time the rule runs. This links the rule to the saved query, and you won't be able to modify the rule's **Custom query** field or filters because the rule will only use settings from the saved query. To make changes, modify the saved query itself.
-*** Deselect this to load the saved query as a one-time way of populating the rule's **Custom query** field and filters. This copies the settings from the saved query to the rule, so you can then further adjust the rule's query and filters as needed. If the saved query is later changed, the rule will not inherit those changes.
-. (Optional) Use **Suppress alerts by** to reduce the number of repeated or duplicate alerts created by the rule. Refer to <<security-alert-suppression,Suppress detection alerts>> for more information.
-+
-////
-/* The following steps are repeated across multiple rule types. If you change anything
-in these steps or sub-steps, apply the change to the other rule types, too. */
-////
-+
-. (Optional) Create a list of **Required fields** that the rule needs to function. This list is informational only, to help users understand the rule; it doesn't affect how the rule actually runs.
-+
-.. Click **Add required field**, then select a field from the index patterns or data view you specified for the rule. You can also start typing a field's name to find it faster, or type in an entirely new custom field.
-.. Enter the field's data type.
-. (Optional) Add **Related integrations** to associate the rule with one or more {integrations-docs}[Elastic integrations]. This indicates the rule's dependency on specific integrations and the data they generate, and allows users to confirm each integration's <<rule-prerequisites,installation status>> when viewing the rule.
-+
-.. Click **Add integration**, then select an integration from the list. You can also start typing an integration's name to find it faster.
-.. Enter the version of the integration you want to associate with the rule, using https://semver.org/[semantic versioning]. For version ranges, you must use tilde or caret syntax. For example, `~1.2.3` is from 1.2.3 to any patch version less than 1.3.0, and `^1.2.3` is from 1.2.3 to any minor and patch version less than 2.0.0.
-. Click **Continue** to <<rule-ui-basic-params,configure basic rule settings>>.
-
-[discrete]
 [[create-threshold-rule]]
 == Create a threshold rule
 
@@ -125,7 +125,7 @@ alerts.
 +
 [NOTE]
 ====
-You can use saved queries (image:images/icons/filterInCircle.svg[Filter]) and queries from saved Timelines (**Import query from saved Timeline**) as rule conditions.
+You can use saved queries and queries from saved Timelines (**Import query from saved Timeline**) as rule conditions.
 ====
 .. Use the **Group by** and **Threshold** fields to determine which source event field is used as a threshold and the threshold's value.
 .. Use the **Count** field to limit alerts by cardinality of a certain field.
@@ -245,7 +245,7 @@ wildcard expression: `*:*`.
 +
 [NOTE]
 ====
-You can use saved queries (image:images/icons/filterInCircle.svg[Filter]) and queries from saved Timelines (**Import query from saved Timeline**) as rule conditions.
+You can use saved queries and queries from saved Timelines (**Import query from saved Timeline**) as rule conditions.
 ====
 .. **Indicator index patterns**: The indicator index patterns containing field values for which you want to generate alerts. This field is automatically populated with indices specified in the `securitySolution:defaultThreatIndex` advanced setting. For more information, see <<update-threat-intel-indices,Update default Elastic Security threat intelligence indices>>.
 +
@@ -280,8 +280,7 @@ image::images/rules-ui-create/-detections-indicator-rule-example.png[Indicator m
 +
 [TIP]
 ====
-Before you create rules, create <<security-timelines-ui,Timeline templates>> so
-they can be selected here. When alerts generated by the rule are investigated in the Timeline, Timeline query values are replaced with their corresponding alert field values.
+Before you create rules, create <<security-timeline-templates-ui,Timeline templates>> so you can select them under **Timeline template** at the end of the **Define rule** section. When alerts generated by the rule are investigated in the Timeline, Timeline query values are replaced with their corresponding alert field values.
 ====
 . (Optional) Use **Suppress alerts by** to reduce the number of repeated or duplicate alerts created by the rule. Refer to <<security-alert-suppression,Suppress detection alerts>> for more information.
 +
@@ -340,7 +339,7 @@ alerts.
 +
 [NOTE]
 ====
-You can use saved queries (image:images/icons/filterInCircle.svg[Filter]) and queries from saved Timelines (**Import query from saved Timeline**) as rule conditions.
+You can use saved queries and queries from saved Timelines (**Import query from saved Timeline**) as rule conditions.
 ====
 .. Use the **Fields** menu to select a field to check for new terms. You can also select up to three fields to detect a combination of new terms (for example, a `host.ip` and `host.id` that have never been observed together before).
 +
@@ -660,7 +659,7 @@ run exactly at its scheduled time.
 . Click **Continue**. The **Rule actions** pane is displayed.
 . Do either of the following:
 +
-** Continue onto <<security-rules-create,setting up alert notifications>> and <<rule-response-action,Response Actions>> (optional).
+** Continue onto <<rule-notifications,setting up alert notifications>> and <<rule-response-action,Response Actions>> (optional).
 ** Create the rule (with or without activation).
 
 [discrete]
@@ -680,7 +679,7 @@ To use actions for alert notifications, you need the appropriate user role. For 
 ====
 Each action type requires a connector. Connectors store the
 information required to send the notification from the external system. You can
-configure connectors while creating the rule or in **Project settings** → **Management** → **{connectors-ui}**. For more
+configure connectors while creating the rule or in **Project settings** → **Stack Management** → **{connectors-ui}**. For more
 information, see {kibana-ref}/action-types.html[Action and connector types].
 
 Some connectors that perform actions require less configuration. For example, you do not need to set the action frequency or variables for the {kibana-ref}/cases-action-type.html[Cases connector].
