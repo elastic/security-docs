@@ -8,6 +8,9 @@ This rule identifies when a web server is spawned via Python. Attackers may use 
 *Rule indices*: 
 
 * logs-endpoint.events.*
+* logs-crowdstrike.fdr*
+* logs-sentinel_one_cloud_funnel.*
+* endgame-*
 
 *Severity*: low
 
@@ -28,8 +31,11 @@ This rule identifies when a web server is spawned via Python. Attackers may use 
 * Use Case: Threat Detection
 * Tactic: Execution
 * Data Source: Elastic Defend
+* Data Source: Crowdstrike
+* Data Source: SentinelOne
+* Data Source: Elastic Endgame
 
-*Version*: 1
+*Version*: 101
 
 *Rule authors*: 
 
@@ -80,13 +86,15 @@ For more details on Elastic Defend refer to the https://www.elastic.co/guide/en/
 
 [source, js]
 ----------------------------------
-process where host.os.type == "linux" and event.type == "start" and event.action == "exec" and (
-  (process.name like "python*" and process.args in ("http.server", "SimpleHTTPServer")) or
+process where host.os.type == "linux" and event.type == "start" and
+  event.action in ("exec", "exec_event", "start", "ProcessRollup2") and
   (
-    process.name in ("bash", "dash", "sh", "tcsh", "csh", "zsh", "ksh", "fish") and
-    process.command_line like~ "*python* -m http.server*"
+    (process.name like "python*" and process.args in ("http.server", "SimpleHTTPServer")) or
+    (
+      process.name in ("bash", "dash", "sh", "tcsh", "csh", "zsh", "ksh", "fish") and
+      process.command_line like~ "*python* -m http.server*"
+    )
   )
-)
 
 ----------------------------------
 
