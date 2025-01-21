@@ -9,6 +9,8 @@ This rule monitors for the addition of the cap_setuid+ep or cap_setgid+ep capabi
 
 * logs-endpoint.events.*
 * endgame-*
+* logs-crowdstrike.fdr*
+* logs-sentinel_one_cloud_funnel.*
 
 *Severity*: medium
 
@@ -30,8 +32,10 @@ This rule monitors for the addition of the cap_setuid+ep or cap_setgid+ep capabi
 * Tactic: Persistence
 * Data Source: Elastic Defend
 * Data Source: Elastic Endgame
+* Data Source: Crowdstrike
+* Data Source: SentinelOne
 
-*Version*: 6
+*Version*: 106
 
 *Rule authors*: 
 
@@ -156,11 +160,12 @@ For more details on Elastic Defend refer to the https://www.elastic.co/guide/en/
 
 [source, js]
 ----------------------------------
-process where host.os.type == "linux" and event.type == "start" and event.action in ("exec", "exec_event") and 
-process.name == "setcap" and process.args : "cap_set?id+ep" and not (
-  process.parent.name in ("jem", "vzctl") or
-  process.args like "/usr/bin/new?idmap"
-)
+process where host.os.type == "linux" and event.type == "start" and
+  event.action in ("exec", "exec_event", "start", "ProcessRollup2") and 
+  process.name == "setcap" and process.args : "cap_set?id+ep" and not (
+    process.parent.name in ("jem", "vzctl") or
+    process.args like "/usr/bin/new?idmap"
+  )
 
 ----------------------------------
 
