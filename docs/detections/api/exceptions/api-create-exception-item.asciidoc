@@ -1,24 +1,26 @@
 [[exceptions-api-create-exception-item]]
-=== Create exception item
+=== Create exceptions used by multiple rules
 
 Creates an exception item and associates it with the specified
 <<exceptions-api-create-container, exception container>>.
 
-Refer to <<lists-api-overview>> for information about creating exception items from
-lists, such as a list of IP addresses or host names.
 
-NOTE: Before creating exception items, you must create an exception container.
-
-IMPORTANT: Endpoint rule exception items cannot use
+[IMPORTANT]
+=====
+* Before creating exception items, you must create an <<exceptions-api-create-container, exception container>>. After creating the container, you can associate exception items with it.
+* Endpoint rule exception items cannot use
 <<lists-api-overview, lists>> (the `list` in the `entries` array), and the
 following fields cannot be used in exception queries (as `field` values in the
 `entries` object):
 
-* `file.Ext.quarantine_path`
-* `file.Ext.quarantine_result`
-* `process.entity_id`
-* `process.parent.entity_id`
-* `process.ancestry`
+** `file.Ext.quarantine_path`
+** `file.Ext.quarantine_result`
+** `process.entity_id`
+** `process.parent.entity_id`
+** `process.ancestry`
+=====
+
+TIP: For more information about creating exceptions for a single rule, refer to <<exceptions-api-create-rule-default-exception-item>>. For more information about creating exception items from a list, such as a list of IP addresses or hosts names, refer to <<lists-api-overview>>.
 
 ==== Request URL
 
@@ -32,11 +34,11 @@ A JSON object with these fields:
 |==============================================
 |Name |Type |Description |Required
 
-|`comments` |comments[] a|Array of `comment` fields:
+|`comments` |String[] a|Array of `comment` fields. Default value is `[]` (empty):
 
 * `comment` (string): Comments about the exception item.
 
-|No, defaults to empty array.
+|No
 
 |`description` |String |Describes the exception item. |Yes
 |`entries` |<<entries-object-schema, entries[]>> |Array containing the
@@ -55,22 +57,22 @@ in all {kib} spaces or just the space in which it is created, where:
 * `single`: Only available in the {kib} space in which it is created.
 * `agnostic`: Available in all {kib} spaces.
 
-Must be the same value as its associated exception container.
+Must be the same value as its associated exception container. Default value is `single`.
 
-|No, defaults to `single`.
-|`tags` |String[] |String array containing words and phrases to help categorize
-exception items. |No
-|`type` |String a|Exception query type, must be `simple`. |Yes
-|`_tags` |String[] a|For endpoint rules only, defines the OS on which the
+|No
+|`os_types` |String[] a|Defines the OS on which the
 exception is implemented. Valid values are:
 
 * `os:windows`: Windows OS
 * `os:linux`: Linux OS
-* `os:macos`: Mac OS
+* `os:macos`: Mac OS 
 
-The array must also include an `endpoint` element (to implement the exception on Linux hosts, use: `["endpoint", "os:linux"]`).
+Default value is `[]` (empty).
 
-|For endpoint exceptions, yes. For detection exceptions, no.
+|No
+|`tags` |String[] |String array containing words and phrases to help categorize
+exception items. |No
+|`type` |String a|Exception query type, must be `simple`. |Yes
 
 |==============================================
 
@@ -83,10 +85,6 @@ The array must also include an `endpoint` element (to implement the exception on
 
 |`field` |String |The source event field used to define the exception. Cannot
 be an empty string. |Yes
-|`list` |list |Object containing the
-<<lists-api-create-container, list container's>> `id` and `type`. Only valid for
-detection exception items.|No, except when using a list to define detection
-exceptions.
 |`operator` |String a|The operator used to determine when the exception is used.
 Can be:
 
