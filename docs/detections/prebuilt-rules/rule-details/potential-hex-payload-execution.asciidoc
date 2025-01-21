@@ -8,6 +8,9 @@ This rule detects potential hex payload execution on Linux systems. Adversaries 
 *Rule indices*: 
 
 * logs-endpoint.events.process*
+* logs-crowdstrike.fdr*
+* logs-sentinel_one_cloud_funnel.*
+* endgame-*
 
 *Severity*: low
 
@@ -29,8 +32,11 @@ This rule detects potential hex payload execution on Linux systems. Adversaries 
 * Tactic: Defense Evasion
 * Tactic: Execution
 * Data Source: Elastic Defend
+* Data Source: Crowdstrike
+* Data Source: SentinelOne
+* Data Source: Elastic Endgame
 
-*Version*: 1
+*Version*: 101
 
 *Rule authors*: 
 
@@ -81,14 +87,16 @@ For more details on Elastic Defend refer to the https://www.elastic.co/guide/en/
 
 [source, js]
 ----------------------------------
-process where host.os.type == "linux" and event.type == "start" and event.action == "exec" and (
-  (process.name == "xxd" and process.args like ("-r*", "-p*")) or
-  (process.name like "python*" and process.command_line like "*fromhex*" and process.command_line like ("*decode*", "*encode*")) or
-  (process.name like "php*" and process.command_line like "*hex2bin*") or
-  (process.name like "ruby*" and process.command_line like "*].pack(\"H*\")*") or
-  (process.name like "perl*" and process.command_line like "*pack(\"H*\",*") or
-  (process.name like "lua*" and process.command_line like "*tonumber(cc, 16)*")
-)
+process where host.os.type == "linux" and event.type == "start" and
+  event.action in ("exec", "exec_event", "start", "ProcessRollup2") and
+  (
+    (process.name == "xxd" and process.args like ("-r*", "-p*")) or
+    (process.name like "python*" and process.command_line like "*fromhex*" and process.command_line like ("*decode*", "*encode*")) or
+    (process.name like "php*" and process.command_line like "*hex2bin*") or
+    (process.name like "ruby*" and process.command_line like "*].pack(\"H*\")*") or
+    (process.name like "perl*" and process.command_line like "*pack(\"H*\",*") or
+    (process.name like "lua*" and process.command_line like "*tonumber(cc, 16)*")
+  )
 
 ----------------------------------
 

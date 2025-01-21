@@ -9,6 +9,7 @@ This rule identifies when the openssl client or server is used to establish a co
 
 * logs-endpoint.events.*
 * endgame-*
+* logs-sentinel_one_cloud_funnel.*
 
 *Severity*: low
 
@@ -32,8 +33,9 @@ This rule identifies when the openssl client or server is used to establish a co
 * Tactic: Execution
 * Data Source: Elastic Defend
 * Data Source: Elastic Endgame
+* Data Source: SentinelOne
 
-*Version*: 2
+*Version*: 102
 
 *Rule authors*: 
 
@@ -84,12 +86,12 @@ For more details on Elastic Defend refer to the https://www.elastic.co/guide/en/
 
 [source, js]
 ----------------------------------
-process where host.os.type == "linux" and event.type == "start" and event.action in ("exec", "exec_event") and
-process.name == "openssl" and (
-  (process.args == "s_client" and process.args : ("-connect", "*:*") and not process.args == "-showcerts") or
-  (process.args == "s_server" and process.args == "-port")
-) and
-not process.parent.executable in ("/pro/xymon/client/ext/awsXymonCheck.sh", "/opt/antidot-svc/nrpe/plugins/check_cert")
+process where host.os.type == "linux" and event.type == "start" and event.action in ("exec", "exec_event", "start") and
+  process.name == "openssl" and (
+    (process.args == "s_client" and process.args : ("-connect", "*:*") and not process.args == "-showcerts") or
+    (process.args == "s_server" and process.args == "-port")
+  ) and
+  not process.parent.executable in ("/pro/xymon/client/ext/awsXymonCheck.sh", "/opt/antidot-svc/nrpe/plugins/check_cert")
 
 ----------------------------------
 
