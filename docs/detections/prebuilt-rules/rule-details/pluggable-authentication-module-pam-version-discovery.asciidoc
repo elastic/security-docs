@@ -9,6 +9,8 @@ This rule detects PAM version discovery activity on Linux systems. PAM version d
 
 * logs-endpoint.events.*
 * endgame-*
+* logs-crowdstrike.fdr*
+* logs-sentinel_one_cloud_funnel.*
 
 *Severity*: low
 
@@ -35,8 +37,10 @@ This rule detects PAM version discovery activity on Linux systems. PAM version d
 * Tactic: Credential Access
 * Data Source: Elastic Defend
 * Data Source: Elastic Endgame
+* Data Source: Crowdstrike
+* Data Source: SentinelOne
 
-*Version*: 1
+*Version*: 101
 
 *Rule authors*: 
 
@@ -87,10 +91,12 @@ For more details on Elastic Defend refer to the https://www.elastic.co/guide/en/
 
 [source, js]
 ----------------------------------
-process where host.os.type == "linux" and event.type == "start" and event.action in ("exec", "exec_event") and (
-  (process.name in ("dpkg", "dpkg-query") and process.args == "libpam-modules") or
-  (process.name == "rpm" and process.args == "pam")
-)
+process where host.os.type == "linux" and event.type == "start" and
+  event.action in ("exec", "exec_event", "start", "ProcessRollup2") and
+  (
+    (process.name in ("dpkg", "dpkg-query") and process.args == "libpam-modules") or
+    (process.name == "rpm" and process.args == "pam")
+  )
 
 ----------------------------------
 

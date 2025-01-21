@@ -9,6 +9,8 @@ Identifies when a non-interactive terminal (tty) is being upgraded to a fully in
 
 * logs-endpoint.events.*
 * endgame-*
+* logs-crowdstrike.fdr*
+* logs-sentinel_one_cloud_funnel.*
 
 *Severity*: medium
 
@@ -30,8 +32,10 @@ Identifies when a non-interactive terminal (tty) is being upgraded to a fully in
 * Tactic: Execution
 * Data Source: Elastic Endgame
 * Data Source: Elastic Defend
+* Data Source: Crowdstrike
+* Data Source: SentinelOne
 
-*Version*: 3
+*Version*: 103
 
 *Rule authors*: 
 
@@ -82,11 +86,13 @@ For more details on Elastic Defend refer to the https://www.elastic.co/guide/en/
 
 [source, js]
 ----------------------------------
-process where host.os.type == "linux" and event.type == "start" and event.action in ("exec", "exec_event") and (
-  (process.name == "stty" and process.args == "raw" and process.args == "-echo" and process.args_count >= 3) or
-  (process.name == "script" and process.args in ("-qc", "-c") and process.args == "/dev/null" and 
-   process.args_count == 4)
-)
+process where host.os.type == "linux" and event.type == "start" and
+  event.action in ("exec", "exec_event", "start", "ProcessRollup2") and
+  (
+    (process.name == "stty" and process.args == "raw" and process.args == "-echo" and process.args_count >= 3) or
+    (process.name == "script" and process.args in ("-qc", "-c") and process.args == "/dev/null" and
+    process.args_count == 4)
+  )
 
 ----------------------------------
 

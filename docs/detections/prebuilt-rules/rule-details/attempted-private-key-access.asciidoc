@@ -37,7 +37,7 @@ Attackers may try to access private keys, e.g. ssh, in order to gain further aut
 * Data Source: Elastic Endgame
 * Data Source: System
 
-*Version*: 106
+*Version*: 107
 
 *Rule authors*: 
 
@@ -52,11 +52,23 @@ Attackers may try to access private keys, e.g. ssh, in order to gain further aut
 [source, js]
 ----------------------------------
 process where host.os.type == "windows" and event.type == "start" and
-  process.args : ("*.pem *", "*.pem", "*.id_rsa*") and
-  not process.args: ("--tls-cert", "--ssl-cert") and
+  process.command_line : ("*.pem *", "*.pem", "*.id_rsa*") and
+  not process.args : (
+        "--rootcert",
+        "--cert",
+        "--crlfile"
+  ) and
+  not process.command_line : (
+        "*--cacert*",
+        "*--ssl-cert*",
+        "*--tls-cert*",
+        "*--tls_server_certs*"
+  ) and
   not process.executable : (
     "?:\\ProgramData\\Logishrd\\LogiOptions\\Software\\*\\LogiLuUpdater.exe",
     "?:\\Program Files\\Elastic\\Agent\\data\\*\\osqueryd.exe",
+    "?:\\Program Files\\Git\\cmd\\git.exe",
+    "?:\\Program Files\\Git\\mingw64\\bin\\git.exe",
     "?:\\Program Files\\Guardicore\\gc-controller.exe",
     "?:\\Program Files\\Guardicore\\gc-deception-agent.exe",
     "?:\\Program Files\\Guardicore\\gc-detection-agent.exe",
