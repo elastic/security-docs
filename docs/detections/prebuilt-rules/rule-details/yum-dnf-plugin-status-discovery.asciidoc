@@ -9,6 +9,8 @@ This rule detects the execution of the `grep` command with the `plugins` argumen
 
 * logs-endpoint.events.*
 * endgame-*
+* logs-crowdstrike.fdr*
+* logs-sentinel_one_cloud_funnel.*
 
 *Severity*: low
 
@@ -34,8 +36,10 @@ This rule detects the execution of the `grep` command with the `plugins` argumen
 * Tactic: Discovery
 * Data Source: Elastic Defend
 * Data Source: Elastic Endgame
+* Data Source: Crowdstrike
+* Data Source: SentinelOne
 
-*Version*: 2
+*Version*: 102
 
 *Rule authors*: 
 
@@ -82,11 +86,12 @@ For more details on Elastic Defend refer to the https://www.elastic.co/guide/en/
 
 [source, js]
 ----------------------------------
-process where host.os.type == "linux" and event.type == "start" and event.action in ("exec", "exec_event") and
-process.name == "grep" and process.args : "plugins*" and process.args : (
-  "/etc/yum.conf", "/usr/lib/yum-plugins/*", "/etc/yum/pluginconf.d/*",
-  "/usr/lib/python*/site-packages/dnf-plugins/*", "/etc/dnf/plugins/*", "/etc/dnf/dnf.conf"
-)
+process where host.os.type == "linux" and event.type == "start" and
+  event.action in ("exec", "exec_event", "start", "ProcessRollup2") and
+  process.name == "grep" and process.args : "plugins*" and process.args : (
+    "/etc/yum.conf", "/usr/lib/yum-plugins/*", "/etc/yum/pluginconf.d/*",
+    "/usr/lib/python*/site-packages/dnf-plugins/*", "/etc/dnf/plugins/*", "/etc/dnf/dnf.conf"
+  )
 
 ----------------------------------
 
