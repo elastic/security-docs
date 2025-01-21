@@ -11,6 +11,8 @@ This rule monitors for inter-process communication via Unix sockets. Adversaries
 * endgame-*
 * auditbeat-*
 * logs-auditd_manager.auditd-*
+* logs-crowdstrike.fdr*
+* logs-sentinel_one_cloud_funnel.*
 
 *Severity*: low
 
@@ -33,8 +35,10 @@ This rule monitors for inter-process communication via Unix sockets. Adversaries
 * Data Source: Elastic Defend
 * Data Source: Elastic Endgame
 * Data Source: Auditd Manager
+* Data Source: Crowdstrike
+* Data Source: SentinelOne
 
-*Version*: 3
+*Version*: 103
 
 *Rule authors*: 
 
@@ -48,8 +52,9 @@ This rule monitors for inter-process communication via Unix sockets. Adversaries
 
 [source, js]
 ----------------------------------
-process where host.os.type == "linux" and event.type == "start" and event.action in ("exec", "exec_event", "executed", "process_started")
- and (
+process where host.os.type == "linux" and event.type == "start" and
+ event.action in ("exec", "exec_event", "start", "ProcessRollup2", "executed", "process_started") and
+ (
   (process.name in ("nc", "ncat", "netcat", "nc.openbsd") and 
    process.args == "-U" and process.args : ("/usr/local/*", "/run/*", "/var/run/*")) or
   (process.name == "socat" and 

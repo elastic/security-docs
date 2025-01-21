@@ -9,6 +9,7 @@ Message of the day (MOTD) is the message that is presented to the user when a us
 
 * logs-endpoint.events.process*
 * endgame-*
+* logs-sentinel_one_cloud_funnel.*
 
 *Severity*: high
 
@@ -33,8 +34,9 @@ Message of the day (MOTD) is the message that is presented to the user when a us
 * Data Source: Elastic Endgame
 * Resources: Investigation Guide
 * Data Source: Elastic Defend
+* Data Source: SentinelOne
 
-*Version*: 10
+*Version*: 110
 
 *Rule authors*: 
 
@@ -159,38 +161,55 @@ For more details on Elastic Defend refer to the https://www.elastic.co/guide/en/
 
 [source, js]
 ----------------------------------
-process where event.type == "start" and host.os.type == "linux" and event.action : ("exec", "exec_event") and
-  process.parent.executable : "/etc/update-motd.d/*" and (
-  (process.name in ("bash", "dash", "sh", "tcsh", "csh", "zsh", "ksh", "fish") and (
-    (process.args : ("-i", "-l")) or (process.parent.name == "socat" and process.parent.args : "*exec*"))) or
-  (process.name : ("nc", "ncat", "netcat", "nc.openbsd") and process.args_count >= 3 and 
-    not process.args : ("-*z*", "-*l*")) or
-  (process.name : "python*" and process.args : "-c" and process.args : (
-     "*import*pty*spawn*", "*import*subprocess*call*"
-  )) or
-  (process.name : "perl*" and process.args : "-e" and process.args : "*socket*" and process.args : (
-     "*exec*", "*system*"
-  )) or
-  (process.name : "ruby*" and process.args : ("-e", "-rsocket") and process.args : (
-     "*TCPSocket.new*", "*TCPSocket.open*"
-  )) or
-  (process.name : "lua*" and process.args : "-e" and process.args : "*socket.tcp*" and process.args : (
-     "*io.popen*", "*os.execute*"
-  )) or
-  (process.name : "php*" and process.args : "-r" and process.args : "*fsockopen*" and process.args : "*/bin/*sh*") or 
-  (process.name : ("awk", "gawk", "mawk", "nawk") and process.args : "*/inet/tcp/*") or 
-  (process.name in ("openssl", "telnet")) or
-  (process.args : (
-    "./*", "/boot/*", "/dev/shm/*", "/etc/cron.*/*", "/etc/init.d/*", "/etc/update-motd.d/*", "/run/*", "/srv/*",
-    "/tmp/*", "/var/tmp/*", "/var/log/*", "/opt/*"
-    ) and process.args_count == 1
+process where event.type == "start" and host.os.type == "linux" and event.action : ("exec", "exec_event", "start") and
+  process.parent.executable : "/etc/update-motd.d/*" and
+  (
+    (
+      process.name in ("bash", "dash", "sh", "tcsh", "csh", "zsh", "ksh", "fish") and
+      (
+        process.args : ("-i", "-l") or
+        (process.parent.name == "socat" and process.parent.args : "*exec*")
+      )
+    ) or
+    (
+      process.name : ("nc", "ncat", "netcat", "nc.openbsd") and process.args_count >= 3 and 
+      not process.args : ("-*z*", "-*l*")
+    ) or
+    (
+      process.name : "python*" and process.args : "-c" and process.args : (
+        "*import*pty*spawn*", "*import*subprocess*call*"
+      )
+    ) or
+    (
+      process.name : "perl*" and process.args : "-e" and process.args : "*socket*" and process.args : (
+        "*exec*", "*system*"
+      )
+    ) or
+    (
+      process.name : "ruby*" and process.args : ("-e", "-rsocket") and process.args : (
+        "*TCPSocket.new*", "*TCPSocket.open*"
+      )
+    ) or
+    (
+      process.name : "lua*" and process.args : "-e" and process.args : "*socket.tcp*" and process.args : (
+        "*io.popen*", "*os.execute*"
+      )
+    ) or
+    (process.name : "php*" and process.args : "-r" and process.args : "*fsockopen*" and process.args : "*/bin/*sh*") or 
+    (process.name : ("awk", "gawk", "mawk", "nawk") and process.args : "*/inet/tcp/*") or 
+    (process.name in ("openssl", "telnet")) or
+    (
+      process.args : (
+        "./*", "/boot/*", "/dev/shm/*", "/etc/cron.*/*", "/etc/init.d/*", "/etc/update-motd.d/*", "/run/*", "/srv/*",
+        "/tmp/*", "/var/tmp/*", "/var/log/*", "/opt/*"
+      ) and process.args_count == 1
+    )
+  ) and 
+  not (
+    process.parent.args == "--force" or
+    process.args in ("/usr/games/lolcat", "/usr/bin/screenfetch") or
+    process.parent.name == "system-crash-notification"
   )
-) and 
-not (
-  process.parent.args == "--force" or
-  process.args in ("/usr/games/lolcat", "/usr/bin/screenfetch") or
-  process.parent.name == "system-crash-notification"
-)
 
 ----------------------------------
 

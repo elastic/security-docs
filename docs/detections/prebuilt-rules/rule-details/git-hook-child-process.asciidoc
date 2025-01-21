@@ -8,6 +8,9 @@ This rule detects child processes spawned by Git hooks. Git hooks are scripts th
 *Rule indices*: 
 
 * logs-endpoint.events.process*
+* logs-crowdstrike.fdr*
+* logs-sentinel_one_cloud_funnel.*
+* endgame-*
 
 *Severity*: low
 
@@ -33,8 +36,11 @@ This rule detects child processes spawned by Git hooks. Git hooks are scripts th
 * Tactic: Execution
 * Tactic: Defense Evasion
 * Data Source: Elastic Defend
+* Data Source: Crowdstrike
+* Data Source: SentinelOne
+* Data Source: Elastic Endgame
 
-*Version*: 2
+*Version*: 102
 
 *Rule authors*: 
 
@@ -85,19 +91,23 @@ For more details on Elastic Defend refer to the https://www.elastic.co/guide/en/
 
 [source, js]
 ----------------------------------
-process where host.os.type == "linux" and event.type == "start" and event.action == "exec" and process.parent.name in (
-  "applypatch-msg", "commit-msg", "fsmonitor-watchman", "post-update", "post-checkout", "post-commit",
-  "pre-applypatch", "pre-commit", "pre-merge-commit", "prepare-commit-msg", "pre-push", "pre-rebase", "pre-receive",
-  "push-to-checkout", "update", "post-receive", "pre-auto-gc", "post-rewrite", "sendemail-validate", "p4-pre-submit",
-  "post-index-change", "post-merge", "post-applypatch"
-) and (
-  process.name in ("nohup", "setsid", "disown", "bash", "dash", "sh", "tcsh", "csh", "zsh", "ksh", "fish") or 
-  process.name : ("php*", "perl*", "ruby*", "lua*") or 
-  process.executable : (
-    "/boot/*", "/dev/shm/*", "/etc/cron.*/*", "/etc/init.d/*", "/etc/update-motd.d/*",
-    "/run/*", "/srv/*", "/tmp/*", "/var/tmp/*", "/var/log/*"
-  )
-) and not process.name in ("git", "dirname")
+process where host.os.type == "linux" and event.type == "start" and
+  event.action in ("exec", "exec_event", "start", "ProcessRollup2") and
+  process.parent.name in (
+    "applypatch-msg", "commit-msg", "fsmonitor-watchman", "post-update", "post-checkout", "post-commit",
+    "pre-applypatch", "pre-commit", "pre-merge-commit", "prepare-commit-msg", "pre-push", "pre-rebase", "pre-receive",
+    "push-to-checkout", "update", "post-receive", "pre-auto-gc", "post-rewrite", "sendemail-validate", "p4-pre-submit",
+    "post-index-change", "post-merge", "post-applypatch"
+  ) and
+  (
+    process.name in ("nohup", "setsid", "disown", "bash", "dash", "sh", "tcsh", "csh", "zsh", "ksh", "fish") or 
+    process.name : ("php*", "perl*", "ruby*", "lua*") or 
+    process.executable : (
+      "/boot/*", "/dev/shm/*", "/etc/cron.*/*", "/etc/init.d/*", "/etc/update-motd.d/*",
+      "/run/*", "/srv/*", "/tmp/*", "/var/tmp/*", "/var/log/*"
+    )
+  ) and
+  not process.name in ("git", "dirname")
 
 ----------------------------------
 
