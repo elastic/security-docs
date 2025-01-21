@@ -9,6 +9,7 @@ This rule monitors for the usage of the which command with an unusual amount of 
 
 * logs-endpoint.events.*
 * endgame-*
+* logs-sentinel_one_cloud_funnel.*
 
 *Severity*: low
 
@@ -30,8 +31,9 @@ This rule monitors for the usage of the which command with an unusual amount of 
 * Tactic: Discovery
 * Data Source: Elastic Defend
 * Data Source: Elastic Endgame
+* Data Source: SentinelOne
 
-*Version*: 7
+*Version*: 107
 
 *Rule authors*: 
 
@@ -45,12 +47,13 @@ This rule monitors for the usage of the which command with an unusual amount of 
 
 [source, js]
 ----------------------------------
-process where host.os.type == "linux" and event.type == "start" and event.action in ("exec", "exec_event") and 
-process.name == "which" and process.args_count >= 10 and not (
-  process.parent.name == "jem" or
-  process.parent.executable like ("/vz/root/*", "/var/lib/docker/*") or
-  process.args == "--tty-only"
-)
+process where host.os.type == "linux" and event.type == "start" and
+  event.action in ("exec", "exec_event", "start") and 
+  process.name == "which" and process.args_count >= 10 and not (
+    process.parent.name == "jem" or
+    process.parent.executable like ("/vz/root/*", "/var/lib/docker/*") or
+    process.args == "--tty-only"
+  )
 
 /* potential tuning if rule would turn out to be noisy
 and process.args in ("nmap", "nc", "ncat", "netcat", nc.traditional", "gcc", "g++", "socat") and 
