@@ -11,6 +11,7 @@ preview::[]
 You can direct third-party endpoint protection systems to perform response actions on enrolled hosts, such as isolating a suspicious endpoint from your network, without leaving the {elastic-sec} UI. This page explains the configuration steps needed to enable response actions for these third-party systems:
 
 * CrowdStrike
+* Microsoft Defender for Endpoint
 * SentinelOne
 
 Check out <<third-party-actions>> to learn which response actions are supported for each system.
@@ -80,6 +81,67 @@ IMPORTANT: Do not create more than one CrowdStrike connector.
 This gives you visibility into CrowdStrike without needing to leave {elastic-sec}. You can perform supported endpoint response actions directly from alerts that a rule creates, by using the **Take action** menu in the alert details flyout.
 ====
 
+.**Set up Microsoft Defender for Endpoint response actions**
+[%collapsible]
+====
+// NOTE TO CONTRIBUTORS: These sections have very similar content. If you change anything 
+// in this section, apply the change to the other sections, too.
+
+. **Create API access information in Microsoft Azure.** You should create two new applications in your Azure domain and grant them the following minimum API permissions:
++
+--
+- For use with the Microsoft Defender for Endpoint Fleet integration policy: Permission to read alert data (`Windows Defender ATP: Alert.Read.All`).
+- For use with the Microsoft Defender for Endpoint connector: Permission to read machine information as well as isolate and release a machine (`Windows Defender ATP: Machine.Isolate and Machine.Read.All`).
+--
++
+Refer to the {integrations-docs}/microsoft_defender_endpoint[Microsoft Defender for Endpoint integration documentation] or https://learn.microsoft.com/en-us/defender-endpoint/api/exposed-apis-create-app-webapp[Microsoft's documentation] for details.
++
+After the applications are created, you should have the following 3 pieces of information available for each one:
++
+--
+- Client ID
+- Client secret
+- Tenant ID
+--
+
+. **Install the Microsoft Defender for Endpoint integration and {agent}.** Elastic's {integrations-docs}/microsoft_defender_endpoint[Microsoft Defender for Endpoint integration] collects and ingests logs into {elastic-sec}.
++
+.. Find **Integrations** in the navigation menu or use the {kibana-ref}/introduction.html#kibana-navigation-search[global search field], search for and select **Microsoft Defender for Endpoint**, then select **Add Microsoft Defender for Endpoint**.
+.. Configure the integration with an **Integration name** and optional **Description**.
+.. Ensure that **Microsoft Defender for Endpoint logs** is selected, and enter the required values for **Client ID**, **Client Secret**, and **Tenant ID**.
+.. Scroll down and enter a name for the agent policy in **New agent policy name**. If other agent policies already exist, you can click the **Existing hosts** tab and select an existing policy instead. For more details on {agent} configuration settings, refer to {fleet-guide}/agent-policy.html[{agent} policies].
+.. Click **Save and continue**.
+.. Select **Add {agent} to your hosts** and continue with the <<enroll-agent,{agent} installation steps>> to install {agent} on a resource in your network (such as a server or VM). {agent} will act as a bridge collecting data from Microsoft Defender for Endpoint and sending it back to {elastic-sec}.
+
+. **Create a Microsoft Defender for Endpoint connector.** Elastic's Microsoft Defender for Endpoint connector enables {elastic-sec} to perform actions on Microsoft Defender–enrolled hosts.
++
+IMPORTANT: Do not create more than one Microsoft Defender for Endpoint connector.
++
+.. Find **Connectors** in the navigation menu or use the {kibana-ref}/introduction.html#kibana-navigation-search[global search field], then select **Create connector**.
+.. Select the Microsoft Defender for Endpoint connector.
+.. Enter the configuration information:
+   - **Connector name**: A name to identify the connector.
+   - **Application client ID**: The client ID created in step 1.
+   - **Tenant ID**: The tenant ID created in step 1.
+   - **Client secret value**: The client secret created in step 1.
+.. (Optional) If necessary, adjust the default values populated for the other configuration parameters.
+.. Click **Save**.
+
+. **Create and enable detection rules to generate {elastic-sec} alerts.** Create <<rules-ui-create,detection rules>> to generate {elastic-sec} alerts based on Microsoft Defender for Endpoint events and data.
++
+This gives you visibility into Microsoft Defender hosts without needing to leave {elastic-sec}. You can perform supported endpoint response actions directly from alerts that a rule creates, by using the **Take action** menu in the alert details flyout.
++
+When creating a rule, you can target any event containing a Microsoft Defender machine ID field. Use one or more of these index patterns:
++
+--
+- `logs-microsoft_defender_endpoint.log-*`
+- `logs-m365_defender.alert-*`
+- `logs-m365_defender.incident-*`
+- `logs-m365_defender.log-*`
+- `logs-m365_defender.event-*`
+--
+
+====
 
 .**Set up SentinelOne response actions**
 [%collapsible]
