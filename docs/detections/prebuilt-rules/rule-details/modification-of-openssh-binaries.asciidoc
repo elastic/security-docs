@@ -34,8 +34,9 @@ Adversaries may modify SSH related binaries for persistence or credential access
 * Tactic: Lateral Movement
 * Data Source: Elastic Endgame
 * Data Source: Elastic Defend
+* Resources: Investigation Guide
 
-*Version*: 110
+*Version*: 111
 
 *Rule authors*: 
 
@@ -62,7 +63,7 @@ Adversaries may exploit OpenSSH by modifying its binaries, such as `/usr/bin/scp
 The detection rule 'Modification of OpenSSH Binaries' is designed to identify such abuse by monitoring file changes in the Linux environment. It triggers an alert when a process, modifies any of the specified OpenSSH binaries or libraries. This helps security analysts detect potential malicious activities and take appropriate action.
 
 > **Note**:
-> This investigation guide uses the https://www.elastic.co/guide/en/security/master/invest-guide-run-osquery.html[Osquery Markdown Plugin] introduced in Elastic Stack version 8.5.0. Older Elastic Stack versions will display unrendered Markdown in this guide.
+> This investigation guide uses the https://www.elastic.co/guide/en/security/current/invest-guide-run-osquery.html[Osquery Markdown Plugin] introduced in Elastic Stack version 8.5.0. Older Elastic Stack versions will display unrendered Markdown in this guide.
 > This investigation guide uses https://www.elastic.co/guide/en/security/current/osquery-placeholder-fields.html[placeholder fields] to dynamically pass alert data into Osquery queries. Placeholder fields were introduced in Elastic Stack version 8.7.0. If you're using Elastic Stack version 8.6.0 or earlier, you'll need to manually adjust this investigation guide's queries to ensure they properly run.
 
 
@@ -177,16 +178,17 @@ Auditbeat is a lightweight shipper that you can install on your servers to audit
 [source, js]
 ----------------------------------
 event.category:file and host.os.type:linux and event.type:change and 
-  process.name:(* and not (dnf or dnf-automatic or dpkg or yum or rpm or yum-cron or anacron or platform-python)) and 
+  process.name:(* and not (
+    dnf or dnf-automatic or dpkg or yum or rpm or yum-cron or anacron or platform-python* or
+    apk or ansible-admin or systemd or python* or yum or nix-daemon or nix
+    )
+  ) and 
   (file.path:(/usr/bin/scp or 
                 /usr/bin/sftp or 
                 /usr/bin/ssh or 
                 /usr/sbin/sshd) or 
   file.name:libkeyutils.so) and
-  not (
-    process.executable:/usr/share/elasticsearch/* or
-    process.name : (apk or ansible-admin or systemd or dnf or python*)
-  )
+  not process.executable:/usr/share/elasticsearch/*
 
 ----------------------------------
 
