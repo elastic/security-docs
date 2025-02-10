@@ -34,7 +34,7 @@ Identifies potentially suspicious processes that are not trusted or living-off-t
 * Resources: Investigation Guide
 * Data Source: Elastic Defend
 
-*Version*: 113
+*Version*: 114
 
 *Rule authors*: 
 
@@ -124,7 +124,7 @@ sequence by process.entity_id with maxspan=1m
   [process where host.os.type == "windows" and event.type == "start" and process.pid != 4 and
 
     /* ignore NT Authority and Network Service accounts */
-    not user.id : ("S-1-5-19", "S-1-5-20") and
+    not user.id in ("S-1-5-19", "S-1-5-20") and
 
     /* filter out anything trusted but not from Microsoft */
     /* LOLBins will be inherently trusted and signed, so ignore everything else trusted */
@@ -137,9 +137,6 @@ sequence by process.entity_id with maxspan=1m
 
   /* second sequence to capture network connections over port 445 related to SMB */
   [network where host.os.type == "windows" and destination.port == 445 and process.pid != 4]
-
-/* end the sequence when the process ends where joining was on process.entity_id */
-until [process where host.os.type == "windows" and event.type == "end"]
 
 ----------------------------------
 
