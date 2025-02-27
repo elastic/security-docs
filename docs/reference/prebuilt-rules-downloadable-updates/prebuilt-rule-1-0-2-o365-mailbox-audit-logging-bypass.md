@@ -1,0 +1,81 @@
+---
+mapped_pages:
+  - https://www.elastic.co/guide/en/security/current/prebuilt-rule-1-0-2-o365-mailbox-audit-logging-bypass.html
+---
+
+# O365 Mailbox Audit Logging Bypass [prebuilt-rule-1-0-2-o365-mailbox-audit-logging-bypass]
+
+Detects the occurrence of mailbox audit bypass associations. The mailbox audit is responsible for logging specified mailbox events (like accessing a folder or a message or permanently deleting a message). However, actions taken by some authorized accounts, such as accounts used by third-party tools or accounts used for lawful monitoring, can create a large number of mailbox audit log entries and may not be of interest to your organization. Because of this, administrators can create bypass associations, allowing certain accounts to perform their tasks without being logged. Attackers can abuse this allowlist mechanism to conceal actions taken, as the mailbox audit will log no activity done by the account.
+
+**Rule type**: query
+
+**Rule indices**:
+
+* filebeat-*
+* logs-o365*
+
+**Severity**: medium
+
+**Risk score**: 47
+
+**Runs every**: 5m
+
+**Searches indices from**: now-30m ({{ref}}/common-options.html#date-math[Date Math format], see also [`Additional look-back time`](docs-content://solutions/security/detect-and-alert/create-detection-rule.md#rule-schedule))
+
+**Maximum alerts per execution**: 100
+
+**References**:
+
+* [https://twitter.com/misconfig/status/1476144066807140355](https://twitter.com/misconfig/status/1476144066807140355)
+
+**Tags**:
+
+* Elastic
+* Cloud
+* Microsoft 365
+* Continuous Monitoring
+* SecOps
+* Initial Access
+
+**Version**: 3
+
+**Rule authors**:
+
+* Elastic
+
+**Rule license**: Elastic License v2
+
+## Investigation guide [_investigation_guide_1448]
+
+## Config
+
+The Office 365 Logs Fleet integration, Filebeat module, or similarly structured data is required to be compatible with this rule.
+
+## Rule query [_rule_query_1679]
+
+```js
+event.dataset:o365.audit and event.provider:Exchange and event.action:Set-MailboxAuditBypassAssociation and event.outcome:success
+```
+
+**Framework**: MITRE ATT&CKTM
+
+* Tactic:
+
+    * Name: Defense Evasion
+    * ID: TA0005
+    * Reference URL: [https://attack.mitre.org/tactics/TA0005/](https://attack.mitre.org/tactics/TA0005/)
+
+* Technique:
+
+    * Name: Impair Defenses
+    * ID: T1562
+    * Reference URL: [https://attack.mitre.org/techniques/T1562/](https://attack.mitre.org/techniques/T1562/)
+
+* Sub-technique:
+
+    * Name: Disable or Modify Tools
+    * ID: T1562.001
+    * Reference URL: [https://attack.mitre.org/techniques/T1562/001/](https://attack.mitre.org/techniques/T1562/001/)
+
+
+

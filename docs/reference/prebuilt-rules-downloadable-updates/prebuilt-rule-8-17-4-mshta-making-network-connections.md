@@ -1,0 +1,119 @@
+---
+mapped_pages:
+  - https://www.elastic.co/guide/en/security/current/prebuilt-rule-8-17-4-mshta-making-network-connections.html
+---
+
+# Mshta Making Network Connections [prebuilt-rule-8-17-4-mshta-making-network-connections]
+
+Identifies Mshta.exe making outbound network connections. This may indicate adversarial activity, as Mshta is often leveraged by adversaries to execute malicious scripts and evade detection.
+
+**Rule type**: eql
+
+**Rule indices**:
+
+* logs-endpoint.events.process-*
+* logs-endpoint.events.network-*
+* winlogbeat-*
+* logs-windows.sysmon_operational-*
+
+**Severity**: medium
+
+**Risk score**: 47
+
+**Runs every**: 5m
+
+**Searches indices from**: now-20m ({{ref}}/common-options.html#date-math[Date Math format], see also [`Additional look-back time`](docs-content://solutions/security/detect-and-alert/create-detection-rule.md#rule-schedule))
+
+**Maximum alerts per execution**: 100
+
+**References**:
+
+* [https://www.elastic.co/security-labs/elastic-protects-against-data-wiper-malware-targeting-ukraine-hermeticwiper](https://www.elastic.co/security-labs/elastic-protects-against-data-wiper-malware-targeting-ukraine-hermeticwiper)
+
+**Tags**:
+
+* Domain: Endpoint
+* OS: Windows
+* Use Case: Threat Detection
+* Tactic: Defense Evasion
+* Data Source: Elastic Defend
+* Data Source: Sysmon
+* Resources: Investigation Guide
+
+**Version**: 209
+
+**Rule authors**:
+
+* Elastic
+
+**Rule license**: Elastic License v2
+
+## Investigation guide [_investigation_guide_4781]
+
+**Triage and analysis**
+
+[TBC: QUOTE]
+**Investigating Mshta Making Network Connections**
+
+Mshta.exe is a legitimate Windows utility used to execute Microsoft HTML Application (HTA) files. Adversaries exploit it to run malicious scripts, leveraging its trusted status to bypass security measures. The detection rule identifies suspicious network activity by Mshta.exe, excluding known benign processes, to flag potential threats. This approach helps in identifying unauthorized network connections indicative of malicious intent.
+
+**Possible investigation steps**
+
+* Review the process tree to understand the parent-child relationship of mshta.exe, focusing on any unusual or unexpected parent processes that are not excluded by the rule, such as Microsoft.ConfigurationManagement.exe or known benign executables.
+* Analyze the command-line arguments used by mshta.exe to identify any suspicious or unexpected scripts being executed, especially those not matching the excluded ADSelfService_Enroll.hta.
+* Examine the network connections initiated by mshta.exe, including destination IP addresses, domains, and ports, to identify any connections to known malicious or suspicious endpoints.
+* Check for any related alerts or logs from the same host around the time of the mshta.exe activity to identify potential lateral movement or additional malicious behavior.
+* Investigate the user account associated with the mshta.exe process to determine if it has been compromised or is exhibiting unusual activity patterns.
+
+**False positive analysis**
+
+* Mshta.exe may be triggered by legitimate software updates or installations, such as those from Microsoft Configuration Management. To handle this, add exceptions for processes with parent names like Microsoft.ConfigurationManagement.exe.
+* Certain applications like Amazon Assistant and TeamViewer may use Mshta.exe for legitimate purposes. Exclude these by specifying their executable paths, such as C:\Amazon\Amazon Assistant\amazonAssistantService.exe and C:\TeamViewer\TeamViewer.exe.
+* Custom scripts or internal tools that utilize HTA files for automation might cause false positives. Identify these scripts and exclude them by their specific arguments, such as ADSelfService_Enroll.hta.
+* Regularly review and update the list of exceptions to ensure that only verified benign activities are excluded, minimizing the risk of overlooking genuine threats.
+
+**Response and remediation**
+
+* Isolate the affected system from the network to prevent further unauthorized access or data exfiltration.
+* Terminate the mshta.exe process if it is confirmed to be making unauthorized network connections.
+* Conduct a thorough scan of the affected system using updated antivirus and anti-malware tools to identify and remove any malicious scripts or files.
+* Review and analyze the process tree and network connections associated with mshta.exe to identify any additional compromised processes or systems.
+* Restore the system from a known good backup if malicious activity is confirmed and cannot be fully remediated.
+* Implement application whitelisting to prevent unauthorized execution of mshta.exe and similar system binaries.
+* Escalate the incident to the security operations center (SOC) or incident response team for further investigation and to assess the potential impact on the broader network.
+
+
+## Rule query [_rule_query_5736]
+
+```js
+sequence by process.entity_id with maxspan=10m
+  [process where host.os.type == "windows" and event.type == "start" and process.name : "mshta.exe" and
+     not process.parent.name : "Microsoft.ConfigurationManagement.exe" and
+     not (process.parent.executable : "C:\\Amazon\\Amazon Assistant\\amazonAssistantService.exe" or
+          process.parent.executable : "C:\\TeamViewer\\TeamViewer.exe") and
+     not process.args : "ADSelfService_Enroll.hta"]
+  [network where host.os.type == "windows" and process.name : "mshta.exe"]
+```
+
+**Framework**: MITRE ATT&CKTM
+
+* Tactic:
+
+    * Name: Defense Evasion
+    * ID: TA0005
+    * Reference URL: [https://attack.mitre.org/tactics/TA0005/](https://attack.mitre.org/tactics/TA0005/)
+
+* Technique:
+
+    * Name: System Binary Proxy Execution
+    * ID: T1218
+    * Reference URL: [https://attack.mitre.org/techniques/T1218/](https://attack.mitre.org/techniques/T1218/)
+
+* Sub-technique:
+
+    * Name: Mshta
+    * ID: T1218.005
+    * Reference URL: [https://attack.mitre.org/techniques/T1218/005/](https://attack.mitre.org/techniques/T1218/005/)
+
+
+

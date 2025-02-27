@@ -1,0 +1,106 @@
+---
+mapped_pages:
+  - https://www.elastic.co/guide/en/security/current/aws-ssm-command-document-created-by-rare-user.html
+---
+
+# AWS SSM Command Document Created by Rare User [aws-ssm-command-document-created-by-rare-user]
+
+Identifies when an AWS Systems Manager (SSM) command document is created by a user who does not typically perform this action. Adversaries may create SSM command documents to execute commands on managed instances, potentially leading to unauthorized access, command and control, data exfiltration and more.
+
+**Rule type**: new_terms
+
+**Rule indices**:
+
+* filebeat-*
+* logs-aws.cloudtrail-*
+
+**Severity**: low
+
+**Risk score**: 21
+
+**Runs every**: 5m
+
+**Searches indices from**: now-9m ({{ref}}/common-options.html#date-math[Date Math format], see also [`Additional look-back time`](docs-content://solutions/security/detect-and-alert/create-detection-rule.md#rule-schedule))
+
+**Maximum alerts per execution**: 100
+
+**References**:
+
+* [https://docs.aws.amazon.com/systems-manager/latest/APIReference/API_CreateDocument.html](https://docs.aws.amazon.com/systems-manager/latest/APIReference/API_CreateDocument.md)
+* [https://docs.aws.amazon.com/systems-manager/latest/userguide/documents.html](https://docs.aws.amazon.com/systems-manager/latest/userguide/documents.md)
+
+**Tags**:
+
+* Domain: Cloud
+* Data Source: AWS
+* Data Source: Amazon Web Services
+* Data Source: AWS SNS
+* Data Source: AWS Systems Manager
+* Resources: Investigation Guide
+* Use Case: Threat Detection
+* Tactic: Execution
+
+**Version**: 2
+
+**Rule authors**:
+
+* Elastic
+
+**Rule license**: Elastic License v2
+
+## Investigation guide [_investigation_guide_94]
+
+**Triage and analysis**
+
+**Investigating AWS SSM Command Document Created by Rare User**
+
+This rule identifies when an AWS Systems Manager (SSM) command document is created by a user who does not typically perform this action. Creating SSM command documents can be a legitimate action but may also indicate malicious intent if done by an unusual or compromised user. Adversaries may leverage SSM documents to execute commands on managed instances, potentially leading to unauthorized access, command and control, or data exfiltration.
+
+**Possible Investigation Steps**
+
+* ***Identify the Actor***: Review the `aws.cloudtrail.user_identity.arn` field to identify who created the SSM document. Verify if this user typically creates such documents and has the appropriate permissions. It may be unexpected for certain types of users, like assumed roles or federated users, to perform this action.
+* ***Analyze the Document Details***:
+* ***Document Name***: Check the `aws.cloudtrail.request_parameters.name` field for the document name to understand its intended purpose.
+* ***Document Content***: If possible, review `aws.cloudtrail.request_parameters.content` for any sensitive or unexpected instructions (e.g., actions for data exfiltration or privilege escalation). If not available via logs, consider reviewing the document in the AWS Management Console.
+* ***Contextualize the Activity with Related Events***: Look for other CloudTrail events involving the same user ARN or IP address (`source.address`). Examine actions performed in other AWS services, such as IAM, EC2, or S3, to identify if additional suspicious behavior exists. The `SendCommand` API call may indicate attempts to execute the SSM document on managed instances.
+* ***Check Document Status and Metadata***:
+* ***Document Status***: Confirm the document creation status in `aws.cloudtrail.response_elements.documentDescription.status`. A status of `Creating` may indicate that the document is in progress.
+* ***Execution Permissions***: Review if the document specifies `platformTypes` and `documentVersion` in `aws.cloudtrail.response_elements.documentDescription` to understand which environments may be impacted and if multiple versions exist.
+
+**False Positive Analysis**
+
+* ***Authorized Administrative Actions***: Determine if this document creation aligns with scheduled administrative tasks or actions by authorized personnel.
+* ***Historical User Actions***: Compare this action against historical activities for the user to determine if they have a history of creating similar documents, which may indicate legitimate usage.
+
+**Response and Remediation**
+
+* ***Immediate Document Review and Deletion***: If the document creation is deemed unauthorized, delete the document immediately and check for other similar documents created recently.
+* ***Enhance Monitoring and Alerts***: Configure additional monitoring for SSM document creation events, especially when associated with untrusted or rare users.
+* ***Policy Update***: Consider restricting SSM document creation permissions to specific, trusted roles or users to prevent unauthorized document creation.
+* ***Incident Response***: If the document is confirmed as part of malicious activity, treat this as a security incident. Follow incident response protocols, including containment, investigation, and remediation.
+
+**Additional Information**
+
+For further guidance on managing and securing AWS Systems Manager in your environment, refer to the [AWS SSM documentation](https://docs.aws.amazon.com/systems-manager/latest/userguide/what-is-systems-manager.md) and AWS security best practices.
+
+
+## Rule query [_rule_query_98]
+
+```js
+event.dataset: "aws.cloudtrail"
+    and event.provider: "ssm.amazonaws.com"
+    and event.action: "CreateDocument"
+    and event.outcome: "success"
+    and aws.cloudtrail.response_elements: *documentType=Command*
+```
+
+**Framework**: MITRE ATT&CKTM
+
+* Tactic:
+
+    * Name: Execution
+    * ID: TA0002
+    * Reference URL: [https://attack.mitre.org/tactics/TA0002/](https://attack.mitre.org/tactics/TA0002/)
+
+
+

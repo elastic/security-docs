@@ -1,0 +1,146 @@
+---
+mapped_pages:
+  - https://www.elastic.co/guide/en/security/current/unusual-linux-user-discovery-activity.html
+---
+
+# Unusual Linux User Discovery Activity [unusual-linux-user-discovery-activity]
+
+Looks for commands related to system user or owner discovery from an unusual user context. This can be due to uncommon troubleshooting activity or due to a compromised account. A compromised account may be used to engage in system owner or user discovery in order to identify currently active or primary users of a system. This may be a precursor to additional discovery, credential dumping or privilege elevation activity.
+
+**Rule type**: machine_learning
+
+**Rule indices**: None
+
+**Severity**: low
+
+**Risk score**: 21
+
+**Runs every**: 15m
+
+**Searches indices from**: now-45m ({{ref}}/common-options.html#date-math[Date Math format], see also [`Additional look-back time`](docs-content://solutions/security/detect-and-alert/create-detection-rule.md#rule-schedule))
+
+**Maximum alerts per execution**: 100
+
+**References**: None
+
+**Tags**:
+
+* Domain: Endpoint
+* OS: Linux
+* Use Case: Threat Detection
+* Rule Type: ML
+* Rule Type: Machine Learning
+* Tactic: Discovery
+* Resources: Investigation Guide
+
+**Version**: 106
+
+**Rule authors**:
+
+* Elastic
+
+**Rule license**: Elastic License v2
+
+## Investigation guide [_investigation_guide_1131]
+
+**Triage and analysis**
+
+[TBC: QUOTE]
+**Investigating Unusual Linux User Discovery Activity**
+
+In Linux environments, user discovery commands help identify active users and system owners, crucial for system management. However, adversaries exploit this by executing these commands from atypical user contexts, often indicating account compromise. The detection rule leverages machine learning to identify anomalies in user discovery activities, flagging potential threats for further investigation.
+
+**Possible investigation steps**
+
+* Review the alert details to identify the specific user account and the command executed that triggered the alert.
+* Check the login history and session details for the identified user account to determine if the activity aligns with their typical behavior or if it appears suspicious.
+* Investigate the source IP address and hostname associated with the user session to verify if they are known and trusted within the organization.
+* Examine recent changes to user permissions or group memberships for the identified account to detect any unauthorized modifications.
+* Look for any additional unusual or unexpected commands executed by the same user account around the time of the alert to identify potential follow-up malicious activities.
+* Correlate the alert with other security events or logs, such as authentication logs or network traffic, to gather more context and assess the scope of the potential compromise.
+
+**False positive analysis**
+
+* System administrators performing routine checks may trigger the rule. To manage this, create exceptions for known admin accounts executing user discovery commands during regular maintenance windows.
+* Automated scripts or monitoring tools that run user discovery commands can cause false positives. Identify these scripts and whitelist their execution paths or user accounts.
+* Developers or IT staff conducting legitimate troubleshooting might be flagged. Document these activities and exclude specific user accounts or IP addresses from the rule.
+* Scheduled tasks or cron jobs that include user discovery commands could be misinterpreted as threats. Review and exclude these tasks from the detection rule to prevent unnecessary alerts.
+
+**Response and remediation**
+
+* Isolate the affected system from the network to prevent further unauthorized access or lateral movement by the adversary.
+* Terminate any suspicious processes associated with the unusual user discovery activity to halt potential malicious actions.
+* Conduct a thorough review of the affected user account’s recent activities and access logs to identify any unauthorized changes or access.
+* Reset the credentials of the compromised account and any other accounts that may have been accessed using the compromised credentials.
+* Implement additional monitoring on the affected system and user accounts to detect any further suspicious activities or attempts to regain access.
+* Escalate the incident to the security operations team for a deeper investigation into potential related threats, such as credential dumping or privilege escalation attempts.
+* Review and update access controls and permissions to ensure that only authorized users have access to sensitive systems and data, reducing the risk of future compromises.
+
+
+## Setup [_setup_712]
+
+**Setup**
+
+This rule requires the installation of associated Machine Learning jobs, as well as data coming in from one of the following integrations: - Elastic Defend - Auditd Manager
+
+**Anomaly Detection Setup**
+
+Once the rule is enabled, the associated Machine Learning job will start automatically. You can view the Machine Learning job linked under the "Definition" panel of the detection rule. If the job does not start due to an error, the issue must be resolved for the job to commence successfully. For more details on setting up anomaly detection jobs, refer to the [helper guide](docs-content://explore-analyze/machine-learning/anomaly-detection.md).
+
+**Elastic Defend Integration Setup**
+
+Elastic Defend is integrated into the Elastic Agent using Fleet. Upon configuration, the integration allows the Elastic Agent to monitor events on your host and send data to the Elastic Security app.
+
+**Prerequisite Requirements:**
+
+* Fleet is required for Elastic Defend.
+* To configure Fleet Server refer to the [documentation](docs-content://reference/ingestion-tools/fleet/fleet-server.md).
+
+**The following steps should be executed in order to add the Elastic Defend integration to your system:**
+
+* Go to the Kibana home page and click "Add integrations".
+* In the query bar, search for "Elastic Defend" and select the integration to see more details about it.
+* Click "Add Elastic Defend".
+* Configure the integration name and optionally add a description.
+* Select the type of environment you want to protect, either "Traditional Endpoints" or "Cloud Workloads".
+* Select a configuration preset. Each preset comes with different default settings for Elastic Agent, you can further customize these later by configuring the Elastic Defend integration policy. [Helper guide](docs-content://solutions/security/configure-elastic-defend/configure-an-integration-policy-for-elastic-defend.md).
+* We suggest selecting "Complete EDR (Endpoint Detection and Response)" as a configuration setting, that provides "All events; all preventions"
+* Enter a name for the agent policy in "New agent policy name". If other agent policies already exist, you can click the "Existing hosts" tab and select an existing policy instead. For more details on Elastic Agent configuration settings, refer to the [helper guide](docs-content://reference/ingestion-tools/fleet/agent-policy.md).
+* Click "Save and Continue".
+* To complete the integration, select "Add Elastic Agent to your hosts" and continue to the next section to install the Elastic Agent on your hosts. For more details on Elastic Defend refer to the [helper guide](docs-content://solutions/security/configure-elastic-defend/install-elastic-defend.md).
+
+**Auditd Manager Integration Setup**
+
+The Auditd Manager Integration receives audit events from the Linux Audit Framework which is a part of the Linux kernel. Auditd Manager provides a user-friendly interface and automation capabilities for configuring and monitoring system auditing through the auditd daemon. With `auditd_manager`, administrators can easily define audit rules, track system events, and generate comprehensive audit reports, improving overall security and compliance in the system.
+
+**The following steps should be executed in order to add the Elastic Agent System integration "auditd_manager" to your system:**
+
+* Go to the Kibana home page and click “Add integrations”.
+* In the query bar, search for “Auditd Manager” and select the integration to see more details about it.
+* Click “Add Auditd Manager”.
+* Configure the integration name and optionally add a description.
+* Review optional and advanced settings accordingly.
+* Add the newly installed “auditd manager” to an existing or a new agent policy, and deploy the agent on a Linux system from which auditd log files are desirable.
+* Click “Save and Continue”.
+* For more details on the integration refer to the [helper guide](https://docs.elastic.co/integrations/auditd_manager).
+
+**Rule Specific Setup Note**
+
+Auditd Manager subscribes to the kernel and receives events as they occur without any additional configuration. However, if more advanced configuration is required to detect specific behavior, audit rules can be added to the integration in either the "audit rules" configuration box or the "auditd rule files" box by specifying a file to read the audit rules from. - For this detection rule no additional audit rules are required.
+
+**Framework**: MITRE ATT&CKTM
+
+* Tactic:
+
+    * Name: Discovery
+    * ID: TA0007
+    * Reference URL: [https://attack.mitre.org/tactics/TA0007/](https://attack.mitre.org/tactics/TA0007/)
+
+* Technique:
+
+    * Name: System Owner/User Discovery
+    * ID: T1033
+    * Reference URL: [https://attack.mitre.org/techniques/T1033/](https://attack.mitre.org/techniques/T1033/)
+
+
+

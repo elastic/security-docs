@@ -1,0 +1,134 @@
+---
+mapped_pages:
+  - https://www.elastic.co/guide/en/security/current/potential-macos-ssh-brute-force-detected.html
+---
+
+# Potential macOS SSH Brute Force Detected [potential-macos-ssh-brute-force-detected]
+
+Identifies a high number (20) of macOS SSH KeyGen process executions from the same host. An adversary may attempt a brute force attack to obtain unauthorized access to user accounts.
+
+**Rule type**: threshold
+
+**Rule indices**:
+
+* logs-endpoint.events.*
+
+**Severity**: medium
+
+**Risk score**: 47
+
+**Runs every**: 5m
+
+**Searches indices from**: now-9m ({{ref}}/common-options.html#date-math[Date Math format], see also [`Additional look-back time`](docs-content://solutions/security/detect-and-alert/create-detection-rule.md#rule-schedule))
+
+**Maximum alerts per execution**: 100
+
+**References**:
+
+* [https://themittenmac.com/detecting-ssh-activity-via-process-monitoring/](https://themittenmac.com/detecting-ssh-activity-via-process-monitoring/)
+
+**Tags**:
+
+* Domain: Endpoint
+* OS: macOS
+* Use Case: Threat Detection
+* Tactic: Credential Access
+* Data Source: Elastic Defend
+* Resources: Investigation Guide
+
+**Version**: 109
+
+**Rule authors**:
+
+* Elastic
+
+**Rule license**: Elastic License v2
+
+## Investigation guide [_investigation_guide_792]
+
+**Triage and analysis**
+
+[TBC: QUOTE]
+**Investigating Potential macOS SSH Brute Force Detected**
+
+SSH (Secure Shell) is a protocol used to securely access remote systems. On macOS, the `sshd-keygen-wrapper` process is involved in SSH key generation. Adversaries may exploit this by repeatedly attempting to generate keys to gain unauthorized access, a tactic known as brute force. The detection rule identifies unusual activity by monitoring for excessive executions of this process, indicating potential brute force attempts.
+
+**Possible investigation steps**
+
+* Review the alert details to confirm the host and process information, specifically checking for the host.os.type as macos and the process.name as sshd-keygen-wrapper.
+* Examine the frequency and timing of the sshd-keygen-wrapper process executions to determine if they align with normal user activity or if they suggest an automated brute force attempt.
+* Investigate the parent process, launchd, to ensure it is legitimate and not being used maliciously to spawn the sshd-keygen-wrapper process.
+* Check for any recent successful or failed login attempts on the affected host to identify potential unauthorized access.
+* Correlate the activity with any other alerts or logs from the same host to identify patterns or additional indicators of compromise.
+* Review user account activity on the host to determine if any accounts have been accessed or modified unexpectedly.
+
+**False positive analysis**
+
+* Legitimate administrative tasks may trigger the rule if an administrator is performing routine maintenance or updates that involve generating SSH keys. To handle this, create an exception for known administrative accounts or scheduled maintenance windows.
+* Automated scripts or applications that require frequent SSH key generation for legitimate purposes can cause false positives. Identify these scripts or applications and exclude their associated processes or hosts from the detection rule.
+* Development environments where SSH keys are frequently generated for testing purposes might trigger the rule. Consider excluding specific development machines or user accounts from the rule to prevent unnecessary alerts.
+* Continuous integration/continuous deployment (CI/CD) systems that automate SSH key generation as part of their workflow can be a source of false positives. Exclude these systems or their specific processes from the detection rule to avoid disruption.
+* If a known security tool or monitoring system is configured to test SSH key generation as part of its checks, it may trigger the rule. Verify the tool’s activity and exclude its processes if deemed non-threatening.
+
+**Response and remediation**
+
+* Immediately isolate the affected macOS host from the network to prevent further unauthorized access attempts.
+* Terminate any suspicious or unauthorized `sshd-keygen-wrapper` processes running on the affected host to halt ongoing brute force attempts.
+* Review and reset SSH credentials for all user accounts on the affected host to ensure no unauthorized access has been achieved.
+* Implement IP blocking or rate limiting on the SSH service to prevent further brute force attempts from the same source.
+* Conduct a thorough review of the affected host’s SSH configuration and logs to identify any unauthorized changes or access.
+* Escalate the incident to the security operations team for further investigation and to determine if additional hosts are affected.
+* Enhance monitoring and alerting for similar SSH brute force patterns across the network to improve early detection and response capabilities.
+
+
+## Setup [_setup_510]
+
+**Setup**
+
+This rule requires data coming in from Elastic Defend.
+
+**Elastic Defend Integration Setup**
+
+Elastic Defend is integrated into the Elastic Agent using Fleet. Upon configuration, the integration allows the Elastic Agent to monitor events on your host and send data to the Elastic Security app.
+
+**Prerequisite Requirements:**
+
+* Fleet is required for Elastic Defend.
+* To configure Fleet Server refer to the [documentation](docs-content://reference/ingestion-tools/fleet/fleet-server.md).
+
+**The following steps should be executed in order to add the Elastic Defend integration on a macOS System:**
+
+* Go to the Kibana home page and click "Add integrations".
+* In the query bar, search for "Elastic Defend" and select the integration to see more details about it.
+* Click "Add Elastic Defend".
+* Configure the integration name and optionally add a description.
+* Select the type of environment you want to protect, for MacOS it is recommended to select "Traditional Endpoints".
+* Select a configuration preset. Each preset comes with different default settings for Elastic Agent, you can further customize these later by configuring the Elastic Defend integration policy. [Helper guide](docs-content://solutions/security/configure-elastic-defend/configure-an-integration-policy-for-elastic-defend.md).
+* We suggest selecting "Complete EDR (Endpoint Detection and Response)" as a configuration setting, that provides "All events; all preventions"
+* Enter a name for the agent policy in "New agent policy name". If other agent policies already exist, you can click the "Existing hosts" tab and select an existing policy instead. For more details on Elastic Agent configuration settings, refer to the [helper guide](docs-content://reference/ingestion-tools/fleet/agent-policy.md).
+* Click "Save and Continue".
+* To complete the integration, select "Add Elastic Agent to your hosts" and continue to the next section to install the Elastic Agent on your hosts. For more details on Elastic Defend refer to the [helper guide](docs-content://solutions/security/configure-elastic-defend/install-elastic-defend.md).
+
+
+## Rule query [_rule_query_840]
+
+```js
+event.category:process and host.os.type:macos and event.type:start and process.name:"sshd-keygen-wrapper" and process.parent.name:launchd
+```
+
+**Framework**: MITRE ATT&CKTM
+
+* Tactic:
+
+    * Name: Credential Access
+    * ID: TA0006
+    * Reference URL: [https://attack.mitre.org/tactics/TA0006/](https://attack.mitre.org/tactics/TA0006/)
+
+* Technique:
+
+    * Name: Brute Force
+    * ID: T1110
+    * Reference URL: [https://attack.mitre.org/techniques/T1110/](https://attack.mitre.org/techniques/T1110/)
+
+
+

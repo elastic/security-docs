@@ -1,0 +1,129 @@
+---
+mapped_pages:
+  - https://www.elastic.co/guide/en/security/current/prebuilt-rule-8-17-4-attempt-to-install-kali-linux-via-wsl.html
+---
+
+# Attempt to Install Kali Linux via WSL [prebuilt-rule-8-17-4-attempt-to-install-kali-linux-via-wsl]
+
+Detects attempts to install or use Kali Linux via Windows Subsystem for Linux. Adversaries may enable and use WSL for Linux to avoid detection.
+
+**Rule type**: eql
+
+**Rule indices**:
+
+* winlogbeat-*
+* logs-endpoint.events.process-*
+* logs-windows.forwarded*
+* logs-windows.sysmon_operational-*
+* endgame-*
+* logs-system.security*
+* logs-m365_defender.event-*
+* logs-sentinel_one_cloud_funnel.*
+* logs-crowdstrike.fdr*
+
+**Severity**: high
+
+**Risk score**: 73
+
+**Runs every**: 5m
+
+**Searches indices from**: now-9m ({{ref}}/common-options.html#date-math[Date Math format], see also [`Additional look-back time`](docs-content://solutions/security/detect-and-alert/create-detection-rule.md#rule-schedule))
+
+**Maximum alerts per execution**: 100
+
+**References**:
+
+* [https://learn.microsoft.com/en-us/windows/wsl/wsl-config](https://learn.microsoft.com/en-us/windows/wsl/wsl-config)
+
+**Tags**:
+
+* Domain: Endpoint
+* OS: Windows
+* Use Case: Threat Detection
+* Tactic: Defense Evasion
+* Data Source: Elastic Endgame
+* Data Source: Elastic Defend
+* Data Source: System
+* Data Source: Microsoft Defender for Endpoint
+* Data Source: Sysmon
+* Data Source: SentinelOne
+* Data Source: Crowdstrike
+* Resources: Investigation Guide
+
+**Version**: 210
+
+**Rule authors**:
+
+* Elastic
+
+**Rule license**: Elastic License v2
+
+## Investigation guide [_investigation_guide_4823]
+
+**Triage and analysis**
+
+[TBC: QUOTE]
+**Investigating Attempt to Install Kali Linux via WSL**
+
+Windows Subsystem for Linux (WSL) allows users to run Linux distributions on Windows, providing a seamless integration of Linux tools. Adversaries may exploit WSL to install Kali Linux, a penetration testing distribution, to evade detection by traditional Windows security tools. The detection rule identifies suspicious processes and file paths associated with Kali Linux installations, flagging potential misuse for defense evasion.
+
+**Possible investigation steps**
+
+* Review the process details to confirm the presence of "wsl.exe" with arguments indicating an attempt to install or use Kali Linux, such as "-d", "--distribution", "-i", or "--install".
+* Check the file paths associated with the Kali Linux installation, such as "?:\Users*\AppData\Local\packages\kalilinux*" or "?:\Program Files*\WindowsApps\KaliLinux.*\kali.exe", to verify if the installation files exist on the system.
+* Investigate the user account associated with the process to determine if the activity aligns with their typical behavior or if it appears suspicious.
+* Correlate the event with other security logs or alerts from data sources like Microsoft Defender for Endpoint or Sysmon to identify any related suspicious activities or patterns.
+* Assess the risk and impact of the detected activity by considering the context of the environment and any potential threats posed by the use of Kali Linux on the system.
+
+**False positive analysis**
+
+* Legitimate use of Kali Linux for development or educational purposes may trigger the rule. Users can create exceptions for specific user accounts or groups known to use Kali Linux for authorized activities.
+* Automated scripts or deployment tools that install or configure Kali Linux as part of a legitimate IT process might be flagged. Consider whitelisting these scripts or processes by their hash or path.
+* Security researchers or IT professionals conducting penetration testing on a Windows machine may cause false positives. Implement user-based exclusions for these professionals to prevent unnecessary alerts.
+* System administrators testing WSL features with various Linux distributions, including Kali, could inadvertently trigger the rule. Establish a policy to document and approve such activities, then exclude them from detection.
+* Training environments where Kali Linux is used to teach cybersecurity skills might be mistakenly flagged. Set up environment-specific exclusions to avoid disrupting educational activities.
+
+**Response and remediation**
+
+* Immediately isolate the affected system from the network to prevent any potential lateral movement or data exfiltration.
+* Terminate any suspicious processes related to the Kali Linux installation attempt, specifically those involving `wsl.exe` with arguments indicating a Kali distribution.
+* Remove any unauthorized installations of Kali Linux by deleting associated files and directories, such as those found in `AppData\\Local\\packages\\kalilinux*` or `Program Files*\\WindowsApps\\KaliLinux.*`.
+* Conduct a thorough review of user accounts and permissions on the affected system to ensure no unauthorized access or privilege escalation has occurred.
+* Escalate the incident to the security operations center (SOC) or incident response team for further investigation and to determine if additional systems are affected.
+* Implement additional monitoring and alerting for similar activities across the network, focusing on WSL usage and installation attempts of known penetration testing tools.
+* Review and update endpoint protection configurations to enhance detection and prevention capabilities against similar threats, leveraging data sources like Microsoft Defender for Endpoint and Sysmon.
+
+
+## Rule query [_rule_query_5778]
+
+```js
+process where host.os.type == "windows" and event.type == "start" and
+(
+  (process.name : "wsl.exe" and process.args : ("-d", "--distribution", "-i", "--install") and process.args : "kali*") or
+  process.executable : (
+    "?:\\Users\\*\\AppData\\Local\\packages\\kalilinux*",
+    "?:\\Users\\*\\AppData\\Local\\Microsoft\\WindowsApps\\kali.exe",
+    "?:\\Program Files*\\WindowsApps\\KaliLinux.*\\kali.exe",
+    "\\Device\\HarddiskVolume?\\Users\\*\\AppData\\Local\\packages\\kalilinux*",
+    "\\Device\\HarddiskVolume?\\Users\\*\\AppData\\Local\\Microsoft\\WindowsApps\\kali.exe",
+    "\\Device\\HarddiskVolume?\\Program Files*\\WindowsApps\\KaliLinux.*\\kali.exe"
+  )
+)
+```
+
+**Framework**: MITRE ATT&CKTM
+
+* Tactic:
+
+    * Name: Defense Evasion
+    * ID: TA0005
+    * Reference URL: [https://attack.mitre.org/tactics/TA0005/](https://attack.mitre.org/tactics/TA0005/)
+
+* Technique:
+
+    * Name: Indirect Command Execution
+    * ID: T1202
+    * Reference URL: [https://attack.mitre.org/techniques/T1202/](https://attack.mitre.org/techniques/T1202/)
+
+
+

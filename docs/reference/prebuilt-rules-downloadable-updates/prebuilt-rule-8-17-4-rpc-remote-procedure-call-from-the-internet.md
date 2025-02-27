@@ -1,0 +1,141 @@
+---
+mapped_pages:
+  - https://www.elastic.co/guide/en/security/current/prebuilt-rule-8-17-4-rpc-remote-procedure-call-from-the-internet.html
+---
+
+# RPC (Remote Procedure Call) from the Internet [prebuilt-rule-8-17-4-rpc-remote-procedure-call-from-the-internet]
+
+This rule detects network events that may indicate the use of RPC traffic from the Internet. RPC is commonly used by system administrators to remotely control a system for maintenance or to use shared resources. It should almost never be directly exposed to the Internet, as it is frequently targeted and exploited by threat actors as an initial access or backdoor vector.
+
+**Rule type**: query
+
+**Rule indices**:
+
+* packetbeat-*
+* auditbeat-*
+* filebeat-*
+* logs-network_traffic.*
+* logs-panw.panos*
+
+**Severity**: high
+
+**Risk score**: 73
+
+**Runs every**: 5m
+
+**Searches indices from**: now-9m ({{ref}}/common-options.html#date-math[Date Math format], see also [`Additional look-back time`](docs-content://solutions/security/detect-and-alert/create-detection-rule.md#rule-schedule))
+
+**Maximum alerts per execution**: 100
+
+**References**:
+
+* [https://www.iana.org/assignments/iana-ipv4-special-registry/iana-ipv4-special-registry.xhtml](https://www.iana.org/assignments/iana-ipv4-special-registry/iana-ipv4-special-registry.xhtml)
+
+**Tags**:
+
+* Tactic: Initial Access
+* Domain: Endpoint
+* Use Case: Threat Detection
+* Data Source: PAN-OS
+* Resources: Investigation Guide
+
+**Version**: 105
+
+**Rule authors**:
+
+* Elastic
+
+**Rule license**: Elastic License v2
+
+## Investigation guide [_investigation_guide_4659]
+
+**Triage and analysis**
+
+[TBC: QUOTE]
+**Investigating RPC (Remote Procedure Call) from the Internet**
+
+RPC enables remote management and resource sharing, crucial for system administration. However, when exposed to the Internet, it becomes a target for attackers seeking initial access or backdoor entry. The detection rule identifies suspicious RPC traffic by monitoring TCP port 135 and filtering out internal IP addresses, flagging potential threats from external sources.
+
+**Possible investigation steps**
+
+* Review the source IP address of the alert to determine if it is from a known malicious actor or if it has been flagged in previous incidents.
+* Check the destination IP address to confirm it belongs to a critical internal system that should not be exposed to the Internet.
+* Analyze network traffic logs to identify any unusual patterns or volumes of traffic associated with the source IP, focusing on TCP port 135.
+* Investigate any related alerts or logs from the same source IP or destination IP to identify potential patterns or repeated attempts.
+* Assess the potential impact on the affected system by determining if any unauthorized access or changes have occurred.
+* Consult threat intelligence sources to gather additional context on the source IP or any related indicators of compromise.
+
+**False positive analysis**
+
+* Internal testing or development environments may generate RPC traffic that appears to originate from external sources. To manage this, add the IP addresses of these environments to the exception list in the detection rule.
+* Legitimate remote management activities by trusted third-party vendors could trigger the rule. Verify the IP addresses of these vendors and include them in the exception list if they are known and authorized.
+* Misconfigured network devices or proxies might route internal RPC traffic through external IP addresses. Review network configurations to ensure proper routing and add any necessary exceptions for known devices.
+* Cloud-based services or applications that use RPC for legitimate purposes might be flagged. Identify these services and adjust the rule to exclude their IP ranges if they are verified as non-threatening.
+
+**Response and remediation**
+
+* Immediately isolate the affected system from the network to prevent further unauthorized access or lateral movement by the attacker.
+* Conduct a thorough examination of the system logs and network traffic to identify any unauthorized access or data exfiltration attempts.
+* Apply the latest security patches and updates to the affected system to address any vulnerabilities that may have been exploited.
+* Change all administrative and user credentials on the affected system and any other systems that may have been accessed using the same credentials.
+* Implement network segmentation to limit the exposure of critical systems and services, ensuring that RPC services are not accessible from the Internet.
+* Monitor the network for any signs of re-infection or further suspicious activity, focusing on traffic patterns similar to those identified in the initial alert.
+* Escalate the incident to the security operations center (SOC) or relevant cybersecurity team for further investigation and to determine if additional systems are compromised.
+
+
+## Rule query [_rule_query_5614]
+
+```js
+(event.dataset: network_traffic.flow or (event.category: (network or network_traffic))) and
+  network.transport:tcp and (destination.port:135 or event.dataset:zeek.dce_rpc) and
+  not source.ip:(
+    10.0.0.0/8 or
+    127.0.0.0/8 or
+    169.254.0.0/16 or
+    172.16.0.0/12 or
+    192.0.0.0/24 or
+    192.0.0.0/29 or
+    192.0.0.8/32 or
+    192.0.0.9/32 or
+    192.0.0.10/32 or
+    192.0.0.170/32 or
+    192.0.0.171/32 or
+    192.0.2.0/24 or
+    192.31.196.0/24 or
+    192.52.193.0/24 or
+    192.168.0.0/16 or
+    192.88.99.0/24 or
+    224.0.0.0/4 or
+    100.64.0.0/10 or
+    192.175.48.0/24 or
+    198.18.0.0/15 or
+    198.51.100.0/24 or
+    203.0.113.0/24 or
+    240.0.0.0/4 or
+    "::1" or
+    "FE80::/10" or
+    "FF00::/8"
+  ) and
+  destination.ip:(
+    10.0.0.0/8 or
+    172.16.0.0/12 or
+    192.168.0.0/16
+  )
+```
+
+**Framework**: MITRE ATT&CKTM
+
+* Tactic:
+
+    * Name: Initial Access
+    * ID: TA0001
+    * Reference URL: [https://attack.mitre.org/tactics/TA0001/](https://attack.mitre.org/tactics/TA0001/)
+
+* Technique:
+
+    * Name: Exploit Public-Facing Application
+    * ID: T1190
+    * Reference URL: [https://attack.mitre.org/techniques/T1190/](https://attack.mitre.org/techniques/T1190/)
+
+
+

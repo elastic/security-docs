@@ -1,0 +1,120 @@
+---
+mapped_pages:
+  - https://www.elastic.co/guide/en/security/current/prebuilt-rule-8-17-4-kirbi-file-creation.html
+---
+
+# Kirbi File Creation [prebuilt-rule-8-17-4-kirbi-file-creation]
+
+Identifies the creation of .kirbi files. The creation of this kind of file is an indicator of an attacker running Kerberos ticket dump utilities, such as Mimikatz, and precedes attacks such as Pass-The-Ticket (PTT), which allows the attacker to impersonate users using Kerberos tickets.
+
+**Rule type**: eql
+
+**Rule indices**:
+
+* logs-endpoint.events.file-*
+* logs-windows.sysmon_operational-*
+* logs-sentinel_one_cloud_funnel.*
+* logs-m365_defender.event-*
+* winlogbeat-*
+* endgame-*
+* logs-crowdstrike.fdr*
+
+**Severity**: high
+
+**Risk score**: 73
+
+**Runs every**: 5m
+
+**Searches indices from**: now-9m ({{ref}}/common-options.html#date-math[Date Math format], see also [`Additional look-back time`](docs-content://solutions/security/detect-and-alert/create-detection-rule.md#rule-schedule))
+
+**Maximum alerts per execution**: 100
+
+**References**: None
+
+**Tags**:
+
+* Domain: Endpoint
+* OS: Windows
+* Use Case: Threat Detection
+* Tactic: Credential Access
+* Data Source: Elastic Defend
+* Data Source: Sysmon
+* Data Source: SentinelOne
+* Data Source: Microsoft Defender for Endpoint
+* Data Source: Elastic Endgame
+* Data Source: Crowdstrike
+* Resources: Investigation Guide
+
+**Version**: 312
+
+**Rule authors**:
+
+* Elastic
+
+**Rule license**: Elastic License v2
+
+## Investigation guide [_investigation_guide_4718]
+
+**Triage and analysis**
+
+[TBC: QUOTE]
+**Investigating Kirbi File Creation**
+
+Kirbi files are associated with Kerberos, a network authentication protocol used in Windows environments to verify user identities. Adversaries exploit this by using tools like Mimikatz to extract Kerberos tickets, enabling unauthorized access through techniques like Pass-The-Ticket. The detection rule identifies the creation of these files, signaling potential credential dumping activities, by monitoring file creation events with a specific extension on Windows systems.
+
+**Possible investigation steps**
+
+* Review the alert details to identify the specific host where the .kirbi file was created, focusing on the host.os.type field to confirm it is a Windows system.
+* Examine the file creation event logs to determine the exact timestamp of the .kirbi file creation and correlate it with other security events around the same time.
+* Investigate the user account associated with the file creation event to determine if it is a legitimate user or potentially compromised, using the event data to identify the user.
+* Check for any recent logins or authentication attempts on the affected host that may indicate unauthorized access, focusing on unusual or unexpected activity.
+* Analyze the process tree and parent processes related to the file creation event to identify any suspicious or unauthorized processes that may have led to the creation of the .kirbi file.
+* Look for additional indicators of compromise on the host, such as other suspicious file creations, modifications, or network connections, to assess the scope of the potential breach.
+* Consult threat intelligence sources or internal threat databases to determine if the detected activity matches known attack patterns or threat actor behaviors associated with Kerberos ticket dumping.
+
+**False positive analysis**
+
+* Legitimate administrative tools or scripts that manage Kerberos tickets may create .kirbi files as part of their normal operations. Review the context of the file creation event to determine if it aligns with expected administrative activities.
+* Scheduled tasks or automated processes that involve Kerberos ticket management might trigger this rule. Identify and document these processes, and consider creating exceptions for known, benign activities.
+* Security software or monitoring tools that interact with Kerberos tickets for auditing or compliance purposes could generate .kirbi files. Verify the source of the file creation and whitelist trusted applications or processes.
+* Development or testing environments where Kerberos authentication is being simulated or tested may produce .kirbi files. Ensure these environments are well-documented and apply exclusions where necessary to avoid false alerts.
+
+**Response and remediation**
+
+* Isolate the affected system from the network immediately to prevent further unauthorized access or lateral movement by the attacker.
+* Terminate any suspicious processes associated with Mimikatz or other credential dumping tools to halt ongoing malicious activities.
+* Conduct a thorough review of recent authentication logs and Kerberos ticket activity to identify any unauthorized access or ticket usage.
+* Reset passwords for all potentially compromised accounts, prioritizing those with elevated privileges, to mitigate the risk of further exploitation.
+* Revoke all active Kerberos tickets and force re-authentication for all users to ensure that any stolen tickets are rendered useless.
+* Escalate the incident to the security operations center (SOC) or incident response team for further investigation and to determine the full scope of the breach.
+* Implement enhanced monitoring and logging for Kerberos-related activities to detect and respond to similar threats more effectively in the future.
+
+
+## Rule query [_rule_query_5673]
+
+```js
+file where host.os.type == "windows" and event.type == "creation" and file.extension : "kirbi"
+```
+
+**Framework**: MITRE ATT&CKTM
+
+* Tactic:
+
+    * Name: Credential Access
+    * ID: TA0006
+    * Reference URL: [https://attack.mitre.org/tactics/TA0006/](https://attack.mitre.org/tactics/TA0006/)
+
+* Technique:
+
+    * Name: OS Credential Dumping
+    * ID: T1003
+    * Reference URL: [https://attack.mitre.org/techniques/T1003/](https://attack.mitre.org/techniques/T1003/)
+
+* Technique:
+
+    * Name: Steal or Forge Kerberos Tickets
+    * ID: T1558
+    * Reference URL: [https://attack.mitre.org/techniques/T1558/](https://attack.mitre.org/techniques/T1558/)
+
+
+

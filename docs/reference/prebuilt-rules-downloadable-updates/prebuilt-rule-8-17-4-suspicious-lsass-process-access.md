@@ -1,0 +1,153 @@
+---
+mapped_pages:
+  - https://www.elastic.co/guide/en/security/current/prebuilt-rule-8-17-4-suspicious-lsass-process-access.html
+---
+
+# Suspicious Lsass Process Access [prebuilt-rule-8-17-4-suspicious-lsass-process-access]
+
+Identifies access attempts to LSASS handle, this may indicate an attempt to dump credentials from Lsass memory.
+
+**Rule type**: eql
+
+**Rule indices**:
+
+* winlogbeat-*
+* logs-windows.sysmon_operational-*
+
+**Severity**: medium
+
+**Risk score**: 47
+
+**Runs every**: 5m
+
+**Searches indices from**: now-9m ({{ref}}/common-options.html#date-math[Date Math format], see also [`Additional look-back time`](docs-content://solutions/security/detect-and-alert/create-detection-rule.md#rule-schedule))
+
+**Maximum alerts per execution**: 100
+
+**References**:
+
+* [https://github.com/redcanaryco/atomic-red-team/blob/master/atomics/T1003.001/T1003.001.md](https://github.com/redcanaryco/atomic-red-team/blob/master/atomics/T1003.001/T1003.001.md)
+
+**Tags**:
+
+* Domain: Endpoint
+* OS: Windows
+* Use Case: Threat Detection
+* Tactic: Credential Access
+* Data Source: Sysmon
+* Resources: Investigation Guide
+
+**Version**: 209
+
+**Rule authors**:
+
+* Elastic
+
+**Rule license**: Elastic License v2
+
+## Investigation guide [_investigation_guide_4738]
+
+**Triage and analysis**
+
+[TBC: QUOTE]
+**Investigating Suspicious Lsass Process Access**
+
+The Local Security Authority Subsystem Service (LSASS) is crucial for enforcing security policies and managing user logins in Windows environments. Adversaries often target LSASS to extract credentials, enabling unauthorized access. The detection rule identifies unusual access attempts to LSASS by filtering out legitimate processes and access patterns, focusing on anomalies that suggest credential dumping activities.
+
+**Possible investigation steps**
+
+* Review the process details that triggered the alert, focusing on the process name and executable path to determine if it is a known legitimate application or potentially malicious.
+* Examine the GrantedAccess value in the event data to understand the level of access attempted on the LSASS process and compare it against typical access patterns.
+* Investigate the parent process of the suspicious process to identify how it was spawned and assess if it is part of a legitimate workflow or an anomaly.
+* Check the CallTrace field for any unusual or suspicious DLLs that might indicate malicious activity or exploitation attempts.
+* Correlate the alert with other security events or logs from the same host to identify any related suspicious activities or patterns, such as network connections or file modifications.
+* Verify the host’s security posture, including the status of antivirus or endpoint protection solutions, to ensure they are functioning correctly and have not been tampered with.
+
+**False positive analysis**
+
+* Legitimate security tools like Sysinternals Process Explorer and Process Monitor can trigger false positives. Exclude these by adding their process names to the exception list.
+* Windows Defender and other antivirus software may access LSASS for legitimate scanning purposes. Exclude their executable paths from the detection rule to prevent false alerts.
+* System processes such as csrss.exe, lsm.exe, and wmiprvse.exe are known to access LSASS as part of normal operations. Ensure these are included in the process executable exceptions to avoid unnecessary alerts.
+* Software updates and installers, like those from Cisco AnyConnect or Oracle, may access LSASS during legitimate operations. Add these specific paths to the exclusion list to reduce false positives.
+* Custom enterprise applications that interact with LSASS for authentication purposes should be identified and their paths added to the exceptions to prevent disruption in monitoring.
+
+**Response and remediation**
+
+* Isolate the affected system from the network immediately to prevent further unauthorized access or lateral movement by the adversary.
+* Terminate any suspicious processes identified in the alert that are attempting to access the LSASS process, ensuring that legitimate processes are not disrupted.
+* Conduct a memory dump analysis of the affected system to identify any malicious tools or scripts used for credential dumping, focusing on the LSASS process.
+* Change all potentially compromised credentials, especially those with administrative privileges, to prevent unauthorized access using stolen credentials.
+* Apply patches and updates to the affected system to address any vulnerabilities that may have been exploited by the adversary.
+* Monitor the network for any signs of further suspicious activity or attempts to access LSASS on other systems, using enhanced logging and alerting mechanisms.
+* Escalate the incident to the security operations center (SOC) or incident response team for further investigation and to determine if additional systems are affected.
+
+
+## Setup [_setup_1524]
+
+**Setup**
+
+If enabling an EQL rule on a non-elastic-agent index (such as beats) for versions <8.2, events will not define `event.ingested` and default fallback for EQL rules was not added until version 8.2. Hence for this rule to work effectively, users will need to add a custom ingest pipeline to populate `event.ingested` to @timestamp. For more details on adding a custom ingest pipeline refer - [/docs-content/docs/reference/ingestion-tools/fleet/data-streams-pipeline-tutorial.md](docs-content://reference/ingestion-tools/fleet/data-streams-pipeline-tutorial.md)
+
+
+## Rule query [_rule_query_5693]
+
+```js
+process where host.os.type == "windows" and event.code == "10" and
+  winlog.event_data.TargetImage : "?:\\WINDOWS\\system32\\lsass.exe" and
+  not winlog.event_data.GrantedAccess :
+                ("0x1000", "0x1400", "0x101400", "0x101000", "0x101001", "0x100000", "0x100040", "0x3200", "0x40", "0x3200") and
+  not process.name : ("procexp64.exe", "procmon.exe", "procexp.exe", "Microsoft.Identity.AadConnect.Health.AadSync.Host.ex") and
+  not process.executable : (
+        "?:\\ProgramData\\Microsoft\\Windows Defender\\platform\\*",
+        "?:\\ProgramData\\WebEx\\webex\\*",
+        "?:\\Program Files (x86)\\*",
+        "?:\\Program Files\\*",
+        "?:\\Windows\\CCM\\CcmExec.exe",
+        "?:\\Windows\\LTSvc\\LTSVC.exe",
+        "?:\\Windows\\Sysmon.exe",
+        "?:\\Windows\\Sysmon64.exe",
+        "C:\\Windows\\CynetMS.exe",
+        "?:\\Windows\\system32\\csrss.exe",
+        "?:\\Windows\\System32\\lsm.exe",
+        "?:\\Windows\\system32\\MRT.exe",
+        "?:\\Windows\\System32\\msiexec.exe",
+        "?:\\Windows\\system32\\wbem\\wmiprvse.exe",
+        "?:\\Windows\\system32\\wininit.exe",
+        "?:\\Windows\\SystemTemp\\GUM*.tmp\\GoogleUpdate.exe",
+        "?:\\Windows\\sysWOW64\\wbem\\wmiprvse.exe",
+        "C:\\oracle\\64\\02\\instantclient_19_13\\sqlplus.exe",
+        "C:\\oracle\\64\\02\\instantclient_19_13\\sqlldr.exe",
+        "d:\\oracle\\product\\19\\dbhome1\\bin\\ORACLE.EXE",
+        "C:\\wamp\\bin\\apache\\apache*\\bin\\httpd.exe",
+        "C:\\Windows\\system32\\netstat.exe",
+        "C:\\PROGRA~1\\INFORM~1\\apps\\jdk\\*\\jre\\bin\\java.exe",
+        "C:\\PROGRA~2\\CyberCNSAgentV2\\osqueryi.exe",
+        "C:\\Utilityw2k19\\packetbeat\\packetbeat.exe",
+        "C:\\ProgramData\\Cisco\\Cisco AnyConnect Secure Mobility Client\\Temp\\CloudUpdate\\vpndownloader.exe",
+        "C:\\ProgramData\\Cisco\\Cisco Secure Client\\Temp\\CloudUpdate\\vpndownloader.exe"
+  ) and
+  not winlog.event_data.CallTrace : ("*mpengine.dll*", "*appresolver.dll*", "*sysmain.dll*")
+```
+
+**Framework**: MITRE ATT&CKTM
+
+* Tactic:
+
+    * Name: Credential Access
+    * ID: TA0006
+    * Reference URL: [https://attack.mitre.org/tactics/TA0006/](https://attack.mitre.org/tactics/TA0006/)
+
+* Technique:
+
+    * Name: OS Credential Dumping
+    * ID: T1003
+    * Reference URL: [https://attack.mitre.org/techniques/T1003/](https://attack.mitre.org/techniques/T1003/)
+
+* Sub-technique:
+
+    * Name: LSASS Memory
+    * ID: T1003.001
+    * Reference URL: [https://attack.mitre.org/techniques/T1003/001/](https://attack.mitre.org/techniques/T1003/001/)
+
+
+
