@@ -303,7 +303,7 @@ Collecting data.  Press Ctrl-C to cancel
 Uninstall {{elastic-endpoint}}.
 
 ::::{note}
-{{elastic-endpoint}} is managed by {{agent}}. To remove {{elastic-endpoint}} from the target machine permanently, remove the {{elastic-defend}} integration from the {{fleet}} policy. The [elastic-agent uninstall](docs-content://reference/security/elastic-defend/uninstall-agent.md) command also uninstalls {{elastic-endpoint}}; therefore, in practice, the `elastic-endpoint uninstall` command is used only to troubleshoot broken installations.
+{{elastic-endpoint}} is managed by {{agent}}. To remove {{elastic-endpoint}} from the target machine permanently, remove the {{elastic-defend}} integration from the {{fleet}} policy. The [elastic-agent uninstall](docs-content://solutions/security/configure-elastic-defend/uninstall-elastic-agent.md) command also uninstalls {{elastic-endpoint}}; therefore, in practice, the `elastic-endpoint uninstall` command is used only to troubleshoot broken installations.
 ::::
 
 
@@ -311,7 +311,7 @@ Uninstall {{elastic-endpoint}}.
 ### Options [_options_5]
 
 `--uninstall-token <string>`
-:   Provide the uninstall token. The token is required if [agent tamper protection](docs-content://reference/security/elastic-defend/agent-tamper-protection.md) is enabled.
+:   Provide the uninstall token. The token is required if [agent tamper protection](docs-content://solutions/security/configure-elastic-defend/prevent-elastic-agent-uninstallation.md) is enabled.
 
 
 ### Example [_example_11]
