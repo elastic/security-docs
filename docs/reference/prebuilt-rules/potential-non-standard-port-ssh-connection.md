@@ -1,0 +1,121 @@
+---
+mapped_pages:
+  - https://www.elastic.co/guide/en/security/current/potential-non-standard-port-ssh-connection.html
+---
+
+# Potential Non-Standard Port SSH connection [potential-non-standard-port-ssh-connection]
+
+Identifies potentially malicious processes communicating via a port paring typically not associated with SSH. For example, SSH over port 2200 or port 2222 as opposed to the traditional port 22. Adversaries may make changes to the standard port a protocol uses to bypass filtering or muddle analysis/parsing of network data.
+
+**Rule type**: eql
+
+**Rule indices**:
+
+* logs-endpoint.events.*
+
+**Severity**: low
+
+**Risk score**: 21
+
+**Runs every**: 5m
+
+**Searches indices from**: now-9m ({{ref}}/common-options.html#date-math[Date Math format], see also [`Additional look-back time`](docs-content://solutions/security/detect-and-alert/create-detection-rule.md#rule-schedule))
+
+**Maximum alerts per execution**: 100
+
+**References**:
+
+* [https://attack.mitre.org/techniques/T1571/](https://attack.mitre.org/techniques/T1571/)
+
+**Tags**:
+
+* Domain: Endpoint
+* OS: Linux
+* Use Case: Threat Detection
+* Tactic: Command and Control
+* OS: macOS
+* Data Source: Elastic Defend
+* Resources: Investigation Guide
+
+**Version**: 7
+
+**Rule authors**:
+
+* Elastic
+
+**Rule license**: Elastic License v2
+
+## Investigation guide [_investigation_guide_716]
+
+**Triage and analysis**
+
+[TBC: QUOTE]
+**Investigating Potential Non-Standard Port SSH connection**
+
+SSH is a protocol used for secure remote access and management of systems. Typically, it operates over port 22. However, adversaries may exploit non-standard ports to evade detection and bypass network filters. The detection rule identifies unusual SSH activity by monitoring processes and network connections on ports other than 22, excluding common benign use cases, to flag potential threats.
+
+**Possible investigation steps**
+
+* Review the process details, including process.entity_id and process.name, to confirm the execution of SSH or SSHD processes and identify any unusual parent processes not listed in the exclusion list.
+* Examine the network connection details, focusing on destination.port to verify the use of non-standard ports for SSH connections and assess if these ports are commonly used within the organization.
+* Analyze the destination.ip to determine if the connection is being made to an external or potentially malicious IP address, especially if it falls outside the specified CIDR ranges.
+* Investigate the context of the SSH connection attempt by checking for any recent changes in network configurations or firewall rules that might explain the use of non-standard ports.
+* Correlate the alert with other security events or logs to identify any patterns or additional indicators of compromise related to the same process or network activity.
+
+**False positive analysis**
+
+* Legitimate administrative tools like rsync, git, and ansible-playbook may use SSH over non-standard ports for valid operations. Ensure these tools are included in the process.parent.name exclusion list to prevent false positives.
+* Backup and synchronization applications such as pyznap and pgbackrest might use SSH on non-standard ports. Add these applications to the exclusion list to avoid unnecessary alerts.
+* Development and deployment tools like Sourcetree and git-lfs may establish SSH connections on non-standard ports during routine operations. Verify these tools are part of the exclusion criteria to minimize false positives.
+* Custom scripts or automation tasks that use SSH on non-standard ports for internal processes should be reviewed and, if deemed safe, added to the exclusion list to reduce noise.
+* Internal network traffic to non-public IP ranges might be flagged if not properly excluded. Ensure that internal IP ranges are correctly specified in the cidrmatch exclusion to prevent false positives.
+
+**Response and remediation**
+
+* Immediately isolate the affected system from the network to prevent further unauthorized access or data exfiltration.
+* Terminate any suspicious SSH processes identified on non-standard ports to halt potential malicious activity.
+* Conduct a thorough review of the system’s SSH configuration files to identify unauthorized changes, such as modifications to the SSH port settings, and revert them to the standard configuration.
+* Reset credentials for any accounts accessed via the non-standard port to prevent further unauthorized access.
+* Implement network-level controls to block SSH traffic on non-standard ports unless explicitly required and documented for legitimate use cases.
+* Escalate the incident to the security operations center (SOC) or incident response team for further investigation and to determine if additional systems are affected.
+* Enhance monitoring and alerting for SSH connections on non-standard ports across the network to improve early detection of similar threats in the future.
+
+
+## Rule query [_rule_query_762]
+
+```js
+sequence by process.entity_id with maxspan=1m
+  [process where event.action == "exec" and process.name in ("ssh", "sshd") and not process.parent.name in (
+   "rsync", "pyznap", "git", "ansible-playbook", "scp", "pgbackrest", "git-lfs", "expect", "Sourcetree", "ssh-copy-id",
+   "run"
+   )
+  ]
+  [network where process.name:"ssh" and event.action in ("connection_attempted", "connection_accepted") and
+   destination.port != 22 and network.transport == "tcp" and not (
+     destination.ip == null or destination.ip == "0.0.0.0" or cidrmatch(
+       destination.ip, "10.0.0.0/8", "127.0.0.0/8", "169.254.0.0/16", "172.16.0.0/12", "192.0.0.0/24", "192.0.0.0/29",
+       "192.0.0.8/32", "192.0.0.9/32", "192.0.0.10/32", "192.0.0.170/32", "192.0.0.171/32", "192.0.2.0/24",
+       "192.31.196.0/24", "192.52.193.0/24", "192.168.0.0/16", "192.88.99.0/24", "224.0.0.0/4", "100.64.0.0/10",
+       "192.175.48.0/24","198.18.0.0/15", "198.51.100.0/24", "203.0.113.0/24", "240.0.0.0/4", "::1", "FE80::/10",
+       "FF00::/8"
+     )
+   )
+  ]
+```
+
+**Framework**: MITRE ATT&CKTM
+
+* Tactic:
+
+    * Name: Command and Control
+    * ID: TA0011
+    * Reference URL: [https://attack.mitre.org/tactics/TA0011/](https://attack.mitre.org/tactics/TA0011/)
+
+* Technique:
+
+    * Name: Non-Standard Port
+    * ID: T1571
+    * Reference URL: [https://attack.mitre.org/techniques/T1571/](https://attack.mitre.org/techniques/T1571/)
+
+
+

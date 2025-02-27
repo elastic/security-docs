@@ -1,0 +1,124 @@
+---
+mapped_pages:
+  - https://www.elastic.co/guide/en/security/current/prebuilt-rule-8-17-4-persistence-via-bits-job-notify-cmdline.html
+---
+
+# Persistence via BITS Job Notify Cmdline [prebuilt-rule-8-17-4-persistence-via-bits-job-notify-cmdline]
+
+An adversary can use the Background Intelligent Transfer Service (BITS) SetNotifyCmdLine method to execute a program that runs after a job finishes transferring data or after a job enters a specified state in order to persist on a system.
+
+**Rule type**: eql
+
+**Rule indices**:
+
+* logs-endpoint.events.process-*
+* winlogbeat-*
+* logs-windows.sysmon_operational-*
+* endgame-*
+* logs-sentinel_one_cloud_funnel.*
+* logs-m365_defender.event-*
+
+**Severity**: medium
+
+**Risk score**: 47
+
+**Runs every**: 5m
+
+**Searches indices from**: now-9m ({{ref}}/common-options.html#date-math[Date Math format], see also [`Additional look-back time`](docs-content://solutions/security/detect-and-alert/create-detection-rule.md#rule-schedule))
+
+**Maximum alerts per execution**: 100
+
+**References**:
+
+* [https://pentestlab.blog/2019/10/30/persistence-bits-jobs/](https://pentestlab.blog/2019/10/30/persistence-bits-jobs/)
+* [https://docs.microsoft.com/en-us/windows/win32/api/bits1_5/nf-bits1_5-ibackgroundcopyjob2-setnotifycmdline](https://docs.microsoft.com/en-us/windows/win32/api/bits1_5/nf-bits1_5-ibackgroundcopyjob2-setnotifycmdline)
+* [https://docs.microsoft.com/en-us/windows-server/administration/windows-commands/bitsadmin-setnotifycmdline](https://docs.microsoft.com/en-us/windows-server/administration/windows-commands/bitsadmin-setnotifycmdline)
+* [https://www.elastic.co/blog/hunting-for-persistence-using-elastic-security-part-2](https://www.elastic.co/blog/hunting-for-persistence-using-elastic-security-part-2)
+
+**Tags**:
+
+* Domain: Endpoint
+* OS: Windows
+* Use Case: Threat Detection
+* Tactic: Persistence
+* Data Source: Elastic Endgame
+* Data Source: Elastic Defend
+* Data Source: Sysmon
+* Data Source: SentinelOne
+* Data Source: Microsoft Defender for Endpoint
+* Resources: Investigation Guide
+
+**Version**: 411
+
+**Rule authors**:
+
+* Elastic
+
+**Rule license**: Elastic License v2
+
+## Investigation guide [_investigation_guide_4944]
+
+**Triage and analysis**
+
+[TBC: QUOTE]
+**Investigating Persistence via BITS Job Notify Cmdline**
+
+Background Intelligent Transfer Service (BITS) is a Windows service that facilitates asynchronous, prioritized, and throttled transfer of files between machines. Adversaries exploit BITS by using the SetNotifyCmdLine method to execute malicious programs post-transfer, achieving persistence. The detection rule identifies suspicious processes initiated by BITS, excluding known legitimate executables, to flag potential abuse.
+
+**Possible investigation steps**
+
+* Review the process details to confirm the parent process is "svchost.exe" with arguments containing "BITS" to ensure the alert is not a false positive.
+* Examine the process executable path to verify it is not one of the known legitimate executables listed in the exclusion criteria.
+* Investigate the command line arguments of the suspicious process to identify any potentially malicious or unusual commands being executed.
+* Check the file hash and signature of the suspicious executable to determine if it is known malware or a legitimate application.
+* Analyze the network activity associated with the process to identify any suspicious connections or data transfers that may indicate malicious behavior.
+* Review the system’s event logs for any additional context or related events that could provide insight into the persistence mechanism or the adversary’s actions.
+* Assess the affected system for any other signs of compromise or persistence mechanisms that may have been employed by the adversary.
+
+**False positive analysis**
+
+* Legitimate system processes or updates may occasionally trigger the rule if they are not included in the exclusion list. Regularly review and update the exclusion list to include any new legitimate executables that are identified.
+* Some third-party software may use BITS for legitimate purposes, such as software updates or data synchronization. Identify these applications and consider adding their executables to the exclusion list to prevent false positives.
+* Scheduled tasks or scripts that utilize BITS for file transfers might be flagged. Verify the legitimacy of these tasks and, if deemed safe, exclude their associated executables from the detection rule.
+* In environments where custom scripts or administrative tools are used, ensure that these are documented and, if necessary, excluded from the rule to avoid unnecessary alerts.
+* Monitor the frequency and context of alerts to identify patterns that may indicate benign activity. Use this information to refine the rule and reduce false positives without compromising security.
+
+**Response and remediation**
+
+* Immediately isolate the affected system from the network to prevent further malicious activity and lateral movement.
+* Terminate any suspicious processes identified as being initiated by BITS that are not part of the known legitimate executables list.
+* Conduct a thorough review of the BITS job configurations on the affected system to identify and remove any unauthorized or suspicious jobs.
+* Restore the system from a known good backup if malicious activity is confirmed and system integrity is compromised.
+* Update and run a full antivirus and anti-malware scan on the affected system to ensure no additional threats are present.
+* Review and enhance endpoint protection policies to prevent unauthorized use of BITS for persistence, ensuring that only trusted applications can create or modify BITS jobs.
+* Escalate the incident to the security operations center (SOC) or incident response team for further investigation and to determine if additional systems are affected.
+
+
+## Rule query [_rule_query_5899]
+
+```js
+process where host.os.type == "windows" and event.type == "start" and
+  process.parent.name : "svchost.exe" and process.parent.args : "BITS" and
+  not process.executable :
+              ("?:\\Windows\\System32\\WerFaultSecure.exe",
+               "?:\\Windows\\System32\\WerFault.exe",
+               "?:\\Windows\\System32\\wermgr.exe",
+               "?:\\WINDOWS\\system32\\directxdatabaseupdater.exe")
+```
+
+**Framework**: MITRE ATT&CKTM
+
+* Tactic:
+
+    * Name: Persistence
+    * ID: TA0003
+    * Reference URL: [https://attack.mitre.org/tactics/TA0003/](https://attack.mitre.org/tactics/TA0003/)
+
+* Technique:
+
+    * Name: BITS Jobs
+    * ID: T1197
+    * Reference URL: [https://attack.mitre.org/techniques/T1197/](https://attack.mitre.org/techniques/T1197/)
+
+
+

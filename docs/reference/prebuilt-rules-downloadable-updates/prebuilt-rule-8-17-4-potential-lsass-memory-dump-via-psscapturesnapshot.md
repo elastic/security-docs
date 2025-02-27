@@ -1,0 +1,122 @@
+---
+mapped_pages:
+  - https://www.elastic.co/guide/en/security/current/prebuilt-rule-8-17-4-potential-lsass-memory-dump-via-psscapturesnapshot.html
+---
+
+# Potential LSASS Memory Dump via PssCaptureSnapShot [prebuilt-rule-8-17-4-potential-lsass-memory-dump-via-psscapturesnapshot]
+
+Identifies suspicious access to an LSASS handle via PssCaptureSnapShot where two successive process accesses are performed by the same process and target two different instances of LSASS. This may indicate an attempt to evade detection and dump LSASS memory for credential access.
+
+**Rule type**: threshold
+
+**Rule indices**:
+
+* winlogbeat-*
+* logs-windows.sysmon_operational-*
+
+**Severity**: high
+
+**Risk score**: 73
+
+**Runs every**: 5m
+
+**Searches indices from**: now-9m ({{ref}}/common-options.html#date-math[Date Math format], see also [`Additional look-back time`](docs-content://solutions/security/detect-and-alert/create-detection-rule.md#rule-schedule))
+
+**Maximum alerts per execution**: 100
+
+**References**:
+
+* [https://www.matteomalvica.com/blog/2019/12/02/win-defender-atp-cred-bypass/](https://www.matteomalvica.com/blog/2019/12/02/win-defender-atp-cred-bypass/)
+* [https://twitter.com/sbousseaden/status/1280619931516747777?lang=en](https://twitter.com/sbousseaden/status/1280619931516747777?lang=en)
+
+**Tags**:
+
+* Domain: Endpoint
+* OS: Windows
+* Use Case: Threat Detection
+* Tactic: Credential Access
+* Data Source: Sysmon
+* Resources: Investigation Guide
+
+**Version**: 311
+
+**Rule authors**:
+
+* Elastic
+
+**Rule license**: Elastic License v2
+
+## Investigation guide [_investigation_guide_4740]
+
+**Triage and analysis**
+
+[TBC: QUOTE]
+**Investigating Potential LSASS Memory Dump via PssCaptureSnapShot**
+
+PssCaptureSnapShot is a Windows feature used for capturing process snapshots, aiding in diagnostics and debugging. Adversaries exploit this to access LSASS memory, aiming to extract credentials. The detection rule identifies suspicious behavior by monitoring for repeated access to LSASS by the same process, targeting different instances, which may indicate an evasion attempt to dump credentials stealthily.
+
+**Possible investigation steps**
+
+* Review the event logs for the specific event code 10 to gather details about the process that accessed the LSASS handle, including the process name, process ID, and the time of access.
+* Check the process execution history on the host to determine if the process accessing LSASS is legitimate or potentially malicious. Look for any unusual or unexpected processes that might have been executed around the time of the alert.
+* Investigate the parent process of the suspicious process to understand how it was initiated and whether it was spawned by a legitimate application or a known malicious process.
+* Analyze the network activity of the host around the time of the alert to identify any suspicious outbound connections that might indicate data exfiltration attempts.
+* Correlate the alert with other security events or alerts from the same host or user account to identify any patterns or additional indicators of compromise.
+* Verify the integrity and security posture of the host by checking for any unauthorized changes to system files or configurations, especially those related to security settings.
+
+**False positive analysis**
+
+* Legitimate diagnostic tools or software that utilize PssCaptureSnapShot for debugging purposes may trigger this rule. Users should identify and whitelist these trusted applications to prevent false positives.
+* System administrators or security tools performing regular health checks on LSASS might access LSASS memory in a non-malicious manner. Exclude these known processes by creating exceptions based on their process names or hashes.
+* Automated scripts or maintenance tasks that interact with LSASS for legitimate reasons could be flagged. Review and document these tasks, then configure the rule to ignore these specific activities.
+* Security software updates or patches that temporarily access LSASS for validation or configuration purposes may cause alerts. Monitor update schedules and adjust the rule to accommodate these temporary accesses.
+
+**Response and remediation**
+
+* Immediately isolate the affected host from the network to prevent further unauthorized access or data exfiltration.
+* Terminate any suspicious processes identified as accessing LSASS memory using PssCaptureSnapShot to halt potential credential dumping activities.
+* Conduct a thorough review of the affected system’s event logs, focusing on event code 10, to identify any additional instances of suspicious LSASS access and determine the scope of the compromise.
+* Change all potentially compromised credentials, especially those with administrative privileges, to mitigate the risk of unauthorized access using dumped credentials.
+* Apply the latest security patches and updates to the affected system to address any vulnerabilities that may have been exploited.
+* Escalate the incident to the security operations center (SOC) or incident response team for further investigation and to determine if additional systems are affected.
+* Enhance monitoring and detection capabilities by ensuring that similar suspicious activities are logged and alerted on, using the specific query fields and threat indicators identified in this alert.
+
+
+## Setup [_setup_1526]
+
+**Setup**
+
+This is meant to run only on datasources using Elastic Agent 7.14+ since versions prior to that will be missing the threshold rule cardinality feature.
+
+
+## Rule query [_rule_query_5695]
+
+```js
+event.category:process and host.os.type:windows and event.code:10 and
+ winlog.event_data.TargetImage:("C:\\Windows\\system32\\lsass.exe" or
+                                 "c:\\Windows\\system32\\lsass.exe" or
+                                 "c:\\Windows\\System32\\lsass.exe")
+```
+
+**Framework**: MITRE ATT&CKTM
+
+* Tactic:
+
+    * Name: Credential Access
+    * ID: TA0006
+    * Reference URL: [https://attack.mitre.org/tactics/TA0006/](https://attack.mitre.org/tactics/TA0006/)
+
+* Technique:
+
+    * Name: OS Credential Dumping
+    * ID: T1003
+    * Reference URL: [https://attack.mitre.org/techniques/T1003/](https://attack.mitre.org/techniques/T1003/)
+
+* Sub-technique:
+
+    * Name: LSASS Memory
+    * ID: T1003.001
+    * Reference URL: [https://attack.mitre.org/techniques/T1003/001/](https://attack.mitre.org/techniques/T1003/001/)
+
+
+

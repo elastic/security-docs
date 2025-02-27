@@ -1,0 +1,88 @@
+---
+mapped_pages:
+  - https://www.elastic.co/guide/en/security/current/prebuilt-rule-0-14-2-creation-or-modification-of-domain-backup-dpapi-private-key.html
+---
+
+# Creation or Modification of Domain Backup DPAPI private key [prebuilt-rule-0-14-2-creation-or-modification-of-domain-backup-dpapi-private-key]
+
+Identifies the creation or modification of Domain Backup private keys. Adversaries may extract the Data Protection API (DPAPI) domain backup key from a Domain Controller (DC) to be able to decrypt any domain user master key file.
+
+**Rule type**: eql
+
+**Rule indices**:
+
+* winlogbeat-*
+* logs-endpoint.events.*
+* logs-windows.*
+
+**Severity**: high
+
+**Risk score**: 73
+
+**Runs every**: 5m
+
+**Searches indices from**: now-9m ({{ref}}/common-options.html#date-math[Date Math format], see also [`Additional look-back time`](docs-content://solutions/security/detect-and-alert/create-detection-rule.md#rule-schedule))
+
+**Maximum alerts per execution**: 100
+
+**References**:
+
+* [https://www.dsinternals.com/en/retrieving-dpapi-backup-keys-from-active-directory/](https://www.dsinternals.com/en/retrieving-dpapi-backup-keys-from-active-directory/)
+* [https://www.harmj0y.net/blog/redteaming/operational-guidance-for-offensive-user-dpapi-abuse/](https://www.harmj0y.net/blog/redteaming/operational-guidance-for-offensive-user-dpapi-abuse/)
+
+**Tags**:
+
+* Elastic
+* Host
+* Windows
+* Threat Detection
+* Credential Access
+
+**Version**: 6
+
+**Rule authors**:
+
+* Elastic
+
+**Rule license**: Elastic License v2
+
+## Investigation guide [_investigation_guide_1313]
+
+## Triage and analysis
+
+Domain DPAPI Backup keys are stored on domain controllers and can be dumped remotely with tools such as Mimikatz. The resulting .pvk private key can be used to decrypt ANY domain user masterkeys, which then can be used to decrypt any secrets protected by those keys.
+
+## Rule query [_rule_query_1422]
+
+```js
+file where event.type != "deletion" and file.name : ("ntds_capi_*.pfx", "ntds_capi_*.pvk")
+```
+
+**Framework**: MITRE ATT&CKTM
+
+* Tactic:
+
+    * Name: Credential Access
+    * ID: TA0006
+    * Reference URL: [https://attack.mitre.org/tactics/TA0006/](https://attack.mitre.org/tactics/TA0006/)
+
+* Technique:
+
+    * Name: Unsecured Credentials
+    * ID: T1552
+    * Reference URL: [https://attack.mitre.org/techniques/T1552/](https://attack.mitre.org/techniques/T1552/)
+
+* Sub-technique:
+
+    * Name: Private Keys
+    * ID: T1552.004
+    * Reference URL: [https://attack.mitre.org/techniques/T1552/004/](https://attack.mitre.org/techniques/T1552/004/)
+
+* Technique:
+
+    * Name: Credentials from Password Stores
+    * ID: T1555
+    * Reference URL: [https://attack.mitre.org/techniques/T1555/](https://attack.mitre.org/techniques/T1555/)
+
+
+
