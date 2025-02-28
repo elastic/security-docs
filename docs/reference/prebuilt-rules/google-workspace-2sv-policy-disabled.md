@@ -97,7 +97,7 @@ This rule detects when a 2SV policy is disabled in Google Workspace.
 * By default, `var.interval` is set to 2 hours (2h). Consider changing this interval to a lower value, such as 10 minutes (10m).
 * See the following references for further information:
 * [https://support.google.com/a/answer/7061566](https://support.google.com/a/answer/7061566)
-* [/beats/docs/reference/ingestion-tools/beats-filebeat/filebeat-module-google_workspace.md](beats://docs/reference/filebeat/filebeat-module-google_workspace.md)
+* [/beats/docs/reference/ingestion-tools/beats-filebeat/filebeat-module-google_workspace.md](beats://reference/filebeat/filebeat-module-google_workspace.md)
 
 
 ## Setup [_setup_247]

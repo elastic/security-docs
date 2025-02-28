@@ -88,10 +88,10 @@ Auditbeat is a lightweight shipper that you can install on your servers to audit
 **The following steps should be executed in order to add the Auditbeat on a Linux System:**
 
 * Elastic provides repositories available for APT and YUM-based distributions. Note that we provide binary packages, but no source packages.
-* To install the APT and YUM repositories follow the setup instructions in this [helper guide](beats://docs/reference/auditbeat/setup-repositories.md).
-* To run Auditbeat on Docker follow the setup instructions in the [helper guide](beats://docs/reference/auditbeat/running-on-docker.md).
-* To run Auditbeat on Kubernetes follow the setup instructions in the [helper guide](beats://docs/reference/auditbeat/running-on-kubernetes.md).
-* For complete “Setup and Run Auditbeat” information refer to the [helper guide](beats://docs/reference/auditbeat/setting-up-running.md).
+* To install the APT and YUM repositories follow the setup instructions in this [helper guide](beats://reference/auditbeat/setup-repositories.md).
+* To run Auditbeat on Docker follow the setup instructions in the [helper guide](beats://reference/auditbeat/running-on-docker.md).
+* To run Auditbeat on Kubernetes follow the setup instructions in the [helper guide](beats://reference/auditbeat/running-on-kubernetes.md).
+* For complete “Setup and Run Auditbeat” information refer to the [helper guide](beats://reference/auditbeat/setting-up-running.md).
 
 **Filebeat Setup**
 
@@ -100,17 +100,17 @@ Filebeat is a lightweight shipper for forwarding and centralizing log data. Inst
 **The following steps should be executed in order to add the Filebeat on a Linux System:**
 
 * Elastic provides repositories available for APT and YUM-based distributions. Note that we provide binary packages, but no source packages.
-* To install the APT and YUM repositories follow the setup instructions in this [helper guide](beats://docs/reference/filebeat/setup-repositories.md).
-* To run Filebeat on Docker follow the setup instructions in the [helper guide](beats://docs/reference/filebeat/running-on-docker.md).
-* To run Filebeat on Kubernetes follow the setup instructions in the [helper guide](beats://docs/reference/filebeat/running-on-kubernetes.md).
+* To install the APT and YUM repositories follow the setup instructions in this [helper guide](beats://reference/filebeat/setup-repositories.md).
+* To run Filebeat on Docker follow the setup instructions in the [helper guide](beats://reference/filebeat/running-on-docker.md).
+* To run Filebeat on Kubernetes follow the setup instructions in the [helper guide](beats://reference/filebeat/running-on-kubernetes.md).
 * For quick start information for Filebeat refer to the [helper guide](https://www.elastic.co/guide/en/beats/filebeat/8.11/filebeat-installation-configuration.html).
-* For complete “Setup and Run Filebeat” information refer to the [helper guide](beats://docs/reference/filebeat/setting-up-running.md).
+* For complete “Setup and Run Filebeat” information refer to the [helper guide](beats://reference/filebeat/setting-up-running.md).
 
 **Rule Specific Setup Note**
 
 * This rule requires the “Filebeat System Module” to be enabled.
 * The system module collects and parses logs created by the system logging service of common Unix/Linux based distributions.
-* To run the system module of Filebeat on Linux follow the setup instructions in the [helper guide](beats://docs/reference/filebeat/filebeat-module-system.md).
+* To run the system module of Filebeat on Linux follow the setup instructions in the [helper guide](beats://reference/filebeat/filebeat-module-system.md).
 
 
 ## Rule query [_rule_query_825]

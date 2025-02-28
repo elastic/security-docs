@@ -28,7 +28,7 @@ The hosts file on endpoints is used to control manual IP address to hostname res
 
 **References**:
 
-* [/beats/docs/reference/ingestion-tools/beats-auditbeat/auditbeat-reference-yml.md](beats://docs/reference/auditbeat/auditbeat-reference-yml.md)
+* [/beats/docs/reference/ingestion-tools/beats-auditbeat/auditbeat-reference-yml.md](beats://reference/auditbeat/auditbeat-reference-yml.md)
 
 **Tags**:
 

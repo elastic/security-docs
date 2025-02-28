@@ -99,10 +99,10 @@ The DGA Detection integration consists of an ML-based framework to detect DGA ac
 
 * Fleet is required for DGA Detection.
 * To configure Fleet Server refer to the [documentation](docs-content://reference/ingestion-tools/fleet/fleet-server.md).
-* DNS events collected by the [Elastic Defend](https://docs.elastic.co/en/integrations/endpoint), [Network Packet Capture](https://docs.elastic.co/integrations/network_traffic) integration, or [Packetbeat](beats://docs/reference/packetbeat/packetbeat-overview.md).
+* DNS events collected by the [Elastic Defend](https://docs.elastic.co/en/integrations/endpoint), [Network Packet Capture](https://docs.elastic.co/integrations/network_traffic) integration, or [Packetbeat](beats://reference/packetbeat/packetbeat-overview.md).
 * To install Elastic Defend, refer to the [documentation](docs-content://solutions/security/configure-elastic-defend/install-elastic-defend.md).
 * To add the Network Packet Capture integration to an Elastic Agent policy, refer to [this](docs-content://reference/ingestion-tools/fleet/add-integration-to-policy.md) guide.
-* To set up and run Packetbeat, follow [this](beats://docs/reference/packetbeat/setting-up-running.md) guide.
+* To set up and run Packetbeat, follow [this](beats://reference/packetbeat/setting-up-running.md) guide.
 
 **The following steps should be executed to install assets associated with the DGA Detection integration:**
 
