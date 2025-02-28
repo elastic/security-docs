@@ -30,7 +30,7 @@ This rule is triggered when CVEs collected from the Rapid7 Threat Command Integr
 
 **References**:
 
-* [/beats/docs/reference/ingestion-tools/beats-filebeat/filebeat-module-threatintel.md](beats://docs/reference/filebeat/filebeat-module-threatintel.md)
+* [/beats/docs/reference/ingestion-tools/beats-filebeat/filebeat-module-threatintel.md](beats://reference/filebeat/filebeat-module-threatintel.md)
 * [https://docs.elastic.co/integrations/ti_rapid7_threat_command](https://docs.elastic.co/integrations/ti_rapid7_threat_command)
 
 **Tags**:

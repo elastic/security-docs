@@ -30,7 +30,7 @@ This rule is triggered when indicators from the Threat Intel Filebeat module (v7
 
 **References**:
 
-* [/beats/docs/reference/ingestion-tools/beats-filebeat/filebeat-module-threatintel.md](beats://docs/reference/filebeat/filebeat-module-threatintel.md)
+* [/beats/docs/reference/ingestion-tools/beats-filebeat/filebeat-module-threatintel.md](beats://reference/filebeat/filebeat-module-threatintel.md)
 
 **Tags**:
 

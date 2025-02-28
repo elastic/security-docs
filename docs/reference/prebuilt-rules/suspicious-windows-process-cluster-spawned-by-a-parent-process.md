@@ -96,9 +96,9 @@ The LotL Attack Detection integration detects living-off-the-land activity in Wi
 
 * Fleet is required for LotL Attack Detection.
 * To configure Fleet Server refer to the [documentation](docs-content://reference/ingestion-tools/fleet/fleet-server.md).
-* Windows process events collected by the [Elastic Defend](https://docs.elastic.co/en/integrations/endpoint) integration or Winlogbeat([/beats/docs/reference/ingestion-tools/beats-winlogbeat/_winlogbeat_overview.md](beats://docs/reference/winlogbeat/_winlogbeat_overview.md)).
+* Windows process events collected by the [Elastic Defend](https://docs.elastic.co/en/integrations/endpoint) integration or Winlogbeat([/beats/docs/reference/ingestion-tools/beats-winlogbeat/_winlogbeat_overview.md](beats://reference/winlogbeat/_winlogbeat_overview.md)).
 * To install Elastic Defend, refer to the [documentation](docs-content://solutions/security/configure-elastic-defend/install-elastic-defend.md).
-* To set up and run Winlogbeat, follow [this](beats://docs/reference/winlogbeat/winlogbeat-installation-configuration.md) guide.
+* To set up and run Winlogbeat, follow [this](beats://reference/winlogbeat/winlogbeat-installation-configuration.md) guide.
 
 **The following steps should be executed to install assets associated with the LotL Attack Detection integration:**
 

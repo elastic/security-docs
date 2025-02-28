@@ -30,7 +30,7 @@ This rule is triggered when an IP address indicator from the Threat Intel Filebe
 
 **References**:
 
-* [/beats/docs/reference/ingestion-tools/beats-filebeat/filebeat-module-threatintel.md](beats://docs/reference/filebeat/filebeat-module-threatintel.md)
+* [/beats/docs/reference/ingestion-tools/beats-filebeat/filebeat-module-threatintel.md](beats://reference/filebeat/filebeat-module-threatintel.md)
 * [docs-content://solutions/security/get-started/enable-threat-intelligence-integrations.md](docs-content://solutions/security/get-started/enable-threat-intelligence-integrations.md)
 * [https://www.elastic.co/security/tip](https://www.elastic.co/security/tip)
 

@@ -27,7 +27,7 @@ Identifies Elasticsearch nodes that do not have Transport Layer Security (TLS), 
 **References**:
 
 * [docs-content://deploy-manage/deploy/self-managed/installing-elasticsearch.md](docs-content://deploy-manage/deploy/self-managed/installing-elasticsearch.md)
-* [/beats/docs/reference/ingestion-tools/beats-packetbeat/packetbeat-http-options.md#_send_all_headers](beats://docs/reference/packetbeat/packetbeat-http-options.md#_send_all_headers)
+* [/beats/docs/reference/ingestion-tools/beats-packetbeat/packetbeat-http-options.md#_send_all_headers](beats://reference/packetbeat/packetbeat-http-options.md#_send_all_headers)
 
 **Tags**:
 

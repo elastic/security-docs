@@ -12,7 +12,7 @@ These {{anomaly-jobs}} automatically detect file system and network anomalies on
 
 Detect anomalous activity in your ECS-compatible authentication logs.
 
-In the {{ml-app}} app, these configurations are available only when data exists that matches the query specified in the [manifest file](https://github.com/elastic/kibana/blob/master/x-pack/plugins/ml/server/models/data_recognizer/modules/security_auth/manifest.json). In the {{security-app}}, it looks in the {{data-source}} specified in the [`securitySolution:defaultIndex` advanced setting](kibana://docs/reference/advanced-settings.md#securitysolution-defaultindex) for data that matches the query.
+In the {{ml-app}} app, these configurations are available only when data exists that matches the query specified in the [manifest file](https://github.com/elastic/kibana/blob/master/x-pack/plugins/ml/server/models/data_recognizer/modules/security_auth/manifest.json). In the {{security-app}}, it looks in the {{data-source}} specified in the [`securitySolution:defaultIndex` advanced setting](kibana://reference/advanced-settings.md#securitysolution-defaultindex) for data that matches the query.
 
 By default, when you create these job in the {{security-app}}, it uses a {{data-source}} that applies to multiple indices. To get the same results if you use the {{ml-app}} app, create a similar [{{data-source}}](https://github.com/elastic/kibana/blob/master/x-pack/plugins/ml/server/models/data_recognizer/modules/security_auth/manifest.json#L7) then select it in the job wizard.
 
@@ -31,7 +31,7 @@ By default, when you create these job in the {{security-app}}, it uses a {{data-
 
 Detect suspicious activity recorded in your CloudTrail logs.
 
-In the {{ml-app}} app, these configurations are available only when data exists that matches the query specified in the [manifest file](https://github.com/elastic/kibana/blob/master/x-pack/plugins/ml/server/models/data_recognizer/modules/security_cloudtrail/manifest.json). In the {{security-app}}, it looks in the {{data-source}} specified in the [`securitySolution:defaultIndex` advanced setting](kibana://docs/reference/advanced-settings.md#securitysolution-defaultindex) for data that matches the query.
+In the {{ml-app}} app, these configurations are available only when data exists that matches the query specified in the [manifest file](https://github.com/elastic/kibana/blob/master/x-pack/plugins/ml/server/models/data_recognizer/modules/security_cloudtrail/manifest.json). In the {{security-app}}, it looks in the {{data-source}} specified in the [`securitySolution:defaultIndex` advanced setting](kibana://reference/advanced-settings.md#securitysolution-defaultindex) for data that matches the query.
 
 | Name | Description | Job | Datafeed |
 | --- | --- | --- | --- |
@@ -46,7 +46,7 @@ In the {{ml-app}} app, these configurations are available only when data exists 
 
 Anomaly detection jobs for host-based threat hunting and detection.
 
-In the {{ml-app}} app, these configurations are available only when data exists that matches the query specified in the [manifest file](https://github.com/elastic/kibana/blob/master/x-pack/platform/plugins/shared/ml/server/models/data_recognizer/modules/security_host/manifest.json). In the {{security-app}}, it looks in the {{data-source}} specified in the [`securitySolution:defaultIndex` advanced setting](kibana://docs/reference/advanced-settings.md#securitysolution-defaultindex) for data that matches the query.
+In the {{ml-app}} app, these configurations are available only when data exists that matches the query specified in the [manifest file](https://github.com/elastic/kibana/blob/master/x-pack/platform/plugins/shared/ml/server/models/data_recognizer/modules/security_host/manifest.json). In the {{security-app}}, it looks in the {{data-source}} specified in the [`securitySolution:defaultIndex` advanced setting](kibana://reference/advanced-settings.md#securitysolution-defaultindex) for data that matches the query.
 
 To access the host traffic anomalies dashboard in Kibana, go to: `Security -> Dashboards -> Host Traffic Anomalies`.
 
@@ -60,7 +60,7 @@ To access the host traffic anomalies dashboard in Kibana, go to: `Security -> Da
 
 Anomaly detection jobs for Linux host-based threat hunting and detection.
 
-In the {{ml-app}} app, these configurations are available only when data exists that matches the query specified in the [manifest file](https://github.com/elastic/kibana/blob/master/x-pack/plugins/ml/server/models/data_recognizer/modules/security_linux/manifest.json). In the {{security-app}}, it looks in the {{data-source}} specified in the [`securitySolution:defaultIndex` advanced setting](kibana://docs/reference/advanced-settings.md#securitysolution-defaultindex) for data that matches the query.
+In the {{ml-app}} app, these configurations are available only when data exists that matches the query specified in the [manifest file](https://github.com/elastic/kibana/blob/master/x-pack/plugins/ml/server/models/data_recognizer/modules/security_linux/manifest.json). In the {{security-app}}, it looks in the {{data-source}} specified in the [`securitySolution:defaultIndex` advanced setting](kibana://reference/advanced-settings.md#securitysolution-defaultindex) for data that matches the query.
 
 | Name | Description | Job | Datafeed |
 | --- | --- | --- | --- |
@@ -84,7 +84,7 @@ In the {{ml-app}} app, these configurations are available only when data exists 
 
 Detect anomalous network activity in your ECS-compatible network logs.
 
-In the {{ml-app}} app, these configurations are available only when data exists that matches the query specified in the [manifest file](https://github.com/elastic/kibana/blob/master/x-pack/plugins/ml/server/models/data_recognizer/modules/security_network/manifest.json). In the {{security-app}}, it looks in the {{data-source}} specified in the [`securitySolution:defaultIndex` advanced setting](kibana://docs/reference/advanced-settings.md#securitysolution-defaultindex) for data that matches the query.
+In the {{ml-app}} app, these configurations are available only when data exists that matches the query specified in the [manifest file](https://github.com/elastic/kibana/blob/master/x-pack/plugins/ml/server/models/data_recognizer/modules/security_network/manifest.json). In the {{security-app}}, it looks in the {{data-source}} specified in the [`securitySolution:defaultIndex` advanced setting](kibana://reference/advanced-settings.md#securitysolution-defaultindex) for data that matches the query.
 
 By default, when you create these jobs in the {{security-app}}, it uses a {{data-source}} that applies to multiple indices. To get the same results if you use the {{ml-app}} app, create a similar [{{data-source}}](https://github.com/elastic/kibana/blob/master/x-pack/plugins/ml/server/models/data_recognizer/modules/security_network/manifest.json#L7) then select it in the job wizard.
 
@@ -100,7 +100,7 @@ By default, when you create these jobs in the {{security-app}}, it uses a {{data
 
 Detect suspicious network activity in {{packetbeat}} data.
 
-In the {{ml-app}} app, these configurations are available only when data exists that matches the query specified in the [manifest file](https://github.com/elastic/kibana/blob/master/x-pack/plugins/ml/server/models/data_recognizer/modules/security_packetbeat/manifest.json). In the {{security-app}}, it looks in the {{data-source}} specified in the [`securitySolution:defaultIndex` advanced setting](kibana://docs/reference/advanced-settings.md#securitysolution-defaultindex) for data that matches the query.
+In the {{ml-app}} app, these configurations are available only when data exists that matches the query specified in the [manifest file](https://github.com/elastic/kibana/blob/master/x-pack/plugins/ml/server/models/data_recognizer/modules/security_packetbeat/manifest.json). In the {{security-app}}, it looks in the {{data-source}} specified in the [`securitySolution:defaultIndex` advanced setting](kibana://reference/advanced-settings.md#securitysolution-defaultindex) for data that matches the query.
 
 | Name | Description | Job | Datafeed |
 | --- | --- | --- | --- |
@@ -115,7 +115,7 @@ In the {{ml-app}} app, these configurations are available only when data exists 
 
 Anomaly detection jobs for Windows host-based threat hunting and detection.
 
-In the {{ml-app}} app, these configurations are available only when data exists that matches the query specified in the [manifest file](https://github.com/elastic/kibana/blob/master/x-pack/plugins/ml/server/models/data_recognizer/modules/security_windows/manifest.json). In the {{security-app}}, it looks in the {{data-source}} specified in the [`securitySolution:defaultIndex` advanced setting](kibana://docs/reference/advanced-settings.md#securitysolution-defaultindex) for data that matches the query.
+In the {{ml-app}} app, these configurations are available only when data exists that matches the query specified in the [manifest file](https://github.com/elastic/kibana/blob/master/x-pack/plugins/ml/server/models/data_recognizer/modules/security_windows/manifest.json). In the {{security-app}}, it looks in the {{data-source}} specified in the [`securitySolution:defaultIndex` advanced setting](kibana://reference/advanced-settings.md#securitysolution-defaultindex) for data that matches the query.
 
 If there are additional requirements such as installing the Windows System Monitor (Sysmon) or auditing process creation in the Windows security event log, they are listed for each job.
 
@@ -137,20 +137,20 @@ If there are additional requirements such as installing the Windows System Monit
 
 ## Security: Elastic Integrations [security-integrations-jobs]
 
-[Elastic Integrations](integration-docs://docs/reference/index.md) are a streamlined way to add Elastic assets to your environment, such as data ingestion, {{transforms}}, and in this case, {{ml}} capabilities for Security.
+[Elastic Integrations](integration-docs://reference/index.md) are a streamlined way to add Elastic assets to your environment, such as data ingestion, {{transforms}}, and in this case, {{ml}} capabilities for Security.
 
 The following Integrations use {{ml}} to analyze patterns of user and entity behavior, and help detect and alert when there is related suspicious activity in your environment.
 
-* [Data Exfiltration Detection](integration-docs://docs/reference/ded.md)
-* [Domain Generation Algorithm Detection](integration-docs://docs/reference/dga.md)
-* [Lateral Movement Detection](integration-docs://docs/reference/lmd.md)
-* [Living off the Land Attack Detection](integration-docs://docs/reference/problemchild.md)
+* [Data Exfiltration Detection](integration-docs://reference/ded.md)
+* [Domain Generation Algorithm Detection](integration-docs://reference/dga.md)
+* [Lateral Movement Detection](integration-docs://reference/lmd.md)
+* [Living off the Land Attack Detection](integration-docs://reference/problemchild.md)
 
 **Domain Generation Algorithm (DGA) Detection**
 
 {{ml-cap}} solution package to detect domain generation algorithm (DGA) activity in your network data. Refer to the [subscription page](https://www.elastic.co/subscriptions) to learn more about the required subscription.
 
-To download, refer to the [documentation](integration-docs://docs/reference/dga.md).
+To download, refer to the [documentation](integration-docs://reference/dga.md).
 
 | Name | Description |
 | --- | --- |
@@ -162,7 +162,7 @@ The job configurations and datafeeds can be found [here](https://github.com/elas
 
 {{ml-cap}} solution package to detect Living off the Land (LotL) attacks in your environment. Refer to the [subscription page](https://www.elastic.co/subscriptions) to learn more about the required subscription. (Also known as ProblemChild).
 
-To download, refer to the [documentation](integration-docs://docs/reference/problemchild.md).
+To download, refer to the [documentation](integration-docs://reference/problemchild.md).
 
 | Name | Description |
 | --- | --- |
@@ -179,7 +179,7 @@ The job configurations and datafeeds can be found [here](https://github.com/elas
 
 {{ml-cap}} package to detect data exfiltration in your network and file data. Refer to the [subscription page](https://www.elastic.co/subscriptions) to learn more about the required subscription.
 
-To download, refer to the [documentation](integration-docs://docs/reference/ded.md).
+To download, refer to the [documentation](integration-docs://reference/ded.md).
 
 | Name | Description |
 | --- | --- |
@@ -197,7 +197,7 @@ The job configurations and datafeeds can be found [here](https://github.com/elas
 
 {{ml-cap}} package to detect lateral movement based on file transfer activity and Windows RDP events. Refer to the [subscription page](https://www.elastic.co/subscriptions) to learn more about the required subscription.
 
-To download, refer to the [documentation](integration-docs://docs/reference/lmd.md).
+To download, refer to the [documentation](integration-docs://reference/lmd.md).
 
 | Name | Description |
 | --- | --- |
