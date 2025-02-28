@@ -21,7 +21,7 @@ Indicates the creation of a scheduled task using Windows event logs. Adversaries
 
 **Runs every**: 5m
 
-**Searches indices from**: now-9m [Date Math format](asciidocalypse://docs/elasticsearch/docs/reference/elasticsearch/rest-apis/common-options.md#rule-schedule), see also [`Additional look-back time`](docs-content://solutions/security/detect-and-alert/create-detection-rule.md#rule-schedule))
+**Searches indices from**: now-9m [Date Math format](asciidocalypse://docs/elasticsearch/docs/reference/elasticsearch/rest-apis/common-options.md#date-math), see also [`Additional look-back time`](docs-content://solutions/security/detect-and-alert/create-detection-rule.md#rule-schedule)
 
 **Maximum alerts per execution**: 100
 
