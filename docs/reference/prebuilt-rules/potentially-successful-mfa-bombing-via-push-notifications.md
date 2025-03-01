@@ -1,4 +1,8 @@
 ---
+applies_to:
+  stack: all
+  serverless:
+    security: all
 mapped_pages:
   - https://www.elastic.co/guide/en/security/current/potentially-successful-mfa-bombing-via-push-notifications.html
 ---

@@ -1,4 +1,8 @@
 ---
+applies_to:
+  stack: all
+  serverless:
+    security: all
 mapped_pages:
   - https://www.elastic.co/guide/en/security/current/aws-sts-getcalleridentity-api-called-for-the-first-time.html
 ---

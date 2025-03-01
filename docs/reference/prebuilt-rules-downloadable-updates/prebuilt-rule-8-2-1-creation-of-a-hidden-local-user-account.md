@@ -1,4 +1,8 @@
 ---
+applies_to:
+  stack: all
+  serverless:
+    security: all
 mapped_pages:
   - https://www.elastic.co/guide/en/security/current/prebuilt-rule-8-2-1-creation-of-a-hidden-local-user-account.html
 ---

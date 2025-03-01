@@ -1,4 +1,8 @@
 ---
+applies_to:
+  stack: all
+  serverless:
+    security: all
 mapped_pages:
   - https://www.elastic.co/guide/en/security/current/prebuilt-rule-8-3-2-powershell-suspicious-discovery-related-windows-api-functions.html
 ---

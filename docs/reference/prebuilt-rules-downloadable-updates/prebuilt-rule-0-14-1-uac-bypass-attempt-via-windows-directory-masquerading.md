@@ -1,4 +1,8 @@
 ---
+applies_to:
+  stack: all
+  serverless:
+    security: all
 mapped_pages:
   - https://www.elastic.co/guide/en/security/current/prebuilt-rule-0-14-1-uac-bypass-attempt-via-windows-directory-masquerading.html
 ---

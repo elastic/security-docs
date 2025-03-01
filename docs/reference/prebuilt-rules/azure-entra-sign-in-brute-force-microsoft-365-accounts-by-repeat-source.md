@@ -1,4 +1,8 @@
 ---
+applies_to:
+  stack: all
+  serverless:
+    security: all
 mapped_pages:
   - https://www.elastic.co/guide/en/security/current/azure-entra-sign-in-brute-force-microsoft-365-accounts-by-repeat-source.html
 ---

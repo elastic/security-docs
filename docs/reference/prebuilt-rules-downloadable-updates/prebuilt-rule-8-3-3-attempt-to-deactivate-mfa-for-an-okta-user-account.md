@@ -1,4 +1,8 @@
 ---
+applies_to:
+  stack: all
+  serverless:
+    security: all
 mapped_pages:
   - https://www.elastic.co/guide/en/security/current/prebuilt-rule-8-3-3-attempt-to-deactivate-mfa-for-an-okta-user-account.html
 ---

@@ -1,4 +1,8 @@
 ---
+applies_to:
+  stack: all
+  serverless:
+    security: all
 mapped_pages:
   - https://www.elastic.co/guide/en/security/current/unauthorized-scope-for-public-app-oauth2-token-grant-with-client-credentials.html
 ---

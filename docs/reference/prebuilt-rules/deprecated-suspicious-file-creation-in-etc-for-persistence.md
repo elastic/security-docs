@@ -1,4 +1,8 @@
 ---
+applies_to:
+  stack: deprecated 8.14.0
+  serverless:
+    security: deprecated all
 mapped_pages:
   - https://www.elastic.co/guide/en/security/current/deprecated-suspicious-file-creation-in-etc-for-persistence.html
 ---

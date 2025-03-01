@@ -1,4 +1,8 @@
 ---
+applies_to:
+  stack: all
+  serverless:
+    security: all
 mapped_pages:
   - https://www.elastic.co/guide/en/security/current/aws-iam-customer-managed-policy-attached-to-role-by-rare-user.html
 ---

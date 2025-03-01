@@ -1,4 +1,8 @@
 ---
+applies_to:
+  stack: all
+  serverless:
+    security: all
 mapped_pages:
   - https://www.elastic.co/guide/en/security/current/creation-or-modification-of-a-new-gpo-scheduled-task-or-service.html
 ---

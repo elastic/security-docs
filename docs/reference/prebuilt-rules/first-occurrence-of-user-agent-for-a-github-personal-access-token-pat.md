@@ -1,4 +1,8 @@
 ---
+applies_to:
+  stack: all
+  serverless:
+    security: all
 mapped_pages:
   - https://www.elastic.co/guide/en/security/current/first-occurrence-of-user-agent-for-a-github-personal-access-token-pat.html
 ---
