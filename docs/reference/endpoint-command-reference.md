@@ -1,4 +1,8 @@
 ---
+applies_to:
+  stack: all
+  serverless:
+    security: all
 mapped_pages:
   - https://www.elastic.co/guide/en/security/current/endpoint-command-ref.html
   - https://www.elastic.co/guide/en/serverless/current/security-endpoint-command-ref.html
