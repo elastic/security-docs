@@ -30,7 +30,7 @@ This rule detects the use of the default Cobalt Strike Team Server TLS certifica
 
 * [https://attack.mitre.org/software/S0154/](https://attack.mitre.org/software/S0154/)
 * [https://www.cobaltstrike.com/help-setup-collaboration](https://www.cobaltstrike.com/help-setup-collaboration)
-* [/beats/docs/reference/ingestion-tools/beats-packetbeat/configuration-tls.md](beats://docs/reference/packetbeat/configuration-tls.md)
+* [/beats/docs/reference/ingestion-tools/beats-packetbeat/configuration-tls.md](beats://reference/packetbeat/configuration-tls.md)
 * [https://www.elastic.co/guide/en/beats/filebeat/7.9/filebeat-module-suricata.html](https://www.elastic.co/guide/en/beats/filebeat/7.9/filebeat-module-suricata.html)
 * [https://www.elastic.co/guide/en/beats/filebeat/7.9/filebeat-module-zeek.html](https://www.elastic.co/guide/en/beats/filebeat/7.9/filebeat-module-zeek.html)
 

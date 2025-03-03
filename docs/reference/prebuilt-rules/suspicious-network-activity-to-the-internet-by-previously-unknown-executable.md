@@ -140,10 +140,10 @@ Auditbeat is a lightweight shipper that you can install on your servers to audit
 **The following steps should be executed in order to add the Auditbeat on a Linux System:**
 
 * Elastic provides repositories available for APT and YUM-based distributions. Note that we provide binary packages, but no source packages.
-* To install the APT and YUM repositories follow the setup instructions in this [helper guide](beats://docs/reference/auditbeat/setup-repositories.md).
-* To run Auditbeat on Docker follow the setup instructions in the [helper guide](beats://docs/reference/auditbeat/running-on-docker.md).
-* To run Auditbeat on Kubernetes follow the setup instructions in the [helper guide](beats://docs/reference/auditbeat/running-on-kubernetes.md).
-* For complete “Setup and Run Auditbeat” information refer to the [helper guide](beats://docs/reference/auditbeat/setting-up-running.md).
+* To install the APT and YUM repositories follow the setup instructions in this [helper guide](beats://reference/auditbeat/setup-repositories.md).
+* To run Auditbeat on Docker follow the setup instructions in the [helper guide](beats://reference/auditbeat/running-on-docker.md).
+* To run Auditbeat on Kubernetes follow the setup instructions in the [helper guide](beats://reference/auditbeat/running-on-kubernetes.md).
+* For complete “Setup and Run Auditbeat” information refer to the [helper guide](beats://reference/auditbeat/setting-up-running.md).
 
 **Filebeat Setup**
 
@@ -152,11 +152,11 @@ Filebeat is a lightweight shipper for forwarding and centralizing log data. Inst
 **The following steps should be executed in order to add the Filebeat on a Linux System:**
 
 * Elastic provides repositories available for APT and YUM-based distributions. Note that we provide binary packages, but no source packages.
-* To install the APT and YUM repositories follow the setup instructions in this [helper guide](beats://docs/reference/filebeat/setup-repositories.md).
-* To run Filebeat on Docker follow the setup instructions in the [helper guide](beats://docs/reference/filebeat/running-on-docker.md).
-* To run Filebeat on Kubernetes follow the setup instructions in the [helper guide](beats://docs/reference/filebeat/running-on-kubernetes.md).
+* To install the APT and YUM repositories follow the setup instructions in this [helper guide](beats://reference/filebeat/setup-repositories.md).
+* To run Filebeat on Docker follow the setup instructions in the [helper guide](beats://reference/filebeat/running-on-docker.md).
+* To run Filebeat on Kubernetes follow the setup instructions in the [helper guide](beats://reference/filebeat/running-on-kubernetes.md).
 * For quick start information for Filebeat refer to the [helper guide](https://www.elastic.co/guide/en/beats/filebeat/8.11/filebeat-installation-configuration.html).
-* For complete “Setup and Run Filebeat” information refer to the [helper guide](beats://docs/reference/filebeat/setting-up-running.md).
+* For complete “Setup and Run Filebeat” information refer to the [helper guide](beats://reference/filebeat/setting-up-running.md).
 
 **Packetbeat Setup**
 
@@ -165,10 +165,10 @@ Packetbeat is a real-time network packet analyzer that you can use for applicati
 **The following steps should be executed in order to add the Packetbeat on a  Linux System:**
 
 * Elastic provides repositories available for APT and YUM-based distributions. Note that we provide binary packages, but no source packages.
-* To install the APT and YUM repositories follow the setup instructions in this [helper guide](beats://docs/reference/packetbeat/setup-repositories.md).
-* To run Packetbeat on Docker follow the setup instructions in the [helper guide](beats://docs/reference/packetbeat/running-on-docker.md).
-* For quick start information for Packetbeat refer to the [helper guide](beats://docs/reference/packetbeat/packetbeat-installation-configuration.md).
-* For complete “Setup and Run Packetbeat” information refer to the [helper guide](beats://docs/reference/packetbeat/setting-up-running.md).
+* To install the APT and YUM repositories follow the setup instructions in this [helper guide](beats://reference/packetbeat/setup-repositories.md).
+* To run Packetbeat on Docker follow the setup instructions in the [helper guide](beats://reference/packetbeat/running-on-docker.md).
+* For quick start information for Packetbeat refer to the [helper guide](beats://reference/packetbeat/packetbeat-installation-configuration.md).
+* For complete “Setup and Run Packetbeat” information refer to the [helper guide](beats://reference/packetbeat/setting-up-running.md).
 
 
 ## Rule query [_rule_query_1060]
