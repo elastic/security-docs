@@ -26,8 +26,8 @@ Identifies the creation of a group in AWS Identity and Access Management (IAM). 
 
 **References**:
 
-* [https://awscli.amazonaws.com/v2/documentation/api/latest/reference/iam/create-group.html](https://awscli.amazonaws.com/v2/documentation/api/latest/reference/iam/create-group.md)
-* [https://docs.aws.amazon.com/IAM/latest/APIReference/API_CreateGroup.html](https://docs.aws.amazon.com/IAM/latest/APIReference/API_CreateGroup.md)
+* [https://awscli.amazonaws.com/v2/documentation/api/latest/reference/iam/create-group.html](https://awscli.amazonaws.com/v2/documentation/api/latest/reference/iam/create-group.html)
+* [https://docs.aws.amazon.com/IAM/latest/APIReference/API_CreateGroup.html](https://docs.aws.amazon.com/IAM/latest/APIReference/API_CreateGroup.html)
 
 **Tags**:
 

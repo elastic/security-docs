@@ -26,8 +26,8 @@ Detects when an EFS File System or Mount is deleted. An adversary could break an
 
 **References**:
 
-* [https://docs.aws.amazon.com/efs/latest/ug/API_DeleteFileSystem.html](https://docs.aws.amazon.com/efs/latest/ug/API_DeleteFileSystem.md)
-* [https://docs.aws.amazon.com/efs/latest/ug/API_DeleteMountTarget.html](https://docs.aws.amazon.com/efs/latest/ug/API_DeleteMountTarget.md)
+* [https://docs.aws.amazon.com/efs/latest/ug/API_DeleteFileSystem.html](https://docs.aws.amazon.com/efs/latest/ug/API_DeleteFileSystem.html)
+* [https://docs.aws.amazon.com/efs/latest/ug/API_DeleteMountTarget.html](https://docs.aws.amazon.com/efs/latest/ug/API_DeleteMountTarget.html)
 
 **Tags**:
 

@@ -25,7 +25,7 @@ Identifies attempts to execute a child process from within the context of an Ele
 
 **References**:
 
-* [https://www.matthewslipper.com/2019/09/22/everything-you-wanted-electron-child-process.html](https://www.matthewslipper.com/2019/09/22/everything-you-wanted-electron-child-process.md)
+* [https://www.matthewslipper.com/2019/09/22/everything-you-wanted-electron-child-process.html](https://www.matthewslipper.com/2019/09/22/everything-you-wanted-electron-child-process.html)
 * [https://www.trustedsec.com/blog/macos-injection-via-third-party-frameworks/](https://www.trustedsec.com/blog/macos-injection-via-third-party-frameworks/)
 * [https://nodejs.org/api/child_process.html](https://nodejs.org/api/child_process.md)
 

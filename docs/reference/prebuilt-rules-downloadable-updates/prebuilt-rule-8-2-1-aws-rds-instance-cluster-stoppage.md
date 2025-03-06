@@ -26,10 +26,10 @@ Identifies that an Amazon Relational Database Service (RDS) cluster or instance 
 
 **References**:
 
-* [https://awscli.amazonaws.com/v2/documentation/api/latest/reference/rds/stop-db-cluster.html](https://awscli.amazonaws.com/v2/documentation/api/latest/reference/rds/stop-db-cluster.md)
-* [https://docs.aws.amazon.com/AmazonRDS/latest/APIReference/API_StopDBCluster.html](https://docs.aws.amazon.com/AmazonRDS/latest/APIReference/API_StopDBCluster.md)
-* [https://awscli.amazonaws.com/v2/documentation/api/latest/reference/rds/stop-db-instance.html](https://awscli.amazonaws.com/v2/documentation/api/latest/reference/rds/stop-db-instance.md)
-* [https://docs.aws.amazon.com/AmazonRDS/latest/APIReference/API_StopDBInstance.html](https://docs.aws.amazon.com/AmazonRDS/latest/APIReference/API_StopDBInstance.md)
+* [https://awscli.amazonaws.com/v2/documentation/api/latest/reference/rds/stop-db-cluster.html](https://awscli.amazonaws.com/v2/documentation/api/latest/reference/rds/stop-db-cluster.html)
+* [https://docs.aws.amazon.com/AmazonRDS/latest/APIReference/API_StopDBCluster.html](https://docs.aws.amazon.com/AmazonRDS/latest/APIReference/API_StopDBCluster.html)
+* [https://awscli.amazonaws.com/v2/documentation/api/latest/reference/rds/stop-db-instance.html](https://awscli.amazonaws.com/v2/documentation/api/latest/reference/rds/stop-db-instance.html)
+* [https://docs.aws.amazon.com/AmazonRDS/latest/APIReference/API_StopDBInstance.html](https://docs.aws.amazon.com/AmazonRDS/latest/APIReference/API_StopDBInstance.html)
 
 **Tags**:
 

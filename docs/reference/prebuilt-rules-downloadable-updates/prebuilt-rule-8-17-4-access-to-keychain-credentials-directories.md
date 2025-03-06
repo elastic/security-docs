@@ -25,7 +25,7 @@ Adversaries may collect the keychain storage data from a system to acquire crede
 
 **References**:
 
-* [https://objective-see.com/blog/blog_0x25.html](https://objective-see.com/blog/blog_0x25.md)
+* [https://objective-see.com/blog/blog_0x25.html](https://objective-see.com/blog/blog_0x25.html)
 * [https://securelist.com/calisto-trojan-for-macos/86543/](https://securelist.com/calisto-trojan-for-macos/86543/)
 
 **Tags**:

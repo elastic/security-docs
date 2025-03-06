@@ -28,7 +28,7 @@ Identifies when an AWS Lambda function is created or updated. AWS Lambda lets yo
 
 * [https://mattslifebytes.com/2023/04/14/from-rebuilds-to-reloads-hacking-aws-lambda-to-enable-instant-code-updates/](https://mattslifebytes.com/2023/04/14/from-rebuilds-to-reloads-hacking-aws-lambda-to-enable-instant-code-updates/)
 * [https://stratus-red-team.cloud/attack-techniques/AWS/aws.persistence.lambda-overwrite-code/](https://stratus-red-team.cloud/attack-techniques/AWS/aws.persistence.lambda-overwrite-code/)
-* [https://docs.aws.amazon.com/lambda/latest/api/API_UpdateFunctionCode.html](https://docs.aws.amazon.com/lambda/latest/api/API_UpdateFunctionCode.md)
+* [https://docs.aws.amazon.com/lambda/latest/api/API_UpdateFunctionCode.html](https://docs.aws.amazon.com/lambda/latest/api/API_UpdateFunctionCode.html)
 
 **Tags**:
 

@@ -29,7 +29,7 @@ Cobalt Strike is a threat emulation platform commonly modified and used by adver
 **References**:
 
 * [https://blog.morphisec.com/fin7-attacks-restaurant-industry](https://blog.morphisec.com/fin7-attacks-restaurant-industry)
-* [https://www.fireeye.com/blog/threat-research/2017/04/fin7-phishing-lnk.html](https://www.fireeye.com/blog/threat-research/2017/04/fin7-phishing-lnk.md)
+* [https://www.fireeye.com/blog/threat-research/2017/04/fin7-phishing-lnk.html](https://www.fireeye.com/blog/threat-research/2017/04/fin7-phishing-lnk.html)
 
 **Tags**:
 

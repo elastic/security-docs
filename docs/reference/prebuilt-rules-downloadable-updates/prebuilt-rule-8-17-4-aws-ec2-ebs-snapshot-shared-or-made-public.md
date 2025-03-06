@@ -23,8 +23,8 @@ Identifies AWS EC2 EBS snaphots being shared with another AWS account or made pu
 
 **References**:
 
-* [https://docs.aws.amazon.com/ebs/latest/userguide/ebs-modifying-snapshot-permissions.html](https://docs.aws.amazon.com/ebs/latest/userguide/ebs-modifying-snapshot-permissions.md)
-* [https://docs.aws.amazon.com/AWSEC2/latest/APIReference/API_ModifySnapshotAttribute.html](https://docs.aws.amazon.com/AWSEC2/latest/APIReference/API_ModifySnapshotAttribute.md)
+* [https://docs.aws.amazon.com/ebs/latest/userguide/ebs-modifying-snapshot-permissions.html](https://docs.aws.amazon.com/ebs/latest/userguide/ebs-modifying-snapshot-permissions.html)
+* [https://docs.aws.amazon.com/AWSEC2/latest/APIReference/API_ModifySnapshotAttribute.html](https://docs.aws.amazon.com/AWSEC2/latest/APIReference/API_ModifySnapshotAttribute.html)
 * [https://cloud.hacktricks.xyz/pentesting-cloud/aws-security/aws-post-exploitation/aws-ec2-ebs-ssm-and-vpc-post-exploitation/aws-ebs-snapshot-dump](https://cloud.hacktricks.xyz/pentesting-cloud/aws-security/aws-post-exploitation/aws-ec2-ebs-ssm-and-vpc-post-exploitation/aws-ebs-snapshot-dump)
 * [https://hackingthe.cloud/aws/exploitation/Misconfigured_Resource-Based_Policies/exploting_public_resources_attack_playbook/](https://hackingthe.cloud/aws/exploitation/Misconfigured_Resource-Based_Policies/exploting_public_resources_attack_playbook/)
 
@@ -79,7 +79,7 @@ This rule detects when an AWS EC2 EBS snapshot is shared with another AWS accoun
 
 **Additional Information:**
 
-For further guidance on managing EBS snapshots and securing AWS environments, refer to the [AWS EBS documentation](https://docs.aws.amazon.com/ebs/latest/userguide/ebs-modifying-snapshot-permissions.md) and AWS best practices for security. Additionally, consult the following resources for specific details on EBS snapshot security: - [AWS EBS Snapshot Permissions](https://docs.aws.amazon.com/ebs/latest/userguide/ebs-modifying-snapshot-permissions.md) - [AWS API ModifySnapshotAttribute](https://docs.aws.amazon.com/AWSEC2/latest/APIReference/API_ModifySnapshotAttribute.md) - [AWS EBS Snapshot Dump](https://cloud.hacktricks.xyz/pentesting-cloud/aws-security/aws-post-exploitation/aws-ec2-ebs-ssm-and-vpc-post-exploitation/aws-ebs-snapshot-dump)
+For further guidance on managing EBS snapshots and securing AWS environments, refer to the [AWS EBS documentation](https://docs.aws.amazon.com/ebs/latest/userguide/ebs-modifying-snapshot-permissions.html) and AWS best practices for security. Additionally, consult the following resources for specific details on EBS snapshot security: - [AWS EBS Snapshot Permissions](https://docs.aws.amazon.com/ebs/latest/userguide/ebs-modifying-snapshot-permissions.html) - [AWS API ModifySnapshotAttribute](https://docs.aws.amazon.com/AWSEC2/latest/APIReference/API_ModifySnapshotAttribute.html) - [AWS EBS Snapshot Dump](https://cloud.hacktricks.xyz/pentesting-cloud/aws-security/aws-post-exploitation/aws-ec2-ebs-ssm-and-vpc-post-exploitation/aws-ebs-snapshot-dump)
 
 
 ## Rule query [_rule_query_5029]

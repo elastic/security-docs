@@ -26,7 +26,7 @@ Identifies the addition of a user to a specified group in AWS Identity and Acces
 
 **References**:
 
-* [https://docs.aws.amazon.com/IAM/latest/APIReference/API_AddUserToGroup.html](https://docs.aws.amazon.com/IAM/latest/APIReference/API_AddUserToGroup.md)
+* [https://docs.aws.amazon.com/IAM/latest/APIReference/API_AddUserToGroup.html](https://docs.aws.amazon.com/IAM/latest/APIReference/API_AddUserToGroup.html)
 
 **Tags**:
 

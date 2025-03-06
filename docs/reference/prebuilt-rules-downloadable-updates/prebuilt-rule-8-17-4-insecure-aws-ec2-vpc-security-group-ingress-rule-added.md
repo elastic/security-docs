@@ -26,8 +26,8 @@ Identifies when a specified inbound (ingress) rule is added or adjusted for a VP
 
 **References**:
 
-* [https://docs.aws.amazon.com/AWSEC2/latest/APIReference/API_AuthorizeSecurityGroupEgress.html](https://docs.aws.amazon.com/AWSEC2/latest/APIReference/API_AuthorizeSecurityGroupEgress.md)
-* [https://docs.aws.amazon.com/AWSEC2/latest/APIReference/API_AuthorizeSecurityGroupIngress.html](https://docs.aws.amazon.com/AWSEC2/latest/APIReference/API_AuthorizeSecurityGroupIngress.md)
+* [https://docs.aws.amazon.com/AWSEC2/latest/APIReference/API_AuthorizeSecurityGroupEgress.html](https://docs.aws.amazon.com/AWSEC2/latest/APIReference/API_AuthorizeSecurityGroupEgress.html)
+* [https://docs.aws.amazon.com/AWSEC2/latest/APIReference/API_AuthorizeSecurityGroupIngress.html](https://docs.aws.amazon.com/AWSEC2/latest/APIReference/API_AuthorizeSecurityGroupIngress.html)
 * [https://www.linkedin.com/pulse/my-backdoors-your-aws-infrastructure-part-3-network-micha%C5%82-brygidyn/](https://www.linkedin.com/pulse/my-backdoors-your-aws-infrastructure-part-3-network-micha%C5%82-brygidyn/)
 
 **Tags**:
@@ -80,7 +80,7 @@ This rule detects the addition of ingress rules to a VPC security group that all
 
 **Additional Information:**
 
-For further guidance on managing security group rules and securing AWS environments, refer to the [Amazon VPC Security Groups documentation](https://docs.aws.amazon.com/vpc/latest/userguide/VPC_SecurityGroups.md) and AWS best practices for security.
+For further guidance on managing security group rules and securing AWS environments, refer to the [Amazon VPC Security Groups documentation](https://docs.aws.amazon.com/vpc/latest/userguide/VPC_SecurityGroups.html) and AWS best practices for security.
 
 
 ## Rule query [_rule_query_5016]

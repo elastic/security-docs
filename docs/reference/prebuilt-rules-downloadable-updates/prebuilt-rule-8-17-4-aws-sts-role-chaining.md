@@ -23,7 +23,7 @@ Identifies role chaining activity. Role chaining is when you use one assumed rol
 
 **References**:
 
-* [https://docs.aws.amazon.com/IAM/latest/UserGuide/id_roles.html#id_roles_terms-and-concepts](https://docs.aws.amazon.com/IAM/latest/UserGuide/id_roles.md#id_roles_terms-and-concepts)
+* [https://docs.aws.amazon.com/IAM/latest/UserGuide/id_roles.html#id_roles_terms-and-concepts](https://docs.aws.amazon.com/IAM/latest/UserGuide/id_roles.html#id_roles_terms-and-concepts)
 * [https://www.uptycs.com/blog/detecting-anomalous-aws-sessions-temporary-credentials](https://www.uptycs.com/blog/detecting-anomalous-aws-sessions-temporary-credentials)
 * [https://hackingthe.cloud/aws/post_exploitation/role-chain-juggling/](https://hackingthe.cloud/aws/post_exploitation/role-chain-juggling/)
 

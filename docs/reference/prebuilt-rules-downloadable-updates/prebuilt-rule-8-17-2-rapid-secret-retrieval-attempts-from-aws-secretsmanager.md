@@ -26,10 +26,10 @@ This rule attempts to identify rapid secret retrieval attempts from AWS SecretsM
 
 **References**:
 
-* [https://docs.aws.amazon.com/secretsmanager/latest/apireference/API_GetSecretValue.html](https://docs.aws.amazon.com/secretsmanager/latest/apireference/API_GetSecretValue.md)
+* [https://docs.aws.amazon.com/secretsmanager/latest/apireference/API_GetSecretValue.html](https://docs.aws.amazon.com/secretsmanager/latest/apireference/API_GetSecretValue.html)
 * [https://detectioninthe.cloud/ttps/credential_access/access_secret_in_secrets_manager/](https://detectioninthe.cloud/ttps/credential_access/access_secret_in_secrets_manager/)
 * [https://cloud.hacktricks.xyz/pentesting-cloud/aws-security/aws-services/aws-secrets-manager-enum](https://cloud.hacktricks.xyz/pentesting-cloud/aws-security/aws-services/aws-secrets-manager-enum)
-* [https://docs.aws.amazon.com/secretsmanager/latest/apireference/API_BatchGetSecretValue.html](https://docs.aws.amazon.com/secretsmanager/latest/apireference/API_BatchGetSecretValue.md)
+* [https://docs.aws.amazon.com/secretsmanager/latest/apireference/API_BatchGetSecretValue.html](https://docs.aws.amazon.com/secretsmanager/latest/apireference/API_BatchGetSecretValue.html)
 
 **Tags**:
 

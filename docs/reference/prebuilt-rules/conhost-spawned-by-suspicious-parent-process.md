@@ -30,7 +30,7 @@ Detects when the Console Window Host (conhost.exe) process is spawned by a suspi
 
 **References**:
 
-* [https://www.fireeye.com/blog/threat-research/2017/08/monitoring-windows-console-activity-part-one.html](https://www.fireeye.com/blog/threat-research/2017/08/monitoring-windows-console-activity-part-one.md)
+* [https://www.fireeye.com/blog/threat-research/2017/08/monitoring-windows-console-activity-part-one.html](https://www.fireeye.com/blog/threat-research/2017/08/monitoring-windows-console-activity-part-one.html)
 
 **Tags**:
 

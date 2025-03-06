@@ -26,7 +26,7 @@ Identifies discovery request `DescribeInstanceAttribute` with the attribute user
 
 **References**:
 
-* [https://docs.aws.amazon.com/AWSEC2/latest/APIReference/API_DescribeInstanceAttribute.html](https://docs.aws.amazon.com/AWSEC2/latest/APIReference/API_DescribeInstanceAttribute.md)
+* [https://docs.aws.amazon.com/AWSEC2/latest/APIReference/API_DescribeInstanceAttribute.html](https://docs.aws.amazon.com/AWSEC2/latest/APIReference/API_DescribeInstanceAttribute.html)
 * [https://hackingthe.cloud/aws/exploitation/local_ec2_priv_esc_through_user_data](https://hackingthe.cloud/aws/exploitation/local_ec2_priv_esc_through_user_data)
 
 **Tags**:
@@ -92,7 +92,7 @@ This rule detects requests to retrieve the `userData` attribute of an EC2 instan
 
 **Additional Information**
 
-For more details on managing EC2 user data securely, refer to the [AWS EC2 User Data Documentation](https://docs.aws.amazon.com/AWSEC2/latest/UserGuide/ec2-instance-metadata.md).
+For more details on managing EC2 user data securely, refer to the [AWS EC2 User Data Documentation](https://docs.aws.amazon.com/AWSEC2/latest/UserGuide/ec2-instance-metadata.html).
 
 
 ## Rule query [_rule_query_36]

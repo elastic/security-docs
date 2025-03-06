@@ -1,6 +1,7 @@
 ---
 mapped_pages:
   - https://www.elastic.co/guide/en/security/current/command-and-scripting-interpreter-via-windows-scripts.html
+  - https://www.elastic.co/guide/en/security/current/suspicious-powershell-execution-via-windows-scripts.html
 ---
 
 # Command and Scripting Interpreter via Windows Scripts [command-and-scripting-interpreter-via-windows-scripts]

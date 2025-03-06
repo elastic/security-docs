@@ -26,12 +26,12 @@ Identifies the deletion of an Amazon Relational Database Service (RDS) Aurora da
 
 **References**:
 
-* [https://awscli.amazonaws.com/v2/documentation/api/latest/reference/rds/delete-db-cluster.html](https://awscli.amazonaws.com/v2/documentation/api/latest/reference/rds/delete-db-cluster.md)
-* [https://docs.aws.amazon.com/AmazonRDS/latest/APIReference/API_DeleteDBCluster.html](https://docs.aws.amazon.com/AmazonRDS/latest/APIReference/API_DeleteDBCluster.md)
-* [https://awscli.amazonaws.com/v2/documentation/api/latest/reference/rds/delete-global-cluster.html](https://awscli.amazonaws.com/v2/documentation/api/latest/reference/rds/delete-global-cluster.md)
-* [https://docs.aws.amazon.com/AmazonRDS/latest/APIReference/API_DeleteGlobalCluster.html](https://docs.aws.amazon.com/AmazonRDS/latest/APIReference/API_DeleteGlobalCluster.md)
-* [https://awscli.amazonaws.com/v2/documentation/api/latest/reference/rds/delete-db-instance.html](https://awscli.amazonaws.com/v2/documentation/api/latest/reference/rds/delete-db-instance.md)
-* [https://docs.aws.amazon.com/AmazonRDS/latest/APIReference/API_DeleteDBInstance.html](https://docs.aws.amazon.com/AmazonRDS/latest/APIReference/API_DeleteDBInstance.md)
+* [https://awscli.amazonaws.com/v2/documentation/api/latest/reference/rds/delete-db-cluster.html](https://awscli.amazonaws.com/v2/documentation/api/latest/reference/rds/delete-db-cluster.html)
+* [https://docs.aws.amazon.com/AmazonRDS/latest/APIReference/API_DeleteDBCluster.html](https://docs.aws.amazon.com/AmazonRDS/latest/APIReference/API_DeleteDBCluster.html)
+* [https://awscli.amazonaws.com/v2/documentation/api/latest/reference/rds/delete-global-cluster.html](https://awscli.amazonaws.com/v2/documentation/api/latest/reference/rds/delete-global-cluster.html)
+* [https://docs.aws.amazon.com/AmazonRDS/latest/APIReference/API_DeleteGlobalCluster.html](https://docs.aws.amazon.com/AmazonRDS/latest/APIReference/API_DeleteGlobalCluster.html)
+* [https://awscli.amazonaws.com/v2/documentation/api/latest/reference/rds/delete-db-instance.html](https://awscli.amazonaws.com/v2/documentation/api/latest/reference/rds/delete-db-instance.html)
+* [https://docs.aws.amazon.com/AmazonRDS/latest/APIReference/API_DeleteDBInstance.html](https://docs.aws.amazon.com/AmazonRDS/latest/APIReference/API_DeleteDBInstance.html)
 
 **Tags**:
 

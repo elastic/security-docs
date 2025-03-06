@@ -26,7 +26,7 @@ Identifies a change to an AWS Security Group Configuration. A security group is 
 
 **References**:
 
-* [https://docs.aws.amazon.com/AWSEC2/latest/WindowsGuide/ec2-security-groups.html](https://docs.aws.amazon.com/AWSEC2/latest/WindowsGuide/ec2-security-groups.md)
+* [https://docs.aws.amazon.com/AWSEC2/latest/WindowsGuide/ec2-security-groups.html](https://docs.aws.amazon.com/AWSEC2/latest/WindowsGuide/ec2-security-groups.html)
 
 **Tags**:
 
@@ -135,7 +135,7 @@ This rule identifies any changes to an AWS Security Group, which functions as a 
 
 **Additional Information**
 
-For more details on managing AWS Security Groups and best practices, refer to the [AWS EC2 Security Groups Documentation](https://docs.aws.amazon.com/AWSEC2/latest/WindowsGuide/ec2-security-groups.md) and AWS security best practices.
+For more details on managing AWS Security Groups and best practices, refer to the [AWS EC2 Security Groups Documentation](https://docs.aws.amazon.com/AWSEC2/latest/WindowsGuide/ec2-security-groups.html) and AWS security best practices.
 
 
 ## Rule query [_rule_query_5057]

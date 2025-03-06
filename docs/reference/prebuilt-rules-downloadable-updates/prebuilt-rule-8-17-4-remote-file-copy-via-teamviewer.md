@@ -26,7 +26,7 @@ Identifies an executable or script file remotely downloaded via a TeamViewer tra
 
 **References**:
 
-* [http://web.archive.org/web/20230329160957/https://blog.menasec.net/2019/11/hunting-for-suspicious-use-of.html](http://web.archive.org/web/20230329160957/https://blog.menasec.net/2019/11/hunting-for-suspicious-use-of.md)
+* [http://web.archive.org/web/20230329160957/https://blog.menasec.net/2019/11/hunting-for-suspicious-use-of.html](http://web.archive.org/web/20230329160957/https://blog.menasec.net/2019/11/hunting-for-suspicious-use-of.html)
 
 **Tags**:
 

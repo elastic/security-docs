@@ -26,7 +26,7 @@ Detects the creation of an AWS Identity and Access Management (IAM) user initiat
 
 **References**:
 
-* [https://docs.aws.amazon.com/IAM/latest/APIReference/API_CreateUser.html](https://docs.aws.amazon.com/IAM/latest/APIReference/API_CreateUser.md)
+* [https://docs.aws.amazon.com/IAM/latest/APIReference/API_CreateUser.html](https://docs.aws.amazon.com/IAM/latest/APIReference/API_CreateUser.html)
 * [https://www.dionach.com/en-us/breaking-into-the-cloud-red-team-tactics-for-aws-compromise/](https://www.dionach.com/en-us/breaking-into-the-cloud-red-team-tactics-for-aws-compromise/)
 
 **Tags**:
@@ -87,7 +87,7 @@ This rule detects when an AWS Identity and Access Management (IAM) user is creat
 
 **Additional Information**
 
-For further guidance on managing IAM roles and permissions within AWS environments, refer to the [AWS IAM documentation](https://docs.aws.amazon.com/IAM/latest/APIReference/API_CreateUser.md) and AWS best practices for security.
+For further guidance on managing IAM roles and permissions within AWS environments, refer to the [AWS IAM documentation](https://docs.aws.amazon.com/IAM/latest/APIReference/API_CreateUser.html) and AWS best practices for security.
 
 
 ## Rule query [_rule_query_5059]

@@ -26,7 +26,7 @@ Monitors for the execution of a previously unknown unix binary with read, write 
 
 **References**:
 
-* [https://man7.org/linux/man-pages/man2/mprotect.2.html](https://man7.org/linux/man-pages/man2/mprotect.2.md)
+* [https://man7.org/linux/man-pages/man2/mprotect.2.html](https://man7.org/linux/man-pages/man2/mprotect.2.html)
 * [https://www.elastic.co/security-labs/linux-detection-engineering-with-auditd](https://www.elastic.co/security-labs/linux-detection-engineering-with-auditd)
 
 **Tags**:

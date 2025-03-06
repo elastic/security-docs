@@ -26,7 +26,7 @@ Identifies the suspicious use of GetSessionToken. Tokens could be created and us
 
 **References**:
 
-* [https://docs.aws.amazon.com/STS/latest/APIReference/API_GetSessionToken.html](https://docs.aws.amazon.com/STS/latest/APIReference/API_GetSessionToken.md)
+* [https://docs.aws.amazon.com/STS/latest/APIReference/API_GetSessionToken.html](https://docs.aws.amazon.com/STS/latest/APIReference/API_GetSessionToken.html)
 
 **Tags**:
 

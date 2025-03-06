@@ -27,7 +27,7 @@ Detects file creation events in the plugin directories for the Yum package manag
 
 **References**:
 
-* [https://pwnshift.github.io/2020/10/01/persistence.html](https://pwnshift.github.io/2020/10/01/persistence.md)
+* [https://pwnshift.github.io/2020/10/01/persistence.html](https://pwnshift.github.io/2020/10/01/persistence.html)
 * [https://www.elastic.co/security-labs/sequel-on-persistence-mechanisms](https://www.elastic.co/security-labs/sequel-on-persistence-mechanisms)
 
 **Tags**:

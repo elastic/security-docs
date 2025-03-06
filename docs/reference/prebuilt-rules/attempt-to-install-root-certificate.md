@@ -25,7 +25,7 @@ Adversaries may install a root certificate on a compromised system to avoid warn
 
 **References**:
 
-* [https://ss64.com/osx/security-cert.html](https://ss64.com/osx/security-cert.md)
+* [https://ss64.com/osx/security-cert.html](https://ss64.com/osx/security-cert.html)
 
 **Tags**:
 

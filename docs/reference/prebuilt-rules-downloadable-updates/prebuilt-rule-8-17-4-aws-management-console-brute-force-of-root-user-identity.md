@@ -26,7 +26,7 @@ Identifies a high number of failed authentication attempts to the AWS management
 
 **References**:
 
-* [https://docs.aws.amazon.com/IAM/latest/UserGuide/id_root-user.html](https://docs.aws.amazon.com/IAM/latest/UserGuide/id_root-user.md)
+* [https://docs.aws.amazon.com/IAM/latest/UserGuide/id_root-user.html](https://docs.aws.amazon.com/IAM/latest/UserGuide/id_root-user.html)
 
 **Tags**:
 

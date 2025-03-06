@@ -26,8 +26,8 @@ Identifies the deletion of an Amazon GuardDuty detector. Upon deletion, GuardDut
 
 **References**:
 
-* [https://awscli.amazonaws.com/v2/documentation/api/latest/reference/guardduty/delete-detector.html](https://awscli.amazonaws.com/v2/documentation/api/latest/reference/guardduty/delete-detector.md)
-* [https://docs.aws.amazon.com/guardduty/latest/APIReference/API_DeleteDetector.html](https://docs.aws.amazon.com/guardduty/latest/APIReference/API_DeleteDetector.md)
+* [https://awscli.amazonaws.com/v2/documentation/api/latest/reference/guardduty/delete-detector.html](https://awscli.amazonaws.com/v2/documentation/api/latest/reference/guardduty/delete-detector.html)
+* [https://docs.aws.amazon.com/guardduty/latest/APIReference/API_DeleteDetector.html](https://docs.aws.amazon.com/guardduty/latest/APIReference/API_DeleteDetector.html)
 
 **Tags**:
 

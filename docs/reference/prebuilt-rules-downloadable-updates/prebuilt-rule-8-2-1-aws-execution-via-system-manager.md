@@ -26,7 +26,7 @@ Identifies the execution of commands and scripts via System Manager. Execution m
 
 **References**:
 
-* [https://docs.aws.amazon.com/systems-manager/latest/userguide/ssm-plugins.html](https://docs.aws.amazon.com/systems-manager/latest/userguide/ssm-plugins.md)
+* [https://docs.aws.amazon.com/systems-manager/latest/userguide/ssm-plugins.html](https://docs.aws.amazon.com/systems-manager/latest/userguide/ssm-plugins.html)
 
 **Tags**:
 

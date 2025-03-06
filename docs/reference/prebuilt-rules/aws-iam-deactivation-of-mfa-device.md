@@ -26,8 +26,8 @@ Identifies the deactivation of a specified multi-factor authentication (MFA) dev
 
 **References**:
 
-* [https://awscli.amazonaws.com/v2/documentation/api/latest/reference/iam/deactivate-mfa-device.html](https://awscli.amazonaws.com/v2/documentation/api/latest/reference/iam/deactivate-mfa-device.md)
-* [https://docs.aws.amazon.com/IAM/latest/APIReference/API_DeactivateMFADevice.html](https://docs.aws.amazon.com/IAM/latest/APIReference/API_DeactivateMFADevice.md)
+* [https://awscli.amazonaws.com/v2/documentation/api/latest/reference/iam/deactivate-mfa-device.html](https://awscli.amazonaws.com/v2/documentation/api/latest/reference/iam/deactivate-mfa-device.html)
+* [https://docs.aws.amazon.com/IAM/latest/APIReference/API_DeactivateMFADevice.html](https://docs.aws.amazon.com/IAM/latest/APIReference/API_DeactivateMFADevice.html)
 
 **Tags**:
 
@@ -56,7 +56,7 @@ Identifies the deactivation of a specified multi-factor authentication (MFA) dev
 
 Multi-factor authentication (MFA) in AWS is a simple best practice that adds an extra layer of protection on top of your user name and password. With MFA enabled, when a user signs in to an AWS Management Console, they will be prompted for their user name and password (the first factor—what they know), as well as for an authentication code from their AWS MFA device (the second factor—what they have). Taken together, these multiple factors provide increased security for your AWS account settings and resources.
 
-For more information about using MFA in AWS, access the [official documentation](https://docs.aws.amazon.com/IAM/latest/UserGuide/id_credentials_mfa.md).
+For more information about using MFA in AWS, access the [official documentation](https://docs.aws.amazon.com/IAM/latest/UserGuide/id_credentials_mfa.html).
 
 This rule looks for the deactivation or deletion of AWS MFA devices. These modifications weaken account security and can lead to the compromise of accounts and other assets.
 

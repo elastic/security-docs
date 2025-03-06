@@ -26,7 +26,7 @@ Identifies attempts to enable the root account using the dsenableroot command. T
 
 **References**:
 
-* [https://ss64.com/osx/dsenableroot.html](https://ss64.com/osx/dsenableroot.md)
+* [https://ss64.com/osx/dsenableroot.html](https://ss64.com/osx/dsenableroot.html)
 
 **Tags**:
 

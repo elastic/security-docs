@@ -23,7 +23,7 @@ Identifies multiple successive failed attempts to use denied model resources wit
 
 **References**:
 
-* [https://docs.aws.amazon.com/bedrock/latest/userguide/guardrails-components.html](https://docs.aws.amazon.com/bedrock/latest/userguide/guardrails-components.md)
+* [https://docs.aws.amazon.com/bedrock/latest/userguide/guardrails-components.html](https://docs.aws.amazon.com/bedrock/latest/userguide/guardrails-components.html)
 * [https://atlas.mitre.org/techniques/AML.T0015](https://atlas.mitre.org/techniques/AML.T0015)
 * [https://atlas.mitre.org/techniques/AML.T0034](https://atlas.mitre.org/techniques/AML.T0034)
 * [https://www.elastic.co/security-labs/elastic-advances-llm-security](https://www.elastic.co/security-labs/elastic-advances-llm-security)
@@ -87,7 +87,7 @@ Bedrock offers a variety of pretrained models from Amazon (such as the Titan ser
 
 This rule requires that guardrails are configured in AWS Bedrock. For more information, see the AWS Bedrock documentation:
 
-[https://docs.aws.amazon.com/bedrock/latest/userguide/guardrails-create.html](https://docs.aws.amazon.com/bedrock/latest/userguide/guardrails-create.md)
+[https://docs.aws.amazon.com/bedrock/latest/userguide/guardrails-create.html](https://docs.aws.amazon.com/bedrock/latest/userguide/guardrails-create.html)
 
 
 ## Rule query [_rule_query_5092]

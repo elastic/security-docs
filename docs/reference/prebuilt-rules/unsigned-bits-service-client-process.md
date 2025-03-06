@@ -25,7 +25,7 @@ Identifies an unsigned Windows Background Intelligent Transfer Service (BITS) cl
 
 **References**:
 
-* [https://web.archive.org/web/20230531215706/https://blog.menasec.net/2021/05/hunting-for-suspicious-usage-of.html](https://web.archive.org/web/20230531215706/https://blog.menasec.net/2021/05/hunting-for-suspicious-usage-of.md)
+* [https://web.archive.org/web/20230531215706/https://blog.menasec.net/2021/05/hunting-for-suspicious-usage-of.html](https://web.archive.org/web/20230531215706/https://blog.menasec.net/2021/05/hunting-for-suspicious-usage-of.html)
 * [https://www.elastic.co/blog/hunting-for-persistence-using-elastic-security-part-2](https://www.elastic.co/blog/hunting-for-persistence-using-elastic-security-part-2)
 
 **Tags**:

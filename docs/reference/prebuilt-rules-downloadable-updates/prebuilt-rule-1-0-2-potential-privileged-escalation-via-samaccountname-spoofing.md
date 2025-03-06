@@ -30,7 +30,7 @@ Identifies a suspicious computer account name rename event, which may indicate a
 * [https://cloudbrothers.info/en/exploit-kerberos-samaccountname-spoofing/](https://cloudbrothers.info/en/exploit-kerberos-samaccountname-spoofing/)
 * [https://github.com/cube0x0/noPac](https://github.com/cube0x0/noPac)
 * [https://twitter.com/exploitph/status/1469157138928914432](https://twitter.com/exploitph/status/1469157138928914432)
-* [https://exploit.ph/cve-2021-42287-cve-2021-42278-weaponisation.html](https://exploit.ph/cve-2021-42287-cve-2021-42278-weaponisation.md)
+* [https://exploit.ph/cve-2021-42287-cve-2021-42278-weaponisation.html](https://exploit.ph/cve-2021-42287-cve-2021-42278-weaponisation.html)
 
 **Tags**:
 

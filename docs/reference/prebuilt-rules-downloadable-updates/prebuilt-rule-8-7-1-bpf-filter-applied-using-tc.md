@@ -27,7 +27,7 @@ Detects when the tc (transmission control) binary is utilized to set a BPF (Berk
 **References**:
 
 * [https://github.com/h3xduck/TripleCross/blob/master/src/helpers/deployer.sh](https://github.com/h3xduck/TripleCross/blob/master/src/helpers/deployer.sh)
-* [https://man7.org/linux/man-pages/man8/tc.8.html](https://man7.org/linux/man-pages/man8/tc.8.md)
+* [https://man7.org/linux/man-pages/man8/tc.8.html](https://man7.org/linux/man-pages/man8/tc.8.html)
 
 **Tags**:
 

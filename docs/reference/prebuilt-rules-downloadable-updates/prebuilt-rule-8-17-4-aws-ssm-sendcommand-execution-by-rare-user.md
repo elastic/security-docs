@@ -26,7 +26,7 @@ Detects the execution of commands or scripts on EC2 instances using AWS Systems 
 
 **References**:
 
-* [https://docs.aws.amazon.com/systems-manager/latest/userguide/ssm-plugins.html](https://docs.aws.amazon.com/systems-manager/latest/userguide/ssm-plugins.md)
+* [https://docs.aws.amazon.com/systems-manager/latest/userguide/ssm-plugins.html](https://docs.aws.amazon.com/systems-manager/latest/userguide/ssm-plugins.html)
 
 **Tags**:
 
@@ -90,7 +90,7 @@ This rule detects the execution of commands or scripts on EC2 instances using AW
 
 **Additional Information**
 
-For further details on managing AWS SSM and security best practices for EC2 instances, refer to the [AWS Systems Manager Documentation](https://docs.aws.amazon.com/systems-manager/latest/userguide/ssm-plugins.md) and AWS best practices.
+For further details on managing AWS SSM and security best practices for EC2 instances, refer to the [AWS Systems Manager Documentation](https://docs.aws.amazon.com/systems-manager/latest/userguide/ssm-plugins.html) and AWS best practices.
 
 
 ## Rule query [_rule_query_5027]

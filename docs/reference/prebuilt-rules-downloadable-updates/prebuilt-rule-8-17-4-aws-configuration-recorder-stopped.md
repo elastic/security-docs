@@ -26,8 +26,8 @@ Identifies an AWS configuration change to stop recording a designated set of res
 
 **References**:
 
-* [https://awscli.amazonaws.com/v2/documentation/api/latest/reference/configservice/stop-configuration-recorder.html](https://awscli.amazonaws.com/v2/documentation/api/latest/reference/configservice/stop-configuration-recorder.md)
-* [https://docs.aws.amazon.com/config/latest/APIReference/API_StopConfigurationRecorder.html](https://docs.aws.amazon.com/config/latest/APIReference/API_StopConfigurationRecorder.md)
+* [https://awscli.amazonaws.com/v2/documentation/api/latest/reference/configservice/stop-configuration-recorder.html](https://awscli.amazonaws.com/v2/documentation/api/latest/reference/configservice/stop-configuration-recorder.html)
+* [https://docs.aws.amazon.com/config/latest/APIReference/API_StopConfigurationRecorder.html](https://docs.aws.amazon.com/config/latest/APIReference/API_StopConfigurationRecorder.html)
 
 **Tags**:
 

@@ -26,8 +26,8 @@ Identifies when an AWS Systems Manager (SSM) command document is created by a us
 
 **References**:
 
-* [https://docs.aws.amazon.com/systems-manager/latest/APIReference/API_CreateDocument.html](https://docs.aws.amazon.com/systems-manager/latest/APIReference/API_CreateDocument.md)
-* [https://docs.aws.amazon.com/systems-manager/latest/userguide/documents.html](https://docs.aws.amazon.com/systems-manager/latest/userguide/documents.md)
+* [https://docs.aws.amazon.com/systems-manager/latest/APIReference/API_CreateDocument.html](https://docs.aws.amazon.com/systems-manager/latest/APIReference/API_CreateDocument.html)
+* [https://docs.aws.amazon.com/systems-manager/latest/userguide/documents.html](https://docs.aws.amazon.com/systems-manager/latest/userguide/documents.html)
 
 **Tags**:
 
@@ -81,7 +81,7 @@ This rule identifies when an AWS Systems Manager (SSM) command document is creat
 
 **Additional Information**
 
-For further guidance on managing and securing AWS Systems Manager in your environment, refer to the [AWS SSM documentation](https://docs.aws.amazon.com/systems-manager/latest/userguide/what-is-systems-manager.md) and AWS security best practices.
+For further guidance on managing and securing AWS Systems Manager in your environment, refer to the [AWS SSM documentation](https://docs.aws.amazon.com/systems-manager/latest/userguide/what-is-systems-manager.html) and AWS security best practices.
 
 
 ## Rule query [_rule_query_98]

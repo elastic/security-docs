@@ -26,7 +26,7 @@ Identifies potential Traffic Mirroring in an Amazon Elastic Compute Cloud (EC2) 
 
 **References**:
 
-* [https://docs.aws.amazon.com/AWSEC2/latest/APIReference/API_TrafficMirrorFilter.html](https://docs.aws.amazon.com/AWSEC2/latest/APIReference/API_TrafficMirrorFilter.md)
+* [https://docs.aws.amazon.com/AWSEC2/latest/APIReference/API_TrafficMirrorFilter.html](https://docs.aws.amazon.com/AWSEC2/latest/APIReference/API_TrafficMirrorFilter.html)
 * [https://github.com/easttimor/aws-incident-response](https://github.com/easttimor/aws-incident-response)
 
 **Tags**:

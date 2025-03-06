@@ -30,7 +30,7 @@ Identifies newly seen removable devices by device friendly name using registry m
 
 **References**:
 
-* [https://winreg-kb.readthedocs.io/en/latest/sources/system-keys/USB-storage.html](https://winreg-kb.readthedocs.io/en/latest/sources/system-keys/USB-storage.md)
+* [https://winreg-kb.readthedocs.io/en/latest/sources/system-keys/USB-storage.html](https://winreg-kb.readthedocs.io/en/latest/sources/system-keys/USB-storage.html)
 * [https://learn.microsoft.com/en-us/windows-hardware/drivers/usbcon/usb-device-specific-registry-settings](https://learn.microsoft.com/en-us/windows-hardware/drivers/usbcon/usb-device-specific-registry-settings)
 
 **Tags**:

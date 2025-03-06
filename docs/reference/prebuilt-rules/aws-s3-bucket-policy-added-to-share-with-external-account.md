@@ -27,7 +27,7 @@ Identifies an AWS S3 bucket policy change to share permissions with an external 
 **References**:
 
 * [https://stratus-red-team.cloud/attack-techniques/AWS/aws.exfiltration.s3-backdoor-bucket-policy/](https://stratus-red-team.cloud/attack-techniques/AWS/aws.exfiltration.s3-backdoor-bucket-policy/)
-* [https://docs.aws.amazon.com/AmazonS3/latest/API/API_PutBucketPolicy.html](https://docs.aws.amazon.com/AmazonS3/latest/API/API_PutBucketPolicy.md)
+* [https://docs.aws.amazon.com/AmazonS3/latest/API/API_PutBucketPolicy.html](https://docs.aws.amazon.com/AmazonS3/latest/API/API_PutBucketPolicy.html)
 
 **Tags**:
 
@@ -79,14 +79,14 @@ This rule detects when an AWS S3 bucket policy is changed to share permissions w
 
 **Additional Information:**
 
-For further guidance on managing S3 bucket policies and securing AWS environments, refer to the [AWS S3 documentation](https://docs.aws.amazon.com/AmazonS3/latest/userguide/enable-cloudtrail-logging-for-s3.md) and AWS best practices for security.
+For further guidance on managing S3 bucket policies and securing AWS environments, refer to the [AWS S3 documentation](https://docs.aws.amazon.com/AmazonS3/latest/userguide/enable-cloudtrail-logging-for-s3.html) and AWS best practices for security.
 
 
 ## Setup [_setup_52]
 
 **Setup**
 
-S3 data event types must be collected in the AWS CloudTrail logs. Please refer to [AWS documentation](https://docs.aws.amazon.com/AmazonS3/latest/userguide/enable-cloudtrail-logging-for-s3.md) for more information.
+S3 data event types must be collected in the AWS CloudTrail logs. Please refer to [AWS documentation](https://docs.aws.amazon.com/AmazonS3/latest/userguide/enable-cloudtrail-logging-for-s3.html) for more information.
 
 
 ## Rule query [_rule_query_90]

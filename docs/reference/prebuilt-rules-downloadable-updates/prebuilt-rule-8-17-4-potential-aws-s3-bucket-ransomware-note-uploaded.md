@@ -79,7 +79,7 @@ This rule detects the `PutObject` S3 API call with a common ransomware note file
 
 **Additional Information:**
 
-For further guidance on managing S3 bucket security and protecting against ransomware, refer to the [AWS S3 documentation](https://docs.aws.amazon.com/AmazonS3/latest/userguide/Welcome.md) and AWS best practices for security. Additionally, consult the following resources for specific details on S3 ransomware protection: - [ERMETIC REPORT - AWS S3 Ransomware Exposure in the Wild](https://s3.amazonaws.com/bizzabo.file.upload/PtZzA0eFQwV2RA5ysNeo_ERMETIC%20REPORT%20-%20AWS%20S3%20Ransomware%20Exposure%20in%20the%20Wild.pdf) - [AWS S3 Ransomware Batch Deletion](https://stratus-red-team.cloud/attack-techniques/AWS/aws.impact.s3-ransomware-batch-deletion/) - [S3 Ransomware Part 1: Attack Vector](https://rhinosecuritylabs.com/aws/s3-ransomware-part-1-attack-vector/)
+For further guidance on managing S3 bucket security and protecting against ransomware, refer to the [AWS S3 documentation](https://docs.aws.amazon.com/AmazonS3/latest/userguide/Welcome.html) and AWS best practices for security. Additionally, consult the following resources for specific details on S3 ransomware protection: - [ERMETIC REPORT - AWS S3 Ransomware Exposure in the Wild](https://s3.amazonaws.com/bizzabo.file.upload/PtZzA0eFQwV2RA5ysNeo_ERMETIC%20REPORT%20-%20AWS%20S3%20Ransomware%20Exposure%20in%20the%20Wild.pdf) - [AWS S3 Ransomware Batch Deletion](https://stratus-red-team.cloud/attack-techniques/AWS/aws.impact.s3-ransomware-batch-deletion/) - [S3 Ransomware Part 1: Attack Vector](https://rhinosecuritylabs.com/aws/s3-ransomware-part-1-attack-vector/)
 
 
 ## Setup [_setup_942]

@@ -26,8 +26,8 @@ Identifies a potential Gatekeeper bypass. In macOS, when applications or program
 
 **References**:
 
-* [https://www.trendmicro.com/en_us/research/20/k/new-macos-backdoor-connected-to-oceanlotus-surfaces.html](https://www.trendmicro.com/en_us/research/20/k/new-macos-backdoor-connected-to-oceanlotus-surfaces.md)
-* [https://ss64.com/osx/xattr.html](https://ss64.com/osx/xattr.md)
+* [https://www.trendmicro.com/en_us/research/20/k/new-macos-backdoor-connected-to-oceanlotus-surfaces.html](https://www.trendmicro.com/en_us/research/20/k/new-macos-backdoor-connected-to-oceanlotus-surfaces.html)
+* [https://ss64.com/osx/xattr.html](https://ss64.com/osx/xattr.html)
 
 **Tags**:
 

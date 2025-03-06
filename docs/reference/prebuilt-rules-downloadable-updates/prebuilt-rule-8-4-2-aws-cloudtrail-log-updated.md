@@ -26,8 +26,8 @@ Identifies an update to an AWS log trail setting that specifies the delivery of 
 
 **References**:
 
-* [https://docs.aws.amazon.com/awscloudtrail/latest/APIReference/API_UpdateTrail.html](https://docs.aws.amazon.com/awscloudtrail/latest/APIReference/API_UpdateTrail.md)
-* [https://awscli.amazonaws.com/v2/documentation/api/latest/reference/cloudtrail/update-trail.html](https://awscli.amazonaws.com/v2/documentation/api/latest/reference/cloudtrail/update-trail.md)
+* [https://docs.aws.amazon.com/awscloudtrail/latest/APIReference/API_UpdateTrail.html](https://docs.aws.amazon.com/awscloudtrail/latest/APIReference/API_UpdateTrail.html)
+* [https://awscli.amazonaws.com/v2/documentation/api/latest/reference/cloudtrail/update-trail.html](https://awscli.amazonaws.com/v2/documentation/api/latest/reference/cloudtrail/update-trail.html)
 
 **Tags**:
 

@@ -26,7 +26,7 @@ Kernel modules are pieces of code that can be loaded and unloaded into the kerne
 
 **References**:
 
-* [http://man7.org/linux/man-pages/man8/modprobe.8.html](http://man7.org/linux/man-pages/man8/modprobe.8.md)
+* [http://man7.org/linux/man-pages/man8/modprobe.8.html](http://man7.org/linux/man-pages/man8/modprobe.8.html)
 
 **Tags**:
 

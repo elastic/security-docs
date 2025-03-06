@@ -23,7 +23,7 @@ Identifies multiple AWS Bedrock executions in a one minute time window without g
 
 **References**:
 
-* [https://docs.aws.amazon.com/bedrock/latest/userguide/guardrails-components.html](https://docs.aws.amazon.com/bedrock/latest/userguide/guardrails-components.md)
+* [https://docs.aws.amazon.com/bedrock/latest/userguide/guardrails-components.html](https://docs.aws.amazon.com/bedrock/latest/userguide/guardrails-components.html)
 * [https://atlas.mitre.org/techniques/AML.T0051](https://atlas.mitre.org/techniques/AML.T0051)
 * [https://atlas.mitre.org/techniques/AML.T0054](https://atlas.mitre.org/techniques/AML.T0054)
 * [https://www.elastic.co/security-labs/elastic-advances-llm-security](https://www.elastic.co/security-labs/elastic-advances-llm-security)
@@ -86,7 +86,7 @@ Using Amazon Bedrock Guardrails during model invocation is critical for ensuring
 
 This rule requires that guardrails are configured in AWS Bedrock. For more information, see the AWS Bedrock documentation:
 
-[https://docs.aws.amazon.com/bedrock/latest/userguide/guardrails-create.html](https://docs.aws.amazon.com/bedrock/latest/userguide/guardrails-create.md)
+[https://docs.aws.amazon.com/bedrock/latest/userguide/guardrails-create.html](https://docs.aws.amazon.com/bedrock/latest/userguide/guardrails-create.html)
 
 
 ## Rule query [_rule_query_5087]

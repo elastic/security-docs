@@ -26,8 +26,8 @@ Identifies the creation of an AWS log trail that specifies the settings for deli
 
 **References**:
 
-* [https://docs.aws.amazon.com/awscloudtrail/latest/APIReference/API_CreateTrail.html](https://docs.aws.amazon.com/awscloudtrail/latest/APIReference/API_CreateTrail.md)
-* [https://awscli.amazonaws.com/v2/documentation/api/latest/reference/cloudtrail/create-trail.html](https://awscli.amazonaws.com/v2/documentation/api/latest/reference/cloudtrail/create-trail.md)
+* [https://docs.aws.amazon.com/awscloudtrail/latest/APIReference/API_CreateTrail.html](https://docs.aws.amazon.com/awscloudtrail/latest/APIReference/API_CreateTrail.html)
+* [https://awscli.amazonaws.com/v2/documentation/api/latest/reference/cloudtrail/create-trail.html](https://awscli.amazonaws.com/v2/documentation/api/latest/reference/cloudtrail/create-trail.html)
 
 **Tags**:
 

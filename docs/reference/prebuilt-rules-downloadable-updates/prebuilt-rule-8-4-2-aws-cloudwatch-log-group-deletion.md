@@ -26,8 +26,8 @@ Identifies the deletion of a specified AWS CloudWatch log group. When a log grou
 
 **References**:
 
-* [https://awscli.amazonaws.com/v2/documentation/api/latest/reference/logs/delete-log-group.html](https://awscli.amazonaws.com/v2/documentation/api/latest/reference/logs/delete-log-group.md)
-* [https://docs.aws.amazon.com/AmazonCloudWatchLogs/latest/APIReference/API_DeleteLogGroup.html](https://docs.aws.amazon.com/AmazonCloudWatchLogs/latest/APIReference/API_DeleteLogGroup.md)
+* [https://awscli.amazonaws.com/v2/documentation/api/latest/reference/logs/delete-log-group.html](https://awscli.amazonaws.com/v2/documentation/api/latest/reference/logs/delete-log-group.html)
+* [https://docs.aws.amazon.com/AmazonCloudWatchLogs/latest/APIReference/API_DeleteLogGroup.html](https://docs.aws.amazon.com/AmazonCloudWatchLogs/latest/APIReference/API_DeleteLogGroup.html)
 
 **Tags**:
 

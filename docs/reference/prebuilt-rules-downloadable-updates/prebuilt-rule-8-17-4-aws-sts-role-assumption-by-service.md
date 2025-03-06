@@ -26,7 +26,7 @@ Identifies when a service has assumed a role in AWS Security Token Service (STS)
 
 **References**:
 
-* [https://docs.aws.amazon.com/STS/latest/APIReference/API_AssumeRole.html](https://docs.aws.amazon.com/STS/latest/APIReference/API_AssumeRole.md)
+* [https://docs.aws.amazon.com/STS/latest/APIReference/API_AssumeRole.html](https://docs.aws.amazon.com/STS/latest/APIReference/API_AssumeRole.html)
 
 **Tags**:
 
@@ -92,7 +92,7 @@ This rule identifies instances where AWS STS (Security Token Service) is used to
 
 **Additional Information**
 
-For more information on managing and securing AWS STS, refer to the [AWS STS documentation](https://docs.aws.amazon.com/STS/latest/APIReference/API_AssumeRole.md) and AWS security best practices.
+For more information on managing and securing AWS STS, refer to the [AWS STS documentation](https://docs.aws.amazon.com/STS/latest/APIReference/API_AssumeRole.html) and AWS security best practices.
 
 
 ## Rule query [_rule_query_5082]

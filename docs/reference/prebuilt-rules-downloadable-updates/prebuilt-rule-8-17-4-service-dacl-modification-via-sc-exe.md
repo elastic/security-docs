@@ -31,7 +31,7 @@ Identifies DACL modifications to deny access to a service, making it unstoppable
 
 **References**:
 
-* [https://blogs.jpcert.or.jp/en/2024/07/mirrorface-attack-against-japanese-organisations.html](https://blogs.jpcert.or.jp/en/2024/07/mirrorface-attack-against-japanese-organisations.md)
+* [https://blogs.jpcert.or.jp/en/2024/07/mirrorface-attack-against-japanese-organisations.html](https://blogs.jpcert.or.jp/en/2024/07/mirrorface-attack-against-japanese-organisations.html)
 * [https://github.com/SigmaHQ/sigma/blob/master/rules/windows/process_creation/proc_creation_win_sc_sdset_deny_service_access.yml](https://github.com/SigmaHQ/sigma/blob/master/rules/windows/process_creation/proc_creation_win_sc_sdset_deny_service_access.yml)
 * [https://learn.microsoft.com/en-us/windows/win32/secauthz/sid-strings](https://learn.microsoft.com/en-us/windows/win32/secauthz/sid-strings)
 * [https://www.sans.org/blog/red-team-tactics-hiding-windows-services/](https://www.sans.org/blog/red-team-tactics-hiding-windows-services/)

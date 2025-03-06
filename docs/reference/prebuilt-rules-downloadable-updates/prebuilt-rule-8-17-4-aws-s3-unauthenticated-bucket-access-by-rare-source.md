@@ -157,8 +157,8 @@ The rule triggers when an unauthenticated IP address retrieves an object, and th
 
 **Additional Resources**
 
-* [AWS Documentation: S3 Bucket Policy Best Practices](https://docs.aws.amazon.com/AmazonS3/latest/userguide/example-bucket-policies.md)
-* [AWS S3 Block Public Access](https://docs.aws.amazon.com/AmazonS3/latest/userguide/access-control-block-public-access.md)
+* [AWS Documentation: S3 Bucket Policy Best Practices](https://docs.aws.amazon.com/AmazonS3/latest/userguide/example-bucket-policies.html)
+* [AWS S3 Block Public Access](https://docs.aws.amazon.com/AmazonS3/latest/userguide/access-control-block-public-access.html)
 
 
 ## Rule query [_rule_query_4997]

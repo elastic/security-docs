@@ -27,8 +27,8 @@ Identifies when an Lambda Layer is added to an existing Lambda function. AWS lay
 **References**:
 
 * [https://cloud.hacktricks.xyz/pentesting-cloud/aws-security/aws-persistence/aws-lambda-persistence/aws-lambda-layers-persistence](https://cloud.hacktricks.xyz/pentesting-cloud/aws-security/aws-persistence/aws-lambda-persistence/aws-lambda-layers-persistence)
-* [https://docs.aws.amazon.com/lambda/latest/api/API_PublishLayerVersion.html](https://docs.aws.amazon.com/lambda/latest/api/API_PublishLayerVersion.md)
-* [https://docs.aws.amazon.com/lambda/latest/api/API_UpdateFunctionConfiguration.html](https://docs.aws.amazon.com/lambda/latest/api/API_UpdateFunctionConfiguration.md)
+* [https://docs.aws.amazon.com/lambda/latest/api/API_PublishLayerVersion.html](https://docs.aws.amazon.com/lambda/latest/api/API_PublishLayerVersion.html)
+* [https://docs.aws.amazon.com/lambda/latest/api/API_UpdateFunctionConfiguration.html](https://docs.aws.amazon.com/lambda/latest/api/API_UpdateFunctionConfiguration.html)
 
 **Tags**:
 
@@ -80,7 +80,7 @@ This rule detects when a Lambda layer is added to an existing Lambda function. A
 
 **Additional Information:**
 
-For further guidance on managing Lambda functions and securing AWS environments, refer to the [AWS Lambda documentation](https://docs.aws.amazon.com/lambda/latest/dg/welcome.md) and AWS best practices for security. Additionally, consult the following resources for specific details on Lambda layers and persistence techniques: - [AWS Lambda Layers Persistence](https://cloud.hacktricks.xyz/pentesting-cloud/aws-security/aws-persistence/aws-lambda-persistence/aws-lambda-layers-persistence) - [AWS API PublishLayerVersion](https://docs.aws.amazon.com/lambda/latest/api/API_PublishLayerVersion.md) - [AWS API UpdateFunctionConfiguration](https://docs.aws.amazon.com/lambda/latest/api/API_UpdateFunctionConfiguration.md)
+For further guidance on managing Lambda functions and securing AWS environments, refer to the [AWS Lambda documentation](https://docs.aws.amazon.com/lambda/latest/dg/welcome.html) and AWS best practices for security. Additionally, consult the following resources for specific details on Lambda layers and persistence techniques: - [AWS Lambda Layers Persistence](https://cloud.hacktricks.xyz/pentesting-cloud/aws-security/aws-persistence/aws-lambda-persistence/aws-lambda-layers-persistence) - [AWS API PublishLayerVersion](https://docs.aws.amazon.com/lambda/latest/api/API_PublishLayerVersion.html) - [AWS API UpdateFunctionConfiguration](https://docs.aws.amazon.com/lambda/latest/api/API_UpdateFunctionConfiguration.html)
 
 
 ## Rule query [_rule_query_65]

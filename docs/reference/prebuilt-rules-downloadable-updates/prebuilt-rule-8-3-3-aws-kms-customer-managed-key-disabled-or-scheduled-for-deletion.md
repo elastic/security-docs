@@ -26,8 +26,8 @@ Identifies attempts to disable or schedule the deletion of an AWS KMS Customer M
 
 **References**:
 
-* [https://docs.aws.amazon.com/cli/latest/reference/kms/disable-key.html](https://docs.aws.amazon.com/cli/latest/reference/kms/disable-key.md)
-* [https://docs.aws.amazon.com/cli/latest/reference/kms/schedule-key-deletion.html](https://docs.aws.amazon.com/cli/latest/reference/kms/schedule-key-deletion.md)
+* [https://docs.aws.amazon.com/cli/latest/reference/kms/disable-key.html](https://docs.aws.amazon.com/cli/latest/reference/kms/disable-key.html)
+* [https://docs.aws.amazon.com/cli/latest/reference/kms/schedule-key-deletion.html](https://docs.aws.amazon.com/cli/latest/reference/kms/schedule-key-deletion.html)
 
 **Tags**:
 

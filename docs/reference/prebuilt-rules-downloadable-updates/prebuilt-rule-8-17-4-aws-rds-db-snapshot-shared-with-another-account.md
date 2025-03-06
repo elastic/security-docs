@@ -26,8 +26,8 @@ Identifies an AWS RDS DB snapshot being shared with another AWS account. DB snap
 
 **References**:
 
-* [https://docs.aws.amazon.com/AmazonRDS/latest/APIReference/API_ModifyDBSnapshotAttribute.html](https://docs.aws.amazon.com/AmazonRDS/latest/APIReference/API_ModifyDBSnapshotAttribute.md)
-* [https://docs.aws.amazon.com/AmazonRDS/latest/UserGuide/USER_ShareSnapshot.html](https://docs.aws.amazon.com/AmazonRDS/latest/UserGuide/USER_ShareSnapshot.md)
+* [https://docs.aws.amazon.com/AmazonRDS/latest/APIReference/API_ModifyDBSnapshotAttribute.html](https://docs.aws.amazon.com/AmazonRDS/latest/APIReference/API_ModifyDBSnapshotAttribute.html)
+* [https://docs.aws.amazon.com/AmazonRDS/latest/UserGuide/USER_ShareSnapshot.html](https://docs.aws.amazon.com/AmazonRDS/latest/UserGuide/USER_ShareSnapshot.html)
 * [https://cloud.hacktricks.xyz/pentesting-cloud/aws-security/aws-post-exploitation/aws-rds-post-exploitation#rds-modifydbsnapshotattribute-rds-createdbsnapshot](https://cloud.hacktricks.xyz/pentesting-cloud/aws-security/aws-post-exploitation/aws-rds-post-exploitation#rds-modifydbsnapshotattribute-rds-createdbsnapshot)
 
 **Tags**:
@@ -82,7 +82,7 @@ This rule identifies when an RDS DB snapshot is shared with another AWS account.
 
 **Additional Information:**
 
-For further guidance on managing DB backups and securing AWS environments, refer to the [AWS RDS documentation](https://docs.aws.amazon.com/AmazonRDS/latest/UserGuide/CHAP_CommonTasks.BackupRestore.md) and AWS best practices for security. Additionally, consult the following resources for specific details on DB snapshot security: - [AWS RDS DB Snapshot Sharing](https://docs.aws.amazon.com/AmazonRDS/latest/UserGuide/USER_ShareSnapshot.md) - [AWS RDS ModifyDBSnapshotAttribute](https://docs.aws.amazon.com/AmazonRDS/latest/APIReference/API_ModifyDBSnapshotAttribute.md) - [AWS RDS Snapshot Dump](https://cloud.hacktricks.xyz/pentesting-cloud/aws-security/aws-post-exploitation/aws-rds-post-exploitation#rds-modifydbsnapshotattribute-rds-createdbsnapshot)
+For further guidance on managing DB backups and securing AWS environments, refer to the [AWS RDS documentation](https://docs.aws.amazon.com/AmazonRDS/latest/UserGuide/CHAP_CommonTasks.BackupRestore.html) and AWS best practices for security. Additionally, consult the following resources for specific details on DB snapshot security: - [AWS RDS DB Snapshot Sharing](https://docs.aws.amazon.com/AmazonRDS/latest/UserGuide/USER_ShareSnapshot.html) - [AWS RDS ModifyDBSnapshotAttribute](https://docs.aws.amazon.com/AmazonRDS/latest/APIReference/API_ModifyDBSnapshotAttribute.html) - [AWS RDS Snapshot Dump](https://cloud.hacktricks.xyz/pentesting-cloud/aws-security/aws-post-exploitation/aws-rds-post-exploitation#rds-modifydbsnapshotattribute-rds-createdbsnapshot)
 
 
 ## Rule query [_rule_query_5033]

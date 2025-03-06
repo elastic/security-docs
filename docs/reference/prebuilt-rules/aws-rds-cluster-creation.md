@@ -26,10 +26,10 @@ Identifies the creation of a new Amazon Relational Database Service (RDS) Aurora
 
 **References**:
 
-* [https://awscli.amazonaws.com/v2/documentation/api/latest/reference/rds/create-db-cluster.html](https://awscli.amazonaws.com/v2/documentation/api/latest/reference/rds/create-db-cluster.md)
-* [https://docs.aws.amazon.com/AmazonRDS/latest/APIReference/API_CreateDBCluster.html](https://docs.aws.amazon.com/AmazonRDS/latest/APIReference/API_CreateDBCluster.md)
-* [https://awscli.amazonaws.com/v2/documentation/api/latest/reference/rds/create-global-cluster.html](https://awscli.amazonaws.com/v2/documentation/api/latest/reference/rds/create-global-cluster.md)
-* [https://docs.aws.amazon.com/AmazonRDS/latest/APIReference/API_CreateGlobalCluster.html](https://docs.aws.amazon.com/AmazonRDS/latest/APIReference/API_CreateGlobalCluster.md)
+* [https://awscli.amazonaws.com/v2/documentation/api/latest/reference/rds/create-db-cluster.html](https://awscli.amazonaws.com/v2/documentation/api/latest/reference/rds/create-db-cluster.html)
+* [https://docs.aws.amazon.com/AmazonRDS/latest/APIReference/API_CreateDBCluster.html](https://docs.aws.amazon.com/AmazonRDS/latest/APIReference/API_CreateDBCluster.html)
+* [https://awscli.amazonaws.com/v2/documentation/api/latest/reference/rds/create-global-cluster.html](https://awscli.amazonaws.com/v2/documentation/api/latest/reference/rds/create-global-cluster.html)
+* [https://docs.aws.amazon.com/AmazonRDS/latest/APIReference/API_CreateGlobalCluster.html](https://docs.aws.amazon.com/AmazonRDS/latest/APIReference/API_CreateGlobalCluster.html)
 
 **Tags**:
 

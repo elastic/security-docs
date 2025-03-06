@@ -25,7 +25,7 @@ Detects network connections initiated through Cross-Desktop Group (XDG) autostar
 
 **References**:
 
-* [https://specifications.freedesktop.org/autostart-spec/autostart-spec-latest.html](https://specifications.freedesktop.org/autostart-spec/autostart-spec-latest.md)
+* [https://specifications.freedesktop.org/autostart-spec/autostart-spec-latest.html](https://specifications.freedesktop.org/autostart-spec/autostart-spec-latest.html)
 * [https://hadess.io/the-art-of-linux-persistence/](https://hadess.io/the-art-of-linux-persistence/)
 * [https://www.elastic.co/security-labs/primer-on-persistence-mechanisms](https://www.elastic.co/security-labs/primer-on-persistence-mechanisms)
 

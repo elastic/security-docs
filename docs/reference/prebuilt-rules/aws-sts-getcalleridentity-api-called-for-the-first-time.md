@@ -26,7 +26,7 @@ An adversary with access to a set of compromised credentials may attempt to veri
 
 **References**:
 
-* [https://docs.aws.amazon.com/STS/latest/APIReference/API_GetCallerIdentity.html](https://docs.aws.amazon.com/STS/latest/APIReference/API_GetCallerIdentity.md)
+* [https://docs.aws.amazon.com/STS/latest/APIReference/API_GetCallerIdentity.html](https://docs.aws.amazon.com/STS/latest/APIReference/API_GetCallerIdentity.html)
 * [https://www.secureworks.com/research/detecting-the-use-of-stolen-aws-lambda-credentials](https://www.secureworks.com/research/detecting-the-use-of-stolen-aws-lambda-credentials)
 * [https://detectioninthe.cloud/ttps/discovery/get_caller_identity/](https://detectioninthe.cloud/ttps/discovery/get_caller_identity/)
 

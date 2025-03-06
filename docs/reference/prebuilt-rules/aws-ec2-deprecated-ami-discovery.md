@@ -127,8 +127,8 @@ This rule detects when a user queries AWS for deprecated Amazon Machine Images (
 
 **Additional Resources**
 
-* [AWS Documentation: AMI Lifecycle Management](https://docs.aws.amazon.com/AWSEC2/latest/UserGuide/AMIs.md)
-* [AWS Documentation: Deprecated AMIs](https://docs.aws.amazon.com/AWSEC2/latest/UserGuide/ami-deprecate.md)
+* [AWS Documentation: AMI Lifecycle Management](https://docs.aws.amazon.com/AWSEC2/latest/UserGuide/AMIs.html)
+* [AWS Documentation: Deprecated AMIs](https://docs.aws.amazon.com/AWSEC2/latest/UserGuide/ami-deprecate.html)
 
 
 ## Rule query [_rule_query_23]

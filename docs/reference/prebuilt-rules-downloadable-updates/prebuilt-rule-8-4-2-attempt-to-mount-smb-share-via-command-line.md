@@ -27,7 +27,7 @@ Identifies the execution of macOS built-in commands to mount a Server Message Bl
 **References**:
 
 * [https://www.freebsd.org/cgi/man.cgi?mount_smbfs](https://www.freebsd.org/cgi/man.cgi?mount_smbfs)
-* [https://ss64.com/osx/mount.html](https://ss64.com/osx/mount.md)
+* [https://ss64.com/osx/mount.html](https://ss64.com/osx/mount.html)
 
 **Tags**:
 

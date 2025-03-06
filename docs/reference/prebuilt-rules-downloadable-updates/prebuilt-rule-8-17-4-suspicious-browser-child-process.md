@@ -25,7 +25,7 @@ Identifies the execution of a suspicious browser child process. Adversaries may 
 
 **References**:
 
-* [https://objective-see.com/blog/blog_0x43.html](https://objective-see.com/blog/blog_0x43.md)
+* [https://objective-see.com/blog/blog_0x43.html](https://objective-see.com/blog/blog_0x43.html)
 * [https://fr.slideshare.net/codeblue_jp/cb19-recent-apt-attack-on-crypto-exchange-employees-by-heungsoo-kang](https://fr.slideshare.net/codeblue_jp/cb19-recent-apt-attack-on-crypto-exchange-employees-by-heungsoo-kang)
 
 **Tags**:

@@ -32,7 +32,7 @@ Detects the execution of the VScode portable binary with the tunnel command line
 
 **References**:
 
-* [https://badoption.eu/blog/2023/01/31/code_c2.html](https://badoption.eu/blog/2023/01/31/code_c2.md)
+* [https://badoption.eu/blog/2023/01/31/code_c2.html](https://badoption.eu/blog/2023/01/31/code_c2.html)
 * [https://code.visualstudio.com/docs/remote/tunnels](https://code.visualstudio.com/docs/remote/tunnels)
 
 **Tags**:

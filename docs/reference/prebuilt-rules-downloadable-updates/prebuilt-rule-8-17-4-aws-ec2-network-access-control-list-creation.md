@@ -26,10 +26,10 @@ Identifies the creation of an AWS Elastic Compute Cloud (EC2) network access con
 
 **References**:
 
-* [https://awscli.amazonaws.com/v2/documentation/api/latest/reference/ec2/create-network-acl.html](https://awscli.amazonaws.com/v2/documentation/api/latest/reference/ec2/create-network-acl.md)
-* [https://docs.aws.amazon.com/AWSEC2/latest/APIReference/API_CreateNetworkAcl.html](https://docs.aws.amazon.com/AWSEC2/latest/APIReference/API_CreateNetworkAcl.md)
-* [https://awscli.amazonaws.com/v2/documentation/api/latest/reference/ec2/create-network-acl-entry.html](https://awscli.amazonaws.com/v2/documentation/api/latest/reference/ec2/create-network-acl-entry.md)
-* [https://docs.aws.amazon.com/AWSEC2/latest/APIReference/API_CreateNetworkAclEntry.html](https://docs.aws.amazon.com/AWSEC2/latest/APIReference/API_CreateNetworkAclEntry.md)
+* [https://awscli.amazonaws.com/v2/documentation/api/latest/reference/ec2/create-network-acl.html](https://awscli.amazonaws.com/v2/documentation/api/latest/reference/ec2/create-network-acl.html)
+* [https://docs.aws.amazon.com/AWSEC2/latest/APIReference/API_CreateNetworkAcl.html](https://docs.aws.amazon.com/AWSEC2/latest/APIReference/API_CreateNetworkAcl.html)
+* [https://awscli.amazonaws.com/v2/documentation/api/latest/reference/ec2/create-network-acl-entry.html](https://awscli.amazonaws.com/v2/documentation/api/latest/reference/ec2/create-network-acl-entry.html)
+* [https://docs.aws.amazon.com/AWSEC2/latest/APIReference/API_CreateNetworkAclEntry.html](https://docs.aws.amazon.com/AWSEC2/latest/APIReference/API_CreateNetworkAclEntry.html)
 
 **Tags**:
 

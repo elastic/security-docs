@@ -26,7 +26,7 @@ Detects use of the systemsetup command to enable remote SSH Login.
 **References**:
 
 * [https://documents.trendmicro.com/assets/pdf/XCSSET_Technical_Brief.pdf](https://documents.trendmicro.com/assets/pdf/XCSSET_Technical_Brief.pdf)
-* [https://ss64.com/osx/systemsetup.html](https://ss64.com/osx/systemsetup.md)
+* [https://ss64.com/osx/systemsetup.html](https://ss64.com/osx/systemsetup.html)
 * [https://support.apple.com/guide/remote-desktop/about-systemsetup-apd95406b8d/mac](https://support.apple.com/guide/remote-desktop/about-systemsetup-apd95406b8d/mac)
 
 **Tags**:

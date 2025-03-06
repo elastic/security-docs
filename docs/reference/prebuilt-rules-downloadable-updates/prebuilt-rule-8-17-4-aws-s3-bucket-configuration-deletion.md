@@ -26,11 +26,11 @@ Identifies the deletion of various Amazon Simple Storage Service (S3) bucket con
 
 **References**:
 
-* [https://docs.aws.amazon.com/AmazonS3/latest/API/API_DeleteBucketPolicy.html](https://docs.aws.amazon.com/AmazonS3/latest/API/API_DeleteBucketPolicy.md)
-* [https://docs.aws.amazon.com/AmazonS3/latest/API/API_DeleteBucketReplication.html](https://docs.aws.amazon.com/AmazonS3/latest/API/API_DeleteBucketReplication.md)
-* [https://docs.aws.amazon.com/AmazonS3/latest/API/API_DeleteBucketCors.html](https://docs.aws.amazon.com/AmazonS3/latest/API/API_DeleteBucketCors.md)
-* [https://docs.aws.amazon.com/AmazonS3/latest/API/API_DeleteBucketEncryption.html](https://docs.aws.amazon.com/AmazonS3/latest/API/API_DeleteBucketEncryption.md)
-* [https://docs.aws.amazon.com/AmazonS3/latest/API/API_DeleteBucketLifecycle.html](https://docs.aws.amazon.com/AmazonS3/latest/API/API_DeleteBucketLifecycle.md)
+* [https://docs.aws.amazon.com/AmazonS3/latest/API/API_DeleteBucketPolicy.html](https://docs.aws.amazon.com/AmazonS3/latest/API/API_DeleteBucketPolicy.html)
+* [https://docs.aws.amazon.com/AmazonS3/latest/API/API_DeleteBucketReplication.html](https://docs.aws.amazon.com/AmazonS3/latest/API/API_DeleteBucketReplication.html)
+* [https://docs.aws.amazon.com/AmazonS3/latest/API/API_DeleteBucketCors.html](https://docs.aws.amazon.com/AmazonS3/latest/API/API_DeleteBucketCors.html)
+* [https://docs.aws.amazon.com/AmazonS3/latest/API/API_DeleteBucketEncryption.html](https://docs.aws.amazon.com/AmazonS3/latest/API/API_DeleteBucketEncryption.html)
+* [https://docs.aws.amazon.com/AmazonS3/latest/API/API_DeleteBucketLifecycle.html](https://docs.aws.amazon.com/AmazonS3/latest/API/API_DeleteBucketLifecycle.html)
 
 **Tags**:
 

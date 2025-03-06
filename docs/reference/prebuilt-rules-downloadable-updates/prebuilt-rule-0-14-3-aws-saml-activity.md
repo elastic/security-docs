@@ -26,8 +26,8 @@ Identifies when SAML activity has occurred in AWS. An adversary could manipulate
 
 **References**:
 
-* [https://docs.aws.amazon.com/IAM/latest/APIReference/API_UpdateSAMLProvider.html](https://docs.aws.amazon.com/IAM/latest/APIReference/API_UpdateSAMLProvider.md)
-* [https://docs.aws.amazon.com/STS/latest/APIReference/API_AssumeRoleWithSAML.html](https://docs.aws.amazon.com/STS/latest/APIReference/API_AssumeRoleWithSAML.md)
+* [https://docs.aws.amazon.com/IAM/latest/APIReference/API_UpdateSAMLProvider.html](https://docs.aws.amazon.com/IAM/latest/APIReference/API_UpdateSAMLProvider.html)
+* [https://docs.aws.amazon.com/STS/latest/APIReference/API_AssumeRoleWithSAML.html](https://docs.aws.amazon.com/STS/latest/APIReference/API_AssumeRoleWithSAML.html)
 
 **Tags**:
 

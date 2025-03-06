@@ -26,7 +26,7 @@ Identifies suspicious access to LSASS handle from a call trace pointing to seclo
 
 **References**:
 
-* [https://splintercod3.blogspot.com/p/the-hidden-side-of-seclogon-part-3.html](https://splintercod3.blogspot.com/p/the-hidden-side-of-seclogon-part-3.md)
+* [https://splintercod3.blogspot.com/p/the-hidden-side-of-seclogon-part-3.html](https://splintercod3.blogspot.com/p/the-hidden-side-of-seclogon-part-3.html)
 
 **Tags**:
 

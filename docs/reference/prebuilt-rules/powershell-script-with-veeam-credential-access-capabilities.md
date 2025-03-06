@@ -26,7 +26,7 @@ Identifies PowerShell scripts that can access and decrypt Veeam credentials stor
 
 **References**:
 
-* [https://forums.veeam.com/veeam-backup-replication-f2/recover-esxi-password-in-veeam-t34630.html](https://forums.veeam.com/veeam-backup-replication-f2/recover-esxi-password-in-veeam-t34630.md)
+* [https://forums.veeam.com/veeam-backup-replication-f2/recover-esxi-password-in-veeam-t34630.html](https://forums.veeam.com/veeam-backup-replication-f2/recover-esxi-password-in-veeam-t34630.html)
 * [https://www.crowdstrike.com/blog/anatomy-of-alpha-spider-ransomware/](https://www.crowdstrike.com/blog/anatomy-of-alpha-spider-ransomware/)
 
 **Tags**:

@@ -26,8 +26,8 @@ Identifies the deactivation of a specified multi-factor authentication (MFA) dev
 
 **References**:
 
-* [https://awscli.amazonaws.com/v2/documentation/api/latest/reference/iam/deactivate-mfa-device.html](https://awscli.amazonaws.com/v2/documentation/api/latest/reference/iam/deactivate-mfa-device.md)
-* [https://docs.aws.amazon.com/IAM/latest/APIReference/API_DeactivateMFADevice.html](https://docs.aws.amazon.com/IAM/latest/APIReference/API_DeactivateMFADevice.md)
+* [https://awscli.amazonaws.com/v2/documentation/api/latest/reference/iam/deactivate-mfa-device.html](https://awscli.amazonaws.com/v2/documentation/api/latest/reference/iam/deactivate-mfa-device.html)
+* [https://docs.aws.amazon.com/IAM/latest/APIReference/API_DeactivateMFADevice.html](https://docs.aws.amazon.com/IAM/latest/APIReference/API_DeactivateMFADevice.html)
 
 **Tags**:
 

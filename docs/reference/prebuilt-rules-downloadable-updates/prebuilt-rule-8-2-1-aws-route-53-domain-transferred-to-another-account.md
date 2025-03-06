@@ -26,7 +26,7 @@ Identifies when a request has been made to transfer a Route 53 domain to another
 
 **References**:
 
-* [https://docs.aws.amazon.com/Route53/latest/APIReference/API_Operations_Amazon_Route_53.html](https://docs.aws.amazon.com/Route53/latest/APIReference/API_Operations_Amazon_Route_53.md)
+* [https://docs.aws.amazon.com/Route53/latest/APIReference/API_Operations_Amazon_Route_53.html](https://docs.aws.amazon.com/Route53/latest/APIReference/API_Operations_Amazon_Route_53.html)
 
 **Tags**:
 

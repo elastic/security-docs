@@ -26,7 +26,7 @@ Identifies when a user or role has assumed a role in AWS Security Token Service 
 
 **References**:
 
-* [https://docs.aws.amazon.com/STS/latest/APIReference/API_AssumeRole.html](https://docs.aws.amazon.com/STS/latest/APIReference/API_AssumeRole.md)
+* [https://docs.aws.amazon.com/STS/latest/APIReference/API_AssumeRole.html](https://docs.aws.amazon.com/STS/latest/APIReference/API_AssumeRole.html)
 
 **Tags**:
 
@@ -88,7 +88,7 @@ This rule detects when a user assumes a role in AWS Security Token Service (STS)
 
 **Additional Information**
 
-For more details on managing and securing AWS STS in your environment, refer to the [AWS STS documentation](https://docs.aws.amazon.com/STS/latest/APIReference/API_AssumeRole.md).
+For more details on managing and securing AWS STS in your environment, refer to the [AWS STS documentation](https://docs.aws.amazon.com/STS/latest/APIReference/API_AssumeRole.html).
 
 
 ## Rule query [_rule_query_106]

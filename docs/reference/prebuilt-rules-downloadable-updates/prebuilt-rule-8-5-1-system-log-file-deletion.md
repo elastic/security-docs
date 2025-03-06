@@ -27,7 +27,7 @@ Identifies the deletion of sensitive Linux system logs. This may indicate an att
 
 **References**:
 
-* [https://www.fireeye.com/blog/threat-research/2020/11/live-off-the-land-an-overview-of-unc1945.html](https://www.fireeye.com/blog/threat-research/2020/11/live-off-the-land-an-overview-of-unc1945.md)
+* [https://www.fireeye.com/blog/threat-research/2020/11/live-off-the-land-an-overview-of-unc1945.html](https://www.fireeye.com/blog/threat-research/2020/11/live-off-the-land-an-overview-of-unc1945.html)
 
 **Tags**:
 

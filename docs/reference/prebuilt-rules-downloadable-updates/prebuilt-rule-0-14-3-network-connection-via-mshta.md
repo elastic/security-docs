@@ -27,7 +27,7 @@ Identifies mshta.exe making a network connection. This may indicate adversarial 
 
 **References**:
 
-* [https://www.fireeye.com/blog/threat-research/2017/05/cyber-espionage-apt32.html](https://www.fireeye.com/blog/threat-research/2017/05/cyber-espionage-apt32.md)
+* [https://www.fireeye.com/blog/threat-research/2017/05/cyber-espionage-apt32.html](https://www.fireeye.com/blog/threat-research/2017/05/cyber-espionage-apt32.html)
 
 **Tags**:
 

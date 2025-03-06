@@ -26,8 +26,8 @@ Identifies when a transfer lock was removed from a Route 53 domain. It is recomm
 
 **References**:
 
-* [https://docs.aws.amazon.com/Route53/latest/APIReference/API_Operations_Amazon_Route_53.html](https://docs.aws.amazon.com/Route53/latest/APIReference/API_Operations_Amazon_Route_53.md)
-* [https://docs.aws.amazon.com/Route53/latest/APIReference/API_domains_DisableDomainTransferLock.html](https://docs.aws.amazon.com/Route53/latest/APIReference/API_domains_DisableDomainTransferLock.md)
+* [https://docs.aws.amazon.com/Route53/latest/APIReference/API_Operations_Amazon_Route_53.html](https://docs.aws.amazon.com/Route53/latest/APIReference/API_Operations_Amazon_Route_53.html)
+* [https://docs.aws.amazon.com/Route53/latest/APIReference/API_domains_DisableDomainTransferLock.html](https://docs.aws.amazon.com/Route53/latest/APIReference/API_domains_DisableDomainTransferLock.html)
 
 **Tags**:
 

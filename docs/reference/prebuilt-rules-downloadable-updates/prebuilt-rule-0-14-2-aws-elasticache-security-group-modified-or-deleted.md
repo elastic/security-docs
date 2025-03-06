@@ -26,7 +26,7 @@ Identifies when an ElastiCache security group has been modified or deleted.
 
 **References**:
 
-* [https://docs.aws.amazon.com/AmazonElastiCache/latest/APIReference/Welcome.html](https://docs.aws.amazon.com/AmazonElastiCache/latest/APIReference/Welcome.md)
+* [https://docs.aws.amazon.com/AmazonElastiCache/latest/APIReference/Welcome.html](https://docs.aws.amazon.com/AmazonElastiCache/latest/APIReference/Welcome.html)
 
 **Tags**:
 

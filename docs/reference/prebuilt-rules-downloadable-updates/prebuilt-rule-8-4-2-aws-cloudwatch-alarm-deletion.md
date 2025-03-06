@@ -26,8 +26,8 @@ Identifies the deletion of an AWS CloudWatch alarm. An adversary may delete alar
 
 **References**:
 
-* [https://awscli.amazonaws.com/v2/documentation/api/latest/reference/cloudwatch/delete-alarms.html](https://awscli.amazonaws.com/v2/documentation/api/latest/reference/cloudwatch/delete-alarms.md)
-* [https://docs.aws.amazon.com/AmazonCloudWatch/latest/APIReference/API_DeleteAlarms.html](https://docs.aws.amazon.com/AmazonCloudWatch/latest/APIReference/API_DeleteAlarms.md)
+* [https://awscli.amazonaws.com/v2/documentation/api/latest/reference/cloudwatch/delete-alarms.html](https://awscli.amazonaws.com/v2/documentation/api/latest/reference/cloudwatch/delete-alarms.html)
+* [https://docs.aws.amazon.com/AmazonCloudWatch/latest/APIReference/API_DeleteAlarms.html](https://docs.aws.amazon.com/AmazonCloudWatch/latest/APIReference/API_DeleteAlarms.html)
 
 **Tags**:
 

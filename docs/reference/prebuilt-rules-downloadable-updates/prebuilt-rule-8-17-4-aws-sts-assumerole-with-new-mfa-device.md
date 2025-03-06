@@ -26,7 +26,7 @@ Identifies when a user has assumed a role using a new MFA device. Users can assu
 
 **References**:
 
-* [https://docs.aws.amazon.com/STS/latest/APIReference/API_AssumeRole.html](https://docs.aws.amazon.com/STS/latest/APIReference/API_AssumeRole.md)
+* [https://docs.aws.amazon.com/STS/latest/APIReference/API_AssumeRole.html](https://docs.aws.amazon.com/STS/latest/APIReference/API_AssumeRole.html)
 * [https://github.com/RhinoSecurityLabs/cloudgoat/blob/d5863b80afd082d853f2e8df1955c6393695a4da/scenarios/iam_privesc_by_key_rotation/README.md](https://github.com/RhinoSecurityLabs/cloudgoat/blob/d5863b80afd082d853f2e8df1955c6393695a4da/scenarios/iam_privesc_by_key_rotation/README.md)
 
 **Tags**:

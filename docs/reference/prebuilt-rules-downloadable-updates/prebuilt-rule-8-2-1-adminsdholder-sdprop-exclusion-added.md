@@ -26,7 +26,7 @@ Identifies a modification on the dsHeuristics attribute on the bit that holds th
 
 **References**:
 
-* [https://www.cert.ssi.gouv.fr/uploads/guide-ad.html#dsheuristics_bad](https://www.cert.ssi.gouv.fr/uploads/guide-ad.md#dsheuristics_bad)
+* [https://www.cert.ssi.gouv.fr/uploads/guide-ad.html#dsheuristics_bad](https://www.cert.ssi.gouv.fr/uploads/guide-ad.html#dsheuristics_bad)
 * [https://petri.com/active-directory-security-understanding-adminsdholder-object](https://petri.com/active-directory-security-understanding-adminsdholder-object)
 
 **Tags**:

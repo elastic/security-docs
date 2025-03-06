@@ -27,7 +27,7 @@ This rule detects a container deployed with one or more dangerously permissive L
 
 * [https://kubernetes.io/docs/tasks/configure-pod-container/security-context/#set-capabilities-for-a-container](https://kubernetes.io/docs/tasks/configure-pod-container/security-context/#set-capabilities-for-a-container)
 * [https://0xn3va.gitbook.io/cheat-sheets/container/escaping/excessive-capabilities](https://0xn3va.gitbook.io/cheat-sheets/container/escaping/excessive-capabilities)
-* [https://man7.org/linux/man-pages/man7/capabilities.7.html](https://man7.org/linux/man-pages/man7/capabilities.7.md)
+* [https://man7.org/linux/man-pages/man7/capabilities.7.html](https://man7.org/linux/man-pages/man7/capabilities.7.html)
 * [https://docs.docker.com/engine/reference/run/#runtime-privilege-and-linux-capabilities](https://docs.docker.com/engine/reference/run/#runtime-privilege-and-linux-capabilities)
 
 **Tags**:

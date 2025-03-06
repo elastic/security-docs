@@ -1,6 +1,7 @@
 ---
 mapped_pages:
   - https://www.elastic.co/guide/en/security/current/deprecated-suspicious-file-creation-in-etc-for-persistence.html
+  - https://www.elastic.co/guide/en/security/current/suspicious-file-creation-in-etc-for-persistence.html
 ---
 
 # Deprecated - Suspicious File Creation in /etc for Persistence [deprecated-suspicious-file-creation-in-etc-for-persistence]

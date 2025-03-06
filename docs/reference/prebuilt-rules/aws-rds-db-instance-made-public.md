@@ -26,8 +26,8 @@ Identifies the creation or modification of an AWS RDS DB instance to enable publ
 
 **References**:
 
-* [https://docs.aws.amazon.com/AmazonRDS/latest/APIReference/API_ModifyDBInstance.html](https://docs.aws.amazon.com/AmazonRDS/latest/APIReference/API_ModifyDBInstance.md)
-* [https://docs.aws.amazon.com/AmazonRDS/latest/UserGuide/Overview.DBInstance.Modifying.html](https://docs.aws.amazon.com/AmazonRDS/latest/UserGuide/Overview.DBInstance.Modifying.md)
+* [https://docs.aws.amazon.com/AmazonRDS/latest/APIReference/API_ModifyDBInstance.html](https://docs.aws.amazon.com/AmazonRDS/latest/APIReference/API_ModifyDBInstance.html)
+* [https://docs.aws.amazon.com/AmazonRDS/latest/UserGuide/Overview.DBInstance.Modifying.html](https://docs.aws.amazon.com/AmazonRDS/latest/UserGuide/Overview.DBInstance.Modifying.html)
 * [https://cloud.hacktricks.xyz/pentesting-cloud/aws-security/aws-persistence/aws-rds-persistence#make-instance-publicly-accessible-rds-modifydbinstance](https://cloud.hacktricks.xyz/pentesting-cloud/aws-security/aws-persistence/aws-rds-persistence#make-instance-publicly-accessible-rds-modifydbinstance)
 * [https://cloud.hacktricks.xyz/pentesting-cloud/aws-security/aws-privilege-escalation/aws-rds-privesc#rds-createdbinstance](https://cloud.hacktricks.xyz/pentesting-cloud/aws-security/aws-privilege-escalation/aws-rds-privesc#rds-createdbinstance)
 
@@ -83,7 +83,7 @@ This rule identifies when an RDS DB instance is created or modified to enable pu
 
 **Additional Information:**
 
-For further guidance on managing DB instances and securing AWS environments, refer to the [AWS RDS documentation](https://docs.aws.amazon.com/AmazonRDS/latest/UserGuide/CHAP_RDS_Managing.md) and AWS best practices for security. Additionally, consult the following resources for specific details on DB instance security: - [AWS RDS ModifyDBInstance](https://docs.aws.amazon.com/AmazonRDS/latest/APIReference/API_ModifyDBInstance.md)
+For further guidance on managing DB instances and securing AWS environments, refer to the [AWS RDS documentation](https://docs.aws.amazon.com/AmazonRDS/latest/UserGuide/CHAP_RDS_Managing.html) and AWS best practices for security. Additionally, consult the following resources for specific details on DB instance security: - [AWS RDS ModifyDBInstance](https://docs.aws.amazon.com/AmazonRDS/latest/APIReference/API_ModifyDBInstance.html)
 
 
 ## Rule query [_rule_query_69]

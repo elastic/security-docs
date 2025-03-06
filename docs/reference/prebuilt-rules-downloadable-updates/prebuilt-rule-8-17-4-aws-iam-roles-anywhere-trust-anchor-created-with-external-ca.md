@@ -26,9 +26,9 @@ Identifies when an AWS IAM Roles Anywhere Trust Anchor with an external certific
 
 **References**:
 
-* [https://docs.aws.amazon.com/rolesanywhere/latest/userguide/introduction.html](https://docs.aws.amazon.com/rolesanywhere/latest/userguide/introduction.md)
+* [https://docs.aws.amazon.com/rolesanywhere/latest/userguide/introduction.html](https://docs.aws.amazon.com/rolesanywhere/latest/userguide/introduction.html)
 * [https://ermetic.com/blog/aws/keep-your-iam-users-close-keep-your-third-parties-even-closer-part-1/](https://ermetic.com/blog/aws/keep-your-iam-users-close-keep-your-third-parties-even-closer-part-1/)
-* [https://docs.aws.amazon.com/rolesanywhere/latest/APIReference/API_CreateTrustAnchor.html](https://docs.aws.amazon.com/rolesanywhere/latest/APIReference/API_CreateTrustAnchor.md)
+* [https://docs.aws.amazon.com/rolesanywhere/latest/APIReference/API_CreateTrustAnchor.html](https://docs.aws.amazon.com/rolesanywhere/latest/APIReference/API_CreateTrustAnchor.html)
 
 **Tags**:
 
@@ -81,7 +81,7 @@ This rule detects when an AWS IAM Roles Anywhere Trust Anchor with an external c
 
 **Additional Information:**
 
-For further guidance on managing IAM Roles Anywhere and securing AWS environments, refer to the [AWS IAM Roles Anywhere documentation](https://docs.aws.amazon.com/rolesanywhere/latest/userguide/introduction.md) and AWS best practices for security. Additionally, consult the following resources for specific details on IAM roles and trust anchors: - [AWS IAM Roles Anywhere Introduction](https://docs.aws.amazon.com/rolesanywhere/latest/userguide/introduction.md) - [Ermetic Blog on IAM Users and Third Parties](https://ermetic.com/blog/aws/keep-your-iam-users-close-keep-your-third-parties-even-closer-part-1/)
+For further guidance on managing IAM Roles Anywhere and securing AWS environments, refer to the [AWS IAM Roles Anywhere documentation](https://docs.aws.amazon.com/rolesanywhere/latest/userguide/introduction.html) and AWS best practices for security. Additionally, consult the following resources for specific details on IAM roles and trust anchors: - [AWS IAM Roles Anywhere Introduction](https://docs.aws.amazon.com/rolesanywhere/latest/userguide/introduction.html) - [Ermetic Blog on IAM Users and Third Parties](https://ermetic.com/blog/aws/keep-your-iam-users-close-keep-your-third-parties-even-closer-part-1/)
 
 
 ## Rule query [_rule_query_5062]
