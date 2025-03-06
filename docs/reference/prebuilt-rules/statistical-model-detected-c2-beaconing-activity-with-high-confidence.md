@@ -25,7 +25,7 @@ A statistical model has identified command-and-control (C2) beaconing activity w
 
 **References**:
 
-* [/reference/security/prebuilt-jobs.md](/reference/prebuilt-jobs.md)
+* [Prebuilt anomaly detection jobs](docs-content://reference/security/prebuilt-anomaly-detection-jobs.md)
 * [https://docs.elastic.co/en/integrations/beaconing](https://docs.elastic.co/en/integrations/beaconing)
 * [https://www.elastic.co/security-labs/identifying-beaconing-malware-using-elastic](https://www.elastic.co/security-labs/identifying-beaconing-malware-using-elastic)
 
