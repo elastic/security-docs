@@ -26,7 +26,7 @@ Identifies an expiration lifecycle configuration added to an S3 bucket. Lifecycl
 
 **References**:
 
-* [https://docs.aws.amazon.com/AmazonS3/latest/userguide/lifecycle-expire-general-considerations.html](https://docs.aws.amazon.com/AmazonS3/latest/userguide/lifecycle-expire-general-considerations.md)
+* [https://docs.aws.amazon.com/AmazonS3/latest/userguide/lifecycle-expire-general-considerations.html](https://docs.aws.amazon.com/AmazonS3/latest/userguide/lifecycle-expire-general-considerations.html)
 
 **Tags**:
 
@@ -85,7 +85,7 @@ This rule detects when an expiration lifecycle configuration is added to an S3 b
 
 **Additional Information**
 
-For further guidance on managing S3 lifecycle policies and ensuring compliance with organizational data retention and security policies, refer to the AWS official documentation on [S3 Lifecycle Configuration](https://docs.aws.amazon.com/AmazonS3/latest/userguide/lifecycle-expire-general-considerations.md).
+For further guidance on managing S3 lifecycle policies and ensuring compliance with organizational data retention and security policies, refer to the AWS official documentation on [S3 Lifecycle Configuration](https://docs.aws.amazon.com/AmazonS3/latest/userguide/lifecycle-expire-general-considerations.html).
 
 
 ## Setup [_setup_51]

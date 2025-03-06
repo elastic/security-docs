@@ -24,7 +24,7 @@ Identifies when a single AWS resource is making `DescribeInstances` API calls in
 **References**:
 
 * [https://www.sentinelone.com/labs/exploring-fbot-python-based-malware-targeting-cloud-and-payment-services/](https://www.sentinelone.com/labs/exploring-fbot-python-based-malware-targeting-cloud-and-payment-services/)
-* [https://docs.aws.amazon.com/AWSEC2/latest/APIReference/API_DescribeInstances.html](https://docs.aws.amazon.com/AWSEC2/latest/APIReference/API_DescribeInstances.md)
+* [https://docs.aws.amazon.com/AWSEC2/latest/APIReference/API_DescribeInstances.html](https://docs.aws.amazon.com/AWSEC2/latest/APIReference/API_DescribeInstances.html)
 
 **Tags**:
 
@@ -83,7 +83,7 @@ This rule detects instances where a single AWS resource makes `DescribeInstances
 
 **Additional Information**
 
-For further information on AWS `DescribeInstances` permissions and best practices, refer to the [AWS DescribeInstances API documentation](https://docs.aws.amazon.com/AWSEC2/latest/APIReference/API_DescribeInstances.md).
+For further information on AWS `DescribeInstances` permissions and best practices, refer to the [AWS DescribeInstances API documentation](https://docs.aws.amazon.com/AWSEC2/latest/APIReference/API_DescribeInstances.html).
 
 
 ## Rule query [_rule_query_5020]

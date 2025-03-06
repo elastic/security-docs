@@ -29,8 +29,8 @@ Identifies when a new SSH public key is uploaded to an AWS EC2 instance using th
 * [https://stratus-red-team.cloud/attack-techniques/AWS/aws.lateral-movement.ec2-instance-connect/](https://stratus-red-team.cloud/attack-techniques/AWS/aws.lateral-movement.ec2-instance-connect/)
 * [https://cloud.hacktricks.xyz/pentesting-cloud/aws-security/aws-privilege-escalation/aws-ec2-privesc](https://cloud.hacktricks.xyz/pentesting-cloud/aws-security/aws-privilege-escalation/aws-ec2-privesc)
 * [https://medium.parttimepolymath.net/aws-ec2-instance-connect-a-very-neat-trick-4d2fc0c28010](https://medium.parttimepolymath.net/aws-ec2-instance-connect-a-very-neat-trick-4d2fc0c28010)
-* [https://docs.aws.amazon.com/ec2-instance-connect/latest/APIReference/API_SendSSHPublicKey.html](https://docs.aws.amazon.com/ec2-instance-connect/latest/APIReference/API_SendSSHPublicKey.md)
-* [https://docs.aws.amazon.com/ec2-instance-connect/latest/APIReference/API_SendSerialConsoleSSHPublicKey.html](https://docs.aws.amazon.com/ec2-instance-connect/latest/APIReference/API_SendSerialConsoleSSHPublicKey.md)
+* [https://docs.aws.amazon.com/ec2-instance-connect/latest/APIReference/API_SendSSHPublicKey.html](https://docs.aws.amazon.com/ec2-instance-connect/latest/APIReference/API_SendSSHPublicKey.html)
+* [https://docs.aws.amazon.com/ec2-instance-connect/latest/APIReference/API_SendSerialConsoleSSHPublicKey.html](https://docs.aws.amazon.com/ec2-instance-connect/latest/APIReference/API_SendSerialConsoleSSHPublicKey.html)
 
 **Tags**:
 
@@ -83,7 +83,7 @@ This rule detects when a new SSH public key is uploaded to an AWS EC2 instance u
 
 **Additional Information:**
 
-For further guidance on managing EC2 instances and securing AWS environments, refer to the [AWS EC2 Instance Connect documentation](https://docs.aws.amazon.com/ec2-instance-connect/latest/APIReference/API_SendSSHPublicKey.md) and AWS best practices for security. Additionally, consult the following resources for specific details on SSH key management and privilege escalation techniques: - [Stratus Red Team - AWS EC2 Instance Connect](https://stratus-red-team.cloud/attack-techniques/AWS/aws.lateral-movement.ec2-instance-connect/) - [HackTricks - AWS EC2 Privilege Escalation](https://cloud.hacktricks.xyz/pentesting-cloud/aws-security/aws-privilege-escalation/aws-ec2-privesc) - [AWS EC2 Instance Connect API Reference](https://docs.aws.amazon.com/ec2-instance-connect/latest/APIReference/API_SendSSHPublicKey.md)
+For further guidance on managing EC2 instances and securing AWS environments, refer to the [AWS EC2 Instance Connect documentation](https://docs.aws.amazon.com/ec2-instance-connect/latest/APIReference/API_SendSSHPublicKey.html) and AWS best practices for security. Additionally, consult the following resources for specific details on SSH key management and privilege escalation techniques: - [Stratus Red Team - AWS EC2 Instance Connect](https://stratus-red-team.cloud/attack-techniques/AWS/aws.lateral-movement.ec2-instance-connect/) - [HackTricks - AWS EC2 Privilege Escalation](https://cloud.hacktricks.xyz/pentesting-cloud/aws-security/aws-privilege-escalation/aws-ec2-privesc) - [AWS EC2 Instance Connect API Reference](https://docs.aws.amazon.com/ec2-instance-connect/latest/APIReference/API_SendSSHPublicKey.html)
 
 
 ## Rule query [_rule_query_4849]

@@ -27,7 +27,7 @@ An instance of the Microsoft Build Engine (MSBuild) started a PowerShell script 
 
 **References**:
 
-* [https://blog.talosintelligence.com/2020/02/building-bypass-with-msbuild.html](https://blog.talosintelligence.com/2020/02/building-bypass-with-msbuild.md)
+* [https://blog.talosintelligence.com/2020/02/building-bypass-with-msbuild.html](https://blog.talosintelligence.com/2020/02/building-bypass-with-msbuild.html)
 
 **Tags**:
 

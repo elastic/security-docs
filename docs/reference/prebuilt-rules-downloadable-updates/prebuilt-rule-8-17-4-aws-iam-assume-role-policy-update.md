@@ -82,7 +82,7 @@ The role trust policy is a JSON document in which you define the principals you 
 * Work with your IT team to identify and minimize the impact on users.
 * Identify if the attacker is moving laterally and compromising other accounts, servers, or services.
 * Identify any regulatory or legal ramifications related to this activity.
-* Use AWS [policy versioning](https://docs.aws.amazon.com/IAM/latest/UserGuide/access_policies_managed-versioning.md) to restore the trust policy to the desired state.
+* Use AWS [policy versioning](https://docs.aws.amazon.com/IAM/latest/UserGuide/access_policies_managed-versioning.html) to restore the trust policy to the desired state.
 * Investigate credential exposure on systems compromised or used by the attacker to ensure all compromised accounts are identified. Reset passwords or delete API keys as needed to revoke the attacker’s access to the environment. Work with your IT teams to minimize the impact on business operations during these actions.
 * Check if unauthorized new users were created, remove unauthorized new accounts, and request password resets for other IAM users.
 * Consider enabling multi-factor authentication for users.

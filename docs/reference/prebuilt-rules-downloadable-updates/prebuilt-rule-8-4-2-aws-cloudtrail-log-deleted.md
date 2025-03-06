@@ -26,8 +26,8 @@ Identifies the deletion of an AWS log trail. An adversary may delete trails in a
 
 **References**:
 
-* [https://docs.aws.amazon.com/awscloudtrail/latest/APIReference/API_DeleteTrail.html](https://docs.aws.amazon.com/awscloudtrail/latest/APIReference/API_DeleteTrail.md)
-* [https://awscli.amazonaws.com/v2/documentation/api/latest/reference/cloudtrail/delete-trail.html](https://awscli.amazonaws.com/v2/documentation/api/latest/reference/cloudtrail/delete-trail.md)
+* [https://docs.aws.amazon.com/awscloudtrail/latest/APIReference/API_DeleteTrail.html](https://docs.aws.amazon.com/awscloudtrail/latest/APIReference/API_DeleteTrail.html)
+* [https://awscli.amazonaws.com/v2/documentation/api/latest/reference/cloudtrail/delete-trail.html](https://awscli.amazonaws.com/v2/documentation/api/latest/reference/cloudtrail/delete-trail.html)
 
 **Tags**:
 

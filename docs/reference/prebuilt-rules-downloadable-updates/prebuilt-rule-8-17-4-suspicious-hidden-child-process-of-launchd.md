@@ -25,9 +25,9 @@ Identifies the execution of a launchd child process with a hidden file. An adver
 
 **References**:
 
-* [https://objective-see.com/blog/blog_0x61.html](https://objective-see.com/blog/blog_0x61.md)
+* [https://objective-see.com/blog/blog_0x61.html](https://objective-see.com/blog/blog_0x61.html)
 * [https://www.intezer.com/blog/research/operation-electrorat-attacker-creates-fake-companies-to-drain-your-crypto-wallets/](https://www.intezer.com/blog/research/operation-electrorat-attacker-creates-fake-companies-to-drain-your-crypto-wallets/)
-* [https://developer.apple.com/library/archive/documentation/MacOSX/Conceptual/BPSystemStartup/Chapters/CreatingLaunchdJobs.html](https://developer.apple.com/library/archive/documentation/MacOSX/Conceptual/BPSystemStartup/Chapters/CreatingLaunchdJobs.md)
+* [https://developer.apple.com/library/archive/documentation/MacOSX/Conceptual/BPSystemStartup/Chapters/CreatingLaunchdJobs.html](https://developer.apple.com/library/archive/documentation/MacOSX/Conceptual/BPSystemStartup/Chapters/CreatingLaunchdJobs.html)
 
 **Tags**:
 

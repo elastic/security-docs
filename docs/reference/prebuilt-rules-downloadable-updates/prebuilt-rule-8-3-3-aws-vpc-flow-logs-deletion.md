@@ -26,8 +26,8 @@ Identifies the deletion of one or more flow logs in AWS Elastic Compute Cloud (E
 
 **References**:
 
-* [https://awscli.amazonaws.com/v2/documentation/api/latest/reference/ec2/delete-flow-logs.html](https://awscli.amazonaws.com/v2/documentation/api/latest/reference/ec2/delete-flow-logs.md)
-* [https://docs.aws.amazon.com/AWSEC2/latest/APIReference/API_DeleteFlowLogs.html](https://docs.aws.amazon.com/AWSEC2/latest/APIReference/API_DeleteFlowLogs.md)
+* [https://awscli.amazonaws.com/v2/documentation/api/latest/reference/ec2/delete-flow-logs.html](https://awscli.amazonaws.com/v2/documentation/api/latest/reference/ec2/delete-flow-logs.html)
+* [https://docs.aws.amazon.com/AWSEC2/latest/APIReference/API_DeleteFlowLogs.html](https://docs.aws.amazon.com/AWSEC2/latest/APIReference/API_DeleteFlowLogs.html)
 
 **Tags**:
 

@@ -26,7 +26,7 @@ Identifies attempts to login to AWS as the root user without using multi-factor 
 
 **References**:
 
-* [https://docs.aws.amazon.com/IAM/latest/UserGuide/id_root-user.html](https://docs.aws.amazon.com/IAM/latest/UserGuide/id_root-user.md)
+* [https://docs.aws.amazon.com/IAM/latest/UserGuide/id_root-user.html](https://docs.aws.amazon.com/IAM/latest/UserGuide/id_root-user.html)
 
 **Tags**:
 

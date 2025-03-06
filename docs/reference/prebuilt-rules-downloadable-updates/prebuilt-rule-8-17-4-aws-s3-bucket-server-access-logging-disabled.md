@@ -26,8 +26,8 @@ Identifies when server access logging is disabled for an Amazon S3 bucket. Serve
 
 **References**:
 
-* [https://docs.aws.amazon.com/AmazonS3/latest/API/API_PutBucketLogging.html](https://docs.aws.amazon.com/AmazonS3/latest/API/API_PutBucketLogging.md)
-* [https://docs.aws.amazon.com/AmazonS3/latest/userguide/enable-server-access-logging.html](https://docs.aws.amazon.com/AmazonS3/latest/userguide/enable-server-access-logging.md)
+* [https://docs.aws.amazon.com/AmazonS3/latest/API/API_PutBucketLogging.html](https://docs.aws.amazon.com/AmazonS3/latest/API/API_PutBucketLogging.html)
+* [https://docs.aws.amazon.com/AmazonS3/latest/userguide/enable-server-access-logging.html](https://docs.aws.amazon.com/AmazonS3/latest/userguide/enable-server-access-logging.html)
 
 **Tags**:
 
@@ -83,7 +83,7 @@ This rule detects when server access logging is disabled for an S3 bucket in AWS
 
 **Additional Information**
 
-For further guidance on monitoring Amazon S3 and ensuring compliance with organizational data retention and security policies, refer to the AWS official documentation on [Monitoring Amazon S3](https://docs.aws.amazon.com/AmazonS3/latest/userguide/monitoring-overview.md).
+For further guidance on monitoring Amazon S3 and ensuring compliance with organizational data retention and security policies, refer to the AWS official documentation on [Monitoring Amazon S3](https://docs.aws.amazon.com/AmazonS3/latest/userguide/monitoring-overview.html).
 
 
 ## Rule query [_rule_query_5013]

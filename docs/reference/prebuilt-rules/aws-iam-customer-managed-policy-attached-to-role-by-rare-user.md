@@ -26,7 +26,7 @@ Detects when an AWS Identity and Access Management (IAM) customer-managed policy
 
 **References**:
 
-* [https://docs.aws.amazon.com/IAM/latest/APIReference/API_AttachRolePolicy.html](https://docs.aws.amazon.com/IAM/latest/APIReference/API_AttachRolePolicy.md)
+* [https://docs.aws.amazon.com/IAM/latest/APIReference/API_AttachRolePolicy.html](https://docs.aws.amazon.com/IAM/latest/APIReference/API_AttachRolePolicy.html)
 
 **Tags**:
 
@@ -86,7 +86,7 @@ This rule detects when a customer-managed IAM policy is attached to a role by an
 
 **Additional Information**
 
-For more information on managing IAM policies and roles in AWS environments, refer to the [AWS IAM Documentation](https://docs.aws.amazon.com/IAM/latest/APIReference/API_AttachRolePolicy.md) and AWS security best practices.
+For more information on managing IAM policies and roles in AWS environments, refer to the [AWS IAM Documentation](https://docs.aws.amazon.com/IAM/latest/APIReference/API_AttachRolePolicy.html) and AWS security best practices.
 
 
 ## Rule query [_rule_query_50]

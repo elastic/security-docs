@@ -27,7 +27,7 @@ Identifies the creation or modification of the default configuration for periodi
 **References**:
 
 * [https://opensource.apple.com/source/crontabs/crontabs-13/private/etc/defaults/periodic.conf.auto.html](https://opensource.apple.com/source/crontabs/crontabs-13/private/etc/defaults/periodic.conf.auto.md)
-* [https://www.oreilly.com/library/view/mac-os-x/0596003706/re328.html](https://www.oreilly.com/library/view/mac-os-x/0596003706/re328.md)
+* [https://www.oreilly.com/library/view/mac-os-x/0596003706/re328.html](https://www.oreilly.com/library/view/mac-os-x/0596003706/re328.html)
 * [https://github.com/D00MFist/PersistentJXA/blob/master/PeriodicPersist.js](https://github.com/D00MFist/PersistentJXA/blob/master/PeriodicPersist.js)
 
 **Tags**:

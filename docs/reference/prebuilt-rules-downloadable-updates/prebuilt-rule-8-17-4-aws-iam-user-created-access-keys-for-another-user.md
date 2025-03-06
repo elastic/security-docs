@@ -26,7 +26,7 @@ An adversary with access to a set of compromised credentials may attempt to pers
 * [https://hackingthe.cloud/aws/exploitation/iam_privilege_escalation/#iamcreateaccesskey](https://hackingthe.cloud/aws/exploitation/iam_privilege_escalation/#iamcreateaccesskey)
 * [https://cloud.hacktricks.xyz/pentesting-cloud/aws-security/aws-persistence/aws-iam-persistence](https://cloud.hacktricks.xyz/pentesting-cloud/aws-security/aws-persistence/aws-iam-persistence)
 * [https://permiso.io/blog/lucr-3-scattered-spider-getting-saas-y-in-the-cloud](https://permiso.io/blog/lucr-3-scattered-spider-getting-saas-y-in-the-cloud)
-* [https://docs.aws.amazon.com/IAM/latest/APIReference/API_CreateAccessKey.html](https://docs.aws.amazon.com/IAM/latest/APIReference/API_CreateAccessKey.md)
+* [https://docs.aws.amazon.com/IAM/latest/APIReference/API_CreateAccessKey.html](https://docs.aws.amazon.com/IAM/latest/APIReference/API_CreateAccessKey.html)
 
 **Tags**:
 

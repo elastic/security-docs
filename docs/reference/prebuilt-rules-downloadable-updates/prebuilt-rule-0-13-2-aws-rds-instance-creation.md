@@ -26,7 +26,7 @@ Identifies the creation of an Amazon Relational Database Service (RDS) Aurora da
 
 **References**:
 
-* [https://docs.aws.amazon.com/AmazonRDS/latest/APIReference/API_CreateDBInstance.html](https://docs.aws.amazon.com/AmazonRDS/latest/APIReference/API_CreateDBInstance.md)
+* [https://docs.aws.amazon.com/AmazonRDS/latest/APIReference/API_CreateDBInstance.html](https://docs.aws.amazon.com/AmazonRDS/latest/APIReference/API_CreateDBInstance.html)
 
 **Tags**:
 

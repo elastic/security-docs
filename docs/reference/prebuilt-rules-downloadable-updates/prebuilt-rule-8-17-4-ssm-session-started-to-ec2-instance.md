@@ -26,7 +26,7 @@ Identifies the first occurrence of an AWS resource establishing a session via SS
 
 **References**:
 
-* [https://docs.aws.amazon.com/systems-manager/latest/APIReference/API_StartSession.html](https://docs.aws.amazon.com/systems-manager/latest/APIReference/API_StartSession.md)
+* [https://docs.aws.amazon.com/systems-manager/latest/APIReference/API_StartSession.html](https://docs.aws.amazon.com/systems-manager/latest/APIReference/API_StartSession.html)
 * [https://hackingthe.cloud/aws/post_exploitation/intercept_ssm_communications/](https://hackingthe.cloud/aws/post_exploitation/intercept_ssm_communications/)
 
 **Tags**:
@@ -84,7 +84,7 @@ This rule detects the first instance of an AWS resource initiating an SSM sessio
 
 **Additional Information**
 
-For more in-depth understanding of managing SSM sessions and security best practices, refer to the [AWS Systems Manager documentation](https://docs.aws.amazon.com/systems-manager/latest/APIReference/API_StartSession.md). Additionally, consider the security implications and best practices outlined in [AWS SSM privilege escalation techniques](https://cloud.hacktricks.xyz/pentesting-cloud/aws-security/aws-privilege-escalation/aws-ssm-privesc).
+For more in-depth understanding of managing SSM sessions and security best practices, refer to the [AWS Systems Manager documentation](https://docs.aws.amazon.com/systems-manager/latest/APIReference/API_StartSession.html). Additionally, consider the security implications and best practices outlined in [AWS SSM privilege escalation techniques](https://cloud.hacktricks.xyz/pentesting-cloud/aws-security/aws-privilege-escalation/aws-ssm-privesc).
 
 
 ## Rule query [_rule_query_5052]

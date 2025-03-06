@@ -26,10 +26,10 @@ Identifies the creation of an AWS Roles Anywhere profile. AWS Roles Anywhere is 
 
 **References**:
 
-* [https://docs.aws.amazon.com/rolesanywhere/latest/userguide/introduction.html](https://docs.aws.amazon.com/rolesanywhere/latest/userguide/introduction.md)
+* [https://docs.aws.amazon.com/rolesanywhere/latest/userguide/introduction.html](https://docs.aws.amazon.com/rolesanywhere/latest/userguide/introduction.html)
 * [https://docs.datadoghq.com/security/default_rules/cloudtrail-aws-iam-roles-anywhere-trust-anchor-created/](https://docs.datadoghq.com/security/default_rules/cloudtrail-aws-iam-roles-anywhere-trust-anchor-created/)
 * [https://ermetic.com/blog/aws/keep-your-iam-users-close-keep-your-third-parties-even-closer-part-1/](https://ermetic.com/blog/aws/keep-your-iam-users-close-keep-your-third-parties-even-closer-part-1/)
-* [https://docs.aws.amazon.com/rolesanywhere/latest/APIReference/API_CreateProfile.html](https://docs.aws.amazon.com/rolesanywhere/latest/APIReference/API_CreateProfile.md)
+* [https://docs.aws.amazon.com/rolesanywhere/latest/APIReference/API_CreateProfile.html](https://docs.aws.amazon.com/rolesanywhere/latest/APIReference/API_CreateProfile.html)
 
 **Tags**:
 
@@ -81,7 +81,7 @@ This rule detects the creation of an AWS Roles Anywhere profile. AWS Roles Anywh
 
 **Additional Information:**
 
-For further guidance on managing AWS IAM Roles Anywhere profiles and securing AWS environments, refer to the [AWS Roles Anywhere documentation](https://docs.aws.amazon.com/rolesanywhere/latest/userguide/introduction.md) and AWS best practices for security. Additionally, consult the following resources for specific details on profile management and potential abuse: - [AWS IAM Roles Anywhere Profile Creation API Reference](https://docs.aws.amazon.com/rolesanywhere/latest/APIReference/API_CreateProfile.md) - [Ermetic Blog - Managing Third Party Access](https://ermetic.com/blog/aws/keep-your-iam-users-close-keep-your-third-parties-even-closer-part-1/)
+For further guidance on managing AWS IAM Roles Anywhere profiles and securing AWS environments, refer to the [AWS Roles Anywhere documentation](https://docs.aws.amazon.com/rolesanywhere/latest/userguide/introduction.html) and AWS best practices for security. Additionally, consult the following resources for specific details on profile management and potential abuse: - [AWS IAM Roles Anywhere Profile Creation API Reference](https://docs.aws.amazon.com/rolesanywhere/latest/APIReference/API_CreateProfile.html) - [Ermetic Blog - Managing Third Party Access](https://ermetic.com/blog/aws/keep-your-iam-users-close-keep-your-third-parties-even-closer-part-1/)
 
 
 ## Rule query [_rule_query_5061]

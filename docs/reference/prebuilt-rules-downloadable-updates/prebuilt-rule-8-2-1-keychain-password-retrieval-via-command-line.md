@@ -26,9 +26,9 @@ Adversaries may collect keychain storage data from a system to in order to acqui
 
 **References**:
 
-* [https://www.netmeister.org/blog/keychain-passwords.html](https://www.netmeister.org/blog/keychain-passwords.md)
+* [https://www.netmeister.org/blog/keychain-passwords.html](https://www.netmeister.org/blog/keychain-passwords.html)
 * [https://github.com/priyankchheda/chrome_password_grabber/blob/master/chrome.py](https://github.com/priyankchheda/chrome_password_grabber/blob/master/chrome.py)
-* [https://ss64.com/osx/security.html](https://ss64.com/osx/security.md)
+* [https://ss64.com/osx/security.html](https://ss64.com/osx/security.html)
 * [https://www.intezer.com/blog/research/operation-electrorat-attacker-creates-fake-companies-to-drain-your-crypto-wallets/](https://www.intezer.com/blog/research/operation-electrorat-attacker-creates-fake-companies-to-drain-your-crypto-wallets/)
 
 **Tags**:

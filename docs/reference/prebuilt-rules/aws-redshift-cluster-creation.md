@@ -26,7 +26,7 @@ Identifies the creation of an Amazon Redshift cluster. Unexpected creation of th
 
 **References**:
 
-* [https://docs.aws.amazon.com/redshift/latest/APIReference/API_CreateCluster.html](https://docs.aws.amazon.com/redshift/latest/APIReference/API_CreateCluster.md)
+* [https://docs.aws.amazon.com/redshift/latest/APIReference/API_CreateCluster.html](https://docs.aws.amazon.com/redshift/latest/APIReference/API_CreateCluster.html)
 
 **Tags**:
 

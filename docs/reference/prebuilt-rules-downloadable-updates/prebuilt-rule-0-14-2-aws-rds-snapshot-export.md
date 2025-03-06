@@ -26,7 +26,7 @@ Identifies the export of an Amazon Relational Database Service (RDS) Aurora data
 
 **References**:
 
-* [https://docs.aws.amazon.com/AmazonRDS/latest/APIReference/API_StartExportTask.html](https://docs.aws.amazon.com/AmazonRDS/latest/APIReference/API_StartExportTask.md)
+* [https://docs.aws.amazon.com/AmazonRDS/latest/APIReference/API_StartExportTask.html](https://docs.aws.amazon.com/AmazonRDS/latest/APIReference/API_StartExportTask.html)
 
 **Tags**:
 

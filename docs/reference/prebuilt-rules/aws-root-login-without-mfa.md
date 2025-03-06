@@ -26,7 +26,7 @@ Identifies attempts to login to AWS as the root user without using multi-factor 
 
 **References**:
 
-* [https://docs.aws.amazon.com/IAM/latest/UserGuide/id_root-user.html](https://docs.aws.amazon.com/IAM/latest/UserGuide/id_root-user.md)
+* [https://docs.aws.amazon.com/IAM/latest/UserGuide/id_root-user.html](https://docs.aws.amazon.com/IAM/latest/UserGuide/id_root-user.html)
 
 **Tags**:
 
@@ -54,9 +54,9 @@ Identifies attempts to login to AWS as the root user without using multi-factor 
 
 Multi-factor authentication (MFA) in AWS is a simple best practice that adds an extra layer of protection on top of your user name and password. With MFA enabled, when a user signs in to an AWS Management Console, they will be prompted for their user name and password, as well as for an authentication code from their AWS MFA device. Taken together, these multiple factors provide increased security for your AWS account settings and resources.
 
-For more information about using MFA in AWS, access the [official documentation](https://docs.aws.amazon.com/IAM/latest/UserGuide/id_credentials_mfa.md).
+For more information about using MFA in AWS, access the [official documentation](https://docs.aws.amazon.com/IAM/latest/UserGuide/id_credentials_mfa.html).
 
-The AWS root account is the one identity that has complete access to all AWS services and resources in the account, which is created when the AWS account is created. AWS strongly recommends that you do not use the root user for your everyday tasks, even the administrative ones. Instead, adhere to the best practice of using the root user only to create your first IAM user. Then securely lock away the root user credentials and use them to perform only a few account and service management tasks. Amazon provides a [list of the tasks that require root user](https://docs.aws.amazon.com/general/latest/gr/root-vs-iam.md#aws_tasks-that-require-root).
+The AWS root account is the one identity that has complete access to all AWS services and resources in the account, which is created when the AWS account is created. AWS strongly recommends that you do not use the root user for your everyday tasks, even the administrative ones. Instead, adhere to the best practice of using the root user only to create your first IAM user. Then securely lock away the root user credentials and use them to perform only a few account and service management tasks. Amazon provides a [list of the tasks that require root user](https://docs.aws.amazon.com/general/latest/gr/root-vs-iam.html#aws_tasks-that-require-root).
 
 This rule looks for attempts to log in to AWS as the root user without using multi-factor authentication (MFA), meaning the account is not secured properly.
 

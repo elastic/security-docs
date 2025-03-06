@@ -75,7 +75,7 @@ The AWS IAM `CompromisedKeyQuarantine` and `CompromisedKeyQuarantineV2` managed 
 
 **Additional Information:**
 
-For further guidance on managing and securing credentials in AWS environments, refer to the [AWS IAM User Guide](https://docs.aws.amazon.com/IAM/latest/UserGuide/best-practices.md) regarding security best practices and guidance on [Remediating Potentially Compromised AWS Credentials](https://docs.aws.amazon.com/guardduty/latest/ug/compromised-creds.md).
+For further guidance on managing and securing credentials in AWS environments, refer to the [AWS IAM User Guide](https://docs.aws.amazon.com/IAM/latest/UserGuide/best-practices.html) regarding security best practices and guidance on [Remediating Potentially Compromised AWS Credentials](https://docs.aws.amazon.com/guardduty/latest/ug/compromised-creds.html).
 
 
 ## Rule query [_rule_query_4999]

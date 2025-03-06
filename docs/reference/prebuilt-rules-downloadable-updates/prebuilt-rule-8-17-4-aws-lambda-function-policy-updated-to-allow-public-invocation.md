@@ -28,7 +28,7 @@ Identifies when an AWS Lambda function policy is updated to allow public invocat
 
 * [https://cloud.hacktricks.xyz/pentesting-cloud/aws-security/aws-persistence/aws-lambda-persistence](https://cloud.hacktricks.xyz/pentesting-cloud/aws-security/aws-persistence/aws-lambda-persistence)
 * [https://stratus-red-team.cloud/attack-techniques/AWS/aws.persistence.lambda-backdoor-function/](https://stratus-red-team.cloud/attack-techniques/AWS/aws.persistence.lambda-backdoor-function/)
-* [https://docs.aws.amazon.com/lambda/latest/api/API_AddPermission.html](https://docs.aws.amazon.com/lambda/latest/api/API_AddPermission.md)
+* [https://docs.aws.amazon.com/lambda/latest/api/API_AddPermission.html](https://docs.aws.amazon.com/lambda/latest/api/API_AddPermission.html)
 
 **Tags**:
 
@@ -80,7 +80,7 @@ This rule detects when an AWS Lambda function policy is updated to allow public 
 
 **Additional Information:**
 
-For further guidance on managing Lambda functions and securing AWS environments, refer to the [AWS Lambda documentation](https://docs.aws.amazon.com/lambda/latest/dg/welcome.md) and AWS best practices for security. Additionally, consult the following resources for specific details on Lambda persistence techniques: - [AWS Lambda Persistence](https://cloud.hacktricks.xyz/pentesting-cloud/aws-security/aws-persistence/aws-lambda-persistence) - [AWS Lambda Backdoor Function](https://stratus-red-team.cloud/attack-techniques/AWS/aws.persistence.lambda-backdoor-function/) - [AWS API AddPermission](https://docs.aws.amazon.com/lambda/latest/api/API_AddPermission.md)
+For further guidance on managing Lambda functions and securing AWS environments, refer to the [AWS Lambda documentation](https://docs.aws.amazon.com/lambda/latest/dg/welcome.html) and AWS best practices for security. Additionally, consult the following resources for specific details on Lambda persistence techniques: - [AWS Lambda Persistence](https://cloud.hacktricks.xyz/pentesting-cloud/aws-security/aws-persistence/aws-lambda-persistence) - [AWS Lambda Backdoor Function](https://stratus-red-team.cloud/attack-techniques/AWS/aws.persistence.lambda-backdoor-function/) - [AWS API AddPermission](https://docs.aws.amazon.com/lambda/latest/api/API_AddPermission.html)
 
 
 ## Rule query [_rule_query_5064]

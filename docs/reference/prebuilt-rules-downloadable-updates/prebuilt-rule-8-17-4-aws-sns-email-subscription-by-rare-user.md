@@ -26,7 +26,7 @@ Identifies when an SNS topic is subscribed to by an email address of a user who 
 
 **References**:
 
-* [https://docs.aws.amazon.com/sns/latest/api/API_Subscribe.html](https://docs.aws.amazon.com/sns/latest/api/API_Subscribe.md)
+* [https://docs.aws.amazon.com/sns/latest/api/API_Subscribe.html](https://docs.aws.amazon.com/sns/latest/api/API_Subscribe.html)
 
 **Tags**:
 
@@ -81,7 +81,7 @@ This rule identifies when an SNS topic is subscribed to by an email address of a
 
 **Additional Information**
 
-For further guidance on managing and securing SNS topics in AWS environments, refer to the [AWS SNS documentation](https://docs.aws.amazon.com/sns/latest/dg/welcome.md) and AWS best practices for security.
+For further guidance on managing and securing SNS topics in AWS environments, refer to the [AWS SNS documentation](https://docs.aws.amazon.com/sns/latest/dg/welcome.html) and AWS best practices for security.
 
 
 ## Rule query [_rule_query_5036]

@@ -26,8 +26,8 @@ Identifies attempts to delete an AWS Config Service resource. An adversary may t
 
 **References**:
 
-* [https://docs.aws.amazon.com/config/latest/developerguide/how-does-config-work.html](https://docs.aws.amazon.com/config/latest/developerguide/how-does-config-work.md)
-* [https://docs.aws.amazon.com/config/latest/APIReference/API_Operations.html](https://docs.aws.amazon.com/config/latest/APIReference/API_Operations.md)
+* [https://docs.aws.amazon.com/config/latest/developerguide/how-does-config-work.html](https://docs.aws.amazon.com/config/latest/developerguide/how-does-config-work.html)
+* [https://docs.aws.amazon.com/config/latest/APIReference/API_Operations.html](https://docs.aws.amazon.com/config/latest/APIReference/API_Operations.html)
 
 **Tags**:
 

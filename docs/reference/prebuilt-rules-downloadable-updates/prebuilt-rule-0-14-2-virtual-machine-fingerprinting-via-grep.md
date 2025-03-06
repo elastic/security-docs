@@ -26,7 +26,7 @@ An adversary may attempt to get detailed information about the operating system 
 
 **References**:
 
-* [https://objective-see.com/blog/blog_0x4F.html](https://objective-see.com/blog/blog_0x4F.md)
+* [https://objective-see.com/blog/blog_0x4F.html](https://objective-see.com/blog/blog_0x4F.html)
 
 **Tags**:
 

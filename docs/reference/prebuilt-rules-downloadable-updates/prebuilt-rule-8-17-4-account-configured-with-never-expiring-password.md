@@ -27,8 +27,8 @@ Detects the creation and modification of an account with the "Don’t Expire Pas
 
 **References**:
 
-* [https://www.cert.ssi.gouv.fr/uploads/guide-ad.html#dont_expire](https://www.cert.ssi.gouv.fr/uploads/guide-ad.md#dont_expire)
-* [http://web.archive.org/web/20230329171952/https://blog.menasec.net/2019/02/threat-hunting-26-persistent-password.html](http://web.archive.org/web/20230329171952/https://blog.menasec.net/2019/02/threat-hunting-26-persistent-password.md)
+* [https://www.cert.ssi.gouv.fr/uploads/guide-ad.html#dont_expire](https://www.cert.ssi.gouv.fr/uploads/guide-ad.html#dont_expire)
+* [http://web.archive.org/web/20230329171952/https://blog.menasec.net/2019/02/threat-hunting-26-persistent-password.html](http://web.archive.org/web/20230329171952/https://blog.menasec.net/2019/02/threat-hunting-26-persistent-password.html)
 
 **Tags**:
 

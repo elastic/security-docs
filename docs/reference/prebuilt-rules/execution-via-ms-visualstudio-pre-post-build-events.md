@@ -26,7 +26,7 @@ Identifies the execution of a command via Microsoft Visual Studio Pre or Post bu
 **References**:
 
 * [https://docs.microsoft.com/en-us/visualstudio/ide/reference/pre-build-event-post-build-event-command-line-dialog-box?view=vs-2022](https://docs.microsoft.com/en-us/visualstudio/ide/reference/pre-build-event-post-build-event-command-line-dialog-box?view=vs-2022)
-* [https://www.pwc.com/gx/en/issues/cybersecurity/cyber-threat-intelligence/threat-actor-of-in-tur-est.html](https://www.pwc.com/gx/en/issues/cybersecurity/cyber-threat-intelligence/threat-actor-of-in-tur-est.md)
+* [https://www.pwc.com/gx/en/issues/cybersecurity/cyber-threat-intelligence/threat-actor-of-in-tur-est.html](https://www.pwc.com/gx/en/issues/cybersecurity/cyber-threat-intelligence/threat-actor-of-in-tur-est.html)
 * [https://blog.google/threat-analysis-group/new-campaign-targeting-security-researchers/](https://blog.google/threat-analysis-group/new-campaign-targeting-security-researchers/)
 * [https://github.com/sbousseaden/EVTX-ATTACK-SAMPLES/blob/master/Execution/execution_evasion_visual_studio_prebuild_event.evtx](https://github.com/sbousseaden/EVTX-ATTACK-SAMPLES/blob/master/Execution/execution_evasion_visual_studio_prebuild_event.evtx)
 

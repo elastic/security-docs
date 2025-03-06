@@ -27,7 +27,7 @@ Identifies the use of osascript to execute scripts via standard input that may p
 **References**:
 
 * [https://github.com/EmpireProject/EmPyre/blob/master/lib/modules/collection/osx/prompt.py](https://github.com/EmpireProject/EmPyre/blob/master/lib/modules/collection/osx/prompt.py)
-* [https://ss64.com/osx/osascript.html](https://ss64.com/osx/osascript.md)
+* [https://ss64.com/osx/osascript.html](https://ss64.com/osx/osascript.html)
 
 **Tags**:
 

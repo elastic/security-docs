@@ -26,7 +26,7 @@ Identifies when an AWS Simple Queue Service (SQS) queue is purged. Adversaries m
 
 **References**:
 
-* [https://docs.aws.amazon.com/AWSSimpleQueueService/latest/APIReference/API_PurgeQueue.html](https://docs.aws.amazon.com/AWSSimpleQueueService/latest/APIReference/API_PurgeQueue.md)
+* [https://docs.aws.amazon.com/AWSSimpleQueueService/latest/APIReference/API_PurgeQueue.html](https://docs.aws.amazon.com/AWSSimpleQueueService/latest/APIReference/API_PurgeQueue.html)
 * [https://hackingthe.cloud/aws/exploitation/Misconfigured_Resource-Based_Policies/exploting_public_resources_attack_playbook/](https://hackingthe.cloud/aws/exploitation/Misconfigured_Resource-Based_Policies/exploting_public_resources_attack_playbook/)
 
 **Tags**:
@@ -90,7 +90,7 @@ This rule detects when an AWS SQS queue is purged, an action that adversaries ma
 
 **Additional Information**
 
-For further guidance on AWS SQS operations and best practices, refer to: - [AWS SQS PurgeQueue API Documentation](https://docs.aws.amazon.com/AWSSimpleQueueService/latest/APIReference/API_PurgeQueue.md)
+For further guidance on AWS SQS operations and best practices, refer to: - [AWS SQS PurgeQueue API Documentation](https://docs.aws.amazon.com/AWSSimpleQueueService/latest/APIReference/API_PurgeQueue.html)
 
 
 ## Rule query [_rule_query_4820]

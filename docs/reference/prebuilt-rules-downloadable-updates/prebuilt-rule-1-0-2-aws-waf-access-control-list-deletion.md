@@ -26,8 +26,8 @@ Identifies the deletion of a specified AWS Web Application Firewall (WAF) access
 
 **References**:
 
-* [https://awscli.amazonaws.com/v2/documentation/api/latest/reference/waf-regional/delete-web-acl.html](https://awscli.amazonaws.com/v2/documentation/api/latest/reference/waf-regional/delete-web-acl.md)
-* [https://docs.aws.amazon.com/waf/latest/APIReference/API_wafRegional_DeleteWebACL.html](https://docs.aws.amazon.com/waf/latest/APIReference/API_wafRegional_DeleteWebACL.md)
+* [https://awscli.amazonaws.com/v2/documentation/api/latest/reference/waf-regional/delete-web-acl.html](https://awscli.amazonaws.com/v2/documentation/api/latest/reference/waf-regional/delete-web-acl.html)
+* [https://docs.aws.amazon.com/waf/latest/APIReference/API_wafRegional_DeleteWebACL.html](https://docs.aws.amazon.com/waf/latest/APIReference/API_wafRegional_DeleteWebACL.html)
 
 **Tags**:
 

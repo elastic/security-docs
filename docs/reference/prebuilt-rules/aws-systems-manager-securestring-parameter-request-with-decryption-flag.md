@@ -26,8 +26,8 @@ Detects the first occurrence of a user identity accessing AWS Systems Manager (S
 
 **References**:
 
-* [https://docs.aws.amazon.com/vsts/latest/userguide/systemsmanager-getparameter.html](https://docs.aws.amazon.com/vsts/latest/userguide/systemsmanager-getparameter.md)
-* [https://docs.aws.amazon.com/systems-manager/latest/userguide/systems-manager-parameter-store.html](https://docs.aws.amazon.com/systems-manager/latest/userguide/systems-manager-parameter-store.md)
+* [https://docs.aws.amazon.com/vsts/latest/userguide/systemsmanager-getparameter.html](https://docs.aws.amazon.com/vsts/latest/userguide/systemsmanager-getparameter.html)
+* [https://docs.aws.amazon.com/systems-manager/latest/userguide/systems-manager-parameter-store.html](https://docs.aws.amazon.com/systems-manager/latest/userguide/systems-manager-parameter-store.html)
 
 **Tags**:
 

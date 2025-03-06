@@ -1,6 +1,7 @@
 ---
 mapped_pages:
   - https://www.elastic.co/guide/en/security/current/aws-ec2-route-table-modified-or-deleted.html
+  - https://www.elastic.co/guide/en/security/current/aws-route-table-modified-or-deleted.html
 ---
 
 # AWS EC2 Route Table Modified or Deleted [aws-ec2-route-table-modified-or-deleted]
@@ -28,11 +29,11 @@ Identifies AWS CloudTrail events where an EC2 route table or association has bee
 
 * [https://github.com/easttimor/aws-incident-response#network-routing](https://github.com/easttimor/aws-incident-response#network-routing)
 * [https://docs.datadoghq.com/security_platform/default_rules/aws-ec2-route-table-modified/](https://docs.datadoghq.com/security_platform/default_rules/aws-ec2-route-table-modified/)
-* [https://docs.aws.amazon.com/AWSEC2/latest/APIReference/API_ReplaceRoute.html](https://docs.aws.amazon.com/AWSEC2/latest/APIReference/API_ReplaceRoute.md)
+* [https://docs.aws.amazon.com/AWSEC2/latest/APIReference/API_ReplaceRoute.html](https://docs.aws.amazon.com/AWSEC2/latest/APIReference/API_ReplaceRoute.html)
 * [https://docs.aws.amazon.com/AWSEC2/latest/APIReference/API_ReplaceRouteTableAssociation](https://docs.aws.amazon.com/AWSEC2/latest/APIReference/API_ReplaceRouteTableAssociation)
-* [https://docs.aws.amazon.com/AWSEC2/latest/APIReference/API_DeleteRouteTable.html](https://docs.aws.amazon.com/AWSEC2/latest/APIReference/API_DeleteRouteTable.md)
-* [https://docs.aws.amazon.com/AWSEC2/latest/APIReference/API_DeleteRoute.html](https://docs.aws.amazon.com/AWSEC2/latest/APIReference/API_DeleteRoute.md)
-* [https://docs.aws.amazon.com/AWSEC2/latest/APIReference/API_DisassociateRouteTable.html](https://docs.aws.amazon.com/AWSEC2/latest/APIReference/API_DisassociateRouteTable.md)
+* [https://docs.aws.amazon.com/AWSEC2/latest/APIReference/API_DeleteRouteTable.html](https://docs.aws.amazon.com/AWSEC2/latest/APIReference/API_DeleteRouteTable.html)
+* [https://docs.aws.amazon.com/AWSEC2/latest/APIReference/API_DeleteRoute.html](https://docs.aws.amazon.com/AWSEC2/latest/APIReference/API_DeleteRoute.html)
+* [https://docs.aws.amazon.com/AWSEC2/latest/APIReference/API_DisassociateRouteTable.html](https://docs.aws.amazon.com/AWSEC2/latest/APIReference/API_DisassociateRouteTable.html)
 
 **Tags**:
 

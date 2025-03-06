@@ -28,7 +28,7 @@ Detects a Roshal Archive (RAR) file or PowerShell script downloaded from the int
 
 **References**:
 
-* [https://www.fireeye.com/blog/threat-research/2017/04/fin7-phishing-lnk.html](https://www.fireeye.com/blog/threat-research/2017/04/fin7-phishing-lnk.md)
+* [https://www.fireeye.com/blog/threat-research/2017/04/fin7-phishing-lnk.html](https://www.fireeye.com/blog/threat-research/2017/04/fin7-phishing-lnk.html)
 * [https://www.justice.gov/opa/press-release/file/1084361/download](https://www.justice.gov/opa/press-release/file/1084361/download)
 * [https://www.iana.org/assignments/iana-ipv4-special-registry/iana-ipv4-special-registry.xhtml](https://www.iana.org/assignments/iana-ipv4-special-registry/iana-ipv4-special-registry.xhtml)
 

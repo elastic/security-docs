@@ -28,7 +28,7 @@ Halfbaked is a malware family used to establish persistence in a contested netwo
 
 **References**:
 
-* [https://www.fireeye.com/blog/threat-research/2017/04/fin7-phishing-lnk.html](https://www.fireeye.com/blog/threat-research/2017/04/fin7-phishing-lnk.md)
+* [https://www.fireeye.com/blog/threat-research/2017/04/fin7-phishing-lnk.html](https://www.fireeye.com/blog/threat-research/2017/04/fin7-phishing-lnk.html)
 * [https://attack.mitre.org/software/S0151/](https://attack.mitre.org/software/S0151/)
 
 **Tags**:

@@ -127,7 +127,7 @@ This rule detects when a login profile is added to the AWS root account. Adding 
 
 **Additional Resources**
 
-* AWS documentation on [Login Profile Management](https://docs.aws.amazon.com/IAM/latest/APIReference/API_CreateLoginProfile.md).
+* AWS documentation on [Login Profile Management](https://docs.aws.amazon.com/IAM/latest/APIReference/API_CreateLoginProfile.html).
 
 
 ## Rule query [_rule_query_54]

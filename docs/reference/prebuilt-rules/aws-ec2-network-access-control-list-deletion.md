@@ -26,10 +26,10 @@ Identifies the deletion of an Amazon Elastic Compute Cloud (EC2) network access 
 
 **References**:
 
-* [https://awscli.amazonaws.com/v2/documentation/api/latest/reference/ec2/delete-network-acl.html](https://awscli.amazonaws.com/v2/documentation/api/latest/reference/ec2/delete-network-acl.md)
-* [https://docs.aws.amazon.com/AWSEC2/latest/APIReference/API_DeleteNetworkAcl.html](https://docs.aws.amazon.com/AWSEC2/latest/APIReference/API_DeleteNetworkAcl.md)
-* [https://awscli.amazonaws.com/v2/documentation/api/latest/reference/ec2/delete-network-acl-entry.html](https://awscli.amazonaws.com/v2/documentation/api/latest/reference/ec2/delete-network-acl-entry.md)
-* [https://docs.aws.amazon.com/AWSEC2/latest/APIReference/API_DeleteNetworkAclEntry.html](https://docs.aws.amazon.com/AWSEC2/latest/APIReference/API_DeleteNetworkAclEntry.md)
+* [https://awscli.amazonaws.com/v2/documentation/api/latest/reference/ec2/delete-network-acl.html](https://awscli.amazonaws.com/v2/documentation/api/latest/reference/ec2/delete-network-acl.html)
+* [https://docs.aws.amazon.com/AWSEC2/latest/APIReference/API_DeleteNetworkAcl.html](https://docs.aws.amazon.com/AWSEC2/latest/APIReference/API_DeleteNetworkAcl.html)
+* [https://awscli.amazonaws.com/v2/documentation/api/latest/reference/ec2/delete-network-acl-entry.html](https://awscli.amazonaws.com/v2/documentation/api/latest/reference/ec2/delete-network-acl-entry.html)
+* [https://docs.aws.amazon.com/AWSEC2/latest/APIReference/API_DeleteNetworkAclEntry.html](https://docs.aws.amazon.com/AWSEC2/latest/APIReference/API_DeleteNetworkAclEntry.html)
 
 **Tags**:
 

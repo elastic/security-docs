@@ -29,7 +29,7 @@ Identifies the registration of a Werfault Debugger. Attackers may abuse this mec
 
 **References**:
 
-* [https://cocomelonc.github.io/malware/2022/11/02/malware-pers-18.html](https://cocomelonc.github.io/malware/2022/11/02/malware-pers-18.md)
+* [https://cocomelonc.github.io/malware/2022/11/02/malware-pers-18.html](https://cocomelonc.github.io/malware/2022/11/02/malware-pers-18.html)
 
 **Tags**:
 

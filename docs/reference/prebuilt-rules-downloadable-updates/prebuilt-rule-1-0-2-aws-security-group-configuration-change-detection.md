@@ -26,7 +26,7 @@ Identifies a change to an AWS security group configuration. A security group is 
 
 **References**:
 
-* [https://docs.aws.amazon.com/AWSEC2/latest/WindowsGuide/ec2-security-groups.html](https://docs.aws.amazon.com/AWSEC2/latest/WindowsGuide/ec2-security-groups.md)
+* [https://docs.aws.amazon.com/AWSEC2/latest/WindowsGuide/ec2-security-groups.html](https://docs.aws.amazon.com/AWSEC2/latest/WindowsGuide/ec2-security-groups.html)
 
 **Tags**:
 

@@ -29,7 +29,7 @@ This rule detects the execution of the `grep` command with the `plugins` argumen
 **References**:
 
 * [https://github.com/rapid7/metasploit-framework/blob/master/modules/exploits/linux/local/yum_package_manager_persistence.rb](https://github.com/rapid7/metasploit-framework/blob/master/modules/exploits/linux/local/yum_package_manager_persistence.rb)
-* [https://pwnshift.github.io/2020/10/01/persistence.html](https://pwnshift.github.io/2020/10/01/persistence.md)
+* [https://pwnshift.github.io/2020/10/01/persistence.html](https://pwnshift.github.io/2020/10/01/persistence.html)
 * [https://www.elastic.co/security-labs/sequel-on-persistence-mechanisms](https://www.elastic.co/security-labs/sequel-on-persistence-mechanisms)
 
 **Tags**:

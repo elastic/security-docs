@@ -26,7 +26,7 @@ Identifies unusual files downloaded from outside the local network that have the
 **References**:
 
 * [https://x.com/Laughing_Mantis/status/1518766501385318406](https://x.com/Laughing_Mantis/status/1518766501385318406)
-* [https://wikileaks.org/ciav7p1/cms/page_13763375.html](https://wikileaks.org/ciav7p1/cms/page_13763375.md)
+* [https://wikileaks.org/ciav7p1/cms/page_13763375.html](https://wikileaks.org/ciav7p1/cms/page_13763375.html)
 
 **Tags**:
 

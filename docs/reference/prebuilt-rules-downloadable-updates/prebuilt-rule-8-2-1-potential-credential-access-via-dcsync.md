@@ -27,7 +27,7 @@ This rule identifies when a User Account starts the Active Directory Replication
 **References**:
 
 * [https://threathunterplaybook.com/notebooks/windows/06_credential_access/WIN-180815210510.html](https://threathunterplaybook.com/notebooks/windows/06_credential_access/WIN-180815210510.md)
-* [https://threathunterplaybook.com/library/windows/active_directory_replication.html?highlight=dcsync#directory-replication-services-auditing](https://threathunterplaybook.com/library/windows/active_directory_replication.md?highlight=dcsync#directory-replication-services-auditing)
+* [https://threathunterplaybook.com/library/windows/active_directory_replication.html?highlight=dcsync#directory-replication-services-auditing](https://threathunterplaybook.com/library/windows/active_directory_replication.html?highlight=dcsync#directory-replication-services-auditing)
 * [https://github.com/SigmaHQ/sigma/blob/master/rules/windows/builtin/security/win_ad_replication_non_machine_account.yml](https://github.com/SigmaHQ/sigma/blob/master/rules/windows/builtin/security/win_ad_replication_non_machine_account.yml)
 * [https://github.com/atc-project/atomic-threat-coverage/blob/master/Atomic_Threat_Coverage/Logging_Policies/LP_0027_windows_audit_directory_service_access.md](https://github.com/atc-project/atomic-threat-coverage/blob/master/Atomic_Threat_Coverage/Logging_Policies/LP_0027_windows_audit_directory_service_access.md)
 * [https://attack.stealthbits.com/privilege-escalation-using-mimikatz-dcsync](https://attack.stealthbits.com/privilege-escalation-using-mimikatz-dcsync)

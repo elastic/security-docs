@@ -24,7 +24,7 @@ Identifies when a single AWS resource is making `GetServiceQuota` API calls for 
 **References**:
 
 * [https://www.sentinelone.com/labs/exploring-fbot-python-based-malware-targeting-cloud-and-payment-services/](https://www.sentinelone.com/labs/exploring-fbot-python-based-malware-targeting-cloud-and-payment-services/)
-* [https://docs.aws.amazon.com/servicequotas/2019-06-24/apireference/API_GetServiceQuota.html](https://docs.aws.amazon.com/servicequotas/2019-06-24/apireference/API_GetServiceQuota.md)
+* [https://docs.aws.amazon.com/servicequotas/2019-06-24/apireference/API_GetServiceQuota.html](https://docs.aws.amazon.com/servicequotas/2019-06-24/apireference/API_GetServiceQuota.html)
 
 **Tags**:
 

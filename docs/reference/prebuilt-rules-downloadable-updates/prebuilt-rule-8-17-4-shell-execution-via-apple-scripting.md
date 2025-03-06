@@ -25,7 +25,7 @@ Identifies the execution of the shell process (sh) via scripting (JXA or AppleSc
 
 **References**:
 
-* [https://developer.apple.com/library/archive/technotes/tn2065/_index.html](https://developer.apple.com/library/archive/technotes/tn2065/_index.md)
+* [https://developer.apple.com/library/archive/technotes/tn2065/_index.html](https://developer.apple.com/library/archive/technotes/tn2065/_index.html)
 * [https://objectivebythesea.com/v2/talks/OBTS_v2_Thomas.pdf](https://objectivebythesea.com/v2/talks/OBTS_v2_Thomas.pdf)
 
 **Tags**:

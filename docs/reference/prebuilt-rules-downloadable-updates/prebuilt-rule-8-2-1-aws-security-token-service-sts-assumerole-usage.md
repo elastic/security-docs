@@ -26,7 +26,7 @@ Identifies the use of AssumeRole. AssumeRole returns a set of temporary security
 
 **References**:
 
-* [https://docs.aws.amazon.com/STS/latest/APIReference/API_AssumeRole.html](https://docs.aws.amazon.com/STS/latest/APIReference/API_AssumeRole.md)
+* [https://docs.aws.amazon.com/STS/latest/APIReference/API_AssumeRole.html](https://docs.aws.amazon.com/STS/latest/APIReference/API_AssumeRole.html)
 
 **Tags**:
 

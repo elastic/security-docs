@@ -26,7 +26,7 @@ Identifies when a user has updated a SAML provider in AWS. SAML providers are us
 
 **References**:
 
-* [https://docs.aws.amazon.com/IAM/latest/APIReference/API_UpdateSAMLProvider.html](https://docs.aws.amazon.com/IAM/latest/APIReference/API_UpdateSAMLProvider.md)
+* [https://docs.aws.amazon.com/IAM/latest/APIReference/API_UpdateSAMLProvider.html](https://docs.aws.amazon.com/IAM/latest/APIReference/API_UpdateSAMLProvider.html)
 
 **Tags**:
 

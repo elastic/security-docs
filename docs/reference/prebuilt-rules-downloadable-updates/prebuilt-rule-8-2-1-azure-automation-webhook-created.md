@@ -26,7 +26,7 @@ Identifies when an Azure Automation webhook is created. Azure Automation runbook
 
 **References**:
 
-* [https://powerzure.readthedocs.io/en/latest/Functions/operational.html#create-backdoor](https://powerzure.readthedocs.io/en/latest/Functions/operational.md#create-backdoor)
+* [https://powerzure.readthedocs.io/en/latest/Functions/operational.html#create-backdoor](https://powerzure.readthedocs.io/en/latest/Functions/operational.html#create-backdoor)
 * [https://github.com/hausec/PowerZure](https://github.com/hausec/PowerZure)
 * [https://posts.specterops.io/attacking-azure-azure-ad-and-introducing-powerzure-ca70b330511a](https://posts.specterops.io/attacking-azure-azure-ad-and-introducing-powerzure-ca70b330511a)
 * [https://www.ciraltos.com/webhooks-and-azure-automation-runbooks/](https://www.ciraltos.com/webhooks-and-azure-automation-runbooks/)

@@ -26,8 +26,8 @@ This rule detects the first time a principal calls AWS Cloudwatch `CreateStack` 
 
 **References**:
 
-* [https://docs.aws.amazon.com/AWSCloudFormation/latest/UserGuide/using-cfn-cli-creating-stack.html/](https://docs.aws.amazon.com/AWSCloudFormation/latest/UserGuide/using-cfn-cli-creating-stack.md/)
-* [https://docs.aws.amazon.com/AWSCloudFormation/latest/UserGuide/stacksets-concepts.html/](https://docs.aws.amazon.com/AWSCloudFormation/latest/UserGuide/stacksets-concepts.md/)
+* [https://docs.aws.amazon.com/AWSCloudFormation/latest/UserGuide/using-cfn-cli-creating-stack.html/](https://docs.aws.amazon.com/AWSCloudFormation/latest/UserGuide/using-cfn-cli-creating-stack.html/)
+* [https://docs.aws.amazon.com/AWSCloudFormation/latest/UserGuide/stacksets-concepts.html/](https://docs.aws.amazon.com/AWSCloudFormation/latest/UserGuide/stacksets-concepts.html/)
 * [https://docs.aws.amazon.com/AWSCloudFormation/latest/APIReference/API_CreateStack.html/](https://docs.aws.amazon.com/AWSCloudFormation/latest/APIReference/API_CreateStack.md/)
 * [https://docs.aws.amazon.com/AWSCloudFormation/latest/APIReference/API_CreateStackSet.html/](https://docs.aws.amazon.com/AWSCloudFormation/latest/APIReference/API_CreateStackSet.md/)
 

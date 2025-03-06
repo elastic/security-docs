@@ -26,8 +26,8 @@ Identifies when a user has disabled or deleted an EventBridge rule. This activit
 
 **References**:
 
-* [https://docs.aws.amazon.com/eventbridge/latest/APIReference/API_DeleteRule.html](https://docs.aws.amazon.com/eventbridge/latest/APIReference/API_DeleteRule.md)
-* [https://docs.aws.amazon.com/eventbridge/latest/APIReference/API_DisableRule.html](https://docs.aws.amazon.com/eventbridge/latest/APIReference/API_DisableRule.md)
+* [https://docs.aws.amazon.com/eventbridge/latest/APIReference/API_DeleteRule.html](https://docs.aws.amazon.com/eventbridge/latest/APIReference/API_DeleteRule.html)
+* [https://docs.aws.amazon.com/eventbridge/latest/APIReference/API_DisableRule.html](https://docs.aws.amazon.com/eventbridge/latest/APIReference/API_DisableRule.html)
 
 **Tags**:
 

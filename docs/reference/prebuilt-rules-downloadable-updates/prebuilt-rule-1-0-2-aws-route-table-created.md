@@ -27,7 +27,7 @@ Identifies when an AWS Route Table has been created.
 **References**:
 
 * [https://docs.datadoghq.com/security_platform/default_rules/cloudtrail-aws-route-table-modified/](https://docs.datadoghq.com/security_platform/default_rules/cloudtrail-aws-route-table-modified/)
-* [https://docs.aws.amazon.com/AWSEC2/latest/APIReference/API_CreateRoute.html](https://docs.aws.amazon.com/AWSEC2/latest/APIReference/API_CreateRoute.md)
+* [https://docs.aws.amazon.com/AWSEC2/latest/APIReference/API_CreateRoute.html](https://docs.aws.amazon.com/AWSEC2/latest/APIReference/API_CreateRoute.html)
 * [https://docs.aws.amazon.com/AWSEC2/latest/APIReference/API_CreateRouteTable](https://docs.aws.amazon.com/AWSEC2/latest/APIReference/API_CreateRouteTable)
 
 **Tags**:

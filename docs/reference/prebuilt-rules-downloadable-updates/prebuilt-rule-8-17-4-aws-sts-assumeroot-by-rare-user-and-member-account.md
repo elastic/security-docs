@@ -26,7 +26,7 @@ Identifies when the STS `AssumeRoot` action is performed by a rare user in AWS. 
 
 **References**:
 
-* [https://docs.aws.amazon.com/STS/latest/APIReference/API_AssumeRoot.html](https://docs.aws.amazon.com/STS/latest/APIReference/API_AssumeRoot.md)
+* [https://docs.aws.amazon.com/STS/latest/APIReference/API_AssumeRoot.html](https://docs.aws.amazon.com/STS/latest/APIReference/API_AssumeRoot.html)
 
 **Tags**:
 
@@ -107,7 +107,7 @@ This rule identifies instances where AWS STS (Security Token Service) is used to
 
 **Additional Information**
 
-For more information on AssumeRoot, refer to the [AWS STS documentation](https://docs.aws.amazon.com/STS/latest/APIReference/API_AssumeRoot.md).
+For more information on AssumeRoot, refer to the [AWS STS documentation](https://docs.aws.amazon.com/STS/latest/APIReference/API_AssumeRoot.html).
 
 
 ## Rule query [_rule_query_5084]

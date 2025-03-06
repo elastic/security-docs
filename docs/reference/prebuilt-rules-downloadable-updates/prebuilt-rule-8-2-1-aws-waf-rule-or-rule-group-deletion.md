@@ -26,8 +26,8 @@ Identifies the deletion of a specified AWS Web Application Firewall (WAF) rule o
 
 **References**:
 
-* [https://awscli.amazonaws.com/v2/documentation/api/latest/reference/waf/delete-rule-group.html](https://awscli.amazonaws.com/v2/documentation/api/latest/reference/waf/delete-rule-group.md)
-* [https://docs.aws.amazon.com/waf/latest/APIReference/API_waf_DeleteRuleGroup.html](https://docs.aws.amazon.com/waf/latest/APIReference/API_waf_DeleteRuleGroup.md)
+* [https://awscli.amazonaws.com/v2/documentation/api/latest/reference/waf/delete-rule-group.html](https://awscli.amazonaws.com/v2/documentation/api/latest/reference/waf/delete-rule-group.html)
+* [https://docs.aws.amazon.com/waf/latest/APIReference/API_waf_DeleteRuleGroup.html](https://docs.aws.amazon.com/waf/latest/APIReference/API_waf_DeleteRuleGroup.html)
 
 **Tags**:
 

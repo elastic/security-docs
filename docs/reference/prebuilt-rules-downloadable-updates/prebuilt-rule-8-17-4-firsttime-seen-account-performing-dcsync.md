@@ -28,7 +28,7 @@ This rule identifies when a User Account starts the Active Directory Replication
 **References**:
 
 * [https://threathunterplaybook.com/notebooks/windows/06_credential_access/WIN-180815210510.html](https://threathunterplaybook.com/notebooks/windows/06_credential_access/WIN-180815210510.md)
-* [https://threathunterplaybook.com/library/windows/active_directory_replication.html?highlight=dcsync#directory-replication-services-auditing](https://threathunterplaybook.com/library/windows/active_directory_replication.md?highlight=dcsync#directory-replication-services-auditing)
+* [https://threathunterplaybook.com/library/windows/active_directory_replication.html?highlight=dcsync#directory-replication-services-auditing](https://threathunterplaybook.com/library/windows/active_directory_replication.html?highlight=dcsync#directory-replication-services-auditing)
 * [https://github.com/SigmaHQ/sigma/blob/master/rules/windows/builtin/security/win_ad_replication_non_machine_account.yml](https://github.com/SigmaHQ/sigma/blob/master/rules/windows/builtin/security/win_ad_replication_non_machine_account.yml)
 * [https://github.com/atc-project/atomic-threat-coverage/blob/master/Atomic_Threat_Coverage/Logging_Policies/LP_0027_windows_audit_directory_service_access.md](https://github.com/atc-project/atomic-threat-coverage/blob/master/Atomic_Threat_Coverage/Logging_Policies/LP_0027_windows_audit_directory_service_access.md)
 * [https://attack.stealthbits.com/privilege-escalation-using-mimikatz-dcsync](https://attack.stealthbits.com/privilege-escalation-using-mimikatz-dcsync)
@@ -66,7 +66,7 @@ Active Directory data consists of objects that have properties, or attributes. E
 
 Adversaries can use the DCSync technique that uses Windows Domain Controller’s API to simulate the replication process from a remote domain controller, compromising major credential material such as the Kerberos krbtgt keys that are used legitimately for creating tickets, but also for forging tickets by attackers. This attack requires some extended privileges to succeed (DS-Replication-Get-Changes and DS-Replication-Get-Changes-All), which are granted by default to members of the Administrators, Domain Admins, Enterprise Admins, and Domain Controllers groups. Privileged accounts can be abused to grant controlled objects the right to DCsync/Replicate.
 
-More details can be found on [Threat Hunter Playbook](https://threathunterplaybook.com/library/windows/active_directory_replication.md?highlight=dcsync#directory-replication-services-auditing) and [The Hacker Recipes](https://www.thehacker.recipes/ad/movement/credentials/dumping/dcsync).
+More details can be found on [Threat Hunter Playbook](https://threathunterplaybook.com/library/windows/active_directory_replication.html?highlight=dcsync#directory-replication-services-auditing) and [The Hacker Recipes](https://www.thehacker.recipes/ad/movement/credentials/dumping/dcsync).
 
 This rule monitors for when a Windows Event ID 4662 (Operation was performed on an Active Directory object) with the access mask 0x100 (Control Access) and properties that contain at least one of the following or their equivalent Schema-Id-GUID (DS-Replication-Get-Changes, DS-Replication-Get-Changes-All, DS-Replication-Get-Changes-In-Filtered-Set) is seen in the environment for the first time in the last 15 days.
 

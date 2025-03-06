@@ -23,8 +23,8 @@ An adversary with access to a set of compromised credentials may attempt to pers
 
 **References**:
 
-* [https://docs.aws.amazon.com/IAM/latest/APIReference/API_AttachGroupPolicy.html](https://docs.aws.amazon.com/IAM/latest/APIReference/API_AttachGroupPolicy.md)
-* [https://docs.aws.amazon.com/aws-managed-policy/latest/reference/AdministratorAccess.html](https://docs.aws.amazon.com/aws-managed-policy/latest/reference/AdministratorAccess.md)
+* [https://docs.aws.amazon.com/IAM/latest/APIReference/API_AttachGroupPolicy.html](https://docs.aws.amazon.com/IAM/latest/APIReference/API_AttachGroupPolicy.html)
+* [https://docs.aws.amazon.com/aws-managed-policy/latest/reference/AdministratorAccess.html](https://docs.aws.amazon.com/aws-managed-policy/latest/reference/AdministratorAccess.html)
 * [https://hackingthe.cloud/aws/exploitation/iam_privilege_escalation/](https://hackingthe.cloud/aws/exploitation/iam_privilege_escalation/)
 
 **Tags**:

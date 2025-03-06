@@ -26,7 +26,7 @@ Identifies when a Route53 private hosted zone has been associated with VPC.
 
 **References**:
 
-* [https://docs.aws.amazon.com/Route53/latest/APIReference/API_AssociateVPCWithHostedZone.html](https://docs.aws.amazon.com/Route53/latest/APIReference/API_AssociateVPCWithHostedZone.md)
+* [https://docs.aws.amazon.com/Route53/latest/APIReference/API_AssociateVPCWithHostedZone.html](https://docs.aws.amazon.com/Route53/latest/APIReference/API_AssociateVPCWithHostedZone.html)
 
 **Tags**:
 

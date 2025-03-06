@@ -29,7 +29,7 @@ Identifies the attempted use of a heap-based buffer overflow vulnerability for t
 * [https://cve.mitre.org/cgi-bin/cvename.cgi?name=2021-3156](https://cve.mitre.org/cgi-bin/cvename.cgi?name=2021-3156)
 * [https://blog.qualys.com/vulnerabilities-research/2021/01/26/cve-2021-3156-heap-based-buffer-overflow-in-sudo-baron-samedit](https://blog.qualys.com/vulnerabilities-research/2021/01/26/cve-2021-3156-heap-based-buffer-overflow-in-sudo-baron-samedit)
 * [https://www.bleepingcomputer.com/news/security/latest-macos-big-sur-also-has-sudo-root-privilege-escalation-flaw](https://www.bleepingcomputer.com/news/security/latest-macos-big-sur-also-has-sudo-root-privilege-escalation-flaw)
-* [https://www.sudo.ws/alerts/unescape_overflow.html](https://www.sudo.ws/alerts/unescape_overflow.md)
+* [https://www.sudo.ws/alerts/unescape_overflow.html](https://www.sudo.ws/alerts/unescape_overflow.html)
 
 **Tags**:
 

@@ -26,7 +26,7 @@ Identifies an attempt to export an AWS EC2 instance. A virtual machine (VM) expo
 
 **References**:
 
-* [https://docs.aws.amazon.com/vm-import/latest/userguide/vmexport.html#export-instance](https://docs.aws.amazon.com/vm-import/latest/userguide/vmexport.md#export-instance)
+* [https://docs.aws.amazon.com/vm-import/latest/userguide/vmexport.html#export-instance](https://docs.aws.amazon.com/vm-import/latest/userguide/vmexport.html#export-instance)
 
 **Tags**:
 

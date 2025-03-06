@@ -81,7 +81,7 @@ This rule detects multiple discovery-related API calls (`Describe`, `List`, or `
 
 **Additional Information**
 
-For further guidance on AWS infrastructure discovery and best practices, refer to [AWS CloudTrail documentation](https://docs.aws.amazon.com/awscloudtrail/latest/userguide/cloudtrail-event-reference.md) and MITRE ATT&CK’s [Cloud Infrastructure Discovery](https://attack.mitre.org/techniques/T1580/).
+For further guidance on AWS infrastructure discovery and best practices, refer to [AWS CloudTrail documentation](https://docs.aws.amazon.com/awscloudtrail/latest/userguide/cloudtrail-event-reference.html) and MITRE ATT&CK’s [Cloud Infrastructure Discovery](https://attack.mitre.org/techniques/T1580/).
 
 
 ## Rule query [_rule_query_5021]

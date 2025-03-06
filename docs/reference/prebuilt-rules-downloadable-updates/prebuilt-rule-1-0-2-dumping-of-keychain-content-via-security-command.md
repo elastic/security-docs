@@ -26,7 +26,7 @@ Adversaries may dump the content of the keychain storage data from a system to a
 
 **References**:
 
-* [https://ss64.com/osx/security.html](https://ss64.com/osx/security.md)
+* [https://ss64.com/osx/security.html](https://ss64.com/osx/security.html)
 
 **Tags**:
 

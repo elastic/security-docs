@@ -26,7 +26,7 @@ Identifies when a Route53 Resolver Query Log Configuration is deleted. When a Ro
 
 **References**:
 
-* [https://docs.aws.amazon.com/Route53/latest/APIReference/API_route53resolver_DeleteResolverQueryLogConfig.html](https://docs.aws.amazon.com/Route53/latest/APIReference/API_route53resolver_DeleteResolverQueryLogConfig.md)
+* [https://docs.aws.amazon.com/Route53/latest/APIReference/API_route53resolver_DeleteResolverQueryLogConfig.html](https://docs.aws.amazon.com/Route53/latest/APIReference/API_route53resolver_DeleteResolverQueryLogConfig.html)
 
 **Tags**:
 
@@ -82,7 +82,7 @@ Adversaries target Route53 Resolver query log configurations because these logs 
 
 **Additional Information**
 
-For detailed instructions on managing Route53 Resolver and securing its configurations, refer to the [Amazon Route53 Resolver documentation](https://docs.aws.amazon.com/Route53/latest/APIReference/API_route53resolver_DeleteResolverQueryLogConfig.md).
+For detailed instructions on managing Route53 Resolver and securing its configurations, refer to the [Amazon Route53 Resolver documentation](https://docs.aws.amazon.com/Route53/latest/APIReference/API_route53resolver_DeleteResolverQueryLogConfig.html).
 
 
 ## Rule query [_rule_query_5010]

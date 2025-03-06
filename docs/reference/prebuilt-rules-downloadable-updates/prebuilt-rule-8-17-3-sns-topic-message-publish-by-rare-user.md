@@ -26,7 +26,7 @@ Identifies when an SNS topic message is published by a rare user in AWS. Adversa
 
 **References**:
 
-* [https://docs.aws.amazon.com/sns/latest/api/API_Publish.html](https://docs.aws.amazon.com/sns/latest/api/API_Publish.md)
+* [https://docs.aws.amazon.com/sns/latest/api/API_Publish.html](https://docs.aws.amazon.com/sns/latest/api/API_Publish.html)
 * [https://hackingthe.cloud/aws/exploitation/Misconfigured_Resource-Based_Policies/exploting_public_resources_attack_playbook/](https://hackingthe.cloud/aws/exploitation/Misconfigured_Resource-Based_Policies/exploting_public_resources_attack_playbook/)
 
 **Tags**:
@@ -100,7 +100,7 @@ This rule identifies when a message is published to an SNS topic by a user who h
 
 **Additional Information**
 
-For more information on SNS topic management and securing AWS resources, refer to: - [AWS SNS Publish API Documentation](https://docs.aws.amazon.com/sns/latest/api/API_Publish.md) - [AWS CloudTrail Documentation](https://docs.aws.amazon.com/awscloudtrail/latest/userguide/cloudtrail-event-reference.md)
+For more information on SNS topic management and securing AWS resources, refer to: - [AWS SNS Publish API Documentation](https://docs.aws.amazon.com/sns/latest/api/API_Publish.html) - [AWS CloudTrail Documentation](https://docs.aws.amazon.com/awscloudtrail/latest/userguide/cloudtrail-event-reference.html)
 
 
 ## Rule query [_rule_query_4824]

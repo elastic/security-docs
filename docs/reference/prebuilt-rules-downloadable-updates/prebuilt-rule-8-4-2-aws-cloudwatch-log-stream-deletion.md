@@ -26,8 +26,8 @@ Identifies the deletion of an AWS CloudWatch log stream, which permanently delet
 
 **References**:
 
-* [https://awscli.amazonaws.com/v2/documentation/api/latest/reference/logs/delete-log-stream.html](https://awscli.amazonaws.com/v2/documentation/api/latest/reference/logs/delete-log-stream.md)
-* [https://docs.aws.amazon.com/AmazonCloudWatchLogs/latest/APIReference/API_DeleteLogStream.html](https://docs.aws.amazon.com/AmazonCloudWatchLogs/latest/APIReference/API_DeleteLogStream.md)
+* [https://awscli.amazonaws.com/v2/documentation/api/latest/reference/logs/delete-log-stream.html](https://awscli.amazonaws.com/v2/documentation/api/latest/reference/logs/delete-log-stream.html)
+* [https://docs.aws.amazon.com/AmazonCloudWatchLogs/latest/APIReference/API_DeleteLogStream.html](https://docs.aws.amazon.com/AmazonCloudWatchLogs/latest/APIReference/API_DeleteLogStream.html)
 
 **Tags**:
 

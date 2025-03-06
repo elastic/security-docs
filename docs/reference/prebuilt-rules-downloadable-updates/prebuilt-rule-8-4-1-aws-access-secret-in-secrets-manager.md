@@ -26,7 +26,7 @@ An adversary may attempt to access the secrets in secrets manager to steal certi
 
 **References**:
 
-* [https://docs.aws.amazon.com/secretsmanager/latest/apireference/API_GetSecretValue.html](https://docs.aws.amazon.com/secretsmanager/latest/apireference/API_GetSecretValue.md)
+* [https://docs.aws.amazon.com/secretsmanager/latest/apireference/API_GetSecretValue.html](https://docs.aws.amazon.com/secretsmanager/latest/apireference/API_GetSecretValue.html)
 * [http://detectioninthe.cloud/credential_access/access_secret_in_secrets_manager/](http://detectioninthe.cloud/credential_access/access_secret_in_secrets_manager/)
 
 **Tags**:

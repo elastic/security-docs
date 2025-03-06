@@ -26,8 +26,8 @@ Identifies suspending the recording of AWS API calls and log file delivery for t
 
 **References**:
 
-* [https://docs.aws.amazon.com/awscloudtrail/latest/APIReference/API_StopLogging.html](https://docs.aws.amazon.com/awscloudtrail/latest/APIReference/API_StopLogging.md)
-* [https://awscli.amazonaws.com/v2/documentation/api/latest/reference/cloudtrail/stop-logging.html](https://awscli.amazonaws.com/v2/documentation/api/latest/reference/cloudtrail/stop-logging.md)
+* [https://docs.aws.amazon.com/awscloudtrail/latest/APIReference/API_StopLogging.html](https://docs.aws.amazon.com/awscloudtrail/latest/APIReference/API_StopLogging.html)
+* [https://awscli.amazonaws.com/v2/documentation/api/latest/reference/cloudtrail/stop-logging.html](https://awscli.amazonaws.com/v2/documentation/api/latest/reference/cloudtrail/stop-logging.html)
 
 **Tags**:
 

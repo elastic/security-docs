@@ -26,7 +26,7 @@ Identifies a successful login to the AWS Management Console by the Root user.
 
 **References**:
 
-* [https://docs.aws.amazon.com/IAM/latest/UserGuide/id_root-user.html](https://docs.aws.amazon.com/IAM/latest/UserGuide/id_root-user.md)
+* [https://docs.aws.amazon.com/IAM/latest/UserGuide/id_root-user.html](https://docs.aws.amazon.com/IAM/latest/UserGuide/id_root-user.html)
 
 **Tags**:
 
@@ -52,7 +52,7 @@ Identifies a successful login to the AWS Management Console by the Root user.
 
 **Investigating AWS Management Console Root Login**
 
-The AWS root account is the one identity that has complete access to all AWS services and resources in the account, which is created when the AWS account is created. AWS strongly recommends that you do not use the root user for your everyday tasks, even the administrative ones. Instead, adhere to the best practice of using the root user only to create your first IAM user. Then securely lock away the root user credentials and use them to perform only a few account and service management tasks. AWS provides a [list of the tasks that require root user](https://docs.aws.amazon.com/general/latest/gr/root-vs-iam.md#aws_tasks-that-require-root).
+The AWS root account is the one identity that has complete access to all AWS services and resources in the account, which is created when the AWS account is created. AWS strongly recommends that you do not use the root user for your everyday tasks, even the administrative ones. Instead, adhere to the best practice of using the root user only to create your first IAM user. Then securely lock away the root user credentials and use them to perform only a few account and service management tasks. AWS provides a [list of the tasks that require root user](https://docs.aws.amazon.com/general/latest/gr/root-vs-iam.html#aws_tasks-that-require-root).
 
 This rule looks for attempts to log in to the AWS Management Console as the root user.
 

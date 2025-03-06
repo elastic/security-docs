@@ -32,7 +32,7 @@ This detection rule identifies the usage of kexec, helping to uncover unauthoriz
 
 * [https://www.crowdstrike.com/blog/venom-vulnerability-details/](https://www.crowdstrike.com/blog/venom-vulnerability-details/)
 * [https://www.makeuseof.com/what-is-venom-vulnerability/](https://www.makeuseof.com/what-is-venom-vulnerability/)
-* [https://madaidans-insecurities.github.io/guides/linux-hardening.html](https://madaidans-insecurities.github.io/guides/linux-hardening.md)
+* [https://madaidans-insecurities.github.io/guides/linux-hardening.html](https://madaidans-insecurities.github.io/guides/linux-hardening.html)
 
 **Tags**:
 
