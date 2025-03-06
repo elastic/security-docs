@@ -23,7 +23,7 @@ A machine learning job found an unusual user name in the authentication logs. An
 
 **References**:
 
-* [/reference/security/prebuilt-jobs.md](/reference/prebuilt-jobs.md)
+* [Prebuilt anomaly detection jobs](docs-content://reference/security/prebuilt-anomaly-detection-jobs.md)
 
 **Tags**:
 

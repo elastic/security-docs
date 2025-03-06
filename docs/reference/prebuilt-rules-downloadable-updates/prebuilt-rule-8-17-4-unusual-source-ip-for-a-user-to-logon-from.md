@@ -23,7 +23,7 @@ A machine learning job detected a user logging in from an IP address that is unu
 
 **References**:
 
-* [/reference/security/prebuilt-jobs.md](/reference/prebuilt-jobs.md)
+* [Prebuilt anomaly detection jobs](docs-content://reference/security/prebuilt-anomaly-detection-jobs.md)
 
 **Tags**:
 

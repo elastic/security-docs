@@ -23,7 +23,7 @@ A machine learning job detected a rare destination country name in the network l
 
 **References**:
 
-* [/reference/security/prebuilt-jobs.md](/reference/prebuilt-jobs.md)
+* [Prebuilt anomaly detection jobs](docs-content://reference/security/prebuilt-anomaly-detection-jobs.md)
 
 **Tags**:
 

@@ -23,7 +23,7 @@ A machine learning job detected an unusual error in a CloudTrail message. These 
 
 **References**:
 
-* [/reference/security/prebuilt-jobs.md](/reference/prebuilt-jobs.md)
+* [Prebuilt anomaly detection jobs](docs-content://reference/security/prebuilt-anomaly-detection-jobs.md)
 
 **Tags**:
 

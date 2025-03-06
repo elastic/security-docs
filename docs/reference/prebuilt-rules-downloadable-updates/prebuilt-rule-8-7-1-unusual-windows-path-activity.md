@@ -23,7 +23,7 @@ Identifies processes started from atypical folders in the file system, which mig
 
 **References**:
 
-* [/reference/security/prebuilt-jobs.md](/reference/prebuilt-jobs.md)
+* [Prebuilt anomaly detection jobs](docs-content://reference/security/prebuilt-anomaly-detection-jobs.md)
 
 **Tags**:
 

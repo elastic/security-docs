@@ -23,7 +23,7 @@ A machine learning job has detected a rare process writing data to an external d
 
 **References**:
 
-* [/reference/security/prebuilt-jobs.md](/reference/prebuilt-jobs.md)
+* [Prebuilt anomaly detection jobs](docs-content://reference/security/prebuilt-anomaly-detection-jobs.md)
 * [https://docs.elastic.co/en/integrations/ded](https://docs.elastic.co/en/integrations/ded)
 * [https://www.elastic.co/blog/detect-data-exfiltration-activity-with-kibanas-new-integration](https://www.elastic.co/blog/detect-data-exfiltration-activity-with-kibanas-new-integration)
 

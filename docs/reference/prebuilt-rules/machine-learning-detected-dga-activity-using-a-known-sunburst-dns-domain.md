@@ -26,7 +26,7 @@ A supervised machine learning model has identified a DNS question name that used
 
 **References**:
 
-* [/reference/security/prebuilt-jobs.md](/reference/prebuilt-jobs.md)
+* [Prebuilt anomaly detection jobs](docs-content://reference/security/prebuilt-anomaly-detection-jobs.md)
 * [https://docs.elastic.co/en/integrations/dga](https://docs.elastic.co/en/integrations/dga)
 * [https://www.elastic.co/security-labs/detect-domain-generation-algorithm-activity-with-new-kibana-integration](https://www.elastic.co/security-labs/detect-domain-generation-algorithm-activity-with-new-kibana-integration)
 
