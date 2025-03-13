@@ -7,14 +7,14 @@ Identifies the use of nltest.exe for domain trust discovery purposes. Adversarie
 
 *Rule indices*: 
 
-* winlogbeat-*
+* endgame-*
+* logs-crowdstrike.fdr*
 * logs-endpoint.events.process-*
+* logs-m365_defender.event-*
+* logs-system.security*
 * logs-windows.forwarded*
 * logs-windows.sysmon_operational-*
-* endgame-*
-* logs-system.security*
-* logs-m365_defender.event-*
-* logs-crowdstrike.fdr*
+* winlogbeat-*
 
 *Severity*: low
 
@@ -40,12 +40,12 @@ Identifies the use of nltest.exe for domain trust discovery purposes. Adversarie
 * Data Source: Elastic Endgame
 * Resources: Investigation Guide
 * Data Source: Elastic Defend
-* Data Source: System
+* Data Source: Windows Security Event Logs
 * Data Source: Microsoft Defender for Endpoint
-* Data Source: Sysmon
 * Data Source: Crowdstrike
+* Data Source: Sysmon
 
-*Version*: 214
+*Version*: 215
 
 *Rule authors*: 
 
@@ -112,8 +112,12 @@ process where host.os.type == "windows" and event.type == "start" and
         "/LSAQUERYFTI:*", "/PARENTDOMAIN",
         "/DOMAIN_TRUSTS", "/BDC_QUERY:*"
         ) and 
-not process.parent.name : "PDQInventoryScanner.exe" and 
-not user.id in ("S-1-5-18", "S-1-5-19", "S-1-5-20")
+not process.parent.name : "PDQInventoryScanner.exe" and
+not (
+  user.id in ("S-1-5-18", "S-1-5-19", "S-1-5-20") and
+  /* Don't apply the user.id exclusion to Sysmon for compatibility */
+  not event.dataset : ("windows.sysmon_operational", "windows.sysmon")
+)
 
 ----------------------------------
 

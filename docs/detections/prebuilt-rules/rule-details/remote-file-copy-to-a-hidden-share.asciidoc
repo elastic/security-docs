@@ -7,15 +7,15 @@ Identifies a remote file copy attempt to a hidden network share. This may indica
 
 *Rule indices*: 
 
-* logs-endpoint.events.process-*
-* winlogbeat-*
-* logs-windows.forwarded*
-* logs-windows.sysmon_operational-*
 * endgame-*
-* logs-system.security*
+* logs-crowdstrike.fdr*
+* logs-endpoint.events.process-*
 * logs-m365_defender.event-*
 * logs-sentinel_one_cloud_funnel.*
-* logs-crowdstrike.fdr*
+* logs-system.security*
+* logs-windows.forwarded*
+* logs-windows.sysmon_operational-*
+* winlogbeat-*
 
 *Severity*: medium
 
@@ -39,14 +39,14 @@ Identifies a remote file copy attempt to a hidden network share. This may indica
 * Tactic: Lateral Movement
 * Data Source: Elastic Endgame
 * Data Source: Elastic Defend
-* Data Source: System
+* Data Source: Windows Security Event Logs
 * Data Source: Microsoft Defender for Endpoint
 * Data Source: Sysmon
 * Data Source: SentinelOne
 * Data Source: Crowdstrike
 * Resources: Investigation Guide
 
-*Version*: 313
+*Version*: 314
 
 *Rule authors*: 
 
@@ -110,11 +110,8 @@ In Windows environments, hidden network shares are often used for legitimate adm
 [source, js]
 ----------------------------------
 process where host.os.type == "windows" and event.type == "start" and
-  (
-    process.name : ("cmd.exe", "powershell.exe", "xcopy.exe") and
-    process.args : ("copy*", "move*", "cp", "mv") or
-    process.name : "robocopy.exe"
-  ) and process.args : "*\\\\*\\*$*"
+  process.name : ("cmd.exe", "powershell.exe", "xcopy.exe", "pwsh.exe", "powershell_ise.exe") and 
+  process.command_line : "*\\\\*\\*$*" and process.command_line : ("*copy*", "*move*", "* cp *", "* mv *")
 
 ----------------------------------
 

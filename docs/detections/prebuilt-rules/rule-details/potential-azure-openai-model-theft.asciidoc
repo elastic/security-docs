@@ -1,0 +1,67 @@
+[[potential-azure-openai-model-theft]]
+=== Potential Azure OpenAI Model Theft
+
+Monitors for suspicious activities that may indicate theft or unauthorized duplication of machine learning (ML) models, such as unauthorized API calls, atypical access patterns, or large data transfers that are unusual during model interactions.
+
+*Rule type*: esql
+
+*Rule indices*: None
+
+*Severity*: medium
+
+*Risk score*: 47
+
+*Runs every*: 10m
+
+*Searches indices from*: now-60m ({ref}/common-options.html#date-math[Date Math format], see also <<rule-schedule, `Additional look-back time`>>)
+
+*Maximum alerts per execution*: 100
+
+*References*: 
+
+* https://genai.owasp.org/llmrisk/llm10-model-theft
+* https://atlas.mitre.org/techniques/AML.T0044
+
+*Tags*: 
+
+* Domain: LLM
+* Data Source: Azure OpenAI
+* Data Source: Azure Event Hubs
+* Use Case: Model Theft
+* Mitre Atlas: T0044
+
+*Version*: 1
+
+*Rule authors*: 
+
+* Elastic
+
+*Rule license*: Elastic License v2
+
+
+==== Setup
+
+
+
+*Setup*
+
+
+For more information on
+streaming events, see the Azure OpenAI documentation:
+
+https://learn.microsoft.com/en-us/azure/azure-monitor/essentials/stream-monitoring-data-event-hubs
+
+
+==== Rule query
+
+
+[source, js]
+----------------------------------
+from logs-azure_openai.logs-*
+| where azure.open_ai.operation_name == "ListKey" and azure.open_ai.category == "Audit"
+| KEEP @timestamp, azure.open_ai.operation_name , azure.open_ai.category, azure.resource.group, azure.resource.name, azure.open_ai.properties.response_length
+| stats count = count(), max_data_transferred = max(azure.open_ai.properties.response_length) by azure.resource.group , azure.resource.name
+| where count >= 100 or max_data_transferred >= 1000000
+| sort count desc
+
+----------------------------------
