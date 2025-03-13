@@ -9,7 +9,6 @@ Identifies processes executed via Windows Management Instrumentation (WMI) on a 
 
 * logs-endpoint.events.process-*
 * logs-endpoint.events.network-*
-* winlogbeat-*
 * logs-windows.sysmon_operational-*
 
 *Severity*: medium
@@ -34,7 +33,7 @@ Identifies processes executed via Windows Management Instrumentation (WMI) on a 
 * Data Source: Sysmon
 * Resources: Investigation Guide
 
-*Version*: 211
+*Version*: 212
 
 *Rule authors*: 
 
@@ -109,7 +108,11 @@ sequence by host.id with maxspan = 2s
 
   [process where host.os.type == "windows" and event.type == "start" and process.parent.name : "WmiPrvSE.exe" and
    not (?process.Ext.token.integrity_level_name : "System" or ?winlog.event_data.IntegrityLevel : "System") and
-   not user.id : ("S-1-5-18", "S-1-5-19", "S-1-5-20") and
+   not (
+         user.id : ("S-1-5-18", "S-1-5-19", "S-1-5-20") and
+         /* Don't apply the user.id exclusion to Sysmon for compatibility */
+         not event.dataset : ("windows.sysmon_operational", "windows.sysmon")
+   ) and
    not process.executable :
                ("?:\\Program Files\\HPWBEM\\Tools\\hpsum_swdiscovery.exe",
                 "?:\\Windows\\CCM\\Ccm32BitLauncher.exe",
