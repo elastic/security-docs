@@ -7,12 +7,13 @@ Identifies suspicious use of whoami.exe which displays user, group, and privileg
 
 *Rule indices*: 
 
-* winlogbeat-*
-* logs-endpoint.events.process-*
-* logs-windows.*
-* logs-system.*
 * endgame-*
+* logs-endpoint.events.process-*
 * logs-m365_defender.event-*
+* logs-system.security*
+* logs-windows.forwarded*
+* logs-windows.sysmon_operational-*
+* winlogbeat-*
 
 *Severity*: low
 
@@ -36,9 +37,10 @@ Identifies suspicious use of whoami.exe which displays user, group, and privileg
 * Data Source: Elastic Endgame
 * Data Source: Elastic Defend
 * Data Source: Microsoft Defender for Endpoint
-* Data Source: System
+* Data Source: Sysmon
+* Data Source: Windows Security Event Logs
 
-*Version*: 213
+*Version*: 214
 
 *Rule authors*: 
 
@@ -95,20 +97,6 @@ This rule looks for the execution of the `whoami` utility. Attackers commonly us
 - Using the incident response data, update logging and audit policies to improve the mean time to detect (MTTD) and the mean time to respond (MTTR).
 
 
-==== Setup
-
-
-
-*Setup*
-
-
-If enabling an EQL rule on a non-elastic-agent index (such as beats) for versions <8.2,
-events will not define `event.ingested` and default fallback for EQL rules was not added until version 8.2.
-Hence for this rule to work effectively, users will need to add a custom ingest pipeline to populate
-`event.ingested` to @timestamp.
-For more details on adding a custom ingest pipeline refer - https://www.elastic.co/guide/en/fleet/current/data-streams-pipeline-tutorial.html
-
-
 ==== Rule query
 
 
@@ -119,9 +107,15 @@ process where host.os.type == "windows" and event.type == "start" and process.na
   (
     /* scoped for whoami execution under system privileges */
     (
-      user.domain : ("NT *", "* NT", "IIS APPPOOL") and
-      user.id : ("S-1-5-18", "S-1-5-19", "S-1-5-20", "S-1-5-82-*") and
-      not ?winlog.event_data.SubjectUserName : "*$"
+      (
+        user.domain : ("NT *", "* NT", "IIS APPPOOL") and
+        user.id : ("S-1-5-18", "S-1-5-19", "S-1-5-20", "S-1-5-82-*") and
+        not ?winlog.event_data.SubjectUserName : "*$" and
+
+        /* Sysmon will always populate user.id as S-1-5-18, leading to FPs */
+        not event.dataset : ("windows.sysmon_operational", "windows.sysmon")
+      ) or
+      (?process.Ext.token.integrity_level_name : "System" or ?winlog.event_data.IntegrityLevel : "System")
     ) and
     not (
       process.parent.name : "cmd.exe" and
