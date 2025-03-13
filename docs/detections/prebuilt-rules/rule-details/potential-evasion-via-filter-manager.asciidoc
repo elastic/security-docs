@@ -7,12 +7,13 @@ The Filter Manager Control Program (fltMC.exe) binary may be abused by adversari
 
 *Rule indices*: 
 
-* winlogbeat-*
-* logs-endpoint.events.process-*
-* logs-windows.*
 * endgame-*
-* logs-system.security*
+* logs-endpoint.events.process-*
 * logs-m365_defender.event-*
+* logs-system.security*
+* logs-windows.forwarded*
+* logs-windows.sysmon_operational-*
+* winlogbeat-*
 
 *Severity*: medium
 
@@ -36,9 +37,10 @@ The Filter Manager Control Program (fltMC.exe) binary may be abused by adversari
 * Resources: Investigation Guide
 * Data Source: Elastic Defend
 * Data Source: Microsoft Defender for Endpoint
-* Data Source: System
+* Data Source: Windows Security Event Logs
+* Data Source: Sysmon
 
-*Version*: 214
+*Version*: 215
 
 *Rule authors*: 
 
@@ -120,18 +122,14 @@ This rule identifies the attempt to unload a minifilter using the `fltmc.exe` co
 ----------------------------------
 process where host.os.type == "windows" and event.type == "start" and
   process.name : "fltMC.exe" and process.args : "unload" and
-  not
-  (
-    (
-      process.executable : "?:\\Program Files (x86)\\ManageEngine\\UEMS_Agent\\bin\\DCFAService64.exe" and
-      process.args : ("DFMFilter", "DRMFilter")
-    ) or
-    (
-      process.executable : "?:\\Windows\\SysWOW64\\msiexec.exe" and
-      process.args : ("BrFilter_*", "BrCow_*") and
-      user.id : "S-1-5-18"
-    )
-  )
+  not process.parent.executable : 
+                   ("?:\\Program Files (x86)\\ManageEngine\\UEMS_Agent\\bin\\DCFAService64.exe", 
+                    "?:\\Windows\\SysWOW64\\msiexec.exe", 
+                    "?:\\Program Files\\Bitdefender\\Endpoint Security\\installer\\installer.exe", 
+                    "?:\\Program Files\\Bitdefender\\Endpoint Security\\EPSecurityService.exe", 
+                    "?:\\Program Files\\Bitdefender\\Bitdefender Security\\productcfg.exe", 
+                    "?:\\Program Files\\Bitdefender\\Bitdefender Security\\bdservicehost.exe", 
+                    "?:\\Program Files\\Bitdefender\\EndpointSetupInformation\\{*}\\Installer.exe")
 
 ----------------------------------
 
