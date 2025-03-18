@@ -1,7 +1,11 @@
 [[detections-logsdb-index-mode-impact]]
 = Using logsdb index mode with {elastic-sec}
 
-NOTE: To use the {ref}/mapping-source-field.html#synthetic-source[synthetic `_source`] feature, you must have the appropriate subscription. Refer to the subscription page for https://www.elastic.co/subscriptions/cloud[Elastic Cloud] and {subscriptions}[Elastic Stack/self-managed] for the breakdown of available features and their associated subscription tiers.
+.Requirements
+[sidebar]
+--
+To use the {ref}/mapping-source-field.html#synthetic-source[synthetic `_source`] feature, you must have the appropriate subscription. Refer to the subscription page for https://www.elastic.co/subscriptions/cloud[Elastic Cloud] and {subscriptions}[Elastic Stack/self-managed] for the breakdown of available features and their associated subscription tiers.
+--
 
 This topic explains the impact of using logsdb index mode with {elastic-sec}.
 
@@ -9,9 +13,15 @@ With logsdb index mode, the original `_source` field is not stored in the index 
 
 When the `_source` is reconstructed, {ref}/mapping-source-field.html#synthetic-source-modifications[modifications] are possible. Therefore, there could be a mismatch between users' expectations and how fields are formatted.
 
-Continue reading to find out how this affects specific {elastic-sec} components. 
+Continue reading to learn how logsdb index mode affects CPU and storage usage and how it affects specific {elastic-sec} components. 
 
-NOTE: Logsdb index mode is fully supported, and is recommended for new {elastic-sec} deployments. Logsdb is not recommended for existing {elastic-sec} deployments unless users fully understand and accept the documented changes to detection alert documents, runtime fields, and rule actions (refer to the sections below), and have ensured that their deployment has sufficient excess hot data tier CPU capacity to support the logsdb ingesting and indexing process. Enabling logsdb without sufficient excess hot data tier CPU capacity may result in data ingestion backups and or security detection rule timeouts and errors.
+NOTE: Logsdb index mode is fully supported, and is recommended for all {elastic-sec} deployments. Users with existing {elastic-sec} deployments are advised to fully understand and accept the documented changes to detection alert documents, runtime fields, and rule actions (refer to the sections below), and ensure that their deployment has sufficient excess hot data tier CPU  capacity to support the logsdb ingest and indexing process. Enabling logsdb without sufficient excess hot data tier CPU capacity may result in data ingestion backups and/or security detection rule timeouts and errors.
+
+[discrete]
+[[logsdb-cpu-storage-effects]]
+== CPU and storage effects 
+
+Logsdb index mode significantly reduces storage needs by using slightly more CPU during ingest. After enabling logsdb for your data sources, you may need to adjust cluster sizing in response to the new CPU and storage needs. To learn more about how logsdb index mode optimized CPU and storage usage, check out https://www.elastic.co/search-labs/blog/elasticsearch-logsdb-index-mode[our blog].
 
 [discrete]
 [[logsdb-alerts]]
@@ -65,3 +75,5 @@ The following will not work with synthetic source (logsdb index mode enabled):
 ----
 "source": """  emit(params._source['agent.name'] + "_____" + doc['agent.name'].value );  """
 ----
+
+Also note that runtime fields with scripts that reference `params._source` may need to be updated. Scripts that currently use dotted field names to access source fields will need to be converted to use the nested access pattern instead, unless the object being accessed has `subobjects` set to `false`. Fields that are not mapped also need to be accessed in scripts using the nested access pattern (for example, `params._source['foo']['bar']['baz']` or `params._source.foo.bar.baz`, not `params._source['foo.bar.baz']`). To learn more about how synthetic source names fields and changes that you may need to make to your scripts, refer to {ref}/mapping-source-field.html#synthetic-source-modifications-field-names[Fields named as they are mapped].
