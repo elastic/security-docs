@@ -53,18 +53,24 @@ To make sure you can access Detections and manage rules, see
 [[cold-tier-detections]]
 == Compatibility with cold and frozen tier nodes
 
-Cold and frozen {ref}/data-tiers.html[data tiers] hold time series data that is only accessed occasionally. In {stack} version >=7.11.0, {elastic-sec} supports cold but not frozen tier data for the following {es} indices:
+Cold data tiers store time series data that is accessed infrequently and rarely updated, while frozen data tiers hold time series data that is accessed even less frequently and never updated. If you are automating searches across different {ref}/data-tiers.html[data tiers] using rules, consider the following best practices and limitations.
 
-* Index patterns specified in `securitySolution:defaultIndex`
-* Index patterns specified in the definitions of detection rules, except for indicator match rules 
-* Index patterns specified in the data sources selector on various {security-app} pages
+[float]
+[[best-practices-data-tiers]]
+=== Best practices 
 
-{elastic-sec} does *NOT* support either cold or frozen tier data for the following {es} indices:
+* **Retention in hot tier**: We recommend keeping data in the hot tier for at least 24 hours. ILM policies that roll over data more frequently than once every 24 hours can increase the volume of frozen data queried by rules, leading to performance issues.
+* **Replicas for Mission-Critical Data**: Data that must always be available should have replicas. Since frozen tiers do not support replicas, shard unavailability can cause partial rule run failures. Shard unavailability may be encountered during or after upgrades. If this happens, you can re-run the rule over the affected time period using <<manually-run-rules,manual runs>>.
 
-* Index patterns controlled by {elastic-sec}, including alerts and list indices
-* Index patterns specified in the definition of indicator match rules 
+[float]
+[[limitations-data-tiers]]
+=== Limitations
 
-Using either cold or frozen tier data for unsupported indices may result in detection rule timeouts and overall performance degradation.
+Data tiers are a powerful and useful tool. It is important to keep in mind some important limitations:
+
+* Index lifecycle management policies for indices controlled by {elastic-sec}, including alerts and list indices, must not be modified.
+* Indicator match rule performance can be severely impacted by querying data within frozen indices.
+* Cold and frozen source data must have an index lifecycle management policy that keeps it in hot or warm for at least one day.
 
 [float]
 [[support-indicator-rules]]
