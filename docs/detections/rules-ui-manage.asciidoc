@@ -58,43 +58,43 @@ For {ml} rules, an indicator icon (image:images/rules-table-error-icon.png[Error
 [[edit-rules-settings]]
 === Modify existing rules settings
 
-You can edit an existing rule's settings, and can bulk edit settings for multiple rules at once.
-
-[NOTE]
-====
-For prebuilt Elastic rules, you can't modify most settings. You can only edit <<rule-schedule, rule actions>> and <<add-exceptions, add exceptions>>. If you try to bulk edit with both prebuilt and custom rules selected, the action will affect only the rules that can be modified.
-
-Similarly, rules will be skipped if they can't be modified by a bulk edit. For example, if you try to apply a tag to rules that already have that tag, or apply an index pattern to rules that use data views.
-====
+.Requirements
+[sidebar]
+--  
+* You can edit custom rules and bulk-modify them with any {subscriptions}[{stack} subscription]. Editing <<rule-notifications,rule actions>> (notifications and response actions) for prebuilt rules can also be done with any subscription.  
+* You must have an https://www.elastic.co/pricing/[Enterprise subscription] to edit all prebuilt rule settings (except for the **Author** and **License** fields) and bulk-modify them.  
+--
 
 . Find *Detection rules (SIEM)* in the navigation menu or by using the {kibana-ref}/introduction.html#kibana-navigation-search[global search field].
 . Do one of the following:
-* Edit a single rule: Select the *All actions* menu (*...*) on a rule, then select *Edit rule settings*. The *Edit rule settings* view opens, where you can modify the <<rules-ui-create, rule's settings>>.
+* Edit a single rule: Select the *All actions* menu (*...*) on a rule, then select *Edit rule settings*. Alternatively, open the rule’s details page and click **Edit rule settings**. The *Edit rule settings* view opens, where you can modify the <<rules-ui-create, rule's settings>>.
 * Bulk edit multiple rules: Select the rules you want to edit, then select an action from the *Bulk actions* menu:
++
+Rules will be skipped if they can't be modified by a bulk edit. For example, if you try to apply a tag to rules that already have that tag, or apply an index pattern to rules that use data views.
++
 ** *Index patterns*: Add or delete the index patterns used by all selected rules.
 ** *Tags*: Add or delete tags on all selected rules.
 ** *Custom highlighted fields*: Add custom highlighted fields on all selected rules. You can choose any fields that are available in the <<update-sec-indices,default {elastic-sec} indices>>, or enter field names from other indices. To overwrite a rule's current set of custom highlighted fields, select the **Overwrite all selected rules' custom highlighted fields** option, then click **Save**. 
 ** *Add rule actions*: Add <<rule-notifications,rule actions>> on all selected rules. If you add multiple actions, you can specify an action frequency for each of them. To overwrite the frequency of existing actions select the option to **Overwrite all selected rules actions**.
-
 +
 IMPORTANT: After upgrading to 8.8 or later, frequency settings for rule actions created in 8.7 or earlier are moved from the rule level to the action level. The action schedules remain the same and will continue to run on their previously specified frequency (`On each rule execution`, `Hourly`, `Daily`, or `Weekly`). 
-
 +
 NOTE: Rule actions won't run during a {kibana-ref}/maintenance-windows.html[maintenance window]. They'll resume running after the maintenance window ends.
-
++
 ** *Update rule schedules*: Update the <<rule-schedule,schedules>> and look-back times on all selected rules.
 ** *Apply Timeline template*: Apply a specified <<timeline-templates-ui, Timeline template>> to the selected rules. You can also choose *None* to remove Timeline templates from the selected rules.
+** *Manual run*: Manually run the specified rules for a specified period of time. This option is only available for enabled rules.  
 . On the flyout that opens, update the rule settings and actions. 
-+
-TIP: To <<snooze-rule-actions,snooze>> rule actions, go to the *Actions* tab and click the bell icon.
 . If available, select *Overwrite all selected _x_* to overwrite the settings on the rules. For example, if you're adding tags to multiple rules, selecting *Overwrite all selected rules tags* removes all the rules' original tags and replaces them with the tags you specify.
 . Click *Save*.
++
+NOTE: Edited prebuilt rules have the `Modified` badge on their details' pages and in the Rules table.
 
 [float]
 [[manage-rules-ui]]
 === Manage rules
 
-You can duplicate, enable, disable, delete, and snooze actions for rules:
+You can duplicate, enable, disable, delete, and do more to rules:
 
 NOTE: When duplicating a rule with exceptions, you can choose to duplicate the rule and its exceptions (active and expired), the rule and active exceptions only, or only the rule. If you duplicate the rule and its exceptions, copies of the exceptions are created and added to the duplicated rule's <<detections-ui-exceptions,default rule list>>. If the original rule used exceptions from a shared exception list, the duplicated rule will reference the same shared exception list.  
 
@@ -152,14 +152,14 @@ image::images/rule-snoozing.png[Rules snooze options,65%]
 [[import-export-rules-ui]]
 === Export and import rules
 
-You can export custom detection rules to an `.ndjson` file, which you can then import into another {elastic-sec} environment. 
+.Requirements
+[sidebar]
+--
+* You can export and import custom rules and prebuilt rules (modified and unmodified) with any {subscriptions}[{stack} subscription].
+* At minimum, your role needs `Read` privileges for the **Action and Connectors** feature to import rules with actions. To overwrite or add new connectors, you need `All` privileges. Refer to <<enable-detections-ui>> to learn more about the required privileges for managing rules.
+--
 
-[NOTE]
-====
-You cannot export Elastic prebuilt rules, but you can duplicate a prebuilt rule, then export the duplicated rule.
-
-If you try to export with both prebuilt and custom rules selected, only the custom rules are exported.
-====
+You can export prebuilt rules and custom rules to an `.ndjson` file, which you can then import into another {elastic-sec} environment. 
 
 The `.ndjson` file also includes any actions, connectors, and exception lists related to the exported rules. However, other configuration items require additional handling when exporting and importing rules:
 
@@ -173,25 +173,31 @@ TIP: You can also use {kib}'s {kibana-ref}/managing-saved-objects.html#managing-
 
 - *Value lists*: Any value lists used for rule exceptions are _not_ included in rule exports or imports. Use the <<edit-value-lists, Manage value lists>> UI to export and import value lists separately.
 
-To export and import detection rules:
+[float]
+[[export-rules-ui]]
+==== Export rules
 
 . Find *Detection rules (SIEM)* in the navigation menu or by using the {kibana-ref}/introduction.html#kibana-navigation-search[global search field]. 
-. To export rules:
-.. In the Rules table, select the rules you want to export.
-.. Select *Bulk actions* -> *Export*, then save the exported file.
-. To import rules:
-+
-NOTE: To import rules with actions, you need at least `Read` privileges for the `Action and Connectors` feature. To overwrite or add new connectors, you need `All` privileges for the `Actions and Connectors` feature. To import rules without actions,  you don't need `Actions and Connectors` privileges. Refer to <<enable-detections-ui>> for more information.
+. Do one of the following:
+** Export a single rule: Find the rule in the Rules table, then select **All actions** -> **Export**. Alternatively, export the rule from its details page (click on the rule name to open its details, then click **All actions** -> **Export**).
+** Export multiple rules: In the Rules table, select the rules you want to export, then click **Bulk actions -> Export**.
 
-.. Click *Import rules*.
-.. Drag and drop the file that contains the detection rules.
-+
-NOTE: Imported rules must be in an `.ndjson` file.
-.. (Optional) Select *Overwrite existing detection rules with conflicting "rule_id"* to update existing rules if they match the `rule_id` value of any rules in the import file. Configuration data included with the rules, such as actions, is also overwritten.
-.. (Optional) Select *Overwrite existing exception lists with conflicting "list_id"* to replace existing exception lists with exception lists from the import file if they have a matching `list_id` value.
-.. (Optional) Select *Overwrite existing connectors with conflicting action "id"* to update existing connectors if they match the `action id` value of any rule actions in the import file. Configuration data included with the actions is also overwritten.
+The rules are exported to an `.ndjson` file.
+
+[float]
+[[import-rules-ui]]
+==== Import rules
+
+. Above the Rules table, click *Import rules*.
+. In the Import rules modal: 
+.. Drag and drop the `.ndjson` file that contains the exported rules. 
+.. (Optional) Select the appropriate options to overwrite existing data:
+** *Overwrite existing detection rules with conflicting "rule_id"*: Updates existing rules if they match the `rule_id` value of any rules in the import file. Configuration data included with the rules, such as actions, is also overwritten.
+** *Overwrite existing exception lists with conflicting "list_id"*: Replaces existing exception lists with exception lists from the import file if they have a matching `list_id` value.
+** *Overwrite existing connectors with conflicting action "id"*: Updates existing connectors if they match the `action id` value of any rule actions in the import file. Configuration data included with the actions is also overwritten.
 .. Click *Import rule*.
-.. (Optional) If a connector is missing sensitive information after the import, a warning displays and you're prompted to fix the connector. In the warning, click *Go to connector*. On the Connectors page, find the connector that needs to be updated, click *Fix*, then add the necessary details.  
+
+The imported rules are added to the Rules table. 
 
 [float]
 [[rule-prerequisites]]
@@ -209,4 +215,4 @@ You can also check rules' related integrations in the *Installed Rules* and *Rul
 [role="screenshot"]
 image::images/rules-table-related-integrations.png[Rules table with related integrations popup,75%]
 
-TIP: You can hide the *integrations* badge in the rules tables. To do this, turn off `securitySolution:showRelatedIntegrations` <<show-related-integrations,advanced setting>>.
+TIP: You can hide the *integrations* badge in the Rules tables. To do this, turn off `securitySolution:showRelatedIntegrations` <<show-related-integrations,advanced setting>>.
