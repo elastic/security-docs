@@ -5,7 +5,7 @@ Detects when an administrator role is assigned to an Okta group. An adversary ma
 
 *Rule type*: query
 
-*Rule indices*:
+*Rule indices*: 
 
 * filebeat-*
 * logs-okta*
@@ -14,60 +14,98 @@ Detects when an administrator role is assigned to an Okta group. An adversary ma
 
 *Risk score*: 47
 
-*Runs every*: 5 minutes
+*Runs every*: 5m
 
-*Searches indices from*: now-6m ({ref}/common-options.html#date-math[Date Math format], see also <<rule-schedule, `Additional look-back time`>>)
+*Searches indices from*: None ({ref}/common-options.html#date-math[Date Math format], see also <<rule-schedule, `Additional look-back time`>>)
 
 *Maximum alerts per execution*: 100
 
-*References*:
+*References*: 
 
 * https://help.okta.com/en/prod/Content/Topics/Security/administrators-admin-comparison.htm
 * https://developer.okta.com/docs/reference/api/system-log/
 * https://developer.okta.com/docs/reference/api/event-types/
 * https://www.elastic.co/security-labs/testing-okta-visibility-and-detection-dorothy
+* https://www.elastic.co/security-labs/monitoring-okta-threats-with-elastic-security
+* https://www.elastic.co/security-labs/starter-guide-to-understanding-okta
 
-*Tags*:
+*Tags*: 
+
+* Use Case: Identity and Access Audit
+* Data Source: Okta
+* Tactic: Persistence
+* Resources: Investigation Guide
+
+*Version*: 412
+
+*Rule authors*: 
 
 * Elastic
-* Identity
-* Okta
-* Continuous Monitoring
-* SecOps
-* Monitoring
-
-*Version*: 102 (<<administrator-privileges-assigned-to-an-okta-group-history, version history>>)
-
-*Added ({stack} release)*: 7.9.0
-
-*Last modified ({stack} release)*: 8.6.0
-
-*Rule authors*: Elastic
 
 *Rule license*: Elastic License v2
 
-==== Potential false positives
-
-Administrator roles may be assigned to Okta users by a Super Admin user. Verify that the behavior was expected. Exceptions can be added to this rule to filter expected behavior.
 
 ==== Investigation guide
 
 
-[source,markdown]
-----------------------------------
 
-----------------------------------
+*Triage and analysis*
 
+
+> **Disclaimer**:
+> This investigation guide was created using generative AI technology and has been reviewed to improve its accuracy and relevance. While every effort has been made to ensure its quality, we recommend validating the content and adapting it to suit your specific environment and operational needs.
+
+
+*Investigating Administrator Privileges Assigned to an Okta Group*
+
+
+Okta is a widely used identity management service that facilitates secure user authentication and access control. Administrator privileges in Okta allow users to manage settings and permissions, making them a target for adversaries seeking persistent access. Malicious actors may exploit these privileges by assigning them to groups, thereby extending elevated access to compromised accounts. The detection rule monitors system events for privilege grants to groups, flagging potential unauthorized privilege escalations.
+
+
+*Possible investigation steps*
+
+
+- Review the event logs for entries with event.dataset:okta.system and event.action:group.privilege.grant to identify the specific group and administrator role assigned.
+- Identify the user account that initiated the privilege grant action and verify if the account has a history of suspicious activity or if it has been compromised.
+- Check the membership of the affected Okta group to determine which user accounts have gained elevated privileges and assess if any of these accounts are unauthorized or compromised.
+- Investigate recent activities of the affected group members to identify any unusual or unauthorized actions that may indicate malicious intent.
+- Review the organization's change management records to confirm if the privilege assignment was part of an approved change request or if it was unauthorized.
+- If unauthorized activity is confirmed, initiate incident response procedures to revoke the unauthorized privileges and secure the affected accounts.
+
+
+*False positive analysis*
+
+
+- Routine administrative tasks may trigger alerts when legitimate IT staff assign administrator roles to groups for maintenance or updates. To manage this, create exceptions for known IT personnel or scheduled maintenance windows.
+- Organizational changes such as mergers or department restructuring might require temporary privilege escalations. Document these changes and adjust the detection rule to exclude these specific events during the transition period.
+- Automated scripts or third-party integrations that manage group permissions could inadvertently trigger false positives. Identify these scripts and whitelist their actions within the monitoring system to prevent unnecessary alerts.
+- Training or onboarding sessions where temporary admin access is granted to groups for demonstration purposes can cause alerts. Ensure these sessions are logged and recognized as non-threatening to avoid false positives.
+
+
+*Response and remediation*
+
+
+- Immediately revoke the administrator privileges assigned to the Okta group to prevent further unauthorized access or privilege escalation.
+- Conduct a thorough review of recent group membership changes and privilege assignments in Okta to identify any other unauthorized modifications.
+- Isolate and investigate any user accounts that were part of the affected group to determine if they have been compromised.
+- Reset passwords and enforce multi-factor authentication (MFA) for all accounts that were part of the affected group to secure them against further unauthorized access.
+- Notify the security team and relevant stakeholders about the incident to ensure awareness and coordinated response efforts.
+- Implement additional monitoring on the affected group and related user accounts to detect any further suspicious activities.
+- Review and update access control policies to ensure that only necessary groups and users have administrative privileges, reducing the risk of similar incidents in the future.
+
+==== Setup
+
+
+The Okta Fleet integration, Filebeat module, or similarly structured data is required to be compatible with this rule.
 
 ==== Rule query
 
 
-[source,js]
+[source, js]
 ----------------------------------
 event.dataset:okta.system and event.action:group.privilege.grant
-----------------------------------
 
-==== Threat mapping
+----------------------------------
 
 *Framework*: MITRE ATT&CK^TM^
 
@@ -79,36 +117,3 @@ event.dataset:okta.system and event.action:group.privilege.grant
 ** Name: Account Manipulation
 ** ID: T1098
 ** Reference URL: https://attack.mitre.org/techniques/T1098/
-
-[[administrator-privileges-assigned-to-an-okta-group-history]]
-==== Rule version history
-
-Version 102 (8.6.0 release)::
-* Formatting only
-
-Version 100 (8.5.0 release)::
-* Formatting only
-
-Version 8 (8.4.0 release)::
-* Formatting only
-
-Version 6 (7.13.0 release)::
-* Formatting only
-
-Version 5 (7.12.0 release)::
-* Formatting only
-
-Version 4 (7.11.2 release)::
-* Formatting only
-
-Version 3 (7.11.0 release)::
-* Rule name changed from: Administrator Privileges Assigned to Okta Group
-Version 2 (7.10.0 release)::
-* Updated query, changed from:
-+
-[source, js]
-----------------------------------
-event.module:okta and event.dataset:okta.system and
-event.action:group.privilege.grant
-----------------------------------
-
