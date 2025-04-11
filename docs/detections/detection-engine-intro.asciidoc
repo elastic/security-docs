@@ -51,20 +51,26 @@ To make sure you can access Detections and manage rules, see
 
 [float]
 [[cold-tier-detections]]
-== Compatibility with cold and frozen tier nodes
+== Manage data in cold and frozen tiers
 
-Cold and frozen {ref}/data-tiers.html[data tiers] hold time series data that is only accessed occasionally. In {stack} version >=7.11.0, {elastic-sec} supports cold but not frozen tier data for the following {es} indices:
+Cold {ref}/data-tiers.html[data tiers] store time series data that's accessed infrequently and rarely updated, while frozen data tiers hold time series data that's accessed even less frequently and never updated. If you're automating searches across different data tiers using rules, consider the following best practices and limitations.
 
-* Index patterns specified in `securitySolution:defaultIndex`
-* Index patterns specified in the definitions of detection rules, except for indicator match rules 
-* Index patterns specified in the data sources selector on various {security-app} pages
+[float]
+[[best-practices-data-tiers]]
+=== Best practices 
 
-{elastic-sec} does *NOT* support either cold or frozen tier data for the following {es} indices:
+* **Retention in hot tier**: We recommend keeping data in the hot data tier ({ilm-cap} hot phase) for at least 24 hours. {ilm-cap} policies that move ingested data from the hot phase to another phase (for example, cold or frozen) in less than 24 hours may cause performance issues and/or rule execution errors.
+* **Replicas for mission-critical data**: Your data should have replicas if it must be highly available. Since frozen tiers don't support replicas, shard unavailability can cause partial rule run failures if rules query frozen tiers. Shard unavailability may also occur during or after {stack} upgrades. If this happens, you can <<manually-run-rules,manually rerun>> rules over the affected time period once the shards are available.
 
-* Index patterns controlled by {elastic-sec}, including alerts and list indices
-* Index patterns specified in the definition of indicator match rules 
 
-Using either cold or frozen tier data for unsupported indices may result in detection rule timeouts and overall performance degradation.
+[float]
+[[limitations-data-tiers]]
+=== Limitations
+
+Data tiers are a powerful and useful tool. When using them, keep the following in mind:
+
+* To avoid rule failures, do not modify {ilm} policies for {elastic-sec}-controlled indices, such as alert and list indices.
+* Source data must have an {ilm} policy that keeps it in the hot or warm tiers for at least 24 hours before moving to cold or frozen tiers.
 
 [float]
 [[support-indicator-rules]]
@@ -124,6 +130,6 @@ To learn how your rules and alerts are affected by using the {ref}/logs-data-str
 
 Utilize the https://dac-reference.readthedocs.io/en/latest/dac_concept_and_workflows.html[Detection-as-Code] (DaC) principles to externally manage your detection rules. 
 
-The {elastic-sec} Labs team uses the https://github.com/elastic/detection-rules[detection-rules] repo to develop, test, and release {elastic-sec}'s <<prebuilt-rules, prebuilt rules>>. The repo provides DaC features and allows you to customize settings to simplify the setup for managing user rules with the DaCe pipeline.
+The {elastic-sec} Labs team uses the https://github.com/elastic/detection-rules[detection-rules] repo to develop, test, and release {elastic-sec}'s <<prebuilt-rules, prebuilt rules>>. The repo provides DaC features and allows you to customize settings to simplify the setup for managing user rules with the DaC pipeline.
 
 To get started, refer to the https://github.com/elastic/detection-rules/blob/main/README.md#detections-as-code-dac[DaC documentation].
