@@ -7,32 +7,34 @@ This rule detects commonly abused network utilities running inside a container. 
 
 *Rule indices*: 
 
-* logs-cloud_defend*
+* logs-endpoint.events.process*
 
-*Severity*: medium
+*Severity*: low
 
-*Risk score*: 47
+*Risk score*: 21
 
 *Runs every*: 5m
 
-*Searches indices from*: now-6m ({ref}/common-options.html#date-math[Date Math format], see also <<rule-schedule, `Additional look-back time`>>)
+*Searches indices from*: now-9m ({ref}/common-options.html#date-math[Date Math format], see also <<rule-schedule, `Additional look-back time`>>)
 
 *Maximum alerts per execution*: 100
 
-*References*: None
+*References*: 
+
+* https://sysdig.com/blog/cve-2021-25741-kubelet-falco/
 
 *Tags*: 
 
-* Data Source: Elastic Defend for Containers
 * Domain: Container
 * OS: Linux
 * Use Case: Threat Detection
 * Tactic: Discovery
 * Tactic: Command and Control
 * Tactic: Reconnaissance
+* Data Source: Elastic Defend
 * Resources: Investigation Guide
 
-*Version*: 3
+*Version*: 2
 
 *Rule authors*: 
 
@@ -61,7 +63,6 @@ Containers are lightweight, portable units that encapsulate applications and the
 *Possible investigation steps*
 
 
-- Review the container ID and process name from the alert to identify which container and network tool triggered the alert.
 - Examine the process arguments to understand the specific command or options used, which may provide insight into the intent of the tool's execution.
 - Check the container's creation and modification timestamps to determine if the container was recently deployed or altered, which could indicate suspicious activity.
 - Investigate the user or service account associated with the process start event to assess if it aligns with expected behavior or if it might be compromised.
@@ -89,16 +90,53 @@ Containers are lightweight, portable units that encapsulate applications and the
 - Enhance monitoring and alerting for the execution of network utilities within containers, ensuring that any future occurrences are detected promptly.
 - Escalate the incident to the security operations team for further investigation and to determine if additional systems or containers have been compromised.
 
+==== Setup
+
+
+
+*Setup*
+
+
+This rule requires data coming in from Elastic Defend.
+
+
+*Elastic Defend Integration Setup*
+
+Elastic Defend is integrated into the Elastic Agent using Fleet. Upon configuration, the integration allows the Elastic Agent to monitor events on your host and send data to the Elastic Security app.
+
+
+*Prerequisite Requirements:*
+
+- Fleet is required for Elastic Defend.
+- To configure Fleet Server refer to the https://www.elastic.co/guide/en/fleet/current/fleet-server.html[documentation].
+
+
+*The following steps should be executed in order to add the Elastic Defend integration on a Linux System:*
+
+- Go to the Kibana home page and click "Add integrations".
+- In the query bar, search for "Elastic Defend" and select the integration to see more details about it.
+- Click "Add Elastic Defend".
+- Configure the integration name and optionally add a description.
+- Select the type of environment you want to protect, either "Traditional Endpoints" or "Cloud Workloads".
+- Select a configuration preset. Each preset comes with different default settings for Elastic Agent, you can further customize these later by configuring the Elastic Defend integration policy. https://www.elastic.co/guide/en/security/current/configure-endpoint-integration-policy.html[Helper guide].
+- We suggest selecting "Complete EDR (Endpoint Detection and Response)" as a configuration setting, that provides "All events; all preventions"
+- Enter a name for the agent policy in "New agent policy name". If other agent policies already exist, you can click the "Existing hosts" tab and select an existing policy instead.
+
+For more details on Elastic Agent configuration settings, refer to the https://www.elastic.co/guide/en/fleet/8.10/agent-policy.html[helper guide].
+- Click "Save and Continue".
+- To complete the integration, select "Add Elastic Agent to your hosts" and continue to the next section to install the Elastic Agent on your hosts.
+For more details on Elastic Defend refer to the https://www.elastic.co/guide/en/security/current/install-endpoint.html[helper guide].
+
+
 ==== Rule query
 
 
 [source, js]
 ----------------------------------
-process where container.id: "*" and event.type== "start" and
-(
-(process.name: ("nc", "ncat", "nmap", "dig", "nslookup", "tcpdump", "tshark", "ngrep", "telnet", "mitmproxy", "socat", "zmap", "masscan", "zgrab")) or
-/*account for tools that execute utilities as a subprocess, in this case the target utility name will appear as a process arg*/
-(process.args: ("nc", "ncat", "nmap", "dig", "nslookup", "tcpdump", "tshark", "ngrep", "telnet", "mitmproxy", "socat", "zmap", "masscan", "zgrab"))
+process where host.os.type == "linux" and event.type == "start" and event.action == "exec" and
+process.entry_leader.entry_meta.type == "container" and process.name in (
+  "nc.traditional", "nc", "ncat", "netcat", "nmap", "dig", "nslookup", "tcpdump", "tshark", "ngrep", "telnet",
+  "mitmproxy", "socat", "zmap", "masscan", "zgrab"
 )
 
 ----------------------------------
