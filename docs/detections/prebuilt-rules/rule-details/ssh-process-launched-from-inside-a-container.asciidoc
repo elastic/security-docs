@@ -7,15 +7,15 @@ This rule detects an SSH or SSHD process executed from inside a container. This 
 
 *Rule indices*: 
 
-* logs-cloud_defend*
+* logs-endpoint.events.process*
 
-*Severity*: high
+*Severity*: medium
 
-*Risk score*: 73
+*Risk score*: 47
 
 *Runs every*: 5m
 
-*Searches indices from*: now-6m ({ref}/common-options.html#date-math[Date Math format], see also <<rule-schedule, `Additional look-back time`>>)
+*Searches indices from*: now-9m ({ref}/common-options.html#date-math[Date Math format], see also <<rule-schedule, `Additional look-back time`>>)
 
 *Maximum alerts per execution*: 100
 
@@ -26,15 +26,15 @@ This rule detects an SSH or SSHD process executed from inside a container. This 
 
 *Tags*: 
 
-* Data Source: Elastic Defend for Containers
 * Domain: Container
 * OS: Linux
 * Use Case: Threat Detection
 * Tactic: Lateral Movement
 * Tactic: Persistence
+* Data Source: Elastic Defend
 * Resources: Investigation Guide
 
-*Version*: 4
+*Version*: 2
 
 *Rule authors*: 
 
@@ -63,7 +63,6 @@ SSH (Secure Shell) is a protocol used for secure remote access and management of
 *Possible investigation steps*
 
 
-- Review the container identifier (container.id) associated with the SSH process to determine which container initiated the process and assess its intended function.
 - Examine the process start event details, including the process name (sshd, ssh, autossh) and event actions (fork, exec), to understand the context and nature of the SSH activity.
 - Check for any recent changes or deployments related to the container to identify if the SSH process aligns with expected behavior or recent updates.
 - Investigate the source and destination of the SSH connection to determine if it involves unauthorized or suspicious endpoints, potentially indicating lateral movement or an attempt to access the host system.
@@ -92,14 +91,51 @@ SSH (Secure Shell) is a protocol used for secure remote access and management of
 - Enhance monitoring and alerting for SSH activity within container environments to ensure rapid detection of similar threats in the future. This includes setting up alerts for any SSH process initiation within containers.
 - Escalate the incident to the security operations team for further investigation and to determine if additional systems or containers have been affected.
 
+==== Setup
+
+
+
+*Setup*
+
+
+This rule requires data coming in from Elastic Defend.
+
+
+*Elastic Defend Integration Setup*
+
+Elastic Defend is integrated into the Elastic Agent using Fleet. Upon configuration, the integration allows the Elastic Agent to monitor events on your host and send data to the Elastic Security app.
+
+
+*Prerequisite Requirements:*
+
+- Fleet is required for Elastic Defend.
+- To configure Fleet Server refer to the https://www.elastic.co/guide/en/fleet/current/fleet-server.html[documentation].
+
+
+*The following steps should be executed in order to add the Elastic Defend integration on a Linux System:*
+
+- Go to the Kibana home page and click "Add integrations".
+- In the query bar, search for "Elastic Defend" and select the integration to see more details about it.
+- Click "Add Elastic Defend".
+- Configure the integration name and optionally add a description.
+- Select the type of environment you want to protect, either "Traditional Endpoints" or "Cloud Workloads".
+- Select a configuration preset. Each preset comes with different default settings for Elastic Agent, you can further customize these later by configuring the Elastic Defend integration policy. https://www.elastic.co/guide/en/security/current/configure-endpoint-integration-policy.html[Helper guide].
+- We suggest selecting "Complete EDR (Endpoint Detection and Response)" as a configuration setting, that provides "All events; all preventions"
+- Enter a name for the agent policy in "New agent policy name". If other agent policies already exist, you can click the "Existing hosts" tab and select an existing policy instead.
+
+For more details on Elastic Agent configuration settings, refer to the https://www.elastic.co/guide/en/fleet/8.10/agent-policy.html[helper guide].
+- Click "Save and Continue".
+- To complete the integration, select "Add Elastic Agent to your hosts" and continue to the next section to install the Elastic Agent on your hosts.
+For more details on Elastic Defend refer to the https://www.elastic.co/guide/en/security/current/install-endpoint.html[helper guide].
+
+
 ==== Rule query
 
 
 [source, js]
 ----------------------------------
-process where container.id: "*" and event.type== "start" and
-event.action in ("fork", "exec") and
-process.name: ("sshd", "ssh", "autossh")
+process where host.os.type == "linux" and event.type == "start" and event.action == "exec" and
+process.entry_leader.entry_meta.type == "container" and process.name in ("sshd", "ssh", "autossh")
 
 ----------------------------------
 
