@@ -7,7 +7,7 @@ Identifies the use of a compression utility to collect known files containing se
 
 *Rule indices*: 
 
-* logs-cloud_defend*
+* logs-endpoint.events.process*
 
 *Severity*: medium
 
@@ -15,7 +15,7 @@ Identifies the use of a compression utility to collect known files containing se
 
 *Runs every*: 5m
 
-*Searches indices from*: now-6m ({ref}/common-options.html#date-math[Date Math format], see also <<rule-schedule, `Additional look-back time`>>)
+*Searches indices from*: now-9m ({ref}/common-options.html#date-math[Date Math format], see also <<rule-schedule, `Additional look-back time`>>)
 
 *Maximum alerts per execution*: 100
 
@@ -23,15 +23,15 @@ Identifies the use of a compression utility to collect known files containing se
 
 *Tags*: 
 
-* Data Source: Elastic Defend for Containers
 * Domain: Container
 * OS: Linux
 * Use Case: Threat Detection
-* Tactic: Collection
 * Tactic: Credential Access
+* Tactic: Collection
+* Data Source: Elastic Defend
 * Resources: Investigation Guide
 
-*Version*: 3
+*Version*: 2
 
 *Rule authors*: 
 
@@ -62,7 +62,6 @@ Containers are lightweight, portable environments used to run applications consi
 
 - Review the process details to confirm the use of compression utilities such as zip, tar, gzip, hdiutil, or 7z within the container environment, focusing on the process.name and process.args fields.
 - Examine the specific file paths listed in the process.args to determine if they include sensitive files like SSH keys, AWS credentials, or Docker configurations, which could indicate unauthorized data collection.
-- Identify the container.id associated with the alert to gather more context about the container's purpose, owner, and any recent changes or deployments that might explain the activity.
 - Check the event.type field for "start" to verify the timing of the process initiation and correlate it with any known legitimate activities or scheduled tasks within the container.
 - Investigate the user or service account under which the process was executed to assess whether it has the necessary permissions and if the activity aligns with expected behavior for that account.
 - Look for any related alerts or logs that might indicate a broader pattern of suspicious activity within the same container or across other containers in the environment.
@@ -89,43 +88,55 @@ Containers are lightweight, portable environments used to run applications consi
 - Escalate the incident to the security operations team for further investigation and to determine if additional systems or data have been affected.
 - Conduct a post-incident review to identify gaps in security controls and update container security policies to prevent recurrence.
 
+==== Setup
+
+
+
+*Setup*
+
+
+This rule requires data coming in from Elastic Defend.
+
+
+*Elastic Defend Integration Setup*
+
+Elastic Defend is integrated into the Elastic Agent using Fleet. Upon configuration, the integration allows the Elastic Agent to monitor events on your host and send data to the Elastic Security app.
+
+
+*Prerequisite Requirements:*
+
+- Fleet is required for Elastic Defend.
+- To configure Fleet Server refer to the https://www.elastic.co/guide/en/fleet/current/fleet-server.html[documentation].
+
+
+*The following steps should be executed in order to add the Elastic Defend integration on a Linux System:*
+
+- Go to the Kibana home page and click "Add integrations".
+- In the query bar, search for "Elastic Defend" and select the integration to see more details about it.
+- Click "Add Elastic Defend".
+- Configure the integration name and optionally add a description.
+- Select the type of environment you want to protect, either "Traditional Endpoints" or "Cloud Workloads".
+- Select a configuration preset. Each preset comes with different default settings for Elastic Agent, you can further customize these later by configuring the Elastic Defend integration policy. https://www.elastic.co/guide/en/security/current/configure-endpoint-integration-policy.html[Helper guide].
+- We suggest selecting "Complete EDR (Endpoint Detection and Response)" as a configuration setting, that provides "All events; all preventions"
+- Enter a name for the agent policy in "New agent policy name". If other agent policies already exist, you can click the "Existing hosts" tab and select an existing policy instead.
+
+For more details on Elastic Agent configuration settings, refer to the https://www.elastic.co/guide/en/fleet/8.10/agent-policy.html[helper guide].
+- Click "Save and Continue".
+- To complete the integration, select "Add Elastic Agent to your hosts" and continue to the next section to install the Elastic Agent on your hosts.
+For more details on Elastic Defend refer to the https://www.elastic.co/guide/en/security/current/install-endpoint.html[helper guide].
+
+
 ==== Rule query
 
 
 [source, js]
 ----------------------------------
-process where container.id: "*" and event.type== "start" and
-
-/*account for tools that execute utilities as a subprocess, in this case the target utility name will appear as a process arg*/
-(process.name: ("zip", "tar", "gzip", "hdiutil", "7z") or process.args: ("zip", "tar", "gzip", "hdiutil", "7z"))
-and process.args: (
-"/root/.ssh/id_rsa",
-"/root/.ssh/id_rsa.pub",
-"/root/.ssh/id_ed25519",
-"/root/.ssh/id_ed25519.pub",
-"/root/.ssh/authorized_keys",
-"/root/.ssh/authorized_keys2",
-"/root/.ssh/known_hosts",
-"/root/.bash_history",
-"/etc/hosts",
-"/home/*/.ssh/id_rsa",
-"/home/*/.ssh/id_rsa.pub",
-"/home/*/.ssh/id_ed25519",
-"/home/*/.ssh/id_ed25519.pub",
-"/home/*/.ssh/authorized_keys",
-"/home/*/.ssh/authorized_keys2",
-"/home/*/.ssh/known_hosts",
-"/home/*/.bash_history",
-"/root/.aws/credentials",
-"/root/.aws/config",
-"/home/*/.aws/credentials",
-"/home/*/.aws/config",
-"/root/.docker/config.json",
-"/home/*/.docker/config.json",
-"/etc/group",
-"/etc/passwd",
-"/etc/shadow",
-"/etc/gshadow")
+process where host.os.type == "linux" and event.type == "start" and event.action == "exec" and
+process.entry_leader.entry_meta.type == "container" and process.name in ("zip", "tar", "gzip", "hdiutil", "7z") and
+process.command_line like~ (
+  "*/root/.ssh/*", "*/home/*/.ssh/*", "*/root/.bash_history*", "*/etc/hosts*", "*/root/.aws/*", "*/home/*/.aws/*",
+  "*/root/.docker/*", "*/home/*/.docker/*", "*/etc/group*", "*/etc/passwd*", "*/etc/shadow*", "*/etc/gshadow*"
+)
 
 ----------------------------------
 
