@@ -1,0 +1,111 @@
+[[prebuilt-rule-8-18-2-aws-iam-virtual-mfa-device-registration-attempt-with-session-token]]
+=== AWS IAM Virtual MFA Device Registration Attempt with Session Token
+
+Identifies attempts to register or enable an IAM Virtual MFA device using temporary credentials (access keys starting with 'ASIA'). This may indicate an adversary attempting to escalate privileges or establish persistence using stolen session tokens.
+
+*Rule type*: query
+
+*Rule indices*: 
+
+* filebeat-*
+* logs-aws.cloudtrail-*
+
+*Severity*: medium
+
+*Risk score*: 47
+
+*Runs every*: 5m
+
+*Searches indices from*: now-9m ({ref}/common-options.html#date-math[Date Math format], see also <<rule-schedule, `Additional look-back time`>>)
+
+*Maximum alerts per execution*: 100
+
+*References*: 
+
+* https://www.sygnia.co/blog/sygnia-investigation-bybit-hack/
+
+*Tags*: 
+
+* Domain: Cloud
+* Data Source: AWS
+* Data Source: Amazon Web Services
+* Data Source: AWS CloudTrail
+* Data Source: AWS IAM
+* Tactic: Persistence
+* Use Case: Identity and Access Audit
+* Resources: Investigation Guide
+
+*Version*: 2
+
+*Rule authors*: 
+
+* Elastic
+
+*Rule license*: Elastic License v2
+
+
+==== Investigation guide
+
+
+
+*Triage and Analysis*
+
+
+
+*Investigating AWS IAM Virtual MFA Device Registration Attempt with Session Token*
+
+
+AWS temporary security credentials that begin with `ASIA` indicate they are session tokens. An attempt to create or enable a Virtual MFA device using such credentials is uncommon and may indicate malicious activity.
+
+
+*Possible Investigation Steps*
+
+
+- **Identify the User**: Check `user.name`, `user.arn`, and `aws.cloudtrail.user_identity.*` fields to determine which IAM entity made the request.
+- **Check for Prior Reconnaissance or Access**: Correlate this event with any prior calls to `GetSessionToken`, `GetCallerIdentity`, or `ListUsers` to see if an adversary was enumerating IAM users.
+- **Source Context**: Review `source.ip`, `user_agent`, and `event.origin` to determine whether this came from a legitimate device or a suspicious endpoint (e.g., Kali, Mythic, unknown VPN).
+- **Validate MFA Setup**: Look for follow-up attempts to call `sts:get-session-token` or `iam:EnableMFADevice` using this same session.
+
+
+*False Positive Analysis*
+
+
+- This may occur if an admin or automation tool is legitimately setting up a new MFA device using temporary credentials.
+- Review the IP, agent, and context to differentiate expected automation from unauthorized access.
+
+
+*Response and Remediation*
+
+
+- **Revoke Credentials**: If unauthorized, revoke the access keys or terminate the session.
+- **Reset MFA and Passwords**: Rotate credentials for the affected IAM user.
+- **Review IAM Policies**: Limit permissions to register MFA devices to trusted roles only.
+- **Enable CloudTrail Alerts**: Monitor IAM changes more broadly with CloudTrail-based alerts.
+
+
+==== Rule query
+
+
+[source, js]
+----------------------------------
+event.dataset: "aws.cloudtrail"
+  and event.provider: "iam.amazonaws.com"
+  and event.action: ("CreateVirtualMFADevice" or "EnableMFADevice")
+  and aws.cloudtrail.user_identity.access_key_id: ASIA*
+
+----------------------------------
+
+*Framework*: MITRE ATT&CK^TM^
+
+* Tactic:
+** Name: Persistence
+** ID: TA0003
+** Reference URL: https://attack.mitre.org/tactics/TA0003/
+* Technique:
+** Name: Account Manipulation
+** ID: T1098
+** Reference URL: https://attack.mitre.org/techniques/T1098/
+* Sub-technique:
+** Name: Device Registration
+** ID: T1098.005
+** Reference URL: https://attack.mitre.org/techniques/T1098/005/
