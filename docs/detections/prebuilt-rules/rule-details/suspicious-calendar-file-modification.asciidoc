@@ -3,7 +3,7 @@
 
 Identifies suspicious modifications of the calendar file by an unusual process. Adversaries may create a custom calendar notification procedure to execute a malicious program at a recurring interval to establish persistence.
 
-*Rule type*: query
+*Rule type*: eql
 
 *Rule indices*: 
 
@@ -132,19 +132,11 @@ For more details on Elastic Defend refer to the https://www.elastic.co/guide/en/
 
 [source, js]
 ----------------------------------
-event.category:file and host.os.type:macos and event.action:modification and
-  file.path:/Users/*/Library/Calendars/*.calendar/Events/*.ics and
-  process.executable:
-  (* and not
-    (
-      /System/Library/* or
-      /System/Applications/Calendar.app/Contents/MacOS/* or
-      /System/Applications/Mail.app/Contents/MacOS/Mail or
-      /usr/libexec/xpcproxy or
-      /sbin/launchd or
-      /Applications/*
-    )
-  )
+file where host.os.type == "macos" and event.action == "modification" and
+  file.path like~ "/Users/*/Library/Calendars/*.calendar/Events/*.ics" and
+  not process.executable like ("/System/Library/*", "/System/Applications/Calendar.app/Contents/MacOS/*", 
+                               "/System/Applications/Mail.app/Contents/MacOS/Mail", "/usr/libexec/xpcproxy",
+                               "/sbin/launchd", "/Applications/*")
 
 ----------------------------------
 
