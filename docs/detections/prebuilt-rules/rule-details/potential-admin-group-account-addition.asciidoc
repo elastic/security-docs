@@ -3,7 +3,7 @@
 
 Identifies attempts to add an account to the admin group via the command line. This could be an indication of privilege escalation activity.
 
-*Rule type*: query
+*Rule type*: eql
 
 *Rule indices*: 
 
@@ -131,12 +131,12 @@ For more details on Elastic Defend refer to the https://www.elastic.co/guide/en/
 
 [source, js]
 ----------------------------------
-event.category:process and host.os.type:macos and event.type:(start or process_started) and
- process.name:(dscl or dseditgroup) and process.args:(("/Groups/admin" or admin) and ("-a" or "-append")) and
- not process.Ext.effective_parent.executable : ("/Library/Application Support/JAMF/Jamf.app/Contents/MacOS/JamfDaemon.app/Contents/MacOS/JamfDaemon" or
-                                                "/Library/Application Support/JAMF/Jamf.app/Contents/MacOS/JamfManagementService.app/Contents/MacOS/JamfManagementService" or
-                                                "/opt/jc/bin/jumpcloud-agent" or
-                                                "/Library/Addigy/go-agent")
+process where host.os.type == "macos" and event.type in ("start", "process_started") and
+ process.name in ("dscl", "dseditgroup") and process.args like~ ("/Groups/admin", "admin") and process.args like ("-a", "-append") and
+ not process.Ext.effective_parent.executable like ("/Library/Application Support/JAMF/Jamf.app/Contents/MacOS/JamfDaemon.app/Contents/MacOS/JamfDaemon",
+                                                   "/Library/Application Support/JAMF/Jamf.app/Contents/MacOS/JamfManagementService.app/Contents/MacOS/JamfManagementService",
+                                                   "/opt/jc/bin/jumpcloud-agent",
+                                                   "/Library/Addigy/go-agent")
 
 ----------------------------------
 
