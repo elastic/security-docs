@@ -2,6 +2,26 @@
 == 8.17
 
 [discrete]
+[[release-notes-8.17.6]]
+=== 8.17.6
+
+[discrete]
+[[enhancements-8.17.6]]
+==== Enhancements
+* Allows {elastic-defend} users to opt out of event-driven Memory Protection scanning using the advanced policy ({kibana-pull}218354[#218354]).
+
+[discrete]
+[[bug-fixes-8.17.6]]
+==== Fixes
+* Fixes a bug that caused installed prebuilt detection rules to upgrade to their latest available versions when you installed a new {elastic-defend} integration or {agent} policy ({kibana-pull}217959[#217959]).
+* Avoids an `IRQL_NOT_LESS_EQUAL` https://learn.microsoft.com/en-us/windows-hardware/drivers/debugger/bug-checks\--blue-screens-[bugcheck] in the {elastic-defend} driver due to an interaction with Trellix Access Protection (`mfehidk.sys`). This issue can occur when `elastic-endpoint-driver.sys` calls https://learn.microsoft.com/en-us/windows/win32/api/fwpmu/nf-fwpmu-fwpmtransactionbegin0[`FwpmTransactionBegin0`] to initialize its network driver. `FwpmTransactionBegin0` performs a synchronous RPC call to the user-mode Base Filtering Engine service. Trellix's driver intercepts this service's operations, causing `FwpmTransactionBegin0` to hang or slow significantly. This delay prevents {elastic-defend}'s driver from properly initializing in a timely manner. Subsequent system activity can invoke {elastic-defend}'s driver before it has fully initialized, leading to a `IRQL_NOT_LESS_EQUAL` bugcheck. 
++
+If you can't upgrade, you can prevent this issue from occurring by either disabling Trellix Access Protection or adding a https://docs.trellix.com/bundle/endpoint-security-10.6.0-threat-prevention-client-interface-reference-guide-windows/page/GUID-6AC245A1-5E5D-4BAF-93B0-FE7FD33571E6.html[Trellix Access Protection exclusion] for the Base Filtering Engine service (`C:\Windows\System32\svchost.exe`). This issue affects {elastic-defend} versions 8.16.0-8.16.6, 8.17.0-8.17.5, 8.18.0, and 9.0.0.
+* Resolves an unbounded kernel non-paged memory growth issue in {elastic-defend}'s kernel driver during extremely high event load situations on Windows. Systems affected by this issue would slow down or become unresponsive until the triggering event load (for example, network activity) subsided. We are only aware of this issue occurring on very busy Windows Server systems running {elastic-defend} 8.16.0 and later.
+* Allows {elastic-defend} to detect and recover from a corrupt persistent cache database.  Previously, such databases would be unusable, effectively turning off the persistent cache.
+* Reduces {elastic-defend}'s CPU usage for registry events.
+
+[discrete]
 [[release-notes-8.17.5]]
 === 8.17.5
 
@@ -39,6 +59,55 @@ When you install an {elastic-defend} integration or a new agent policy for this 
 
 *Workaround* +
 To resolve this issue, before you add an {elastic-defend} integration to a policy in {fleet}, apply any pending prebuilt rule updates. This will prevent rule actions and exceptions from being overwritten.
+
+*Resolved* +
+This issue is fixed in {stack} versions 8.17.6, 8.18.1, and 9.0.1.
+
+====
+// end::known-issue[]
+
+// tag::known-issue[]
+[discrete]
+.Interaction between Elastic Defend and Trellix Access Protection causes IRQL_NOT_LESS_EQUAL bugcheck
+[%collapsible]
+====
+*Details* +
+
+An `IRQL_NOT_LESS_EQUAL` https://learn.microsoft.com/en-us/windows-hardware/drivers/debugger/bug-checks--blue-screens-[bugcheck] in the {elastic-defend} driver happens due to an interaction with Trellix Access Protection (`mfehidk.sys`). This issue can occur when `elastic-endpoint-driver.sys` calls https://learn.microsoft.com/en-us/windows/win32/api/fwpmu/nf-fwpmu-fwpmtransactionbegin0[`FwpmTransactionBegin0`] to initialize its network driver. `FwpmTransactionBegin0` performs a synchronous RPC call to the user-mode Base Filtering Engine service. Trellix's driver intercepts this service's operations, causing `FwpmTransactionBegin0` to hang or slow significantly. This delay prevents {elastic-defend} driver from properly initializing in a timely manner. Subsequent system activity can invoke {elastic-defend}'s driver before it has fully initialized, leading to a `IRQL_NOT_LESS_EQUAL` bugcheck. This issue affects {elastic-defend} versions 8.16.0-8.16.6, 8.17.0-8.17.5, 8.18.0, and 9.0.0.
+
+*Workaround* +
+
+If you can't upgrade, either disable Trellix Access Protection or add a https://docs.trellix.com/bundle/endpoint-security-10.6.0-threat-prevention-client-interface-reference-guide-windows/page/GUID-6AC245A1-5E5D-4BAF-93B0-FE7FD33571E6.html[Trellix Access Protection exclusion] for the Base Filtering Engine service (`C:\Windows\System32\svchost.exe`). 
+
+*Resolved* +
+This issue is fixed in {elastic-defend} versions 8.17.6, 8.18.1, and 9.0.1.
+
+====
+// end::known-issue[]
+
+// tag::known-issue[]
+[discrete]
+.Unbounded kernel non-paged memory growth issue in Elastic Defend's kernal driver causes slow down on Windows systems
+[%collapsible]
+====
+*Details* +
+
+An unbounded kernel non-paged memory growth issue in {elastic-defend}'s kernel driver occurs during extremely high event load situations on Windows. Systems affected by this issue will slow down or become unresponsive until the triggering event load (for example, network activity) subsides. We are only aware of this issue occurring on very busy Windows Server systems running {elastic-defend} versions 8.16.0-8.16.6, 8.17.0-8.17.5, 8.18.0, and 9.0.0.
+
+*Workaround* +
+
+If you can't upgrade, turn off the relevant event source at the kernel level using your {elastic-defend} <<adv-policy-settings,advanced policy settings>>:
+
+* Network Events - Set the `windows.advanced.kernel.network` advanced setting to `false`.
+* Registry Events - Set the `windows.advanced.kernel.registry` advanced setting to `false`.
+
+
+NOTE: Clearing the corresponding checkbox under <<event-collection,Event Collection>> is insufficient, as {elastic-defend} may still process these event sources internally to support other features.
+
+*Resolved* +
+This issue is fixed in {elastic-defend} versions 8.17.6, 8.18.1, and 9.0.1.
+
+
 ====
 // end::known-issue[]
 
@@ -95,6 +164,55 @@ When you install an {elastic-defend} integration or a new agent policy for this 
 
 *Workaround* +
 To resolve this issue, before you add an {elastic-defend} integration to a policy in {fleet}, apply any pending prebuilt rule updates. This will prevent rule actions and exceptions from being overwritten.
+
+*Resolved* +
+This issue is fixed in {stack} versions 8.17.6, 8.18.1, and 9.0.1.
+
+====
+// end::known-issue[]
+
+// tag::known-issue[]
+[discrete]
+.Interaction between Elastic Defend and Trellix Access Protection causes IRQL_NOT_LESS_EQUAL bugcheck
+[%collapsible]
+====
+*Details* +
+
+An `IRQL_NOT_LESS_EQUAL` https://learn.microsoft.com/en-us/windows-hardware/drivers/debugger/bug-checks--blue-screens-[bugcheck] in the {elastic-defend} driver happens due to an interaction with Trellix Access Protection (`mfehidk.sys`). This issue can occur when `elastic-endpoint-driver.sys` calls https://learn.microsoft.com/en-us/windows/win32/api/fwpmu/nf-fwpmu-fwpmtransactionbegin0[`FwpmTransactionBegin0`] to initialize its network driver. `FwpmTransactionBegin0` performs a synchronous RPC call to the user-mode Base Filtering Engine service. Trellix's driver intercepts this service's operations, causing `FwpmTransactionBegin0` to hang or slow significantly. This delay prevents {elastic-defend} driver from properly initializing in a timely manner. Subsequent system activity can invoke {elastic-defend}'s driver before it has fully initialized, leading to a `IRQL_NOT_LESS_EQUAL` bugcheck. This issue affects {elastic-defend} versions 8.16.0-8.16.6, 8.17.0-8.17.5, 8.18.0, and 9.0.0.
+
+*Workaround* +
+
+If you can't upgrade, either disable Trellix Access Protection or add a https://docs.trellix.com/bundle/endpoint-security-10.6.0-threat-prevention-client-interface-reference-guide-windows/page/GUID-6AC245A1-5E5D-4BAF-93B0-FE7FD33571E6.html[Trellix Access Protection exclusion] for the Base Filtering Engine service (`C:\Windows\System32\svchost.exe`). 
+
+*Resolved* +
+This issue is fixed in {elastic-defend} versions 8.17.6, 8.18.1, and 9.0.1.
+
+====
+// end::known-issue[]
+
+// tag::known-issue[]
+[discrete]
+.Unbounded kernel non-paged memory growth issue in Elastic Defend's kernal driver causes slow down on Windows systems
+[%collapsible]
+====
+*Details* +
+
+An unbounded kernel non-paged memory growth issue in {elastic-defend}'s kernel driver occurs during extremely high event load situations on Windows. Systems affected by this issue will slow down or become unresponsive until the triggering event load (for example, network activity) subsides. We are only aware of this issue occurring on very busy Windows Server systems running {elastic-defend} versions 8.16.0-8.16.6, 8.17.0-8.17.5, 8.18.0, and 9.0.0.
+
+*Workaround* +
+
+If you can't upgrade, turn off the relevant event source at the kernel level using your {elastic-defend} <<adv-policy-settings,advanced policy settings>>:
+
+* Network Events - Set the `windows.advanced.kernel.network` advanced setting to `false`.
+* Registry Events - Set the `windows.advanced.kernel.registry` advanced setting to `false`.
+
+
+NOTE: Clearing the corresponding checkbox under <<event-collection,Event Collection>> is insufficient, as {elastic-defend} may still process these event sources internally to support other features.
+
+*Resolved* +
+This issue is fixed in {elastic-defend} versions 8.17.6, 8.18.1, and 9.0.1.
+
+
 ====
 // end::known-issue[]
 
@@ -137,6 +255,51 @@ On November 12, 2024, it was discovered that manually running a custom query rul
 ====
 // end::known-issue[]
 
+// tag::known-issue[]
+[discrete]
+.Interaction between Elastic Defend and Trellix Access Protection causes IRQL_NOT_LESS_EQUAL bugcheck
+[%collapsible]
+====
+*Details* +
+
+An `IRQL_NOT_LESS_EQUAL` https://learn.microsoft.com/en-us/windows-hardware/drivers/debugger/bug-checks--blue-screens-[bugcheck] in the {elastic-defend} driver happens due to an interaction with Trellix Access Protection (`mfehidk.sys`). This issue can occur when `elastic-endpoint-driver.sys` calls https://learn.microsoft.com/en-us/windows/win32/api/fwpmu/nf-fwpmu-fwpmtransactionbegin0[`FwpmTransactionBegin0`] to initialize its network driver. `FwpmTransactionBegin0` performs a synchronous RPC call to the user-mode Base Filtering Engine service. Trellix's driver intercepts this service's operations, causing `FwpmTransactionBegin0` to hang or slow significantly. This delay prevents {elastic-defend} driver from properly initializing in a timely manner. Subsequent system activity can invoke {elastic-defend}'s driver before it has fully initialized, leading to a `IRQL_NOT_LESS_EQUAL` bugcheck. This issue affects {elastic-defend} versions 8.16.0-8.16.6, 8.17.0-8.17.5, 8.18.0, and 9.0.0.
+
+*Workaround* +
+
+If you can't upgrade, either disable Trellix Access Protection or add a https://docs.trellix.com/bundle/endpoint-security-10.6.0-threat-prevention-client-interface-reference-guide-windows/page/GUID-6AC245A1-5E5D-4BAF-93B0-FE7FD33571E6.html[Trellix Access Protection exclusion] for the Base Filtering Engine service (`C:\Windows\System32\svchost.exe`). 
+
+*Resolved* +
+This issue is fixed in {elastic-defend} versions 8.17.6, 8.18.1, and 9.0.1.
+
+====
+// end::known-issue[]
+
+// tag::known-issue[]
+[discrete]
+.Unbounded kernel non-paged memory growth issue in Elastic Defend's kernal driver causes slow down on Windows systems
+[%collapsible]
+====
+*Details* +
+
+An unbounded kernel non-paged memory growth issue in {elastic-defend}'s kernel driver occurs during extremely high event load situations on Windows. Systems affected by this issue will slow down or become unresponsive until the triggering event load (for example, network activity) subsides. We are only aware of this issue occurring on very busy Windows Server systems running {elastic-defend} versions 8.16.0-8.16.6, 8.17.0-8.17.5, 8.18.0, and 9.0.0.
+
+*Workaround* +
+
+If you can't upgrade, turn off the relevant event source at the kernel level using your {elastic-defend} <<adv-policy-settings,advanced policy settings>>:
+
+* Network Events - Set the `windows.advanced.kernel.network` advanced setting to `false`.
+* Registry Events - Set the `windows.advanced.kernel.registry` advanced setting to `false`.
+
+
+NOTE: Clearing the corresponding checkbox under <<event-collection,Event Collection>> is insufficient, as {elastic-defend} may still process these event sources internally to support other features.
+
+*Resolved* +
+This issue is fixed in {elastic-defend} versions 8.17.6, 8.18.1, and 9.0.1.
+
+
+====
+// end::known-issue[]
+
 [discrete]
 [[bug-fixes-8.17.3]]
 ==== Bug fixes
@@ -174,6 +337,51 @@ On November 12, 2024, it was discovered that manually running threshold rules co
 ====
 *Details* +
 On November 12, 2024, it was discovered that manually running a custom query rule with suppression could incorrectly inflate the number of suppressed alerts. 
+====
+// end::known-issue[]
+
+// tag::known-issue[]
+[discrete]
+.Interaction between Elastic Defend and Trellix Access Protection causes IRQL_NOT_LESS_EQUAL bugcheck
+[%collapsible]
+====
+*Details* +
+
+An `IRQL_NOT_LESS_EQUAL` https://learn.microsoft.com/en-us/windows-hardware/drivers/debugger/bug-checks--blue-screens-[bugcheck] in the {elastic-defend} driver happens due to an interaction with Trellix Access Protection (`mfehidk.sys`). This issue can occur when `elastic-endpoint-driver.sys` calls https://learn.microsoft.com/en-us/windows/win32/api/fwpmu/nf-fwpmu-fwpmtransactionbegin0[`FwpmTransactionBegin0`] to initialize its network driver. `FwpmTransactionBegin0` performs a synchronous RPC call to the user-mode Base Filtering Engine service. Trellix's driver intercepts this service's operations, causing `FwpmTransactionBegin0` to hang or slow significantly. This delay prevents {elastic-defend} driver from properly initializing in a timely manner. Subsequent system activity can invoke {elastic-defend}'s driver before it has fully initialized, leading to a `IRQL_NOT_LESS_EQUAL` bugcheck. This issue affects {elastic-defend} versions 8.16.0-8.16.6, 8.17.0-8.17.5, 8.18.0, and 9.0.0.
+
+*Workaround* +
+
+If you can't upgrade, either disable Trellix Access Protection or add a https://docs.trellix.com/bundle/endpoint-security-10.6.0-threat-prevention-client-interface-reference-guide-windows/page/GUID-6AC245A1-5E5D-4BAF-93B0-FE7FD33571E6.html[Trellix Access Protection exclusion] for the Base Filtering Engine service (`C:\Windows\System32\svchost.exe`). 
+
+*Resolved* +
+This issue is fixed in {elastic-defend} versions 8.17.6, 8.18.1, and 9.0.1.
+
+====
+// end::known-issue[]
+
+// tag::known-issue[]
+[discrete]
+.Unbounded kernel non-paged memory growth issue in Elastic Defend's kernal driver causes slow down on Windows systems
+[%collapsible]
+====
+*Details* +
+
+An unbounded kernel non-paged memory growth issue in {elastic-defend}'s kernel driver occurs during extremely high event load situations on Windows. Systems affected by this issue will slow down or become unresponsive until the triggering event load (for example, network activity) subsides. We are only aware of this issue occurring on very busy Windows Server systems running {elastic-defend} versions 8.16.0-8.16.6, 8.17.0-8.17.5, 8.18.0, and 9.0.0.
+
+*Workaround* +
+
+If you can't upgrade, turn off the relevant event source at the kernel level using your {elastic-defend} <<adv-policy-settings,advanced policy settings>>:
+
+* Network Events - Set the `windows.advanced.kernel.network` advanced setting to `false`.
+* Registry Events - Set the `windows.advanced.kernel.registry` advanced setting to `false`.
+
+
+NOTE: Clearing the corresponding checkbox under <<event-collection,Event Collection>> is insufficient, as {elastic-defend} may still process these event sources internally to support other features.
+
+*Resolved* +
+This issue is fixed in {elastic-defend} versions 8.17.6, 8.18.1, and 9.0.1.
+
+
 ====
 // end::known-issue[]
 
@@ -224,6 +432,9 @@ This issue was discovered on February 6, 2025.
 *Workaround* +
 To resolve this issue, upgrade to 8.17.2. Alternatively, increase {kib}'s RAM to 2 GB.
 
+*Resolved* +
+This issue is fixed in {stack} version 8.17.2.
+
 ====
 // end::known-issue[]
 
@@ -244,6 +455,51 @@ On November 12, 2024, it was discovered that manually running threshold rules co
 ====
 *Details* +
 On November 12, 2024, it was discovered that manually running a custom query rule with suppression could incorrectly inflate the number of suppressed alerts. 
+====
+// end::known-issue[]
+
+// tag::known-issue[]
+[discrete]
+.Interaction between Elastic Defend and Trellix Access Protection causes IRQL_NOT_LESS_EQUAL bugcheck
+[%collapsible]
+====
+*Details* +
+
+An `IRQL_NOT_LESS_EQUAL` https://learn.microsoft.com/en-us/windows-hardware/drivers/debugger/bug-checks--blue-screens-[bugcheck] in the {elastic-defend} driver happens due to an interaction with Trellix Access Protection (`mfehidk.sys`). This issue can occur when `elastic-endpoint-driver.sys` calls https://learn.microsoft.com/en-us/windows/win32/api/fwpmu/nf-fwpmu-fwpmtransactionbegin0[`FwpmTransactionBegin0`] to initialize its network driver. `FwpmTransactionBegin0` performs a synchronous RPC call to the user-mode Base Filtering Engine service. Trellix's driver intercepts this service's operations, causing `FwpmTransactionBegin0` to hang or slow significantly. This delay prevents {elastic-defend} driver from properly initializing in a timely manner. Subsequent system activity can invoke {elastic-defend}'s driver before it has fully initialized, leading to a `IRQL_NOT_LESS_EQUAL` bugcheck. This issue affects {elastic-defend} versions 8.16.0-8.16.6, 8.17.0-8.17.5, 8.18.0, and 9.0.0.
+
+*Workaround* +
+
+If you can't upgrade, either disable Trellix Access Protection or add a https://docs.trellix.com/bundle/endpoint-security-10.6.0-threat-prevention-client-interface-reference-guide-windows/page/GUID-6AC245A1-5E5D-4BAF-93B0-FE7FD33571E6.html[Trellix Access Protection exclusion] for the Base Filtering Engine service (`C:\Windows\System32\svchost.exe`). 
+
+*Resolved* +
+This issue is fixed in {elastic-defend} versions 8.17.6, 8.18.1, and 9.0.1.
+
+====
+// end::known-issue[]
+
+// tag::known-issue[]
+[discrete]
+.Unbounded kernel non-paged memory growth issue in Elastic Defend's kernal driver causes slow down on Windows systems
+[%collapsible]
+====
+*Details* +
+
+An unbounded kernel non-paged memory growth issue in {elastic-defend}'s kernel driver occurs during extremely high event load situations on Windows. Systems affected by this issue will slow down or become unresponsive until the triggering event load (for example, network activity) subsides. We are only aware of this issue occurring on very busy Windows Server systems running {elastic-defend} versions 8.16.0-8.16.6, 8.17.0-8.17.5, 8.18.0, and 9.0.0.
+
+*Workaround* +
+
+If you can't upgrade, turn off the relevant event source at the kernel level using your {elastic-defend} <<adv-policy-settings,advanced policy settings>>:
+
+* Network Events - Set the `windows.advanced.kernel.network` advanced setting to `false`.
+* Registry Events - Set the `windows.advanced.kernel.registry` advanced setting to `false`.
+
+
+NOTE: Clearing the corresponding checkbox under <<event-collection,Event Collection>> is insufficient, as {elastic-defend} may still process these event sources internally to support other features.
+
+*Resolved* +
+This issue is fixed in {elastic-defend} versions 8.17.6, 8.18.1, and 9.0.1.
+
+
 ====
 // end::known-issue[]
 
@@ -288,6 +544,9 @@ This issue was discovered on February 6, 2025.
 
 *Workaround* +
 To resolve this issue, upgrade to 8.17.2. Alternatively, increase {kib}'s RAM to 2 GB.
+
+*Resolved* +
+This issue is fixed in {stack} version 8.17.2.
 
 ====
 // end::known-issue[]
@@ -376,6 +635,51 @@ On November 12, 2024, it was discovered that manually running threshold rules co
 ====
 *Details* +
 On November 12, 2024, it was discovered that manually running a custom query rule with suppression could incorrectly inflate the number of suppressed alerts. 
+
+====
+// end::known-issue[]
+
+// tag::known-issue[]
+[discrete]
+.Interaction between Elastic Defend and Trellix Access Protection causes IRQL_NOT_LESS_EQUAL bugcheck
+[%collapsible]
+====
+*Details* +
+
+An `IRQL_NOT_LESS_EQUAL` https://learn.microsoft.com/en-us/windows-hardware/drivers/debugger/bug-checks--blue-screens-[bugcheck] in the {elastic-defend} driver happens due to an interaction with Trellix Access Protection (`mfehidk.sys`). This issue can occur when `elastic-endpoint-driver.sys` calls https://learn.microsoft.com/en-us/windows/win32/api/fwpmu/nf-fwpmu-fwpmtransactionbegin0[`FwpmTransactionBegin0`] to initialize its network driver. `FwpmTransactionBegin0` performs a synchronous RPC call to the user-mode Base Filtering Engine service. Trellix's driver intercepts this service's operations, causing `FwpmTransactionBegin0` to hang or slow significantly. This delay prevents {elastic-defend} driver from properly initializing in a timely manner. Subsequent system activity can invoke {elastic-defend}'s driver before it has fully initialized, leading to a `IRQL_NOT_LESS_EQUAL` bugcheck. This issue affects {elastic-defend} versions 8.16.0-8.16.6, 8.17.0-8.17.5, 8.18.0, and 9.0.0.
+
+*Workaround* +
+
+If you can't upgrade, either disable Trellix Access Protection or add a https://docs.trellix.com/bundle/endpoint-security-10.6.0-threat-prevention-client-interface-reference-guide-windows/page/GUID-6AC245A1-5E5D-4BAF-93B0-FE7FD33571E6.html[Trellix Access Protection exclusion] for the Base Filtering Engine service (`C:\Windows\System32\svchost.exe`). 
+
+*Resolved* +
+This issue is fixed in {elastic-defend} versions 8.17.6, 8.18.1, and 9.0.1.
+
+====
+// end::known-issue[]
+
+// tag::known-issue[]
+[discrete]
+.Unbounded kernel non-paged memory growth issue in Elastic Defend's kernal driver causes slow down on Windows systems
+[%collapsible]
+====
+*Details* +
+
+An unbounded kernel non-paged memory growth issue in {elastic-defend}'s kernel driver occurs during extremely high event load situations on Windows. Systems affected by this issue will slow down or become unresponsive until the triggering event load (for example, network activity) subsides. We are only aware of this issue occurring on very busy Windows Server systems running {elastic-defend} versions 8.16.0-8.16.6, 8.17.0-8.17.5, 8.18.0, and 9.0.0.
+
+*Workaround* +
+
+If you can't upgrade, turn off the relevant event source at the kernel level using your {elastic-defend} <<adv-policy-settings,advanced policy settings>>:
+
+* Network Events - Set the `windows.advanced.kernel.network` advanced setting to `false`.
+* Registry Events - Set the `windows.advanced.kernel.registry` advanced setting to `false`.
+
+
+NOTE: Clearing the corresponding checkbox under <<event-collection,Event Collection>> is insufficient, as {elastic-defend} may still process these event sources internally to support other features.
+
+*Resolved* +
+This issue is fixed in {elastic-defend} versions 8.17.6, 8.18.1, and 9.0.1.
+
 
 ====
 // end::known-issue[]
