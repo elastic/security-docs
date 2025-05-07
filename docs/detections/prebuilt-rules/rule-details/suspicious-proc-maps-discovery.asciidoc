@@ -7,7 +7,10 @@ Monitors for /proc/*/maps file reads. The /proc/*/maps file in Linux provides a 
 
 *Rule indices*: 
 
+* endgame-*
+* logs-crowdstrike.fdr*
 * logs-endpoint.events.process*
+* logs-sentinel_one_cloud_funnel.*
 
 *Severity*: low
 
@@ -30,9 +33,12 @@ Monitors for /proc/*/maps file reads. The /proc/*/maps file in Linux provides a 
 * Use Case: Threat Detection
 * Tactic: Discovery
 * Data Source: Elastic Defend
+* Data Source: Elastic Endgame
+* Data Source: Crowdstrike
+* Data Source: SentinelOne
 * Resources: Investigation Guide
 
-*Version*: 6
+*Version*: 7
 
 *Rule authors*: 
 
@@ -96,7 +102,6 @@ In Linux environments, the `/proc/*/maps` files provide detailed memory mapping 
 *Setup*
 
 
-
 This rule requires data coming in from Elastic Defend.
 
 
@@ -132,10 +137,8 @@ For more details on Elastic Defend refer to the https://www.elastic.co/guide/en/
 
 [source, js]
 ----------------------------------
-process where host.os.type == "linux" and event.type == "start" and event.action == "exec" and
-process.name in ("cat", "grep") and process.args : "/proc/*/maps" and process.entry_leader.name in (
-  "bash", "dash", "sh", "tcsh", "csh", "zsh", "ksh", "fish"
-)
+process where host.os.type == "linux" and event.type == "start" and event.action in ("exec", "exec_event", "start", "ProcessRollup2") and
+process.name in ("cat", "grep", "tail", "less", "more", "egrep", "fgrep") and process.args like "/proc/*/maps"
 
 ----------------------------------
 
