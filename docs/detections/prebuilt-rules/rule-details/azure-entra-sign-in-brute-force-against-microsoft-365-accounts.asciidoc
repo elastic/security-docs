@@ -34,7 +34,7 @@ Identifies potential brute-force attempts against Microsoft 365 user accounts by
 * Tactic: Credential Access
 * Resources: Investigation Guide
 
-*Version*: 3
+*Version*: 4
 
 *Rule authors*: 
 
@@ -108,6 +108,9 @@ from logs-azure.signinlogs*
   and to_lower(azure.signinlogs.properties.resource_display_name) rlike "(.*)365(.*)"
   and azure.signinlogs.category in ("NonInteractiveUserSignInLogs", "SignInLogs")
   and event.outcome != "success"
+  and not (azure.signinlogs.category == "NonInteractiveUserSignInLogs"
+      and azure.signinlogs.properties.status.error_code in (70043, 70044, 50057)
+      and azure.signinlogs.properties.incoming_token_type in ("primaryRefreshToken", "refreshToken")) 
   // for tuning review azure.signinlogs.properties.status.error_code
   // https://learn.microsoft.com/en-us/entra/identity-platform/reference-error-codes
 
