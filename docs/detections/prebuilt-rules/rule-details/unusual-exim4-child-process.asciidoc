@@ -1,0 +1,70 @@
+[[unusual-exim4-child-process]]
+=== Unusual Exim4 Child Process
+
+This rule detects the execution of unusual commands via a descendant process of exim4. Attackers may use descendant processes of exim4 to evade detection and establish persistence or execute post-exploitation commands on a target system.
+
+*Rule type*: new_terms
+
+*Rule indices*: 
+
+* logs-endpoint.events.process*
+
+*Severity*: low
+
+*Risk score*: 21
+
+*Runs every*: 5m
+
+*Searches indices from*: now-9m ({ref}/common-options.html#date-math[Date Math format], see also <<rule-schedule, `Additional look-back time`>>)
+
+*Maximum alerts per execution*: 100
+
+*References*: 
+
+* https://www.qualys.com/2021/05/04/21nails/21nails.txt
+* https://blog.qualys.com/vulnerabilities-threat-research/2021/05/04/21nails-multiple-vulnerabilities-in-exim-mail-server
+
+*Tags*: 
+
+* Domain: Endpoint
+* OS: Linux
+* Use Case: Threat Detection
+* Tactic: Persistence
+* Data Source: Elastic Defend
+
+*Version*: 1
+
+*Rule authors*: 
+
+* Elastic
+
+*Rule license*: Elastic License v2
+
+
+==== Rule query
+
+
+[source, js]
+----------------------------------
+host.os.type:linux and event.type:start and event.action:exec and process.parent.name:exim4 and
+not process.name:(
+  exim4 or start-stop-daemon or run-parts or systemctl or update-exim4.conf or install or plymouth or
+  readlink or grep or stat or cmake or gcc or cppcheck or sort or sshd
+)
+
+----------------------------------
+
+*Framework*: MITRE ATT&CK^TM^
+
+* Tactic:
+** Name: Persistence
+** ID: TA0003
+** Reference URL: https://attack.mitre.org/tactics/TA0003/
+* Technique:
+** Name: Boot or Logon Initialization Scripts
+** ID: T1037
+** Reference URL: https://attack.mitre.org/techniques/T1037/
+* Technique:
+** Name: Compromise Host Software Binary
+** ID: T1554
+** Reference URL: https://attack.mitre.org/techniques/T1554/

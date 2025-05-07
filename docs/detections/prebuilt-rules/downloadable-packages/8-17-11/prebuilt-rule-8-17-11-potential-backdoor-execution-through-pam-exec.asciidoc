@@ -1,0 +1,80 @@
+[[prebuilt-rule-8-17-11-potential-backdoor-execution-through-pam-exec]]
+=== Potential Backdoor Execution Through PAM_EXEC
+
+This rule detects SSH session ID change followed by a suspicious SSHD child process, this may indicate the successful execution of a potentially malicious process through the Pluggable Authentication Module (PAM) utility. PAM is a framework used by Linux systems to authenticate users. Adversaries may create malicious PAM modules that grant them persistence onto the target every time a user logs in by executing a backdoor script or command.
+
+*Rule type*: eql
+
+*Rule indices*: 
+
+* logs-endpoint.events.process*
+
+*Severity*: medium
+
+*Risk score*: 47
+
+*Runs every*: 5m
+
+*Searches indices from*: now-9m ({ref}/common-options.html#date-math[Date Math format], see also <<rule-schedule, `Additional look-back time`>>)
+
+*Maximum alerts per execution*: 100
+
+*References*: 
+
+* https://www.elastic.co/security-labs/approaching-the-summit-on-persistence
+* https://www.group-ib.com/blog/pluggable-authentication-module/
+
+*Tags*: 
+
+* Domain: Endpoint
+* OS: Linux
+* Use Case: Threat Detection
+* Tactic: Credential Access
+* Tactic: Persistence
+* Data Source: Elastic Defend
+
+*Version*: 1
+
+*Rule authors*: 
+
+* Elastic
+
+*Rule license*: Elastic License v2
+
+
+==== Rule query
+
+
+[source, js]
+----------------------------------
+sequence by process.entity_id with maxspan=3s
+  [process where host.os.type == "linux" and event.type == "change" and event.action == "session_id_change" and process.name in ("ssh", "sshd")]
+  [process where host.os.type == "linux" and event.type == "start" and event.action == "exec" and process.parent.name in ("ssh", "sshd") and
+   process.args_count == 2 and (
+     process.name like ("perl*", "python*", "php*", "ruby*", "lua*") or
+     process.executable like (
+       "/tmp/*", "/var/tmp/*", "/dev/shm/*", "./*", "/boot/*", "/sys/*", "/lost+found/*", "/media/*", "/proc/*",
+       "/var/backups/*", "/var/log/*", "/var/mail/*", "/var/spool/*") or
+     process.name like ".*"
+   )]
+
+----------------------------------
+
+*Framework*: MITRE ATT&CK^TM^
+
+* Tactic:
+** Name: Persistence
+** ID: TA0003
+** Reference URL: https://attack.mitre.org/tactics/TA0003/
+* Technique:
+** Name: Create or Modify System Process
+** ID: T1543
+** Reference URL: https://attack.mitre.org/techniques/T1543/
+* Tactic:
+** Name: Credential Access
+** ID: TA0006
+** Reference URL: https://attack.mitre.org/tactics/TA0006/
+* Technique:
+** Name: Modify Authentication Process
+** ID: T1556
+** Reference URL: https://attack.mitre.org/techniques/T1556/

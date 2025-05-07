@@ -1,0 +1,112 @@
+[[prebuilt-rule-8-17-11-potential-powershell-obfuscation-via-invalid-escape-sequences]]
+=== Potential PowerShell Obfuscation via Invalid Escape Sequences
+
+Identifies PowerShell scripts that use invalid escape sequences as a form of obfuscation. This technique introduces backticks (`) between characters in a way that does not correspond to valid PowerShell escape sequences, breaking up strings and bypassing pattern-based detections while preserving execution logic. This is designed to evade static analysis and bypass security protections such as the Antimalware Scan Interface (AMSI).
+
+*Rule type*: esql
+
+*Rule indices*: None
+
+*Severity*: low
+
+*Risk score*: 21
+
+*Runs every*: 5m
+
+*Searches indices from*: now-9m ({ref}/common-options.html#date-math[Date Math format], see also <<rule-schedule, `Additional look-back time`>>)
+
+*Maximum alerts per execution*: 100
+
+*References*: None
+
+*Tags*: 
+
+* Domain: Endpoint
+* OS: Windows
+* Use Case: Threat Detection
+* Tactic: Defense Evasion
+* Data Source: PowerShell Logs
+
+*Version*: 1
+
+*Rule authors*: 
+
+* Elastic
+
+*Rule license*: Elastic License v2
+
+
+==== Setup
+
+
+
+*Setup*
+
+
+The 'PowerShell Script Block Logging' logging policy must be enabled.
+Steps to implement the logging policy with Advanced Audit Configuration:
+
+```
+Computer Configuration >
+Administrative Templates >
+Windows PowerShell >
+Turn on PowerShell Script Block Logging (Enable)
+```
+
+Steps to implement the logging policy via registry:
+
+```
+reg add "hklm\SOFTWARE\Policies\Microsoft\Windows\PowerShell\ScriptBlockLogging" /v EnableScriptBlockLogging /t REG_DWORD /d 1
+```
+
+
+==== Rule query
+
+
+[source, js]
+----------------------------------
+FROM logs-windows.powershell_operational* metadata _id, _version, _index
+| WHERE event.code == "4104" and powershell.file.script_block_text LIKE "*`*"
+
+// Replace string format expressions with 🔥 to enable counting the occurrence of the patterns we are looking for
+// The emoji is used because it's unlikely to appear in scripts and has a consistent character length of 1
+| EVAL replaced_with_fire = REPLACE(powershell.file.script_block_text, """[A-Za-z0-9_-]`(?![rntb]|\r|\n|\d)[A-Za-z0-9_-]""", "🔥")
+
+// Count how many patterns were detected by calculating the number of 🔥 characters inserted
+| EVAL count = LENGTH(replaced_with_fire) - LENGTH(REPLACE(replaced_with_fire, "🔥", ""))
+
+// Keep the fields relevant to the query, although this is not needed as the alert is populated using _id
+| KEEP count, replaced_with_fire, powershell.file.script_block_text, powershell.file.script_block_id, file.name, file.path, powershell.sequence, powershell.total, _id, _index, host.name, agent.id, user.id
+| WHERE count >= 10
+
+// Filter FPs, and due to the behavior of the LIKE operator, allow null values
+| WHERE (file.name NOT LIKE "TSS_*.psm1" or file.name IS NULL)
+
+----------------------------------
+
+*Framework*: MITRE ATT&CK^TM^
+
+* Tactic:
+** Name: Defense Evasion
+** ID: TA0005
+** Reference URL: https://attack.mitre.org/tactics/TA0005/
+* Technique:
+** Name: Obfuscated Files or Information
+** ID: T1027
+** Reference URL: https://attack.mitre.org/techniques/T1027/
+* Technique:
+** Name: Deobfuscate/Decode Files or Information
+** ID: T1140
+** Reference URL: https://attack.mitre.org/techniques/T1140/
+* Tactic:
+** Name: Execution
+** ID: TA0002
+** Reference URL: https://attack.mitre.org/tactics/TA0002/
+* Technique:
+** Name: Command and Scripting Interpreter
+** ID: T1059
+** Reference URL: https://attack.mitre.org/techniques/T1059/
+* Sub-technique:
+** Name: PowerShell
+** ID: T1059.001
+** Reference URL: https://attack.mitre.org/techniques/T1059/001/
