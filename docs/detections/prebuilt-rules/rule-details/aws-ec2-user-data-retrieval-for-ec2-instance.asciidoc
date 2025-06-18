@@ -1,7 +1,7 @@
 [[aws-ec2-user-data-retrieval-for-ec2-instance]]
 === AWS EC2 User Data Retrieval for EC2 Instance
 
-Identifies discovery request `DescribeInstanceAttribute` with the attribute userData and instanceId in AWS CloudTrail logs. This may indicate an attempt to retrieve user data from an EC2 instance. Adversaries may use this information to gather sensitive data from the instance such as hardcoded credentials or to identify potential vulnerabilities. This is a [New Terms](https://www.elastic.co/guide/en/security/current/rules-ui-create.html#create-new-terms-rule) rule that identifies when `aws.cloudtrail.user_identity.arn` requests the user data for a specific `aws.cloudtrail.flattened.request_parameters.instanceId` from an EC2 instance in the last 14 days.
+Identifies discovery request DescribeInstanceAttribute with the attribute userData and instanceId in AWS CloudTrail logs. This may indicate an attempt to retrieve user data from an EC2 instance. Adversaries may use this information to gather sensitive data from the instance such as hardcoded credentials or to identify potential vulnerabilities. This is a New Terms rule that identifies the first time an IAM user or role requests the user data for a specific EC2 instance.
 
 *Rule type*: new_terms
 
@@ -16,7 +16,7 @@ Identifies discovery request `DescribeInstanceAttribute` with the attribute user
 
 *Runs every*: 5m
 
-*Searches indices from*: now-9m ({ref}/common-options.html#date-math[Date Math format], see also <<rule-schedule, `Additional look-back time`>>)
+*Searches indices from*: now-6m ({ref}/common-options.html#date-math[Date Math format], see also <<rule-schedule, `Additional look-back time`>>)
 
 *Maximum alerts per execution*: 100
 
@@ -35,7 +35,7 @@ Identifies discovery request `DescribeInstanceAttribute` with the attribute user
 * Use Case: Log Auditing
 * Tactic: Discovery
 
-*Version*: 5
+*Version*: 6
 
 *Rule authors*: 
 
@@ -69,12 +69,7 @@ This rule detects requests to retrieve the `userData` attribute of an EC2 instan
   - **User Identity**: Inspect the `aws.cloudtrail.user_identity.arn` field to identify the user or role that executed the `DescribeInstanceAttribute` action. Investigate whether this user typically performs such actions.
   - **Access Patterns**: Validate whether the user or role has the necessary permissions and whether the frequency of this action aligns with expected behavior.
   - **Access Key ID**: Check the `aws.cloudtrail.user_identity.access_key_id` field to determine the key used to make the request as it may be compromised.
-
-- **Analyze Request Details**:
-  - **Parameters**: Verify that the `attribute=userData` parameter was explicitly requested. This indicates intentional access to user data.
   - **Source IP and Geolocation**: Check the `source.address` and `source.geo` fields to validate whether the request originated from a trusted location or network. Unexpected geolocations can indicate adversarial activity.
-
-- **Review Source Tool**:
   - **User Agent**: Inspect the `user_agent.original` field to determine the tool or client used (e.g., Terraform, AWS CLI). Legitimate automation tools may trigger this activity, but custom or unknown user agents may indicate malicious intent.
 
 - **Check for Related Activity**:
@@ -119,7 +114,7 @@ event.dataset: "aws.cloudtrail"
     and event.provider: "ec2.amazonaws.com"
     and event.action: "DescribeInstanceAttribute"
     and event.outcome: "success"
-    and aws.cloudtrail.request_parameters: (*attribute=userData* and *instanceId*)
+    and aws.cloudtrail.flattened.request_parameters.attribute: "userData"
     and not aws.cloudtrail.user_identity.invoked_by: (
         "AWS Internal" or
         "cloudformation.amazonaws.com"
