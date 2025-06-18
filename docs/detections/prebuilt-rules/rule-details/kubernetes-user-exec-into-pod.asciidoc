@@ -3,7 +3,7 @@
 
 This rule detects a user attempt to establish a shell session into a pod using the 'exec' command. Using the 'exec' command in a pod allows a user to establish a temporary shell session and execute any process/commands in the pod. An adversary may call bash to gain a persistent interactive shell which will allow access to any data the pod has permissions to, including secrets.
 
-*Rule type*: query
+*Rule type*: eql
 
 *Rule indices*: 
 
@@ -30,7 +30,7 @@ This rule detects a user attempt to establish a shell session into a pod using t
 * Tactic: Execution
 * Resources: Investigation Guide
 
-*Version*: 206
+*Version*: 207
 
 *Rule authors*: 
 
@@ -97,11 +97,9 @@ The Kubernetes Fleet integration with Audit Logs enabled or similarly structured
 
 [source, js]
 ----------------------------------
-event.dataset : "kubernetes.audit_logs"
-  and kubernetes.audit.annotations.authorization_k8s_io/decision:"allow"
-  and kubernetes.audit.verb:"create"
-  and kubernetes.audit.objectRef.resource:"pods"
-  and kubernetes.audit.objectRef.subresource:"exec"
+any where host.os.type == "linux" and event.dataset == "kubernetes.audit_logs" and
+kubernetes.audit.verb in ("get", "create") and kubernetes.audit.objectRef.subresource == "exec" and
+kubernetes.audit.stage == "ResponseComplete" and `kubernetes.audit.annotations.authorization_k8s_io/decision` == "allow"
 
 ----------------------------------
 
