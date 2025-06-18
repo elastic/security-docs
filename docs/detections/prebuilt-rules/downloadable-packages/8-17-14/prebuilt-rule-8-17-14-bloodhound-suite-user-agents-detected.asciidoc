@@ -1,0 +1,174 @@
+[[prebuilt-rule-8-17-14-bloodhound-suite-user-agents-detected]]
+=== BloodHound Suite User-Agents Detected
+
+Identifies potential enumeration activity using AzureHound, SharpHound, or BloodHound across Microsoft cloud services. These tools are often used by red teamers and adversaries to map users, groups, roles, applications, and access relationships within Microsoft Entra ID (Azure AD) and Microsoft 365.
+
+*Rule type*: eql
+
+*Rule indices*: 
+
+* filebeat-*
+* logs-azure.*
+* logs-o365.audit-*
+
+*Severity*: medium
+
+*Risk score*: 47
+
+*Runs every*: 5m
+
+*Searches indices from*: now-9m ({ref}/common-options.html#date-math[Date Math format], see also <<rule-schedule, `Additional look-back time`>>)
+
+*Maximum alerts per execution*: 100
+
+*References*: 
+
+* https://specterops.io/bloodhound-overview/
+* https://github.com/SpecterOps/AzureHound
+* https://www.microsoft.com/en-us/security/blog/2025/05/27/new-russia-affiliated-actor-void-blizzard-targets-critical-sectors-for-espionage/
+
+*Tags*: 
+
+* Domain: Cloud
+* Data Source: Azure
+* Data Source: Azure Activity Logs
+* Data Source: Graph API
+* Data Source: Graph API Activity Logs
+* Data Source: Microsoft 365
+* Data Source: Microsoft 365 Audit Logs
+* Data Source: Microsoft Entra ID
+* Data Source: Microsoft Entra ID Audit Logs
+* Data Source: Microsoft Entra ID Sign-in Logs
+* Use Case: Identity and Access Audit
+* Use Case: Threat Detection
+* Tactic: Discovery
+* Resources: Investigation Guide
+
+*Version*: 1
+
+*Rule authors*: 
+
+* Elastic
+
+*Rule license*: Elastic License v2
+
+
+==== Investigation guide
+
+
+
+*Triage and analysis*
+
+
+This rule identifies potential enumeration activity using AzureHound, SharpHound, or BloodHound across Microsoft cloud services. These tools are often used by red teamers and adversaries to map users, groups, roles, applications, and access relationships within Microsoft Entra ID (Azure AD) and Microsoft 365.
+
+The detection is based on known enumeration patterns, particularly the presence of suspicious user agent strings (e.g., `azurehound/`, `sharphound/`, `bloodhound/`) in various Azure and M365 logs. The rule monitors multiple log sources, including:
+
+- Azure Graph API Activity Logs
+- Microsoft 365 Audit Logs
+- Entra ID Sign-in Logs
+- Entra ID Audit Logs
+- Azure Activity Logs
+
+This ensures broader detection of credential abuse, token misuse, or unauthorized identity discovery activity from both interactive and non-interactive (API) sessions.
+
+
+*Possible investigation steps*
+
+
+- Confirm the tool used via `user_agent.original`. Look for:
+    - `azurehound/x.y.z`
+    - `bloodhound/1.0`
+    - `sharphound/1.0`
+- Examine `url.original` or `url.path` to determine which APIs were accessed if Graph API activity logs. For example:
+    - `/v1.0/organization`, `/v1.0/users`, `/v1.0/groups` may indicate user/group/tenant discovery.
+- Identify the `user.id`, `user.name`, or `azure.auditlogs.properties.initiated_by.user.user_principal_name` fields to determine which identity executed the API request.
+- Review `app_id`, `app_display_name`, or `client_id` to identify the application context (e.g., Azure CLI, Graph Explorer, unauthorized app).
+- Check `http.request.method`, `http.response.status_code`, and `event.action` for enumeration patterns (many successful GETs in a short period) if Graph API activity logs.
+- Investigate correlated sign-ins (`azure.signinlogs`) by the same user, IP, or app immediately preceding the API calls. Was MFA used? Is the location suspicious?
+- Review `source.ip`, `client.geo.*`, and `network.*` fields to determine the origin of the requests. Flag unexpected IPs or ISPs.
+- If the event originates in M365 Audit Logs, investigate cross-service activity: Exchange Online, Teams, SharePoint, or role escalations via Unified Audit.
+
+
+*False positive analysis*
+
+
+- This activity may be benign if performed by red teams, internal security auditors, or known security tools under authorization.
+- Automated monitoring solutions, cloud posture scanners, or legitimate Azure/M365 integrations may generate similar traffic. Review the `app_id` and user context.
+- Developer activity in test tenants may include tool usage for learning or validation purposes.
+
+
+*Response and remediation*
+
+
+- If confirmed malicious:
+    - Revoke active sessions or tokens associated with the identified user/app.
+    - Disable the account or rotate credentials immediately.
+    - Review the role assignments (`Directory.Read.All`, `AuditLog.Read.All`, `Directory.AccessAsUser.All`) and remove excessive privileges.
+    - Conduct historical analysis to determine how long enumeration has been occurring and what objects were queried.
+    - Enable Conditional Access policies to require MFA for API and CLI-based access.
+    - Validate audit logging and alerting is enabled across Microsoft Graph, Azure Activity Logs, and M365 workloads.
+
+- If legitimate:
+    - Document the source (e.g., red team operation, security tool).
+    - Add appropriate allowlist conditions for service principal, user, source address or device if policy allows.
+
+
+
+==== Rule query
+
+
+[source, js]
+----------------------------------
+any where event.dataset : (
+    "azure.activitylogs",
+    "azure.graphactivitylogs",
+    "azure.auditlogs",
+    "azure.signinlogs",
+    "o365.audit"
+) and user_agent.original regex~ "(azure|sharp|blood)(hound)/.*"
+
+----------------------------------
+
+*Framework*: MITRE ATT&CK^TM^
+
+* Tactic:
+** Name: Discovery
+** ID: TA0007
+** Reference URL: https://attack.mitre.org/tactics/TA0007/
+* Technique:
+** Name: Permission Groups Discovery
+** ID: T1069
+** Reference URL: https://attack.mitre.org/techniques/T1069/
+* Sub-technique:
+** Name: Cloud Groups
+** ID: T1069.003
+** Reference URL: https://attack.mitre.org/techniques/T1069/003/
+* Technique:
+** Name: System Information Discovery
+** ID: T1082
+** Reference URL: https://attack.mitre.org/techniques/T1082/
+* Technique:
+** Name: Account Discovery
+** ID: T1087
+** Reference URL: https://attack.mitre.org/techniques/T1087/
+* Sub-technique:
+** Name: Cloud Account
+** ID: T1087.004
+** Reference URL: https://attack.mitre.org/techniques/T1087/004/
+* Technique:
+** Name: Password Policy Discovery
+** ID: T1201
+** Reference URL: https://attack.mitre.org/techniques/T1201/
+* Technique:
+** Name: Cloud Service Discovery
+** ID: T1526
+** Reference URL: https://attack.mitre.org/techniques/T1526/
+* Technique:
+** Name: Cloud Infrastructure Discovery
+** ID: T1580
+** Reference URL: https://attack.mitre.org/techniques/T1580/
+* Technique:
+** Name: Virtual Machine Discovery
+** ID: T1673
+** Reference URL: https://attack.mitre.org/techniques/T1673/
