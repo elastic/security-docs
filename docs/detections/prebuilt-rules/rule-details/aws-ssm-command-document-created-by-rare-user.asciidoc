@@ -1,7 +1,7 @@
 [[aws-ssm-command-document-created-by-rare-user]]
 === AWS SSM Command Document Created by Rare User
 
-Identifies when an AWS Systems Manager (SSM) command document is created by a user who does not typically perform this action. Adversaries may create SSM command documents to execute commands on managed instances, potentially leading to unauthorized access, command and control, data exfiltration and more.
+Identifies when an AWS Systems Manager (SSM) command document is created by a user or role who does not typically perform this action. Adversaries may create SSM command documents to execute commands on managed instances, potentially leading to unauthorized access, command and control, data exfiltration and more.
 
 *Rule type*: new_terms
 
@@ -16,7 +16,7 @@ Identifies when an AWS Systems Manager (SSM) command document is created by a us
 
 *Runs every*: 5m
 
-*Searches indices from*: now-9m ({ref}/common-options.html#date-math[Date Math format], see also <<rule-schedule, `Additional look-back time`>>)
+*Searches indices from*: now-6m ({ref}/common-options.html#date-math[Date Math format], see also <<rule-schedule, `Additional look-back time`>>)
 
 *Maximum alerts per execution*: 100
 
@@ -30,13 +30,13 @@ Identifies when an AWS Systems Manager (SSM) command document is created by a us
 * Domain: Cloud
 * Data Source: AWS
 * Data Source: Amazon Web Services
-* Data Source: AWS SNS
+* Data Source: AWS SSM
 * Data Source: AWS Systems Manager
 * Resources: Investigation Guide
 * Use Case: Threat Detection
 * Tactic: Execution
 
-*Version*: 4
+*Version*: 5
 
 *Rule authors*: 
 
@@ -66,7 +66,7 @@ This rule identifies when an AWS Systems Manager (SSM) command document is creat
 - **Analyze the Document Details**:
   - **Document Name**: Check the `aws.cloudtrail.request_parameters.name` field for the document name to understand its intended purpose.
   - **Document Content**: If possible, review `aws.cloudtrail.request_parameters.content` for any sensitive or unexpected instructions (e.g., actions for data exfiltration or privilege escalation). If not available via logs, consider reviewing the document in the AWS Management Console.
-- **Contextualize the Activity with Related Events**: Look for other CloudTrail events involving the same user ARN or IP address (`source.address`). Examine actions performed in other AWS services, such as IAM, EC2, or S3, to identify if additional suspicious behavior exists. The `SendCommand` API call may indicate attempts to execute the SSM document on managed instances.
+- **Contextualize the Activity with Related Events**: Look for other CloudTrail events involving the same user ARN or IP address (`source.ip`). Examine actions performed in other AWS services, such as IAM, EC2, or S3, to identify if additional suspicious behavior exists. The `SendCommand` API call may indicate attempts to execute the SSM document on managed instances.
 - **Check Document Status and Metadata**:
   - **Document Status**: Confirm the document creation status in `aws.cloudtrail.response_elements.documentDescription.status`. A status of `Creating` may indicate that the document is in progress.
   - **Execution Permissions**: Review if the document specifies `platformTypes` and `documentVersion` in `aws.cloudtrail.response_elements.documentDescription` to understand which environments may be impacted and if multiple versions exist.
@@ -103,7 +103,7 @@ event.dataset: "aws.cloudtrail"
     and event.provider: "ssm.amazonaws.com"
     and event.action: "CreateDocument"
     and event.outcome: "success"
-    and aws.cloudtrail.response_elements: *documentType=Command*
+    and aws.cloudtrail.flattened.response_elements.documentDescription.documentType: "Command"
 
 ----------------------------------
 
@@ -113,3 +113,7 @@ event.dataset: "aws.cloudtrail"
 ** Name: Execution
 ** ID: TA0002
 ** Reference URL: https://attack.mitre.org/tactics/TA0002/
+* Technique:
+** Name: Cloud Administration Command
+** ID: T1651
+** Reference URL: https://attack.mitre.org/techniques/T1651/
