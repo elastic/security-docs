@@ -39,7 +39,7 @@ Identifies suspicious creation of Alternate Data Streams on highly targeted file
 * Data Source: SentinelOne
 * Data Source: Elastic Endgame
 
-*Version*: 319
+*Version*: 320
 
 *Rule authors*: 
 
@@ -125,7 +125,11 @@ Attackers can abuse these alternate data streams to hide malicious files, string
 ----------------------------------
 file where host.os.type == "windows" and event.type == "creation" and
 
-  file.path : "C:\\*:*" and
+  file.path : "C:\\*:*" and file.extension in~ (
+    "pdf", "dll", "exe", "dat", "com", "bat", "cmd", "sys", "vbs", "ps1", "hta", "txt", "vbe", "js",
+    "wsh", "docx", "doc", "xlsx", "xls", "pptx", "ppt", "rtf", "gif", "jpg", "png", "bmp", "img", "iso"
+  ) and
+
   not file.path : 
           ("C:\\*:zone.identifier*",
            "C:\\users\\*\\appdata\\roaming\\microsoft\\teams\\old_weblogs_*:$DATA",
@@ -160,12 +164,12 @@ file where host.os.type == "windows" and event.type == "creation" and
           "?:\\windows\\System32\\svchost.exe",
           "?:\\Windows\\System32\\WFS.exe"
   ) and
+  
+  not (
+    ?process.code_signature.trusted == true and
+    file.name : "*:sec.endpointdlp:$DATA"
+  )
 
-  file.extension :
-    (
-      "pdf", "dll", "exe", "dat", "com", "bat", "cmd", "sys", "vbs", "ps1", "hta", "txt", "vbe", "js",
-      "wsh", "docx", "doc", "xlsx", "xls", "pptx", "ppt", "rtf", "gif", "jpg", "png", "bmp", "img", "iso"
-    )
 
 ----------------------------------
 
