@@ -25,12 +25,6 @@ For a demo, refer to the following video.
 ++++
 =======
 
-This page describes:
-
-* <<attack-discovery-generate-discoveries, How to generate discoveries>>
-* <<attack-discovery-what-info, What information each discovery includes>>
-* <<attack-discovery-workflows, How you can interact with discoveries to enhance {elastic-sec} workflows>>
-
 [discrete]
 [[attack-discovery-rbac]]
 == Role-based access control (RBAC) for Attack Discovery
@@ -39,10 +33,39 @@ You need the `Attack Discovery: All` privilege to use Attack Discovery.
 
 image::images/attck-disc-rbac.png[Attack Discovery's RBAC settings,60%]
 
+Your role must also have the following privileges:
+
+[discrete]
+[width="100%",options="header"]
+|===
+|Action |Indices |{es} privileges
+
+|Read Attack Discovery alerts
+a| 
+* `.alerts-security.attack.discovery.alerts-<space-id>`
+* `.internal.alerts-security.attack.discovery.alerts-<space-id>`
+* `.adhoc.alerts-security.attack.discovery.alerts-<space-id>`
+* `.internal.adhoc.alerts-security.attack.discovery.alerts-<space-id>`
+| `read`, `view_index_metadata`
+
+a|Read and modify Attack Discovery alerts. This includes:
+
+* Generating discovery alerts manually
+* Generating discovery alerts using schedules
+* Sharing manually created alerts with other users
+* Updating a discovery's status
+a|
+* `.alerts-security.attack.discovery.alerts-<space-id>`
+* `.internal.alerts-security.attack.discovery.alerts-<space-id>`
+* `.adhoc.alerts-security.attack.discovery.alerts-<space-id>`
+* `.internal.adhoc.alerts-security.attack.discovery.alerts-<space-id>`
+|`read`, `view_index_metadata`, `write`, `maintenance`
+|===
+
 [discrete]
 == Set up Attack Discovery
 
-By default, Attack Discovery analyzes up to 100 alerts from the last 24 hours, but you can customize how many and which alerts it analyzes using the settings menu. To open it, click the gear icon next to the **Generate** button.
+By default, Attack Discovery analyzes up to 100 alerts from the last 24 hours, but you can customize how many and which alerts it analyzes using the settings menu. To open it, click the settings icon next to the **Run** button.
 
 image::images/security-attack-discovery-settings.png[Attack Discovery's settings menu,60%]
 
@@ -54,7 +77,7 @@ You can select which alerts Attack Discovery will process by filtering based on 
 
 Attack Discovery is designed for use with alerts based on data that complies with ECS, and by default only analyses ECS-compliant fields. However, you can enable Attack Discovery to review additional fields by following these steps:
 
-1. Select an alert with some of the non-ECS fields you want to analyze, and go to its details flyout. From here, use the **Chat** button to open AI Assistant.
+1. Select an alert with some of the non-ECS fields you want to analyze, and go to its details flyout. From here, use the **Ask AI Assistant** button to open AI Assistant.
 2. At the bottom of the chat window, the alert's information appears. Click **Edit** to open the anonymization window to this alert's fields.
 3.  Search for and select the non-ECS fields you want Attack Discovery to analyze. Set them to **Allowed**. 
 
@@ -63,12 +86,12 @@ The selected fields can now be analyzed the next time you run Attack Discovery.
 
 [[attack-discovery-generate-discoveries]]
 [discrete]
-== Generate discoveries
+== Generate discoveries manually
 
 You'll need to select an LLM connector before you can analyze alerts. Attack Discovery uses the same LLM connectors as <<security-assistant>>. To get started:
 
 . Click the **Attack Discovery** page from {elastic-sec}'s navigation menu.
-. Select an existing connector from the dropdown menu, or add a new one.
+. Click the settings icon next to the **Run** button, then in the settings menu, select an existing connector from the dropdown menu, or add a new one.
 +
 .Recommended models
 [sidebar]
@@ -78,9 +101,9 @@ While Attack Discovery is compatible with many different models, refer to the <<
 +
 image::images/attck-disc-select-model-empty.png[]
 +
-. Once you've selected a connector, click **Generate** to start the analysis.
+. Once you've selected a connector, click **Save and run** to start the analysis.
 
-It may take from a few seconds up to several minutes to generate discoveries, depending on the number of alerts and the model you selected. Once the analysis is complete, any threats it identifies will appear as discoveries. Click each one’s title to expand or collapse it. Click **Generate** at any time to start the Attack Discovery process again with the selected alerts.
+It may take from a few seconds up to several minutes to generate discoveries, depending on the number of alerts and the model you selected. Once the analysis is complete, any threats it identifies will appear as discoveries. Click each one’s title to expand or collapse it. Click **Run** at any time to start the Attack Discovery process again with the selected alerts.
 
 IMPORTANT: Attack Discovery uses the same data anonymization settings as <<security-assistant, Elastic AI Assistant>>. To configure which alert fields are sent to the LLM and which of those fields are obfuscated, use the Elastic AI Assistant settings. Consider the privacy policies of third-party LLMs before sending them sensitive data.
 
@@ -109,3 +132,69 @@ There are several ways you can incorporate discoveries into your {elastic-sec} w
 * Click **View in AI Assistant** to attach the discovery to a conversation with AI Assistant. You can then ask follow-up questions about the discovery or associated alerts. 
 
 image::images/add-discovery-to-assistant.gif[Attack Discovery view in AI Assistant]
+
+[[schedule-discoveries]]
+[discrete]
+== Schedule discoveries
+
+You can define recurring schedules (for example, daily or weekly) to automatically generate attack discoveries without needing manual runs. For example, you can generate discoveries every 24 hours and send a Slack notification to your SecOps channel if discoveries are found. Notifications are sent using configured {kibana-ref}/action-types.html[connectors], such as Slack or email, and you can customize the notification content to tailor alert context to your needs.
+
+NOTE: You can still generate discoveries manually at any time, regardless of an active schedule.
+
+To create a new schedule:
+
+. In the top-right corner, select **Schedule**.
+. In the **Attack discovery schedule** flyout, select **Create new schedule**.
+. Enter a name for the new schedule.
+. Select the LLM connector to use for generating discoveries, or add a new one.
+. Use the KQL query bar, time filter, and alerts slider to customize the set of alerts that will be analyzed.
+. Define the schedule's frequency (for example, every 24 hours).
+. Optionally, select the {kibana-ref}/action-types.html[connectors] to use for receiving notifications, and define their actions.
+. Click **Create & enable schedule**.
+
+After creating new schedules, you can view their status, modify them or delete them from the **Attack discovery schedule** flyout.
+
+TIP: Scheduled discoveries are shown with a **Scheduled Attack discovery** icon. Click the icon to view the schedule that created it.
+
+[[saved-discoveries]]
+[discrete]
+== View saved discoveries
+
+Attack discoveries are automatically saved on the **Attack Discovery** page each time you generate them. Once saved, discoveries remain available for later review, reporting, and tracking over time. This allows you to revisit discoveries to monitor trends, maintain audit trails, and support investigations as your environment evolves.
+
+[discrete]
+=== Change a discovery's status
+
+You can set a discovery's status to indicate that it's under active investigation or that it's been resolved. To do this, click **Take action**, then select **Mark as acknowledged** or **Mark as closed**.
+
+You can choose to change the status of only the discovery, or of both the discovery and the alerts associated with it.
+
+[discrete]
+=== Share attack discoveries
+
+By default, scheduled discoveries are shared with all users in a {kib} space.
+
+Manually generated discoveries are private by default. To share them, change **Not shared** to **Shared** next to the discovery's name.
+
+NOTE: Once a discovery is shared, its visibility cannot be changed.
+
+[discrete]
+=== Take bulk actions
+
+You can take bulk actions on multiple discoveries, such as bulk-changing their status or adding them to a case. To do this, select the checkboxes next to each discovery, then click **Selected *x* Attack discoveries** and choose the action you want to take.
+
+[discrete]
+=== Search and filter saved discoveries
+
+You can search and filter saved discoveries to help locate relevant findings.
+
+* Use the search box to perform full-text searches across your generated discoveries.
+
+* **Visibility**: Use this filter to, for example, show only shared discoveries.
+
+* **Status**: Filter discoveries by their current status.
+
+* **Connector**: Filter discoveries by connector name. Connectors that are deleted after discoveries have been generated are shown with a **Deleted** tag.
+
+* Time filter: Adjust the time filter to view discoveries generated within a specific timeframe.
+
