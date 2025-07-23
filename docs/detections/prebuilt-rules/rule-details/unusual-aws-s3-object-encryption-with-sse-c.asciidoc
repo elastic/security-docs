@@ -1,7 +1,7 @@
 [[unusual-aws-s3-object-encryption-with-sse-c]]
 === Unusual AWS S3 Object Encryption with SSE-C
 
-Identifies when AWS S3 objects stored in a bucket are encrypted using Server-Side Encryption with Customer-Provided Keys (SSE-C). Adversaries with compromised AWS credentials can encrypt objects in an S3 bucket using their own encryption keys, rendering the objects unreadable or recoverable without the key. This can be used as a form of ransomware to extort the bucket owner for the decryption key. This is a [New Terms](https://www.elastic.co/guide/en/security/current/rules-ui-create.html#create-new-terms-rule) rule that flags when this behavior is observed for the first time in the last 14 days by the user ARN and target bucket name.
+Identifies when AWS S3 objects stored in a bucket are encrypted using Server-Side Encryption with Customer-Provided Keys (SSE-C). Adversaries with compromised AWS credentials can encrypt objects in an S3 bucket using their own encryption keys, rendering the objects unreadable or recoverable without the key. This can be used as a form of ransomware to extort the bucket owner for the decryption key. This is a New Terms rule that flags when this behavior is observed for the first time user and target bucket name.
 
 *Rule type*: new_terms
 
@@ -16,7 +16,7 @@ Identifies when AWS S3 objects stored in a bucket are encrypted using Server-Sid
 
 *Runs every*: 5m
 
-*Searches indices from*: now-9m ({ref}/common-options.html#date-math[Date Math format], see also <<rule-schedule, `Additional look-back time`>>)
+*Searches indices from*: now-6m ({ref}/common-options.html#date-math[Date Math format], see also <<rule-schedule, `Additional look-back time`>>)
 
 *Maximum alerts per execution*: 100
 
@@ -35,7 +35,7 @@ Identifies when AWS S3 objects stored in a bucket are encrypted using Server-Sid
 * Use Case: Threat Detection
 * Tactic: Impact
 
-*Version*: 3
+*Version*: 4
 
 *Rule authors*: 
 
@@ -66,11 +66,11 @@ This rule identifies the use of Server-Side Encryption with Customer-Provided Ke
    - Review the `aws.cloudtrail.user_identity.access_key_id` to identify the access key used. This could be a compromised key.
 
 2. **Examine the Targeted Resources**:
-   - Check `aws.cloudtrail.flattened.request_parameters.bucketName` to identify the bucket involved.
-   - Analyze the object key from `aws.cloudtrail.flattened.request_parameters.key`.
+   - Check `aws.cloudtrail.request_parameters` to identify the bucket involved.
+   - Analyze the object key from `aws.cloudtrail.request_parameters`.
 
 3. **Evaluate Encryption Behavior**:
-   - Confirm the encryption details in `aws.cloudtrail.flattened.request_parameters.x-amz-server-side-encryption-customer-algorithm` and `aws.cloudtrail.flattened.additional_eventdata.SSEApplied`.
+   - Confirm the encryption details in `aws.cloudtrail.request_parameters` and `aws.cloudtrail.additional_eventdata`.
    - Note if `SSEApplied` is `SSE-C`, which confirms encryption using a customer-provided key.
 
 4. **Correlate with Recent Events**:
@@ -128,7 +128,6 @@ event.dataset: "aws.cloudtrail"
     and event.action: "PutObject"
     and event.outcome: "success"
     and aws.cloudtrail.flattened.request_parameters.x-amz-server-side-encryption-customer-algorithm: "AES256"
-    and aws.cloudtrail.flattened.additional_eventdata.SSEApplied: "SSE_C"
 
 ----------------------------------
 
