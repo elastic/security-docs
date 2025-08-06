@@ -34,7 +34,7 @@ Detects when a certain threshold of Okta user authentication events are reported
 * Tactic: Credential Access
 * Resources: Investigation Guide
 
-*Version*: 205
+*Version*: 206
 
 *Rule authors*: 
 
@@ -115,19 +115,26 @@ The Okta Fleet integration, Filebeat module, or similarly structured data is req
 
 [source, js]
 ----------------------------------
-FROM logs-okta*
-| WHERE
-    event.dataset == "okta.system"
-    AND (event.action == "user.session.start" OR event.action RLIKE "user\\.authentication(.*)")
-    AND okta.outcome.reason == "INVALID_CREDENTIALS"
-| KEEP okta.client.ip, okta.actor.alternate_id, okta.actor.id, event.action, okta.outcome.reason
-| STATS
-    source_auth_count = COUNT_DISTINCT(okta.actor.id)
-    BY okta.client.ip, okta.actor.alternate_id
-| WHERE
-    source_auth_count > 5
-| SORT
-    source_auth_count DESC
+from logs-okta*
+| where
+    event.dataset == "okta.system" and
+    (event.action == "user.session.start" or event.action rlike "user\.authentication(.*)") and
+    okta.outcome.reason == "INVALID_CREDENTIALS"
+| keep
+    okta.client.ip,
+    okta.actor.alternate_id,
+    okta.actor.id,
+    event.action,
+    okta.outcome.reason
+| stats
+    Esql.okta_actor_id_count_distinct = count_distinct(okta.actor.id)
+  by
+    okta.client.ip,
+    okta.actor.alternate_id
+| where
+    Esql.okta_actor_id_count_distinct > 5
+| sort
+    Esql.okta_actor_id_count_distinct desc
 
 ----------------------------------
 

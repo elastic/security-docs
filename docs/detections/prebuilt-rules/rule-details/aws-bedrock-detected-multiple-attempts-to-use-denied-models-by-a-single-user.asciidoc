@@ -34,7 +34,7 @@ Identifies multiple successive failed attempts to use denied model resources wit
 * Mitre Atlas: T0015
 * Mitre Atlas: T0034
 
-*Version*: 4
+*Version*: 5
 
 *Rule authors*: 
 
@@ -107,10 +107,29 @@ https://docs.aws.amazon.com/bedrock/latest/userguide/guardrails-create.html
 [source, js]
 ----------------------------------
 from logs-aws_bedrock.invocation-*
+
+// Filter for access denied errors from GenAI responses
 | where gen_ai.response.error_code == "AccessDeniedException"
-| keep user.id, gen_ai.request.model.id, cloud.account.id, gen_ai.response.error_code
-| stats total_denials = count(*) by user.id, gen_ai.request.model.id, cloud.account.id
-| where total_denials > 3
-| sort total_denials desc
+
+// keep ECS and response fields
+| keep
+  user.id,
+  gen_ai.request.model.id,
+  cloud.account.id,
+  gen_ai.response.error_code
+
+// count total denials per user/model/account
+| stats
+    Esql.ml_response_access_denied_count = count(*)
+  by
+    user.id,
+    gen_ai.request.model.id,
+    cloud.account.id
+
+// Filter for users with repeated denials
+| where Esql.ml_response_access_denied_count > 3
+
+// sort by volume of denials
+| sort Esql.ml_response_access_denied_count desc
 
 ----------------------------------

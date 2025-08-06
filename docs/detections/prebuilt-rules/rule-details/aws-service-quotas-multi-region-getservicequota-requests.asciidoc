@@ -32,7 +32,7 @@ Identifies when a single AWS resource is making `GetServiceQuota` API calls for 
 * Tactic: Discovery
 * Resources: Investigation Guide
 
-*Version*: 3
+*Version*: 4
 
 *Rule authors*: 
 
@@ -97,28 +97,41 @@ AWS Service Quotas manage resource limits across AWS services, crucial for maint
 from logs-aws.cloudtrail-*
 
 // filter for GetServiceQuota API calls
-| where event.dataset == "aws.cloudtrail" and event.provider == "servicequotas.amazonaws.com" and event.action == "GetServiceQuota"
+| where
+  event.dataset == "aws.cloudtrail"
+  and event.provider == "servicequotas.amazonaws.com"
+  and event.action == "GetServiceQuota"
 
 // truncate the timestamp to a 30-second window
-| eval target_time_window = DATE_TRUNC(30 seconds, @timestamp)
+| eval Esql.time_window_date_trunc = date_trunc(30 seconds, @timestamp)
 
-// pre-process the request parameters to extract the service code and quota code
-| dissect aws.cloudtrail.request_parameters "{%{?service_code_key}=%{service_code}, %{?quota_code_key}=%{quota_code}}"
+// dissect request parameters to extract service and quota code
+| dissect aws.cloudtrail.request_parameters "{%{?Esql.aws_cloudtrail_request_parameters_service_code_key}=%{Esql.aws_cloudtrail_request_parameters_service_code}, %{?quota_code_key}=%{Esql.aws_cloudtrail_request_parameters_quota_code}}"
 
 // filter for EC2 service quota L-1216C47A (vCPU on-demand instances)
-| where service_code == "ec2" and quota_code == "L-1216C47A"
+| where Esql.aws_cloudtrail_request_parameters_service_code == "ec2" and Esql.aws_cloudtrail_request_parameters_quota_code == "L-1216C47A"
 
 // keep only the relevant fields
-| keep target_time_window, aws.cloudtrail.user_identity.arn, cloud.region, service_code, quota_code
+| keep
+    Esql.time_window_date_trunc,
+    aws.cloudtrail.user_identity.arn,
+    cloud.region,
+    Esql.aws_cloudtrail_request_parameters_service_code,
+    Esql.aws_cloudtrail_request_parameters_quota_code
 
-// count the number of unique regions and total API calls within the 30-second window
-| stats region_count = count_distinct(cloud.region), window_count = count(*) by target_time_window, aws.cloudtrail.user_identity.arn
+// count the number of unique regions and total API calls within the time window
+| stats
+    Esql.cloud_region_count_distinct = count_distinct(cloud.region),
+    Esql.event_count = count(*)
+  by Esql.time_window_date_trunc, aws.cloudtrail.user_identity.arn
 
-// filter for resources making DescribeInstances API calls in more than 10 regions within the 30-second window
-| where region_count >= 10 and window_count >= 10
+// filter for API calls in more than 10 regions within the 30-second window
+| where
+  Esql.cloud_region_count_distinct >= 10
+  and Esql.event_count >= 10
 
-// sort the results by time windows in descending order
-| sort target_time_window desc
+// sort by time window descending
+| sort Esql.time_window_date_trunc desc
 
 ----------------------------------
 
