@@ -34,7 +34,7 @@ Detects when a high number of Okta user authentication events are reported for m
 * Tactic: Credential Access
 * Resources: Investigation Guide
 
-*Version*: 205
+*Version*: 206
 
 *Rule authors*: 
 
@@ -112,20 +112,27 @@ The Okta Fleet integration, Filebeat module, or similarly structured data is req
 
 [source, js]
 ----------------------------------
-FROM logs-okta*
-| WHERE
-    event.dataset == "okta.system"
-    AND (event.action RLIKE "user\\.authentication(.*)" OR event.action == "user.session.start")
-    AND okta.debug_context.debug_data.dt_hash != "-"
-    AND okta.outcome.reason == "INVALID_CREDENTIALS"
-| KEEP event.action, okta.debug_context.debug_data.dt_hash, okta.actor.id, okta.actor.alternate_id, okta.outcome.reason
-| STATS
-    target_auth_count = COUNT_DISTINCT(okta.actor.id)
-    BY okta.debug_context.debug_data.dt_hash, okta.actor.alternate_id
-| WHERE
-    target_auth_count > 20
-| SORT
-    target_auth_count DESC
+from logs-okta*
+| where
+    event.dataset == "okta.system" and
+    (event.action rlike "user\.authentication(.*)" or event.action == "user.session.start") and
+    okta.debug_context.debug_data.dt_hash != "-" and
+    okta.outcome.reason == "INVALID_CREDENTIALS"
+| keep
+    event.action,
+    okta.debug_context.debug_data.dt_hash,
+    okta.actor.id,
+    okta.actor.alternate_id,
+    okta.outcome.reason
+| stats
+    Esql.okta_actor_id_count_distinct = count_distinct(okta.actor.id)
+  by
+    okta.debug_context.debug_data.dt_hash,
+    okta.actor.alternate_id
+| where
+    Esql.okta_actor_id_count_distinct > 20
+| sort
+    Esql.okta_actor_id_count_distinct desc
 
 ----------------------------------
 
