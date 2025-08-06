@@ -28,7 +28,7 @@ This rule detects potential port scanning activity from a compromised host. Port
 * Data Source: Elastic Defend
 * Resources: Investigation Guide
 
-*Version*: 4
+*Version*: 5
 
 *Rule authors*: 
 
@@ -128,12 +128,32 @@ For more details on Elastic Defend refer to the https://www.elastic.co/guide/en/
 [source, js]
 ----------------------------------
 from logs-endpoint.events.network-*
-| keep @timestamp, host.os.type, event.type, event.action, destination.port, process.executable, destination.ip, agent.id, host.name
-| where @timestamp > now() - 1 hours
-| where host.os.type == "linux" and event.type == "start" and event.action == "connection_attempted"
-| stats cc = count(), port_count = count_distinct(destination.port), agent_count = count_distinct(agent.id), host.name = VALUES(host.name), agent.id = VALUES(agent.id) by process.executable, destination.ip
-| where agent_count == 1 and port_count > 100
-| sort cc asc
+| where
+    @timestamp > now() - 1h and
+    host.os.type == "linux" and
+    event.type == "start" and
+    event.action == "connection_attempted"
+| keep
+    @timestamp,
+    host.os.type,
+    event.type,
+    event.action,
+    destination.port,
+    process.executable,
+    destination.ip,
+    agent.id,
+    host.name
+| stats
+    Esql.event_count = count(),
+    Esql.destination_port_count_distinct = count_distinct(destination.port),
+    Esql.agent_id_count_distinct = count_distinct(agent.id),
+    Esql.host_name_values = values(host.name),
+    Esql.agent_id_values = values(agent.id)
+    by process.executable, destination.ip
+| where
+    Esql.agent_id_count_distinct == 1 and
+    Esql.destination_port_count_distinct > 100
+| sort Esql.event_count asc
 | limit 100
 
 ----------------------------------

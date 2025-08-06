@@ -34,7 +34,7 @@ Detects when an Okta client address has a certain threshold of Okta user authent
 * Tactic: Credential Access
 * Resources: Investigation Guide
 
-*Version*: 205
+*Version*: 206
 
 *Rule authors*: 
 
@@ -115,20 +115,28 @@ The Okta Fleet integration, Filebeat module, or similarly structured data is req
 
 [source, js]
 ----------------------------------
-FROM logs-okta*
-| WHERE
-    event.dataset == "okta.system"
-    AND (event.action RLIKE "user\\.authentication(.*)" OR event.action == "user.session.start")
-    AND okta.debug_context.debug_data.request_uri == "/api/v1/authn"
-    AND okta.outcome.reason == "INVALID_CREDENTIALS"
-| KEEP event.action, okta.debug_context.debug_data.dt_hash, okta.client.ip, okta.actor.alternate_id, okta.debug_context.debug_data.request_uri, okta.outcome.reason
-| STATS
-    source_auth_count = COUNT_DISTINCT(okta.debug_context.debug_data.dt_hash)
-    BY okta.client.ip, okta.actor.alternate_id
-| WHERE
-    source_auth_count >= 30
-| SORT
-    source_auth_count DESC
+from logs-okta*
+| where
+    event.dataset == "okta.system" and
+    (event.action rlike "user\.authentication(.*)" or event.action == "user.session.start") and
+    okta.debug_context.debug_data.request_uri == "/api/v1/authn" and
+    okta.outcome.reason == "INVALID_CREDENTIALS"
+| keep
+    event.action,
+    okta.debug_context.debug_data.dt_hash,
+    okta.client.ip,
+    okta.actor.alternate_id,
+    okta.debug_context.debug_data.request_uri,
+    okta.outcome.reason
+| stats
+    Esql.okta_debug_context_debug_data_dt_hash_count_distinct = count_distinct(okta.debug_context.debug_data.dt_hash)
+  by
+    okta.client.ip,
+    okta.actor.alternate_id
+| where
+    Esql.okta_debug_context_debug_data_dt_hash_count_distinct >= 30
+| sort
+    Esql.okta_debug_context_debug_data_dt_hash_count_distinct desc
 
 ----------------------------------
 
