@@ -28,7 +28,7 @@ Identifies PowerShell scripts that use concatenated strings within dynamic comma
 * Data Source: PowerShell Logs
 * Resources: Investigation Guide
 
-*Version*: 2
+*Version*: 3
 
 *Rule authors*: 
 
@@ -113,19 +113,37 @@ reg add "hklm\SOFTWARE\Policies\Microsoft\Windows\PowerShell\ScriptBlockLogging"
 
 [source, js]
 ----------------------------------
-FROM logs-windows.powershell_operational* metadata _id, _version, _index
-| WHERE event.code == "4104" and powershell.file.script_block_text LIKE "*+*"
+from logs-windows.powershell_operational* metadata _id, _version, _index
+| where event.code == "4104" and powershell.file.script_block_text like "*+*"
 
-// Replace string format expressions with 🔥 to enable counting the occurrence of the patterns we are looking for
+// replace the patterns we are looking for with the 🔥 emoji to enable counting them
 // The emoji is used because it's unlikely to appear in scripts and has a consistent character length of 1
-| EVAL replaced_with_fire = REPLACE(powershell.file.script_block_text, """[.&]\(\s*(['"][A-Za-z0-9.-]+['"]\s*\+\s*)+['"][A-Za-z0-9.-]+['"]\s*\)""", "🔥")
+| eval Esql.script_block_tmp = replace(
+    powershell.file.script_block_text,
+    """[.&]\(\s*(['"][A-Za-z0-9.-]+['"]\s*\+\s*)+['"][A-Za-z0-9.-]+['"]\s*\)""",
+    "🔥"
+)
 
-// Count how many patterns were detected by calculating the number of 🔥 characters inserted
-| EVAL count = LENGTH(replaced_with_fire) - LENGTH(REPLACE(replaced_with_fire, "🔥", ""))
+// count how many patterns were detected by calculating the number of 🔥 characters inserted
+| eval Esql.script_block_pattern_count = length(Esql.script_block_tmp) - length(replace(Esql.script_block_tmp, "🔥", ""))
 
-// Keep the fields relevant to the query, although this is not needed as the alert is populated using _id
-| KEEP count, replaced_with_fire, powershell.file.script_block_text, powershell.file.script_block_id, file.path, powershell.sequence, powershell.total, _id, _index, host.name, agent.id, user.id
-| WHERE count >= 1
+// keep the fields relevant to the query, although this is not needed as the alert is populated using _id
+| keep
+    Esql.script_block_pattern_count,
+    Esql.script_block_tmp,
+    powershell.file.script_block_text,
+    powershell.file.script_block_id,
+    file.path,
+    powershell.sequence,
+    powershell.total,
+    _id,
+    _index,
+    host.name,
+    agent.id,
+    user.id
+
+// Filter for scripts that match the pattern at least once
+| where Esql.script_block_pattern_count >= 1
 
 ----------------------------------
 
