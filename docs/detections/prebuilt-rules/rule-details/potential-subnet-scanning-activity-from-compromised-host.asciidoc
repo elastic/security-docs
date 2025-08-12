@@ -1,7 +1,7 @@
 [[potential-subnet-scanning-activity-from-compromised-host]]
 === Potential Subnet Scanning Activity from Compromised Host
 
-This rule detects potential subnet scanning activity from a compromised host. Subnet scanning is a common reconnaissance technique used by attackers to identify live hosts within a network range. A compromised host may exhibit subnet scanning behavior when an attacker is attempting to map out the network topology, identify vulnerable hosts, or prepare for further exploitation. This rule identifies potential subnet scanning activity by monitoring network connection attempts from a single host to a large number of hosts within a short time frame. ES|QL rules have limited fields available in its alert documents. Make sure to review the original documents to aid in the investigation of this alert.
+This rule detects potential subnet scanning activity from a compromised host. Subnet scanning is a common reconnaissance technique used by attackers to identify live hosts within a network range. A compromised host may exhibit subnet scanning behavior when an attacker is attempting to map out the network topology, identify vulnerable hosts, or prepare for further exploitation. This rule identifies potential subnet scanning activity by monitoring network connection attempts from a single host to a large number of hosts within a short time frame. ESQL rules have limited fields available in its alert documents. Make sure to review the original documents to aid in the investigation of this alert.
 
 *Rule type*: esql
 
@@ -28,7 +28,7 @@ This rule detects potential subnet scanning activity from a compromised host. Su
 * Data Source: Elastic Defend
 * Resources: Investigation Guide
 
-*Version*: 3
+*Version*: 5
 
 *Rule authors*: 
 
@@ -128,11 +128,22 @@ For more details on Elastic Defend refer to the https://www.elastic.co/guide/en/
 ----------------------------------
 from logs-endpoint.events.network-*
 | keep @timestamp, host.os.type, event.type, event.action, process.executable, destination.ip, agent.id, host.name
-| where @timestamp > now() - 1 hours
-| where host.os.type == "linux" and event.type == "start" and event.action == "connection_attempted"
-| stats cc = count(), dest_count = count_distinct(destination.ip), agent_count = count_distinct(agent.id), host.name = VALUES(host.name), agent.id = VALUES(agent.id) by process.executable
-| where agent_count == 1 and dest_count > 250
-| sort cc asc
+| where
+    @timestamp > now() - 1 hours and
+    host.os.type == "linux" and
+    event.type == "start" and
+    event.action == "connection_attempted"
+| stats
+    Esql.event_count = count(),
+    Esql.destination_ip_count_distinct = count_distinct(destination.ip),
+    Esql.agent_id_count_distinct = count_distinct(agent.id),
+    Esql.host_name_values = values(host.name),
+    Esql.agent_id_values = values(agent.id)
+  by process.executable
+| where
+    Esql.agent_id_count_distinct == 1 and
+    Esql.destination_ip_count_distinct > 250
+| sort Esql.event_count asc
 | limit 100
 
 ----------------------------------

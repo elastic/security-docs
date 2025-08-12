@@ -29,7 +29,7 @@ Detects when Azure OpenAI requests result in zero response length, potentially i
 * Use Case: Insecure Output Handling
 * Resources: Investigation Guide
 
-*Version*: 2
+*Version*: 3
 
 *Rule authors*: 
 
@@ -104,10 +104,22 @@ https://learn.microsoft.com/en-us/azure/azure-monitor/essentials/stream-monitori
 [source, js]
 ----------------------------------
 from logs-azure_openai.logs-*
-| where azure.open_ai.properties.response_length == 0 and azure.open_ai.result_signature == "200" and azure.open_ai.operation_name == "ChatCompletions_Create"
-| keep azure.open_ai.properties.request_length, azure.open_ai.result_signature, cloud.account.id, azure.resource.name
-| stats count = count() by azure.resource.name
-| where count >= 10
-| sort count desc
+| where
+    azure.open_ai.properties.response_length == 0 and
+    azure.open_ai.result_signature == "200" and
+    azure.open_ai.operation_name == "ChatCompletions_Create"
+| keep
+    azure.open_ai.properties.request_length,
+    azure.open_ai.result_signature,
+    cloud.account.id,
+    azure.resource.name
+| stats
+    Esql.event_count = count(*)
+  by
+    azure.resource.name
+| where
+    Esql.event_count >= 10
+| sort
+    Esql.event_count desc
 
 ----------------------------------

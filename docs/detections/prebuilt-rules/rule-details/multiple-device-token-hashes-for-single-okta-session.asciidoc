@@ -35,7 +35,7 @@ This rule detects when a specific Okta actor has multiple device token hashes fo
 * Domain: SaaS
 * Resources: Investigation Guide
 
-*Version*: 305
+*Version*: 307
 
 *Rule authors*: 
 
@@ -60,7 +60,7 @@ This rule detects when a specific Okta actor has multiple device token hashes fo
 
 *Possible investigation steps:*
 
-- Since this is an ES|QL rule, the `okta.actor.alternate_id` and `okta.authentication_context.external_session_id` values can be used to pivot into the raw authentication events related to this alert.
+- Since this is an ESQL rule, the `okta.actor.alternate_id` and `okta.authentication_context.external_session_id` values can be used to pivot into the raw authentication events related to this alert.
 - Identify the users involved in this action by examining the `okta.actor.id`, `okta.actor.type`, `okta.actor.alternate_id`, and `okta.actor.display_name` fields.
 - Determine the device client used for these actions by analyzing `okta.client.ip`, `okta.client.user_agent.raw_user_agent`, `okta.client.zone`, `okta.client.device`, and `okta.client.id` fields.
 - With Okta end users identified, review the `okta.debug_context.debug_data.dt_hash` field.
@@ -108,30 +108,31 @@ The Okta Fleet integration, Filebeat module, or similarly structured data is req
 
 [source, js]
 ----------------------------------
-FROM logs-okta*
-| WHERE
-    event.dataset == "okta.system"
-    // ignore authentication events where session and device token hash change often
-    AND NOT event.action IN (
+from logs-okta*
+| where
+    event.dataset == "okta.system" and
+    not event.action in (
         "policy.evaluate_sign_on",
         "user.session.start",
         "user.authentication.sso"
-    )
-    // ignore Okta system events and only allow registered users
-    AND (
-        okta.actor.alternate_id != "system@okta.com"
-        AND okta.actor.alternate_id RLIKE "[^@\\s]+\\@[^@\\s]+"
-    )
-    AND okta.authentication_context.external_session_id != "unknown"
-| KEEP event.action, okta.actor.alternate_id, okta.authentication_context.external_session_id, okta.debug_context.debug_data.dt_hash
-| STATS
-    dt_hash_counts = COUNT_DISTINCT(okta.debug_context.debug_data.dt_hash) BY
-        okta.actor.alternate_id,
-        okta.authentication_context.external_session_id
-| WHERE
-    dt_hash_counts >= 2
-| SORT
-    dt_hash_counts DESC
+    ) and
+    okta.actor.alternate_id != "system@okta.com" and
+    okta.actor.alternate_id rlike "[^@\s]+\@[^@\s]+" and
+    okta.authentication_context.external_session_id != "unknown"
+| keep
+    event.action,
+    okta.actor.alternate_id,
+    okta.authentication_context.external_session_id,
+    okta.debug_context.debug_data.dt_hash
+| stats
+    Esql.okta_debug_context_debug_data_dt_hash_count_distinct = count_distinct(okta.debug_context.debug_data.dt_hash)
+  by
+    okta.actor.alternate_id,
+    okta.authentication_context.external_session_id
+| where
+    Esql.okta_debug_context_debug_data_dt_hash_count_distinct >= 2
+| sort
+    Esql.okta_debug_context_debug_data_dt_hash_count_distinct desc
 
 ----------------------------------
 

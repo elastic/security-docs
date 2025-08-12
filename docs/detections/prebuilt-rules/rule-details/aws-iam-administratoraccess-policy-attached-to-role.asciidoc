@@ -34,7 +34,7 @@ An adversary with access to a set of compromised credentials may attempt to pers
 * Tactic: Persistence
 * Resources: Investigation Guide
 
-*Version*: 4
+*Version*: 6
 
 *Rule authors*: 
 
@@ -56,7 +56,7 @@ An adversary with access to a set of compromised credentials may attempt to pers
 
 The AWS IAM `AdministratorAccess` managed policy provides full access to all AWS services and resources.
 With access to the `iam:AttachRolePolicy` permission, a set of compromised credentials could be used to attach
-this policy to a compromised role for privilege escalation or as a means of persistence. This rule uses https://www.elastic.co/guide/en/security/current/rules-ui-create.html#create-esql-rule[ES|QL]
+this policy to a compromised role for privilege escalation or as a means of persistence. This rule uses https://www.elastic.co/guide/en/security/current/rules-ui-create.html#create-esql-rule[ESQL]
 to look for use of the `AttachRolePolicy` operation along with request_parameters where the policyName is `AdministratorAccess`.
 
 
@@ -116,10 +116,27 @@ to look for use of the `AttachRolePolicy` operation along with request_parameter
 [source, js]
 ----------------------------------
 from logs-aws.cloudtrail-* metadata _id, _version, _index
-| where event.provider == "iam.amazonaws.com" and event.action == "AttachRolePolicy" and event.outcome == "success"
-| dissect aws.cloudtrail.request_parameters "{%{?policyArn}=%{?arn}:%{?aws}:%{?iam}::%{?aws}:%{?policy}/%{policyName},%{?roleName}=%{role.name}}"
-| where policyName == "AdministratorAccess"
-| keep @timestamp, event.provider, event.action, event.outcome, policyName, role.name
+
+| where
+  event.provider == "iam.amazonaws.com"
+  and event.action == "AttachRolePolicy"
+  and event.outcome == "success"
+
+// Extract policy name and role name from request parameters
+| dissect aws.cloudtrail.request_parameters
+    "{%{?policyArn}=%{?arn}:%{?aws}:%{?iam}::%{?aws}:%{?policy}/%{Esql.aws_cloudtrail_request_parameters_policy_name},%{?roleName}=%{Esql.aws_cloudtrail_request_parameters_role_name}}"
+
+// Filter for AdministratorAccess policy attachment
+| where Esql.aws_cloudtrail_request_parameters_policy_name == "AdministratorAccess"
+
+// keep relevant ECS and dynamic fields
+| keep
+  @timestamp,
+  event.provider,
+  event.action,
+  event.outcome,
+  Esql.aws_cloudtrail_request_parameters_policy_name,
+  Esql.aws_cloudtrail_request_parameters_role_name
 
 ----------------------------------
 
