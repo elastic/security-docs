@@ -33,7 +33,7 @@ Identifies child processes of unusual instances of RunDLL32 where the command li
 * Data Source: Sysmon
 * Resources: Investigation Guide
 
-*Version*: 211
+*Version*: 212
 
 *Rule authors*: 
 
@@ -122,7 +122,9 @@ RunDLL32 is a legitimate Windows utility used to load and execute functions with
 sequence with maxspan=1h
   [process where host.os.type == "windows" and event.type == "start" and
      (process.name : "rundll32.exe" or process.pe.original_file_name == "RUNDLL32.EXE") and
-      process.args_count == 1
+      (process.args_count == 1 and
+        /* Excludes bug where a missing closing quote sets args_count to 1 despite extra args */
+        not process.command_line regex~ """\".*\.exe[^\"].*""")
   ] by process.entity_id
   [process where host.os.type == "windows" and event.type == "start" and process.parent.name : "rundll32.exe"
   ] by process.parent.entity_id
