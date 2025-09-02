@@ -13,6 +13,7 @@ Identifies attempts to disable PowerShell Script Block Logging via registry modi
 * endgame-*
 * logs-m365_defender.event-*
 * logs-sentinel_one_cloud_funnel.*
+* logs-crowdstrike.fdr*
 
 *Severity*: medium
 
@@ -40,8 +41,9 @@ Identifies attempts to disable PowerShell Script Block Logging via registry modi
 * Data Source: Sysmon
 * Data Source: Microsoft Defender for Endpoint
 * Data Source: SentinelOne
+* Data Source: Crowdstrike
 
-*Version*: 313
+*Version*: 314
 
 *Rule authors*: 
 
@@ -112,18 +114,19 @@ PowerShell Script Block Logging is a feature of PowerShell that records the cont
 [source, js]
 ----------------------------------
 registry where host.os.type == "windows" and event.type == "change" and
-    registry.path : (
-        "HKLM\\SOFTWARE\\Policies\\Microsoft\\Windows\\PowerShell\\ScriptBlockLogging\\EnableScriptBlockLogging",
-        "\\REGISTRY\\MACHINE\\SOFTWARE\\Policies\\Microsoft\\Windows\\PowerShell\\ScriptBlockLogging\\EnableScriptBlockLogging",
-        "MACHINE\\SOFTWARE\\Policies\\Microsoft\\Windows\\PowerShell\\ScriptBlockLogging\\EnableScriptBlockLogging"
-    ) and registry.data.strings : ("0", "0x00000000") and
-    not (
-        process.executable : (
+    registry.value : "EnableScriptBlockLogging" and
+    registry.data.strings : ("0", "0x00000000") and
+    not process.executable : (
           "?:\\Windows\\System32\\svchost.exe",
           "?:\\Windows\\System32\\DeviceEnroller.exe",
           "?:\\Windows\\system32\\omadmclient.exe",
-          "?:\\Program Files (x86)\\N-able Technologies\\AutomationManagerAgent\\AutomationManager.AgentService.exe"
-        ) and user.id == "S-1-5-18"
+          "?:\\Program Files (x86)\\N-able Technologies\\AutomationManagerAgent\\AutomationManager.AgentService.exe",
+          
+          /* Crowdstrike specific exclusion as it uses NT Object paths */
+          "\\Device\\HarddiskVolume*\\Windows\\System32\\svchost.exe",
+          "\\Device\\HarddiskVolume*\\Windows\\System32\\DeviceEnroller.exe",
+          "\\Device\\HarddiskVolume*\\Windows\\system32\\omadmclient.exe",
+          "\\Device\\HarddiskVolume*\\Program Files (x86)\\N-able Technologies\\AutomationManagerAgent\\AutomationManager.AgentService.exe"
     )
 
 ----------------------------------
