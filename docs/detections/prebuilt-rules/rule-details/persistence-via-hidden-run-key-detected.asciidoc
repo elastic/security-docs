@@ -11,6 +11,9 @@ Identifies a persistence mechanism that utilizes the NtSetValueKey native API to
 * winlogbeat-*
 * logs-windows.sysmon_operational-*
 * endgame-*
+* logs-crowdstrike.fdr*
+* logs-sentinel_one_cloud_funnel.*
+* logs-m365_defender.event-*
 
 *Severity*: high
 
@@ -35,12 +38,15 @@ Identifies a persistence mechanism that utilizes the NtSetValueKey native API to
 * Tactic: Persistence
 * Tactic: Defense Evasion
 * Tactic: Execution
+* Resources: Investigation Guide
 * Data Source: Elastic Endgame
 * Data Source: Elastic Defend
 * Data Source: Sysmon
-* Resources: Investigation Guide
+* Data Source: Crowdstrike
+* Data Source: SentinelOne
+* Data Source: Microsoft Defender for Endpoint
 
-*Version*: 212
+*Version*: 213
 
 *Rule authors*: 
 
@@ -98,20 +104,6 @@ The Windows Registry is a critical system database that stores configuration set
 - Implement enhanced monitoring on the affected system and similar endpoints to detect any recurrence of the threat, focusing on registry changes and process execution.
 - Update and reinforce endpoint security configurations to prevent similar persistence techniques, such as enabling registry auditing and restricting access to critical registry paths.
 
-==== Setup
-
-
-
-*Setup*
-
-
-If enabling an EQL rule on a non-elastic-agent index (such as beats) for versions <8.2,
-events will not define `event.ingested` and default fallback for EQL rules was not added until version 8.2.
-Hence for this rule to work effectively, users will need to add a custom ingest pipeline to populate
-`event.ingested` to @timestamp.
-For more details on adding a custom ingest pipeline refer - https://www.elastic.co/guide/en/fleet/current/data-streams-pipeline-tutorial.html
-
-
 ==== Rule query
 
 
@@ -119,18 +111,12 @@ For more details on adding a custom ingest pipeline refer - https://www.elastic.
 ----------------------------------
 /* Registry Path ends with backslash */
 registry where host.os.type == "windows" and event.type == "change" and length(registry.data.strings) > 0 and
- registry.path : ("HKEY_USERS\\*\\Software\\Microsoft\\Windows\\CurrentVersion\\Run\\",
-                  "HKU\\*\\Software\\Microsoft\\Windows\\CurrentVersion\\Run\\",
-                  "HKLM\\Software\\Microsoft\\Windows\\CurrentVersion\\Run\\",
-                  "HKLM\\Software\\WOW6432Node\\Microsoft\\Windows\\CurrentVersion\\Run\\",
-                  "HKEY_USERS\\*\\Software\\Microsoft\\Windows\\CurrentVersion\\Policies\\Explorer\\Run\\",
-                  "HKU\\*\\Software\\Microsoft\\Windows\\CurrentVersion\\Policies\\Explorer\\Run\\",
-                  "\\REGISTRY\\MACHINE\\Software\\Microsoft\\Windows\\CurrentVersion\\Policies\\Explorer\\Run\\",
-                  "\\REGISTRY\\USER\\*\\Software\\Microsoft\\Windows\\CurrentVersion\\Run\\",
-                  "\\REGISTRY\\MACHINE\\Software\\Microsoft\\Windows\\CurrentVersion\\Run\\",
-                  "\\REGISTRY\\MACHINE\\Software\\WOW6432Node\\Microsoft\\Windows\\CurrentVersion\\Run\\",
-                  "\\REGISTRY\\USER\\*\\Software\\Microsoft\\Windows\\CurrentVersion\\Policies\\Explorer\\Run\\",
-                  "\\REGISTRY\\MACHINE\\Software\\Microsoft\\Windows\\CurrentVersion\\Policies\\Explorer\\Run\\")
+  registry.path : "*\\Run\\" and
+  registry.path : (
+    "*\\Software\\Microsoft\\Windows\\CurrentVersion\\Run\\",
+    "*\\Software\\WOW6432Node\\Microsoft\\Windows\\CurrentVersion\\Run\\",
+    "*\\Software\\Microsoft\\Windows\\CurrentVersion\\Policies\\Explorer\\Run\\"
+  )
 
 ----------------------------------
 

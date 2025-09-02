@@ -1,0 +1,131 @@
+[[prebuilt-rule-8-18-13-m365-portal-login-atypical-travel]]
+=== M365 Portal Login (Atypical Travel)
+
+Detects successful Microsoft 365 portal logins from rare locations. Rare locations are defined as locations that are not commonly associated with the user's account. This behavior may indicate an adversary attempting to access a Microsoft 365 account from an unusual location or behind a VPN.
+
+*Rule type*: new_terms
+
+*Rule indices*: 
+
+* filebeat-*
+* logs-o365.audit-*
+
+*Severity*: medium
+
+*Risk score*: 47
+
+*Runs every*: 5m
+
+*Searches indices from*: now-15m ({ref}/common-options.html#date-math[Date Math format], see also <<rule-schedule, `Additional look-back time`>>)
+
+*Maximum alerts per execution*: 100
+
+*References*: 
+
+* https://www.huntress.com/blog/time-travelers-busted-how-to-detect-impossible-travel-
+
+*Tags*: 
+
+* Domain: Cloud
+* Domain: SaaS
+* Data Source: Microsoft 365
+* Data Source: Microsoft 365 Audit Logs
+* Use Case: Threat Detection
+* Use Case: Identity and Access Audit
+* Tactic: Initial Access
+* Resources: Investigation Guide
+
+*Version*: 6
+
+*Rule authors*: 
+
+* Elastic
+
+*Rule license*: Elastic License v2
+
+
+==== Investigation guide
+
+
+
+*Triage and analysis*
+
+
+
+*Investigating M365 Portal Login (Atypical Travel)*
+
+
+Microsoft 365 is a cloud-based suite offering productivity tools accessible from anywhere, making it crucial for business operations. Adversaries may exploit this by logging in from uncommon locations, potentially using VPNs to mask their origin. The detection rule identifies successful logins from atypical locations, flagging potential unauthorized access attempts by analyzing login events and user location patterns.
+
+
+*Possible investigation steps*
+
+
+- Review the user associated with these sign-ins to determine if the login attempt was legitimate or if further investigation is needed.
+- Analyze the geographic locations of the logins to identify any patterns or anomalies that may indicate malicious activity.
+- Review the ISP information for the login attempts to identify any unusual or suspicious providers.
+- Review the authorization request type to understand the context of the login attempts and whether they align with the user's typical behavior.
+- Analyze the client application used for the login attempts to determine if it is consistent with the user's normal usage patterns (Teams, Office, etc.)
+- Analyze the user-agent associated with the login attempts to identify any unusual or suspicious patterns.
+
+
+*False positive analysis*
+
+
+- Users traveling or using VPNs may trigger this alert. Verify with the user if they were traveling or using a VPN at the time of the login attempt.
+- Mobile access may also result in false positives, as users may log in from various locations while on the go.
+
+
+*Response and remediation*
+
+
+- Investigate the login attempt further by checking for any additional context or related events that may provide insight into the user's behavior.
+- If the login attempt is deemed suspicious, consider implementing additional security measures, such as requiring multi-factor authentication (MFA) for logins from unusual locations.
+- Educate users about the risks of accessing corporate resources from unfamiliar locations and the importance of using secure connections (e.g., VPNs) when doing so.
+- Monitor for any subsequent login attempts from the same location or IP address to identify potential patterns of malicious activity.
+
+
+==== Rule query
+
+
+[source, js]
+----------------------------------
+event.dataset:o365.audit and
+    event.provider:AzureActiveDirectory and
+    event.action:UserLoggedIn and
+    event.outcome:success and
+    o365.audit.Target.Type:(0 or 10 or 2 or 3 or 5 or 6) and
+    o365.audit.UserId:(* and not "Not Available") and
+    source.geo.region_iso_code:* and
+    o365.audit.Target.ID:(
+        00000006-0000-0ff1-ce00-000000000000 or
+        4765445b-32c6-49b0-83e6-1d93765276ca
+    ) and not o365.audit.ApplicationId:(
+        29d9ed98-a469-4536-ade2-f981bc1d605e or
+        38aa3b87-a06d-4817-b275-7a316988d93b or
+        a809996b-059e-42e2-9866-db24b99a9782
+    ) and not o365.audit.ExtendedProperties.RequestType:(
+        "Cmsi:Cmsi" or
+        "Consent:Set" or
+        "Login:reprocess" or
+        "Login:resume" or
+        "MessagePrompt:MessagePrompt" or
+        "SAS:EndAuth"
+    )
+
+----------------------------------
+
+*Framework*: MITRE ATT&CK^TM^
+
+* Tactic:
+** Name: Initial Access
+** ID: TA0001
+** Reference URL: https://attack.mitre.org/tactics/TA0001/
+* Technique:
+** Name: Valid Accounts
+** ID: T1078
+** Reference URL: https://attack.mitre.org/techniques/T1078/
+* Sub-technique:
+** Name: Cloud Accounts
+** ID: T1078.004
+** Reference URL: https://attack.mitre.org/techniques/T1078/004/

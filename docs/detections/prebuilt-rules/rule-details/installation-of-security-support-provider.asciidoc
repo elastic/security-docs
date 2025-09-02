@@ -13,6 +13,7 @@ Identifies registry modifications related to the Windows Security Support Provid
 * endgame-*
 * logs-m365_defender.event-*
 * logs-sentinel_one_cloud_funnel.*
+* logs-crowdstrike.fdr*
 
 *Severity*: medium
 
@@ -38,9 +39,10 @@ Identifies registry modifications related to the Windows Security Support Provid
 * Data Source: Sysmon
 * Data Source: Microsoft Defender for Endpoint
 * Data Source: SentinelOne
+* Data Source: Crowdstrike
 * Resources: Investigation Guide
 
-*Version*: 312
+*Version*: 313
 
 *Rule authors*: 
 
@@ -104,15 +106,18 @@ Security Support Providers (SSPs) in Windows environments facilitate authenticat
 [source, js]
 ----------------------------------
 registry where host.os.type == "windows" and event.type == "change" and
-   registry.path : (
-      "HKLM\\SYSTEM\\*ControlSet*\\Control\\Lsa\\Security Packages*",
-      "HKLM\\SYSTEM\\*ControlSet*\\Control\\Lsa\\OSConfig\\Security Packages*",
-      "\\REGISTRY\\MACHINE\\SYSTEM\\*ControlSet*\\Control\\Lsa\\Security Packages*",
-      "\\REGISTRY\\MACHINE\\SYSTEM\\*ControlSet*\\Control\\Lsa\\OSConfig\\Security Packages*",
-      "MACHINE\\SYSTEM\\*ControlSet*\\Control\\Lsa\\Security Packages*",
-      "MACHINE\\SYSTEM\\*ControlSet*\\Control\\Lsa\\OSConfig\\Security Packages*"
-   ) and
-   not process.executable : ("C:\\Windows\\System32\\msiexec.exe", "C:\\Windows\\SysWOW64\\msiexec.exe")
+  registry.value : "Security Packages" and
+  registry.path : (
+      "*\\SYSTEM\\*ControlSet*\\Control\\Lsa\\Security Packages",
+      "*\\SYSTEM\\*ControlSet*\\Control\\Lsa\\OSConfig\\Security Packages"
+  ) and
+  not process.executable : (
+        "C:\\Windows\\System32\\msiexec.exe",
+        "C:\\Windows\\SysWOW64\\msiexec.exe",
+        /* Crowdstrike specific exclusion as it uses NT Object paths */
+        "\\Device\\HarddiskVolume*\\Windows\\System32\\msiexec.exe",
+        "\\Device\\HarddiskVolume*\\Windows\\SysWOW64\\msiexec.exe"
+  )
 
 ----------------------------------
 

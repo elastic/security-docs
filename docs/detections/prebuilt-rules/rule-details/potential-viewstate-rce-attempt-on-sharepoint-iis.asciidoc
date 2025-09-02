@@ -1,0 +1,81 @@
+[[potential-viewstate-rce-attempt-on-sharepoint-iis]]
+=== Potential VIEWSTATE RCE Attempt on SharePoint/IIS
+
+Detects potential remote code execution (RCE) attempts targeting IIS web servers running SharePoint via malicious VIEWSTATE payloads in HTTP POST requests. Attackers may exploit insecure deserialization in the VIEWSTATE parameter to execute arbitrary code. This rule identifies suspicious requests containing VIEWSTATE data and other indicators of exploitation, specifically those associated with the Toolshell exploit chain. Toolshell leverages vulnerabilities (CVE-2025-53770 and CVE-2025-53771) for initial access, enabling adversaries to deploy a webshell, steal machine keys, sign VIEWSTATE payloads offline, and subsequently send signed payloads to the server to achieve code execution.
+
+*Rule type*: query
+
+*Rule indices*: 
+
+* logs-network_traffic.http*
+
+*Severity*: medium
+
+*Risk score*: 47
+
+*Runs every*: 60m
+
+*Searches indices from*: now-119m ({ref}/common-options.html#date-math[Date Math format], see also <<rule-schedule, `Additional look-back time`>>)
+
+*Maximum alerts per execution*: 100
+
+*References*: 
+
+* https://research.eye.security/sharepoint-under-siege/
+* https://msrc.microsoft.com/update-guide/vulnerability/CVE-2025-53771
+* https://msrc.microsoft.com/update-guide/vulnerability/CVE-2025-53770
+* https://msrc.microsoft.com/blog/2025/07/customer-guidance-for-sharepoint-vulnerability-cve-2025-53770/
+
+*Tags*: 
+
+* Domain: Network
+* Tactic: Initial Access
+* Use Case: Exploit Detection
+* Data Source: Network Traffic
+* Data Source: Network Traffic HTTP Logs
+* Rule Type: BBR
+
+*Version*: 1
+
+*Rule authors*: 
+
+* Elastic
+
+*Rule license*: Elastic License v2
+
+
+==== Setup
+
+
+
+*Network Traffic Setup*
+
+
+This rule requires network traffic logs to be collected from HTTP endpoints, focusing on IIS web servers and SharePoint sites. Ensure logging captures HTTP request and response details, including headers and request bodies for POST requests. Monitoring VIEWSTATE content is critical for detecting deserialization attacks.
+
+
+==== Rule query
+
+
+[source, js]
+----------------------------------
+data_stream.dataset : "network_traffic.http" and
+    network.direction: "ingress" and
+    http.request.method: "POST" and
+    http.request.referrer: *SignOut.aspx and
+    http.request.body.content: *__VIEWSTATE=* and
+    http.request.body.bytes >= 500 and
+    http.response.headers.server: Microsoft-IIS*
+
+----------------------------------
+
+*Framework*: MITRE ATT&CK^TM^
+
+* Tactic:
+** Name: Initial Access
+** ID: TA0001
+** Reference URL: https://attack.mitre.org/tactics/TA0001/
+* Technique:
+** Name: Exploit Public-Facing Application
+** ID: T1190
+** Reference URL: https://attack.mitre.org/techniques/T1190/
