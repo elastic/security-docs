@@ -1,0 +1,43 @@
+[[configure-dns-histogram]]
+
+= Configure the DNS histogram
+
+The DNS histogram (**Top domains by dns.question.registered_domain**) on the **Network** page helps you visualize domain activity in your environment. If you're using {elastic-defend}, you may need to add the `dns.question.registered_domain` field so that DNS data appears correctly.
+
+If the DNS histogram is empty, follow these steps to populate the data.
+
+[discrete]
+== Add the `dns.question.name` field
+
+Add the `dns.question.name` field to the Events table to confirm that DNS data is available.
+
+. Go to the **Network** page using the navigation menu or the {kibana-ref}/introduction.html#kibana-navigation-search[global search field]. 
+. Select the **Events** tab.
+. In the Events table, click **Fields**, then add the `dns.question.name` field.
+
+[discrete]
+== Create a custom ingest pipeline
+
+Create an ingest pipeline that extracts registered domains (for example, `example.com`) from full DNS query names (for example, `www.example.com`).
+
+. Go to the **Ingest Pipelines** page using the navigation menu or the {kibana-ref}/introduction.html#kibana-navigation-search[global search field], and select **Create pipeline → New pipeline**.
+. On the **Create pipeline** page, set the pipeline name to `logs-endpoint.events.network@custom`.
+. Click **Add a processor**. In the **Add processor** flyout, configure the following:
+.. From the **Processor** dropdown, select **Registered domain**.
+.. Under **Field**, enter `dns.question.name`.
+.. Under **Target field (optional)**, enter `dns.question.registered_domain`.
+.. Turn **Ignore missing** on.
+.. Under **Condition (optional)**, enter `ctx?.dns?.question?.name != null`.
+.. Turn **Ignore failures for this processor** on.
+.. Select **Add processor**.
+. Select **Create pipeline**. This custom pipeline is automatically picked up by the existing `logs-endpoint.events.network-<version>` pipeline.
+
+[discrete]
+== Add the `dns.question.registered_domain` field
+
+Add the `dns.question.registered_domain` field to the Events table to verify that the ingest pipeline processes DNS queries correctly.
+
+. Go back to the Events table on the **Network** page.
+. Click **Fields**, then add the `dns.question.registered_domain` field.
+
+After you configure the DNS histogram, it will show domain activity grouped by registered domain, allowing you to identify the top domains queried in your environment.
