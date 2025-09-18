@@ -17,9 +17,9 @@ Identifies attempts to open a Microsoft Management Console File from untrusted p
 * logs-windows.sysmon_operational-*
 * winlogbeat-*
 
-*Severity*: high
+*Severity*: medium
 
-*Risk score*: 73
+*Risk score*: 47
 
 *Runs every*: 5m
 
@@ -46,7 +46,7 @@ Identifies attempts to open a Microsoft Management Console File from untrusted p
 * Resources: Investigation Guide
 * Data Source: Sysmon
 
-*Version*: 312
+*Version*: 313
 
 *Rule authors*: 
 
@@ -120,7 +120,13 @@ process where host.os.type == "windows" and event.type == "start" and
         "?:\\Windows\\System32\\*.msc",
         "?:\\Windows\\SysWOW64\\*.msc",
         "?:\\Program files\\*.msc",
-        "?:\\Program Files (x86)\\*.msc"
+        "?:\\Program Files (x86)\\*.msc",
+        "?:\\Windows\\ADFS\\Microsoft.IdentityServer.msc"
+  ) and
+  not process.command_line : (
+    "C:\\Windows\\system32\\mmc.exe eventvwr.msc /s",
+    "mmc.exe eventvwr.msc /s",
+    "\"C:\\Windows\\System32\\mmc.exe\" CompMgmt.msc*"
   )
 
 ----------------------------------
