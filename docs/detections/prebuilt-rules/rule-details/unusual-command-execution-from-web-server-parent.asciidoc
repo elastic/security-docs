@@ -30,7 +30,7 @@ This rule detects potential command execution from a web server parent process o
 * Data Source: Elastic Defend
 * Resources: Investigation Guide
 
-*Version*: 5
+*Version*: 6
 
 *Rule authors*: 
 
@@ -155,20 +155,30 @@ from logs-endpoint.events.process-*
     host.os.type == "linux" and
     event.type == "start" and
     event.action == "exec" and (
+      (
         process.parent.name in (
             "apache", "nginx", "apache2", "httpd", "lighttpd", "caddy", "node", "mongrel_rails", "java", "gunicorn",
             "uwsgi", "openresty", "cherokee", "h2o", "resin", "puma", "unicorn", "traefik", "tornado", "hypercorn",
             "daphne", "twistd", "yaws", "webfsd", "httpd.worker", "flask", "rails", "mongrel"
         ) or
-        process.parent.name like "php-*" or
-        process.parent.name like "python*" or
-        process.parent.name like "ruby*" or
-        process.parent.name like "perl*" or
         user.name in (
             "apache", "www-data", "httpd", "nginx", "lighttpd", "tomcat", "tomcat8", "tomcat9", "ftp", "ftpuser", "ftpd"
         ) or
         user.id in ("99", "33", "498", "48") or
         process.working_directory like "/var/www/*"
+      ) or
+      (
+        (
+          process.parent.name like "php-*" or
+          process.parent.name like "python*" or
+          process.parent.name like "ruby*" or
+          process.parent.name like "perl*"
+        ) and (
+          process.working_directory like "/var/www/*" or
+          process.working_directory like "/srv/www/*" or
+          process.working_directory like "/usr/share/nginx/*"
+        )
+      )
     ) and
     process.name in ("bash", "dash", "sh", "tcsh", "csh", "zsh", "ksh", "fish") and
     process.command_line like "* -c *" and not (
