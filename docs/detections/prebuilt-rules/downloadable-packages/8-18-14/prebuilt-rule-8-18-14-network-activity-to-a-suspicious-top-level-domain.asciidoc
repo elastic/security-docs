@@ -1,0 +1,128 @@
+[[prebuilt-rule-8-18-14-network-activity-to-a-suspicious-top-level-domain]]
+=== Network Activity to a Suspicious Top Level Domain
+
+Identifies DNS queries to commonly abused Top Level Domains by common LOLBINs or executable running from world writable directories or unsigned binaries. This behavior matches on common malware C2 abusing less formal domain names.
+
+*Rule type*: eql
+
+*Rule indices*: 
+
+* endgame-*
+* logs-endpoint.events.network-*
+* logs-sentinel_one_cloud_funnel.*
+* logs-crowdstrike.fdr*
+* logs-windows.sysmon_operational-*
+* winlogbeat-*
+
+*Severity*: high
+
+*Risk score*: 73
+
+*Runs every*: 5m
+
+*Searches indices from*: now-9m ({ref}/common-options.html#date-math[Date Math format], see also <<rule-schedule, `Additional look-back time`>>)
+
+*Maximum alerts per execution*: 100
+
+*References*: 
+
+* https://www.cybercrimeinfocenter.org/top-20-tlds-by-malicious-phishing-domains
+
+*Tags*: 
+
+* Domain: Endpoint
+* OS: Windows
+* Use Case: Threat Detection
+* Tactic: Command and Control
+* Resources: Investigation Guide
+* Data Source: Elastic Endgame
+* Data Source: Elastic Defend
+* Data Source: Windows Security Event Logs
+* Data Source: SentinelOne
+* Data Source: Crowdstrike
+* Data Source: Sysmon
+
+*Version*: 2
+
+*Rule authors*: 
+
+* Elastic
+
+*Rule license*: Elastic License v2
+
+
+==== Investigation guide
+
+
+
+*Triage and analysis*
+
+
+
+*Investigating Network Activity to a Suspicious Top Level Domain*
+
+
+
+*Possible investigation steps*
+
+
+- Investigate the process execution chain (parent process tree) for unknown processes or malicious scripts.
+- Review if the domain reputation and the frequency of network activities as well as any download/upload activity.
+- Verify if the executed process is persistent on the host like common mechanisms Startup folder, task or Run key.
+- Investigate other alerts associated with the user/host during the past 48 hours.
+- Extract this communication's indicators of compromise (IoCs) and use traffic logs to search for other potentially compromised hosts.
+
+
+*False positive analysis*
+
+
+- Trusted domain from an expected process running in the environment.
+
+
+*Response and remediation*
+
+
+- Initiate the incident response process based on the outcome of the triage.
+- Isolate the involved host to prevent further post-compromise behavior.
+- Immediately block the identified indicators of compromise (IoCs).
+- Implement any temporary network rules, procedures, and segmentation required to contain the attack.
+- Investigate credential exposure on systems compromised or used by the attacker to ensure all compromised accounts are identified. Reset passwords for these accounts and other potentially compromised credentials, such as email, business systems, and web services.
+- Update firewall rules to be more restrictive.
+- Reimage the host operating system or restore the compromised files to clean versions.
+- Run a full antimalware scan. This may reveal additional artifacts left in the system, persistence mechanisms, and malware components.
+- Determine the initial vector abused by the attacker and take action to prevent reinfection through the same vector.
+- Using the incident response data, update logging and audit policies to improve the mean time to detect (MTTD) and the mean time to respond (MTTR).
+
+
+==== Rule query
+
+
+[source, js]
+----------------------------------
+network where host.os.type == "windows" and dns.question.name != null and
+ (
+  process.name : ("MSBuild.exe", "mshta.exe", "wscript.exe", "powershell.exe", "pwsh.exe", "msiexec.exe", "rundll32.exe",
+                  "bitsadmin.exe", "InstallUtil.exe", "python.exe", "regsvr32.exe", "dllhost.exe", "node.exe",
+                  "java.exe", "javaw.exe", "*.pif", "*.com", "*.scr") or
+  (?process.code_signature.trusted == false or ?process.code_signature.exists == false) or
+  ?process.code_signature.subject_name : ("AutoIt Consulting Ltd", "OpenJS Foundation", "Python Software Foundation") or
+  process.executable : ("?:\\Users\\*.exe", "?:\\ProgramData\\*.exe")
+ ) and
+dns.question.name regex """.*\.(top|buzz|xyz|rest|ml|cf|gq|ga|onion|monster|cyou|quest|cc|bar|cfd|click|cam|surf|tk|shop|club|icu|pw|ws|online|fun|life|boats|store|hair|skin|motorcycles|christmas|lol|makeup|mom|bond|beauty|biz|live|work|zip|country|accountant|date|party|science|loan|win|men|faith|review|racing|download|host)"""
+
+----------------------------------
+
+*Framework*: MITRE ATT&CK^TM^
+
+* Tactic:
+** Name: Command and Control
+** ID: TA0011
+** Reference URL: https://attack.mitre.org/tactics/TA0011/
+* Technique:
+** Name: Application Layer Protocol
+** ID: T1071
+** Reference URL: https://attack.mitre.org/techniques/T1071/
+* Sub-technique:
+** Name: DNS
+** ID: T1071.004
+** Reference URL: https://attack.mitre.org/techniques/T1071/004/
