@@ -42,7 +42,7 @@ Identifies use of WinRar or 7z to create an encrypted files. Adversaries will of
 * Data Source: Microsoft Defender for Endpoint
 * Data Source: SentinelOne
 
-*Version*: 216
+*Version*: 217
 
 *Rule authors*: 
 
@@ -97,20 +97,6 @@ These steps are usually done in preparation for exfiltration, meaning the attack
 - Using the incident response data, update logging and audit policies to improve the mean time to detect (MTTD) and the mean time to respond (MTTR).
 
 
-==== Setup
-
-
-
-*Setup*
-
-
-If enabling an EQL rule on a non-elastic-agent index (such as beats) for versions <8.2,
-events will not define `event.ingested` and default fallback for EQL rules was not added until version 8.2.
-Hence for this rule to work effectively, users will need to add a custom ingest pipeline to populate
-`event.ingested` to @timestamp.
-For more details on adding a custom ingest pipeline refer - https://www.elastic.co/guide/en/fleet/current/data-streams-pipeline-tutorial.html
-
-
 ==== Rule query
 
 
@@ -120,8 +106,8 @@ process where host.os.type == "windows" and event.type == "start" and
 (
   (
     (
-      process.name:"rar.exe" or ?process.code_signature.subject_name == "win.rar GmbH" or
-      ?process.pe.original_file_name == "Command line RAR"
+      process.name : ("rar.exe", "WinRAR.exe") or ?process.code_signature.subject_name == "win.rar GmbH" or
+      ?process.pe.original_file_name == "WinRAR.exe"
     ) and
     process.args == "a" and process.args : ("-hp*", "-p*", "/hp*", "/p*")
   ) or
