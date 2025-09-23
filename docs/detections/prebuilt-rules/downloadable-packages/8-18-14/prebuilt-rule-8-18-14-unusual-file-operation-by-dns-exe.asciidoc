@@ -1,0 +1,71 @@
+[[prebuilt-rule-8-18-14-unusual-file-operation-by-dns-exe]]
+=== Unusual File Operation by dns.exe
+
+Identifies an unexpected file being modified by dns.exe, the process responsible for Windows DNS Server services, which may indicate activity related to remote code execution or other forms of exploitation.
+
+*Rule type*: new_terms
+
+*Rule indices*: 
+
+* winlogbeat-*
+* logs-endpoint.events.file-*
+* logs-windows.sysmon_operational-*
+* endgame-*
+
+*Severity*: medium
+
+*Risk score*: 47
+
+*Runs every*: 5m
+
+*Searches indices from*: now-9m ({ref}/common-options.html#date-math[Date Math format], see also <<rule-schedule, `Additional look-back time`>>)
+
+*Maximum alerts per execution*: 100
+
+*References*: 
+
+* https://research.checkpoint.com/2020/resolving-your-way-into-domain-admin-exploiting-a-17-year-old-bug-in-windows-dns-servers/
+* https://msrc-blog.microsoft.com/2020/07/14/july-2020-security-update-cve-2020-1350-vulnerability-in-windows-domain-name-system-dns-server/
+* https://www.elastic.co/security-labs/detection-rules-for-sigred-vulnerability
+
+*Tags*: 
+
+* Domain: Endpoint
+* OS: Windows
+* Use Case: Threat Detection
+* Tactic: Lateral Movement
+* Data Source: Elastic Endgame
+* Use Case: Vulnerability
+* Data Source: Elastic Defend
+* Data Source: Sysmon
+
+*Version*: 215
+
+*Rule authors*: 
+
+* Elastic
+
+*Rule license*: Elastic License v2
+
+
+==== Rule query
+
+
+[source, js]
+----------------------------------
+event.category : "file" and host.os.type : "windows" and
+  event.type : ("creation" or "deletion" or "change") and process.name : "dns.exe" and
+  not file.extension : ("old" or "temp" or "bak" or "dns" or "arpa" or "log")
+
+----------------------------------
+
+*Framework*: MITRE ATT&CK^TM^
+
+* Tactic:
+** Name: Lateral Movement
+** ID: TA0008
+** Reference URL: https://attack.mitre.org/tactics/TA0008/
+* Technique:
+** Name: Exploitation of Remote Services
+** ID: T1210
+** Reference URL: https://attack.mitre.org/techniques/T1210/

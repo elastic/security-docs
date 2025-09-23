@@ -3,7 +3,7 @@
 
 Identifies handle requests for the Local Security Authority Subsystem Service (LSASS) object access with specific access masks that many tools with a capability to dump memory to disk use (0x1fffff, 0x1010, 0x120089). This rule is tool agnostic as it has been validated against a host of various LSASS dump tools such as SharpDump, Procdump, Mimikatz, Comsvcs etc. It detects this behavior at a low level and does not depend on a specific tool or dump file name.
 
-*Rule type*: eql
+*Rule type*: new_terms
 
 *Rule indices*: 
 
@@ -11,9 +11,9 @@ Identifies handle requests for the Local Security Authority Subsystem Service (L
 * logs-windows.forwarded*
 * winlogbeat-*
 
-*Severity*: high
+*Severity*: medium
 
-*Risk score*: 73
+*Risk score*: 47
 
 *Runs every*: 5m
 
@@ -39,7 +39,7 @@ Identifies handle requests for the Local Security Authority Subsystem Service (L
 * Resources: Investigation Guide
 * Data Source: Windows Security Event Logs
 
-*Version*: 215
+*Version*: 216
 
 *Rule authors*: 
 
@@ -136,7 +136,7 @@ Audit File System (Success,Failure)
 Audit Handle Manipulation (Success,Failure)
 ```
 
-Also, this event generates only if the object’s https://docs.microsoft.com/en-us/windows/win32/secauthz/access-control-lists[SACL] has the required access control entry (ACE) to handle the use of specific access rights.
+Also, this event generates only if the object's https://docs.microsoft.com/en-us/windows/win32/secauthz/access-control-lists[SACL] has the required access control entry (ACE) to handle the use of specific access rights.
 
 
 ==== Rule query
@@ -144,30 +144,20 @@ Also, this event generates only if the object’s https://docs.microsoft.com/en-
 
 [source, js]
 ----------------------------------
-any where event.code == "4656" and
-
-    winlog.event_data.ObjectName : (
-        "?:\\Windows\\System32\\lsass.exe",
-        "\\Device\\HarddiskVolume?\\Windows\\System32\\lsass.exe",
-        "\\Device\\HarddiskVolume??\\Windows\\System32\\lsass.exe") and
-
-    /* The right to perform an operation controlled by an extended access right. */
-
-    (winlog.event_data.AccessMask : ("0x1fffff" , "0x1010", "0x120089", "0x1F3FFF") or
-     winlog.event_data.AccessMaskDescription : ("READ_CONTROL", "Read from process memory"))
-
-     /* Common Noisy False Positives */
-
-    and not winlog.event_data.ProcessName : (
-        "?:\\Program Files\\*.exe",
-        "?:\\Program Files (x86)\\*.exe",
-        "?:\\Windows\\system32\\wbem\\WmiPrvSE.exe",
-        "?:\\Windows\\System32\\dllhost.exe",
-        "?:\\Windows\\System32\\svchost.exe",
-        "?:\\Windows\\System32\\msiexec.exe",
-        "?:\\ProgramData\\Microsoft\\Windows Defender\\*.exe",
-        "?:\\Windows\\explorer.exe",
-        "?:\\Windows\\System32\\poqexec.exe")
+host.os.type:"windows" and event.code:"4656" and
+  (
+    winlog.event_data.AccessMask : ("0x1fffff" or "0x1010" or "0x120089" or "0x1F3FFF") or
+    winlog.event_data.AccessMaskDescription : ("READ_CONTROL" or "Read from process memory")
+  ) and
+  winlog.event_data.ObjectName : *\\Windows\\System32\\lsass.exe and
+  not winlog.event_data.ProcessName : (
+      "C:\Windows\System32\wbem\WmiPrvSE.exe" or
+      "C:\Windows\SysWOW64\wbem\WmiPrvSE.exe" or
+      "C:\Windows\System32\dllhost.exe" or
+      "C:\Windows\System32\svchost.exe" or
+      "C:\Windows\System32\msiexec.exe" or
+      "C:\Windows\explorer.exe"
+  )
 
 ----------------------------------
 

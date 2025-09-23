@@ -42,7 +42,7 @@ Identifies the execution of a child process from a Microsoft Common Console file
 * Data Source: Microsoft Defender for Endpoint
 * Data Source: SentinelOne
 
-*Version*: 204
+*Version*: 205
 
 *Rule authors*: 
 
@@ -91,8 +91,33 @@ Identifies the execution of a child process from a Microsoft Common Console file
 [source, js]
 ----------------------------------
 process where host.os.type == "windows" and event.type == "start" and
- process.parent.executable : "?:\\Windows\\System32\\mmc.exe" and endswith~(process.parent.args, ".msc") and
- not process.parent.args : ("?:\\Windows\\System32\\*.msc", "?:\\Windows\\SysWOW64\\*.msc", "?:\\Program files\\*.msc", "?:\\Program Files (x86)\\*.msc")
+  process.parent.executable : "?:\\Windows\\System32\\mmc.exe" and endswith~(process.parent.args, ".msc") and
+  not (
+    process.parent.args : (
+      "?:\\Windows\\System32\\*.msc",
+      "?:\\Windows\\SysWOW64\\*.msc",
+      "?:\\Program files\\*.msc",
+      "?:\\Program Files (x86)\\*.msc"
+    ) or
+    (
+      process.executable : "?:\\Windows\\System32\\mmc.exe" and
+      process.command_line : "\"C:\\WINDOWS\\system32\\mmc.exe\" \"C:\\Windows\\System32\\gpme.msc\" /s /gpobject:\"LDAP://*"
+    ) or
+    (
+      process.executable : (
+        "?:\\Program Files (x86)\\Microsoft\\Edge\\Application\\msedge.exe",
+        "?:\\Program Files\\Mozilla Firefox\\firefox.exe",
+        "?:\\Program Files\\Google\\Chrome\\Application\\chrome.exe",
+        "?:\\Program Files\\internet explorer\\iexplore.exe"
+      ) and
+      process.args : "http*://go.microsoft.com/fwlink/*"
+    ) or
+    process.executable : (
+      "?:\\Windows\\System32\\vmconnect.exe",
+      "?:\\Windows\\System32\\WerFault.exe",
+      "?:\\Windows\\System32\\wermgr.exe"
+    )
+  )
 
 ----------------------------------
 
