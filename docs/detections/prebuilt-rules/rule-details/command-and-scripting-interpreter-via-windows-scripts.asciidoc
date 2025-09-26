@@ -42,7 +42,7 @@ Identifies PowerShell.exe or Cmd.exe execution spawning from Windows Script Host
 * Data Source: Elastic Endgame
 * Data Source: Crowdstrike
 
-*Version*: 206
+*Version*: 207
 
 *Rule authors*: 
 
@@ -105,7 +105,11 @@ PowerShell, a powerful scripting language in Windows, is often targeted by adver
 [source, js]
 ----------------------------------
 process where host.os.type == "windows" and event.type == "start" and
-  process.name : ("powershell.exe", "pwsh.exe", "cmd.exe") and
+  process.command_line != null and
+  (
+    process.name : ("powershell.exe", "pwsh.exe", "powershell_ise.exe", "cmd.exe") or
+    ?process.pe.original_file_name : ("powershell.exe", "pwsh.dll", "powershell_ise.exe", "Cmd.Exe")
+  ) and
   process.parent.name : ("wscript.exe", "mshta.exe")
 
 ----------------------------------

@@ -47,7 +47,7 @@ Identifies the execution of a process with arguments pointing to the INetCache F
 * Data Source: Crowdstrike
 * Resources: Investigation Guide
 
-*Version*: 209
+*Version*: 210
 
 *Rule authors*: 
 
@@ -113,13 +113,25 @@ The INetCache folder stores temporary internet files, which can be exploited by 
 process where host.os.type == "windows" and event.type == "start" and
   process.parent.name : ("explorer.exe", "winrar.exe", "7zFM.exe", "Bandizip.exe") and
   (
-    process.args : "?:\\Users\\*\\AppData\\Local\\Microsoft\\Windows\\INetCache\\IE\\*" or
+    process.args : "*\\AppData\\Local\\Microsoft\\Windows\\INetCache\\IE\\*" or
     process.executable : (
       "?:\\Users\\*\\AppData\\Local\\Microsoft\\Windows\\INetCache\\IE\\*",
 
-      /* Crowdstrike specific exclusion as it uses NT Object paths */
+      /* Crowdstrike specific condition as it uses NT Object paths */
       "\\Device\\HarddiskVolume*\\Users\\*\\AppData\\Local\\Microsoft\\Windows\\INetCache\\IE\\*"
     )
+  ) and
+  not process.executable : (
+        "?:\\Program Files\\*.exe",
+        "?:\\Program Files (x86)\\*.exe",
+        "?:\\Windows\\System32\\mspaint.exe",
+        "?:\\Windows\\System32\\notepad.exe",
+
+        /* Crowdstrike specific exclusion as it uses NT Object paths */
+        "\\Device\\HarddiskVolume*\\Program Files\\*.exe",
+        "\\Device\\HarddiskVolume*\\Program Files (x86)\\*.exe",
+        "\\Device\\HarddiskVolume*\\Windows\\System32\\mspaint.exe",
+        "\\Device\\HarddiskVolume*\\Windows\\System32\\notepad.exe"
   )
 
 ----------------------------------

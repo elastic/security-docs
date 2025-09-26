@@ -3,7 +3,7 @@
 
 Identifies suspicious commands executed via a web server, which may suggest a vulnerability and remote shell access.
 
-*Rule type*: eql
+*Rule type*: new_terms
 
 *Rule indices*: 
 
@@ -49,7 +49,7 @@ Identifies suspicious commands executed via a web server, which may suggest a vu
 * Data Source: Sysmon
 * Data Source: Crowdstrike
 
-*Version*: 419
+*Version*: 420
 
 *Rule authors*: 
 
@@ -120,18 +120,27 @@ This rule detects a web server process spawning script and command-line interfac
 
 [source, js]
 ----------------------------------
-process where host.os.type == "windows" and event.type == "start" and
-  process.parent.name : ("w3wp.exe", "httpd.exe", "nginx.exe", "php.exe", "php-cgi.exe", "tomcat.exe") and
-  process.name : ("cmd.exe", "cscript.exe", "powershell.exe", "pwsh.exe", "powershell_ise.exe", "wmic.exe", "wscript.exe") and
+host.os.type:windows and event.category:process and event.type:start and process.args : * and
+  process.parent.name:("w3wp.exe" or "httpd.exe" or "nginx.exe" or "php.exe" or "php-cgi.exe" or "tomcat.exe") and
+  (
+    process.name : ("cmd.exe" or "cscript.exe" or "powershell.exe" or "pwsh.exe" or "powershell_ise.exe" or "wmic.exe" or "wscript.exe") or
+    process.name.caseless : ("cmd.exe" or "cscript.exe" or "powershell.exe" or "pwsh.exe" or "powershell_ise.exe" or "wmic.exe" or "wscript.exe")
+  ) and
   not
   (
-    process.parent.name : ("php.exe", "httpd.exe") and process.name : "cmd.exe" and
     process.command_line : (
-      "cmd.exe /c mode CON",
-      "cmd.exe /s /c \"mode CON\"",
-      "cmd.exe /c \"mode\"",
-      "cmd.exe /s /c \"tput colors 2>&1\""
-    )
+      "cmd.exe /c mode CON" or
+      "cmd.exe /s /c \"mode CON\"" or
+      "cmd.exe /c \"mode\"" or
+      "cmd.exe /s /c \"tput colors 2>&1\"" or
+      "cmd.exe /s /c \"stty 2> NUL\"" or
+      "cmd.exe /s /c \"stty 2>&1\"" or
+      "cmd.exe /c \"stty 2>&1\"" or
+      "cmd.exe /s /c \"ipconfig /all 2>&1\"" or
+      "cmd.exe /s /c \"echo '%os%'\"" or
+      *.\\install\\awk.exe*
+    ) or
+    process.args : (\(git or (*artisan* and *queue\:work*) or *rmdir* or "mode CON" or ver or ls or mode or dir)
   )
 
 ----------------------------------

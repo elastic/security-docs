@@ -3,7 +3,7 @@
 
 Identifies execution via MSSQL xp_cmdshell stored procedure. Malicious users may attempt to elevate their privileges by using xp_cmdshell, which is disabled by default, thus, it's important to review the context of it's use.
 
-*Rule type*: eql
+*Rule type*: new_terms
 
 *Rule indices*: 
 
@@ -17,9 +17,9 @@ Identifies execution via MSSQL xp_cmdshell stored procedure. Malicious users may
 * logs-windows.sysmon_operational-*
 * winlogbeat-*
 
-*Severity*: high
+*Severity*: medium
 
-*Risk score*: 73
+*Risk score*: 47
 
 *Runs every*: 5m
 
@@ -46,7 +46,7 @@ Identifies execution via MSSQL xp_cmdshell stored procedure. Malicious users may
 * Data Source: SentinelOne
 * Data Source: Crowdstrike
 
-*Version*: 316
+*Version*: 317
 
 *Rule authors*: 
 
@@ -107,18 +107,29 @@ The xp_cmdshell procedure is disabled by default, but when used, it has the same
 
 [source, js]
 ----------------------------------
-process where host.os.type == "windows" and event.type == "start" and process.parent.name : "sqlservr.exe" and 
+host.os.type:windows and event.category:process and event.type:start and
+process.parent.name:"sqlservr.exe" and process.command_line : * and
+(
   (
-   (process.name : "cmd.exe" and 
-    not process.args : ("\\\\*", "diskfree", "rmdir", "mkdir", "dir", "del", "rename", "bcp", "*XMLNAMESPACES*", 
-                        "?:\\MSSQL\\Backup\\Jobs\\sql_agent_backup_job.ps1", "K:\\MSSQL\\Backup\\msdb", "K:\\MSSQL\\Backup\\Logins")) or 
-                        
-   (process.name : "vpnbridge.exe" or ?process.pe.original_file_name : "vpnbridge.exe") or 
-
-   (process.name : "certutil.exe" or ?process.pe.original_file_name == "CertUtil.exe") or 
-
-   (process.name : "bitsadmin.exe" or ?process.pe.original_file_name == "bitsadmin.exe")
-  )
+    (process.name.caseless : "cmd.exe" or process.pe.original_file_name : "Cmd.Exe") and
+    not process.args : (
+          \\\\* or diskfree or rmdir or mkdir or dir or DIR or del or rename or bcp or md or ren or REN or send or echo or
+          ECHO or TYPE or type or EXIST or forfiles or sqlcmd or SQLCMD or dtexec or Sort-Object or cat or copy or COPY or
+          move or MOVE or CD\\ or show or rd or powercfg or "C:\SPAN4\DATA\RISKPARAM.SPN" or ("@ECHO" and "@FOR") or
+          ("@echo" and "@for") or (SET and PATH=*) or ("-ExecutionPolicy" and "-File") or MSSQLFDLauncher$DATEV_DBENGINE or
+          (wmic and (cpu or computersystem or logicaldisk or os or ComputerSystem or volume)) or -s\:C\:\\WINDOWS\\SERVIC* or
+          D\:\\* or E\:\\* or F\:\\* or Z\:\\* or "C:\Program Files\Amazon\AWSCLIV2\aws.exe" or C\:\\7-Zip\\7z.exe* or
+          C\:\\FTP* or *\(Get-Item* or C\:\\ProgramData\\Daktronics*
+    ) and
+    not process.command_line : (
+          "\"C:\\Windows\\system32\\cmd.exe\" /c " or
+          "\"C:\\Windows\\System32\\cmd.exe\""
+    )
+  ) or
+  process.name.caseless:("bitsadmin.exe" or "certutil.exe" or "vpnbridge.exe") or
+  process.name:("bitsadmin.exe" or "certutil.exe" or "vpnbridge.exe") or
+  process.pe.original_file_name:("CertUtil.exe" or "bitsadmin.exe" or "vpnbridge.exe")
+)
 
 ----------------------------------
 
