@@ -1,0 +1,141 @@
+[[prebuilt-rule-8-19-8-entra-id-actor-token-user-impersonation-abuse]]
+=== Entra ID Actor Token User Impersonation Abuse
+
+Identifies potential abuse of actor tokens in Microsoft Entra ID audit logs. Actor tokens are undocumented backend mechanisms used by Microsoft for service-to-service (S2S) operations, allowing services to perform actions on behalf of users. These tokens appear in logs with the service's display name but the impersonated user's UPN. While some legitimate Microsoft operations use actor tokens, unexpected usage may indicate exploitation of CVE-2025-55241, which allowed unauthorized access to Azure AD Graph API across tenants before being patched by Microsoft.
+
+*Rule type*: esql
+
+*Rule indices*: None
+
+*Severity*: medium
+
+*Risk score*: 47
+
+*Runs every*: 8m
+
+*Searches indices from*: now-9m ({ref}/common-options.html#date-math[Date Math format], see also <<rule-schedule, `Additional look-back time`>>)
+
+*Maximum alerts per execution*: 100
+
+*References*: 
+
+* https://dirkjanm.io/obtaining-global-admin-in-every-entra-id-tenant-with-actor-tokens/
+* https://msrc.microsoft.com/update-guide/en-US/advisory/CVE-2025-55241
+
+*Tags*: 
+
+* Domain: Cloud
+* Domain: Identity
+* Data Source: Azure
+* Data Source: Entra ID
+* Data Source: Entra Audit Logs
+* Use Case: Identity and Access Audit
+* Use Case: Threat Detection
+* Tactic: Initial Access
+* Tactic: Privilege Escalation
+* Resources: Investigation Guide
+
+*Version*: 1
+
+*Rule authors*: 
+
+* Elastic
+
+*Rule license*: Elastic License v2
+
+
+==== Investigation guide
+
+
+
+*Triage and analysis*
+
+
+
+*Investigating Entra ID Actor Token User Impersonation Abuse*
+
+
+This rule detects when Microsoft services use actor tokens to perform operations in audit logs. Actor tokens are undocumented backend mechanisms used by Microsoft for service-to-service (S2S) communication. They appear with a mismatch: the service's display name but the impersonated user's UPN. While some operations legitimately use actor tokens, unexpected usage may indicate exploitation of CVE-2025-55241, which allowed attackers to obtain Global Admin privileges across any Entra ID tenant. Note that this vulnerability has been patched by Microsoft as of September 2025.
+
+
+*Possible investigation steps*
+
+
+- Review the `azure.auditlogs.properties.initiated_by.user.userPrincipalName` field to identify which service principals are exhibiting this behavior.
+- Check the `azure.auditlogs.properties.initiated_by.user.displayName` to confirm these are legitimate Microsoft services.
+- Analyze the actions performed by these service principals - look for privilege escalations, permission grants, or unusual administrative operations.
+- Review the timing and frequency of these events to identify potential attack patterns or automated exploitation.
+- Cross-reference with recent administrative changes or service configurations that might explain legitimate use cases.
+- Check if any new applications or service principals were registered recently that could be related to this activity.
+- Investigate any correlation with other suspicious authentication events or privilege escalation attempts in your tenant.
+
+
+*False positive analysis*
+
+
+- Legitimate Microsoft service migrations or updates may temporarily exhibit this behavior.
+- Third-party integrations using Microsoft Graph or other APIs might trigger this pattern during normal operations.
+- Automated administrative tools or scripts using service principal authentication could be misconfigured.
+
+
+*Response and remediation*
+
+
+- Immediately review and audit all service principal permissions and recent consent grants in your Entra ID tenant.
+- Disable or restrict any suspicious service principals exhibiting this behavior until verified.
+- Review and revoke any unnecessary application permissions, especially those with high privileges.
+- Enable and review Entra ID audit logs for any permission grants or role assignments made by these service principals.
+- Implement Conditional Access policies to restrict service principal authentication from unexpected locations or conditions.
+- Enable Entra ID Identity Protection to detect and respond to risky service principal behaviors.
+- Review and harden application consent policies to prevent unauthorized service principal registrations.
+- Consider implementing privileged identity management (PIM) for service principal role assignments.
+
+
+==== Rule query
+
+
+[source, js]
+----------------------------------
+from logs-azure.auditlogs-* metadata _id, _version, _index
+| where azure.auditlogs.properties.initiated_by.user.displayName in (
+    "Office 365 Exchange Online",
+    "Skype for Business Online",
+    "Dataverse",
+    "Office 365 SharePoint Online",
+    "Microsoft Dynamics ERP"
+  ) and
+  not azure.auditlogs.operation_name like "*group*" and
+  azure.auditlogs.operation_name != "Set directory feature on tenant"
+  and azure.auditlogs.properties.initiated_by.user.userPrincipalName rlike ".+@[A-Za-z0-9.]+\\.[A-Za-z]{2,}"
+| keep
+    _id,
+    @timestamp,
+    azure.*,
+    client.*,
+    event.*,
+    source.*
+
+----------------------------------
+
+*Framework*: MITRE ATT&CK^TM^
+
+* Tactic:
+** Name: Initial Access
+** ID: TA0001
+** Reference URL: https://attack.mitre.org/tactics/TA0001/
+* Technique:
+** Name: Valid Accounts
+** ID: T1078
+** Reference URL: https://attack.mitre.org/techniques/T1078/
+* Sub-technique:
+** Name: Cloud Accounts
+** ID: T1078.004
+** Reference URL: https://attack.mitre.org/techniques/T1078/004/
+* Tactic:
+** Name: Privilege Escalation
+** ID: TA0004
+** Reference URL: https://attack.mitre.org/tactics/TA0004/
+* Technique:
+** Name: Abuse Elevation Control Mechanism
+** ID: T1548
+** Reference URL: https://attack.mitre.org/techniques/T1548/
