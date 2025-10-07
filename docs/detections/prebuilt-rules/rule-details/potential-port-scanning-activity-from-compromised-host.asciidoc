@@ -28,7 +28,7 @@ This rule detects potential port scanning activity from a compromised host. Port
 * Data Source: Elastic Defend
 * Resources: Investigation Guide
 
-*Version*: 6
+*Version*: 7
 
 *Rule authors*: 
 
@@ -133,6 +133,8 @@ from logs-endpoint.events.network-*
     host.os.type == "linux" and
     event.type == "start" and
     event.action == "connection_attempted" and
+    network.direction  == "egress" and
+    destination.port < 32768 and
     not (
       cidr_match(destination.ip, "127.0.0.0/8", "::1", "FE80::/10", "FF00::/8") or
       process.executable in (
@@ -155,6 +157,7 @@ from logs-endpoint.events.network-*
     destination.port,
     process.executable,
     destination.ip,
+    source.ip,
     agent.id,
     host.name
 | stats
@@ -162,7 +165,8 @@ from logs-endpoint.events.network-*
     Esql.destination_port_count_distinct = count_distinct(destination.port),
     Esql.agent_id_count_distinct = count_distinct(agent.id),
     Esql.host_name_values = values(host.name),
-    Esql.agent_id_values = values(agent.id)
+    Esql.agent_id_values = values(agent.id),
+    Esql.source_ip_values = values(source.ip)
     by process.executable, destination.ip
 | where
     Esql.agent_id_count_distinct == 1 and

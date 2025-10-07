@@ -10,9 +10,9 @@ Identifies when a user has elevated their access to User Access Administrator fo
 * filebeat-*
 * logs-azure.auditlogs-*
 
-*Severity*: medium
+*Severity*: high
 
-*Risk score*: 47
+*Risk score*: 73
 
 *Runs every*: 5m
 
@@ -24,10 +24,12 @@ Identifies when a user has elevated their access to User Access Administrator fo
 
 * https://learn.microsoft.com/en-us/azure/role-based-access-control/elevate-access-global-admin?tabs=azure-portal%2Centra-audit-logs/
 * https://permiso.io/blog/azures-apex-permissions-elevate-access-the-logs-security-teams-overlook
+* https://www.microsoft.com/en-us/security/blog/2025/08/27/storm-0501s-evolving-techniques-lead-to-cloud-based-ransomware/
 
 *Tags*: 
 
 * Domain: Cloud
+* Domain: Identity
 * Data Source: Azure
 * Data Source: Microsoft Entra ID
 * Data Source: Microsoft Entra ID Audit Logs
@@ -35,7 +37,7 @@ Identifies when a user has elevated their access to User Access Administrator fo
 * Tactic: Privilege Escalation
 * Resources: Investigation Guide
 
-*Version*: 1
+*Version*: 2
 
 *Rule authors*: 
 
@@ -56,7 +58,7 @@ Identifies when a user has elevated their access to User Access Administrator fo
 *Investigating Microsoft Entra ID Elevated Access to User Access Administrator*
 
 
-This rule identifies when a user elevates their permissions to the "User Access Administrator" role in Microsoft Entra ID (Azure AD). This role allows full control over access management for Azure resources and can be abused by attackers for lateral movement, persistence, or privilege escalation. Since this is a **New Terms** rule, the alert will only trigger if the user has not performed this elevation in the past 14 days, helping reduce alert fatigue.
+This rule identifies when a user elevates their permissions to the "User Access Administrator" role in Azure RBAC. This role allows full control over access management for Azure resources and can be abused by attackers for lateral movement, persistence, or privilege escalation. Since this is a New Terms rule, the alert will only trigger if the user has not performed this elevation in the past 14 days, helping reduce alert fatigue.
 
 
 *Possible investigation steps*
@@ -104,8 +106,10 @@ This rule identifies when a user elevates their permissions to the "User Access 
 [source, js]
 ----------------------------------
 event.dataset: azure.auditlogs
-    and azure.auditlogs.operation_name: "User has elevated their access to User Access Administrator for their Azure Resources"
-    and event.outcome: "success"
+    and (
+      azure.auditlogs.operation_name: "User has elevated their access to User Access Administrator for their Azure Resources" or
+      azure.auditlogs.properties.additional_details.value: "Microsoft.Authorization/elevateAccess/action"
+    ) and event.outcome: "success"
 
 ----------------------------------
 
