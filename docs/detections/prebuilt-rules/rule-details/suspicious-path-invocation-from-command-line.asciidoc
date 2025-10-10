@@ -33,7 +33,7 @@ This rule detects the execution of a PATH variable in a command line invocation 
 * Data Source: Elastic Defend
 * Resources: Investigation Guide
 
-*Version*: 4
+*Version*: 5
 
 *Rule authors*: 
 
@@ -135,7 +135,15 @@ For more details on Elastic Defend refer to the https://www.elastic.co/guide/en/
 ----------------------------------
 event.category:process and host.os.type:linux and event.type:start and event.action:exec and
 process.name:(bash or csh or dash or fish or ksh or sh or tcsh or zsh) and process.args:-c and
-process.command_line:(*PATH=* and not sh*/run/motd.dynamic.new)
+process.command_line:*PATH=* and
+not (
+  process.command_line:(*_PATH=* or *PYTHONPATH=* or sh*/run/motd.dynamic.new) or
+  process.parent.executable:(
+    "/opt/puppetlabs/puppet/bin/puppet" or /var/lib/docker/overlay2/* or /vz/root/*/dovecot or
+    "/usr/libexec/dovecot/auth" or /home/*/.local/share/containers/* or /vz/root/*/dovecot/auth
+  ) or
+  process.parent.command_line:"runc init"
+)
 
 ----------------------------------
 
