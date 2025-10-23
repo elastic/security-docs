@@ -1,0 +1,120 @@
+[[prebuilt-rule-8-19-9-potential-command-shell-via-netcat]]
+=== Potential Command Shell via NetCat
+
+Identifies potential attempt to execute via a reverse shell using the netcat utility to execute Windows commands using the default interpreters like Cmd.exe and Powershell.
+
+*Rule type*: eql
+
+*Rule indices*: 
+
+* logs-endpoint.events.process-*
+
+*Severity*: high
+
+*Risk score*: 73
+
+*Runs every*: 5m
+
+*Searches indices from*: now-9m ({ref}/common-options.html#date-math[Date Math format], see also <<rule-schedule, `Additional look-back time`>>)
+
+*Maximum alerts per execution*: 100
+
+*References*: None
+
+*Tags*: 
+
+* Domain: Endpoint
+* OS: Windows
+* Use Case: Threat Detection
+* Tactic: Execution
+* Resources: Investigation Guide
+* Data Source: Elastic Defend
+
+*Version*: 1
+
+*Rule authors*: 
+
+* Elastic
+
+*Rule license*: Elastic License v2
+
+
+==== Investigation guide
+
+
+
+*Triage and analysis*
+
+
+
+*Investigating Potential Command Shell via NetCat*
+
+
+Attackers may abuse the NetCat utility to execute commands remotely using the builtin Windows Command Shell interpreters.
+
+
+*Possible investigation steps*
+
+
+- Verify if the user is authorized to use the Netcat utility.
+- Investigate the process execution chain (parent process tree) and how the netcat binary was dropped.
+- Review the network connections made by the parent process and check their reputation.
+- Investiguate all child processes spawned by the Cmd or Powershell instance.
+- Examine the host for other alerts within the same period.
+
+
+*False positive analysis*
+
+
+- IT Support or system amdinistrator authorized activity using NetCat.
+
+
+*Response and remediation*
+
+
+- Initiate the incident response process based on the outcome of the triage.
+- Isolate the involved host to prevent further post-compromise behavior.
+- If the triage identified malware, search the environment for additional compromised hosts.
+  - Implement temporary network rules, procedures, and segmentation to contain the malware.
+  - Stop suspicious processes.
+  - Immediately block the identified indicators of compromise (IoCs).
+  - Inspect the affected systems for additional malware backdoors like reverse shells, reverse proxies, or droppers that attackers could use to reinfect the system.
+- Remove and block malicious artifacts identified during triage.
+- Run a full antimalware scan. This may reveal additional artifacts left in the system, persistence mechanisms, and malware components.
+- Investigate credential exposure on systems compromised or used by the attacker to ensure all compromised accounts are identified. Reset passwords for these accounts and other potentially compromised credentials, such as email, business systems, and web services.
+- Determine the initial vector abused by the attacker and take action to prevent reinfection through the same vector.
+- Using the incident response data, update logging and audit policies to improve the mean time to detect (MTTD) and the mean time to respond (MTTR).
+
+
+==== Rule query
+
+
+[source, js]
+----------------------------------
+process where host.os.type == "windows" and event.type == "start" and
+process.name : ("cmd.exe", "powershell.exe") and process.parent.args : "-e" and
+ (
+  (process.parent.args_count == 5 and process.parent.command_line regex~ """.*[0-9]{1,3}(\.[0-9]{1,3}){3}.*""") or
+  (process.parent.args : "-*l*" and process.parent.args : "-*p*" and process.parent.args : ("cmd.exe", "powershell.exe"))
+  )
+
+----------------------------------
+
+*Framework*: MITRE ATT&CK^TM^
+
+* Tactic:
+** Name: Execution
+** ID: TA0002
+** Reference URL: https://attack.mitre.org/tactics/TA0002/
+* Technique:
+** Name: Command and Scripting Interpreter
+** ID: T1059
+** Reference URL: https://attack.mitre.org/techniques/T1059/
+* Sub-technique:
+** Name: PowerShell
+** ID: T1059.001
+** Reference URL: https://attack.mitre.org/techniques/T1059/001/
+* Sub-technique:
+** Name: Windows Command Shell
+** ID: T1059.003
+** Reference URL: https://attack.mitre.org/techniques/T1059/003/

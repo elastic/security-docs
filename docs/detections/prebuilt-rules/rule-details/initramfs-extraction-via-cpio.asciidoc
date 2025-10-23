@@ -1,7 +1,7 @@
 [[initramfs-extraction-via-cpio]]
 === Initramfs Extraction via CPIO
 
-This rule detects the extraction of an initramfs image using the `cpio` command on Linux systems. The `cpio` command is used to create or extract cpio archives. Attackers may extract the initramfs image to modify the contents or add malicious files, which can be leveraged to maintain persistence on the system.
+This rule detects the extraction of an initramfs image using the "cpio" command on Linux systems. The "cpio" command is used to create or extract cpio archives. Attackers may extract the initramfs image to modify the contents or add malicious files, which can be leveraged to maintain persistence on the system.
 
 *Rule type*: eql
 
@@ -39,7 +39,7 @@ This rule detects the extraction of an initramfs image using the `cpio` command 
 * Data Source: SentinelOne
 * Resources: Investigation Guide
 
-*Version*: 4
+*Version*: 5
 
 *Rule authors*: 
 
@@ -136,9 +136,19 @@ For more details on Elastic Defend refer to the https://www.elastic.co/guide/en/
 ----------------------------------
 process where host.os.type == "linux" and event.type == "start" and
 event.action in ("exec", "exec_event", "start", "ProcessRollup2", "executed") and
-process.name == "cpio" and process.args in ("-H", "--format") and process.args == "newc" and not (
+process.name == "cpio" and process.args in ("-H", "--format") and process.args == "newc" and
+not (
   process.parent.name in ("mkinitramfs", "dracut") or
-  process.parent.executable like~ ("/usr/share/initramfs-tools/*", "/nix/store/*")
+  ?process.parent.executable like~ ("/usr/share/initramfs-tools/*", "/nix/store/*") or
+  ?process.parent.args in (
+    "/bin/dracut", "/usr/share/initramfs-tools/hooks/amd64_microcode", "/usr/bin/dracut", "/usr/sbin/mkinitramfs",
+    "/usr/sbin/dracut", "/usr/bin/update-microcode-initrd"
+  ) or
+  process.args like ("/var/tmp/mkinitramfs_*", "/tmp/tmp.*/mkinitramfs_*") or
+  ?process.working_directory like (
+    "/var/tmp/mkinitramfs-*", "/tmp/microcode-initrd_*", "/var/tmp/mkinitramfs-*", "/var/tmp/dracut.*",
+    "/var/tmp/mkinitramfs_*"
+  )
 )
 
 ----------------------------------
