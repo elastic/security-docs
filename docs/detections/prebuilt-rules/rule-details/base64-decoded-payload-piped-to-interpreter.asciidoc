@@ -8,6 +8,7 @@ This rule detects when a base64 decoded payload is piped to an interpreter on Li
 *Rule indices*: 
 
 * logs-endpoint.events.process*
+* logs-crowdstrike.fdr*
 
 *Severity*: medium
 
@@ -30,8 +31,9 @@ This rule detects when a base64 decoded payload is piped to an interpreter on Li
 * Tactic: Execution
 * Data Source: Elastic Defend
 * Resources: Investigation Guide
+* Data Source: Crowdstrike
 
-*Version*: 3
+*Version*: 4
 
 *Rule authors*: 
 
@@ -131,7 +133,7 @@ For more details on Elastic Defend refer to the https://www.elastic.co/guide/en/
 [source, js]
 ----------------------------------
 sequence by host.id, process.parent.entity_id with maxspan=3s
-  [process where host.os.type == "linux" and event.type == "start" and event.action == "exec" and (
+  [process where host.os.type == "linux" and event.type == "start" and event.action in ("exec", "ProcessRollup2") and (
     (process.name in ("base64", "base64plain", "base64url", "base64mime", "base64pem", "base32", "base16") and process.command_line like~ "*-*d*") or
     (process.name == "openssl" and process.args == "enc" and process.args in ("-d", "-base64", "-a")) or
     (process.name like "python*" and
@@ -141,7 +143,7 @@ sequence by host.id, process.parent.entity_id with maxspan=3s
     (process.name like "perl*" and process.command_line like~ "*decode_base64*") or
     (process.name like "ruby*" and process.args == "-e" and process.command_line like~ "*Base64.decode64*")
   )]
- [process where host.os.type == "linux" and event.type == "start" and event.action == "exec" and process.name like~ (
+ [process where host.os.type == "linux" and event.type == "start" and event.action in ("exec", "ProcessRollup2") and process.name like~ (
     "bash", "dash", "sh", "tcsh", "csh", "zsh", "ksh", "fish", "python*", "perl*", "ruby*", "lua*", "php*"
  )]
 

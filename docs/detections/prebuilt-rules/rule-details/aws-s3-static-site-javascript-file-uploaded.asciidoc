@@ -1,7 +1,7 @@
 [[aws-s3-static-site-javascript-file-uploaded]]
 === AWS S3 Static Site JavaScript File Uploaded
 
-This rule detects when a JavaScript file is uploaded or accessed in an S3 static site directory (`static/js/`) by an IAM user or assumed role. This can indicate suspicious modification of web content hosted on S3, such as injecting malicious scripts into a static website frontend.
+This rule detects when a JavaScript file is uploaded in an S3 static site directory (`static/js/`) by an IAM user or assumed role. This can indicate suspicious modification of web content hosted on S3, such as injecting malicious scripts into a static website frontend.
 
 *Rule type*: esql
 
@@ -13,7 +13,7 @@ This rule detects when a JavaScript file is uploaded or accessed in an S3 static
 
 *Runs every*: 5m
 
-*Searches indices from*: now-9m ({ref}/common-options.html#date-math[Date Math format], see also <<rule-schedule, `Additional look-back time`>>)
+*Searches indices from*: now-6m ({ref}/common-options.html#date-math[Date Math format], see also <<rule-schedule, `Additional look-back time`>>)
 
 *Maximum alerts per execution*: 100
 
@@ -34,7 +34,7 @@ This rule detects when a JavaScript file is uploaded or accessed in an S3 static
 * Use Case: Cloud Threat Detection
 * Resources: Investigation Guide
 
-*Version*: 3
+*Version*: 5
 
 *Rule authors*: 
 
@@ -92,10 +92,11 @@ An S3 `PutObject` action that targets a path like `static/js/` and uploads a `.j
 from logs-aws.cloudtrail* metadata _id, _version, _index
 
 | where
-    // S3 object read/write activity
+    // S3 object write activity
     event.dataset == "aws.cloudtrail"
     and event.provider == "s3.amazonaws.com"
-    and event.action in ("GetObject", "PutObject")
+    and event.action == "PutObject"
+    and event.outcome == "success"
 
     // IAM users or assumed roles only
     and aws.cloudtrail.user_identity.type in ("IAMUser", "AssumedRole")
@@ -107,7 +108,7 @@ from logs-aws.cloudtrail* metadata _id, _version, _index
     and not (
         user_agent.original like "*Terraform*"
         or user_agent.original like "*Ansible*"
-        or user_agent.original like "*Pulumni*"
+        or user_agent.original like "*Pulumi*"
     )
 
 // Extract fields from request parameters
