@@ -8,6 +8,7 @@ This rule detects the modification and reading of kernel features through built-
 *Rule indices*: 
 
 * logs-endpoint.events.process*
+* logs-crowdstrike.fdr*
 
 *Severity*: low
 
@@ -30,8 +31,9 @@ This rule detects the modification and reading of kernel features through built-
 * Tactic: Discovery
 * Data Source: Elastic Defend
 * Resources: Investigation Guide
+* Data Source: Crowdstrike
 
-*Version*: 2
+*Version*: 3
 
 *Rule authors*: 
 
@@ -93,7 +95,7 @@ Kernel features in Linux systems are critical for maintaining security and stabi
 
 [source, js]
 ----------------------------------
-process where host.os.type == "linux" and event.type == "start" and event.action == "exec" and
+process where host.os.type == "linux" and event.type == "start" and event.action in ("exec", "ProcessRollup2") and
 process.command_line : (
   "*/etc/sysctl.conf*", "*/etc/sysctl.d/*", "*/proc/sys/kernel/nmi_watchdog*",
   "*/proc/sys/vm/nr_hugepages*", "*/proc/sys/kernel/yama/ptrace_scope*",
@@ -103,7 +105,7 @@ process.command_line : (
   "*kernel.nmi_watchdog*", "*vm.nr_hugepages*", "*vm.drop_caches*",
   "*kernel.sysrq*"
 ) and
-process.parent.executable != null and 
+?process.parent.executable != null and 
 (
   (process.name == "tee" and process.args like "-*a*") or // also detects --append
   (process.name == "cat" and not process.parent.name in ("bash", "dash", "sh", "tcsh", "csh", "zsh", "ksh", "fish")) or
