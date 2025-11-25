@@ -3,13 +3,9 @@
 
 Detects when multiple hosts are using the same agent ID. This could occur in the event of an agent being taken over and used to inject illegitimate documents into an instance as an attempt to spoof events in order to masquerade actual activity to evade detection.
 
-*Rule type*: threshold
+*Rule type*: esql
 
-*Rule indices*: 
-
-* logs-*
-* metrics-*
-* traces-*
+*Rule indices*: None
 
 *Severity*: high
 
@@ -29,7 +25,7 @@ Detects when multiple hosts are using the same agent ID. This could occur in the
 * Tactic: Defense Evasion
 * Resources: Investigation Guide
 
-*Version*: 103
+*Version*: 105
 
 *Rule authors*: 
 
@@ -91,7 +87,11 @@ In network environments, agents are deployed on hosts to monitor and report acti
 
 [source, js]
 ----------------------------------
-event.agent_id_status:* and not tags:forwarded
+from logs-endpoint.*  metadata _id
+| where event.agent_id_status is not null 
+| stats Esql.count_distinct_host_ids = count_distinct(host.id), Esql.host_id_values = values(host.id), Esql.user_id_values_user_id = values(user.id) by agent.id
+| where Esql.count_distinct_host_ids >= 2
+| keep Esql.count_distinct_host_ids, Esql.host_id_values, Esql.user_id_values_user_id, agent.id
 
 ----------------------------------
 

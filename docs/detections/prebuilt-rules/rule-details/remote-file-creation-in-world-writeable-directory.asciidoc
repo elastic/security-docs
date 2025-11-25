@@ -3,7 +3,7 @@
 
 This rule detects the creation of a file in a world-writeable directory through a service that is commonly used for file transfer. This behavior is often associated with lateral movement and can be an indicator of an attacker attempting to move laterally within a network.
 
-*Rule type*: eql
+*Rule type*: new_terms
 
 *Rule indices*: 
 
@@ -31,7 +31,7 @@ This rule detects the creation of a file in a world-writeable directory through 
 * Data Source: Elastic Defend
 * Resources: Investigation Guide
 
-*Version*: 3
+*Version*: 4
 
 *Rule authors*: 
 
@@ -146,9 +146,10 @@ Auditbeat is a lightweight shipper that you can install on your servers to audit
 
 [source, js]
 ----------------------------------
-file where host.os.type == "linux" and event.action == "creation" and
-process.name in ("scp", "sshd", "ssh", "ftp", "sftp", "vsftpd", "sftp-server", "rsync") and
-file.path like~ ("/tmp*", "/var/tmp*", "/dev/shm/*", "/home/.*") and user.id != "0"
+event.category:file and host.os.type:linux and event.action:creation and
+process.name:(ftp or rsync or scp or sftp or sftp-server or ssh or sshd or vsftpd) and
+file.path:((/dev/shm/* or /tmp* or /var/tmp*) and not (/tmp/ansible-tmp-* or /var/tmp/ansible-tmp-*)) and
+not user.id:0
 
 ----------------------------------
 
