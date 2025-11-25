@@ -32,7 +32,7 @@ Identifies the Elastic endpoint agent has stopped and is no longer running on th
 * Data Source: Elastic Defend
 * Resources: Investigation Guide
 
-*Version*: 110
+*Version*: 111
 
 *Rule authors*: 
 
@@ -118,12 +118,12 @@ process where
 or
 /* service or systemctl used to stop Elastic Agent on Linux */
 (event.type == "end" and
-  (process.name : ("systemctl", "service") and
-    process.args : "elastic-agent" and
-    process.args : ("stop", "disable"))
+  (process.name in ("systemctl", "service", "chkconfig", "update-rc.d") and
+    process.args : ("elastic-agent", "elastic-agent.service") and
+    process.args : ("stop", "disable", "remove", "off", "kill", "mask"))
   or
   /* pkill , killall used to stop Elastic Agent on Linux */
-  ( event.type == "end" and process.name : ("pkill", "killall") and process.args: "elastic-agent")
+  ( event.type == "end" and process.name in ("pkill", "killall", "kill") and process.args: "elastic-agent")
   or
   /* Unload Elastic Agent extension on MacOS */
   (process.name : "kextunload" and
