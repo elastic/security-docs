@@ -33,7 +33,7 @@ Identifies rare connection attempts to a Web Distributed Authoring and Versionin
 * Data Source: Crowdstrike
 * Resources: Investigation Guide
 
-*Version*: 4
+*Version*: 5
 
 *Rule authors*: 
 
@@ -81,7 +81,7 @@ Identifies rare connection attempts to a Web Distributed Authoring and Versionin
 
 [source, js]
 ----------------------------------
-from logs-*
+from logs-endpoint.events.process-*, logs-windows.sysmon_operational-*, logs-system.security-*, logs-windows.*, winlogbeat-*, logs-crowdstrike.fdr*, logs-m365_defender.event-* METADATA _id, _version, _index
 | where
     @timestamp > now() - 8 hours and
     event.category == "process" and
@@ -89,8 +89,7 @@ from logs-*
     process.name == "rundll32.exe" and
     process.command_line like "*DavSetCookie*"
 | keep host.id, process.command_line, user.name
-| grok
-    process.command_line """(?<Esql.server_webdav_cookie>DavSetCookie .* http)"""
+| grok process.command_line """(?<Esql.server_webdav_cookie>DavSetCookie .* http)"""
 | eval
     Esql.server_webdav_cookie_replace = replace(Esql.server_webdav_cookie, "(DavSetCookie | http)", "")
 | where

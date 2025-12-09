@@ -1,7 +1,7 @@
 [[aws-rds-db-instance-or-cluster-deletion-protection-disabled]]
 === AWS RDS DB Instance or Cluster Deletion Protection Disabled
 
-Identifies the modification of an AWS RDS DB instance or cluster to remove the deletionProtection feature. Deletion protection is enabled automatically for instances set up through the console and can be used to protect them from unintentional deletion activity. If disabled an instance or cluster can be deleted, destroying sensitive or critical information. Adversaries with the proper permissions can take advantage of this to set up future deletion events against a compromised environment.
+Identifies the modification of an AWS RDS DB instance or cluster to disable the deletionProtection feature. Deletion protection prevents accidental or unauthorized deletion of RDS resources. Adversaries with sufficient permissions may disable this protection as a precursor to destructive actions, including the deletion of databases containing sensitive or business-critical data. This rule alerts when deletionProtection is explicitly set to false on an RDS DB instance or cluster.
 
 *Rule type*: eql
 
@@ -35,7 +35,7 @@ Identifies the modification of an AWS RDS DB instance or cluster to remove the d
 * Use Case: Threat Detection
 * Tactic: Impact
 
-*Version*: 5
+*Version*: 6
 
 *Rule authors*: 
 
@@ -51,47 +51,87 @@ Identifies the modification of an AWS RDS DB instance or cluster to remove the d
 *Triage and analysis*
 
 
+> **Disclaimer**:
+> This investigation guide was created using generative AI technology and has been reviewed to improve its accuracy and relevance. 
+> While every effort has been made to ensure its quality, validate and adapt it to suit your operational needs.
+
 
 *Investigating AWS RDS DB Instance or Cluster Deletion Protection Disabled*
 
-
-This rule identifies when the deletion protection feature is removed from an RDS DB instance or cluster. Removing deletion protection is a prerequisite for deleting a DB instance. Adversaries may exploit this feature to permanently delete data in a compromised environment.
-
-
-*Possible Investigation Steps*
+ 
+Deletion protection is designed to safeguard RDS DB instances and clusters from accidental or unauthorized deletion. An adversary with privileged access in a compromised environment, can disable this safeguard before issuing a `DeleteDBInstance` or `DeleteDBCluster` action. This rule detects successful attempts to modify deletionProtection and set it to false on any RDS instance or cluster.
 
 
-- **Identify the Actor**: Review the `aws.cloudtrail.user_identity.arn` and `aws.cloudtrail.user_identity.access_key_id` fields to identify who made the change. Verify if this actor typically performs such actions and if they have the necessary permissions.
-- **Review the Modification Event**: Identify the DB instance involved and review the event details. Look for `ModifyDBInstance` actions where the deletionProtection parameter was changed.
-    - **Request and Response Parameters**: Check the `aws.cloudtrail.request_parameters` field in the CloudTrail event to identify the DB instance or cluster identifier and any other modifications made to the instance.
-- **Verify the Modified Instance**: Check the DB instance that was modified and its contents to determine the sensitivity of the data stored within it.
-- **Contextualize with Recent Changes**: Compare this modification event against recent changes in RDS DB instance or cluster configurations and deployments. Look for any other recent permissions changes or unusual administrative actions.
-- **Correlate with Other Activities**: Search for related CloudTrail events before and after this change to see if the same actor or IP address engaged in other potentially suspicious activities.
-- **Interview Relevant Personnel**: If the modification was initiated by a user, verify the intent and authorization for this action with the person or team responsible for managing DB instances.
-
-*False Positive Analysis*
+*Possible investigation steps*
 
 
-- **Legitimate Instance Modification**: Confirm if the DB instance modification aligns with legitimate tasks.
-- **Consistency Check**: Compare the action against historical data of similar actions performed by the user or within the organization. If the action is consistent with past legitimate activities, it might indicate a false alarm.
+- **Identify the Actor**
+  - Review `aws.cloudtrail.user_identity.arn`, `aws.cloudtrail.user_identity.type`, and `access_key_id` to determine which IAM principal made the change.
+  - Validate whether this principal normally performs RDS lifecycle operations.
+
+- **Review Event Details**
+  - Inspect `aws.cloudtrail.request_parameters` or `target.entity.id` to confirm the targeted DB instance or cluster identifier.
+  - Confirm that the request explicitly contains `deletionProtection=false`.
+
+- **Contextualize the Change**
+  - Determine if recent activities justify the removal of deletion protection (migration, decommissioning, or maintenance).
+  - Compare the timestamp to normal operational hours or deployment windows.
+
+- **Correlate with Additional Activity**
+  - Look for subsequent or preceding RDS actions such as:
+    - `DeleteDBInstance`
+    - `DeleteDBCluster`
+    - Security group modifications
+    - Changes to parameter groups or backup retention policies.
+  - Sudden removal of backups or snapshots may indicate imminent destructive activity.
+
+- **Verify Environmental Risk**
+  - Assess the sensitivity of data stored in the affected DB instance or cluster.
+  - Determine if the instance is production, customer-facing, or mission-critical.
+
+- **Interview Relevant Personnel**
+  - Confirm with service owners or DB administrators whether the modification was intended and approved.
 
 
-*Response and Remediation*
+*False positive analysis*
 
 
-- **Immediate Review and Reversal**: If the change was unauthorized, reset deletionProtection to true.
-- **Enhance Monitoring and Alerts**: Adjust monitoring systems to alert on similar actions, especially those involving sensitive data or permissions.
-- **Audit Instances and Policies**: Conduct a comprehensive audit of all instances and associated policies to ensure they adhere to the principle of least privilege.
-- **Policy Update**: Review and possibly update your organization’s policies on DB instance access to tighten control and prevent unauthorized access.
-- **Incident Response**: If malicious intent is confirmed, consider it a data breach incident and initiate the incident response protocol. This includes further investigation, containment, and recovery.
+- **Expected Decommissioning**
+  - Instances undergoing teardown or migration legitimately require deletion protection to be disabled first.
+
+- **Inconsistent Historical Behavior**
+  - Compare the action to historical modification patterns for the user or role. If the action aligns with past legitimate changes, it may not be suspicious.
 
 
-*Additional Information:*
+*Response and remediation*
 
 
-For further guidance on managing DB instances and securing AWS environments, refer to the https://docs.aws.amazon.com/AmazonRDS/latest/UserGuide/CHAP_RDS_Managing.html[AWS RDS documentation] and AWS best practices for security. Additionally, consult the following resources for specific details on DB instance security:
-- https://docs.aws.amazon.com/AmazonRDS/latest/APIReference/API_ModifyDBInstance.html[AWS RDS ModifyDBInstance]
-- https://docs.aws.amazon.com/AmazonRDS/latest/UserGuide/USER_DeleteInstance.html[Deleting AWS RDS DB Instance]
+- **Immediate Remediation**
+  - If unauthorized, re-enable deletion protection (`deletionProtection=true`) on the affected DB instance or cluster.
+  - Review security groups, backup retention, and snapshot policies for additional unauthorized changes.
+
+- **Access Review**
+  - Investigate credential exposure for the IAM principal that performed the action.
+  - Rotate access keys or temporarily revoke permissions if compromise is suspected.
+
+- **Containment**
+  - If destructive intent is suspected, apply guardrails (e.g., IAM condition keys, SCPs) to prevent DB deletion.
+
+- **Audit and Harden**
+  - Ensure RDS instances adhere to least-privilege principles.
+  - Restrict who can modify `ModifyDBInstance` or `ModifyDBCluster` destructive settings, such as deletion protection, backup retention, and public accessibility.
+
+- **Incident Response Activation**
+  - Treat unauthorized removal of deletion protection as a high-risk precursor to data destruction.
+  - Trigger IR processes for containment, root cause analysis, and post-incident hardening.
+
+
+*Additional information*
+
+
+- **https://github.com/aws-samples/aws-incident-response-playbooks/blob/c151b0dc091755fffd4d662a8f29e2f6794da52c/playbooks/[AWS IR Playbooks]** 
+- **https://github.com/aws-samples/aws-customer-playbook-framework/tree/a8c7b313636b406a375952ac00b2d68e89a991f2/docs[AWS Customer Playbook Framework]** 
+- **Security Best Practices:** https://aws.amazon.com/premiumsupport/knowledge-center/security-best-practices/[AWS Knowledge Center – Security Best Practices].
 
 
 ==== Rule query

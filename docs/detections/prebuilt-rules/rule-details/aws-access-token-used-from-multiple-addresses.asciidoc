@@ -32,7 +32,7 @@ This rule identifies potentially suspicious activity by detecting instances wher
 * Use Case: Identity and Access Audit
 * Resources: Investigation Guide
 
-*Version*: 105
+*Version*: 106
 
 *Rule authors*: 
 
@@ -55,7 +55,7 @@ This rule identifies potentially suspicious activity by detecting instances wher
 Access tokens are bound to a single user. Usage from multiple IP addresses may indicate the token was stolen and used elsewhere. By correlating this with additional detection criteria like multiple user agents, different cities, and different networks, we can improve the fidelity of the rule and help to eliminate false positives associated with expected behavior, like dual-stack IPV4/IPV6 usage.
 
 
-*Possible Investigation Steps*
+*Possible investigation steps*
 
 
 - **Identify the IAM User**: Examine the `aws.cloudtrail.user_identity.arn` stored in `user_id` and correlate with the `source.ips` stored in `ip_list` and `unique_ips` count to determine how widely the token was used.
@@ -66,14 +66,14 @@ Access tokens are bound to a single user. Usage from multiple IP addresses may i
 - **Trace Adversary Movement**: Pivot to related actions (e.g., `s3:ListBuckets`, `iam:ListUsers`, `sts:GetCallerIdentity`) to track further enumeration.
 
 
-*False Positive Analysis*
+*False positive analysis*
 
 
 - Automation frameworks that rotate through multiple IPs or cloud functions with dynamic egress IPs may cause this alert to fire.
 - Confirm geolocation and workload context before escalating.
 
 
-*Response and Remediation*
+*Response and remediation*
 
 
 - **Revoke the Token**: Disable or rotate the IAM credentials and invalidate the temporary session token.
@@ -81,7 +81,7 @@ Access tokens are bound to a single user. Usage from multiple IP addresses may i
 - **Strengthen Controls**: Require MFA for high-privilege actions, restrict access via policy conditions (e.g., IP range or device).
 
 
-*References*
+*Additional information*
 
 
 - https://docs.aws.amazon.com/IAM/latest/UserGuide/id_credentials_access-keys.html[IAM Long-Term Credentials]
@@ -114,7 +114,8 @@ from logs-aws.cloudtrail* metadata _id, _version, _index
     "health.amazonaws.com", "monitoring.amazonaws.com", "notifications.amazonaws.com",
     "ce.amazonaws.com", "cost-optimization-hub.amazonaws.com",
     "servicecatalog-appregistry.amazonaws.com", "securityhub.amazonaws.com", 
-    "account.amazonaws.com", "budgets.amazonaws.com", "freetier.amazonaws.com"
+    "account.amazonaws.com", "budgets.amazonaws.com", "freetier.amazonaws.com", "support.amazonaws.com",
+    "support-console.amazonaws.com"
   )
 
 | eval
@@ -129,7 +130,8 @@ from logs-aws.cloudtrail* metadata _id, _version, _index
   Esql.source_geo_city_name = source.geo.city_name,
   Esql.source_network_org_name = `source.as.organization.name`,
   Esql.source_ip_network_pair = concat(Esql.source_ip_string, "-", `source.as.organization.name`),
-  Esql.event_timestamp = @timestamp
+  Esql.event_timestamp = @timestamp,
+  Esql.data_stream_namespace = data_stream.namespace
 
 | stats
   Esql.event_action_values = values(event.action),
@@ -147,6 +149,7 @@ from logs-aws.cloudtrail* metadata _id, _version, _index
   Esql.user_agent_original_count_distinct = count_distinct(Esql.user_agent_original),
   Esql.source_geo_city_name_count_distinct = count_distinct(Esql.source_geo_city_name),
   Esql.source_network_org_name_count_distinct = count_distinct(Esql.source_network_org_name),
+  Esql.data_stream_namespace_values = values(Esql.data_stream_namespace),
   Esql.timestamp_first_seen = min(Esql.event_timestamp),
   Esql.timestamp_last_seen = max(Esql.event_timestamp),
   Esql.event_count = count()
@@ -190,9 +193,15 @@ from logs-aws.cloudtrail* metadata _id, _version, _index
   Esql.source_ip_count_distinct,
   Esql.user_agent_original_count_distinct,
   Esql.source_geo_city_name_count_distinct,
-  Esql.source_network_org_name_count_distinct
+  Esql.source_network_org_name_count_distinct,
+  Esql.data_stream_namespace_values
 
-| where Esql.activity_type != "normal_activity"
+| where Esql.activity_fidelity_score == "high"
+
+// this rule only alerts for "high" fidelity cases, to broaden the rule scope to include all activity
+// change the final condition to 
+// | where Esql.activity_type != "normal_activity"
+
 
 ----------------------------------
 

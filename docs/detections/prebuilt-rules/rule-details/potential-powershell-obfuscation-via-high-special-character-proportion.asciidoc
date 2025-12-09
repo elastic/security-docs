@@ -28,7 +28,7 @@ Identifies PowerShell scripts with an abnormally high proportion of non-alphanum
 * Data Source: PowerShell Logs
 * Rule Type: BBR
 
-*Version*: 5
+*Version*: 6
 
 *Rule authors*: 
 
@@ -90,9 +90,9 @@ from logs-windows.powershell_operational* metadata _id, _version, _index
     Esql.script_block_length,
     Esql.script_block_ratio,
     Esql.script_block_tmp,
-    powershell.file.script_block_text,
-    powershell.file.script_block_id,
+    powershell.file.*,
     file.path,
+    file.directory,
     powershell.sequence,
     powershell.total,
     _id,
@@ -103,6 +103,11 @@ from logs-windows.powershell_operational* metadata _id, _version, _index
 
 // Filter for scripts with high special character ratio
 | where Esql.script_block_ratio > 0.30
+
+// Exclude Noisy Patterns
+| where not file.directory like "C:\\\\ProgramData\\\\Microsoft\\\\Windows Defender Advanced Threat Protection\\\\DataCollection\\\\*"
+  // ESQL requires this condition, otherwise it only returns matches where file.directory exists.
+  or file.directory IS NULL
 
 ----------------------------------
 

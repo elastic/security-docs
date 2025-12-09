@@ -13,7 +13,7 @@ This rule detects unusual spikes in error logs from web servers, which may indic
 
 *Runs every*: 10m
 
-*Searches indices from*: now-9m ({ref}/common-options.html#date-math[Date Math format], see also <<rule-schedule, `Additional look-back time`>>)
+*Searches indices from*: now-11m ({ref}/common-options.html#date-math[Date Math format], see also <<rule-schedule, `Additional look-back time`>>)
 
 *Maximum alerts per execution*: 100
 
@@ -30,7 +30,7 @@ This rule detects unusual spikes in error logs from web servers, which may indic
 * Data Source: IIS
 * Resources: Investigation Guide
 
-*Version*: 2
+*Version*: 3
 
 *Rule authors*: 
 
@@ -94,16 +94,19 @@ from logs-nginx.error-*, logs-apache_tomcat.error-*, logs-apache.error-*, logs-i
     event.dataset,
     source.ip,
     agent.id,
-    host.name
+    host.name,
+    data_stream.namespace
+
 | where source.ip is not null
 | stats
     Esql.event_count = count(),
     Esql.host_name_values = values(host.name),
     Esql.agent_id_values = values(agent.id),
-    Esql.event_dataset_values = values(event.dataset)
+    Esql.event_dataset_values = values(event.dataset),
+    Esql.data_stream_namespace_values = values(data_stream.namespace)
     by source.ip, agent.id
 | where
-    Esql.event_count > 25
+    Esql.event_count > 50
 
 ----------------------------------
 

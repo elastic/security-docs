@@ -7,12 +7,20 @@ This rule detects when Node.js, directly or via a shell, spawns the curl or wget
 
 *Rule indices*: 
 
-* logs-endpoint.events.process*
+* endgame-*
 * logs-crowdstrike.fdr*
+* logs-endpoint.events.process-*
+* logs-sentinel_one_cloud_funnel.*
+* logs-system.security*
+* logs-windows.forwarded*
+* logs-windows.sysmon_operational-*
+* winlogbeat-*
+* auditbeat-*
+* logs-auditd_manager.auditd-*
 
-*Severity*: low
+*Severity*: medium
 
-*Risk score*: 21
+*Risk score*: 47
 
 *Runs every*: 5m
 
@@ -26,13 +34,20 @@ This rule detects when Node.js, directly or via a shell, spawns the curl or wget
 
 * Domain: Endpoint
 * OS: Linux
+* OS: Windows
+* OS: macOS
 * Use Case: Threat Detection
 * Tactic: Command and Control
-* Data Source: Elastic Defend
 * Resources: Investigation Guide
+* Data Source: Elastic Defend
+* Data Source: Elastic Endgame
+* Data Source: Windows Security Event Logs
+* Data Source: Sysmon
+* Data Source: SentinelOne
 * Data Source: Crowdstrike
+* Data Source: Auditd Manager
 
-*Version*: 2
+*Version*: 3
 
 *Rule authors*: 
 
@@ -127,15 +142,18 @@ For more details on Elastic Defend refer to the https://www.elastic.co/guide/en/
 
 [source, js]
 ----------------------------------
-process where host.os.type == "linux" and event.type == "start" and event.action in ("exec", "ProcessRollup2") and process.parent.name == "node" and (
+process where event.type == "start" and
+ event.action in ("exec", "exec_event", "start", "ProcessRollup2", "executed", "process_started") and
+ process.parent.name in ("node", "bun", "node.exe", "bun.exe") and (
   (
-    process.name in ("bash", "dash", "sh", "tcsh", "csh", "zsh", "ksh", "fish") and
-    process.args == "-c" and process.command_line like~ ("*curl*", "*wget*")
+    process.name in ("bash", "dash", "sh", "tcsh", "csh", "zsh", "ksh", "fish", "cmd.exe", "bash.exe", "powershell.exe") and
+    process.command_line like~ ("*curl*http*", "*wget*http*")
   ) or 
   (
-    process.name in ("curl", "wget")
+    process.name in ("curl", "wget", "curl.exe", "wget.exe")
   )
-)
+) and
+ not process.command_line like ("*127.0.0.1*", "*localhost*")
 
 ----------------------------------
 

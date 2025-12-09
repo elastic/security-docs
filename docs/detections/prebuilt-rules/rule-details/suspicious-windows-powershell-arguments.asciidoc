@@ -44,7 +44,7 @@ Identifies the execution of PowerShell with suspicious argument values. This beh
 * Data Source: Elastic Endgame
 * Resources: Investigation Guide
 
-*Version*: 209
+*Version*: 210
 
 *Rule authors*: 
 
@@ -176,7 +176,9 @@ process where host.os.type == "windows" and event.type == "start" and
           "*$env:computername*http*",
           "*;InVoKe-ExpRESsIoN $COntent.CONTENt;*",
           "*WebClient*example.com*",
-          "*=iwr $*;iex $*"
+          "*=iwr $*;iex $*",
+          "*ServerXmlHttp*IEX*",
+          "*XmlDocument*IEX*"
     ) or
 
     (process.args : "-c" and process.args : "&{'*") or
@@ -186,6 +188,11 @@ process where host.os.type == "windows" and event.type == "start" and
     (process.args : "-bxor" and process.args : "0x*") or
 
     process.args : "$*$*;set-alias" or
+
+    process.args == "-e" or
+
+    // ATHPowerShellCommandLineParameter
+    process.args : ("-EncodedCommandParamVariation", "-UseEncodedArguments", "-CommandParamVariation") or
 
     (
       process.parent.name : ("explorer.exe", "cmd.exe") and
