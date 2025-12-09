@@ -13,13 +13,12 @@ Identifies when a single AWS resource is making `DescribeInstances` API calls in
 
 *Runs every*: 5m
 
-*Searches indices from*: now-9m ({ref}/common-options.html#date-math[Date Math format], see also <<rule-schedule, `Additional look-back time`>>)
+*Searches indices from*: now-6m ({ref}/common-options.html#date-math[Date Math format], see also <<rule-schedule, `Additional look-back time`>>)
 
 *Maximum alerts per execution*: 100
 
 *References*: 
 
-* https://www.sentinelone.com/labs/exploring-fbot-python-based-malware-targeting-cloud-and-payment-services/
 * https://docs.aws.amazon.com/AWSEC2/latest/APIReference/API_DescribeInstances.html
 
 *Tags*: 
@@ -28,10 +27,11 @@ Identifies when a single AWS resource is making `DescribeInstances` API calls in
 * Data Source: AWS
 * Data Source: AWS EC2
 * Resources: Investigation Guide
+* Rule Type: BBR
 * Use Case: Threat Detection
 * Tactic: Discovery
 
-*Version*: 7
+*Version*: 8
 
 *Rule authors*: 
 
@@ -51,50 +51,76 @@ Identifies when a single AWS resource is making `DescribeInstances` API calls in
 *Investigating AWS EC2 Multi-Region DescribeInstances API Calls*
 
 
-This rule detects instances where a single AWS resource makes `DescribeInstances` API calls in over 10 regions within a 30-second window. This could indicate an adversary using compromised credentials or an exploited resource to enumerate AWS infrastructure across multiple regions. Attackers often leverage multi-region enumeration to assess the overall cloud environment and find potential targets for further exploitation.
+This rule flags when the `DescribeInstances` API is executed across multiple AWS regions within a short timeframe. While benign in some cases (e.g., asset inventory, legitimate multi-region management), this pattern can indicate a reconnaissance phase in which an adversary enumerates EC2 instances in all regions to identify potential targets across the environment.
+
+Because the signal can generate significant noise in dynamic or large AWS environments, this rule should be treated as a Building Block Rule (BBR), not a stand-alone alert requiring immediate incident response. Instead, it is best used for hunting, enrichment, correlation, and escalation when combined with other signals.
 
 
-*Possible Investigation Steps*
+*How to use this rule (hunting & correlation guide)*
 
 
-- **Identify the Resource and Actor**:
-  - **Actor ARN**: Check `aws.cloudtrail.user_identity.arn` to determine the exact identity performing the enumeration. Validate if the user is expected to perform region-wide `DescribeInstances` actions across multiple regions or if it seems unusual.
-  - **Account and Role Details**: Examine `cloud.account.id` and `aws.cloudtrail.user_identity.session_context.session_issuer` for information about the AWS account and specific role associated with the action.
+This rule is most effective when paired with other detection rules or data sources. Use it to answer questions such as:
 
-- **Analyze API Call Patterns**:
-  - **Frequency and Scope**: Review `cloud.region` field and confirm if this specific resource commonly performs `DescribeInstances` calls across multiple regions.
-  - **Time Window Context**: Compare the timing of the API calls within the `target_time_window` to determine if this burst pattern aligns with expected system usage or is potentially malicious.
-
-- **Check User Agent and Tooling**:
-  - **Source and User Agent**: Verify `user_agent.original` to determine if the request was made through expected tooling (e.g., AWS CLI or SDK) or a third-party tool that might indicate non-standard access.
-  - **Source IP Address**: Look into `source.address` to identify the origin of the calls. Unusual IP addresses, especially those outside expected ranges, may indicate compromised access.
-
-- **Evaluate for Potential Reconnaissance Behavior**:
-  - **Account and Region Enumeration**: Adversaries may use region-wide `DescribeInstances` requests to discover resources within an account across different regions. Confirm if this access aligns with operational practices or represents excessive access.
-  - **Permissions and Roles**: Investigate the permissions associated with the user role. Excessive permissions on a compromised role may allow broader enumeration, which should be restricted.
-
-- **Review Related CloudTrail Events**:
-  - **Additional Describe or List Actions**: Identify any associated `Describe` or `List` API calls that may indicate further enumeration of other AWS services within the same timeframe.
-  - **Potential Preceding Events**: Look for preceding login or access events from the same actor, as these may indicate potential credential compromise or unauthorized escalation of privileges.
+- Did a newly created or unknown principal call `DescribeInstances` across many regions? Pair this with a new terms or first-time principal rule (e.g., `GetCallerIdentity`, `AssumeRole`, or `aws.cloudtrail.user_identity.session_context.session_issuer.arn`).  
+- Was the same principal also observed making other discovery or enumeration calls (e.g., `DescribeSnapshots`, `DescribeVolumes`, `DescribeImages`, `DescribeSecurityGroups`) in a short timeframe?  
+- Did the multi-region calls precede or coincide with higher-risk actions such as:  
+  - Snapshot creation or shared snapshot modifications (`CreateSnapshot`, `ModifySnapshotAttribute`)  
+  - AMI export/copy operations (`ExportImage`, `CopyImage`)  
+  - Access key creation, role assumption, or IAM permission changes  
+  - Unexpected S3 bucket or data transfer activity (e.g., large data egress, new S3 bucket writes)  
+- Did the activity span regions normally unused or outside the organization's typical operational footprint?
 
 
-*False Positive Analysis*
+*Possible investigation steps:*
 
 
-- **Expected Enumeration**: Certain administrative or automation scripts may conduct broad `DescribeInstances` API calls for inventory purposes. Review usage patterns or consult relevant teams to validate the purpose.
-- **Automated Cloud Management**: Some automated services may perform regional checks for compliance or backup operations. If this rule is triggered repeatedly by a known service, consider whitelisting or tuning accordingly.
+- **Review the principal and session trace**:  
+  - Identify `aws.cloudtrail.user_identity.arn`, `aws.cloudtrail.user_identity.access_key_id`, and determine whether the principal is known, recently onboarded, or unusual (e.g., a service role used in rare cases).  
+  - Examine `user_agent.original` and `source.ip` for anomalies (e.g., new CLI/SDK versions, IAM roles from unexpected hosts, geolocation outside expected range).
+
+- **Evaluate region distribution and timing**:  
+  - Inspect the regions contacted by `DescribeInstances` within the alert window. Are some regions rarely used in your org?  
+  - Look at the timeline: did the calls occur in rapid succession or spread out? A burst suggests automated reconnaissance rather than manual usage.
+
+- **Correlate with other detection signals & data access patterns**:  
+  - Query for other CloudTrail events by the same principal in the ±30 minutes window: enumeration APIs (`Describe*`), snapshot/AMI events, `CopySnapshot`, `ExportImage`, `StartInstances`, etc.  
+  - Cross-validate with SIEM or data egress logs: did large volumes of data leave the environment after the enumeration?  
+  - Review IAM activity for privilege elevation, new access keys, or role chaining that could support the enumeration action.
+
+- **Assess intent and operational context**:  
+  - Determine whether the enumeration aligns with known asset-inventory or management tasks (Recurring scans, DevOps automation, IT health checks).  
+  - If this principal is known for asset management, verify the timing, region list, and audit logs for existing tickets/change-records.  
+  - If the activity is unexpected, low legitimacy, or tied to other suspicious events, escalate.
 
 
-*Response and Remediation*
+*False positive analysis:*
 
 
-- **Review IAM Policies and Role Permissions**: Limit the permissions of roles associated with this resource, restricting unnecessary multi-region enumeration access.
-- **Enforce Least Privilege Access**: Ensure that permissions for DescribeInstances are tightly controlled and restricted to specific roles or accounts that require multi-region access.
-- **Increase Monitoring and Alerts**: Set up additional monitoring on this role or account for further signs of unauthorized activity or lateral movement attempts.
-- **Access Review**: Conduct a review of users and entities with `DescribeInstances` permissions, especially for multi-region capabilities, and ensure these permissions are necessary for their functions.
+Because many organizations have legitimate multi-region cloud operations, this rule may generate false positives. Common benign scenarios include:
+
+- DevOps or cloud-ops automation that inventories EC2 instances across all regions (for cost, compliance, or multi-region deployment verification).  
+- Large-scale migrations or disaster-recovery tests that touch many regions in a short time.  
+- Security or audit team enumeration of the environment (e.g., internal red-team, internal asset scanning).  
+- Cross-account management tools in AWS Organizations that routinely query multiple regions.
+
+To manage these, consider:  
+- Whitelisting known automation roles/principals (with caution).  
+- Tagging and excluding known “inventory scan” sessions (based on user agent, IP range, timing).  
+- Using this rule only as a correlation trigger and not as a direct alert.
 
 
-*Additional Information*
+*Response and escalation:*
+
+
+Because this rule is a BBR, its detection alone does not usually warrant full incident response. Instead:
+
+- **Document the finding** in your hunt log, noting principal, regions, timestamp, and correlation flags (other events).  
+- If correlation reveals additional suspicious activity (e.g., snapshot share, data export, IAM privilege change) escalate to full incident response.  
+- If the enumeration is determined benign (e.g., approved internal scan), add context (ticket number, owner, justification) and suppress/annotate this principal in future hunts for a defined interval.  
+- Update your detection playbooks to reflect this rule’s role as a recon-indicator, and train analysts to use it as a pivot point.
+
+
+*Additional information*
 
 
 For further information on AWS `DescribeInstances` permissions and best practices, refer to the https://docs.aws.amazon.com/AWSEC2/latest/APIReference/API_DescribeInstances.html[AWS DescribeInstances API documentation].
@@ -105,7 +131,7 @@ For further information on AWS `DescribeInstances` permissions and best practice
 
 [source, js]
 ----------------------------------
-from logs-aws.cloudtrail-*
+from logs-aws.cloudtrail-* metadata _id, _version, _index
 
 // filter for DescribeInstances API calls
 | where event.dataset == "aws.cloudtrail"
@@ -116,19 +142,36 @@ from logs-aws.cloudtrail-*
 | eval Esql.time_window_date_trunc = date_trunc(30 seconds, @timestamp)
 
 // keep only the relevant raw fields
-| keep Esql.time_window_date_trunc, aws.cloudtrail.user_identity.arn, cloud.region
+| keep 
+    Esql.time_window_date_trunc, 
+    aws.cloudtrail.user_identity.arn, 
+    cloud.region, 
+    cloud.account.id,
+    aws.cloudtrail.user_identity.access_key_id,
+    aws.cloudtrail.user_identity.type,
+    user_agent.original,
+    source.as.organization.name,
+    source.ip,
+    @timestamp,
+    data_stream.namespace    
 
 // count the number of unique regions and total API calls within the 30-second window
 | stats
     Esql.cloud_region_count_distinct = count_distinct(cloud.region),
-    Esql.event_count = count(*)
+    Esql.event_count = count(*),
+    Esql.event_timestamp_values = VALUES(@timestamp),
+    Esql.aws_cloudtrail_user_identity_type_values = VALUES(aws.cloudtrail.user_identity.type),
+    Esql.aws_cloudtrail_user_identity_access_key_id_values = VALUES(aws.cloudtrail.user_identity.access_key_id),
+    Esql.source_ip_values = VALUES(source.ip),
+    Esql.user_agent_original_values = VALUES(user_agent.original),
+    Esql.source_as_organization_name_values = VALUES(source.as.organization.name),
+    Esql.cloud_account_id_values = VALUES(cloud.account.id),
+    Esql.cloud_region_values = VALUES(cloud.region),
+    Esql.data_stream_namespace_values = VALUES(data_stream.namespace)
   by Esql.time_window_date_trunc, aws.cloudtrail.user_identity.arn
 
 // filter for resources making DescribeInstances API calls in more than 10 regions within the 30-second window
 | where Esql.cloud_region_count_distinct >= 10 and Esql.event_count >= 10
-
-// sort the results by time window in descending order
-| sort Esql.time_window_date_trunc desc
 
 ----------------------------------
 

@@ -9,6 +9,7 @@ This rule detects the execution of Node.js pre or post-install scripts. These sc
 
 * logs-endpoint.events.process*
 * logs-crowdstrike.fdr*
+* logs-sentinel_one_cloud_funnel.*
 
 *Severity*: medium
 
@@ -23,11 +24,14 @@ This rule detects the execution of Node.js pre or post-install scripts. These sc
 *References*: 
 
 * https://www.elastic.co/blog/shai-hulud-worm-npm-supply-chain-compromise
+* https://www.wiz.io/blog/shai-hulud-2-0-ongoing-supply-chain-attack
+* https://www.elastic.co/blog/shai-hulud-worm-2-0-updated-response
 
 *Tags*: 
 
 * Domain: Endpoint
 * OS: Linux
+* OS: macOS
 * Use Case: Threat Detection
 * Tactic: Persistence
 * Tactic: Execution
@@ -35,8 +39,9 @@ This rule detects the execution of Node.js pre or post-install scripts. These sc
 * Data Source: Elastic Defend
 * Resources: Investigation Guide
 * Data Source: Crowdstrike
+* Data Source: SentinelOne
 
-*Version*: 2
+*Version*: 3
 
 *Rule authors*: 
 
@@ -88,25 +93,13 @@ For more details on Elastic Defend refer to the https://www.elastic.co/guide/en/
 [source, js]
 ----------------------------------
 sequence by host.id with maxspan=10s
-  [process where host.os.type == "linux" and event.type == "start" and event.action in ("exec", "ProcessRollup2") and process.name == "node" and process.args == "install"] by process.entity_id
-  [process where host.os.type == "linux" and event.type == "start" and event.action in ("exec", "ProcessRollup2") and process.parent.name == "node"] by process.parent.entity_id
+  [process where host.os.type in ("linux", "macos") and event.type == "start" and event.action in ("exec", "ProcessRollup2", "start") and process.name == "node" and process.args == "install"] by process.entity_id
+  [process where host.os.type in ("linux", "macos") and event.type == "start" and event.action in ("exec", "ProcessRollup2", "start") and process.parent.name == "node"] by process.parent.entity_id
 
 ----------------------------------
 
 *Framework*: MITRE ATT&CK^TM^
 
-* Tactic:
-** Name: Persistence
-** ID: TA0003
-** Reference URL: https://attack.mitre.org/tactics/TA0003/
-* Technique:
-** Name: Create or Modify System Process
-** ID: T1543
-** Reference URL: https://attack.mitre.org/techniques/T1543/
-* Technique:
-** Name: Hijack Execution Flow
-** ID: T1574
-** Reference URL: https://attack.mitre.org/techniques/T1574/
 * Tactic:
 ** Name: Execution
 ** ID: TA0002
@@ -119,6 +112,26 @@ sequence by host.id with maxspan=10s
 ** Name: Unix Shell
 ** ID: T1059.004
 ** Reference URL: https://attack.mitre.org/techniques/T1059/004/
+* Technique:
+** Name: User Execution
+** ID: T1204
+** Reference URL: https://attack.mitre.org/techniques/T1204/
+* Sub-technique:
+** Name: Malicious Library
+** ID: T1204.005
+** Reference URL: https://attack.mitre.org/techniques/T1204/005/
+* Tactic:
+** Name: Persistence
+** ID: TA0003
+** Reference URL: https://attack.mitre.org/tactics/TA0003/
+* Technique:
+** Name: Create or Modify System Process
+** ID: T1543
+** Reference URL: https://attack.mitre.org/techniques/T1543/
+* Technique:
+** Name: Hijack Execution Flow
+** ID: T1574
+** Reference URL: https://attack.mitre.org/techniques/T1574/
 * Tactic:
 ** Name: Defense Evasion
 ** ID: TA0005

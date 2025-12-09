@@ -7,10 +7,12 @@ Malware or other files dropped or created on a system by an adversary may leave 
 
 *Rule indices*: 
 
+* auditbeat-*
 * endgame-*
 * logs-crowdstrike.fdr*
 * logs-endpoint.events.process*
 * logs-sentinel_one_cloud_funnel.*
+* logs-auditd_manager.auditd-*
 
 *Severity*: low
 
@@ -30,13 +32,14 @@ Malware or other files dropped or created on a system by an adversary may leave 
 * OS: Linux
 * Use Case: Threat Detection
 * Tactic: Defense Evasion
+* Data Source: Auditd Manager
 * Data Source: Elastic Defend
 * Data Source: Elastic Endgame
 * Data Source: Crowdstrike
 * Data Source: SentinelOne
 * Resources: Investigation Guide
 
-*Version*: 213
+*Version*: 214
 
 *Rule authors*: 
 
@@ -135,9 +138,13 @@ For more details on Elastic Defend refer to the https://www.elastic.co/guide/en/
 
 [source, js]
 ----------------------------------
-process where host.os.type == "linux" and event.type == "start" and process.name == "shred" and process.args in (
-  "-u", "--remove", "-z", "--zero"
-) and not process.parent.name == "logrotate"
+process where host.os.type == "linux" and event.type == "start" and event.action in ("exec", "exec_event", "start", "ProcessRollup2", "executed", "process_started") and
+process.name == "shred" and (
+// Any short-flag cluster containing at least one of u/z, and containing no extra "-" after the first one
+process.args regex~ "-[^-]*[uz][^-]*" or
+process.args in ("--remove", "--zero")
+) and
+not process.parent.name == "logrotate"
 
 ----------------------------------
 

@@ -1,0 +1,133 @@
+[[genai-or-mcp-server-child-process-execution]]
+=== GenAI or MCP Server Child Process Execution
+
+Detects child process execution from GenAI tools or MCP (Model Context Protocol) servers. Adversaries exploit AI agents to execute system commands, exfiltrate data, or establish persistence. MCP servers provide LLMs direct access to execute shell commands, read files, and interact with external services. This building block provides visibility into AI-initiated process execution for correlation with other suspicious activity.
+
+*Rule type*: eql
+
+*Rule indices*: 
+
+* logs-endpoint.events.process-*
+* logs-windows.sysmon_operational-*
+* logs-m365_defender.event-*
+* logs-sentinel_one_cloud_funnel.*
+
+*Severity*: low
+
+*Risk score*: 21
+
+*Runs every*: 60m
+
+*Searches indices from*: now-119m ({ref}/common-options.html#date-math[Date Math format], see also <<rule-schedule, `Additional look-back time`>>)
+
+*Maximum alerts per execution*: 100
+
+*References*: None
+
+*Tags*: 
+
+* Domain: Endpoint
+* OS: Linux
+* OS: macOS
+* OS: Windows
+* Use Case: Threat Detection
+* Tactic: Execution
+* Data Source: Elastic Defend
+* Data Source: Sysmon
+* Data Source: Microsoft Defender for Endpoint
+* Data Source: SentinelOne
+* Rule Type: BBR
+* Domain: LLM
+* Mitre Atlas: T0053
+
+*Version*: 1
+
+*Rule authors*: 
+
+* Elastic
+
+*Rule license*: Elastic License v2
+
+
+==== Rule query
+
+
+[source, js]
+----------------------------------
+process where event.type == "start" 
+  and (
+    // GenAI clients
+    process.parent.name in (
+      "Cursor", "Cursor.exe", "cursor",
+      "Cursor Helper", "Cursor Helper (Plugin)", "Cursor Helper (GPU)", "Cursor Helper (Renderer)",
+      "Claude", "Claude.exe", "claude",
+      "Claude Helper", "Claude Helper (Plugin)", "Claude Helper (GPU)", "Claude Helper (Renderer)",
+      "Windsurf", "Windsurf.exe", "windsurf",
+      "Windsurf Helper", "Windsurf Helper (Plugin)", "Windsurf Helper (GPU)", "Windsurf Helper (Renderer)",
+      "Code", "Code.exe", "code",
+      "Code Helper", "Code Helper (Plugin)", "Code Helper (GPU)", "Code Helper (Renderer)",
+      "codex", "codex.exe",
+      "Copilot", "Copilot.exe", "copilot",
+      "Jan", "Jan.exe", "jan",
+      "Jan Helper", "Jan Helper (Plugin)", "Jan Helper (GPU)", "Jan Helper (Renderer)",
+      "LM Studio", "LM Studio.exe", "lmstudio",
+      "Ollama", "Ollama.exe", "ollama",
+      "GPT4All", "gpt4all", "gpt4all.exe",
+      "textgen.exe", "textgen", "text-generation-webui.exe", "oobabooga.exe",
+      "gemini-cli.exe", "gemini-cli",
+      "genaiscript.exe", "genaiscript",
+      "grok.exe", "grok",
+      "qwen.exe", "qwen",
+      "koboldcpp.exe", "koboldcpp", "KoboldCpp",
+      "llama-server", "llama-cli"
+    ) or
+    // Package managers running MCP servers
+    (process.parent.name in ("npx", "npx.exe", "pnpm", "pnpm.exe", "yarn", "yarn.exe", "bunx", "bunx.exe") and
+     process.parent.command_line like~ ("*@modelcontextprotocol/*", "*mcp-server-*", "*mcp_server*")) or
+    
+    // Node/Deno/Bun running MCP servers
+    (process.parent.name in ("node", "node.exe", "deno", "deno.exe", "bun", "bun.exe") and
+     process.parent.command_line like~ ("*@modelcontextprotocol/*", "*mcp-server-*", "*mcp_server*")) or
+    
+    // Python MCP servers
+    (process.parent.name like~ "python*" and
+     process.parent.command_line like~ ("*-m mcp_server*", "*mcp-server-*", "*mcp_server*")) or
+    
+    // MCP server binaries
+    process.parent.name like~ ("mcp-server*", "*-mcp-server", "*_mcp_server*") or
+    process.parent.name in ("mcp-server", "mcp-server-elastic-cloud", "github-mcp-server")
+  )
+  and process.name != null
+  // Exclusions
+  and not (
+    // Runtime self-spawns
+    (process.parent.name in ("node", "node.exe") and process.name in ("node", "node.exe")) or
+    (process.parent.name like~ "python*" and process.name like~ "python*") or
+    (process.parent.name in ("deno", "deno.exe") and process.name in ("deno", "deno.exe")) or
+    (process.parent.name in ("bun", "bun.exe") and process.name in ("bun", "bun.exe")) or
+    
+    // Helper process self-spawns
+    (process.parent.name == "Cursor" and process.name like~ "Cursor Helper*") or
+    (process.parent.name == "Claude" and process.name like~ "Claude Helper*") or
+    (process.parent.name == "Windsurf" and process.name like~ "Windsurf Helper*") or
+    (process.parent.name == "Code" and process.name like~ "Code Helper*") or
+    (process.parent.name == "Jan" and process.name like~ "Jan Helper*") or
+    (process.parent.name == "LM Studio" and process.name like~ "LM Studio Helper*") or
+    (process.parent.name == "Ollama" and process.name like~ "Ollama Helper*") or
+    
+    // Version and help checks
+    process.args in ("--version", "--help", "-v", "-h", "-V", "version", "help")
+  )
+
+----------------------------------
+
+*Framework*: MITRE ATT&CK^TM^
+
+* Tactic:
+** Name: Execution
+** ID: TA0002
+** Reference URL: https://attack.mitre.org/tactics/TA0002/
+* Technique:
+** Name: Command and Scripting Interpreter
+** ID: T1059
+** Reference URL: https://attack.mitre.org/techniques/T1059/

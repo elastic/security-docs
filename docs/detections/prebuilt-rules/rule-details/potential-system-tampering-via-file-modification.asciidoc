@@ -13,7 +13,6 @@ Identifies attempts to delete or modify critical files used during the boot proc
 * endgame-*
 * logs-m365_defender.event-*
 * logs-sentinel_one_cloud_funnel.*
-* logs-crowdstrike.fdr*
 
 *Severity*: high
 
@@ -42,7 +41,7 @@ Identifies attempts to delete or modify critical files used during the boot proc
 * Data Source: SentinelOne
 * Data Source: Crowdstrike
 
-*Version*: 2
+*Version*: 3
 
 *Rule authors*: 
 
@@ -101,9 +100,20 @@ This rule identifies attempts to delete or modify critical files used during the
 [source, js]
 ----------------------------------
 file where host.os.type == "windows" and event.type in ("change", "deletion") and
- file.name : ("winload.exe", "winlod.efi", "ntoskrnl.exe", "bootmgr") and
- file.path : ("?:\\Windows\\*", "\\Device\\HarddiskVolume*\\Windows\\*") and
- not process.executable : ("?:\\Windows\\System32\\poqexec.exe", "\\Device\\HarddiskVolume*\\Windows\\System32\\poqexec.exe")
+  file.name : ("winload.exe", "winlod.efi", "ntoskrnl.exe", "bootmgr") and
+  file.path : ("?:\\Windows\\*", "\\Device\\HarddiskVolume*\\Windows\\*") and
+  not process.executable : (
+    "?:\\Windows\\System32\\poqexec.exe",
+    "?:\\Windows\\WinSxS\\amd64_microsoft-windows-servicingstack_*\\tiworker.exe"
+  ) and
+  not file.path : (
+    "?:\\Windows\\WinSxS\\Temp\\InFlight\\*",
+    "?:\\Windows\\SoftwareDistribution\\Download*",
+    "?:\\Windows\\WinSxS\\amd64_microsoft-windows*",
+    "?:\\Windows\\SystemTemp\\*",
+    "?:\\Windows\\Temp\\????????.???\\*",
+    "?:\\Windows\\Temp\\*\\amd64_microsoft-windows-*"
+  )
 
 ----------------------------------
 

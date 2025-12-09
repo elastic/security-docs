@@ -1,7 +1,7 @@
 [[sedebugprivilege-enabled-by-a-suspicious-process]]
 === SeDebugPrivilege Enabled by a Suspicious Process
 
-Identifies the creation of a process running as SYSTEM and impersonating a Windows core binary privileges. Adversaries may create a new process with a different token to escalate privileges and bypass access controls.
+Identifies a process running with a non-SYSTEM account that enables the SeDebugPrivilege privilege. Adversaries may enable this privilege to debug and modify other processes, typically reserved for system-level tasks, to escalate privileges and bypass access controls.
 
 *Rule type*: eql
 
@@ -35,7 +35,7 @@ Identifies the creation of a process running as SYSTEM and impersonating a Windo
 * Data Source: Windows Security Event Logs
 * Resources: Investigation Guide
 
-*Version*: 112
+*Version*: 113
 
 *Rule authors*: 
 
@@ -129,21 +129,26 @@ any where host.os.type == "windows" and event.provider: "Microsoft-Windows-Secur
  /* exclude processes with System Integrity  */
  not winlog.event_data.SubjectUserSid : ("S-1-5-18", "S-1-5-19", "S-1-5-20") and
 
- not winlog.event_data.ProcessName :
-         ("?:\\Windows\\System32\\msiexec.exe",
-          "?:\\Windows\\SysWOW64\\msiexec.exe",
-          "?:\\Windows\\System32\\lsass.exe",
-          "?:\\Windows\\WinSxS\\*",
-          "?:\\Program Files\\*",
-          "?:\\Program Files (x86)\\*",
-          "?:\\Windows\\System32\\MRT.exe",
-          "?:\\Windows\\System32\\cleanmgr.exe",
-          "?:\\Windows\\System32\\taskhostw.exe",
-          "?:\\Windows\\System32\\mmc.exe",
-          "?:\\Users\\*\\AppData\\Local\\Temp\\*-*\\DismHost.exe",
-          "?:\\Windows\\System32\\auditpol.exe",
-          "?:\\Windows\\System32\\wbem\\WmiPrvSe.exe",
-          "?:\\Windows\\SysWOW64\\wbem\\WmiPrvSe.exe")
+ not winlog.event_data.ProcessName : (
+        "?:\\Program Files (x86)\\*",
+        "?:\\Program Files\\*",
+        "?:\\Users\\*\\AppData\\Local\\Temp\\*-*\\DismHost.exe",
+        "?:\\Windows\\System32\\auditpol.exe",
+        "?:\\Windows\\System32\\cleanmgr.exe",
+        "?:\\Windows\\System32\\lsass.exe",
+        "?:\\Windows\\System32\\mmc.exe",
+        "?:\\Windows\\System32\\MRT.exe",
+        "?:\\Windows\\System32\\msiexec.exe",
+        "?:\\Windows\\System32\\sdiagnhost.exe",
+        "?:\\Windows\\System32\\ServerManager.exe",
+        "?:\\Windows\\System32\\taskhostw.exe",
+        "?:\\Windows\\System32\\wbem\\WmiPrvSe.exe",
+        "?:\\Windows\\System32\\WerFault.exe",
+        "?:\\Windows\\SysWOW64\\msiexec.exe",
+        "?:\\Windows\\SysWOW64\\wbem\\WmiPrvSe.exe",
+        "?:\\Windows\\SysWOW64\\WerFault.exe",
+        "?:\\Windows\\WinSxS\\*"
+    )
 
 ----------------------------------
 

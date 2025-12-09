@@ -1,0 +1,105 @@
+[[prebuilt-rule-8-19-12-new-github-self-hosted-action-runner]]
+=== New GitHub Self Hosted Action Runner
+
+This rule detects the creation of a self-hosted Github runner from a first time seen user.name in the last 5 days. Adversaries may abuse self-hosted runners to execute workflow jobs on customer infrastructure.
+
+*Rule type*: new_terms
+
+*Rule indices*: 
+
+* logs-github.audit-*
+
+*Severity*: medium
+
+*Risk score*: 47
+
+*Runs every*: 5m
+
+*Searches indices from*: now-9m ({ref}/common-options.html#date-math[Date Math format], see also <<rule-schedule, `Additional look-back time`>>)
+
+*Maximum alerts per execution*: 100
+
+*References*: 
+
+* https://www.elastic.co/blog/shai-hulud-worm-npm-supply-chain-compromise
+* https://socket.dev/blog/shai-hulud-strikes-again-v2
+
+*Tags*: 
+
+* Domain: Cloud
+* Use Case: Threat Detection
+* Tactic: Initial Access
+* Data Source: Github
+* Resources: Investigation Guide
+
+*Version*: 1
+
+*Rule authors*: 
+
+* Elastic
+
+*Rule license*: Elastic License v2
+
+
+==== Investigation guide
+
+
+
+*Triage and analysis*
+
+
+
+*Investigating New GitHub Self Hosted Action Runner*
+
+
+Adversaries who gain the ability to modify or trigger workflows in a linked GitHub repository can execute arbitrary commands on the runner host.
+
+
+*Possible investigation steps*
+
+
+- Validate the user is authoried to perform this change
+- Review the purpose of the self-hosted action runner and what actions will be executed.
+- Verify if there is any adjascent  sensitive file access or collection.
+- Correlate with other alerts and investiguate if this activity is related to a supply chain attack.
+
+
+*False positive analysis*
+
+
+- Authorized github self-hosted actions runner.
+
+
+*Response and remediation*
+
+
+- Immediately isolate the affected system from the network to prevent further unauthorized command execution and potential lateral movement.
+- Terminate any suspicious child processes that were initiated by the Github actions runner.
+- Conduct a thorough review of the affected system's logs and configurations to identify any unauthorized changes or additional indicators of compromise.
+- Restore the system from a known good backup if any unauthorized changes or malicious activities are confirmed.
+- Implement application whitelisting to prevent unauthorized execution.
+- Escalate the incident to the security operations center (SOC) or incident response team for further investigation and to assess the potential impact on the broader network.
+
+==== Rule query
+
+
+[source, js]
+----------------------------------
+event.dataset:"github.audit" and event.category:"configuration" and event.action:"enterprise.register_self_hosted_runner"
+
+----------------------------------
+
+*Framework*: MITRE ATT&CK^TM^
+
+* Tactic:
+** Name: Initial Access
+** ID: TA0001
+** Reference URL: https://attack.mitre.org/tactics/TA0001/
+* Technique:
+** Name: Supply Chain Compromise
+** ID: T1195
+** Reference URL: https://attack.mitre.org/techniques/T1195/
+* Sub-technique:
+** Name: Compromise Software Supply Chain
+** ID: T1195.002
+** Reference URL: https://attack.mitre.org/techniques/T1195/002/
