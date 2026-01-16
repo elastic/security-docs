@@ -32,7 +32,7 @@ This rule identifies file permission modification events on files located in com
 * Data Source: Elastic Defend
 * Resources: Investigation Guide
 
-*Version*: 5
+*Version*: 6
 
 *Rule authors*: 
 
@@ -131,17 +131,27 @@ For more details on Elastic Defend refer to the https://www.elastic.co/guide/en/
 
 [source, js]
 ----------------------------------
-process where host.os.type == "linux" and event.type == "start" and event.action == "exec" and process.name in ("chmod", "chown") and
-process.args like~ (
-  "/bin/*", "/usr/bin/*", "/usr/local/bin/*", "/sbin/*", "/usr/sbin/*", "/usr/local/sbin/*",
-  "/lib/*", "/usr/lib/*", "/lib64/*", "/usr/lib64/*"
+process where host.os.type == "linux" and event.type == "start" and event.action == "exec" and process.name == "chmod" and
+process.args like (
+  "/bin/*", "/usr/bin/*", "/sbin/*", "/usr/sbin/*", "/usr/local/sbin/*", "/lib/*", "/usr/lib/*", "/lib64/*", "/usr/lib64/*"
 ) and
-process.args in ("4755", "755", "000", "777", "444", "-x", "+x") and not (
-  process.args in ("/bin/chmod", "/usr/bin/chmod", "/usr/local/bin/chmod") or
-  process.parent.executable like~ ("/tmp/newroot/*", "/var/lib/dpkg/info/*") or
+process.args in ("4755", "755", "000", "777", "444", "+x") and not (
+  process.args in (
+    "/bin/chmod", "/usr/bin/chmod", "/usr/local/bin/chmod", "/usr/bin/restic", "/usr/local/bin/ack-tool", "/usr/lib/policykit-1/polkit-agent-helper-1",
+    "/usr/local/bin/deploy-entrypoint.sh", "/usr/local/bin/mc", "/usr/local/bin/start.sh", "/usr/local/sbin/MySQLBackups/mysql_backup.sh",
+    "/usr/bin/coreutils", "/usr/bin/docker-compose", "/usr/bin/cri-dockerd", "/usr/sbin/mkfs.ext5", "/usr/bin/cyclonedx", "/usr/bin/distro",
+    "/usr/bin/telegraf", "/usr/bin/jq", "/usr/bin/google-chrome", "/usr/sbin/login_duo"
+  ) or
+  process.args like "/usr/lib/omnissa/*" or
+  process.parent.executable like (
+    "/tmp/newroot/*", "/var/lib/dpkg/*", "/usr/libexec/postfix/post-install", "/kaniko/executor", "./install_viewagent.sh", "/bin/make" 
+  ) or
+  process.parent.args like (
+    "/var/lib/dpkg/*", "/usr/lib/postfix/bin/post-install", "/usr/lib/postfix/sbin/post-install", "/usr/libexec/postfix/post-install",
+    "./install_viewagent.sh", "/usr/lib/omnissa/*", "/var/tmp/rpm-tmp.*"
+  ) or
   process.parent.name in ("udevadm", "systemd", "entrypoint", "sudo", "dart") or
-  process.parent.command_line == "runc init" or
-  process.parent.args like "/var/tmp/rpm-tmp.*"
+  process.parent.command_line == "runc init"
 )
 
 ----------------------------------

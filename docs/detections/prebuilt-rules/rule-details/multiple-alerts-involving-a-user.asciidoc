@@ -3,11 +3,9 @@
 
 This rule uses alert data to determine when multiple different alerts involving the same user are triggered. Analysts can use this to prioritize triage and response, as these users are more likely to be compromised.
 
-*Rule type*: threshold
+*Rule type*: esql
 
-*Rule indices*: 
-
-* .alerts-security.*
+*Rule indices*: None
 
 *Severity*: high
 
@@ -15,7 +13,7 @@ This rule uses alert data to determine when multiple different alerts involving 
 
 *Runs every*: 1h
 
-*Searches indices from*: now-24h ({ref}/common-options.html#date-math[Date Math format], see also <<rule-schedule, `Additional look-back time`>>)
+*Searches indices from*: now-4h ({ref}/common-options.html#date-math[Date Math format], see also <<rule-schedule, `Additional look-back time`>>)
 
 *Maximum alerts per execution*: 100
 
@@ -27,7 +25,7 @@ This rule uses alert data to determine when multiple different alerts involving 
 * Rule Type: Higher-Order Rule
 * Resources: Investigation Guide
 
-*Version*: 4
+*Version*: 6
 
 *Rule authors*: 
 
@@ -91,6 +89,32 @@ In security environments, monitoring user activity is crucial as adversaries oft
 
 [source, js]
 ----------------------------------
-signal.rule.name:* and user.name:* and not user.id:("S-1-5-18" or "S-1-5-19" or "S-1-5-20")
+from .alerts-security.*
+| where kibana.alert.rule.name is not null and user.id is not null and
+  // Exclude low severity alerts
+  kibana.alert.risk_score > 21
+| stats
+    Esql.rule_name_distinct_count = COUNT_DISTINCT(kibana.alert.rule.name), 
+    Esql.rule_id_distinct_count = COUNT_DISTINCT(kibana.alert.rule.rule_id),
+    Esql.host_id_distinct_count = COUNT_DISTINCT(host.id),
+    Esql.risk_score_distinct_count = COUNT_DISTINCT(kibana.alert.risk_score),
+    Esql.event_dataset_distinct_count = COUNT_DISTINCT(event.dataset),
+    Esql.rule_name_values = VALUES(kibana.alert.rule.name), 
+    Esql.risk_score_values = VALUES(kibana.alert.risk_score), 
+    Esql.event_dataset_values = VALUES(event.dataset), 
+    Esql.event_module_values = VALUES(event.module), 
+    Esql.process_command_line = VALUES(process.command_line), 
+    Esql.host_id_values = VALUES(host.id), 
+    Esql.source_ip_values = VALUES(source.ip), 
+    Esql.destination_ip_values = VALUES(destination.ip) by user.id
+
+| where Esql.rule_name_distinct_count >= 4 AND Esql.rule_id_distinct_count >= 2 and
+  // Exclude known system accounts with matches in more than one host
+  not (
+    (length(TO_STRING(user.id)) <= 4 or user.id IN ("S-1-5-18", "S-1-5-19", "S-1-5-20", "0")) and
+    (Esql.host_id_distinct_count >= 2 or Esql.host_id_distinct_count == 0)
+  )
+
+| keep user.id, Esql.*
 
 ----------------------------------

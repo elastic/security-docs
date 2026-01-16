@@ -12,9 +12,9 @@ Adversaries may attempt to disable the Auditd service to evade detection. Auditd
 * logs-crowdstrike.fdr*
 * logs-sentinel_one_cloud_funnel.*
 
-*Severity*: low
+*Severity*: medium
 
-*Risk score*: 21
+*Risk score*: 47
 
 *Runs every*: 5m
 
@@ -36,7 +36,7 @@ Adversaries may attempt to disable the Auditd service to evade detection. Auditd
 * Data Source: SentinelOne
 * Resources: Investigation Guide
 
-*Version*: 104
+*Version*: 105
 
 *Rule authors*: 
 
@@ -137,10 +137,11 @@ For more details on Elastic Defend refer to the https://www.elastic.co/guide/en/
 process where host.os.type == "linux" and event.type == "start" and event.action in ("exec", "exec_event", "start", "ProcessRollup2") and (
   (process.name == "service" and process.args == "stop") or
   (process.name == "chkconfig" and process.args == "off") or
-  (process.name == "systemctl" and process.args in ("disable", "stop", "kill"))
+  (process.name == "update-rc.d" and process.args in ("remove", "disable")) or
+  (process.name == "systemctl" and process.args in ("disable", "stop", "kill", "mask"))
 ) and
 process.args in ("auditd", "auditd.service") and 
-not process.parent.name == "auditd.prerm"
+not ?process.parent.name == "auditd.prerm"
 
 ----------------------------------
 

@@ -1,17 +1,15 @@
 [[linux-system-information-discovery]]
 === Linux System Information Discovery
 
-Enrich process events with uname and other command lines that imply Linux system information discovery.
+This rule identifies Linux system information discovery activity via built-in commands that read common system files. Adversaries may use these commands to gather information about the operating system, installed services, and hardware configuration to aid in further exploration and exploitation of the system.
 
-*Rule type*: eql
+*Rule type*: new_terms
 
 *Rule indices*: 
 
 * logs-endpoint.events.*
 * endgame-*
-* auditbeat-*
-* logs-auditd_manager.auditd-*
-* logs-crowdstrike.fdr*
+* logs-sentinel_one_cloud_funnel.*
 
 *Severity*: low
 
@@ -34,10 +32,9 @@ Enrich process events with uname and other command lines that imply Linux system
 * Rule Type: BBR
 * Data Source: Elastic Defend
 * Data Source: Elastic Endgame
-* Data Source: Auditd Manager
-* Data Source: Crowdstrike
+* Data Source: SentinelOne
 
-*Version*: 6
+*Version*: 7
 
 *Rule authors*: 
 
@@ -51,11 +48,13 @@ Enrich process events with uname and other command lines that imply Linux system
 
 [source, js]
 ----------------------------------
-process where event.type == "start" and event.action in ("exec", "exec_event", "executed", "process_started", "ProcessRollup2") and (
-  process.name: "uname" or (
-  process.name: ("cat", "more", "less") and process.args: ("*issue*", "*version*", "*profile*", "*services*", "*cpuinfo*")
-  )
-)
+event.category:process and host.os.type:linux and event.type:start and event.action:(exec or exec_event or start) and
+process.name:("cat" or "more" or "less" or "nano" or "vi" or "vim" or "vim.basic" or "emacs") and
+process.args:(
+  "/etc/issue" or "/etc/os-release" or "/proc/version" or "/etc/profile" or "/proc/cpuinfo" or "/etc/services" or
+  "/etc/lsb-release" or "/etc/redhat-release" or "/etc/debian_version" or "/etc/hostname"
+) and
+not process.parent.executable:("/usr/local/jamf/bin/jamf" or "/etc/cp/watchdog/cp-nano-watchdog")
 
 ----------------------------------
 

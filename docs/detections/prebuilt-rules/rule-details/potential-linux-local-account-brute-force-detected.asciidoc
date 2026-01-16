@@ -3,17 +3,15 @@
 
 Identifies multiple consecutive login attempts executed by one process targeting a local linux user account within a short time interval. Adversaries might brute force login attempts across different users with a default wordlist or a set of customly crafted passwords in an attempt to gain access to these accounts.
 
-*Rule type*: eql
+*Rule type*: esql
 
-*Rule indices*: 
-
-* logs-endpoint.events.process*
+*Rule indices*: None
 
 *Severity*: medium
 
 *Risk score*: 47
 
-*Runs every*: 5m
+*Runs every*: 8m
 
 *Searches indices from*: now-9m ({ref}/common-options.html#date-math[Date Math format], see also <<rule-schedule, `Additional look-back time`>>)
 
@@ -30,7 +28,7 @@ Identifies multiple consecutive login attempts executed by one process targeting
 * Data Source: Elastic Defend
 * Resources: Investigation Guide
 
-*Version*: 11
+*Version*: 13
 
 *Rule authors*: 
 
@@ -128,13 +126,53 @@ For more details on Elastic Defend refer to the https://www.elastic.co/guide/en/
 
 [source, js]
 ----------------------------------
-sequence by host.id, process.parent.executable, user.id with maxspan=1s
-  [process where host.os.type == "linux" and event.type == "start" and event.action == "exec" and process.name == "su" and
-   not process.parent.name in (
-     "bash", "dash", "ash", "sh", "tcsh", "csh", "zsh", "ksh", "fish", "clickhouse-server", "ma", "gitlab-runner",
-     "updatedb.findutils", "cron", "perl", "sudo", "java", "cloud-app-identify", "ambari-sudo.sh"
-   )
-  ] with runs=10
+from logs-endpoint.events.process* metadata _id, _index, _version
+
+// Create 1-minute time buckets
+| eval Esql.time_window_date_trunc = date_trunc(1 minute, @timestamp)
+
+// Ensure event.action values in a list are expanded
+| mv_expand event.action 
+
+| where
+  event.category == "process" and event.type == "start" and event.action == "exec" and process.name == "su" and 
+  process.parent.name not in (
+    "bash", "dash", "ash", "sh", "tcsh", "csh", "zsh", "ksh", "fish", "clickhouse-server", "ma", "gitlab-runner",
+    "updatedb.findutils", "cron", "perl", "sudo", "java", "cloud-app-identify", "ambari-sudo.sh", "runc",
+    "cau9sat.exe", "git-pull.sh", "distributor-pulltabs-devel-live", "p_ctmag", "backup_agent_main", "sshd",
+    "nxpgsql", "cau9cli.exe", "autopostgresqlbackup"
+  ) and
+  not process.parent.command_line == "runc init"
+
+// Keep relevant fields
+| keep
+   @timestamp,
+   event.action,
+   event.category,
+   event.type,
+   process.name,
+   process.parent.name,
+   process.parent.command_line,
+   process.command_line,
+   user.name,
+   event.dataset,
+   data_stream.namespace,
+   process.parent.executable,
+   agent.id,
+   user.id,
+   Esql.time_window_date_trunc
+
+| stats
+  Esql.event_count = count(*),
+  Esql.process_command_line_values = values(process.command_line),
+  Esql.process_parent_command_line_values = values(process.parent.command_line),
+  Esql.user_name_values = values(user.name),
+  Esql.event_dataset_values = values(event.dataset),
+  Esql.data_stream_namespace_values = values(data_stream.namespace)
+
+  by process.parent.executable, agent.id, user.id, Esql.time_window_date_trunc
+
+| where Esql.event_count >= 10
 
 ----------------------------------
 

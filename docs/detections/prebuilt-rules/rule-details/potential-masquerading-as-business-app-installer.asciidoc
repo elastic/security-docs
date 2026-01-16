@@ -28,15 +28,15 @@ Identifies executables with names resembling legitimate business applications bu
 
 * Domain: Endpoint
 * Data Source: Elastic Defend
+* Data Source: Elastic Endgame
 * OS: Windows
 * Use Case: Threat Detection
 * Tactic: Defense Evasion
 * Tactic: Initial Access
 * Tactic: Execution
 * Resources: Investigation Guide
-* Data Source: Elastic Endgame
 
-*Version*: 9
+*Version*: 10
 
 *Rule authors*: 
 
@@ -100,9 +100,9 @@ Business applications are integral to productivity, often downloaded and install
 
 [source, js]
 ----------------------------------
-process where host.os.type == "windows" and
+process where host.os.type == "windows" and 
   event.type == "start" and process.executable : "?:\\Users\\*\\Downloads\\*" and
-  not process.code_signature.status : ("errorCode_endpoint*", "errorUntrustedRoot", "errorChaining") and
+  not process.code_signature.status like ("errorCode_endpoint*", "errorUntrustedRoot", "errorChaining") and process.hash.sha256 != null and 
   (
     /* Slack */
     (process.name : "*slack*.exe" and not
@@ -132,13 +132,17 @@ process where host.os.type == "windows" and
       (process.code_signature.subject_name in (
         "WhatsApp LLC",
         "WhatsApp, Inc",
-        "24803D75-212C-471A-BC57-9EF86AB91435"
+        "24803D75-212C-471A-BC57-9EF86AB91435",
+        /* WhatsApp Installer - MS Store */
+        "Microsoft Corporation"
        ) and process.code_signature.trusted == true)
     ) or
 
     /* Zoom */
     (process.name : ("*zoom*installer*.exe", "*zoom*setup*.exe", "zoom.exe")  and not
-      (process.code_signature.subject_name == "Zoom Video Communications, Inc." and process.code_signature.trusted == true)
+      (process.code_signature.subject_name in (
+        "Zoom Video Communications, Inc.", "Zoom Communications, Inc."
+       ) and process.code_signature.trusted == true)
     ) or
 
     /* Outlook */

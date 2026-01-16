@@ -31,7 +31,7 @@ This rule detects the creation of a Linux kernel object file (.ko) on a system. 
 * Data Source: Elastic Defend
 * Resources: Investigation Guide
 
-*Version*: 4
+*Version*: 5
 
 *Rule authors*: 
 
@@ -131,9 +131,20 @@ For more details on Elastic Defend refer to the https://www.elastic.co/guide/en/
 
 [source, js]
 ----------------------------------
-event.category:file and host.os.type:linux and event.type:creation and file.extension:ko and not (
-  file.path:/var/tmp/mkinitramfs_* or process.executable:/snap/* or process.name:cpio
-) and not file.path:/tmp/mkinitramfs*
+event.category:file and host.os.type:linux and event.type:creation and file.extension:ko and
+not (
+  file.path:(
+    /tmp/mkinitramfs* or /var/cache/uptrack/* or /var/tmp/dracut.* or /build/* or /var/lib/dkms/* or
+    /mnt/Samsung/* or /var/tmp/portage/* or /tmp/user/0/mkinitramfs* or /var/tmp/supermin* or
+    /mnt/img/storage/squashfs-root/* or /var/opt/eset/* or /var/tmp/mkinitramfs_* 
+  ) or
+  process.executable:(
+    "/usr/local/v3net/suarez/bin/suarez" or "/sbin/dracut" or "/opt/traps/bin/pmd" or "/usr/bin/pacman" or
+    "/usr/bin/containerd" or "/usr/sbin/dockerd" or "/usr/bin/dockerd" or /snap/* or
+    "/usr/lib/dracut/dracut-initramfs-restore" or "/sbin/unsquashfs"
+  ) or
+  process.name:"cpio"
+)
 
 ----------------------------------
 

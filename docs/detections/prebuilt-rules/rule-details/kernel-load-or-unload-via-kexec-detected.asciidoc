@@ -45,7 +45,7 @@ This detection rule identifies the usage of kexec, helping to uncover unauthoriz
 * Data Source: SentinelOne
 * Resources: Investigation Guide
 
-*Version*: 111
+*Version*: 112
 
 *Rule authors*: 
 
@@ -146,9 +146,12 @@ For more details on Elastic Defend refer to the https://www.elastic.co/guide/en/
 [source, js]
 ----------------------------------
 process where host.os.type == "linux" and event.type == "start" and
-  event.action in ("exec", "exec_event", "start", "ProcessRollup2", "executed", "process_started") and
-  process.name == "kexec" and process.args in ("--exec", "-e", "--load", "-l", "--unload", "-u") and
-  not process.parent.name in ("kdumpctl", "unload.sh")
+event.action in ("exec", "exec_event", "start", "ProcessRollup2", "executed", "process_started") and
+process.name == "kexec" and process.args in ("--exec", "-e", "--load", "-l", "--unload", "-u") and
+not (
+  process.parent.name in ("kdumpctl", "unload.sh") or
+  process.parent.args in ("/usr/bin/kdumpctl", "/usr/sbin/kdump-config", "/usr/lib/kdump/unload.sh")
+)
 
 ----------------------------------
 

@@ -32,7 +32,7 @@ This rule monitors for suspicious activities that may indicate an attacker attem
 * Data Source: Elastic Defend
 * Resources: Investigation Guide
 
-*Version*: 11
+*Version*: 12
 
 *Rule authors*: 
 
@@ -139,9 +139,10 @@ event.action in ("exec", "exec_event", "fork", "fork_event") and user.name == "p
   process.parent.name == "puppet" or
   process.command_line like (
     "*BECOME-SUCCESS-*", "bash -c while true; do sleep 1;*", "df -l", "sleep 1", "who", "head -v -n *", "tail -v -n *",
-    "/bin/sh -c echo BECOME-SUCCESS*", "/usr/bin/python3 /var/tmp/ansible-tmp*"
+    "/bin/sh -c echo BECOME-SUCCESS*", "/usr/bin/python3 /var/tmp/ansible-tmp*", "*chpasswd*"
   ) or
-  process.parent.command_line like "*BECOME-SUCCESS-*"
+  process.parent.command_line like ("*BECOME-SUCCESS-*", "-bash -c echo $HOME", "su - postgres -c echo $HOME") or
+  process.parent.executable in ("/usr/bin/watch", "/bin/diskmgr", "/usr/bin/diskmgr")
 )
 
 ----------------------------------

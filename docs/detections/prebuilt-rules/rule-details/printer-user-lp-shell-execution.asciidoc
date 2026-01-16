@@ -8,8 +8,9 @@ This detection rule addresses multiple vulnerabilities in the CUPS printing syst
 *Rule indices*: 
 
 * endgame-*
-* logs-endpoint.events.process*
 * logs-crowdstrike.fdr*
+* logs-endpoint.events.process*
+* logs-sentinel_one_cloud_funnel.*
 
 *Severity*: high
 
@@ -35,12 +36,13 @@ This detection rule addresses multiple vulnerabilities in the CUPS printing syst
 * Use Case: Threat Detection
 * Use Case: Vulnerability
 * Tactic: Execution
+* Data Source: Crowdstrike
 * Data Source: Elastic Defend
 * Data Source: Elastic Endgame
+* Data Source: SentinelOne
 * Resources: Investigation Guide
-* Data Source: Crowdstrike
 
-*Version*: 8
+*Version*: 9
 
 *Rule authors*: 
 
@@ -153,14 +155,14 @@ For more details on Elastic Defend refer to the https://www.elastic.co/guide/en/
 [source, js]
 ----------------------------------
 process where host.os.type == "linux" and event.type == "start" and
-  event.action in ("exec", "exec_event", "ProcessRollup2") and user.name == "lp" and
+  event.action in ("exec", "exec_event", "ProcessRollup2", "ProcessRollup2") and user.name == "lp" and
   process.parent.name in ("cupsd", "foomatic-rip", "bash", "dash", "sh", "tcsh", "csh", "zsh", "ksh", "fish") and
   process.name in ("bash", "dash", "sh", "tcsh", "csh", "zsh", "ksh", "fish") and not (
     process.command_line like (
       "*/tmp/foomatic-*", "*-sDEVICE=ps2write*", "*printf*", "/bin/sh -e -c cat", "/bin/bash -c cat",
       "/bin/bash -e -c cat"
     ) or
-    process.args like "gs*"
+    process.args like ("gs*", "/usr/bin/lsb_release", "/usr/lib/cups/filter/gstopdf")
   )
 
 ----------------------------------

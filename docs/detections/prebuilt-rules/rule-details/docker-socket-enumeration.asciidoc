@@ -14,9 +14,9 @@ This rule detects potential Docker socket enumeration activity by monitoring pro
 * logs-endpoint.events.process*
 * logs-sentinel_one_cloud_funnel.*
 
-*Severity*: low
+*Severity*: medium
 
-*Risk score*: 21
+*Risk score*: 47
 
 *Runs every*: 5m
 
@@ -40,7 +40,7 @@ This rule detects potential Docker socket enumeration activity by monitoring pro
 * Data Source: SentinelOne
 * Resources: Investigation Guide
 
-*Version*: 3
+*Version*: 4
 
 *Rule authors*: 
 
@@ -144,7 +144,12 @@ For more details on Elastic Defend refer to the https://www.elastic.co/guide/en/
 process where host.os.type == "linux" and event.type == "start" and
 event.action in ("exec", "exec_event", "start", "ProcessRollup2", "executed", "process_started") and
 process.name in ("curl", "socat", "nc", "netcat", "ncat", "nc.traditional") and
-process.command_line like ("*/var/run/docker.sock*", "*/run/docker.sock*")
+process.command_line like ("*/var/run/docker.sock*", "*/run/docker.sock*") and
+process.parent.executable != null and
+not (
+  process.parent.executable in ("/usr/sbin/sshd", "/www/server/panel/BT-Panel") or
+  process.parent.args in ("/usr/libexec/netdata/plugins.d/cgroup-name.sh", "/docker-entrypoint")
+)
 
 ----------------------------------
 

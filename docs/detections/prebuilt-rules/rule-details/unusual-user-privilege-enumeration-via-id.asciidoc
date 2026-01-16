@@ -9,9 +9,9 @@ This rule monitors for a sequence of 20 "id" command executions within 1 second 
 
 * logs-endpoint.events.process*
 
-*Severity*: low
+*Severity*: medium
 
-*Risk score*: 21
+*Risk score*: 47
 
 *Runs every*: 5m
 
@@ -30,7 +30,7 @@ This rule monitors for a sequence of 20 "id" command executions within 1 second 
 * Data Source: Elastic Defend
 * Resources: Investigation Guide
 
-*Version*: 8
+*Version*: 9
 
 *Rule authors*: 
 
@@ -134,8 +134,12 @@ sequence by host.id, process.parent.entity_id with maxspan=1s
    process.name == "id" and process.args_count == 2 and
    not (
      process.parent.name in ("rpm", "snarftmp", "quota_copy", "java") or
-     process.parent.args : "/var/tmp/rpm-tmp*"
-    )] with runs=20
+     process.parent.args like (
+       "/var/tmp/rpm-tmp*", "/tmp/netdata-kickstart.sh", "./k8s-certifikator.sh", "/usr/local/bin/docker-entrypoint.sh",
+       "./set_quota.sh"
+     ) or
+     (process.parent.name == "java" and process.args == "oracle")
+   )] with runs=20
 
 ----------------------------------
 

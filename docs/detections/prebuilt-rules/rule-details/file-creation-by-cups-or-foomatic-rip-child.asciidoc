@@ -11,9 +11,9 @@ This detection rule addresses multiple vulnerabilities in the CUPS printing syst
 * logs-endpoint.events.process*
 * logs-sentinel_one_cloud_funnel.*
 
-*Severity*: high
+*Severity*: medium
 
-*Risk score*: 73
+*Risk score*: 47
 
 *Runs every*: 5m
 
@@ -39,7 +39,7 @@ This detection rule addresses multiple vulnerabilities in the CUPS printing syst
 * Data Source: SentinelOne
 * Resources: Investigation Guide
 
-*Version*: 105
+*Version*: 106
 
 *Rule authors*: 
 
@@ -156,7 +156,10 @@ sequence by host.id with maxspan=10s
    process.parent.name == "foomatic-rip" and
    process.name in ("bash", "dash", "sh", "tcsh", "csh", "zsh", "ksh", "fish")] by process.entity_id
   [file where host.os.type == "linux" and event.type != "deletion" and
-   not (process.name == "gs" and file.path like "/tmp/gs_*")] by process.parent.entity_id
+   not (
+     (process.name == "gs" and file.path like ("/tmp/gs_*", "/var/spool/cups/tmp/gs_*")) or
+     (process.name == "pdftops" and file.path like "/tmp/0*")
+   )] by process.parent.entity_id
 
 ----------------------------------
 

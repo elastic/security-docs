@@ -3,14 +3,16 @@
 
 Identifies when a terminal (tty) is spawned via Perl. Attackers may upgrade a simple reverse shell to a fully interactive tty after obtaining initial access to a host.
 
-*Rule type*: query
+*Rule type*: eql
 
 *Rule indices*: 
 
 * auditbeat-*
-* logs-endpoint.events.*
 * endgame-*
+* logs-auditd_manager.auditd-*
 * logs-crowdstrike.fdr*
+* logs-endpoint.events.process*
+* logs-sentinel_one_cloud_funnel.*
 
 *Severity*: high
 
@@ -30,12 +32,14 @@ Identifies when a terminal (tty) is spawned via Perl. Attackers may upgrade a si
 * OS: Linux
 * Use Case: Threat Detection
 * Tactic: Execution
-* Data Source: Elastic Endgame
 * Data Source: Elastic Defend
-* Resources: Investigation Guide
+* Data Source: Elastic Endgame
+* Data Source: Auditd Manager
 * Data Source: Crowdstrike
+* Data Source: SentinelOne
+* Resources: Investigation Guide
 
-*Version*: 112
+*Version*: 113
 
 *Rule authors*: 
 
@@ -150,8 +154,15 @@ Auditbeat is a lightweight shipper that you can install on your servers to audit
 
 [source, js]
 ----------------------------------
-event.category:process and host.os.type:linux and event.type:(start or process_started) and process.name:perl and
-  process.args:("exec \"/bin/sh\";" or "exec \"/bin/dash\";" or "exec \"/bin/bash\";")
+process where host.os.type == "linux" and event.type == "start" and
+event.action in ("exec", "exec_event", "start", "ProcessRollup2", "executed", "process_started") and
+process.name == "perl" and process.args == "exec" and
+process.args in (
+  "\"sh\";", "\"dash\";", "\"bash\";", "\"zsh\";",
+  "\"/bin/sh\";", "\"/bin/dash\";", "\"/bin/bash\";", "\"/bin/zsh\";",
+  "\"/usr/bin/sh\";", "\"/usr/bin/dash\";", "\"/usr/bin/bash\";", "\"/usr/bin/zsh\";",
+  "\"/usr/local/bin/sh\";", "\"/usr/local/bin/dash\";", "\"/usr/local/bin/bash\";", "\"/usr/local/bin/zsh\";"
+)
 
 ----------------------------------
 

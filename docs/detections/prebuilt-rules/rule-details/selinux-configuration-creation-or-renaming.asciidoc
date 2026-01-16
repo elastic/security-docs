@@ -34,7 +34,7 @@ This rule detects the creation or renaming of the SELinux configuration file. SE
 * Data Source: SentinelOne
 * Resources: Investigation Guide
 
-*Version*: 104
+*Version*: 105
 
 *Rule authors*: 
 
@@ -137,7 +137,13 @@ For more details on Elastic Defend refer to the https://www.elastic.co/guide/en/
 [source, js]
 ----------------------------------
 file where host.os.type == "linux" and event.action in ("creation", "file_create_event", "rename", "file_rename_event")
-and file.path : "/etc/selinux/config" and not process.name in ("dockerd", "platform-python")
+and file.path : "/etc/selinux/config" and not (
+  process.name in ("dockerd", "platform-python") or
+  process.executable like (
+    "/usr/libexec/platform-python*", "/dev/fd/3", "/usr/bin/podman", "/usr/local/cpanel/3rdparty/perl/*/bin/perl",
+    "/kaniko/executor", "/usr/lib/systemd/systemd", "/usr/bin/insights-client", "/bin/podman"
+  )
+)
 
 ----------------------------------
 

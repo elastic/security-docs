@@ -14,9 +14,9 @@ This rule monitors for potential attempts to disable AppArmor. AppArmor is a Lin
 * logs-endpoint.events.process*
 * logs-sentinel_one_cloud_funnel.*
 
-*Severity*: low
+*Severity*: high
 
-*Risk score*: 21
+*Risk score*: 73
 
 *Runs every*: 5m
 
@@ -39,7 +39,7 @@ This rule monitors for potential attempts to disable AppArmor. AppArmor is a Lin
 * Data Source: SentinelOne
 * Resources: Investigation Guide
 
-*Version*: 111
+*Version*: 112
 
 *Rule authors*: 
 
@@ -140,13 +140,15 @@ For more details on Elastic Defend refer to the https://www.elastic.co/guide/en/
 [source, js]
 ----------------------------------
 process where host.os.type == "linux" and event.type == "start" and
- event.action in ("exec", "exec_event", "start", "ProcessRollup2", "executed", "process_started") and
- (
-  (process.name == "systemctl" and process.args in ("stop", "disable", "kill") and process.args in ("apparmor", "apparmor.service")) or
-  (process.name == "service" and process.args == "apparmor" and process.args == "stop") or
-  (process.name == "chkconfig" and process.args == "apparmor" and process.args == "off") or
+event.action in ("exec", "exec_event", "start", "ProcessRollup2", "executed", "process_started") and
+(
+  (process.name == "service" and process.args == "stop") or
+  (process.name == "chkconfig" and process.args == "off") or
+  (process.name == "update-rc.d" and process.args in ("remove", "disable")) or
+  (process.name == "systemctl" and process.args in ("disable", "stop", "kill", "mask")) or
   (process.name == "ln" and process.args : "/etc/apparmor.d/*" and process.args == "/etc/apparmor.d/disable/")
-)
+) and
+not ?process.parent.executable == "/opt/puppetlabs/puppet/bin/ruby"
 
 ----------------------------------
 

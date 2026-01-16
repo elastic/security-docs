@@ -34,7 +34,7 @@ Identifies the creation of a sudo binary located at /usr/bin/sudo. Attackers may
 * Data Source: Elastic Defend
 * Resources: Investigation Guide
 
-*Version*: 110
+*Version*: 111
 
 *Rule authors*: 
 
@@ -136,6 +136,7 @@ For more details on Elastic Defend refer to the https://www.elastic.co/guide/en/
 ----------------------------------
 file where host.os.type == "linux" and event.action in ("creation", "rename") and
 file.path in ("/usr/bin/sudo", "/bin/sudo") and not (
+  process.name like ("python*", "platform-python*") or
   file.Ext.original.path in ("/usr/bin/sudo", "/bin/sudo") or
   process.executable in (
     "/bin/dpkg", "/usr/bin/dpkg", "/bin/dockerd", "/usr/bin/dockerd", "/usr/sbin/dockerd", "/bin/microdnf",
@@ -143,11 +144,15 @@ file.path in ("/usr/bin/sudo", "/bin/sudo") and not (
     "/bin/podman", "/usr/bin/podman", "/bin/dnf-automatic", "/usr/bin/dnf-automatic", "/bin/pacman", "/usr/bin/pacman",
     "/usr/bin/dpkg-divert", "/bin/dpkg-divert", "/sbin/apk", "/usr/sbin/apk", "/usr/local/sbin/apk", "/usr/bin/apt",
     "/usr/sbin/pacman", "/usr/bin/microdnf", "/usr/local/bin/dockerd", "/usr/local/bin/podman", "/usr/local/bin/dnf",
-    "/kaniko/executor", "/proc/self/exe", "/usr/bin/apt-get", "/usr/bin/apt-cache", "/usr/bin/apt-mark"
+    "/kaniko/executor", "/proc/self/exe", "/usr/bin/apt-get", "/usr/bin/apt-cache", "/usr/bin/apt-mark",
+    "./usr/bin/podman", "./usr/lib/snapd/snap-update-ns", "/kaniko/kaniko-executor", "/usr/libexec/packagekitd",
+    "/usr/bin/dnf5", "/usr/lib/pamac/pamac-daemon", "./usr/libexec/snapd/snap-update-ns", "/usr/bin/update-alternatives"
   ) or
   file.Ext.original.extension == "dpkg-new" or
   process.executable : (
-    "/nix/store/*", "/var/lib/dpkg/*", "/tmp/vmis.*", "/snap/*", "/dev/fd/*", "/var/lib/docker/*"
+    "/nix/store/*", "/var/lib/dpkg/*", "/tmp/vmis.*", "/snap/*", "/dev/fd/*", "/var/lib/docker/*",
+    "./snap/snapd/*/usr/lib/snapd/snap-update-ns", "/opt/docker/overlay2/*/dockerd", 
+    "/var/lib/containers/storage/overlay/*/dockerd"
   ) or
   process.executable == null or
   (process.name == "sed" and file.name : "sed*")

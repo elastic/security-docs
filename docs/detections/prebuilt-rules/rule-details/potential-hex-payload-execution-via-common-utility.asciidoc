@@ -37,7 +37,7 @@ This rule detects potential hex payload execution on Linux systems. Adversaries 
 * Data Source: Elastic Endgame
 * Resources: Investigation Guide
 
-*Version*: 105
+*Version*: 106
 
 *Rule authors*: 
 
@@ -138,15 +138,30 @@ For more details on Elastic Defend refer to the https://www.elastic.co/guide/en/
 [source, js]
 ----------------------------------
 process where host.os.type == "linux" and event.type == "start" and
-  event.action in ("exec", "exec_event", "start", "ProcessRollup2") and
-  (
-    (process.name == "xxd" and process.args like ("-r*", "-p*")) or
-    (process.name like "python*" and process.command_line like "*fromhex*" and process.command_line like ("*decode*", "*encode*")) or
-    (process.name like "php*" and process.command_line like "*hex2bin*") or
-    (process.name like "ruby*" and process.command_line like "*].pack(\"H*\")*") or
-    (process.name like "perl*" and process.command_line like "*pack(\"H*\",*") or
-    (process.name like "lua*" and process.command_line like "*tonumber(cc, 16)*")
+event.action in ("exec", "exec_event", "start", "ProcessRollup2") and
+(
+  (process.name == "xxd" and process.args like ("-r*", "-p*")) or
+  (process.name like "python*" and process.command_line like "*fromhex*" and process.command_line like ("*decode*", "*encode*")) or
+  (process.name like "php*" and process.command_line like "*hex2bin*") or
+  (process.name like "ruby*" and process.command_line like "*].pack(\"H*\")*") or
+  (process.name like "perl*" and process.command_line like "*pack(\"H*\",*") or
+  (process.name like "lua*" and process.command_line like "*tonumber(cc, 16)*")
+) and
+not (
+  // Vulnerability scanning tools scanning for xz-backdoor
+  process.command_line like ("*liblzma*", "*xz*") or
+  ?process.parent.args like (
+    "/srv/acme/acme.sh", "/home/*/.acme.sh/acme.sh", "/opt/custom-nagios-plugins/check_rad_eap",
+    "/usr/bin/testssl", "./testssl.sh", "/root/.acme.sh/acme.sh"
+  ) or
+  ?process.parent.args like "printf*" or
+  ?process.working_directory in (
+    "/home/prtg-ssh",
+    "/home/svc-acas-lnx",
+    "/tmp/newroot/home/svc-acas-lnx",
+    "/var/prtg/scriptsxml"
   )
+)
 
 ----------------------------------
 

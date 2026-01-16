@@ -10,9 +10,9 @@ This detection rule detects the creation of a shell through a suspicious process
 * logs-endpoint.events.network*
 * logs-endpoint.events.process*
 
-*Severity*: medium
+*Severity*: high
 
-*Risk score*: 47
+*Risk score*: 73
 
 *Runs every*: 5m
 
@@ -33,7 +33,7 @@ This detection rule detects the creation of a shell through a suspicious process
 * Data Source: Elastic Defend
 * Resources: Investigation Guide
 
-*Version*: 13
+*Version*: 14
 
 *Rule authors*: 
 
@@ -149,15 +149,13 @@ sequence by host.id, process.entity_id with maxspan=1s
     )) or
     (process.name : "php*" and process.args : "-r" and process.args : "*fsockopen*" and process.args : "*/bin/*sh*") or
     (process.name : ("awk", "gawk", "mawk", "nawk") and process.args : "*/inet/tcp/*") or
-    (process.name : "openssl" and process.args : "-connect") or
     (process.name : ("nc", "ncat", "netcat") and process.args == "-e" and process.args_count >= 3 and
-     not process.args == "-z") or
-    (process.name : "telnet" and process.args_count >= 3)
+     not process.args == "-z")
   ) and process.parent.name : (
     "bash", "dash", "sh", "tcsh", "csh", "zsh", "ksh", "fish", "python*", "php*", "perl", "ruby", "lua*",
-    "openssl", "nc", "netcat", "ncat", "telnet", "awk")]
+    "nc", "netcat", "ncat", "awk", "gawk", "mawk", "nawk")]
   [network where host.os.type == "linux" and event.type == "start" and event.action in ("connection_attempted", "connection_accepted") and
-    process.name : ("python*", "php*", "perl", "ruby", "lua*", "openssl", "nc", "netcat", "ncat", "telnet", "awk") and
+    process.name : ("python*", "php*", "perl", "ruby", "lua*", "nc", "netcat", "ncat", "awk", "gawk", "mawk", "nawk") and
     destination.ip != null and not cidrmatch(destination.ip, "127.0.0.0/8", "169.254.0.0/16", "224.0.0.0/4", "::1")]
 
 ----------------------------------

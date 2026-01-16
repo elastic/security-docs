@@ -7,10 +7,12 @@ This rule detects the execution of the `grep` command with the `plugins` argumen
 
 *Rule indices*: 
 
+* auditbeat-*
 * endgame-*
 * logs-crowdstrike.fdr*
 * logs-endpoint.events.process*
 * logs-sentinel_one_cloud_funnel.*
+* logs-auditd_manager.auditd-*
 
 *Severity*: low
 
@@ -34,13 +36,14 @@ This rule detects the execution of the `grep` command with the `plugins` argumen
 * OS: Linux
 * Use Case: Threat Detection
 * Tactic: Discovery
+* Data Source: Auditd Manager
 * Data Source: Elastic Defend
 * Data Source: Elastic Endgame
 * Data Source: Crowdstrike
 * Data Source: SentinelOne
 * Resources: Investigation Guide
 
-*Version*: 106
+*Version*: 107
 
 *Rule authors*: 
 
@@ -135,11 +138,12 @@ For more details on Elastic Defend refer to the https://www.elastic.co/guide/en/
 [source, js]
 ----------------------------------
 process where host.os.type == "linux" and event.type == "start" and
-  event.action in ("exec", "exec_event", "start", "ProcessRollup2") and
-  process.name == "grep" and process.args : "plugins*" and process.args : (
-    "/etc/yum.conf", "/usr/lib/yum-plugins/*", "/etc/yum/pluginconf.d/*",
-    "/usr/lib/python*/site-packages/dnf-plugins/*", "/etc/dnf/plugins/*", "/etc/dnf/dnf.conf"
-  )
+event.action in ("exec", "exec_event", "start", "ProcessRollup2", "executed", "process_started") and
+process.name == "grep" and process.args : "plugins*" and process.args like (
+  "/etc/yum.conf", "/usr/lib/yum-plugins/*", "/etc/yum/pluginconf.d/*",
+  "/usr/lib/python*/site-packages/dnf-plugins/*", "/etc/dnf/plugins/*", "/etc/dnf/dnf.conf"
+) and
+not ?process.parent.executable == "/usr/lib/venv-salt-minion/bin/python.original"
 
 ----------------------------------
 

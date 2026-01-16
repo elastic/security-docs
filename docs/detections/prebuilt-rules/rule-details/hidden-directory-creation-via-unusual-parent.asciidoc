@@ -35,7 +35,7 @@ This rule detects the creation of a hidden directory via an unusual parent execu
 * Data Source: Elastic Endgame
 * Resources: Investigation Guide
 
-*Version*: 105
+*Version*: 106
 
 *Rule authors*: 
 
@@ -138,13 +138,15 @@ For more details on Elastic Defend refer to the https://www.elastic.co/guide/en/
 process where host.os.type == "linux" and event.type == "start" and event.action in ("exec", "start", "exec_event") and
 process.name == "mkdir" and process.parent.executable like (
   "/dev/shm/*", "/tmp/*", "/var/tmp/*", "/var/run/*", "/root/*", "/boot/*", "/var/www/html/*", "/opt/.*"
-) and process.args like (".*", "/*/.*") and process.args_count <= 3 and not (
-  process.parent.executable like ("/tmp/newroot/*", "/run/containerd/*") or
+) and process.args like (".*", "/*/.*") and process.args_count <= 3 and
+not (
   process.command_line like ("mkdir -p .", "mkdir ./*") or
-  process.args == "/root/.ssh" or
+  process.args like ("/root/.ssh", "/home/*/.ssh", "/root/.cache/install4j") or
   process.parent.executable like (
-    "/tmp/pear/temp/*", "/var/tmp/buildah*", "/tmp/python-build.*", "/tmp/cliphist-wofi-img", "/tmp/snap.rootfs_*"
-  )
+    "/tmp/pear/temp/*", "/var/tmp/buildah*", "/tmp/python-build.*", "/tmp/cliphist-wofi-img", "/tmp/snap.rootfs_*",
+    "/root/.acme.sh/acme.sh", "/tmp/buildpacks/*go/bin/test-compile", "/tmp/newroot/*", "/run/containerd/*"
+  ) or
+  process.parent.name in ("libtool", "jpenable", "configure")
 )
 
 ----------------------------------

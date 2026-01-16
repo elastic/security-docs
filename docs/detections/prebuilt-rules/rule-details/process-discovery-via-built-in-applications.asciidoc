@@ -3,7 +3,7 @@
 
 Identifies the use of built-in tools attackers can use to discover running processes on an endpoint.
 
-*Rule type*: eql
+*Rule type*: new_terms
 
 *Rule indices*: 
 
@@ -33,7 +33,7 @@ Identifies the use of built-in tools attackers can use to discover running proce
 * Data Source: Elastic Defend
 * Data Source: Elastic Endgame
 
-*Version*: 5
+*Version*: 6
 
 *Rule authors*: 
 
@@ -47,10 +47,15 @@ Identifies the use of built-in tools attackers can use to discover running proce
 
 [source, js]
 ----------------------------------
-process where event.type == "start" and event.action in ("exec", "exec_event") and process.name in (
-  "ps", "pstree", "htop", "pgrep"
-) and 
-not process.parent.name in ("amazon-ssm-agent", "snap")
+event.category:process and host.os.type:(linux or macos) and event.type:start and event.action:(exec or exec_event) and
+process.name:("ps" or "pstree" or "htop" or "pgrep") and not (
+  process.parent.name:("amazon-ssm-agent" or "snap") or
+  process.parent.args:("/usr/local/ASR/Vx/bin/status" or "/usr/sbin/ksmtuned") or
+  process.parent.executable:(
+    "/usr/bin/check_mk_agent" or /opt/gitlab/* or "/usr/bin/pmlogctl" or "/usr/libexec/pcp/bin/pmlogger_daily" or
+    "/usr/libexec/pcp/bin/pmlogger_check"
+  )
+)
 
 ----------------------------------
 

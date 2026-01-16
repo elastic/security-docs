@@ -36,7 +36,7 @@ This rule detects a suspicious egress network connection attempt from a Git hook
 * Data Source: Elastic Defend
 * Resources: Investigation Guide
 
-*Version*: 5
+*Version*: 6
 
 *Rule authors*: 
 
@@ -139,8 +139,10 @@ For more details on Elastic Defend refer to the https://www.elastic.co/guide/en/
 ----------------------------------
 sequence by host.id with maxspan=3s
   [process where host.os.type == "linux" and event.type == "start" and event.action == "exec" and
-   process.parent.name == "git" and process.args : ".git/hooks/*" and
-   process.name in ("bash", "dash", "sh", "tcsh", "csh", "zsh", "ksh", "fish")] by process.entity_id
+   process.parent.name == "git" and process.args like ".git/hooks/*" and
+   process.name in ("bash", "dash", "sh", "tcsh", "csh", "zsh", "ksh", "fish") and
+   not (process.name like "python*" and process.command_line like "*pip*")
+  ] by process.entity_id
   [network where host.os.type == "linux" and event.type == "start" and event.action == "connection_attempted" and not (
      destination.ip == null or destination.ip == "0.0.0.0" or cidrmatch(
        destination.ip, "10.0.0.0/8", "127.0.0.0/8", "169.254.0.0/16", "172.16.0.0/12", "192.0.0.0/24", "192.0.0.0/29",

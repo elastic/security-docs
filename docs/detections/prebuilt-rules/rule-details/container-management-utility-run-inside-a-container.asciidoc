@@ -30,7 +30,7 @@ This rule detects when a container management binary is run from inside a contai
 * Data Source: Elastic Defend
 * Resources: Investigation Guide
 
-*Version*: 3
+*Version*: 4
 
 *Rule authors*: 
 
@@ -132,8 +132,13 @@ For more details on Elastic Defend refer to the https://www.elastic.co/guide/en/
 ----------------------------------
 process where host.os.type == "linux" and event.type == "start" and event.action == "exec" and
 process.entry_leader.entry_meta.type == "container" and process.interactive == true and
-process.name in ("dockerd", "docker", "kubelet", "kube-proxy", "kubectl", "containerd", "systemd", "crictl") and
-not process.parent.executable in ("/sbin/init", "/usr/bin/dockerd")
+process.name in ("dockerd", "kubelet", "kube-proxy", "kubectl", "containerd", "systemd", "crictl") and
+not (
+  process.parent.executable in ("/sbin/init", "/usr/bin/dockerd", "/usr/bin/runc", "/usr/bin/containerd-shim-runc-v2") or
+  process.working_directory == "/aws" or
+  process.parent.command_line == "runc init" or
+  (process.parent.name == "busybox" and process.name == "kubectl")
+)
 
 ----------------------------------
 

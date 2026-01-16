@@ -11,6 +11,8 @@ This rule monitors for a set of Linux utilities that can be used for tunneling a
 * logs-crowdstrike.fdr*
 * logs-endpoint.events.process*
 * logs-sentinel_one_cloud_funnel.*
+* auditbeat-*
+* logs-auditd_manager.auditd-*
 
 *Severity*: medium
 
@@ -37,9 +39,10 @@ This rule monitors for a set of Linux utilities that can be used for tunneling a
 * Data Source: Elastic Endgame
 * Data Source: Crowdstrike
 * Data Source: SentinelOne
+* Data Source: Auditd Manager
 * Resources: Investigation Guide
 
-*Version*: 112
+*Version*: 113
 
 *Rule authors*: 
 
@@ -95,6 +98,7 @@ This rule looks for several utilities that are capable of setting up tunnel netw
 *Related rules*
 
 
+- Potential Linux Tunneling and/or Port Forwarding via Command Line - 8c8df61f-ed2a-4832-87b8-ee30812606e0
 - Potential Protocol Tunneling via Chisel Client - 3f12325a-4cc6-410b-8d4c-9fbbeb744cfd
 - Potential Protocol Tunneling via Chisel Server - ac8805f6-1e08-406c-962e-3937057fa86f
 - Potential Protocol Tunneling via EarthWorm - 9f1c4ca3-44b5-481d-ba42-32dc215a2769
@@ -169,13 +173,13 @@ For more details on Elastic Defend refer to the https://www.elastic.co/guide/en/
 
 [source, js]
 ----------------------------------
-process where host.os.type == "linux" and event.type == "start" and event.action in ("exec", "exec_event", "start", "ProcessRollup2") and (
+process where host.os.type == "linux" and event.type == "start" and event.action in ("exec", "exec_event", "start", "ProcessRollup2", "executed", "process_started") and (
   (
     // gost & pivotnacci - spawned without process.parent.name
     (process.name == "gost" and process.args : ("-L*", "-C*", "-R*")) or (process.name == "pivotnacci")) or (
     // ssh
     (process.name == "ssh" and (process.args in ("-R", "-L", "-D", "-w") and process.args_count >= 4 and 
-     not process.args : "chmod")) or
+     not (process.args == "chmod" or process.command_line like "*rungencmd*"))) or
     // sshuttle
     (process.name == "sshuttle" and process.args in ("-r", "--remote", "-l", "--listen") and process.args_count >= 4) or
     // socat
@@ -183,7 +187,7 @@ process where host.os.type == "linux" and event.type == "start" and event.action
     // chisel
     (process.name : "chisel*" and process.args in ("client", "server")) or
     // iodine(d), dnscat, hans, ptunnel-ng, ssf, 3proxy & ngrok 
-    (process.name in ("iodine", "iodined", "dnscat", "hans", "hans-ubuntu", "ptunnel-ng", "ssf", "3proxy", "ngrok"))
+    (process.name in ("iodine", "iodined", "dnscat", "hans", "hans-ubuntu", "ptunnel-ng", "ssf", "3proxy", "ngrok", "wstunnel"))
   ) and process.parent.name in ("bash", "dash", "ash", "sh", "tcsh", "csh", "zsh", "ksh", "fish")
 )
 

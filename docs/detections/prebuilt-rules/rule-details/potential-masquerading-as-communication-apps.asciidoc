@@ -34,7 +34,7 @@ Identifies suspicious instances of communications apps, both unsigned and rename
 * Data Source: SentinelOne
 * Data Source: Elastic Endgame
 
-*Version*: 11
+*Version*: 12
 
 *Rule authors*: 
 
@@ -98,7 +98,8 @@ Communication apps are integral to modern workflows, facilitating seamless inter
 [source, js]
 ----------------------------------
 process where host.os.type == "windows" and
-  event.type == "start" and
+  event.type == "start" and 
+  not process.code_signature.status like "errorCode_endpoint*" and process.hash.sha256 != null and 
   (
     /* Slack */
     (process.name : "slack.exe" and not
@@ -115,7 +116,8 @@ process where host.os.type == "windows" and
 
     /* Teams */
     (process.name : "Teams.exe" and not
-      (process.code_signature.subject_name : "Microsoft Corporation" and process.code_signature.trusted == true)
+      (process.code_signature.subject_name : "Microsoft Corporation" and process.code_signature.trusted == true) and 
+      process.executable != "C:\\Program Files (x86)\\Teams Installer\\Teams.exe"
     ) or
 
     /* Discord */
@@ -125,7 +127,8 @@ process where host.os.type == "windows" and
 
     /* RocketChat */
     (process.name : "Rocket.Chat.exe" and not
-      (process.code_signature.subject_name : "Rocket.Chat Technologies Corp." and process.code_signature.trusted == true)
+      (process.code_signature.subject_name : "Rocket.Chat Technologies Corp." and process.code_signature.trusted == true) and 
+      process.executable != "C:\\Program Files\\rocketchat\\Rocket.Chat.exe"
     ) or
 
     /* Mattermost */
@@ -144,7 +147,10 @@ process where host.os.type == "windows" and
 
     /* Zoom */
     (process.name : "Zoom.exe" and not
-      (process.code_signature.subject_name : "Zoom Video Communications, Inc." and process.code_signature.trusted == true)
+      (process.code_signature.subject_name : (
+        "Zoom Video Communications, Inc.",
+        "Zoom Communications, Inc."
+       ) and process.code_signature.trusted == true)
     ) or
 
     /* Outlook */

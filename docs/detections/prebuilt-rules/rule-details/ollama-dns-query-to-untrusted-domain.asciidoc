@@ -1,0 +1,88 @@
+[[ollama-dns-query-to-untrusted-domain]]
+=== Ollama DNS Query to Untrusted Domain
+
+Detects Ollama DNS queries to domains outside official infrastructure. Adversaries can redirect Ollama to pull models from attacker-controlled servers via OLLAMA_HOST or custom manifests. Malicious models may contain backdoors, exploit parsing vulnerabilities like CVE-2025-1975, or poison inference outputs.
+
+*Rule type*: eql
+
+*Rule indices*: 
+
+* logs-endpoint.events.network-*
+
+*Severity*: low
+
+*Risk score*: 21
+
+*Runs every*: 60m
+
+*Searches indices from*: now-119m ({ref}/common-options.html#date-math[Date Math format], see also <<rule-schedule, `Additional look-back time`>>)
+
+*Maximum alerts per execution*: 100
+
+*References*: 
+
+* https://www.greynoise.io/blog/threat-actors-actively-targeting-llms
+* https://atlas.mitre.org/techniques/AML.T0010.003
+* https://nvd.nist.gov/vuln/detail/CVE-2025-1975
+
+*Tags*: 
+
+* Domain: Endpoint
+* OS: Linux
+* OS: macOS
+* OS: Windows
+* Use Case: Threat Detection
+* Tactic: Command and Control
+* Data Source: Elastic Defend
+* Domain: LLM
+* Mitre Atlas: T0010.003
+* Rule Type: BBR
+
+*Version*: 1
+
+*Rule authors*: 
+
+* Elastic
+
+*Rule license*: Elastic License v2
+
+
+==== Rule query
+
+
+[source, js]
+----------------------------------
+network where event.action == "lookup_requested" and
+  process.name in ("ollama", "ollama.exe") and
+  dns.question.name != null and
+  not dns.question.name : (
+    "ollama.ai", "*.ollama.ai", "ollama.com", "*.ollama.com",
+    "github.com", "*.github.com", "*.githubusercontent.com",
+    "*.r2.cloudflarestorage.com", "*.cloudflare.com", "*.cloudflarestorage.com",
+    "localhost", "*.local", "*.internal", "*.localdomain"
+  )
+
+----------------------------------
+
+*Framework*: MITRE ATT&CK^TM^
+
+* Tactic:
+** Name: Command and Control
+** ID: TA0011
+** Reference URL: https://attack.mitre.org/tactics/TA0011/
+* Technique:
+** Name: Ingress Tool Transfer
+** ID: T1105
+** Reference URL: https://attack.mitre.org/techniques/T1105/
+* Tactic:
+** Name: Initial Access
+** ID: TA0001
+** Reference URL: https://attack.mitre.org/tactics/TA0001/
+* Technique:
+** Name: Supply Chain Compromise
+** ID: T1195
+** Reference URL: https://attack.mitre.org/techniques/T1195/
+* Sub-technique:
+** Name: Compromise Software Supply Chain
+** ID: T1195.002
+** Reference URL: https://attack.mitre.org/techniques/T1195/002/

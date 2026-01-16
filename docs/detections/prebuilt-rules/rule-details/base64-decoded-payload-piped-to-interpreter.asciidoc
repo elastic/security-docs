@@ -10,9 +10,9 @@ This rule detects when a base64 decoded payload is piped to an interpreter on Li
 * logs-endpoint.events.process*
 * logs-crowdstrike.fdr*
 
-*Severity*: medium
+*Severity*: high
 
-*Risk score*: 47
+*Risk score*: 73
 
 *Runs every*: 5m
 
@@ -33,7 +33,7 @@ This rule detects when a base64 decoded payload is piped to an interpreter on Li
 * Resources: Investigation Guide
 * Data Source: Crowdstrike
 
-*Version*: 4
+*Version*: 5
 
 *Rule authors*: 
 
@@ -145,7 +145,17 @@ sequence by host.id, process.parent.entity_id with maxspan=3s
   )]
  [process where host.os.type == "linux" and event.type == "start" and event.action in ("exec", "ProcessRollup2") and process.name like~ (
     "bash", "dash", "sh", "tcsh", "csh", "zsh", "ksh", "fish", "python*", "perl*", "ruby*", "lua*", "php*"
- )]
+  ) and
+  not (
+    ?process.parent.command_line in ("bash ./run_tests.sh unit-integration", "/bin/sh /var/lib/dpkg/info/nmap-common.postinst configure") or
+    process.command_line == "/usr/bin/perl /usr/bin/shasum -a 256" or
+    ?process.working_directory like (
+      "/usr/local/zeek", "/opt/zeek", "/var/lib/docker/overlay2/*/opt/zeek", "/usr/local/zeek_old_install",
+      "/var/lib/docker/overlay2/*/usr/local/zeek", "/proc/self/fd/*/usr/local/zeek"
+    ) or
+    (?process.parent.name == "zsh" and ?process.parent.command_line like "*extendedglob*") or
+    (process.name like "python*" and ?process.parent.name == "python*")
+  )]
 
 ----------------------------------
 

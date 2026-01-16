@@ -1,21 +1,21 @@
 [[okta-sign-in-events-via-third-party-idp]]
 === Okta Sign-In Events via Third-Party IdP
 
-Detects sign-in events where authentication is carried out via a third-party Identity Provider (IdP).
+Detects sign-in events where authentication is carried out via a third-party Identity Provider (IdP) that has not been seen before. Adversaries may add an unauthorized IdP to an Okta tenant to gain persistent access. This rule uses New Terms detection to only alert when a previously unseen IdP is used for authentication, reducing noise from legitimate federated identity providers while highlighting potentially rogue IdP additions.
 
-*Rule type*: query
+*Rule type*: new_terms
 
 *Rule indices*: 
 
-* logs-okta*
+* logs-okta.system-*
 
 *Severity*: medium
 
 *Risk score*: 47
 
-*Runs every*: 15m
+*Runs every*: 5m
 
-*Searches indices from*: now-30m ({ref}/common-options.html#date-math[Date Math format], see also <<rule-schedule, `Additional look-back time`>>)
+*Searches indices from*: now-9m ({ref}/common-options.html#date-math[Date Math format], see also <<rule-schedule, `Additional look-back time`>>)
 
 *Maximum alerts per execution*: 100
 
@@ -30,12 +30,13 @@ Detects sign-in events where authentication is carried out via a third-party Ide
 
 *Tags*: 
 
+* Domain: Identity
 * Use Case: Identity and Access Audit
 * Tactic: Initial Access
 * Data Source: Okta
 * Resources: Investigation Guide
 
-*Version*: 210
+*Version*: 211
 
 *Rule authors*: 
 
@@ -103,18 +104,26 @@ The Okta Fleet integration, Filebeat module, or similarly structured data is req
 
 [source, js]
 ----------------------------------
-event.dataset:okta.system and okta.debug_context.debug_data.request_uri:/oauth2/v1/authorize/callback and
-    (not okta.authentication_context.issuer.id:Okta and event.action:(user.authentication.auth_via_IDP
-        or user.authentication.auth_via_inbound_SAML
-        or user.authentication.auth_via_mfa
-        or user.authentication.auth_via_social)
-        or event.action:user.session.start) or
-    (event.action:user.authentication.auth_via_IDP and okta.outcome.result:FAILURE
-        and okta.outcome.reason:("A SAML assert with the same ID has already been processed by Okta for a previous request"
-            or "Unable to match transformed username"
-            or "Unable to resolve IdP endpoint"
-            or "Unable to validate SAML Response"
-            or "Unable to validate incoming SAML Assertion"))
+event.dataset: "okta.system"
+    and okta.authentication_context.issuer.id: (* and not "Okta")
+    and (
+        event.action: (
+            "user.authentication.auth_via_IDP"
+            or "user.authentication.auth_via_inbound_SAML"
+            or "user.authentication.auth_via_social"
+        )
+        or (
+            event.action: "user.authentication.auth_via_IDP"
+            and okta.outcome.result: "FAILURE"
+            and okta.outcome.reason: (
+                "A SAML assert with the same ID has already been processed by Okta for a previous request"
+                or "Unable to match transformed username"
+                or "Unable to resolve IdP endpoint"
+                or "Unable to validate SAML Response"
+                or "Unable to validate incoming SAML Assertion"
+            )
+        )
+    )
 
 ----------------------------------
 

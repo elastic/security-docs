@@ -37,7 +37,7 @@ Detects the use of the chkconfig binary to manually add a service for management
 * Data Source: SentinelOne
 * Resources: Investigation Guide
 
-*Version*: 217
+*Version*: 218
 
 *Rule authors*: 
 
@@ -180,13 +180,15 @@ For more details on Elastic Defend refer to the https://www.elastic.co/guide/en/
 [source, js]
 ----------------------------------
 process where host.os.type == "linux" and event.action in ("exec", "exec_event", "start") and
+process.executable != null and
 ( 
   (process.executable : "/usr/sbin/chkconfig" and process.args : "--add") or
   (process.args : "*chkconfig" and process.args : "--add")
 ) and not (
   process.parent.name in ("rpm", "qualys-scan-util", "qualys-cloud-agent", "update-alternatives") or
-  process.parent.args : ("/var/tmp/rpm*", "/var/lib/waagent/*") or
-  process.args in ("jexec", "sapinit", "httpd", "dbora")
+  process.parent.executable in ("/opt/commvault/.gxsetup/silent_install/install", "/usr/sbin/alternatives") or
+  process.parent.args : ("/var/tmp/rpm*", "/var/lib/waagent/*", "/usr/bin/puppet*") or
+  process.args in ("jexec", "sapinit", "httpd", "dbora" , "selfprotection")
 )
 
 ----------------------------------

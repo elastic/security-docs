@@ -9,9 +9,9 @@ This rule detects kernel unpacking activity through several built-in Linux utili
 
 * logs-endpoint.events.process*
 
-*Severity*: low
+*Severity*: medium
 
-*Risk score*: 21
+*Risk score*: 47
 
 *Runs every*: 5m
 
@@ -33,7 +33,7 @@ This rule detects kernel unpacking activity through several built-in Linux utili
 * Data Source: Elastic Defend
 * Resources: Investigation Guide
 
-*Version*: 5
+*Version*: 6
 
 *Rule authors*: 
 
@@ -138,7 +138,15 @@ process where host.os.type == "linux" and event.type == "start" and event.action
   (process.name == "grep" and process.args == "ELF") or
   (process.name in ("lzop", "lz4") and process.args in ("-d", "--decode"))
 ) and
-not process.parent.name == "mkinitramfs"
+not (
+  process.parent.name == "mkinitramfs" or
+  process.parent.executable like (
+    "/usr/lib/needrestart/vmlinuz-get-version", "/usr/libexec/platform-python*", "/tmp/newroot/usr/libexec/platform-python*",
+    "/usr/bin/kdumpctl", "/usr/bin/stap-report", "/usr/sbin/nv-update-initrd"
+  ) or
+  process.parent.command_line like "*ansible*" or
+  process.parent.args == "/usr/bin/kdumpctl"
+)
 
 ----------------------------------
 

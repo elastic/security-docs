@@ -7,7 +7,8 @@ This rule detects the use of git to clone a repository or download files from Gi
 
 *Rule indices*: 
 
-* logs-endpoint.events.*
+* logs-endpoint.events.process*
+* logs-endpoint.events.file*
 
 *Severity*: low
 
@@ -30,7 +31,7 @@ This rule detects the use of git to clone a repository or download files from Gi
 * Data Source: Elastic Defend
 * Resources: Investigation Guide
 
-*Version*: 2
+*Version*: 3
 
 *Rule authors*: 
 
@@ -145,6 +146,9 @@ sequence by process.entity_id, host.id with maxspan=10s
   [process where host.os.type == "linux" and event.type == "start" and event.action == "exec" and (
      (process.name == "git" and process.args == "clone") or
      (process.name in ("wget", "curl") and process.command_line like~ "*github*")
+  ) and not (
+    process.parent.name in ("git", "cmake") or
+     process.parent.args like "/root/.ansible/tmp/ansible*"
   )]
   [file where host.os.type == "linux" and event.type == "creation" and file.path like ("/tmp/*", "/var/tmp/*", "/dev/shm/*")]
 

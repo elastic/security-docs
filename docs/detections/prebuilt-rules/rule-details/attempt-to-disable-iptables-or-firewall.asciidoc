@@ -11,9 +11,9 @@ Adversaries may attempt to disable the iptables or firewall service in an attemp
 * logs-endpoint.events.process*
 * logs-sentinel_one_cloud_funnel.*
 
-*Severity*: low
+*Severity*: medium
 
-*Risk score*: 21
+*Risk score*: 47
 
 *Runs every*: 5m
 
@@ -36,7 +36,7 @@ Adversaries may attempt to disable the iptables or firewall service in an attemp
 * Data Source: SentinelOne
 * Resources: Investigation Guide
 
-*Version*: 113
+*Version*: 114
 
 *Rule authors*: 
 
@@ -137,22 +137,25 @@ For more details on Elastic Defend refer to the https://www.elastic.co/guide/en/
 [source, js]
 ----------------------------------
 process where host.os.type == "linux" and event.type == "start" and event.action in ("exec", "exec_event", "start") and
-  (
+(
    /* disable FW */
-   (
-     (process.name == "ufw" and process.args == "disable") or
-     (process.name == "iptables" and process.args in ("-F", "--flush", "-X", "--delete-chain") and process.args_count == 2) or
-     (process.name in ("iptables", "ip6tables") and process.parent.args == "force-stop")
-   ) or
+  (
+    (process.name == "ufw" and process.args == "disable") or
+    (process.name == "iptables" and process.args in ("-F", "--flush", "-X", "--delete-chain") and process.args_count == 2) or
+    (process.name in ("iptables", "ip6tables") and process.parent.args == "force-stop")
+  ) or
 
    /* stop FW service */
-   (
-     ((process.name == "service" and process.args == "stop") or
-       (process.name == "chkconfig" and process.args == "off") or
-       (process.name == "systemctl" and process.args in ("disable", "stop", "kill"))) and
+  (
+    (
+      (process.name == "service" and process.args == "stop") or
+      (process.name == "chkconfig" and process.args == "off") or
+      (process.name == "update-rc.d" and process.args in ("remove", "disable")) or
+      (process.name == "systemctl" and process.args in ("disable", "stop", "kill", "mask"))
+    ) and
     process.args in ("firewalld", "ip6tables", "iptables", "firewalld.service", "ip6tables.service", "iptables.service")
-    )
   )
+)
 
 ----------------------------------
 

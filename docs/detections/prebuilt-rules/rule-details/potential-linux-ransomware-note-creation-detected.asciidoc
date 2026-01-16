@@ -30,7 +30,7 @@ This rule identifies a sequence of a mass file encryption event in conjunction w
 * Data Source: Elastic Defend
 * Resources: Investigation Guide
 
-*Version*: 14
+*Version*: 15
 
 *Rule authors*: 
 
@@ -137,11 +137,14 @@ sequence by process.entity_id, host.id with maxspan=1s
    file.path : (
      "/home/*/Downloads/*", "/home/*/Documents/*", "/root/*", "/bin/*", "/usr/bin/*", "/var/log/*", "/var/lib/log/*",
      "/var/backup/*", "/var/www/*") and
-   not process.name : (
-     "dpkg", "yum", "dnf", "rpm", "dockerd", "go", "java", "pip*", "python*", "node", "containerd", "php", "p4d",
-     "conda", "chrome", "imap", "cmake", "firefox", "semanage", "semodule", "ansible-galaxy", "fc-cache", "jammy", "git",
-     "systemsettings", "vmis-launcher", "bundle", "kudu-tserver", "suldownloader", "rustup-init", "bun"
-    )
+   not (
+     process.name : (
+       "dpkg", "yum", "dnf", "rpm", "dockerd", "go", "java", "pip*", "python*", "node", "containerd", "php", "p4d",
+       "conda", "chrome", "imap", "cmake", "firefox", "semanage", "semodule", "ansible-galaxy", "fc-cache", "jammy", "git",
+       "systemsettings", "vmis-launcher", "bundle", "kudu-tserver", "suldownloader", "rustup-init", "bun"
+     ) or
+     process.executable in ("./runc", "./usr/bin/qemu-aarch64")
+   )
   ] with runs=25
   [file where host.os.type == "linux" and event.action == "creation" and
    file.name : ("*restore*", "*lock*", "*recovery*", "*read*", "*instruction*", "*how_to*", "*ransom*")

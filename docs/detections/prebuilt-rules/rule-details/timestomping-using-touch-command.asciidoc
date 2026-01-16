@@ -32,7 +32,7 @@ Timestomping is an anti-forensics technique which is used to modify the timestam
 * Data Source: Elastic Defend
 * Resources: Investigation Guide
 
-*Version*: 109
+*Version*: 110
 
 *Rule authors*: 
 
@@ -107,12 +107,37 @@ For more details on adding a custom ingest pipeline refer - https://www.elastic.
 
 [source, js]
 ----------------------------------
-process where event.type == "start" and
- process.name : "touch" and user.id != "0" and
- process.args : ("-r", "-t", "-a*","-m*") and
- not process.args : (
-   "/usr/lib/go-*/bin/go", "/usr/lib/dracut/dracut-functions.sh", "/tmp/KSInstallAction.*/m/.patch/*"
-) and not process.parent.name in ("pmlogger_daily", "pmlogger_janitor", "systemd")
+process where event.type == "start" and event.action == "exec" and process.name == "touch" and
+process.parent.executable != null and process.args like (
+  "-t*", "-d*", "-a*", "-m*", "-r*", "--date=*", "--reference=*", "--time=*"
+) and not (
+  process.parent.executable in (
+    "/usr/local/bin/manage_omnimesh_logs", "/pro/bin/sys/install/packageUtils.sh", "/bin/dracut",
+    "/usr/libexec/postfix/aliasesdb", "pwsh-preview", "/usr/bin/dracut", "/usr/share/initramfs-tools/hooks/amd64_microcode",
+    "/usr/local/bin/start-mailserver.sh", "/usr/bin/ssm-agent-worker", "/bin/ssm-agent-worker", "/usr/local/cpanel/scripts/restartsrv_bind"
+  ) or
+  process.parent.executable like ("/opt/sw/tomcat/rc_scripts/*", "/tmp/newroot/var/lib/docker/overlay2/*", "/snap/*", "/opt/zeek/*") or
+  process.parent.name in (
+    "xargs", "find", "sudo", "make", "pmlogger_check", "pmlogger_daily", "pmlogger_janitor", "autoupdate", "pmlogctl",
+    "spyglass", "desktop-launch", "pmiectl", "systemd"
+  ) or
+  process.parent.args like (
+    "/home/*/scripts/auto_download_process.py", "/home/*/scripts/perl_python_eagu1p.py", "/var/lib/dpkg/info/*",
+    "bazel-out/k8-dbg/bin/dependencies/thirdparty/libjansson_foreign_cc/build_script.sh", "/usr/lib/portage/python*/ebuild.sh",
+    "/var/tmp/rpm-tmp.*", "/usr/lib/pcp/bin/pmlogger_janitor", "/usr/libexec/pcp/bin/pmlogger_janitor",
+    "/usr/libexec/pcp/bin/pmlogger_daily", "/usr/lib/pcp/bin/pmlogger_daily", "/opt/oracle.ExaWatcher/GetExaWatcherResults.sh"
+  ) or
+  process.args in (
+    "/usr/bin/coreutils", "--no-create", "/etc/opt/lumu/lumud.conf", "/opt/vuso*", "/opt/diff", "/etc/aliases.db", "/opt/cursor/cursor"
+  ) or
+  process.args like (
+    "--checkpoint=*", "/root/.config/envman/*", "/var/tmp/dracut*", "/var/tmp/portage*", "/snap/*", "/var/tmp/pmlogger_*/stamp", "/opt/ubki/*.jar",
+    "/usr/lib/go-*/bin/go", "/usr/lib/dracut/dracut-functions.sh", "/tmp/KSInstallAction.*/m/.patch/*"
+  ) or
+  process.command_line in ("/bin/touch -a /tmp/au_status", "touch -d 2 seconds ago /etc/postfix/main.cf") or
+  process.parent.command_line == "runc init" or
+  process.working_directory in ("/opt/libexec", "/opt/local/src/connectxx/build/src/mdp")
+)
 
 ----------------------------------
 

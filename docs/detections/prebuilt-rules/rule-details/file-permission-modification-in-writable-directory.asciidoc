@@ -9,9 +9,9 @@ Identifies file permission modifications in common writable directories by a non
 
 * logs-endpoint.events.*
 
-*Severity*: low
+*Severity*: high
 
-*Risk score*: 21
+*Risk score*: 73
 
 *Runs every*: 5m
 
@@ -30,7 +30,7 @@ Identifies file permission modifications in common writable directories by a non
 * Data Source: Elastic Defend
 * Resources: Investigation Guide
 
-*Version*: 214
+*Version*: 215
 
 *Rule authors*: 
 
@@ -145,10 +145,20 @@ Auditbeat is a lightweight shipper that you can install on your servers to audit
 
 [source, js]
 ----------------------------------
-host.os.type:linux and event.category:process and event.type:start and
-process.name:(chattr or chgrp or chmod or chown) and process.working_directory:(/dev/shm or /tmp or /var/tmp) and
-not process.parent.name:(
-  apt-key or update-motd-updates-available or apt-get or java or pilot or PassengerAgent or nginx
+host.os.type:"linux" and event.category:process and event.type:"start" and event.action:"exec" and
+process.name:("chattr" or "chgrp" or "chmod") and process.working_directory:("/dev/shm" or "/tmp" or "/var/tmp") and
+not (
+  process.args:(
+    "+r" or "640" or /tmp/apt-key-gpghome* or "/usr/bin/coreutils" or "/opt/eset/eei/uninstall.sh" or /tmp/era.repository.*.bin
+  ) or
+  process.parent.args:"/var/illumio_pce/illumio/scripts/consul" or
+  process.parent.name:(
+    apt-key or update-motd-updates-available or apt-get or java or pilot or PassengerAgent or nginx
+  ) or
+  process.parent.executable:(
+    "/usr/local/bin/afb-ssh-setup-keys.sh" or "/usr/local/bin/afb-ssh-setup-keys.sh" or "/opt/puppetlabs/puppet/bin/ruby" or
+    "/usr/sbin/update-exim4.conf" or "/bin/dracut"
+  )
 )
 
 ----------------------------------

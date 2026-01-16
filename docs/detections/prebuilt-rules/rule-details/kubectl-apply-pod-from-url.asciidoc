@@ -7,10 +7,12 @@ This rule detects the execution of the "kubectl apply" command with a URL argume
 
 *Rule indices*: 
 
+* auditbeat-*
 * endgame-*
 * logs-crowdstrike.fdr*
 * logs-endpoint.events.process*
 * logs-sentinel_one_cloud_funnel.*
+* logs-auditd_manager.auditd-*
 
 *Severity*: low
 
@@ -31,13 +33,14 @@ This rule detects the execution of the "kubectl apply" command with a URL argume
 * OS: Linux
 * Use Case: Threat Detection
 * Tactic: Execution
+* Data Source: Auditd Manager
 * Data Source: Elastic Endgame
 * Data Source: Elastic Defend
 * Data Source: Crowdstrike
 * Data Source: SentinelOne
 * Resources: Investigation Guide
 
-*Version*: 1
+*Version*: 2
 
 *Rule authors*: 
 
@@ -136,8 +139,10 @@ For more details on Elastic Defend refer to the https://www.elastic.co/guide/en/
 [source, js]
 ----------------------------------
 process where host.os.type == "linux" and event.type == "start" and
-event.action in ("exec", "exec_event", "start", "ProcessRollup2") and
-process.name == "kubectl" and process.args == "apply" and process.args like "http*"
+event.action in ("exec", "exec_event", "start", "ProcessRollup2", "process_started", "executed") and
+process.name == "kubectl" and process.args == "apply" and
+process.args like ("http://*", "https://*") and
+not process.command_line like ("*download.elastic.co*", "*github.com/kubernetes-sigs/*")
 
 ----------------------------------
 

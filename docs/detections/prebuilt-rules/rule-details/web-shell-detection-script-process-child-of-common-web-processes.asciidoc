@@ -49,7 +49,7 @@ Identifies suspicious commands executed via a web server, which may suggest a vu
 * Data Source: Sysmon
 * Data Source: Crowdstrike
 
-*Version*: 420
+*Version*: 421
 
 *Rule authors*: 
 
@@ -121,7 +121,7 @@ This rule detects a web server process spawning script and command-line interfac
 [source, js]
 ----------------------------------
 host.os.type:windows and event.category:process and event.type:start and process.args : * and
-  process.parent.name:("w3wp.exe" or "httpd.exe" or "nginx.exe" or "php.exe" or "php-cgi.exe" or "tomcat.exe") and
+  process.parent.name:("w3wp.exe" or "httpd.exe" or "nginx.exe" or "php.exe" or "php-cgi.exe" or "tomcat.exe" or "ArcSOC.exe") and
   (
     process.name : ("cmd.exe" or "cscript.exe" or "powershell.exe" or "pwsh.exe" or "powershell_ise.exe" or "wmic.exe" or "wscript.exe") or
     process.name.caseless : ("cmd.exe" or "cscript.exe" or "powershell.exe" or "pwsh.exe" or "powershell_ise.exe" or "wmic.exe" or "wscript.exe")
@@ -140,7 +140,19 @@ host.os.type:windows and event.category:process and event.type:start and process
       "cmd.exe /s /c \"echo '%os%'\"" or
       *.\\install\\awk.exe*
     ) or
-    process.args : (\(git or (*artisan* and *queue\:work*) or *rmdir* or "mode CON" or ver or ls or mode or dir)
+    process.args : (\(git or (*artisan* and *queue\:work*) or *rmdir* or "mode CON" or ver or ls or mode or dir) or
+
+    (process.name:cmd.exe and process.parent.args : "c:\\\\xampp\\\\htdocs\\\\open-audit\\\\index.php") or
+
+    (process.name:cmd.exe and process.args:("/V:ON" and "--header-html")) or
+
+    (process.parent.args:"WebCession" and process.args:E\:\\Data\\CLM\\cession\\*.bat) or
+
+    (process.parent.executable :"D:\\AiDKlinik\\php\\php-cgi.exe" and process.args:D\:\\AiDKlinik\\web*) or
+
+    (process.parent.args :"E:/wamp64/bin/apache/apache2.4.62.1" and process.args:node*) or
+
+    (process.parent.name:"php.exe" and process.name:"cmd.exe" and process.args:("/V:ON" and "/E:ON"))
   )
 
 ----------------------------------

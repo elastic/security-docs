@@ -9,9 +9,9 @@ This rule detects the execution of multiple base64 decoding commands to decode d
 
 * logs-endpoint.events.process*
 
-*Severity*: low
+*Severity*: medium
 
-*Risk score*: 21
+*Risk score*: 47
 
 *Runs every*: 5m
 
@@ -31,7 +31,7 @@ This rule detects the execution of multiple base64 decoding commands to decode d
 * Data Source: Elastic Defend
 * Resources: Investigation Guide
 
-*Version*: 1
+*Version*: 2
 
 *Rule authors*: 
 
@@ -151,7 +151,8 @@ sequence by process.parent.entity_id with maxspan=3s
      ) or
      process.working_directory like (
        "/opt/microsoft/omsagent/plugin", "/opt/rapid7/ir_agent/*", "/tmp/newroot/*"
-      )
+      ) or
+      (process.parent.name == "zsh" and process.parent.command_line like "*extendedglob*")
    )]
   [process where host.os.type == "linux" and event.type == "start" and event.action == "exec" and process.parent.executable != null and
    process.name in ("base64", "base64plain", "base64url", "base64mime", "base64pem", "base32", "base16") and

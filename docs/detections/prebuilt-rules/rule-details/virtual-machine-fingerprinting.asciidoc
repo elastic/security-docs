@@ -3,14 +3,16 @@
 
 An adversary may attempt to get detailed information about the operating system and hardware. This rule identifies common locations used to discover virtual machine hardware by a non-root user. This technique has been used by the Pupy RAT and other malware.
 
-*Rule type*: query
+*Rule type*: eql
 
 *Rule indices*: 
 
 * auditbeat-*
-* logs-endpoint.events.*
 * endgame-*
+* logs-endpoint.events.*
 * logs-crowdstrike.fdr*
+* logs-sentinel_one_cloud_funnel.*
+* logs-auditd_manager.auditd-*
 
 *Severity*: high
 
@@ -32,10 +34,11 @@ An adversary may attempt to get detailed information about the operating system 
 * Tactic: Discovery
 * Data Source: Elastic Endgame
 * Data Source: Elastic Defend
-* Resources: Investigation Guide
 * Data Source: Crowdstrike
+* Data Source: SentinelOne
+* Resources: Investigation Guide
 
-*Version*: 112
+*Version*: 113
 
 *Rule authors*: 
 
@@ -151,13 +154,20 @@ Auditbeat is a lightweight shipper that you can install on your servers to audit
 
 [source, js]
 ----------------------------------
-event.category:process and host.os.type:linux and event.type:(start or process_started) and
-  process.args:("/sys/class/dmi/id/bios_version" or
-                "/sys/class/dmi/id/product_name" or
-                "/sys/class/dmi/id/chassis_vendor" or
-                "/proc/scsi/scsi" or
-                "/proc/ide/hd0/model") and
-  not user.name:root
+process where host.os.type == "linux" and event.type == "start" and 
+event.action in ("exec", "exec_event", "start", "ProcessRollup2", "process_started") and
+process.args in (
+  "/sys/class/dmi/id/bios_version", "/sys/class/dmi/id/product_name", "/sys/class/dmi/id/chassis_vendor",
+  "/proc/scsi/scsi", "/proc/ide/hd0/model"
+) and not (
+  user.name == "root" or
+  ?process.parent.name in ("LinkManager.exe", "saposcol", "svc_snow_discovery") or
+  ?process.working_directory == "/home/qualys" or
+  ?process.parent.executable in (
+    "/usr/sara/sbin/sys2prometheus", "/usr/sara/sbin/sys2ganglia", "/usr/libexec/valgrind/memcheck-amd64-linux",
+    "/var/lib/cfengine3/modules/init_node", "/opt/emby-server/system/EmbyServer"
+  )
+)
 
 ----------------------------------
 
