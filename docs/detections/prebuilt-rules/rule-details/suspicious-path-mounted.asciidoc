@@ -9,9 +9,9 @@ This rule detects suspicious paths mounted on Linux systems. The mount command i
 
 * logs-endpoint.events.process*
 
-*Severity*: low
+*Severity*: medium
 
-*Risk score*: 21
+*Risk score*: 47
 
 *Runs every*: 5m
 
@@ -30,7 +30,7 @@ This rule detects suspicious paths mounted on Linux systems. The mount command i
 * Data Source: Elastic Defend
 * Resources: Investigation Guide
 
-*Version*: 2
+*Version*: 3
 
 *Rule authors*: 
 
@@ -131,7 +131,15 @@ For more details on Elastic Defend refer to the https://www.elastic.co/guide/en/
 process where host.os.type == "linux" and event.type == "start" and event.action == "exec" and process.name == "mount" and 
 process.args like ("/tmp/*", "/var/tmp/*", "/dev/shm/*", "/home/*", "/root/*", "/mount") and process.parent.executable != null and
 not (
-  process.parent.executable like ("/bin/*", "/usr/bin/*", "/usr/local/bin/*", "/sbin/*", "/usr/sbin/*", "/usr/local/sbin/*", "/usr/libexec/*") or
+  process.parent.executable like (
+    "/bin/*", "/usr/bin/*", "/usr/local/bin/*", "/sbin/*", "/usr/sbin/*", "/usr/local/sbin/*", "/usr/libexec/*",
+    "/usr/local/nutanix/ngt/*/python"
+  ) or
+  process.parent.executable in (
+    "/usr/lib/uptrack/ksplice-apply", "/usr/lib/Acronis/BackupAndRecovery/mms",
+    "/usr/lib/Acronis/BackupAndRecovery/service_process-bin", "/usr/lib/systemd/systemd", "/etc/grub.d/10_linux_zfs",
+    "./tools/image-summary", "/nfsplugin", "/usr/share/ksplice/ksplice-apply", "/lib/systemd/systemd"
+  ) or
   process.parent.name == "snapd"
 )
 

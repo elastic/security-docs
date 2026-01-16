@@ -9,12 +9,11 @@ This rule detects the execution of the `pkexec` command by a shell process. The 
 
 * logs-endpoint.events.process*
 * endgame-*
-* logs-crowdstrike.fdr*
 * logs-sentinel_one_cloud_funnel.*
 
-*Severity*: low
+*Severity*: high
 
-*Risk score*: 21
+*Risk score*: 73
 
 *Runs every*: 5m
 
@@ -33,11 +32,10 @@ This rule detects the execution of the `pkexec` command by a shell process. The 
 * Tactic: Persistence
 * Data Source: Elastic Endgame
 * Data Source: Elastic Defend
-* Data Source: Crowdstrike
 * Data Source: SentinelOne
 * Resources: Investigation Guide
 
-*Version*: 105
+*Version*: 106
 
 *Rule authors*: 
 
@@ -154,7 +152,15 @@ Auditbeat is a lightweight shipper that you can install on your servers to audit
 ----------------------------------
 event.category:process and host.os.type:linux and event.type:start and
 event.action:(exec or exec_event or start or ProcessRollup2) and process.name:pkexec and
-process.args:pkexec and process.parent.name:(bash or dash or sh or tcsh or csh or zsh or ksh or fish)
+process.args:pkexec and process.parent.name:(bash or dash or sh or tcsh or csh or zsh or ksh or fish) and
+not (
+  process.args:(
+    "/usr/libexec/gvfsd-admin" or "udevadm" or "/opt/forticlient/stop-forticlient.sh" or "/usr/bin/gparted" or
+    "dpkg" or "/usr/sbin/gparted" or "input-remapper-control" or "/usr/lib/ubuntu-release-upgrader/do-partial-upgrade"
+  ) or
+  process.parent.command_line:*/home/*/.claude/shell-snapshots/* or
+  process.parent.args:"/usr/bin/timeshift-launcher"
+)
 
 ----------------------------------
 

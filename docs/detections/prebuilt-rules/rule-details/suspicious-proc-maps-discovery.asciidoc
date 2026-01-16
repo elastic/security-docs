@@ -7,14 +7,16 @@ Monitors for /proc/*/maps file reads. The /proc/*/maps file in Linux provides a 
 
 *Rule indices*: 
 
+* auditbeat-*
 * endgame-*
 * logs-crowdstrike.fdr*
 * logs-endpoint.events.process*
 * logs-sentinel_one_cloud_funnel.*
+* logs-auditd_manager.auditd-*
 
-*Severity*: low
+*Severity*: high
 
-*Risk score*: 21
+*Risk score*: 73
 
 *Runs every*: 5m
 
@@ -32,13 +34,15 @@ Monitors for /proc/*/maps file reads. The /proc/*/maps file in Linux provides a 
 * OS: Linux
 * Use Case: Threat Detection
 * Tactic: Discovery
+* Tactic: Credential Access
+* Data Source: Auditd Manager
 * Data Source: Elastic Defend
 * Data Source: Elastic Endgame
 * Data Source: Crowdstrike
 * Data Source: SentinelOne
 * Resources: Investigation Guide
 
-*Version*: 7
+*Version*: 8
 
 *Rule authors*: 
 
@@ -137,8 +141,17 @@ For more details on Elastic Defend refer to the https://www.elastic.co/guide/en/
 
 [source, js]
 ----------------------------------
-process where host.os.type == "linux" and event.type == "start" and event.action in ("exec", "exec_event", "start", "ProcessRollup2") and
-process.name in ("cat", "grep", "tail", "less", "more", "egrep", "fgrep") and process.args like "/proc/*/maps"
+process where host.os.type == "linux" and event.type == "start" and
+event.action in ("exec", "exec_event", "start", "ProcessRollup2", "executed", "process_started") and
+process.name in ("cat", "grep", "tail", "less", "more", "egrep", "fgrep", "awk") and process.args like "/proc/*/maps" and
+not (
+  ?process.parent.args in ("/usr/bin/finalrd", "/sbin/chkrootkit", "./uac", "/usr/sbin/chkrootkit") or
+  ?process.parent.executable in ("/usr/sbin/chkrootkit", "/sbin/chkrootkit") or
+  ?process.parent.name == "uac" or
+  ?process.parent.executable in ("/opt/secl/linux-ir-scripts-v3/thieves.sh", "/opt/traps/rpm-installer/setup.sh") or
+  ?process.working_directory like ("/opt/traps/deb-installer", "/opt/Tanium/TaniumClient/*") or
+  ?process.parent.executable like ("/home/*/sunlight/thieves.sh")
+)
 
 ----------------------------------
 
@@ -152,3 +165,15 @@ process.name in ("cat", "grep", "tail", "less", "more", "egrep", "fgrep") and pr
 ** Name: Process Discovery
 ** ID: T1057
 ** Reference URL: https://attack.mitre.org/techniques/T1057/
+* Tactic:
+** Name: Credential Access
+** ID: TA0006
+** Reference URL: https://attack.mitre.org/tactics/TA0006/
+* Technique:
+** Name: OS Credential Dumping
+** ID: T1003
+** Reference URL: https://attack.mitre.org/techniques/T1003/
+* Sub-technique:
+** Name: Proc Filesystem
+** ID: T1003.007
+** Reference URL: https://attack.mitre.org/techniques/T1003/007/

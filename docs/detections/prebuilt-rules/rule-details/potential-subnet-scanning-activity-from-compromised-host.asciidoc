@@ -7,9 +7,9 @@ This rule detects potential subnet scanning activity from a compromised host. Su
 
 *Rule indices*: None
 
-*Severity*: low
+*Severity*: medium
 
-*Risk score*: 21
+*Risk score*: 47
 
 *Runs every*: 1h
 
@@ -28,7 +28,7 @@ This rule detects potential subnet scanning activity from a compromised host. Su
 * Data Source: Elastic Defend
 * Resources: Investigation Guide
 
-*Version*: 8
+*Version*: 9
 
 *Rule authors*: 
 
@@ -126,34 +126,52 @@ For more details on Elastic Defend refer to the https://www.elastic.co/guide/en/
 
 [source, js]
 ----------------------------------
-from logs-endpoint.events.network-*
-| keep @timestamp, host.os.type, event.type, event.action, process.executable, destination.ip, agent.id, host.name
+from logs-endpoint.events.network-* metadata _id, _index, _version
+| mv_expand event.action
 | where
-    @timestamp > now() - 1 hours and
     host.os.type == "linux" and
     event.type == "start" and
     event.action == "connection_attempted" and
     not (
-      process.executable in ("/usr/local/bin/prometheus", "/app/extra/chrome") or
+      process.executable in ("/usr/local/bin/prometheus", "/app/extra/chrome", "/usr/lib/virtualbox/VBoxHeadless", "/usr/bin/prometheus") or
       process.executable like "/usr/local/prometheus/*/prometheus" or
       process.executable like "/usr/share/elastic-agent/*" or
       process.executable like "/var/lib/docker/overlay*connectord" or
       process.executable like "/opt/rumble/bin/rumble-agent*" or
       process.executable like "/opt/gitlab/*" or
-      process.executable like "/opt/google/chrome/chrome*"
+      process.executable like "/opt/google/chrome/chrome*" or
+      process.executable like "/snap/firefox/*/firefox" or
+      process.executable like "/var/lib/docker/overlay2/*/qbittorrent-nox"
     )
+| keep
+    @timestamp,
+    _id,
+    _index,
+    _version,
+    host.os.type,
+    event.type,
+    event.action,
+    process.executable,
+    destination.ip,
+    agent.id,
+    host.name,
+    event.dataset,
+    data_stream.namespace
+
 | stats
     Esql.event_count = count(),
     Esql.destination_ip_count_distinct = count_distinct(destination.ip),
     Esql.agent_id_count_distinct = count_distinct(agent.id),
     Esql.host_name_values = values(host.name),
-    Esql.agent_id_values = values(agent.id)
+    Esql.agent_id_values = values(agent.id),
+    Esql.event_dataset_values = values(event.dataset),
+    Esql.data_stream_namespace_values = values(data_stream.namespace)
   by process.executable
+
 | where
     Esql.agent_id_count_distinct == 1 and
     Esql.destination_ip_count_distinct > 250
 | sort Esql.event_count asc
-| limit 100
 
 ----------------------------------
 

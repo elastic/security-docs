@@ -33,7 +33,7 @@ This rule monitors for Linux Shadow file modifications. These modifications are 
 * Data Source: Elastic Defend
 * Resources: Investigation Guide
 
-*Version*: 5
+*Version*: 6
 
 *Rule authors*: 
 
@@ -135,8 +135,17 @@ For more details on Elastic Defend refer to the https://www.elastic.co/guide/en/
 ----------------------------------
 file where host.os.type == "linux" and event.type == "change" and event.action == "rename" and
 file.path == "/etc/shadow" and file.Ext.original.path != null and 
-not process.name in (
-  "usermod", "useradd", "passwd", "chage", "systemd-sysusers", "chpasswd", "userdel", "adduser", "update-passwd", "perl"
+not (
+  file.Ext.original.name in ("shadow+", "nshadow") or
+  process.name in (
+    "usermod", "useradd", "passwd", "chage", "systemd-sysusers", "chpasswd", "userdel", "adduser", "update-passwd", "perl"
+  ) or
+  process.executable like "/usr/libexec/platform-python*" or
+  process.executable in (
+    "/usr/bin/containerd", "/usr/bin/dnf", "/usr/bin/yum", "/bin/dnf", "./usr/bin/qemu-aarch64-static",
+    "/usr/local/cpanel/whostmgr/bin/xml-api", "/usr/local/cpanel/whostmgr/bin/whostmgr5",
+    "/usr/local/cpanel/bin/admin/Cpanel/security"
+  )
 )
 
 ----------------------------------

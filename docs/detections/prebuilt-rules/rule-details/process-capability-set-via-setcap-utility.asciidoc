@@ -35,7 +35,7 @@ This rule detects the use of the setcap utility to set capabilities on a process
 * Data Source: SentinelOne
 * Resources: Investigation Guide
 
-*Version*: 104
+*Version*: 105
 
 *Rule authors*: 
 
@@ -137,8 +137,14 @@ For more details on Elastic Defend refer to the https://www.elastic.co/guide/en/
 process where host.os.type == "linux" and event.type == "start" and event.action in ("exec", "exec_event", "start") and
 process.name == "setcap" and not (
   process.parent.executable == null or
-  process.parent.executable : ("/var/lib/dpkg/*", "/var/lib/docker/*", "/tmp/newroot/*", "/var/tmp/newroot/*") or
-  process.parent.name in ("jem", "vzctl")
+  process.parent.executable like (
+    "/var/lib/dpkg/*", "/var/lib/docker/*", "/tmp/newroot/*", "/var/tmp/newroot/*", "/usr/bin/cmake",
+    "/opt/zscaler/bin/zpa-connector"
+  ) or
+  process.parent.name in ("jem", "vzctl") or
+  process.parent.args like "/var/lib/dpkg/info/*" or
+  ?process.working_directory in ("/opt/dynatrace/oneagent", "/opt/sophos-spl/plugins/av/sbin") or
+  process.parent.command_line in ("/bin/bash /entrypoint.sh telegraf", "/bin/sh /usr/local/bin/docker-entrypoint.sh server")
 )
 
 ----------------------------------

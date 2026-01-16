@@ -1,17 +1,13 @@
 [[linux-system-information-discovery-via-getconf]]
 === Linux System Information Discovery via Getconf
 
-This rule identifies Linux system information discovery via the `getconf` command. The `getconf` command is used to query system configuration variables and system limits. Adversaries may use this command to gather information about the system, such as the page size, maximum number of open files, and other system limits, to aid in further exploration and exploitation of the system.
+This rule identifies Linux system information discovery via the "getconf" command. The "getconf" command is used to query system configuration variables and system limits. Adversaries may use this command to gather information about the system, such as the page size, maximum number of open files, and other system limits, to aid in further exploration and exploitation of the system.
 
-*Rule type*: eql
+*Rule type*: new_terms
 
 *Rule indices*: 
 
 * logs-endpoint.events.process*
-* endgame-*
-* auditbeat-*
-* logs-auditd_manager.auditd-*
-* logs-crowdstrike.fdr*
 
 *Severity*: low
 
@@ -35,11 +31,8 @@ This rule identifies Linux system information discovery via the `getconf` comman
 * Tactic: Discovery
 * Rule Type: BBR
 * Data Source: Elastic Defend
-* Data Source: Elastic Endgame
-* Data Source: Auditd Manager
-* Data Source: Crowdstrike
 
-*Version*: 4
+*Version*: 5
 
 *Rule authors*: 
 
@@ -53,8 +46,23 @@ This rule identifies Linux system information discovery via the `getconf` comman
 
 [source, js]
 ----------------------------------
-process where host.os.type == "linux" and event.type == "start" and event.action in ("exec", "exec_event", "executed", "process_started", "ProcessRollup2") and
-process.name == "getconf"
+event.category:process and host.os.type:linux and event.type:start and event.action:exec and process.name:getconf and not (
+  process.parent.executable:(
+    "/usr/bin/google_guest_agent_manager" or "/opt/commvault/Base64/cvlaunchd" or /usr/local/manageengine/uems_agent/bin/*
+  ) or
+  process.working_directory:(
+    "/opt/oracle/mgmt_agent/agent_inst/bin" or "/var/lib/oracle-cloud-agent/plugins/oci-managementagent/polaris" or
+    "/opt/commvault/Base/cvlaunchd" or "/opt/simpana" or "/opt/commvault" or "/opt/ITSPlatform/agentcore" or
+    "/u01/app/oracle/EMBase/agent_inst/sysman/emd" or "/opt/abacus/lib"
+  ) or
+  process.parent.args:(
+    /opt/oracle/mgmt_agent/agent_inst/* or "/opt/datadog-agent/bin/agent/agent" or "/usr/bin/byobu-status" or
+    "/usr/local/nagios/libexec/check_ssl_cert" or "/usr/lib64/nagios/plugins/cpanel/check_ssl_cert"
+  ) or
+  process.parent.command_line:(
+    "/bin/sh -s unix:cmd" or "ruby /usr/local/bundle/bin/bundle exec rackup"
+  )
+)
 
 ----------------------------------
 

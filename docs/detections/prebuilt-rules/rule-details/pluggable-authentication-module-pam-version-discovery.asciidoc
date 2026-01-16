@@ -41,7 +41,7 @@ This rule detects PAM version discovery activity on Linux systems. PAM version d
 * Data Source: SentinelOne
 * Resources: Investigation Guide
 
-*Version*: 105
+*Version*: 106
 
 *Rule authors*: 
 
@@ -141,12 +141,20 @@ For more details on Elastic Defend refer to the https://www.elastic.co/guide/en/
 [source, js]
 ----------------------------------
 process where host.os.type == "linux" and event.type == "start" and
-  event.action in ("exec", "exec_event", "start", "ProcessRollup2") and process.parent.name != null and
+  event.action in ("exec", "exec_event", "start", "ProcessRollup2") and ?process.parent.name != null and
   (
     (process.name in ("dpkg", "dpkg-query") and process.args == "libpam-modules") or
     (process.name == "rpm" and process.args == "pam")
   ) and
-not process.parent.name in ("dcservice", "inspectorssmplugin")
+not (
+  ?process.parent.name in ("dcservice", "inspectorssmplugin") or
+  ?process.working_directory in ("/var/ossec", "/opt/msp-agent") or
+  ?process.parent.executable in (
+    "/opt/CyberCNSAgent/cybercnsagent_linux", "/usr/local/manageengine/uems_agent/bin/dcpatchscan",
+    "/usr/local/manageengine/uems_agent/bin/dcconfig", "/usr/share/vicarius/topiad",
+    "/etc/rc.d/init.d/sshd-chroot"
+  )
+)
 
 ----------------------------------
 

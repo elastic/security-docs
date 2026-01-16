@@ -10,9 +10,9 @@ This rule detects the modification and reading of kernel features through built-
 * logs-endpoint.events.process*
 * logs-crowdstrike.fdr*
 
-*Severity*: low
+*Severity*: medium
 
-*Risk score*: 21
+*Risk score*: 47
 
 *Runs every*: 5m
 
@@ -33,7 +33,7 @@ This rule detects the modification and reading of kernel features through built-
 * Resources: Investigation Guide
 * Data Source: Crowdstrike
 
-*Version*: 3
+*Version*: 4
 
 *Rule authors*: 
 
@@ -112,6 +112,17 @@ process.command_line : (
   (process.name == "grep" and process.args_count == 3 and not process.parent.name in ("bash", "dash", "sh", "tcsh", "csh", "zsh", "ksh", "fish")) or
   (process.name == "sysctl" and process.args like ("*-w*", "*--write*", "*=*")) or
   (process.name in ("bash", "dash", "sh", "tcsh", "csh", "zsh", "ksh", "fish") and process.args == "-c" and process.args : "*echo *")
+) and
+not (
+  process.parent.executable in (
+    "/opt/novell/groupwise/agents/bin/gwia", "/opt/novell/groupwise/agents/bin/gwmta", "/opt/novell/groupwise/agents/bin/gwpoa",
+    "/opt/illumio_ven/system/etc/init.d/illumio-firewall", "/usr/bin/oracle-database-preinstall-19c-verify", "/usr/bin/make",
+    "/usr/local/qualys/cloud-agent/bin/qualys-scan-util"
+  ) or
+  process.parent.executable like "/tmp/CVU_19_resource*/checkmemlock.sh" or
+  process.parent.args == "/usr/share/mysql/mysql-systemd-start" or
+  process.parent.command_line like "*ansible*" or
+  (process.parent.name in ("crond", "cron") and process.command_line like "*drop_caches*")
 )
 
 ----------------------------------

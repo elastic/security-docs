@@ -37,7 +37,7 @@ Identifies the execution of a binary by root in Linux shared memory directories:
 * Data Source: Elastic Defend
 * Resources: Investigation Guide
 
-*Version*: 114
+*Version*: 115
 
 *Rule authors*: 
 
@@ -139,9 +139,14 @@ For more details on Elastic Defend refer to the https://www.elastic.co/guide/en/
 [source, js]
 ----------------------------------
 process where host.os.type == "linux" and event.type == "start" and event.action in ("exec", "exec_event") and
-user.id == "0" and process.executable : ("/dev/shm/*", "/run/shm/*", "/var/run/*", "/var/lock/*") and
-not process.executable : ("/var/run/docker/*", "/var/run/utsns/*", "/var/run/s6/*", "/var/run/cloudera-scm-agent/*",
-"/var/run/argo/argoexec") and not process.parent.command_line : "/usr/bin/runc init"
+user.id == "0" and process.executable like ("/dev/shm/*", "/run/shm/*", "/var/run/*", "/var/lock/*") and
+not (
+  process.executable : (
+    "/var/run/docker/*", "/var/run/utsns/*", "/var/run/s6/*", "/var/run/cloudera-scm-agent/*",
+    "/var/run/argo/argoexec", "/dev/shm/*.*/sandfly"
+  ) or
+  process.parent.command_line == "/usr/bin/runc init"
+)
 
 ----------------------------------
 

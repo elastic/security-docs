@@ -34,7 +34,7 @@ Identifies instances where a process is executed with user/group ID 0 (root), an
 * Data Source: Elastic Defend
 * Resources: Investigation Guide
 
-*Version*: 109
+*Version*: 110
 
 *Rule authors*: 
 
@@ -140,12 +140,12 @@ process where host.os.type == "linux" and event.type == "start" and event.action
 ) and (
   process.name in (
     "aa-exec", "ab", "agetty", "alpine", "ar", "arj", "arp", "as", "ascii-xfr", "ash", "aspell",
-    "atobm", "awk", "base32", "base64", "basenc", "basez", "bash", "bc", "bridge", "busctl",
+    "atobm", "awk", "base32", "base64", "basenc", "basez", "bc", "bridge", "busctl",
     "busybox", "bzip2", "cabal", "capsh", "cat", "choom", "chown", "chroot", "clamscan", "cmp",
-    "column", "comm", "cp", "cpio", "cpulimit", "csh", "csplit", "csvtool", "cupsfilter", "curl",
-    "cut", "dash", "date", "dd", "debugfs", "dialog", "diff", "dig", "distcc", "dmsetup", "docker",
+    "column", "comm", "cp", "cpio", "cpulimit", "csplit", "csvtool", "cupsfilter", "curl",
+    "cut", "date", "dd", "debugfs", "dialog", "diff", "dig", "distcc", "dmsetup", "docker",
     "dosbox", "ed", "efax", "elvish", "emacs", "env", "eqn", "espeak", "expand", "expect", "file",
-    "find", "fish", "flock", "fmt", "fold", "gawk", "gcore", "gdb", "genie", "genisoimage", "gimp",
+    "fish", "flock", "fmt", "fold", "gawk", "gcore", "gdb", "genie", "genisoimage", "gimp",
     "grep", "gtester", "gzip", "hd", "head", "hexdump", "highlight", "hping3", "iconv", "install",
     "ionice", "ispell", "jjs", "join", "jq", "jrunscript", "julia", "ksh", "ksshell", "kubectl",
     "ld.so", "less", "links", "logsave", "look", "lua", "make", "mawk", "minicom", "more",
@@ -162,10 +162,18 @@ process where host.os.type == "linux" and event.type == "start" and event.action
     "wc", "wget", "whiptail", "xargs", "xdotool", "xmodmap", "xmore", "xxd", "xz", "yash", "zsh",
     "zsoelim"
   ) or
-  process.name == "ip" and (
-    (process.args == "-force" and process.args in ("-batch", "-b")) or (process.args == "exec")
-  )
-) and not process.parent.name == "spine"
+  (process.name == "ip" and ((process.args == "-force" and process.args in ("-batch", "-b")) or (process.args == "exec"))) or
+  (process.name == "find" and process.args in ("-exec", "-execdir")) or
+  (process.name in ("bash", "csh", "dash") and process.args in ("-p", "-b"))
+) and not (
+  process.parent.name == "spine" or
+  process.parent.executable in (
+    "/usr/NX/bin/nxexec", "/opt/andrisoft/bin/WANmaintenance", "/usr/lib/vmware/bin/vmware-vmx",
+    "/usr/bin/pamprivilegechange", "/usr/lib/hyper-v/bin/hv_kvp_daemon"
+  ) or
+  process.parent.command_line in ("runc init", "/opt/bitdefender-security-tools/bin/auctl") or
+  process.args like ("/usr/bin/snmpwalk*", "/usr/bin/snmpbulkwalk*", "/usr/bin/snmpget*")
+)
 
 ----------------------------------
 

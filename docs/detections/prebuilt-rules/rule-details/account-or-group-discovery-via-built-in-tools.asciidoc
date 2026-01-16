@@ -3,14 +3,11 @@
 
 Adversaries may use built-in applications to get a listing of local system or domain accounts and groups.
 
-*Rule type*: eql
+*Rule type*: new_terms
 
 *Rule indices*: 
 
 * logs-endpoint.events.*
-* endgame-*
-* auditbeat-*
-* logs-auditd_manager.auditd-*
 
 *Severity*: low
 
@@ -33,10 +30,8 @@ Adversaries may use built-in applications to get a listing of local system or do
 * Tactic: Discovery
 * Rule Type: BBR
 * Data Source: Elastic Defend
-* Data Source: Elastic Endgame
-* Data Source: Auditd Manager
 
-*Version*: 5
+*Version*: 6
 
 *Rule authors*: 
 
@@ -50,12 +45,20 @@ Adversaries may use built-in applications to get a listing of local system or do
 
 [source, js]
 ----------------------------------
-process where event.type == "start" and event.action in ("exec", "exec_event", "executed", "process_started") and ( 
-  (process.name in ("groups", "id")) or 
-  (process.name == "dscl" and process.args : ("/Active Directory/*", "/Users*", "/Groups*")) or
-  (process.name == "dscacheutil" and process.args in ("user", "group")) or
-  (process.args in ("/etc/passwd", "/etc/master.passwd", "/etc/sudoers")) or
-  (process.name == "getent" and process.args in ("passwd", "group"))
+event.category:process and host.os.type:(linux or macos) and event.action:exec and (
+  (process.name:"dscl" and process.args:(/Active*Directory/* or /Users* or /Groups*)) or
+  (process.name:"dscacheutil" and process.args:("user" or "group")) or
+  (process.name:"getent" and process.args:("passwd" or "group") and process.args_count >= 3)
+) and not (
+  process.parent.executable:(
+    "/usr/lib/ocf/resource.d/cyanconnode/mysql" or /snap/* or "/usr/bin/check_mk_agent" or "/usr/bin/cloudflared" or
+    /opt/puppetlabs/* or /var/lib/snapd/* or "/usr/lib/google/guest_agent/core_plugin" or "/opt/rudder/bin/cf-agent" or
+    "/opt/NinjaRMMAgent/programfiles/ninjarmm-linagent"
+  ) or
+  process.working_directory:(
+    /var/snap/* or  "/Applications/NinjaRMMAgent/programfiles/ninjarmm-macagent" or "/var/lib/nanitor/agent" or
+    "/var/ossec" or /opt/rapid7/* or "/opt/Tanium/TaniumClient"
+  )
 )
 
 ----------------------------------

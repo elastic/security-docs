@@ -30,7 +30,7 @@ Identifies instances where a process (granted CAP_SETUID and/or CAP_SETGID capab
 * Data Source: Elastic Defend
 * Resources: Investigation Guide
 
-*Version*: 8
+*Version*: 9
 
 *Rule authors*: 
 
@@ -139,16 +139,20 @@ sequence by host.id, process.entity_id with maxspan=1s
      process.parent.executable in (
        "/opt/SolarWinds/Agent/bin/Plugins/JobEngine/SolarWinds.Agent.JobEngine.Plugin", "/usr/bin/vmware-toolbox-cmd",
        "/usr/bin/dbus-daemon", "/usr/bin/update-notifier", "/usr/share/language-tools/language-options",
-       "/opt/SolarWinds/Agent/*", "/usr/local/sbin/lynis.sh"
+       "/opt/SolarWinds/Agent/*", "/usr/local/sbin/lynis.sh", "/usr/libexec/sssd/sssd_be",
+       "/opt/sophos-spl/plugins/edr/bin/osqueryd.5", "/apps/dynatrace/oneagent/install/agent/lib64/oneagentos",
+       "/opt/carbonblack/*/osqueryi"
      ) or
      process.executable : ("/opt/dynatrace/*", "/tmp/newroot/*", "/opt/SolarWinds/Agent/*") or
      process.executable in (
        "/bin/fgrep", "/usr/bin/sudo", "/usr/bin/pkexec", "/usr/lib/cockpit/cockpit-session", "/usr/sbin/suexec"
      ) or
      process.parent.name in ("update-notifier", "language-options", "osqueryd", "saposcol", "dbus-daemon", "osqueryi", "sdbrun") or
-     process.command_line like ("sudo*BECOME-SUCCESS*", "/bin/sh*sapsysinfo.sh*", "sudo su", "sudo su -") or
+     process.command_line like ("sudo*BECOME-SUCCESS*", "/bin/sh*sapsysinfo.sh*", "sudo su", "sudo su -", "sudo -E -H bash -l") or
      process.name in ("sudo", "fgrep", "lsb_release", "apt-update", "dbus-daemon-launch-helper", "man") or
-     process.parent.command_line like "/usr/bin/python*ansible*"
+     process.parent.command_line like "/usr/bin/python*ansible*" or
+     process.working_directory like ("/opt/Elastic/Agent/data/*", "/usr/sap/tmp") or
+     process.args like ("/usr/bin/lsb_release*", "/bin/fgrep*")
    )]
   [process where host.os.type == "linux" and event.action == "uid_change" and event.type == "change" and
    (process.thread.capabilities.effective : "CAP_SET?ID" or process.thread.capabilities.permitted : "CAP_SET?ID")

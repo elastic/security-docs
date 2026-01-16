@@ -38,7 +38,7 @@ Identifies suspicious usage of unshare to manipulate system namespaces. Unshare 
 * Data Source: SentinelOne
 * Resources: Investigation Guide
 
-*Version*: 113
+*Version*: 114
 
 *Rule authors*: 
 
@@ -153,9 +153,14 @@ Auditbeat is a lightweight shipper that you can install on your servers to audit
 [source, js]
 ----------------------------------
 process where host.os.type == "linux" and event.type == "start" and event.action : ("exec", "exec_event", "start") and
-process.executable: "/usr/bin/unshare" and
-not process.parent.executable: ("/usr/bin/udevadm", "*/lib/systemd/systemd-udevd", "/usr/bin/unshare") and
-not process.args == "/usr/bin/snap" and not process.parent.name in ("zz-proxmox-boot", "java")
+process.executable: "/usr/bin/unshare" and not (
+  process.parent.executable: ("/usr/bin/udevadm", "*/lib/systemd/systemd-udevd", "/usr/bin/unshare") or
+  process.args == "/usr/bin/snap" and not process.parent.name in ("zz-proxmox-boot", "java") or
+  process.parent.args like (
+    "/etc/kernel/postinst.d/zz-proxmox-boot", "/opt/openssh/sbin/sshd", "/usr/sbin/sshd",
+    "/snap/*", "/home/*/.local/share/JetBrains/Toolbox/*"
+  )
+)
 
 ----------------------------------
 

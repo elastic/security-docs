@@ -7,8 +7,12 @@ This rule detects when a process executes a command line containing hexadecimal 
 
 *Rule indices*: 
 
-* logs-endpoint.events.process*
+* auditbeat-*
+* endgame-*
 * logs-crowdstrike.fdr*
+* logs-endpoint.events.process*
+* logs-sentinel_one_cloud_funnel.*
+* logs-auditd_manager.auditd-*
 
 *Severity*: low
 
@@ -29,11 +33,14 @@ This rule detects when a process executes a command line containing hexadecimal 
 * Use Case: Threat Detection
 * Tactic: Defense Evasion
 * Tactic: Execution
+* Data Source: Auditd Manager
 * Data Source: Elastic Defend
-* Resources: Investigation Guide
+* Data Source: Elastic Endgame
 * Data Source: Crowdstrike
+* Data Source: SentinelOne
+* Resources: Investigation Guide
 
-*Version*: 3
+*Version*: 4
 
 *Rule authors*: 
 
@@ -130,10 +137,12 @@ For more details on Elastic Defend refer to the https://www.elastic.co/guide/en/
 
 [source, js]
 ----------------------------------
-process where host.os.type == "linux" and event.type == "start" and event.action in ("exec", "ProcessRollup2") and
+process where host.os.type == "linux" and event.type == "start" and
+event.action in ("exec", "exec_event", "start", "ProcessRollup2", "executed", "process_started") and
 ?process.parent.executable != null and
 process.command_line : "*\\x*\\x*\\x*\\x*\\x*\\x*\\x*\\x*\\x*\\x*\\x*\\x*\\x*\\x*" and
-length(process.command_line) > 50
+length(process.command_line) > 50 and
+not process.name in ("snap", "printf", "sed")
 
 ----------------------------------
 

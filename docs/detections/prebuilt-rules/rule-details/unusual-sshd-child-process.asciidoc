@@ -1,7 +1,7 @@
 [[unusual-sshd-child-process]]
 === Unusual SSHD Child Process
 
-This rule detects the creation of an unusual SSHD child process through the usage of the `new_terms` rule type. Attackers may abuse SSH to maintain persistence on a compromised system, or to establish a backdoor for remote access, potentially resulting in an unusual SSHD child process being created.
+This rule detects the creation of an unusual SSHD child process through the usage of the "new_terms" rule type. Attackers may abuse SSH to maintain persistence on a compromised system, or to establish a backdoor for remote access, potentially resulting in an unusual SSHD child process being created.
 
 *Rule type*: new_terms
 
@@ -10,9 +10,9 @@ This rule detects the creation of an unusual SSHD child process through the usag
 * logs-endpoint.events.process*
 * logs-crowdstrike.fdr*
 
-*Severity*: medium
+*Severity*: low
 
-*Risk score*: 47
+*Risk score*: 21
 
 *Runs every*: 5m
 
@@ -34,7 +34,7 @@ This rule detects the creation of an unusual SSHD child process through the usag
 * Resources: Investigation Guide
 * Data Source: Crowdstrike
 
-*Version*: 5
+*Version*: 6
 
 *Rule authors*: 
 
@@ -96,10 +96,11 @@ Secure Shell (SSH) is a protocol used to securely access remote systems. Adversa
 [source, js]
 ----------------------------------
 event.category:process and host.os.type:linux and event.type:start and event.action:(exec or ProcessRollup2) and
-process.parent.name:(ssh or sshd) and process.args_count:2 and
+process.parent.name:sshd and process.args_count:2 and process.parent.args:"-D" and
 not (
   process.command_line:(-bash or -zsh or -sh) or
-  process.name:(ractrans or exectask or tty or tput or ferny-askpass or id or ip)
+  process.name:(ractrans or exectask or tty or tput or ferny-askpass or id or ip) or
+  process.executable:/var/tmp/foreman-ssh-cmd*/script
 )
 
 ----------------------------------

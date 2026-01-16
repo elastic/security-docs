@@ -35,7 +35,7 @@ This rule detects the deletion of SSL certificates on a Linux system. Adversarie
 * Data Source: Elastic Endgame
 * Resources: Investigation Guide
 
-*Version*: 104
+*Version*: 105
 
 *Rule authors*: 
 
@@ -134,8 +134,15 @@ For more details on Elastic Defend refer to the https://www.elastic.co/guide/en/
 
 [source, js]
 ----------------------------------
-file where host.os.type == "linux" and event.type == "deletion" and file.path : "/etc/ssl/certs/*" and
-file.extension in ("pem", "crt") and not process.name in ("dockerd", "pacman")
+file where host.os.type == "linux" and event.type == "deletion" and process.executable != null and
+file.path : "/etc/ssl/certs/*" and file.extension in ("pem", "crt") and
+not (
+  process.name in ("dockerd", "pacman") or
+  process.executable in (
+    "/kaniko/executor", "/usr/sbin/update-ca-certificates", "/usr/bin/gnurm", "/usr/bin/podman",
+    "/usr/local/bin/executor", "/opt/kaniko/executor", "/.envbuilder/bin/envbuilder", "/opt/kaspersky/kesl/libexec/kesl"
+  )
+)
 
 ----------------------------------
 

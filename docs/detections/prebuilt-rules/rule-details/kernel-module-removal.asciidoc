@@ -12,9 +12,9 @@ Kernel modules are pieces of code that can be loaded and unloaded into the kerne
 * logs-endpoint.events.process*
 * logs-sentinel_one_cloud_funnel.*
 
-*Severity*: medium
+*Severity*: low
 
-*Risk score*: 47
+*Risk score*: 21
 
 *Runs every*: 5m
 
@@ -38,7 +38,7 @@ Kernel modules are pieces of code that can be loaded and unloaded into the kerne
 * Data Source: SentinelOne
 * Resources: Investigation Guide
 
-*Version*: 214
+*Version*: 215
 
 *Rule authors*: 
 
@@ -139,12 +139,16 @@ For more details on Elastic Defend refer to the https://www.elastic.co/guide/en/
 [source, js]
 ----------------------------------
 process where host.os.type == "linux" and event.type == "start" and
-  event.action in ("exec", "exec_event", "start", "ProcessRollup2") and
-  (
-    process.name == "rmmod" or
-    (process.name == "modprobe" and process.args in ("--remove", "-r"))
-  ) and
-  process.parent.name in ("sudo", "bash", "dash", "ash", "sh", "tcsh", "csh", "zsh", "ksh", "fish")
+event.action in ("exec", "exec_event", "start", "ProcessRollup2") and
+(
+  process.name == "rmmod" or
+  (process.name == "modprobe" and process.args in ("--remove", "-r"))
+) and
+process.parent.name in ("sudo", "bash", "dash", "ash", "sh", "tcsh", "csh", "zsh", "ksh", "fish") and
+not (
+  ?process.parent.args like "/var/tmp/rpm-tmp*" or
+  ?process.working_directory like~ ("/tmp/makeself*NVIDIA-Linux*", "/tmp/self*NVIDIA-Linux*")
+)
 
 ----------------------------------
 

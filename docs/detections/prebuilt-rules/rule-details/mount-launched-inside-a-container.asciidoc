@@ -32,7 +32,7 @@ This rule detects the use of the mount utility from inside a container. The moun
 * Data Source: Elastic Defend
 * Resources: Investigation Guide
 
-*Version*: 2
+*Version*: 3
 
 *Rule authors*: 
 
@@ -133,7 +133,16 @@ For more details on Elastic Defend refer to the https://www.elastic.co/guide/en/
 [source, js]
 ----------------------------------
 process where host.os.type == "linux" and event.type == "start" and event.action == "exec" and
-process.entry_leader.entry_meta.type == "container" and process.name == "mount"
+process.entry_leader.entry_meta.type == "container" and process.name == "mount" and not (
+  process.parent.command_line like "*grep*" or
+  process.parent.executable like (
+    "/usr/local/bin/dind", "/run/k3s/containerd/io.containerd.runtime.v2.task/k8s.io/*/longhorn-instance-manager",
+    "/run/k3s/containerd/io.containerd.runtime.v2.task/k8s.io/*/longhorn-manager", "/usr/sbin/update-binfmts",
+    "/usr/local/bin/engine-manager", "/usr/bin/timeout", "/opt/gitlab/embedded/bin/ruby", "/usr/local/sbin/longhorn-manager",
+    "/longhorn-share-manager", "/usr/lib/systemd/systemd", "/lib/systemd/systemd"
+  ) or
+  process.parent.args in ("/usr/local/bin/instance-manager", "/usr/local/sbin/nsmounter")
+)
 
 ----------------------------------
 

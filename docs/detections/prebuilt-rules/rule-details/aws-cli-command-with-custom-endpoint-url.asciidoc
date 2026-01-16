@@ -1,14 +1,18 @@
 [[aws-cli-command-with-custom-endpoint-url]]
 === AWS CLI Command with Custom Endpoint URL
 
-Detects the use of the AWS CLI with the `--endpoint-url` argument, which allows users to specify a custom endpoint URL for AWS services. This can be leveraged by adversaries to redirect API requests to non-standard or malicious endpoints, potentially bypassing typical security controls and logging mechanisms. This behavior may indicate an attempt to interact with unauthorized or compromised infrastructure, exfiltrate data, or perform other malicious activities under the guise of legitimate AWS operations.
+Detects the use of the AWS CLI with the "--endpoint-url" argument, which allows users to specify a custom endpoint URL for AWS services. This can be leveraged by adversaries to redirect API requests to non-standard or malicious endpoints, potentially bypassing typical security controls and logging mechanisms. This behavior may indicate an attempt to interact with unauthorized or compromised infrastructure, exfiltrate data, or perform other malicious activities under the guise of legitimate AWS operations.
 
 *Rule type*: new_terms
 
 *Rule indices*: 
 
-* logs-endpoint.events.process-*
 * logs-crowdstrike.fdr*
+* logs-endpoint.events.process*
+* logs-sentinel_one_cloud_funnel.*
+* endgame-*
+* auditbeat-*
+* logs-auditd_manager.auditd-*
 
 *Severity*: medium
 
@@ -26,15 +30,18 @@ Detects the use of the AWS CLI with the `--endpoint-url` argument, which allows 
 
 *Tags*: 
 
-* Data Source: Elastic Defend
 * Domain: Endpoint
 * OS: Linux
 * Use Case: Threat Detection
 * Tactic: Command and Control
 * Resources: Investigation Guide
+* Data Source: Elastic Defend
+* Data Source: Elastic Endgame
+* Data Source: Auditd Manager
 * Data Source: Crowdstrike
+* Data Source: SentinelOne
 
-*Version*: 5
+*Version*: 6
 
 *Rule authors*: 
 
@@ -96,7 +103,9 @@ The AWS CLI allows users to interact with AWS services via command-line, offerin
 
 [source, js]
 ----------------------------------
-host.os.type: "linux" and event.category: "process" and process.name: "aws" and process.args:  "--endpoint-url"
+host.os.type:"linux" and event.category:"process" and
+event.action:("exec" or "exec_event" or "executed" or "process_started" or "ProcessRollup2") and
+process.name:"aws" and process.args:"--endpoint-url"
 
 ----------------------------------
 

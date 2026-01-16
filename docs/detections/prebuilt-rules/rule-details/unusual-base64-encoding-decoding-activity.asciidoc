@@ -28,7 +28,7 @@ This rule leverages ESQL to detect unusual base64 encoding/decoding activity on 
 * Data Source: Elastic Defend
 * Resources: Investigation Guide
 
-*Version*: 7
+*Version*: 8
 
 *Rule authors*: 
 
@@ -130,9 +130,9 @@ For more details on Elastic Defend refer to the https://www.elastic.co/guide/en/
 
 [source, js]
 ----------------------------------
-from logs-endpoint.events.process-*
+from logs-endpoint.events.process-* metadata _id, _index, _version
+| mv_expand event.action 
 | where
-    @timestamp > now() - 1h and
     host.os.type == "linux" and
     event.type == "start" and
     event.action == "exec" and (
@@ -170,25 +170,35 @@ from logs-endpoint.events.process-*
     )
 | keep
     @timestamp,
+    _id,
+    _index,
+    _version,
     host.os.type,
     event.type,
     event.action,
     process.name,
     process.args,
     process.command_line,
+    process.parent.name,
+    process.parent.command_line,
     agent.id,
-    host.name
+    host.name,
+    event.dataset,
+    data_stream.namespace
 | stats
     Esql.event_count = count(),
+    Esql.process_parent_name_values = values(process.parent.name),
+    Esql.process_parent_command_line_values = values(process.parent.command_line),
     Esql.agent_id_count_distinct = count_distinct(agent.id),
     Esql.host_name_values = values(host.name),
-    Esql.agent_id_values = values(agent.id)
+    Esql.agent_id_values = values(agent.id),
+    Esql.event_dataset_values = values(event.dataset),
+    Esql.data_stream_namespace_values = values(data_stream.namespace)
     by process.name, process.command_line
 | where
     Esql.agent_id_count_distinct == 1 and
     Esql.event_count < 15
 | sort Esql.event_count asc
-| limit 100
 
 ----------------------------------
 

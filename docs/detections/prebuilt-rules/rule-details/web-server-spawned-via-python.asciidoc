@@ -12,9 +12,9 @@ This rule identifies when a web server is spawned via Python. Attackers may use 
 * logs-endpoint.events.process*
 * logs-sentinel_one_cloud_funnel.*
 
-*Severity*: low
+*Severity*: medium
 
-*Risk score*: 21
+*Risk score*: 47
 
 *Runs every*: 5m
 
@@ -36,7 +36,7 @@ This rule identifies when a web server is spawned via Python. Attackers may use 
 * Data Source: Elastic Endgame
 * Resources: Investigation Guide
 
-*Version*: 105
+*Version*: 106
 
 *Rule authors*: 
 
@@ -137,14 +137,15 @@ For more details on Elastic Defend refer to the https://www.elastic.co/guide/en/
 [source, js]
 ----------------------------------
 process where host.os.type == "linux" and event.type == "start" and
-  event.action in ("exec", "exec_event", "start", "ProcessRollup2") and
+event.action in ("exec", "exec_event", "start", "ProcessRollup2") and
+(
+  (process.name like "python*" and process.args in ("http.server", "SimpleHTTPServer")) or
   (
-    (process.name like "python*" and process.args in ("http.server", "SimpleHTTPServer")) or
-    (
-      process.name in ("bash", "dash", "sh", "tcsh", "csh", "zsh", "ksh", "fish") and
-      process.command_line like~ "*python* -m http.server*"
-    )
+    process.name in ("bash", "dash", "sh", "tcsh", "csh", "zsh", "ksh", "fish") and
+    process.command_line like~ "*python* -m http.server*"
   )
+) and
+not process.parent.executable == "/usr/lib/systemd/systemd"
 
 ----------------------------------
 

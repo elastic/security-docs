@@ -35,7 +35,7 @@ Identifies access to the /etc/shadow file via the commandline using standard sys
 * Data Source: Elastic Defend
 * Resources: Investigation Guide
 
-*Version*: 212
+*Version*: 213
 
 *Rule authors*: 
 
@@ -135,10 +135,18 @@ For more details on Elastic Defend refer to the https://www.elastic.co/guide/en/
 [source, js]
 ----------------------------------
 host.os.type : "linux" and event.category : "process" and event.action : ("exec" or "exec_event") and
-(process.args : "/etc/shadow" or (process.working_directory: "/etc" and process.args: "shadow")) and not (
+(
+  process.args : "/etc/shadow" or
+  (process.working_directory: "/etc" and process.args: "shadow")
+) and not (
   (process.executable : ("/bin/chown" or "/usr/bin/chown") and process.args : "root:shadow") or
   (process.executable : ("/bin/chmod" or "/usr/bin/chmod") and process.args : "640") or
-  process.executable:(/vz/* or /var/lib/docker/* or /run/containerd/* or /tmp/.criu* or /tmp/newroot/*) or
+  process.executable:(
+    /vz/* or /var/lib/docker/* or /run/containerd/* or /tmp/.criu* or /tmp/newroot/* or
+    "/etc/cron.daily/passwd" or "/usr/sbin/lynis" or "/usr/bin/rkhunter" or
+    "/usr/local/hestia/bin/v-check-user-password" or "/usr/sbin/setroubleshootd" or
+    "/usr/lib/tiger/scripts/check_passwdformat"
+  ) or
   process.parent.name:(gen_passwd_sets or scc_* or wazuh-modulesd)
 )
 

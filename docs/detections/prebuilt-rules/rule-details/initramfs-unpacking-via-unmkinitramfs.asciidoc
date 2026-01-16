@@ -1,7 +1,7 @@
 [[initramfs-unpacking-via-unmkinitramfs]]
 === Initramfs Unpacking via unmkinitramfs
 
-This rule detects the unpacking of an initramfs image using the `unmkinitramfs` command on Linux systems. The `unmkinitramfs` command is used to extract the contents of an initramfs image, which is used to boot the system. Attackers may use `unmkinitramfs` to unpack an initramfs image and modify its contents to include malicious code or backdoors, allowing them to maintain persistence on the system.
+This rule detects the unpacking of an initramfs image using the "unmkinitramfs" command on Linux systems. The "unmkinitramfs" command is used to extract the contents of an initramfs image, which is used to boot the system. Attackers may use "unmkinitramfs" to unpack an initramfs image and modify its contents to include malicious code or backdoors, allowing them to maintain persistence on the system.
 
 *Rule type*: eql
 
@@ -39,7 +39,7 @@ This rule detects the unpacking of an initramfs image using the `unmkinitramfs` 
 * Data Source: SentinelOne
 * Resources: Investigation Guide
 
-*Version*: 4
+*Version*: 5
 
 *Rule authors*: 
 
@@ -135,7 +135,10 @@ For more details on Elastic Defend refer to the https://www.elastic.co/guide/en/
 ----------------------------------
 process where host.os.type == "linux" and event.type == "start" and
 event.action in ("exec", "exec_event", "start", "ProcessRollup2", "executed") and
-process.name == "unmkinitramfs"
+process.name == "unmkinitramfs" and not (
+  ?process.parent.executable == "/usr/bin/lsinitramfs" or
+  ?process.working_directory == "/usr/local/nutanix/ngt/python/bin"
+)
 
 ----------------------------------
 

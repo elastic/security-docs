@@ -36,7 +36,7 @@ This rule detects the installation of root certificates on a Linux system. Adver
 * Data Source: Elastic Endgame
 * Resources: Investigation Guide
 
-*Version*: 105
+*Version*: 106
 
 *Rule authors*: 
 
@@ -143,7 +143,15 @@ process.name in ("update-ca-trust", "update-ca-certificates") and not (
     "ipa-client-install", "su", "platform-python", "python*", "kesl", "execd", "systemd", "flock"
   ) or
   process.parent.args like "/var/tmp/rpm*" or
-  (process.parent.name in ("sh", "bash", "zsh") and process.args == "-e")
+  (process.parent.name in ("sh", "bash", "zsh") and process.args == "-e") or
+  process.parent.executable in (
+    "/app/update-cert-trust.sh", "/opt/puppetlabs/puppet/bin/puppet", "/opt/puppetlabs/puppet/bin/ruby",
+    "/start-haproxy", "/usr/bin/entrypoint.sh", "/usr/bin/crun"
+  ) or
+  process.parent.args like (
+    "/entrypoint.sh", "/entrypoint", "./bootstrap-RHEL*", "lib/apk/exec/ca-certificates-*trigger"
+  ) or
+  ?process.working_directory == "/var/lib/rancher"
 )
 
 ----------------------------------

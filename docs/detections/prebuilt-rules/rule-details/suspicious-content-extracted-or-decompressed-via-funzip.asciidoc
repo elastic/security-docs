@@ -10,6 +10,7 @@ Identifies when suspicious content is extracted from a file and subsequently dec
 * endgame-*
 * logs-endpoint.events.process*
 * logs-sentinel_one_cloud_funnel.*
+* logs-crowdstrike.fdr*
 
 *Severity*: medium
 
@@ -34,9 +35,10 @@ Identifies when suspicious content is extracted from a file and subsequently dec
 * Data Source: Elastic Endgame
 * Data Source: Elastic Defend
 * Data Source: SentinelOne
+* Data Source: Crowdstrike
 * Resources: Investigation Guide
 
-*Version*: 109
+*Version*: 110
 
 *Rule authors*: 
 
@@ -135,11 +137,11 @@ For more details on Elastic Defend refer to the https://www.elastic.co/guide/en/
 
 [source, js]
 ----------------------------------
-process where host.os.type == "linux" and event.action in ("exec", "exec_event", "start") and
+process where host.os.type == "linux" and event.action in ("exec", "exec_event", "start", "ProcessRollup2") and
 ((process.args == "tail" and process.args == "-c" and process.args == "funzip")) and
 not process.args : "/var/log/messages" and
-not process.parent.executable : ("/usr/bin/dracut", "/sbin/dracut", "/usr/bin/xargs") and
-not (process.parent.name in ("sh", "sudo") and process.parent.command_line : "*nessus_su*")
+not ?process.parent.executable : ("/usr/bin/dracut", "/sbin/dracut", "/usr/bin/xargs") and
+not (process.parent.name in ("sh", "sudo") and ?process.parent.command_line : "*nessus_su*")
 
 ----------------------------------
 

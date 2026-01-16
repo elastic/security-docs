@@ -11,9 +11,9 @@ Detects suspicious process events executed by the APT package manager, potential
 * logs-sentinel_one_cloud_funnel.*
 * logs-crowdstrike.fdr*
 
-*Severity*: medium
+*Severity*: low
 
-*Risk score*: 47
+*Risk score*: 21
 
 *Runs every*: 5m
 
@@ -38,7 +38,7 @@ Detects suspicious process events executed by the APT package manager, potential
 * Resources: Investigation Guide
 * Data Source: Crowdstrike
 
-*Version*: 109
+*Version*: 110
 
 *Rule authors*: 
 
@@ -145,10 +145,33 @@ sequence by host.id with maxspan=5s
      "bash", "dash", "sh", "tcsh", "csh", "zsh", "ksh", "fish"
    ) and not process.executable == "/usr/lib/venv-salt-minion/bin/python.original"
   ] by process.entity_id
-  [process where host.os.type == "linux" and event.type == "start" and event.action in ("exec", "start", "ProcessRollup2") and process.name : (
+  [process where host.os.type == "linux" and event.type == "start" and event.action in ("exec", "start", "ProcessRollup2") and process.name like (
      "bash", "dash", "sh", "tcsh", "csh", "zsh", "ksh", "fish", "python*", "php*",
      "perl", "ruby", "lua*", "openssl", "nc", "netcat", "ncat", "telnet", "awk"
-   )
+   ) and not (
+     ?process.parent.executable like (
+       "/run/k3s/containerd*", "/tmp/newroot/*", "/usr/share/debconf/frontend", "/var/tmp/buildah*", "./merged/*",
+       "./*/vz/root/*", "/usr/bin/adequate" 
+      ) or
+     process.executable like ("/usr/lib/venv-salt-minion/bin/python.original", "./merged/var/lib/containers/*") or
+     process.command_line in (
+       "python3 /usr/sbin/omv-mkaptidx", "python3 /usr/local/bin/abr-upgrade --upgrade",
+       "sh -c apt-get indextargets -o Dir::State::lists=/var/lib/apt/lists/ --format='$(FILENAME)' 'Created-By: Packages'",
+       "/usr/bin/perl /usr/sbin/dpkg-preconfigure --apt", "/bin/sh -e /usr/lib/update-notifier/update-motd-updates-available",
+       "/usr/bin/python3 /usr/lib/cnf-update-db", "/usr/bin/python3 /usr/bin/apt-listchanges --apt",
+       "/usr/bin/perl -w /usr/sbin/dpkg-preconfigure --apt", "/bin/sh /usr/lib/needrestart/apt-pinvoke",
+       "/bin/sh /usr/bin/kali-check-apt-sources", "/bin/sh /usr/lib/needrestart/apt-pinvoke -m u",
+       "/usr/bin/perl /usr/sbin/needrestart",  "/usr/bin/perl -w /usr/bin/apt-show-versions -i",
+       "/usr/bin/perl -w /usr/bin/apt-show-versions -i", "/usr/bin/perl -w /bin/apt-show-versions -i",
+       "/usr/bin/perl /bin/adequate --help",  "/usr/bin/perl /usr/sbin/needrestart -m u", 
+       "/usr/bin/perl -w /usr/share/debconf/frontend /usr/sbin/needrestart",
+       "/usr/bin/python3 /sbin/katello-tracer-upload",
+       "/usr/bin/python3 /usr/bin/package-profile-upload"
+     ) or
+     ?process.parent.command_line like ("sh -c if [ -x*", "sh -c -- if [ -x*") or
+     process.args in ("/usr/sbin/needrestart", "/usr/lib/needrestart/apt-pinvoke", "/usr/share/proxmox-ve/pve-apt-hook", "/usr/bin/dpkg-source") or
+     ?process.parent.args == "/usr/share/debconf/frontend"
+    )
   ] by process.parent.entity_id
 
 ----------------------------------

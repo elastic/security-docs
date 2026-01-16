@@ -35,7 +35,7 @@ This rule detects the creation of .pth files in system-wide and user-specific Py
 * Data Source: Elastic Defend
 * Resources: Investigation Guide
 
-*Version*: 4
+*Version*: 5
 
 *Rule authors*: 
 
@@ -133,8 +133,8 @@ For more details on Elastic Defend refer to the https://www.elastic.co/guide/en/
 
 [source, js]
 ----------------------------------
-file where host.os.type == "linux" and event.action in ("creation", "rename") and file.extension == "pth" and
-file.path like~ (
+file where host.os.type == "linux" and event.action == "creation" and file.extension == "pth" and
+file.path like (
   "/usr/local/lib/python*/dist-packages/*", 
   "/usr/lib/python*/dist-packages/*",
   "/usr/local/lib/python*/site-packages/*",
@@ -146,11 +146,17 @@ file.path like~ (
     "/usr/local/bin/pip2", "/usr/bin/restic", "/usr/bin/pacman", "/usr/bin/dockerd", "/usr/local/bin/pip3",
     "/usr/bin/pip3", "/usr/local/bin/pip", "/usr/bin/pip", "/usr/bin/podman", "/usr/local/bin/poetry",
     "/usr/bin/poetry", "/usr/bin/pamac-daemon", "/opt/venv/bin/pip", "/usr/bin/dnf", "./venv/bin/pip",
-    "/usr/bin/dnf5", "/bin/dnf5", "/bin/pip", "/bin/podman"
+    "/usr/bin/dnf5", "/bin/dnf5", "/bin/pip", "/bin/podman", "./usr/bin/podman", "/kaniko/executor", "/dev/fd/3",
+    "/opt/SolarWinds/Agent/bin/Plugins/Discovery/SolarWinds.Agent.Discovery.Plugin", "/usr/bin/crio",
+    "/opt/splunk/bin/splunkd", "/opt/Tanium/TaniumClient/TaniumCX"
   ) or
-  process.executable like~ (
+  process.executable like (
     "/usr/bin/python*", "/usr/local/bin/python*", "/opt/venv/bin/python*",
     "/nix/store/*libexec/docker/dockerd", "/snap/docker/*dockerd"
+  ) or
+  (
+    process.name like ("python*", "platform-python*", "conda", "virtualenv", "cp", "pip*", "uv") and
+    file.name in ("distutils-precedence.pth", "_virtualenv.pth")
   )
 )
 

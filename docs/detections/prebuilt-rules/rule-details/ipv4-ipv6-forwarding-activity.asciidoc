@@ -36,7 +36,7 @@ This rule monitors for the execution of commands that enable IPv4 and IPv6 forwa
 * Resources: Investigation Guide
 * Data Source: Crowdstrike
 
-*Version*: 106
+*Version*: 107
 
 *Rule authors*: 
 
@@ -110,7 +110,14 @@ process where host.os.type == "linux" and event.type == "start" and event.action
     process.command_line like "*echo *"
   )
 ) and
-not process.parent.name like~ ("privsep-helper", "platform-python*", "init.ipv6-global", "wsl-bootstrap")
+not (
+  process.parent.name like~ ("privsep-helper", "platform-python*", "init.ipv6-global", "wsl-bootstrap") or
+  ?process.parent.executable == "/usr/sbin/sshd" or
+  ?process.parent.args in (
+    "/usr/lib/pritunl/usr/bin/pritunl", "/usr/bin/dockerd-rootless.sh", "/etc/rc.d/init.d/network", "/etc/rc0.d/K90network"
+  )  or
+  ?process.parent.args like "/etc/untangle/post-network-hook.d/*"
+)
 
 ----------------------------------
 
