@@ -1,0 +1,118 @@
+[[prebuilt-rule-8-19-14-aws-cloudtrail-log-deleted]]
+=== AWS CloudTrail Log Deleted
+
+Detects deletion of an AWS CloudTrail trail via DeleteTrail API. Removing trails is a high-risk action that destroys an audit control plane and is frequently paired with other destructive or stealthy operations. Validate immediately and restore compliant logging.
+
+*Rule type*: query
+
+*Rule indices*: 
+
+* filebeat-*
+* logs-aws.cloudtrail-*
+
+*Severity*: medium
+
+*Risk score*: 47
+
+*Runs every*: 5m
+
+*Searches indices from*: now-6m ({ref}/common-options.html#date-math[Date Math format], see also <<rule-schedule, `Additional look-back time`>>)
+
+*Maximum alerts per execution*: 100
+
+*References*: 
+
+* https://docs.aws.amazon.com/awscloudtrail/latest/APIReference/API_DeleteTrail.html
+* https://awscli.amazonaws.com/v2/documentation/api/latest/reference/cloudtrail/delete-trail.html
+
+*Tags*: 
+
+* Domain: Cloud
+* Data Source: AWS
+* Data Source: Amazon Web Services
+* Data Source: AWS Cloudtrail
+* Use Case: Log Auditing
+* Resources: Investigation Guide
+* Tactic: Defense Evasion
+
+*Version*: 214
+
+*Rule authors*: 
+
+* Elastic
+
+*Rule license*: Elastic License v2
+
+
+==== Investigation guide
+
+
+
+*Triage and analysis*
+
+
+
+*Investigating AWS CloudTrail Log Deleted*
+
+
+AWS CloudTrail is a service that enables governance, compliance, and operational and risk auditing of your AWS account. It logs API calls and related events, providing visibility into user activity. This rule identifies the deletion of an AWS log trail using the `DeleteTrail` API. Deleting a trail can eliminate visibility and is a strong indicator of defense evasion or sabotage.
+
+
+*Possible investigation steps*
+
+- **Actor & target**
+  - Identify `aws.cloudtrail.user_identity.arn`, `user_agent.original`, `source.ip`.
+  - Confirm which trail was deleted (name/ARN, multi-region/organization status) from `aws.cloudtrail.request_parameters`.
+- **Blast radius**
+  - Determine whether it was the only trail or if organization/multi-region coverage remains.
+  - Review preceding `StopLogging` or `UpdateTrail` and subsequent high-risk actions (IAM, S3, KMS, EC2 exports).
+- **Data preservation**
+  - Verify S3 destinations and CloudWatch log groups for retained historical logs and file integrity validation.
+
+
+*False positive analysis*
+
+- **Planned deletion**: Validate with tickets and decommissioning plans; ensure replacement/alternate trails exist.
+
+
+*Response and remediation*
+
+- Recreate or re-enable compliant multi-region (or organization) trails immediately.
+- Investigate the actor’s recent activity; rotate creds if compromise is suspected.
+- Validate destination bucket policies, CMK policies, and event selectors for all active trails.
+- Hardening: Restrict `cloudtrail:DeleteTrail` and enforce guardrails via AWS Config/SCPs; alert on future deletions.
+
+
+*Additional information*
+
+- **https://github.com/aws-samples/aws-incident-response-playbooks/blob/c151b0dc091755fffd4d662a8f29e2f6794da52c/playbooks/[AWS IR Playbooks]** 
+- **https://github.com/aws-samples/aws-customer-playbook-framework/tree/a8c7b313636b406a375952ac00b2d68e89a991f2/docs[AWS Customer Playbook Framework]** 
+- **Security Best Practices:** https://aws.amazon.com/premiumsupport/knowledge-center/security-best-practices/[AWS Knowledge Center – Security Best Practices].
+
+
+==== Rule query
+
+
+[source, js]
+----------------------------------
+event.dataset: "aws.cloudtrail"
+    and event.provider: "cloudtrail.amazonaws.com"
+    and event.action: "DeleteTrail"
+    and event.outcome: "success"
+
+----------------------------------
+
+*Framework*: MITRE ATT&CK^TM^
+
+* Tactic:
+** Name: Defense Evasion
+** ID: TA0005
+** Reference URL: https://attack.mitre.org/tactics/TA0005/
+* Technique:
+** Name: Impair Defenses
+** ID: T1562
+** Reference URL: https://attack.mitre.org/techniques/T1562/
+* Sub-technique:
+** Name: Disable or Modify Tools
+** ID: T1562.001
+** Reference URL: https://attack.mitre.org/techniques/T1562/001/

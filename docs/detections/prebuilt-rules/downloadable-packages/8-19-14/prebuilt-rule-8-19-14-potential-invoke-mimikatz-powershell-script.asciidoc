@@ -1,0 +1,184 @@
+[[prebuilt-rule-8-19-14-potential-invoke-mimikatz-powershell-script]]
+=== Potential Invoke-Mimikatz PowerShell Script
+
+Mimikatz is a credential dumper capable of obtaining plaintext Windows account logins and passwords, along with many other features that make it useful for testing the security of networks. This rule detects PowerShell script content associated with Invoke-Mimikatz or Mimikatz.
+
+*Rule type*: query
+
+*Rule indices*: 
+
+* winlogbeat-*
+* logs-windows.powershell*
+
+*Severity*: critical
+
+*Risk score*: 99
+
+*Runs every*: 5m
+
+*Searches indices from*: now-9m ({ref}/common-options.html#date-math[Date Math format], see also <<rule-schedule, `Additional look-back time`>>)
+
+*Maximum alerts per execution*: 100
+
+*References*: 
+
+* https://attack.mitre.org/software/S0002/
+* https://raw.githubusercontent.com/EmpireProject/Empire/master/data/module_source/credentials/Invoke-Mimikatz.ps1
+* https://www.elastic.co/security-labs/detect-credential-access
+
+*Tags*: 
+
+* Domain: Endpoint
+* OS: Windows
+* Use Case: Threat Detection
+* Tactic: Credential Access
+* Resources: Investigation Guide
+* Data Source: PowerShell Logs
+
+*Version*: 214
+
+*Rule authors*: 
+
+* Elastic
+
+*Rule license*: Elastic License v2
+
+
+==== Investigation guide
+
+
+
+*Triage and analysis*
+
+
+> **Disclaimer**:
+> This investigation guide was created using generative AI technology and has been reviewed to improve its accuracy and relevance. While every effort has been made to ensure its quality, we recommend validating the content and adapting it to suit your specific environment and operational needs.
+
+
+*Investigating Potential Invoke-Mimikatz PowerShell Script*
+
+
+This alert identifies PowerShell script block content on a Windows host that contains strings commonly associated with Mimikatz or Invoke-Mimikatz activity. The matched content is consistent with attempts to access credentials from memory and/or enumerate and export certificates, which can enable rapid privilege escalation and lateral movement.
+
+
+*Key alert fields to review*
+
+
+- `user.name`, `user.domain`, `user.id`: Account execution context for correlation, prioritization, and scoping.
+- `host.name`, `host.id`: Host execution context for correlation, prioritization, and scoping.
+- `powershell.file.script_block_text`: Script block content that matched the detection logic.
+- `powershell.file.script_block_id`, `powershell.sequence`, `powershell.total`: Script block metadata to pivot to other fragments or reconstruct full script content when split across multiple events.
+- `file.path`, `file.directory`, `file.name`: File-origin context when the script block is sourced from an on-disk file.
+- `powershell.file.script_block_length`: Script block length (size) context.
+
+
+*Possible investigation steps*
+
+
+- Establish basic context and prioritize:
+  - Use `@timestamp` to define the initial investigation window and identify surrounding activity on the same `host.name` and for the same `user.name`.
+  - Review `host.name` and `host.id` to determine whether the host is a high-value asset (e.g., administrative workstation, authentication infrastructure, file server) and whether it is expected to run high-risk administrative scripts.
+  - Review `user.name`, `user.domain`, and `user.id` to determine whether the account is privileged, shared, or service-related, and whether its use on this host is expected.
+
+- Analyze what the script block indicates:
+  - Review `powershell.file.script_block_text` and categorize the intent based on the matched strings:
+    - Credential dumping indicators (e.g., `sekurlsa::logonpasswords`, `DumpCreds`) suggest an attempt to extract authentication material from memory.
+    - Certificate access indicators (e.g., `crypto::certificates`, `CERT_SYSTEM_STORE_LOCAL_MACHINE`, `DumpCerts`) suggest enumeration and potential export of certificates/keys.
+  - Determine whether the content appears to be:
+    - Tool staging (function or module definitions, large scripts) versus
+    - Direct execution (explicit commands, parameters, or output handling).
+    Use `powershell.file.script_block_length` as a quick signal for full-module loading versus a short invocation.
+  - Extract and record any embedded scope details from `powershell.file.script_block_text` (usernames, domains, hostnames, file paths, share paths, or remote endpoints) to guide scoping.
+
+- Reconstruct full script content when split across multiple events:
+  - Pivot by `powershell.file.script_block_id` and order by `powershell.sequence` to rebuild the full script block.
+  - Validate completeness using `powershell.total` (when present) and identify missing fragments that may require expanding the time window or searching for additional related script blocks.
+  - After reconstruction, re-review the consolidated content for follow-on actions such as output to disk, remote targeting, or additional credential/certificate collection logic.
+
+- Determine the likely script source and propagation risk:
+  - If `file.path`, `file.directory`, or `file.name` are present, treat the activity as file-backed PowerShell content:
+    - Identify whether the path and name align with known administrative scripts in your environment.
+    - Look for other script blocks referencing the same `file.path` or `file.name` on the same `host.name` to understand reuse and execution frequency.
+  - If file context is absent, treat the activity as inline/interactive or dynamically generated content and prioritize identifying the initiating execution chain using adjacent telemetry.
+
+- Scope for additional related activity:
+  - Search for other occurrences of the same `powershell.file.script_block_text` keywords across the environment, focusing on the same `user.name`/`user.id` and `host.name`/`host.id` first, then widening to other hosts and users.
+  - Identify whether multiple distinct `powershell.file.script_block_id` values appear for the same user/host within a short period, which can indicate iterative testing, staging, or repeated execution.
+
+- Correlate with adjacent telemetry in the same time window (if available in your environment):
+  - Process activity: identify the PowerShell host process and its parent process on `host.name` around `@timestamp` to determine whether execution was interactive, scheduled, or remotely initiated.
+  - File activity: look for evidence of exported data (credential output, dumps, certificate files) and for newly created or modified scripts consistent with the `file.path` context or references found in `powershell.file.script_block_text`.
+  - Network activity: review outbound and internal connections from `host.name` around `@timestamp`, especially if the script text references remote systems or suggests staging/exfiltration behavior.
+  - Authentication activity: review successful and failed authentications involving `user.name` and other accounts referenced in the script text after the alert time to identify potential credential reuse or lateral movement.
+
+
+*False positive analysis*
+
+
+- Authorized security testing and adversary simulation can legitimately execute Mimikatz-related tooling. Validate with the owning team, documented approval, and expected targets and timing.
+- Training, lab, or malware analysis environments may execute or store Mimikatz-related scripts for educational purposes. Confirm the host purpose and ensure activity is confined to approved non-production systems.
+- Some defensive, auditing, or instructional PowerShell content may include these strings as examples or test cases. Confirm the surrounding script context in `powershell.file.script_block_text` and whether the content represents active execution versus reference text. Unexpected use on production endpoints or by standard users should be treated as suspicious.
+
+
+*Response and remediation*
+
+
+- If activity is confirmed or strongly suspected malicious:
+  - Contain the affected host (`host.name`) according to your incident response process to limit further credential access and lateral movement.
+  - Preserve evidence:
+    - Save the full reconstructed script content (all fragments associated with `powershell.file.script_block_id`) and retain relevant logs around `@timestamp`.
+    - If `file.path` is present, preserve the referenced script file and any related artifacts identified during triage.
+  - Assume credential exposure may have occurred when credential dumping indicators are present:
+    - Initiate credential resets for the involved `user.name` and any other accounts referenced in `powershell.file.script_block_text`, prioritizing privileged and service accounts.
+    - Review for follow-on authentications and lateral movement originating from `host.name`.
+  - If certificate access indicators are present:
+    - Identify potentially impacted certificates and keys, restrict use as appropriate, and coordinate revocation and re-issuance based on your PKI and incident response procedures.
+  - Expand hunting:
+    - Search for the same keywords and related script blocks across other hosts and users to determine spread and identify additional affected systems.
+
+- If activity is determined to be authorized:
+  - Document the business justification, responsible parties, and approved scope (hosts and users).
+  - Apply preventive controls to reduce risk of misuse, such as limiting where high-risk tools can run, restricting PowerShell usage to approved accounts and hosts, and enhancing monitoring for future occurrences.
+
+
+==== Setup
+
+
+
+*Setup*
+
+
+PowerShell Script Block Logging must be enabled to generate the events used by this rule (e.g., 4104).
+Setup instructions: https://ela.st/powershell-logging-setup
+
+
+==== Rule query
+
+
+[source, js]
+----------------------------------
+event.category:process and host.os.type:windows and
+powershell.file.script_block_text:(
+  (DumpCreds and
+  DumpCerts) or
+  "sekurlsa::logonpasswords" or
+  ("crypto::certificates" and
+  "CERT_SYSTEM_STORE_LOCAL_MACHINE")
+)
+
+----------------------------------
+
+*Framework*: MITRE ATT&CK^TM^
+
+* Tactic:
+** Name: Credential Access
+** ID: TA0006
+** Reference URL: https://attack.mitre.org/tactics/TA0006/
+* Technique:
+** Name: OS Credential Dumping
+** ID: T1003
+** Reference URL: https://attack.mitre.org/techniques/T1003/
+* Sub-technique:
+** Name: LSASS Memory
+** ID: T1003.001
+** Reference URL: https://attack.mitre.org/techniques/T1003/001/

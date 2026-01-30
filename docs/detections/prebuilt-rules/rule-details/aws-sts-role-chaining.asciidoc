@@ -38,7 +38,7 @@ Identifies role chaining activity. Role chaining is when you use one assumed rol
 * Tactic: Lateral Movement
 * Resources: Investigation Guide
 
-*Version*: 3
+*Version*: 4
 
 *Rule authors*: 
 
@@ -54,9 +54,6 @@ Identifies role chaining activity. Role chaining is when you use one assumed rol
 *Triage and analysis*
 
 
-> **Disclaimer**:
-> This investigation guide was created using generative AI technology and has been reviewed to improve its accuracy and relevance. While every effort has been made to ensure its quality, we recommend validating the content and adapting it to suit your specific environment and operational needs.
-
 
 *Investigating AWS STS Role Chaining*
 
@@ -68,10 +65,15 @@ Role chaining occurs when a role assumed with temporary credentials (`AssumeRole
 
 
 - **Review Alert Context**: Investigate the alert, focusing on `aws.cloudtrail.user_identity.session_context.session_issuer.arn` (the calling role) and `aws.cloudtrail.resources.arn` (the target role).  
+
 - **Determine scope and intent.** Check `aws.cloudtrail.recipient_account_id` and `aws.cloudtrail.resources.account_id` fields to identify whether the chaining is Intra-account (within the same AWS account) or Cross-account (from another AWS account).  
+
 - **Check role privileges.** Compare policies of the calling and target roles. Determine if chaining increases permissions (for example, access to S3 data, IAM modifications, or admin privileges).  
+
 - **Correlate with other activity.** Look for related alerts or CloudTrail activity within ±30 minutes: policy changes, unusual S3 access, or use of sensitive APIs. Use `aws.cloudtrail.user_identity.arn` to track behavior from the same role session, use `aws.cloudtrail.user_identity.session_context.session_issuer.arn` to track broader behavior from the role itself.
+
 - **Validate legitimacy.** Contact the account or service owner to confirm if the chaining was expected (for example, automation pipelines or federated access flows).  
+
 - **Geography & source.** Review `cloud.region`, `source.address`, and other `geo` fields to assess if the activity originates from expected regions or network ranges.  
 
 
@@ -86,20 +88,20 @@ Role chaining occurs when a role assumed with temporary credentials (`AssumeRole
 *Response and remediation*
 
 
-**1. Immediate steps**
+**Immediate steps**
 - **Preserve evidence.** Export triggering CloudTrail events (±30 minutes) into a restricted evidence bucket. Include session context, source IP, and user agent.  
 - **Notify owners.** Contact the owners of both roles to validate intent.  
 
-**2. Containment (if suspicious)**
+**Containment (if suspicious)**
 - **Revoke temporary credentials.** https://docs.aws.amazon.com/IAM/latest/UserGuide/id_roles_use_revoke-sessions.html[Revoke Session Permissions] if possible, or attach https://docs.aws.amazon.com/aws-managed-policy/latest/reference/AWSDenyAll.html[AWSDenyALL policy] to the originating role.  
 - **Restrict risky roles.** Apply least-privilege policies or temporarily deny `sts:AssumeRole` for suspicious principals.  
 - **Enable monitoring.** Ensure CloudTrail and GuardDuty are active in all regions to detect further chaining.  
 
-**3. Scope and hunt**
+**Scope and hunt**
 - Search for additional AssumeRole activity by the same `issuer.arn` or `resources.arn` across other accounts and regions.  
 - Look for privilege escalation attempts (for example, IAM `AttachRolePolicy`, `UpdateAssumeRolePolicy`) or sensitive data access following the chain.  
 
-**4. Recovery & hardening**
+**Recovery & hardening**
 - Apply least privilege to all roles, limiting trust policies to only required principals.  
 - Enforce MFA where possible on AssumeRole operations.  
 - Periodically review role chaining patterns to validate necessity; remove unused or risky trust relationships.  
