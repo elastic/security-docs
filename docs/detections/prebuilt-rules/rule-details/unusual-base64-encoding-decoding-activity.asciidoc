@@ -28,7 +28,7 @@ This rule leverages ESQL to detect unusual base64 encoding/decoding activity on 
 * Data Source: Elastic Defend
 * Resources: Investigation Guide
 
-*Version*: 8
+*Version*: 9
 
 *Rule authors*: 
 
@@ -199,6 +199,12 @@ from logs-endpoint.events.process-* metadata _id, _index, _version
     Esql.agent_id_count_distinct == 1 and
     Esql.event_count < 15
 | sort Esql.event_count asc
+
+// Extract unique values to ECS fields for alerts exclusion
+| eval agent.id = mv_min(Esql.agent_id_values),
+       host.name = mv_min(Esql.host_name_values)
+
+| keep agent.id, host.name, process.name, process.command_line, Esql.*
 
 ----------------------------------
 

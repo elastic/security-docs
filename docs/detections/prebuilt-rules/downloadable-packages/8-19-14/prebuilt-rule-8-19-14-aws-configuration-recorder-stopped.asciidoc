@@ -1,0 +1,147 @@
+[[prebuilt-rule-8-19-14-aws-configuration-recorder-stopped]]
+=== AWS Configuration Recorder Stopped
+
+Identifies when an AWS Config configuration recorder is stopped. AWS Config recorders continuously track and record configuration changes across supported AWS resources. Stopping the recorder immediately reduces visibility into infrastructure changes and can be abused by adversaries to evade detection, obscure follow-on activity, or weaken compliance and security monitoring controls.
+
+*Rule type*: query
+
+*Rule indices*: 
+
+* filebeat-*
+* logs-aws.cloudtrail-*
+
+*Severity*: high
+
+*Risk score*: 73
+
+*Runs every*: 5m
+
+*Searches indices from*: now-6m ({ref}/common-options.html#date-math[Date Math format], see also <<rule-schedule, `Additional look-back time`>>)
+
+*Maximum alerts per execution*: 100
+
+*References*: 
+
+* https://awscli.amazonaws.com/v2/documentation/api/latest/reference/configservice/stop-configuration-recorder.html
+* https://docs.aws.amazon.com/config/latest/APIReference/API_StopConfigurationRecorder.html
+
+*Tags*: 
+
+* Domain: Cloud
+* Data Source: AWS
+* Data Source: Amazon Web Services
+* Data Source: AWS Config
+* Tactic: Defense Evasion
+* Resources: Investigation Guide
+
+*Version*: 211
+
+*Rule authors*: 
+
+* Elastic
+
+*Rule license*: Elastic License v2
+
+
+==== Investigation guide
+
+
+
+*Triage and analysis*
+
+
+
+*Investigating AWS Configuration Recorder Stopped*
+
+
+AWS Config provides continuous visibility into resource configuration changes and underpins many security, compliance,
+and audit workflows. Stopping the configuration recorder prevents new changes from being captured and can create blind
+spots in detection and forensic timelines.
+
+This behavior is uncommon in steady-state production environments and should be carefully reviewed, especially when
+performed outside approved maintenance windows or by unexpected principals.
+
+
+*Possible investigation steps*
+
+
+**Identify the actor**
+- Review `aws.cloudtrail.user_identity.arn` and `aws.cloudtrail.user_identity.access_key_id`
+  to determine who initiated the `StopConfigurationRecorder` action. Confirm whether this principal typically administers AWS Config or performs security and compliance operations.
+
+**Examine the request context**
+- Review `user_agent.original` to determine whether the request originated from the AWS Console, CLI, SDK, or automation tooling.
+- Inspect `source.ip` and any available geo context to assess whether the request originated from an expected network or region.
+
+**Determine scope and impact**
+- Identify which configuration recorder was stopped and which regions or resources were affected.
+- Determine how long the recorder remained disabled and whether any configuration changes occurred during that window.
+- Assess whether AWS Config rules, Security Hub controls, or downstream monitoring systems were impacted.
+
+**Correlate with related activity**
+- Look for surrounding CloudTrail activity from the same principal, including:
+  - Deletion or modification of Config rules, delivery channels, or conformance packs.
+  - IAM changes, credential activity, or other security control modifications.
+- Check for signs of follow-on activity that may have relied on reduced visibility, such as resource creation, policy changes,
+  or network reconfiguration.
+
+**Validate intent**
+- Confirm with the platform, security, or compliance teams whether the recorder stoppage was intentional and approved.
+- Compare the timing against change management records, infrastructure deployments, or account bootstrapping workflows.
+
+
+*False positive analysis*
+
+
+- Planned maintenance or controlled configuration changes may require temporarily stopping the recorder.
+- Automated account provisioning, teardown, or remediation tooling may stop and restart the recorder as part of normal workflows.
+
+
+*Response and remediation*
+
+
+- Immediately restart the AWS Config recorder to restore configuration visibility.
+- Review CloudTrail logs for activity that occurred while the recorder was stopped and assess potential security or compliance impact.
+- If the action was unauthorized, rotate or disable credentials associated with the initiating principal and investigate for compromise.
+- Review IAM permissions to ensure only a minimal set of trusted roles can stop or modify AWS Config components.
+- Implement guardrails such as AWS Config rules, SCPs, or automated remediation to detect and respond to recorder stoppage.
+- Update monitoring, alerting, and incident response runbooks to explicitly cover AWS Config visibility loss scenarios.
+
+
+*Additional information*
+
+- **https://github.com/aws-samples/aws-incident-response-playbooks/blob/c151b0dc091755fffd4d662a8f29e2f6794da52c/playbooks/[AWS IR Playbooks]** 
+- **https://github.com/aws-samples/aws-customer-playbook-framework/tree/a8c7b313636b406a375952ac00b2d68e89a991f2/docs[AWS Customer Playbook Framework]** 
+- **https://aws.amazon.com/premiumsupport/knowledge-center/security-best-practices/[AWS Knowledge Center – Security Best Practices]**
+
+
+==== Rule query
+
+
+[source, js]
+----------------------------------
+event.dataset: aws.cloudtrail 
+    and event.provider: config.amazonaws.com 
+    and event.action: StopConfigurationRecorder 
+    and event.outcome: success
+
+----------------------------------
+
+*Framework*: MITRE ATT&CK^TM^
+
+* Tactic:
+** Name: Defense Evasion
+** ID: TA0005
+** Reference URL: https://attack.mitre.org/tactics/TA0005/
+* Technique:
+** Name: Impair Defenses
+** ID: T1562
+** Reference URL: https://attack.mitre.org/techniques/T1562/
+* Sub-technique:
+** Name: Disable or Modify Tools
+** ID: T1562.001
+** Reference URL: https://attack.mitre.org/techniques/T1562/001/
+* Sub-technique:
+** Name: Disable or Modify Cloud Logs
+** ID: T1562.008
+** Reference URL: https://attack.mitre.org/techniques/T1562/008/

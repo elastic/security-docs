@@ -1,0 +1,118 @@
+[[prebuilt-rule-8-19-14-aws-iam-group-deletion]]
+=== AWS IAM Group Deletion
+
+Detects when an IAM group is deleted using the DeleteGroup API call. Deletion of an IAM group may represent a malicious attempt to remove audit trails, disrupt operations, or hide adversary activity (for example after using the group briefly for privileged access). This can be an indicator of impact or cleanup in an attack lifecycle.
+
+*Rule type*: query
+
+*Rule indices*: 
+
+* filebeat-*
+* logs-aws.cloudtrail-*
+
+*Severity*: low
+
+*Risk score*: 21
+
+*Runs every*: 5m
+
+*Searches indices from*: now-6m ({ref}/common-options.html#date-math[Date Math format], see also <<rule-schedule, `Additional look-back time`>>)
+
+*Maximum alerts per execution*: 100
+
+*References*: 
+
+* https://awscli.amazonaws.com/v2/documentation/api/latest/reference/iam/delete-group.html
+* https://docs.aws.amazon.com/IAM/latest/APIReference/API_DeleteGroup.html
+
+*Tags*: 
+
+* Domain: Cloud
+* Data Source: AWS
+* Data Source: Amazon Web Services
+* Data Source: AWS IAM
+* Tactic: Impact
+* Resources: Investigation Guide
+
+*Version*: 211
+
+*Rule authors*: 
+
+* Elastic
+
+*Rule license*: Elastic License v2
+
+
+==== Investigation guide
+
+
+
+*Triage and analysis*
+
+
+
+*Investigating AWS IAM Group Deletion*
+
+
+Attackers sometimes remove groups to erase evidence, disrupt operations, or prevent users from receiving needed permissions (Impact). Deletion can also follow malicious cleanup after attaching policies and using the group briefly. This alert fires on `DeleteGroup` API call. Consider intentional disruption or covering tracks, particularly if the group was privileged or recently modified.
+
+
+*Possible investigation steps*
+
+
+- **Identify the actor and environment**  
+  - Review `aws.cloudtrail.user_identity.arn`, `aws.cloudtrail.user_identity.access_key_id`.  
+  - Check `source.ip`, `user_agent.original`, `cloud.account.id`, `cloud.region` for atypical activity.
+
+- **Determine what was lost**
+  - From `aws.cloudtrail.request_parameters`, capture `groupName`.  
+  - Use history or logs to identify existing members and attached policies prior to deletion (ex: `GetGroup`, `ListAttachedGroupPolicies`).  
+  - Determine if the group contained privileged roles/policies that could have been weaponized.
+
+- **Correlate with related activity**
+  - Look in the prior 1–24h for `DetachGroupPolicy`, `RemoveUserFromGroup`, `DeleteGroupPolicy`, which often precede deletion in adversary cleanup workflows.  
+  - After deletion, monitor for creation of new similarly-named groups, or re-attachment of policies to other groups/roles.
+
+
+*False positive analysis*
+
+
+- Projects & services that are being decommissioned often require group deletion. Confirm through internal inventory and change control.  
+- Sandbox or dev accounts frequently create and delete groups; ensure the environment context is understood.
+
+
+*Response and remediation*
+
+
+- **Containment**: If deletion was unauthorized, restrict the actor’s IAM privileges and block further configuration changes.  
+- **Investigation and scoping**: Recover details of the deleted group (members, policies) from logs or AWS Config, and determine the impact of the deletion (which users lost membership, service account disruption).  
+- **Recovery and hardening**: Recreate the group if necessary, restore intended policies and memberships, enforce change-control for group deletions, restrict `iam:DeleteGroup` privileges, and create alerts for destructive IAM operations.
+
+
+*Additional information*
+
+https://aws.amazon.com/premiumsupport/knowledge-center/security-best-practices/[AWS Security Best Practices]
+
+
+==== Rule query
+
+
+[source, js]
+----------------------------------
+event.dataset: aws.cloudtrail and 
+    event.provider: iam.amazonaws.com and 
+    event.action: DeleteGroup and 
+    event.outcome: success
+
+----------------------------------
+
+*Framework*: MITRE ATT&CK^TM^
+
+* Tactic:
+** Name: Impact
+** ID: TA0040
+** Reference URL: https://attack.mitre.org/tactics/TA0040/
+* Technique:
+** Name: Account Access Removal
+** ID: T1531
+** Reference URL: https://attack.mitre.org/techniques/T1531/

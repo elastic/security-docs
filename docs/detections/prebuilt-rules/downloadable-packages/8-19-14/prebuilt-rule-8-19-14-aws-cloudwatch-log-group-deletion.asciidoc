@@ -1,0 +1,191 @@
+[[prebuilt-rule-8-19-14-aws-cloudwatch-log-group-deletion]]
+=== AWS CloudWatch Log Group Deletion
+
+Detects the deletion of an Amazon CloudWatch Log Group using the "DeleteLogGroup" API. CloudWatch log groups store operational and security logs for AWS services and custom applications. Deleting a log group permanently removes all associated log streams and historical log data, which can eliminate forensic evidence and disrupt security monitoring pipelines. Adversaries may delete log groups to conceal malicious activity, disable log forwarding, or impede incident response.
+
+*Rule type*: query
+
+*Rule indices*: 
+
+* filebeat-*
+* logs-aws.cloudtrail-*
+
+*Severity*: medium
+
+*Risk score*: 47
+
+*Runs every*: 5m
+
+*Searches indices from*: now-6m ({ref}/common-options.html#date-math[Date Math format], see also <<rule-schedule, `Additional look-back time`>>)
+
+*Maximum alerts per execution*: 100
+
+*References*: 
+
+* https://awscli.amazonaws.com/v2/documentation/api/latest/reference/logs/delete-log-group.html
+* https://docs.aws.amazon.com/AmazonCloudWatchLogs/latest/APIReference/API_DeleteLogGroup.html
+
+*Tags*: 
+
+* Domain: Cloud
+* Data Source: AWS
+* Data Source: Amazon Web Services
+* Data Source: Amazon CloudWatch
+* Use Case: Log Auditing
+* Resources: Investigation Guide
+* Tactic: Defense Evasion
+* Tactic: Impact
+
+*Version*: 213
+
+*Rule authors*: 
+
+* Elastic
+
+*Rule license*: Elastic License v2
+
+
+==== Investigation guide
+
+
+
+*Triage and analysis*
+
+
+
+*Investigating AWS CloudWatch Log Group Deletion*
+
+
+CloudWatch Logs is foundational to AWS observability, SIEM ingestion, audit pipelines, and incident response.  
+Log groups often contain retention-critical logs such as:
+
+- VPC Flow Logs  
+- Lambda function logs  
+- Application and container logs  
+- Security service logs (e.g., AWS WAF, RDS logs)
+
+Deletion of a log group removes all historical log streams and cannot be reversed. 
+Adversaries may leverage `DeleteLogGroup` to impair forensic visibility, disrupt monitoring, and hide evidence following malicious actions. This rule detects a successful `DeleteLogGroup` event initiated from a non–AWS Internal user agent, signalling potential defense evasion or disruption of logging pipelines.
+
+
+*Possible investigation steps*
+
+
+ **Identify the actor**
+- Review `aws.cloudtrail.user_identity.arn` and `aws.cloudtrail.user_identity.access_key_id`.  
+- Determine whether this identity normally modifies CloudWatch Logs or is associated with automation.
+
+**Review deletion details**
+- Inspect `aws.cloudtrail.request_parameters` to determine the exact log group deleted.  
+- Assess whether the log group provided visibility into:
+  - CloudTrail processing,  
+  - Network flows (VPC Flow Logs),  
+  - Serverless/application security logs,  
+  - Lambda, ECS, EKS, or container workload logs.
+
+**Check source and context**
+- Assess `source.ip` for unusual IPs, geolocations, VPN endpoints, or cloud provider ranges unfamiliar to your environment.  
+- Review `user_agent.original` for unexpected tools (custom agents, unusual SDKs, attackers using CLI default agents).
+
+**Correlate with surrounding activity**
+Look for preceding or subsequent CloudTrail events such as:
+
+- `StopLogging`, `DeleteTrail`, or CloudTrail configuration changes  
+- IAM permission escalations (e.g., `PutUserPolicy`, `AttachRolePolicy`)  
+- Security service suppression actions (e.g., GuardDuty detector deletion)  
+- Lambda or application configuration updates that may indicate a compromise  
+
+If the deleted log group was associated with a Lambda execution role, review for suspicious code updates or rogue deployments.
+
+**Assess business or security impact**
+- Identify whether the deleted log group fed:
+  - SIEM ingestion  
+  - Security analytics pipelines  
+  - Compliance/audit logs  
+  - Operational monitoring or alerting  
+- Contact the service owner or development team to verify whether the deletion was intentional.
+
+**Determine compromise scope if malicious**
+- Use CloudTrail to identify prior activity by the same user identity or IP.  
+- Examine authentication events (IAM, STS) for signs of stolen credentials or session hijacking.  
+- Identify resources or applications dependent on the deleted logging pipeline.
+
+
+*False positive analysis*
+
+
+- **IaC-managed environments**: Tools like Terraform or CloudFormation may delete and recreate log groups during deployments.  
+- **Automated cleanup jobs**: Some environments use automated retention cleanup workflows.  
+- **Ephemeral testing accounts**: Development/testing accounts frequently create and destroy log groups.
+
+To tune noise:
+- Add exceptions for specific automation IAM roles or trusted source IPs.
+- Require `user_agent.original` and `source.ip` conditions for baseline-based tuning.
+
+
+*Response and remediation*
+
+
+**Containment**
+- Immediately recreate the deleted log group (if appropriate) using IaC or CloudWatch Console.  
+- Restrict the IAM identity that performed the deletion until the activity is validated.  
+- Enable or confirm CloudTrail logging in all regions to maintain broader visibility.
+
+**Investigation**
+- Review CloudTrail activity for:
+  - privilege escalation attempts,  
+  - IAM role modifications,  
+  - security service tampering (CloudTrail, Config, GuardDuty).  
+- Correlate with alerts from other services (GuardDuty, Security Hub, SIEM detections).
+
+**Recovery and hardening**
+- Enforce least privilege on `logs:DeleteLogGroup`.  
+- Configure AWS Config rules to alert on missing or modified log groups.  
+- Implement log group retention policies and IAM SCP guardrails to prevent unauthorized deletion.  
+- Document log group ownership and expected lifecycle management.
+
+
+*Additional information*
+
+
+- **https://github.com/aws-samples/aws-incident-response-playbooks/blob/c151b0dc091755fffd4d662a8f29e2f6794da52c/playbooks/[AWS IR Playbooks]** 
+- **https://github.com/aws-samples/aws-customer-playbook-framework/tree/a8c7b313636b406a375952ac00b2d68e89a991f2/docs[AWS Customer Playbook Framework]** 
+- **Security Best Practices:** https://aws.amazon.com/premiumsupport/knowledge-center/security-best-practices/[AWS Knowledge Center – Security Best Practices].
+
+
+==== Rule query
+
+
+[source, js]
+----------------------------------
+event.dataset: "aws.cloudtrail" 
+  and event.provider: "logs.amazonaws.com" 
+  and event.action: "DeleteLogGroup" 
+  and event.outcome: "success"
+  and source.ip: * 
+  and not user_agent.original : "AWS Internal"
+
+----------------------------------
+
+*Framework*: MITRE ATT&CK^TM^
+
+* Tactic:
+** Name: Impact
+** ID: TA0040
+** Reference URL: https://attack.mitre.org/tactics/TA0040/
+* Technique:
+** Name: Data Destruction
+** ID: T1485
+** Reference URL: https://attack.mitre.org/techniques/T1485/
+* Tactic:
+** Name: Defense Evasion
+** ID: TA0005
+** Reference URL: https://attack.mitre.org/tactics/TA0005/
+* Technique:
+** Name: Impair Defenses
+** ID: T1562
+** Reference URL: https://attack.mitre.org/techniques/T1562/
+* Sub-technique:
+** Name: Disable or Modify Tools
+** ID: T1562.001
+** Reference URL: https://attack.mitre.org/techniques/T1562/001/

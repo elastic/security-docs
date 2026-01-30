@@ -27,7 +27,7 @@ This rule detects Elastic SIEM high severity detection alerts that are observed 
 * Rule Type: Higher-Order Rule
 * Resources: Investigation Guide
 
-*Version*: 2
+*Version*: 3
 
 *Rule authors*: 
 
@@ -111,6 +111,10 @@ FROM .alerts-security.*
 | eval Esql.recent = DATE_DIFF("minute", Esql.first_time_seen, now())
 // first time seen is within 10m of the rule execution time
 | where Esql.recent <= 10 and Esql.agents_distinct_count == 1 and Esql.alerts_count <= 10 and (Esql.last_time_seen == Esql.first_time_seen)
-| keep kibana.alert.rule.name, Esql.*
+
+// Move single values to their corresponding ECS fields for alerts exclusion
+| eval host.id = mv_min(Esql.host_id_values)
+
+| keep host.id, kibana.alert.rule.name, Esql.*
 
 ----------------------------------
