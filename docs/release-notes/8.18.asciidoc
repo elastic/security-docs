@@ -488,7 +488,7 @@ This issue is fixed in {elastic-defend} versions 8.17.6, 8.18.1, and 9.0.1.
 ====
 *Details* +
 
-After upgrading to 8.18 (or one of the 8.18 patch releases) from a {stack} version earlier than 8.9, you might encounter the following issues with gap fill functionality:
+After upgrading to 8.18.x from a {stack} version earlier than 8.9, you might encounter the following issues with gap fill functionality:
 
 * **Gap fills**: Manual runs are scheduled to fill gaps, but gap statuses aren't updated to `Filled` after the manual runs complete.
 
@@ -509,46 +509,50 @@ The `elastic/kibana` service account has permissions to access the new data stre
 
 Migrate data from the old reindexed index to the new data stream, then delete the old index.
 
-1. **Identify the old index**:
+. **Identify the old index**:
++
+[source,console]
+----
+GET .kibana-event-log-*
+----
++
+Look for indices with names like `.reindexed-v8-kibana-event-log-{version}-*`.
 
-    ```console
-    GET .kibana-event-log-*
-    ```
-
-    Look for indices with names like `.reindexed-v8-kibana-event-log-{version}-*`.
-
-2. **Reindex data to the new data stream**:
-
-    ```console
-    POST _reindex
-    {
-      "source": {
-        "index": ".reindexed-v8-kibana-event-log-7.17.29-000001" <1>
+. **Reindex data to the new data stream**:
++
+[source,console]
+----
+POST _reindex
+{
+  "source": {
+    "index": ".reindexed-v8-kibana-event-log-7.17.29-000001" <1>
       },
-      "dest": {
+   "dest": {
         "index": ".kibana-event-log-ds",
         "op_type": "create"
       }
-    }
-    ```
+}
+----
++
+  <1> Replace `7.17.29` with your version number.
++
+. **Delete the old index**:
++
+[source,console]
+----
+DELETE .reindexed-v8-kibana-event-log-7.17.29-000001
+----
 
-    <1> Replace `7.17.29` with your version number.
+. **Verify**:
++
+[source,console]
+----
+GET .kibana-event-log-*
+----
 
-3. **Delete the old index**:
+Only the data stream (`.kibana-event-log-ds`) and its backing indices (`.ds-.kibana-event-log-ds-*`) should remain.
 
-    ```console
-    DELETE .reindexed-v8-kibana-event-log-7.17.29-000001
-    ```
-
-4. **Verify**:
-
-    ```console
-    GET .kibana-event-log-*
-    ```
-
-    Only the data stream (`.kibana-event-log-ds`) and its backing indices (`.ds-.kibana-event-log-ds-*`) should remain.
-
-**IMPORTANT:**
+IMPORTANT:
 
 * **Backup**: Consider backing up your data before performing these operations in production environments.
 * **Event log retention**: Event log data has a default retention of 90 days. If you don't need historical data, you can skip the reindex step and simply delete the old index and its aliases.
