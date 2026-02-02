@@ -1,0 +1,135 @@
+[[prebuilt-rule-8-19-14-aws-sqs-queue-purge]]
+=== AWS SQS Queue Purge
+
+Identifies when an AWS Simple Queue Service (SQS) queue is purged. Purging an SQS queue permanently deletes all messages currently in the queue. Adversaries may use this action to disrupt application workflows, destroy operational data, or impair monitoring and alerting by removing messages that contain evidence of malicious activity.
+
+*Rule type*: query
+
+*Rule indices*: 
+
+* filebeat-*
+* logs-aws.cloudtrail-*
+
+*Severity*: medium
+
+*Risk score*: 47
+
+*Runs every*: 5m
+
+*Searches indices from*: now-6m ({ref}/common-options.html#date-math[Date Math format], see also <<rule-schedule, `Additional look-back time`>>)
+
+*Maximum alerts per execution*: 100
+
+*References*: 
+
+* https://docs.aws.amazon.com/AWSSimpleQueueService/latest/APIReference/API_PurgeQueue.html
+* https://hackingthe.cloud/aws/exploitation/Misconfigured_Resource-Based_Policies/exploting_public_resources_attack_playbook/
+
+*Tags*: 
+
+* Domain: Cloud
+* Data Source: AWS
+* Data Source: Amazon Web Services
+* Data Source: AWS SQS
+* Use Case: Threat Detection
+* Use Case: Log Auditing
+* Tactic: Defense Evasion
+* Resources: Investigation Guide
+
+*Version*: 6
+
+*Rule authors*: 
+
+* Elastic
+
+*Rule license*: Elastic License v2
+
+
+==== Investigation guide
+
+
+
+*Triage and analysis*
+
+
+
+*Investigating AWS SQS Queue Purge*
+
+
+AWS SQS is a managed message queuing service commonly used to decouple services and buffer events across distributed and serverless architectures. Purging a queue removes all pending messages and cannot be undone. While this may be required for maintenance or testing, adversaries may abuse this action to disrupt operations, delete forensic evidence, or evade detection by removing queued security or audit events.
+
+
+*Possible investigation steps*
+
+
+**Identify the actor**
+- Review `aws.cloudtrail.user_identity.arn` and `access_key_id` to determine who initiated the purge. Confirm whether this identity typically manages SQS resources and whether the action aligns with their role.
+
+**Review the affected queue**
+- Identify the purged queue using `aws.cloudtrail.request_parameters` or `aws.cloudtrail.resources.arn`. Determine the purpose of the queue and whether it supports critical workflows, security tooling, or monitoring pipelines.
+
+**Evaluate the context of the action**
+- Review the `@timestamp` to determine when the purge occurred and whether it aligns with maintenance windows or
+  deployment activity.
+- Examine `source.ip` and `user_agent.original` for anomalies such as unexpected locations, automation tools, or
+  unfamiliar clients.
+
+**Correlate related activity**
+- Search for other CloudTrail events from the same identity before and after the purge, including IAM changes, credential activity, or additional SQS operations.
+- Look for signs of follow-on behavior such as queue deletion, policy updates, or attempts to suppress logging.
+
+**Validate intent**
+- Confirm with the queue owner or application team whether the purge was intentional, approved, and expected. If no clear business justification exists, treat the activity as potentially suspicious.
+
+
+*False positive analysis*
+
+
+- Queue purges performed during routine maintenance, incident recovery, or test resets may be legitimate.
+- Automated jobs or cleanup scripts may regularly purge queues as part of normal operation.
+
+
+*Response and remediation*
+
+
+- If the purge was unauthorized, immediately restrict SQS permissions for the affected identity and investigate for credential compromise.
+- Assess operational impact and determine whether downstream systems were disrupted or lost critical data.
+- Review recent activity to identify any additional attempts to evade detection or disable monitoring.
+- Reinforce least-privilege IAM policies to limit which identities can perform `PurgeQueue`.
+- Enhance monitoring and alerting for destructive SQS actions, especially in production environments.
+- Work with application teams to document approved purge workflows and ensure adequate guardrails are in place.
+
+
+*Additional information*
+
+- **https://github.com/aws-samples/aws-incident-response-playbooks/blob/c151b0dc091755fffd4d662a8f29e2f6794da52c/playbooks/[AWS IR Playbooks]** 
+- **https://github.com/aws-samples/aws-customer-playbook-framework/tree/a8c7b313636b406a375952ac00b2d68e89a991f2/docs[AWS Customer Playbook Framework]** 
+- **https://aws.amazon.com/premiumsupport/knowledge-center/security-best-practices/[AWS Knowledge Center – Security Best Practices]**
+
+
+==== Rule query
+
+
+[source, js]
+----------------------------------
+event.dataset: "aws.cloudtrail"
+    and event.provider: "sqs.amazonaws.com"
+    and event.action: "PurgeQueue"
+    and event.outcome: "success"
+
+----------------------------------
+
+*Framework*: MITRE ATT&CK^TM^
+
+* Tactic:
+** Name: Defense Evasion
+** ID: TA0005
+** Reference URL: https://attack.mitre.org/tactics/TA0005/
+* Technique:
+** Name: Impair Defenses
+** ID: T1562
+** Reference URL: https://attack.mitre.org/techniques/T1562/
+* Sub-technique:
+** Name: Disable or Modify Cloud Logs
+** ID: T1562.008
+** Reference URL: https://attack.mitre.org/techniques/T1562/008/
