@@ -6,6 +6,12 @@
 === 8.18.8
 
 [discrete]
+[[known-issue-8.18.8]]
+==== Known issues
+
+include::8.18.asciidoc[tag=known-issue-4770]
+
+[discrete]
 [[features-8.18.8]]
 ==== New features
 * Adds an {elastic-defend} option to remediate orphaned state by attempting to start Elastic Agent service.
@@ -33,6 +39,12 @@
 === 8.18.7
 
 [discrete]
+[[known-issue-8.18.7]]
+==== Known issues
+
+include::8.18.asciidoc[tag=known-issue-4770]
+
+[discrete]
 [[bug-fixes-8.18.7]]
 ==== Fixes
 * Prevents users without appropriate privileges from deleting notes ({kibana-pull}233948[#233948]).
@@ -44,6 +56,12 @@
 [discrete]
 [[release-notes-8.18.6]]
 === 8.18.6
+
+[discrete]
+[[known-issue-8.18.6]]
+==== Known issues
+
+include::8.18.asciidoc[tag=known-issue-4770]
 
 [discrete]
 [[enhancements-8.18.6]]
@@ -63,6 +81,12 @@
 [discrete]
 [[release-notes-8.18.5]]
 === 8.18.5
+
+[discrete]
+[[known-issue-8.18.5]]
+==== Known issues
+
+include::8.18.asciidoc[tag=known-issue-4770]
 
 [discrete]
 [[enhancements-8.18.5]]
@@ -85,6 +109,12 @@
 [discrete]
 [[release-notes-8.18.4]]
 === 8.18.4
+
+[discrete]
+[[known-issue-8.18.4]]
+==== Known issues
+
+include::8.18.asciidoc[tag=known-issue-4770]
 
 [discrete]
 [[enhancements-8.18.4]]
@@ -137,6 +167,8 @@ This issue is fixed in {stack} version 8.18.4.
 
 ====
 // end::known-issue[]
+
+include::8.18.asciidoc[tag=known-issue-4770]
 
 
 [discrete]
@@ -285,6 +317,8 @@ This issue is fixed in {stack} version 8.18.2.
 
 ====
 // end::known-issue[]
+
+include::8.18.asciidoc[tag=known-issue-4770]
 
 [discrete]
 [[enhancements-8.18.1]]
@@ -446,6 +480,86 @@ This issue is fixed in {elastic-defend} versions 8.17.6, 8.18.1, and 9.0.1.
 
 ====
 // end::known-issue[]
+
+// tag::known-issue-4770[]
+[discrete]
+.Details about gap fills aren't properly updated
+[%collapsible]
+====
+*Details* +
+
+After upgrading to 8.18.x from a {stack} version earlier than 8.9, you might encounter the following issues with gap fill functionality:
+
+* **Gap fills**: Manual runs are scheduled to fill gaps, but gap statuses aren't updated to `Filled` after the manual runs complete.
+
+* **Rule deletion**: If a rule has gaps and you delete the rule, the rule is removed but the gaps are not marked as deleted. You may see incorrect numbers when viewing total rules with gaps.
+
+*Root cause* +
+
+When upgrading from {stack} versions earlier than 8.9, the old event log index is reindexed with a new name:
+
+* Old index: `.reindexed-v8-kibana-event-log-{version}-000001`
+* Aliases: `.kibana-event-log-{version}`, `.kibana-event-log-{version}-000001`
+
+Starting in {stack} 8.9.0, a new data stream (`.kibana-event-log-ds`) was introduced for event log storage.
+
+The `elastic/kibana` service account has permissions to access the new data stream but does not have permissions to access the old reindexed indices. When {kib} queries `.kibana-event-log-*`, it matches both the new data stream and the old reindexed index, causing Point-in-Time (PIT) operations to fail.
+
+*Workaround* +
+
+Migrate data from the old reindexed index to the new data stream, then delete the old index.
+
+. **Identify the old index**:
++
+[source,console]
+----
+GET .kibana-event-log-*
+----
++
+Look for indices with names like `.reindexed-v8-kibana-event-log-{version}-*`.
+
+. **Reindex data to the new data stream**:
++
+[source,sh]
+--------------------------------------------------
+POST _reindex
+{
+  "source": {
+    "index": ".reindexed-v8-kibana-event-log-7.17.29-000001"
+    },
+    "dest": {
+      "index": ".kibana-event-log-ds",
+      "op_type": "create"
+    }
+}
+--------------------------------------------------
++
+NOTE: Replace `7.17.29` with your version number.
++
+. **Delete the old index**:
++
+[source,console]
+----
+DELETE .reindexed-v8-kibana-event-log-7.17.29-000001
+----
++
+. **Verify**:
++
+[source,console]
+----
+GET .kibana-event-log-*
+----
++
+Only the data stream (`.kibana-event-log-ds`) and its backing indices (`.ds-.kibana-event-log-ds-*`) should remain.
+
+IMPORTANT:
+
+* **Backup**: Consider backing up your data before performing these operations in production environments.
+* **Event log retention**: Event log data has a default retention of 90 days. If you don't need historical data, you can skip the reindex step and simply delete the old index and its aliases.
+
+
+====
+// end::known-issue-4770[]
 
 [discrete]
 [[deprecations-8.18.0]]
