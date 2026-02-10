@@ -37,12 +37,13 @@ Identifies when a user creates a new inbox rule in Microsoft 365 that deletes or
 * Tactic: Defense Evasion
 * Resources: Investigation Guide
 
-*Version*: 2
+*Version*: 3
 
 *Rule authors*: 
 
 * Elastic
 * Jamie Lee
+* Marco Pedrinazzi
 
 *Rule license*: Elastic License v2
 
@@ -110,8 +111,11 @@ This is a new terms rule that alerts only when the combination of `user.id` and 
 [source, js]
 ----------------------------------
 event.dataset: "o365.audit" and
-    event.action: "New-InboxRule" and event.outcome: "success" and
-    o365.audit.Parameters.SubjectContainsWords: (
+    event.action: ("New-InboxRule" or "Set-InboxRule") and event.outcome: "success" and
+    (
+     o365.audit.Parameters.BodyContainsWords: "\u0000" or 
+     o365.audit.Parameters.WithinSizeRangeMinimum <= 1023 or 
+     o365.audit.Parameters.SubjectContainsWords: (
         *phish* or
         *hack* or
         *alert* or
@@ -127,12 +131,14 @@ event.dataset: "o365.audit" and
         *protection* or
         *login* or
         *suspicious*
+      )
     ) and (
     o365.audit.Parameters.DeleteMessage: True or
     o365.audit.Parameters.MoveToFolder: (
         *Deleted* or
         *Junk* or
-        *RSS*
+        *RSS* or 
+        *Calendar*
     )
 )
 

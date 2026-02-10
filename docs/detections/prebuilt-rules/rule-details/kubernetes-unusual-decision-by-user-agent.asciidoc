@@ -23,14 +23,14 @@ This rule detects unusual request responses in Kubernetes audit logs through the
 
 *Tags*: 
 
+* Data Source: Kubernetes
 * Domain: Kubernetes
 * Domain: Container
 * Use Case: Threat Detection
-* Data Source: Kubernetes
 * Tactic: Execution
 * Resources: Investigation Guide
 
-*Version*: 2
+*Version*: 3
 
 *Rule authors*: 
 
@@ -93,7 +93,13 @@ Kubernetes orchestrates containerized applications, relying on API requests for 
 
 [source, js]
 ----------------------------------
-event.dataset:"kubernetes.audit_logs" and kubernetes.audit.stage:"ResponseComplete" and user_agent.original:*
+event.dataset:"kubernetes.audit_logs" and kubernetes.audit.stage:"ResponseComplete" and
+kubernetes.audit.userAgent:(* and not (*kubernetes/$Format)) and
+not (
+  kubernetes.audit.userAgent:kubelet* and
+  not kubernetes.audit.objectRef.resource:(pods or nodes or csinodes or csidrivers or configmaps or secrets or events or leases or runtimeclasses) and
+  kubernetes.audit.verb:(get or list or watch or patch)
+)
 
 ----------------------------------
 
