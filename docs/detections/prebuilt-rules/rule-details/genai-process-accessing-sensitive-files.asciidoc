@@ -44,7 +44,7 @@ Detects when GenAI tools access sensitive files such as cloud credentials, SSH k
 * Mitre Atlas: T0085.001
 * Mitre Atlas: T0055
 
-*Version*: 2
+*Version*: 3
 
 *Rule authors*: 
 
@@ -104,22 +104,27 @@ This rule detects GenAI tools accessing credential files, SSH keys, browser data
 file where event.action in ("open", "creation", "modification") and event.outcome == "success" and
 
   // GenAI process 
-    process.name in (
-      "ollama.exe", "ollama", "Ollama",
-      "textgen.exe", "textgen", "text-generation-webui.exe", "oobabooga.exe",
-      "lmstudio.exe", "lmstudio", "LM Studio",
-      "claude.exe", "claude", "Claude",
-      "cursor.exe", "cursor", "Cursor",
-      "copilot.exe", "copilot", "Copilot",
-      "codex.exe", "codex",
-      "Jan", "jan.exe", "jan",
-      "gpt4all.exe", "gpt4all", "GPT4All",
-      "gemini-cli.exe", "gemini-cli",
-      "genaiscript.exe", "genaiscript",
-      "grok.exe", "grok",
-      "qwen.exe", "qwen",
-      "koboldcpp.exe", "koboldcpp", "KoboldCpp",
-      "llama-server", "llama-cli"
+    (
+      process.name in (
+        "ollama.exe", "ollama", "Ollama",
+        "textgen.exe", "textgen", "text-generation-webui.exe", "oobabooga.exe",
+        "lmstudio.exe", "lmstudio", "LM Studio",
+        "claude.exe", "claude", "Claude",
+        "cursor.exe", "cursor", "Cursor",
+        "copilot.exe", "copilot", "Copilot",
+        "codex.exe", "codex",
+        "Jan", "jan.exe", "jan",
+        "gpt4all.exe", "gpt4all", "GPT4All",
+        "gemini-cli.exe", "gemini-cli",
+        "genaiscript.exe", "genaiscript",
+        "grok.exe", "grok",
+        "qwen.exe", "qwen",
+        "koboldcpp.exe", "koboldcpp", "KoboldCpp",
+        "llama-server", "llama-cli"
+      ) or
+      // OpenClaw/Moltbot/Clawdbot via Node.js
+      (process.name in ("node", "node.exe") and
+       process.command_line like~ ("*openclaw*", "*moltbot*", "*clawdbot*"))
     ) and
 
   // Sensitive file paths

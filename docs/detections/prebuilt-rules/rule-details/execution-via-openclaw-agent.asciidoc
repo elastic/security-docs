@@ -1,0 +1,131 @@
+[[execution-via-openclaw-agent]]
+=== Execution via OpenClaw Agent
+
+Detects suspicious child process execution from the OpenClaw, Moltbot, or Clawdbot AI coding agents running via Node.js. These tools can execute arbitrary shell commands through skills or prompt injection attacks. Malicious skills from public registries like ClawHub have been observed executing obfuscated download-and-execute commands targeting cryptocurrency wallets and credentials. This rule identifies shells, scripting interpreters, and common LOLBins spawned by these AI agents.
+
+*Rule type*: eql
+
+*Rule indices*: 
+
+* logs-endpoint.events.process-*
+
+*Severity*: medium
+
+*Risk score*: 47
+
+*Runs every*: 5m
+
+*Searches indices from*: now-9m ({ref}/common-options.html#date-math[Date Math format], see also <<rule-schedule, `Additional look-back time`>>)
+
+*Maximum alerts per execution*: 100
+
+*References*: 
+
+* https://www.malwarebytes.com/blog/threat-intel/2026/01/clawdbots-rename-to-moltbot-sparks-impersonation-campaign
+* https://www.tomshardware.com/tech-industry/cyber-security/malicious-moltbot-skill-targets-crypto-users-on-clawhub
+* https://blogs.cisco.com/ai/personal-ai-agents-like-openclaw-are-a-security-nightmare
+* https://blog.virustotal.com/2026/02/from-automation-to-infection-how.html
+
+*Tags*: 
+
+* Domain: Endpoint
+* Domain: LLM
+* OS: Linux
+* OS: macOS
+* OS: Windows
+* Use Case: Threat Detection
+* Tactic: Execution
+* Tactic: Command and Control
+* Data Source: Elastic Defend
+* Resources: Investigation Guide
+
+*Version*: 1
+
+*Rule authors*: 
+
+* Elastic
+
+*Rule license*: Elastic License v2
+
+
+==== Investigation guide
+
+
+
+*Triage and analysis*
+
+
+
+*Investigating Execution via OpenClaw Agent*
+
+
+OpenClaw (formerly Clawdbot, rebranded to Moltbot) is a personal AI coding assistant that can execute shell commands 
+and scripts on behalf of users. Malicious actors have weaponized the skill ecosystem (ClawHub) to distribute skills 
+that execute download-and-execute commands, targeting cryptocurrency wallets and credentials.
+
+
+*Possible investigation steps*
+
+
+- Verify if OpenClaw/Moltbot is an approved application in your organization.
+- Review the child process command line for indicators of malicious activity (encoded payloads, remote downloads, credential access).
+- Check the parent Node.js process command line to identify which OpenClaw component initiated the execution.
+- Examine recently installed skills from ClawHub for malicious or obfuscated code.
+- Correlate with network events to identify data exfiltration or C2 communication.
+- Review the user's AI conversation history for prompt injection attempts.
+
+
+*False positive analysis*
+
+
+- Developers legitimately using OpenClaw/Moltbot for AI-assisted coding may trigger this rule when the AI executes build scripts, curl commands, or other legitimate automation.
+- If the tool is approved, consider tuning based on specific command patterns or adding exception lists.
+
+
+*Response and remediation*
+
+
+- If the child process activity appears malicious, terminate the OpenClaw gateway and investigate the skill that initiated the command.
+- Review and remove any suspicious skills from the OpenClaw configuration.
+- If credentials may have been accessed, rotate affected secrets and API keys.
+- Block known typosquat domains (moltbot.you, clawbot.ai, clawdbot.you) at the network level.
+
+
+==== Rule query
+
+
+[source, js]
+----------------------------------
+process where event.type == "start" and
+  process.parent.name : ("node", "node.exe") and 
+  process.parent.command_line : ("*openclaw*", "*moltbot*", "*clawdbot*") and
+   process.name : ("bash", "sh", "zsh", "bash.exe", "cmd.exe", "powershell.exe", "curl.exe", "curl", "base64", "xattr", "osascript", "python*", "chmod", "certutil.exe", "rundll32.exe")
+
+----------------------------------
+
+*Framework*: MITRE ATT&CK^TM^
+
+* Tactic:
+** Name: Execution
+** ID: TA0002
+** Reference URL: https://attack.mitre.org/tactics/TA0002/
+* Technique:
+** Name: Command and Scripting Interpreter
+** ID: T1059
+** Reference URL: https://attack.mitre.org/techniques/T1059/
+* Sub-technique:
+** Name: JavaScript
+** ID: T1059.007
+** Reference URL: https://attack.mitre.org/techniques/T1059/007/
+* Tactic:
+** Name: Command and Control
+** ID: TA0011
+** Reference URL: https://attack.mitre.org/tactics/TA0011/
+* Technique:
+** Name: Application Layer Protocol
+** ID: T1071
+** Reference URL: https://attack.mitre.org/techniques/T1071/
+* Sub-technique:
+** Name: Web Protocols
+** ID: T1071.001
+** Reference URL: https://attack.mitre.org/techniques/T1071/001/

@@ -27,11 +27,13 @@ This rule detects when a user creates a pod/container running in privileged mode
 *Tags*: 
 
 * Data Source: Kubernetes
+* Domain: Kubernetes
+* Use Case: Threat Detection
 * Tactic: Execution
 * Tactic: Privilege Escalation
 * Resources: Investigation Guide
 
-*Version*: 208
+*Version*: 209
 
 *Rule authors*: 
 
@@ -97,12 +99,18 @@ The Kubernetes Fleet integration with Audit Logs enabled or similarly structured
 
 [source, js]
 ----------------------------------
-event.dataset : "kubernetes.audit_logs"
-  and kubernetes.audit.annotations.authorization_k8s_io/decision:"allow"
-  and kubernetes.audit.objectRef.resource:pods
-  and kubernetes.audit.verb:create
-  and kubernetes.audit.requestObject.spec.containers.securityContext.privileged:true
-  and not kubernetes.audit.requestObject.spec.containers.image: ("docker.elastic.co/beats/elastic-agent:8.4.0")
+event.dataset : "kubernetes.audit_logs" and kubernetes.audit.annotations.authorization_k8s_io/decision:"allow" and
+kubernetes.audit.objectRef.resource:pods and kubernetes.audit.verb:create and kubernetes.audit.requestObject.spec.containers.securityContext.privileged:true and
+not kubernetes.audit.requestObject.spec.containers.image: (
+  *amazonaws.com/betsie/pipeline/pipeline-core* or mirror.gcr.io/aquasec/trivy* or rancher/mirrored-longhornio-longhorn-instance-manager* or quay.io/calico* or
+  rancher/system-agent* or openebs/m-exporter* or openebs/cstor-istgt* or ghcr.io/kubereboot/kured* or registry.k8s.io/sig-storage/csi-node-driver-registrar* or
+  registry.k8s.io/csi-secrets-store* or registry.gitlab.com/gitlab-org/gitlab-runner/gitlab-runner-helper* or sonarsource/sonar-scanner-cli* or
+  rancher/mirrored-longhornio-longhorn-engine* or jenkins/inbound-agent* or mcr.microsoft.com/oss/v2/kubernetes-csi* or registry.k8s.io/dns/k8s-dns-node-cache* or
+  *amazonaws.com/eks/kube-proxy* or *amazonaws.com/eks/aws-efs-csi-driver* or *amazonaws.com/eks/livenessprobe* or *amazonaws.com/amazon-k8s-cni* or
+  *amazonaws.com/amazon/aws-network-policy-agent* or mcr.microsoft.com/oss/kubernetes-csi* or openebs/node-disk-manager* or openebs/node-disk-exporter* or
+  mcr.microsoft.com/oss/kubernetes/kube-proxy* or public.ecr.aws/eks-distro/kubernetes-csi/livenessprobe* or public.ecr.aws/eks-distro/kubernetes-csi/external-provisioner* or
+  amazon/aws-efs-csi-driver* or registry.k8s.io/kube-proxy* or registry.crowdstrike.com/falcon-sensor* or *octopus-deploy/tentacle* or */sysdig/*
+)
 
 ----------------------------------
 
