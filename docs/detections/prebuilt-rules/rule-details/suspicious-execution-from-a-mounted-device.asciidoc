@@ -37,7 +37,7 @@ Identifies when a script interpreter or signed binary is launched via a non-stan
 * Data Source: Sysmon
 * Resources: Investigation Guide
 
-*Version*: 211
+*Version*: 212
 
 *Rule authors*: 
 
@@ -95,30 +95,21 @@ In Windows environments, script interpreters and signed binaries are essential f
 - Monitor for any recurrence of similar activities by enhancing logging and alerting mechanisms, focusing on process execution from non-standard directories.
 - Escalate the incident to the security operations center (SOC) or incident response team for further investigation and to determine if additional systems are affected.
 
-==== Setup
-
-
-
-*Setup*
-
-
-If enabling an EQL rule on a non-elastic-agent index (such as beats) for versions <8.2,
-events will not define `event.ingested` and default fallback for EQL rules was not added until version 8.2.
-Hence for this rule to work effectively, users will need to add a custom ingest pipeline to populate
-`event.ingested` to @timestamp.
-For more details on adding a custom ingest pipeline refer - https://www.elastic.co/guide/en/fleet/current/data-streams-pipeline-tutorial.html
-
-
 ==== Rule query
 
 
 [source, js]
 ----------------------------------
 process where host.os.type == "windows" and event.type == "start" and process.executable : "C:\\*" and
-  (process.working_directory : "?:\\" and not process.working_directory: "C:\\") and
+  (
+    process.working_directory : ("D:\\*", "E:\\*", "F:\\*") or
+    ?process.Ext.device.product_id : ("Virtual DVD-ROM", "Virtual Disk")
+  ) and
   process.parent.name : "explorer.exe" and
-  process.name : ("rundll32.exe", "mshta.exe", "powershell.exe", "pwsh.exe", "cmd.exe", "regsvr32.exe",
-                  "cscript.exe", "wscript.exe")
+  process.name : (
+    "rundll32.exe", "mshta.exe", "powershell.exe", "pwsh.exe", "cmd.exe", "regsvr32.exe", "cscript.exe",
+    "wscript.exe", "certutil.exe", "bitsadmin.exe", "msiexec.exe", "wmic.exe", "schtasks.exe", "msbuild.exe"
+  )
 
 ----------------------------------
 

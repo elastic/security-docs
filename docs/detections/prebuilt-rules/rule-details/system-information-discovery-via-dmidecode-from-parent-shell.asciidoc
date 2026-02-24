@@ -36,7 +36,7 @@ This rule detects the use of dmidecode to gather system information from a Linux
 * Data Source: SentinelOne
 * Resources: Investigation Guide
 
-*Version*: 1
+*Version*: 2
 
 *Rule authors*: 
 
@@ -148,7 +148,16 @@ Auditbeat is a lightweight shipper that you can install on your servers to audit
 ----------------------------------
 process where host.os.type == "linux" and event.type == "start" and event.action in ("exec", "exec_event", "start") and
 process.name == "dmidecode" and process.parent.name in ("bash", "dash", "sh", "tcsh", "csh", "zsh", "ksh", "fish") and
-process.parent.args == "-c"
+process.parent.args == "-c" and not (
+  process.parent.command_line in (
+    "/bin/sh -c /usr/sbin/dmidecode | /bin/grep VMware", "sh -c dmidecode -s system-manufacturer"
+  ) or
+  ?process.working_directory in (
+    "/data/oem_agent/agent_inst/sysman/emd", "/opt/rapid7/ir_agent/components/insight_agent/common", "/opt/veeam/transport",
+    "/data/app/oracle/agent/agent_inst/sysman/emd", "/home/nessus", "/opt/commvault", "/opt/nessus_agent/var/nessus/mod/com.tenable.nessus_agent/data"
+  ) or
+  process.parent.args like "printf*"
+)
 
 ----------------------------------
 

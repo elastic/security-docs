@@ -29,7 +29,7 @@ This rule detects Suricata high severity alerts that are observed for the first 
 * Domain: Network
 * Data Source: Suricata
 
-*Version*: 2
+*Version*: 3
 
 *Rule authors*: 
 
@@ -89,7 +89,9 @@ whether it represents a true compromise or rare benign activity.
 FROM logs-suricata.*
 
   // high severity alerts
-| where event.module == "suricata" and event.kind == "signal" and event.severity == 1
+| where event.module == "suricata" and event.kind == "signal" and event.severity == 1 and
+        rule.name is not null and
+        not rule.name like "SURICATA STREAM*"
 
 | STATS Esql.alerts_count = count(*),
         Esql.first_time_seen = MIN(@timestamp),

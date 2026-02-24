@@ -42,7 +42,7 @@ This rule monitors for a set of Linux utilities that can be used for tunneling a
 * Data Source: Auditd Manager
 * Resources: Investigation Guide
 
-*Version*: 113
+*Version*: 114
 
 *Rule authors*: 
 
@@ -178,8 +178,19 @@ process where host.os.type == "linux" and event.type == "start" and event.action
     // gost & pivotnacci - spawned without process.parent.name
     (process.name == "gost" and process.args : ("-L*", "-C*", "-R*")) or (process.name == "pivotnacci")) or (
     // ssh
-    (process.name == "ssh" and (process.args in ("-R", "-L", "-D", "-w") and process.args_count >= 4 and 
-     not (process.args == "chmod" or process.command_line like "*rungencmd*"))) or
+    (process.name == "ssh" and (
+      (
+        /* exact tunnel argument matching */
+        process.args in ("-R", "-L", "-D", "-w") or
+        /* single-dash token, first letter is NOT o/O, contains one of R/L/D/w/W somewhere later */
+        process.args regex "-[A-NP-Za-np-z][A-Za-z]*[RLDwW][A-Za-z]*"
+      ) and
+      process.args_count >= 4 and 
+      not (
+        process.args == "chmod" or process.command_line like "*rungencmd*"
+      )
+    )) or
+    (process.name == "ssh" and process.args == "-J") or
     // sshuttle
     (process.name == "sshuttle" and process.args in ("-r", "--remote", "-l", "--listen") and process.args_count >= 4) or
     // socat
