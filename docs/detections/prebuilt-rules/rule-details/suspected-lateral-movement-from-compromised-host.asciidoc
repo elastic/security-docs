@@ -25,7 +25,7 @@ Detects potential lateral movement or post-compromise activity by correlating al
 * Rule Type: Higher-Order Rule
 * Resources: Investigation Guide
 
-*Version*: 3
+*Version*: 4
 
 *Rule authors*: 
 
@@ -80,6 +80,20 @@ The detection rule uses alert data to determine when multiple alerts from differ
 - Monitor the host and network for any signs of re-infection or further suspicious activity, using enhanced logging and alerting based on the identified attack patterns.
 - Escalate the incident to the appropriate internal or external cybersecurity teams for further investigation and potential legal action if the attack is part of a larger campaign.
 
+==== Setup
+
+
+
+*Setup*
+
+
+This rule requires the `host.ip` field to be populated.
+For **Elastic Defend** events on versions **8.18 and above**, this field is **disabled by default**.
+
+If you are using **Elastic Defend**, ensure host IP collection is enabled by following the configuration steps in the
+https://www.elastic.co/docs/solutions/security/configure-elastic-defend/configure-data-volume-for-elastic-endpoint#host-fields[helper guide].
+
+
 ==== Rule query
 
 
@@ -90,7 +104,9 @@ from .alerts-security.*
 // any alerts excluding deprecated, low severity and threat_match rules
 | where kibana.alert.rule.name is not null and kibana.alert.risk_score > 21 and
         kibana.alert.rule.type != "threat_match" and
-        not kibana.alert.rule.name like "Deprecated - *"
+        not kibana.alert.rule.name like "Deprecated - *" and
+        not KQL("""kibana.alert.rule.tags : "Rule Type: Higher-Order Rule" """) and
+        not kibana.alert.rule.name in ("Abnormally Large DNS Response", "Web Application Suspicious Activity: No User Agent")
 
 // alerts with existing source.ip or host.ip
 | eval alert_source_ip = CASE(source.ip is not null, source.ip, null),

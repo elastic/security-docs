@@ -44,7 +44,7 @@ Identifies the execution of PowerShell with suspicious argument values. This beh
 * Data Source: Elastic Endgame
 * Resources: Investigation Guide
 
-*Version*: 210
+*Version*: 211
 
 *Rule authors*: 
 
@@ -114,6 +114,11 @@ process where host.os.type == "windows" and event.type == "start" and
     ?user.id == "S-1-5-18" and
     /* Don't apply the user.id exclusion to Sysmon for compatibility */
     not event.dataset : ("windows.sysmon_operational", "windows.sysmon")
+  ) and
+
+  not process.parent.executable : (
+        "?:\\Program Files\\*.exe",
+        "?:\\Program Files (x86)\\*.exe"
   ) and
 
   (
@@ -197,6 +202,10 @@ process where host.os.type == "windows" and event.type == "start" and
     (
       process.parent.name : ("explorer.exe", "cmd.exe") and
       process.command_line : ("*-encodedCommand*", "*Invoke-webrequest*", "*WebClient*", "*Reflection.Assembly*"))
+    ) and
+    not process.command_line : (
+      "*Use-Icinga -Minimal*",
+      "*& {$j = sajb {Add-Type -AssemblyName*"
     )
 
 ----------------------------------

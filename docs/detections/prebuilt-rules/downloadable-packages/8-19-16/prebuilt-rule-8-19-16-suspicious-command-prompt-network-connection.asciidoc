@@ -1,0 +1,179 @@
+[[prebuilt-rule-8-19-16-suspicious-command-prompt-network-connection]]
+=== Suspicious Command Prompt Network Connection
+
+Identifies a network connection by the command prompt (cmd.exe) when it is executed with specific arguments, such as a script or a URL, or when it is spawned by Microsoft Office applications. Adversaries often abuse cmd.exe to download malicious payloads or establish command and control channels from a remote source.
+
+*Rule type*: eql
+
+*Rule indices*: 
+
+* winlogbeat-*
+* logs-endpoint.events.process-*
+* logs-endpoint.events.network-*
+* logs-windows.sysmon_operational-*
+* logs-sentinel_one_cloud_funnel.*
+
+*Severity*: low
+
+*Risk score*: 21
+
+*Runs every*: 5m
+
+*Searches indices from*: now-9m ({ref}/common-options.html#date-math[Date Math format], see also <<rule-schedule, `Additional look-back time`>>)
+
+*Maximum alerts per execution*: 100
+
+*References*: 
+
+* https://www.iana.org/assignments/iana-ipv4-special-registry/iana-ipv4-special-registry.xhtml
+
+*Tags*: 
+
+* Domain: Endpoint
+* OS: Windows
+* Use Case: Threat Detection
+* Tactic: Execution
+* Resources: Investigation Guide
+* Data Source: Elastic Defend
+* Data Source: Sysmon
+* Data Source: SentinelOne
+
+*Version*: 213
+
+*Rule authors*: 
+
+* Elastic
+
+*Rule license*: Elastic License v2
+
+
+==== Investigation guide
+
+
+
+*Triage and analysis*
+
+
+> **Disclaimer**:
+> This investigation guide was created using generative AI technology and has been reviewed to improve its accuracy and relevance. While every effort has been made to ensure its quality, we recommend validating the content and adapting it to suit your specific environment and operational needs.
+
+
+*Investigating Suspicious Command Prompt Network Connection*
+
+
+This alert identifies a Windows `cmd.exe` process start event that is quickly followed by a network connection from the same `cmd.exe` instance (`process.entity_id`). The command line indicates scripted execution (batch files), references to remote resources (URL-like strings), or execution launched by a Microsoft Office application. This pattern can be used to download payloads, stage execution, or establish command and control.
+
+
+*Triage and analysis steps*
+
+
+- Confirm the matched sequence and keep analysis tied to the correct process instance:
+  - Use the `Investigate in timeline` button in the Alerts table or pivot on `process.entity_id` to review both the process start event and the associated network event(s).
+  - Example KQL pivots:
+    - `process.entity_id:"<process_entity_id>" and event.category:process`
+    - `process.entity_id:"<process_entity_id>" and event.category:network`
+
+- Determine why `cmd.exe` matched and assess intent:
+  - Review `process.args` to confirm the interpreter switch (`/c` to execute and exit, `/k` to remain open).
+  - Identify which match condition applies:
+    - Batch script: `process.args` includes a `.bat` or `.cmd` reference.
+    - Remote resource: `process.command_line` contains `http://`, `https://`, or `ftp://`.
+    - Office parent: `process.parent.name` is one of `winword.exe`, `excel.exe`, `powerpnt.exe`, `outlook.exe`, `msaccess.exe`, or `mspub.exe`.
+  - Look for staging or obfuscation patterns in `process.command_line` (for example: `&`/`&&`/`||`, pipes `|`, redirection `>`/`>>`, escaping `^`, environment variables, or long encoded strings).
+
+- Validate the execution context and launch vector:
+  - Review `user.*` fields to determine who ran the command and whether it is expected for the host role.
+  - Review `process.parent.name` (and `process.parent.command_line` if available) to understand the initial trigger:
+    - Office parent: prioritize identifying the initiating document or message and any user interaction around `@timestamp`.
+    - Management tooling or installer parent: validate change control and whether the command line and destination are consistent with that software.
+  - If a batch script is referenced, locate the script on the host (if telemetry allows) and capture path and hash (`file.path`, `file.hash.sha256`) for scoping.
+
+- Analyze the outbound destination:
+  - Review `destination.ip` and `destination.port` for expectedness (business relationship, known vendor, or organization-owned public IP space).
+  - Note: the rule excludes common private and reserved address ranges, but it can still alert on connections to legitimate public services.
+  - Pivot on `destination.ip` to identify other hosts contacting the same destination near `@timestamp`:
+    - `destination.ip:"<destination_ip>" and event.category:network`
+  - Check whether the same `process.entity_id` generated repeated connections (potential beaconing) versus a single connection (one-time retrieval).
+
+- Reconstruct follow-on activity and potential impact:
+  - Identify child processes spawned by `cmd.exe` and look for common follow-on tooling (for example: `powershell.exe`, `mshta.exe`, `rundll32.exe`, `regsvr32.exe`, `certutil.exe`, `bitsadmin.exe`, `curl.exe`, `wget.exe`).
+  - If file telemetry is available, review file creation/modification shortly after `@timestamp` and correlate any new binaries or scripts with hashes and execution events.
+
+- Scope the activity (blast radius):
+  - Search for the same `process.command_line` (or distinctive substrings), script name, or extracted URL across endpoints.
+  - Search for other `cmd.exe` instances connecting to the same `destination.ip` or the same destination port/protocol.
+  - If the parent is Office, scope for the same parent-child relationship (`process.parent.name` -> `cmd.exe`) across users and hosts.
+
+
+*False positive analysis*
+
+
+- Software deployment, packaging, or endpoint management workflows that use `cmd.exe /c` to run batch scripts and contact vendor services.
+- Signed installer or updater activity where `cmd.exe` is used as a helper process with stable command lines.
+- Documented Office macros/add-ins/templates that legitimately spawn `cmd.exe` with consistent command lines and destinations.
+
+A benign determination is more likely when the combination of `process.parent.name`, stable `process.command_line`, and consistent `destination.ip`/`destination.port` repeats across an expected set of hosts and users and aligns to a documented workflow owner.
+
+
+*Response and remediation*
+
+
+- If the activity is suspicious or cannot be attributed to an approved workflow:
+  - Contain the affected endpoint (`host.id`) using available endpoint or network controls.
+  - Preserve evidence (at minimum):
+    - `@timestamp`, `host.*`, `user.*`
+    - `process.entity_id`, `process.command_line`, `process.args`, `process.parent.*`
+    - `destination.ip`, `destination.port`, `network.*`
+    - Any related child processes and file artifacts (paths and hashes) identified during triage
+  - Scope for related activity by searching for additional occurrences of the same destination and command-line patterns.
+  - If Office is the launch vector, identify and quarantine the initiating document or email and assess whether similar content was delivered to other users.
+  - If a script is involved, collect and review the script contents and investigate how it was introduced (downloads, email attachments, shared drives, logon scripts, scheduled tasks).
+  - If account compromise is suspected, follow established identity response procedures (credential reset, session review, and access auditing).
+
+- If the activity is confirmed benign:
+  - Document the expected parent process, command-line pattern, and destinations.
+  - Consider adding a narrowly scoped exception using stable identifiers and constrained conditions (for example, specific `process.command_line` patterns and known destinations) to reduce recurring noise.
+
+
+==== Rule query
+
+
+[source, js]
+----------------------------------
+sequence by process.entity_id with maxspan=15s
+  [process where host.os.type == "windows" and event.type == "start" and
+    process.name : "cmd.exe" and process.args : ("/c", "/k") and
+    (
+      process.args : ("*.bat", "*.cmd") or
+      process.command_line : ("*http://*", "*https://*", "*ftp://*") or
+      process.parent.name : ("excel.exe", "msaccess.exe", "mspub.exe", "powerpnt.exe", "winword.exe", "outlook.exe")
+    )
+  ]
+  [network where host.os.type == "windows" and process.name : "cmd.exe" and
+     not cidrmatch(destination.ip, "10.0.0.0/8", "127.0.0.0/8", "169.254.0.0/16", "172.16.0.0/12", "192.0.0.0/24",
+                                  "192.0.0.0/29", "192.0.0.8/32", "192.0.0.9/32", "192.0.0.10/32", "192.0.0.170/32",
+                                  "192.0.0.171/32", "192.0.2.0/24", "192.31.196.0/24", "192.52.193.0/24",
+                                  "192.168.0.0/16", "192.88.99.0/24", "224.0.0.0/4", "100.64.0.0/10", "192.175.48.0/24",
+                                  "198.18.0.0/15", "198.51.100.0/24", "203.0.113.0/24", "240.0.0.0/4", "::1",
+                                  "FE80::/10", "FF00::/8")]
+
+----------------------------------
+
+*Framework*: MITRE ATT&CK^TM^
+
+* Tactic:
+** Name: Execution
+** ID: TA0002
+** Reference URL: https://attack.mitre.org/tactics/TA0002/
+* Technique:
+** Name: Command and Scripting Interpreter
+** ID: T1059
+** Reference URL: https://attack.mitre.org/techniques/T1059/
+* Tactic:
+** Name: Command and Control
+** ID: TA0011
+** Reference URL: https://attack.mitre.org/tactics/TA0011/
+* Technique:
+** Name: Ingress Tool Transfer
+** ID: T1105
+** Reference URL: https://attack.mitre.org/techniques/T1105/

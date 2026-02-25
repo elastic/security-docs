@@ -1,0 +1,165 @@
+[[prebuilt-rule-8-19-16-aws-iam-oidc-provider-created-by-rare-user]]
+=== AWS IAM OIDC Provider Created by Rare User
+
+Detects when an uncommon user or role creates an OpenID Connect (OIDC) Identity Provider in AWS IAM. OIDC providers enable web identity federation, allowing users authenticated by external identity providers (such as Google, GitHub, or custom OIDC-compliant providers) to assume IAM roles and access AWS resources. Adversaries who have gained administrative access may create rogue OIDC providers to establish persistent, federated access that survives credential rotation. This technique allows attackers to assume roles using tokens from an IdP they control. While OIDC provider creation is benign in some environments, it should still be validated against authorized infrastructure changes.
+
+*Rule type*: new_terms
+
+*Rule indices*: 
+
+* filebeat-*
+* logs-aws.cloudtrail-*
+
+*Severity*: medium
+
+*Risk score*: 47
+
+*Runs every*: 5m
+
+*Searches indices from*: now-6m ({ref}/common-options.html#date-math[Date Math format], see also <<rule-schedule, `Additional look-back time`>>)
+
+*Maximum alerts per execution*: 100
+
+*References*: 
+
+* https://docs.aws.amazon.com/IAM/latest/APIReference/API_CreateOpenIDConnectProvider.html
+* https://docs.aws.amazon.com/IAM/latest/UserGuide/id_roles_providers_oidc.html
+* https://www.cisa.gov/news-events/cybersecurity-advisories/aa23-320a
+
+*Tags*: 
+
+* Domain: Cloud
+* Data Source: AWS
+* Data Source: Amazon Web Services
+* Data Source: AWS IAM
+* Use Case: Identity and Access Audit
+* Tactic: Persistence
+* Resources: Investigation Guide
+
+*Version*: 1
+
+*Rule authors*: 
+
+* Elastic
+
+*Rule license*: Elastic License v2
+
+
+==== Investigation guide
+
+
+
+*Triage and analysis*
+
+
+
+*Investigating AWS IAM OIDC Provider Created by Rare User*
+
+
+OpenID Connect (OIDC) providers in AWS IAM enable web identity federation, allowing external identity providers to authenticate users who then assume IAM roles. Common legitimate use cases include GitHub Actions accessing AWS resources, Kubernetes pods authenticating to AWS, and web applications using social login.
+
+This rule detects the first time a specific user or role creates an OIDC provider within an account. While OIDC provider creation is common in some environments, a new user creating one for the first time warrants validation to ensure it's authorized.
+
+
+*Possible investigation steps*
+
+
+- **Identify the actor**
+  - Review `aws.cloudtrail.user_identity.arn` to determine who created the OIDC provider.
+  - Check if this user has created OIDC providers before in other accounts.
+
+- **Review the OIDC provider details**
+  - Examine `aws.cloudtrail.request_parameters` for the provider URL and client IDs.
+  - Identify the external IdP (e.g., GitHub, Google, custom provider).
+
+- **Validate business justification**
+  - Confirm with DevOps or platform teams whether this aligns with CI/CD pipeline setup.
+  - Check for related change tickets or infrastructure-as-code deployments.
+
+- **Check for follow-on activity**
+  - Search for `CreateRole` or `UpdateAssumeRolePolicy` calls that trust the new OIDC provider.
+  - Look for `AssumeRoleWithWebIdentity` calls using the newly created provider.
+
+- **Correlate with other suspicious activity**
+  - Check for preceding privilege escalation or credential access events.
+  - Look for other persistence mechanisms being established concurrently.
+
+
+*False positive analysis*
+
+
+- **CI/CD pipeline integration**
+  - GitHub Actions, GitLab CI, and other CI/CD systems commonly use OIDC for AWS authentication.
+  - Validate against known DevOps workflows.
+
+- **Kubernetes federation**
+  - EKS and self-managed Kubernetes clusters may use OIDC providers for pod identity.
+  - Confirm with platform engineering teams.
+
+- **Infrastructure-as-code deployments**
+  - Terraform, CloudFormation, or other IaC tools may create OIDC providers.
+  - Verify via CI/CD logs.
+
+
+*Response and remediation*
+
+
+- **Immediate containment**
+  - If unauthorized, delete the OIDC provider using `DeleteOpenIDConnectProvider`.
+  - Review and remove any IAM roles that trust the rogue provider.
+
+- **Investigation**
+  - Audit CloudTrail for any `AssumeRoleWithWebIdentity` calls using this provider.
+  - Review all IAM roles with web identity trust relationships.
+
+- **Hardening**
+  - Restrict `iam:CreateOpenIDConnectProvider` permissions to authorized roles.
+  - Implement SCPs to control OIDC provider creation in member accounts.
+  - Enable AWS Config rules to monitor identity provider configurations.
+
+
+*Additional information*
+
+- **https://docs.aws.amazon.com/IAM/latest/UserGuide/id_roles_providers_oidc.html[AWS IAM OIDC Providers Documentation]**
+- **https://github.com/aws-samples/aws-incident-response-playbooks/blob/c151b0dc091755fffd4d662a8f29e2f6794da52c/playbooks/[AWS IR Playbooks]**
+- **https://github.com/aws-samples/aws-customer-playbook-framework/tree/a8c7b313636b406a375952ac00b2d68e89a991f2/docs[AWS Customer Playbook Framework]**
+
+
+==== Rule query
+
+
+[source, js]
+----------------------------------
+event.dataset: "aws.cloudtrail"
+    and event.provider: "iam.amazonaws.com"
+    and event.action: "CreateOpenIDConnectProvider"
+    and event.outcome: "success"
+
+----------------------------------
+
+*Framework*: MITRE ATT&CK^TM^
+
+* Tactic:
+** Name: Persistence
+** ID: TA0003
+** Reference URL: https://attack.mitre.org/tactics/TA0003/
+* Technique:
+** Name: Valid Accounts
+** ID: T1078
+** Reference URL: https://attack.mitre.org/techniques/T1078/
+* Sub-technique:
+** Name: Cloud Accounts
+** ID: T1078.004
+** Reference URL: https://attack.mitre.org/techniques/T1078/004/
+* Tactic:
+** Name: Privilege Escalation
+** ID: TA0004
+** Reference URL: https://attack.mitre.org/tactics/TA0004/
+* Technique:
+** Name: Domain or Tenant Policy Modification
+** ID: T1484
+** Reference URL: https://attack.mitre.org/techniques/T1484/
+* Sub-technique:
+** Name: Trust Modification
+** ID: T1484.002
+** Reference URL: https://attack.mitre.org/techniques/T1484/002/
