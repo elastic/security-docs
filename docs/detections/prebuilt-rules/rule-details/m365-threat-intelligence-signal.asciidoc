@@ -1,7 +1,7 @@
 [[m365-threat-intelligence-signal]]
 === M365 Threat Intelligence Signal
 
-Identifies a Microsoft 365 audit log generated for Threat Intelligence signals by Microsoft Defender for Office 365. Signals generated may relate to services such as Exchange Online, SharePoint Online, OneDrive for Business and others.
+Identifies Microsoft 365 audit logs generated for Threat Intelligence signals by Microsoft Defender for Office 365. This includes phishing and malware events, campaign-related threat detections, file-based threats in SharePoint, OneDrive, and Teams, as well as Microsoft Threat Intelligence Center (MSTIC) signals. These events provide early indicators of compromise attempts and can be correlated with other signals for threat hunting and detection.
 
 *Rule type*: query
 
@@ -18,7 +18,7 @@ Identifies a Microsoft 365 audit log generated for Threat Intelligence signals b
 
 *Searches indices from*: now-9m ({ref}/common-options.html#date-math[Date Math format], see also <<rule-schedule, `Additional look-back time`>>)
 
-*Maximum alerts per execution*: 1000
+*Maximum alerts per execution*: 100
 
 *References*: 
 
@@ -33,13 +33,15 @@ Identifies a Microsoft 365 audit log generated for Threat Intelligence signals b
 * Data Source: Microsoft 365
 * Data Source: Microsoft 365 Audit Logs
 * Data Source: Microsoft Defender
-* Data Source: Microsoft Defender Threat Intelligence
+* Data Source: Microsoft Defender for Office 365
+* Data Source: Microsoft Threat Intelligence
 * Use Case: Threat Detection
 * Tactic: Initial Access
+* Tactic: Execution
 * Resources: Investigation Guide
 * Rule Type: BBR
 
-*Version*: 2
+*Version*: 3
 
 *Rule authors*: 
 
@@ -68,7 +70,7 @@ Microsoft 365 Threat Intelligence leverages audit logs to monitor activities acr
 *Possible investigation steps*
 
 
-- Review the audit logs filtered by event.dataset: "o365.audit" and event.provider: "ThreatIntelligence" to identify the specific activities flagged by the rule.
+- Review the audit logs filtered by event.dataset: "o365.audit" and the relevant event.code (ThreatIntelligence, ThreatFinder, ThreatIntelligenceAtpContent, or MSTIC) to identify the specific activities flagged by the rule.
 - Examine the user accounts associated with the flagged activities to determine if they have been compromised or are behaving anomalously.
 - Investigate the source IP addresses and locations associated with the flagged events to identify any unusual or suspicious access patterns.
 - Check for any related alerts or signals in Microsoft Defender for Office 365 that might provide additional context or corroborate the threat.
@@ -113,7 +115,8 @@ For information on troubleshooting the maximum alerts warning please refer to th
 
 [source, js]
 ----------------------------------
-event.dataset: "o365.audit" and event.provider: "ThreatIntelligence"
+event.dataset: "o365.audit" and
+    event.code:(ThreatIntelligence or ThreatFinder or ThreatIntelligenceAtpContent or ThreatIntelligenceUrl or MSTIC or Campaign)
 
 ----------------------------------
 
@@ -127,3 +130,11 @@ event.dataset: "o365.audit" and event.provider: "ThreatIntelligence"
 ** Name: Phishing
 ** ID: T1566
 ** Reference URL: https://attack.mitre.org/techniques/T1566/
+* Tactic:
+** Name: Execution
+** ID: TA0002
+** Reference URL: https://attack.mitre.org/tactics/TA0002/
+* Technique:
+** Name: User Execution
+** ID: T1204
+** Reference URL: https://attack.mitre.org/techniques/T1204/

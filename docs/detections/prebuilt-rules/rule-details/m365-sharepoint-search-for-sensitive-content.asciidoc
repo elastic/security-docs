@@ -1,0 +1,147 @@
+[[m365-sharepoint-search-for-sensitive-content]]
+=== M365 SharePoint Search for Sensitive Content
+
+Identifies search queries in SharePoint containing sensitive terms related to credentials, financial data, PII, legal matters, or infrastructure information. Adversaries who compromise user accounts often search for high-value files before exfiltration. This rule detects searches containing terms across multiple sensitivity categories, regardless of the access method (browser, PowerShell, or API). The actual search query text is analyzed against a curated list of sensitive terms to identify potential reconnaissance activity.
+
+*Rule type*: eql
+
+*Rule indices*: 
+
+* filebeat-*
+* logs-o365.audit-*
+
+*Severity*: low
+
+*Risk score*: 21
+
+*Runs every*: 5m
+
+*Searches indices from*: now-9m ({ref}/common-options.html#date-math[Date Math format], see also <<rule-schedule, `Additional look-back time`>>)
+
+*Maximum alerts per execution*: 100
+
+*References*: 
+
+* https://cloud.google.com/blog/topics/threat-intelligence/expansion-shinyhunters-saas-data-theft
+
+*Tags*: 
+
+* Domain: Cloud
+* Domain: SaaS
+* Data Source: Microsoft 365
+* Data Source: Microsoft 365 Audit Logs
+* Use Case: Threat Detection
+* Tactic: Discovery
+* Tactic: Collection
+* Resources: Investigation Guide
+
+*Version*: 1
+
+*Rule authors*: 
+
+* Elastic
+
+*Rule license*: Elastic License v2
+
+
+==== Investigation guide
+
+
+
+*Triage and Analysis*
+
+
+
+*Investigating M365 SharePoint Search for Sensitive Content*
+
+
+This rule detects search queries in SharePoint or OneDrive that contain sensitive terms. The Microsoft 365 Unified Audit Log captures the actual search query text in the `SearchQueryText` field, allowing detection of reconnaissance activity targeting credentials, financial data, PII, legal documents, or infrastructure information.
+
+
+*Possible Investigation Steps*
+
+
+- Identify who performed the search and determine if this user has a legitimate business need to search for this type of content.
+- Review the exact search terms used. Multiple sensitive terms in one query are more suspicious.
+- Determine if the search was via browser, automation tool (PnP PowerShell), or API.
+- Review the source IP and correlate with the user's typical access patterns.
+- Look for subsequent file download or access events from the same user/session within minutes of the search.
+- Determine if the user is a member of roles that would legitimately search for sensitive content (HR, Finance, Legal, Security, Compliance).
+- Check Azure AD sign-in logs for authentication anomalies (device code flow, unusual location).
+
+
+*Response and Remediation*
+
+
+- If unauthorized search activity is confirmed, immediately review what files were accessed or downloaded following the search.
+- Revoke the user's session tokens and require reauthentication with MFA.
+- If the account was compromised, reset credentials and investigate the compromise vector.
+- Review Data Loss Prevention (DLP) policies to ensure sensitive content is properly protected.
+- Consider implementing sensitivity labels and access restrictions on high-value content.
+
+
+==== Rule query
+
+
+[source, js]
+----------------------------------
+web where event.dataset == "o365.audit" and
+    event.provider == "SharePoint" and
+    event.action == "SearchQueryPerformed" and
+    event.outcome == "success" and
+    o365.audit.SearchQueryText != null and
+    o365.audit.SearchQueryText != "" and
+    o365.audit.SearchQueryText like~ (
+        /* Credentials and Secrets */
+        "*password*", "*credential*", "*secret*", "*api key*", "*apikey*",
+        "*token*", "*private key*", "*certificate*", "*ssh*", "*aws*",
+        "*azure*", "*gcp*", "*oauth*", "*bearer*", "*connection string*",
+        "*access key*", "*secret key*",
+        /* Financial */
+        "*salary*", "*payroll*", "*compensation*", "*budget*", "*revenue*",
+        "*financial*", "*banking*", "*invoice*", "*wire transfer*", "*account number*",
+        "*credit card*", "*routing number*", "*profit*", "*expense*", "*1099*",
+        /* Legal and Compliance */
+        "*confidential*", "*privileged*", "*attorney*", "*legal hold*", "*settlement*",
+        "*contract*", "*nda*", "*merger*", "*acquisition*", "*litigation*",
+        "*subpoena*", "*trade secret*", "*intellectual property*", "*proprietary*",
+        "*internal*", "*proposal*", "*poc*",
+        /* HR and PII */
+        "*ssn*", "*social security*", "*employee*", "*personnel*", "*performance review*",
+        "*termination*", "*tax*", "*w2*", "*benefits*", "*background check*",
+        "*medical*", "*hipaa*", "*passport*", "*driver license*", "*dob*",
+        /* Infrastructure and IT */
+        "*admin*", "*root*", "*vpn*", "*firewall*", "*network diagram*",
+        "*architecture*", "*topology*", "*production*", "*database*", "*config*",
+        "*backup*", "*disaster recovery*", "*vulnerability*", "*pentest*", "*security audit*",
+        "*salesforce*"
+    )
+
+----------------------------------
+
+*Framework*: MITRE ATT&CK^TM^
+
+* Tactic:
+** Name: Discovery
+** ID: TA0007
+** Reference URL: https://attack.mitre.org/tactics/TA0007/
+* Technique:
+** Name: Cloud Storage Object Discovery
+** ID: T1619
+** Reference URL: https://attack.mitre.org/techniques/T1619/
+* Tactic:
+** Name: Collection
+** ID: TA0009
+** Reference URL: https://attack.mitre.org/tactics/TA0009/
+* Technique:
+** Name: Data from Information Repositories
+** ID: T1213
+** Reference URL: https://attack.mitre.org/techniques/T1213/
+* Sub-technique:
+** Name: Sharepoint
+** ID: T1213.002
+** Reference URL: https://attack.mitre.org/techniques/T1213/002/
+* Technique:
+** Name: Data from Cloud Storage
+** ID: T1530
+** Reference URL: https://attack.mitre.org/techniques/T1530/
