@@ -1,0 +1,171 @@
+[[prebuilt-rule-8-19-17-m365-onedrive-sharepoint-excessive-file-downloads]]
+=== M365 OneDrive/SharePoint Excessive File Downloads
+
+Identifies when an excessive number of files are downloaded from OneDrive or SharePoint by an authorized user or application in a short period of time. This may indicate a potential data exfiltration event, especially if the downloads are performed using OAuth authentication which could suggest an OAuth phishing attack such as Device Code Authentication phishing.
+
+*Rule type*: esql
+
+*Rule indices*: None
+
+*Severity*: medium
+
+*Risk score*: 47
+
+*Runs every*: 8m
+
+*Searches indices from*: now-9m ({ref}/common-options.html#date-math[Date Math format], see also <<rule-schedule, `Additional look-back time`>>)
+
+*Maximum alerts per execution*: 100
+
+*References*: 
+
+* https://www.volexity.com/blog/2025/02/13/multiple-russian-threat-actors-targeting-microsoft-device-code-authentication/
+* https://cloud.google.com/blog/topics/threat-intelligence/expansion-shinyhunters-saas-data-theft
+
+*Tags*: 
+
+* Domain: Cloud
+* Domain: SaaS
+* Domain: Storage
+* Data Source: Microsoft 365
+* Data Source: Microsoft 365 Audit Logs
+* Data Source: SharePoint
+* Data Source: OneDrive
+* Use Case: Threat Detection
+* Tactic: Collection
+* Tactic: Exfiltration
+* Resources: Investigation Guide
+
+*Version*: 7
+
+*Rule authors*: 
+
+* Elastic
+
+*Rule license*: Elastic License v2
+
+
+==== Investigation guide
+
+
+
+*Triage and Analysis*
+
+
+
+*Investigating M365 OneDrive/SharePoint Excessive File Downloads*
+
+
+This rule detects an excessive number of files downloaded from OneDrive using OAuth authentication. Threat actors may use OAuth phishing attacks, such as **Device Code Authentication phishing**, to obtain valid access tokens and perform unauthorized data exfiltration. This method allows adversaries to bypass traditional authentication mechanisms, making it a stealthy and effective technique.
+
+This rule leverages ESQL aggregations which limit the field values available in the alert document. To investigate further, it is recommended to identify the original documents ingested.
+
+
+*Possible Investigation Steps*
+
+
+- Review the user ID field to identify the user who performed the downloads. Check if this user typically downloads large amounts of data from OneDrive.
+- Correlate user ID with Entra Sign-In logs to verify the authentication method used and determine if it was expected for this user.
+- Review the authentication method used. If OAuth authentication was used, investigate whether it was expected for this user.
+- Identify the client application used for authentication. Determine if it is a legitimate enterprise-approved app or an unauthorized third-party application.
+- Check the number of unique files downloaded. If a user downloads a high volume of unique files in a short period, it may indicate data exfiltration.
+- Analyze the file types and directories accessed to determine if sensitive or confidential data was involved.
+- Investigate the source IP address and geolocation of the download activity. If it originates from an unusual or anonymized location, further scrutiny is needed.
+- Review other recent activities from the same user, such as file access, sharing, or permission changes, that may indicate further compromise.
+- Check for signs of session persistence using OAuth. If Azure sign-in logs are correlated where `authentication_protocol` or `originalTransferMethod` field shows `deviceCode`, the session was established through device code authentication.
+- Look for multiple authentication attempts from different devices or locations within a short timeframe, which could indicate unauthorized access.
+- Investigate if other OAuth-related anomalies exist, such as consent grants for unfamiliar applications or unexpected refresh token activity.
+- Review the `file.directory` value from the original documents to identify the specific folders or paths where the files were downloaded.
+- Examine if the downloaded files are from Sharepoint or OneDrive by checking the `event.code` field.
+- Review the incoming token type to determine how authentication occurred. If the `token.id` field is populated, it indicates that OAuth authentication was used, which may suggest an OAuth phishing attack.
+
+
+*False Positive Analysis*
+
+
+- Verify if the user regularly downloads large batches of files as part of their job function.
+- Determine if the downloads were triggered by an authorized automated process, such as a data backup or synchronization tool.
+- Confirm if the detected OAuth application is approved for enterprise use and aligns with expected usage patterns.
+
+
+*Response and Remediation*
+
+
+- If unauthorized activity is confirmed, revoke the OAuth token used and terminate active OneDrive sessions.
+- Reset the affected user's password and require reauthentication to prevent continued unauthorized access.
+- Restrict OAuth app permissions and enforce conditional access policies to limit authentication to trusted devices and applications.
+- Monitor for additional signs of compromise, such as unusual email forwarding rules, external sharing of OneDrive files, or privilege escalation attempts.
+- Educate users on OAuth phishing risks and encourage the use of **Microsoft Defender for Office 365 Safe Links** to mitigate credential-based attacks.
+- Enable continuous monitoring for OAuth authentication anomalies using **Microsoft Entra ID sign-in logs** and security tools.
+
+
+==== Rule query
+
+
+[source, js]
+----------------------------------
+from logs-o365.audit-* metadata _id, _version, _index
+| where
+    event.dataset == "o365.audit" and
+    event.provider == "OneDrive" and
+    event.action == "FileDownloaded" and
+    event.outcome == "success"
+    and (user.id is not null and o365.audit.ApplicationId is not null)
+    and o365.audit.ApplicationId not in (
+        "08e18876-6177-487e-b8b5-cf950c1e598c", // SharePoint Online Web Client Extensibility
+        "fb8d773d-7ef8-4ec0-a117-179f88add510", // Enterprise Copilot Platform
+        "d3590ed6-52b3-4102-aeff-aad2292ab01c", // Microsoft Office
+        "7ab7862c-4c57-491e-8a45-d52a7e023983" // App Service
+    )
+| eval session.id = coalesce(o365.audit.AppAccessContext.AADSessionId, session.id, null)
+| where session.id is not null
+| eval Esql.time_window_date_trunc = date_trunc(3 minutes, @timestamp)
+| stats
+    Esql.file_directory_values = values(file.directory),
+    Esql.file_extension_values = values(file.extension),
+    Esql.application_name_values = values(application.name),
+    Esql.file_name_count_distinct = count_distinct(file.name),
+    Esql.total_file_size_mb = round((mv_sum(values(file.size))) / 1048576.0, 2),
+    Esql.o365_audit_Site_values = values(o365.audit.Site),
+    Esql.o365_audit_SiteUrl_values = values(o365.audit.SiteUrl),
+    Esql.user_domain_values = values(user.domain),
+    Esql.token_id_values = values(token.id),
+    Esql.event_code_values = values(event.code),
+    Esql.event_provider_values = values(event.provider),
+    Esql.auth_type_values = values(o365.audit.AuthenticationType),
+    Esql.is_managed_device_values = values(o365.audit.IsManagedDevice),
+    Esql.platform_values = values(o365.audit.Platform),
+    Esql.user_agent_values = values(user_agent.name),
+    Esql.source_asn_org_values = values(source.as.organization.name),
+    Esql.geo_country_values = values(source.geo.country_name),
+    Esql.event_count = count(*)
+    by
+    Esql.time_window_date_trunc,
+    user.id,
+    session.id,
+    source.ip,
+    o365.audit.ApplicationId
+| where Esql.file_name_count_distinct >= 25
+| keep
+    Esql.*,
+    user.id,
+    source.ip,
+    o365.audit.ApplicationId,
+    session.id
+
+----------------------------------
+
+*Framework*: MITRE ATT&CK^TM^
+
+* Tactic:
+** Name: Collection
+** ID: TA0009
+** Reference URL: https://attack.mitre.org/tactics/TA0009/
+* Technique:
+** Name: Data from Cloud Storage
+** ID: T1530
+** Reference URL: https://attack.mitre.org/techniques/T1530/
+* Tactic:
+** Name: Exfiltration
+** ID: TA0010
+** Reference URL: https://attack.mitre.org/tactics/TA0010/
