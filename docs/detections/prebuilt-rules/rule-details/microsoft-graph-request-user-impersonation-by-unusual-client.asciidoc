@@ -34,7 +34,7 @@ This New Terms rule focuses on the first occurrence of a client application ID (
 * Use Case: Identity and Access Audit
 * Tactic: Initial Access
 
-*Version*: 5
+*Version*: 6
 
 *Rule authors*: 
 
@@ -54,7 +54,7 @@ This New Terms rule focuses on the first occurrence of a client application ID (
 *Investigating Microsoft Graph Request User Impersonation by Unusual Client*
 
 
-This rule detects the first observed occurrence of a Microsoft Graph API request by a specific client application ID (`azure.graphactivitylogs.properties.app_id`) in combination with a user principal object ID (`azure.graphactivitylogs.properties.user_principal_object_id`) and tenant ID (`azure.tenant_id`) within the last 14 days. This may indicate unauthorized access following a successful phishing attempt, token theft, or abuse of OAuth workflows.
+This rule detects the first observed occurrence of a Microsoft Graph API request by a specific client application ID (`azure.graphactivitylogs.properties.app_id`) in combination with a user principal object ID (`azure.graphactivitylogs.properties.user_principal_object_id`) and tenant ID (`azure.tenant_id`) within specific number of days. This may indicate unauthorized access following a successful phishing attempt, token theft, or abuse of OAuth workflows.
 
 Adversaries frequently exploit legitimate Microsoft or third-party application IDs to avoid raising suspicion during initial access. By using pre-consented or trusted apps to interact with Microsoft Graph, attackers can perform actions on behalf of users without triggering conventional authentication alerts or requiring additional user interaction.
 
@@ -103,10 +103,21 @@ Adversaries frequently exploit legitimate Microsoft or third-party application I
 ----------------------------------
 event.dataset: "azure.graphactivitylogs"
     and event.type: "access"
+    and azure.graphactivitylogs.properties.app_id: *
     and azure.graphactivitylogs.properties.c_idtyp: "user"
     and azure.graphactivitylogs.properties.client_auth_method: 0
     and http.response.status_code: 200
     and url.domain: "graph.microsoft.com"
+    and not url.path: (
+        /v1.0/organization
+        or /v1.0/me/licenseDetails
+        or /v1.0/me/photo*
+        or /v1.0/me/photos*
+        or /beta/me/settings/regionalAndLanguageSettings
+        or /v1.0/me/drive/special/copilotuploads
+        or /v1.0/me/informationProtection/sensitivityLabels
+        or /beta/me/informationProtection/dataLossPreventionPolicies
+    )
 
 ----------------------------------
 

@@ -1,0 +1,117 @@
+[[prebuilt-rule-8-19-18-first-time-python-spawned-a-shell-on-host]]
+=== First Time Python Spawned a Shell on Host
+
+Detects the first time a Python process spawns a shell on a given host. Malicious Python scripts, compromised dependencies, or model file deserialization can result in shell spawns that would not occur during normal workflows. Since legitimate Python processes rarely shell out to interactive shells, a first occurrence of this behavior on a host is a strong signal of potential compromise.
+
+*Rule type*: new_terms
+
+*Rule indices*: 
+
+* logs-endpoint.events.process-*
+
+*Severity*: medium
+
+*Risk score*: 47
+
+*Runs every*: 5m
+
+*Searches indices from*: now-9m ({ref}/common-options.html#date-math[Date Math format], see also <<rule-schedule, `Additional look-back time`>>)
+
+*Maximum alerts per execution*: 100
+
+*References*: 
+
+* https://blog.trailofbits.com/2024/06/11/exploiting-ml-models-with-pickle-file-attacks-part-1/
+* https://github.com/trailofbits/fickling
+* https://5stars217.github.io/2024-03-04-what-enables-malicious-models/
+
+*Tags*: 
+
+* Domain: Endpoint
+* OS: macOS
+* Use Case: Threat Detection
+* Tactic: Execution
+* Data Source: Elastic Defend
+* Resources: Investigation Guide
+* Domain: LLM
+
+*Version*: 1
+
+*Rule authors*: 
+
+* Elastic
+
+*Rule license*: Elastic License v2
+
+
+==== Investigation guide
+
+
+
+*Triage and analysis*
+
+
+
+*Investigating First Time Python Spawned a Shell on Host*
+
+
+Attackers who achieve Python code execution — whether through malicious scripts, compromised dependencies, or model file deserialization (e.g., pickle/PyTorch `__reduce__`) — often spawn shell processes to perform reconnaissance, credential theft, persistence, or reverse shell activity. Since legitimate Python workflows rarely shell out with `-c`, a first occurrence is highly suspicious.
+
+This rule uses the New Terms rule type to detect the first occurrence of a Python process spawning a shell with the `-c` flag on a given host within a 7-day window. This approach reduces false positives from recurring legitimate Python workflows while surfacing novel, potentially malicious activity.
+
+
+*Possible investigation steps*
+
+
+- Examine the parent Python process command line to identify the script or command that triggered the shell spawn.
+- Determine if the Python process was loading a model file (look for `torch.load`, `pickle.load`), running a standalone script, or executing via a compromised dependency.
+- Review the shell command arguments to assess intent (credential access, reverse shell, persistence, reconnaissance).
+- Inspect the full process tree to determine if the Python process was launched from an interactive session, a cron job, or an automated pipeline.
+- Investigate the origin of any recently downloaded scripts, packages, or model files on the host.
+- Correlate with other hosts in the environment to determine if the same behavior is occurring elsewhere, which may indicate a supply chain compromise.
+
+
+*False positive analysis*
+
+
+- Development environments where Python scripts legitimately shell out for system tasks (e.g., build scripts, CI/CD runners) may trigger this rule on first occurrence. Consider excluding known CI/CD working directories or build automation paths.
+- Package installation via pip or conda may spawn shells during post-install scripts. These are excluded by the query filter.
+- Jupyter notebooks executing system commands via `!` or `subprocess` may trigger this rule in data science environments.
+
+
+*Response and remediation*
+
+
+- Investigate the shell command that was executed and assess its impact (credential access, persistence, data exfiltration).
+- If a malicious file is confirmed, quarantine it and identify its source (PyPI, Hugging Face, shared drive, email attachment).
+- Scan other hosts that may have received the same file.
+- Review and rotate any credentials that may have been accessed.
+- Consider implementing `weights_only=True` enforcement for PyTorch model loading across the environment.
+
+
+==== Rule query
+
+
+[source, js]
+----------------------------------
+event.category:process and host.os.type:macos and event.type:start and event.action:exec and
+process.parent.name:python* and
+process.name:(bash or dash or sh or tcsh or csh or zsh or ksh or fish) and process.args:"-c" and
+not process.command_line:(*pip* or *conda* or *brew* or *jupyter*)
+
+----------------------------------
+
+*Framework*: MITRE ATT&CK^TM^
+
+* Tactic:
+** Name: Execution
+** ID: TA0002
+** Reference URL: https://attack.mitre.org/tactics/TA0002/
+* Technique:
+** Name: Command and Scripting Interpreter
+** ID: T1059
+** Reference URL: https://attack.mitre.org/techniques/T1059/
+* Sub-technique:
+** Name: Python
+** ID: T1059.006
+** Reference URL: https://attack.mitre.org/techniques/T1059/006/

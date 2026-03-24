@@ -29,6 +29,7 @@ Identifies access to email resources via Microsoft Graph API using an first-part
 *Tags*: 
 
 * Domain: Cloud
+* Domain: Email
 * Data Source: Azure
 * Data Source: Microsoft Graph
 * Data Source: Microsoft Graph Activity Logs
@@ -36,7 +37,7 @@ Identifies access to email resources via Microsoft Graph API using an first-part
 * Tactic: Collection
 * Resources: Investigation Guide
 
-*Version*: 3
+*Version*: 4
 
 *Rule authors*: 
 
@@ -102,21 +103,22 @@ This rule detects instances where a previously unseen or rare Microsoft Graph ap
 
 [source, js]
 ----------------------------------
-event.dataset: "azure.graphactivitylogs" and
-azure.graphactivitylogs.properties.app_id: * and
-azure.graphactivitylogs.result_signature: 200 and
-azure.graphactivitylogs.properties.c_idtyp: "user" and
-azure.graphactivitylogs.properties.client_auth_method: 0 and
-http.request.method: (GET or POST or PUT or PATCH or DELETE) and (
-  url.path: (/v1.0/me/*cc or /v1.0/users/*) and
-  (
-    url.path: (*mail* or *messages* or *inbox*) or
-    azure.graphactivitylogs.properties.requestUri: (*mail* or *messages* or *inbox*)
-  ) or
-  azure.graphactivitylogs.properties.scopes: (
-    "Mail.Read" or "Mail.ReadWrite" or "Mail.Send" or "email"
-  )
-)
+event.dataset:azure.graphactivitylogs
+    and azure.graphactivitylogs.properties.app_id:*
+    and azure.graphactivitylogs.result_signature:200
+    and azure.graphactivitylogs.properties.c_idtyp:user
+    and azure.graphactivitylogs.properties.client_auth_method:0
+    and http.request.method:(DELETE or GET or PATCH or POST or PUT)
+    and (
+        (
+            url.path:(/v1.0/me/*cc or /v1.0/users/*)
+            and (
+                url.path:((*inbox* or *mail* or *messages*) and not *mailboxSettings*)
+                or azure.graphactivitylogs.properties.requestUri:(*inbox* or *mail* or *messages*)
+            )
+        )
+        or azure.graphactivitylogs.properties.scopes:(Mail.Read or Mail.ReadWrite or Mail.Send)
+    )
 
 ----------------------------------
 

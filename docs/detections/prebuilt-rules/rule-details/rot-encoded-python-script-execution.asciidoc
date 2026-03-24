@@ -35,7 +35,7 @@ Identifies the execution of a Python script that uses the ROT cipher for letters
 * Data Source: Elastic Defend
 * Resources: Investigation Guide
 
-*Version*: 4
+*Version*: 5
 
 *Rule authors*: 
 
@@ -98,7 +98,11 @@ ROT encoding, a simple letter substitution cipher, is often used to obfuscate Py
 [source, js]
 ----------------------------------
 sequence by process.entity_id with maxspan=1m
- [process where host.os.type in ("windows", "macos") and event.type == "start" and process.name : "python*"]
+ [process where host.os.type in ("windows", "macos") and event.type == "start" and process.name : "python*" and
+  not (
+    process.args : ("*gcloud.py", "*conda-script.py", "*compileall.py", "*.lmstudio*") or
+    process.parent.args : ("*gcloud.py", "*conda-script.py", "*compileall.py", "*.lmstudio*")
+  )]
  [file where host.os.type in ("windows", "macos") and
   event.action != "deletion" and process.name : "python*" and file.name : "rot_??.cpython-*.pyc*"]
 

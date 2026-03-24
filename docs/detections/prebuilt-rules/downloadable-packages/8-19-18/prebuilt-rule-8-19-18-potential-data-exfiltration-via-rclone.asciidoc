@@ -1,0 +1,117 @@
+[[prebuilt-rule-8-19-18-potential-data-exfiltration-via-rclone]]
+=== Potential Data Exfiltration via Rclone
+
+Identifies abuse of rclone (or a renamed copy, e.g. disguised as a security or backup utility) to exfiltrate data to cloud storage or remote endpoints. Rclone is a legitimate file sync tool; threat actors rename it to blend with administrative traffic and use copy/sync with cloud backends (e.g. :s3:) and include filters to exfiltrate specific file types.
+
+*Rule type*: eql
+
+*Rule indices*: 
+
+* endgame-*
+* logs-crowdstrike.fdr*
+* logs-endpoint.events.process-*
+* logs-m365_defender.event-*
+* logs-sentinel_one_cloud_funnel.*
+* logs-system.security*
+* logs-windows.sysmon_operational-*
+* winlogbeat-*
+
+*Severity*: medium
+
+*Risk score*: 47
+
+*Runs every*: 5m
+
+*Searches indices from*: now-9m ({ref}/common-options.html#date-math[Date Math format], see also <<rule-schedule, `Additional look-back time`>>)
+
+*Maximum alerts per execution*: 100
+
+*References*: 
+
+* https://attack.mitre.org/techniques/T1048/
+* https://rclone.org/commands/rclone_copy/
+
+*Tags*: 
+
+* Domain: Endpoint
+* OS: Windows
+* Use Case: Threat Detection
+* Tactic: Exfiltration
+* Resources: Investigation Guide
+* Data Source: Elastic Defend
+* Data Source: Sysmon
+* Data Source: SentinelOne
+* Data Source: Microsoft Defender for Endpoint
+* Data Source: Crowdstrike
+* Data Source: Elastic Endgame
+* Data Source: Windows Security Event Logs
+
+*Version*: 1
+
+*Rule authors*: 
+
+* Elastic
+
+*Rule license*: Elastic License v2
+
+
+==== Investigation guide
+
+
+
+*Triage and analysis*
+
+
+
+*Investigating Potential Data Exfiltration via Rclone*
+
+
+Rclone is a legitimate file synchronization tool. Threat actors abuse it (often renamed, e.g. to TrendFileSecurityCheck.exe) to exfiltrate data to S3, HTTP endpoints, or other cloud backends, using `copy`/`sync` with `--include` filters and high `--transfers` to move specific file types at scale.
+
+
+*Possible investigation steps*
+
+
+- Confirm the command line for `copy`/`sync`, cloud backend (e.g. `:s3:`, `:http`), and options like `--include`, `--transfers`, `-P`.
+- If the process name is not `rclone.exe`, compare with `process.pe.original_file_name`; a mismatch indicates a renamed copy used to evade name-based detection.
+- From the command line, identify the source path (e.g. UNC or local) and the remote backend (S3 bucket, HTTP endpoint) as the exfil destination.
+- Review `--include`/`--exclude` and `--max-age`/`--max-size` to understand what data was targeted (documents, CAD, archives, etc.).
+- Correlate with the process executable path (recently dropped?), parent process, and user; look for outbound network to the same backend.
+
+
+*False positive analysis*
+
+
+- Legitimate backup or sync jobs using rclone from a known path and config may trigger; allowlist by process path or `--config` path for approved rclone usage.
+
+
+*Response and remediation*
+
+
+- Terminate the rclone process and isolate the host if exfiltration is confirmed.
+- Identify and revoke access to the destination (S3 bucket, API keys, etc.); preserve logs for the exfil session.
+- Determine scope of data exposed and notify stakeholders; rotate credentials and secrets that may have been in exfiltrated paths.
+
+
+==== Rule query
+
+
+[source, js]
+----------------------------------
+process where host.os.type == "windows" and event.type == "start" and
+ (process.name : "rclone.exe" or ?process.pe.original_file_name == "rclone.exe") and process.args : ("copy", "sync") and
+  not process.args : ("--config=?:\\Program Files\\rclone\\config\\rclone\\rclone.conf", "--config=?:\\Program Files (x86)\\rclone\\config\\rclone\\rclone.conf") and 
+  not process.executable : ("?:\\Program Files*", "\\Device\\HarddiskVolume*\\Program Files*")
+
+----------------------------------
+
+*Framework*: MITRE ATT&CK^TM^
+
+* Tactic:
+** Name: Exfiltration
+** ID: TA0010
+** Reference URL: https://attack.mitre.org/tactics/TA0010/
+* Technique:
+** Name: Exfiltration Over Alternative Protocol
+** ID: T1048
+** Reference URL: https://attack.mitre.org/techniques/T1048/

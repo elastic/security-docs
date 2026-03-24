@@ -28,9 +28,10 @@ This rule detects potential web server discovery or fuzzing activity by identify
 * Data Source: Apache
 * Data Source: Apache Tomcat
 * Data Source: IIS
+* Data Source: Traefik
 * Resources: Investigation Guide
 
-*Version*: 3
+*Version*: 4
 
 *Rule authors*: 
 
@@ -87,7 +88,7 @@ This rule flags a single origin generating a rapid burst of GET requests that pr
 
 [source, js]
 ----------------------------------
-from logs-nginx.access-*, logs-apache.access-*, logs-apache_tomcat.access-*, logs-iis.access-*
+from logs-nginx.access-*, logs-apache.access-*, logs-apache_tomcat.access-*, logs-iis.access-*, logs-traefik.access-*
 | where
     http.request.method == "GET" and 
     http.response.status_code in (404, 403)
@@ -101,14 +102,14 @@ from logs-nginx.access-*, logs-apache.access-*, logs-apache_tomcat.access-*, log
     http.response.status_code,
     source.ip,
     agent.id,
-    host.name,
+    agent.name,
     Esql.url_original_to_lower,
     data_stream.namespace
 
 | stats
     Esql.event_count = count(),
     Esql.url_original_count_distinct = count_distinct(Esql.url_original_to_lower),
-    Esql.host_name_values = values(host.name),
+    Esql.agent_name_values = values(agent.name),
     Esql.agent_id_values = values(agent.id),
     Esql.http_request_method_values = values(http.request.method),
     Esql.http_response_status_code_values = values(http.response.status_code),
