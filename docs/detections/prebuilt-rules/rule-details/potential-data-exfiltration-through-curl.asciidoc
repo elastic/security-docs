@@ -1,7 +1,7 @@
 [[potential-data-exfiltration-through-curl]]
 === Potential Data Exfiltration Through Curl
 
-Detects the use of curl to upload an archived file to an internet server. Threat actors often will collect data on a system and compress it in an archive file before exfiltrating the file back to their C2 server for review. Many threat actors have been seen utilizing curl to upload this archive file with the collected data to do this. Use of curl in this way while not inherently malicious should be considered highly abnormal and suspicious activity.
+Detects the use of curl to upload files to an internet server. Threat actors often will collect and exfiltrate data on a system to their C2 server for review. Many threat actors have been observed using curl to upload the collected data. Use of curl in this way, while not inherently malicious, should be considered highly abnormal and suspicious activity.
 
 *Rule type*: eql
 
@@ -24,6 +24,7 @@ Detects the use of curl to upload an archived file to an internet server. Threat
 *References*: 
 
 * https://everything.curl.dev/usingcurl/uploads
+* https://cloud.google.com/blog/topics/threat-intelligence/disrupting-gridtide-global-espionage-campaign?hl=en
 
 *Tags*: 
 
@@ -36,7 +37,7 @@ Detects the use of curl to upload an archived file to an internet server. Threat
 * Data Source: Crowdstrike
 * Data Source: SentinelOne
 
-*Version*: 4
+*Version*: 5
 
 *Rule authors*: 
 
@@ -134,11 +135,18 @@ For more details on Elastic Defend refer to the https://www.elastic.co/guide/en/
 
 [source, js]
 ----------------------------------
-process where host.os.type == "linux" and event.type == "start" and event.action in ("exec", "ProcessRollup2", "start") and process.name == "curl" and
-?process.parent.executable != null and (process.args in ("-F", "-T", "-d") or process.args like ("--data*", "--form*")) and 
-process.command_line like~ ("*@/*.zip*", "*@/*.gz*", "*@/*.tgz*", "*b64=@*", "*=<*") and
-process.command_line like~ "*http*" and
-not ?process.parent.executable == "/usr/share/untangle/bin/configuration-backup-upload-backup.sh"
+process where host.os.type == "linux" and event.type == "start" and event.action in ("exec", "ProcessRollup2", "start") and
+process.name == "curl" and ?process.parent.executable != null and
+(
+  process.args in ("-T", "--upload-file") or
+  (
+    (process.args in ("-F", "-d", "--form") or process.args like "--data*") and process.command_line like "*@*"
+  )
+) and
+(
+  process.command_line like ("*http:*", "*https:*", "*ftp:*", "*ftps:*") or
+  process.command_line regex ".*[0-9]{1,3}\\.[0-9]{1,3}\\.[0-9]{1,3}\\.[0-9]{1,3}.*"
+)
 
 ----------------------------------
 

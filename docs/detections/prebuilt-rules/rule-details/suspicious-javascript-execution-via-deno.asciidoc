@@ -1,0 +1,117 @@
+[[suspicious-javascript-execution-via-deno]]
+=== Suspicious JavaScript Execution via Deno
+
+Detects execution of JavaScript via Deno with suspicious command-line patterns (base64, eval, http, or import in a javascript context). Adversaries may abuse Deno to run malicious JavaScript for execution or staging.
+
+*Rule type*: eql
+
+*Rule indices*: 
+
+* endgame-*
+* logs-crowdstrike.fdr*
+* logs-endpoint.events.process-*
+* logs-m365_defender.event-*
+* logs-sentinel_one_cloud_funnel.*
+* logs-system.security*
+* logs-windows.sysmon_operational-*
+* winlogbeat-*
+
+*Severity*: high
+
+*Risk score*: 73
+
+*Runs every*: 5m
+
+*Searches indices from*: now-9m ({ref}/common-options.html#date-math[Date Math format], see also <<rule-schedule, `Additional look-back time`>>)
+
+*Maximum alerts per execution*: 100
+
+*References*: 
+
+* https://reliaquest.com/blog/threat-spotlight-casting-a-wider-net-clickfix-deno-and-leaknets-scaling-threat
+* https://deno.com/
+
+*Tags*: 
+
+* Domain: Endpoint
+* OS: Windows
+* Use Case: Threat Detection
+* Tactic: Execution
+* Resources: Investigation Guide
+* Data Source: Elastic Defend
+* Data Source: Sysmon
+* Data Source: SentinelOne
+* Data Source: Microsoft Defender for Endpoint
+* Data Source: Crowdstrike
+* Data Source: Elastic Endgame
+* Data Source: Windows Security Event Logs
+
+*Version*: 1
+
+*Rule authors*: 
+
+* Elastic
+
+*Rule license*: Elastic License v2
+
+
+==== Investigation guide
+
+
+
+*Triage and analysis*
+
+
+
+*Investigating Suspicious JavaScript Execution via Deno*
+
+
+Deno is a legitimate JavaScript/TypeScript runtime. This rule fires when a Deno process (identified by name, PE original filename, or code signer "Deno Land Inc.") is started with a command line matching suspicious patterns: javascript with base64, eval(, http, or javascript import. Such patterns are commonly used to run inline or remote scripts and can indicate abuse.
+
+
+*Possible investigation steps*
+
+
+- Review process.command_line and process.args to see the exact script or URL being executed.
+- Identify the parent process and how Deno was launched (user, script, terminal, or other tool).
+- Check whether Deno is approved on the host; if not, treat as potential unauthorized software execution.
+- Correlate with file creation or network events around the same time (downloads, script drops).
+
+
+*False positive analysis*
+
+
+- Legitimate development or automation that runs Deno with eval, http imports, or base64-encoded snippets may trigger; allowlist by host or command-line pattern where appropriate.
+
+
+*Response and remediation*
+
+
+- If abuse is confirmed: contain the host, terminate the Deno process, and remove or block Deno if not authorized; investigate how the script was delivered and scope for similar activity.
+
+
+==== Rule query
+
+
+[source, js]
+----------------------------------
+process where host.os.type == "windows" and event.type == "start" and
+ (process.name : "deno.exe" or ?process.pe.original_file_name == "deno.exe" or ?process.code_signature.subject_name == "Deno Land Inc.") and
+ process.command_line : ("*javascript*base64*", "*eval(*", "*http*", "*javascript*import*")
+
+----------------------------------
+
+*Framework*: MITRE ATT&CK^TM^
+
+* Tactic:
+** Name: Execution
+** ID: TA0002
+** Reference URL: https://attack.mitre.org/tactics/TA0002/
+* Technique:
+** Name: Command and Scripting Interpreter
+** ID: T1059
+** Reference URL: https://attack.mitre.org/techniques/T1059/
+* Sub-technique:
+** Name: JavaScript
+** ID: T1059.007
+** Reference URL: https://attack.mitre.org/techniques/T1059/007/

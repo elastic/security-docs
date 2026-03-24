@@ -29,9 +29,10 @@ This rule detects unusual spikes in web server requests with uncommon or suspici
 * Data Source: Apache
 * Data Source: Apache Tomcat
 * Data Source: IIS
+* Data Source: Traefik
 * Resources: Investigation Guide
 
-*Version*: 3
+*Version*: 4
 
 *Rule authors*: 
 
@@ -88,7 +89,7 @@ This rule flags surges of web requests that advertise scanner or brute-force too
 
 [source, js]
 ----------------------------------
-from logs-nginx.access-*, logs-apache.access-*, logs-apache_tomcat.access-*, logs-iis.access-*
+from logs-nginx.access-*, logs-apache.access-*, logs-apache_tomcat.access-*, logs-iis.access-*, logs-traefik.access-*
 
 | eval Esql.user_agent_original_to_lower = to_lower(user_agent.original), Esql.url_original_to_lower = to_lower(url.original)
 
@@ -123,14 +124,14 @@ from logs-nginx.access-*, logs-apache.access-*, logs-apache_tomcat.access-*, log
     user_agent.original,
     source.ip,
     agent.id,
-    host.name,
+    agent.name,
     Esql.url_original_to_lower,
     Esql.user_agent_original_to_lower,
     data_stream.namespace
 | stats
     Esql.event_count = count(),
     Esql.url_original_count_distinct = count_distinct(Esql.url_original_to_lower),
-    Esql.host_name_values = values(host.name),
+    Esql.agent_name_values = values(agent.name),
     Esql.agent_id_values = values(agent.id),
     Esql.url_original_values = values(Esql.url_original_to_lower),
     Esql.user_agent_original_values = values(Esql.user_agent_original_to_lower),
