@@ -1,0 +1,114 @@
+[[suspicious-python-shell-command-execution]]
+=== Suspicious Python Shell Command Execution
+
+Detects the execution of suspicious shell commands via the Python interpreter. Attackers may use Python to execute shell commands to gain access to the system or to perform other malicious activities, such as credential access, data exfiltration, or lateral movement.
+
+*Rule type*: esql
+
+*Rule indices*: None
+
+*Severity*: medium
+
+*Risk score*: 47
+
+*Runs every*: 5m
+
+*Searches indices from*: now-9m ({ref}/common-options.html#date-math[Date Math format], see also <<rule-schedule, `Additional look-back time`>>)
+
+*Maximum alerts per execution*: 100
+
+*References*: None
+
+*Tags*: 
+
+* Domain: Endpoint
+* OS: Linux
+* OS: macOS
+* Use Case: Threat Detection
+* Tactic: Execution
+* Data Source: Elastic Defend
+
+*Version*: 2
+
+*Rule authors*: 
+
+* Elastic
+
+*Rule license*: Elastic License v2
+
+
+==== Rule query
+
+
+[source, js]
+----------------------------------
+FROM logs-endpoint.events.process-* METADATA _id, _version, _index
+
+| WHERE host.os.type in ("linux", "macos") and event.type == "start" and TO_LOWER(process.parent.name) like "python*" and
+  process.name in ("bash", "dash", "sh", "tcsh", "csh", "zsh", "ksh", "fish", "busybox") and
+  KQL("""event.action:"exec" and process.args:("-c" or "-cl" or "-lc")""")
+
+// truncate timestamp to 1-minute window
+| EVAL Esql.time_window_date_trunc = DATE_TRUNC(1 minutes, @timestamp)
+
+| EVAL Esql.process_command_line_patterns = CASE(
+  process.command_line like "*grep*", "grep",
+  process.command_line like "*find*", "find",
+  process.command_line like "*curl*", "curl",
+  process.command_line like "*env *", "environment_enumeration",
+  process.command_line like "*wget*", "wget",
+  process.command_line like "*whoami*" or process.command_line like "*uname*" or process.command_line like "*hostname*", "discovery", "other"
+)
+
+| KEEP
+    @timestamp,
+    _id,
+    _index,
+    _version,
+    Esql.process_command_line_patterns,
+    Esql.time_window_date_trunc,
+    host.os.type,
+    event.type,
+    event.action,
+    process.parent.name,
+    process.working_directory,
+    process.parent.working_directory,
+    process.name,
+    process.executable,
+    process.command_line,
+    process.parent.executable,
+    process.parent.entity_id,
+    agent.id,
+    host.name,
+    event.dataset,
+    data_stream.namespace
+
+| STATS
+  Esql.process_command_line_count_distinct = COUNT_DISTINCT(process.command_line),
+  Esql.patterns_count_distinct = COUNT_DISTINCT(Esql.process_command_line_patterns),
+  Esql.process_command_line_values = VALUES(process.command_line),
+  Esql.host_name_values = values(host.name),
+  Esql.agent_id_values = values(agent.id),
+  Esql.event_dataset_values = values(event.dataset),
+  Esql.data_stream_namespace_values = values(data_stream.namespace)
+  BY process.parent.entity_id, agent.id, host.name, Esql.time_window_date_trunc
+
+| SORT Esql.process_command_line_count_distinct DESC
+| WHERE Esql.process_command_line_count_distinct >= 5 AND Esql.patterns_count_distinct >= 4
+
+----------------------------------
+
+*Framework*: MITRE ATT&CK^TM^
+
+* Tactic:
+** Name: Execution
+** ID: TA0002
+** Reference URL: https://attack.mitre.org/tactics/TA0002/
+* Technique:
+** Name: Command and Scripting Interpreter
+** ID: T1059
+** Reference URL: https://attack.mitre.org/techniques/T1059/
+* Sub-technique:
+** Name: Python
+** ID: T1059.006
+** Reference URL: https://attack.mitre.org/techniques/T1059/006/
