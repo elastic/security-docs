@@ -1,0 +1,168 @@
+[[prebuilt-rule-8-19-20-potential-execution-via-filefix-phishing-attack]]
+=== Potential Execution via FileFix Phishing Attack
+
+Identifies the execution of Windows commands or downloaded files via the browser's dialog box. Adversaries may use phishing to instruct the victim to copy and paste malicious commands for execution via crafted phsihing web pages.
+
+*Rule type*: eql
+
+*Rule indices*: 
+
+* logs-endpoint.events.process-*
+* logs-m365_defender.event-*
+* logs-sentinel_one_cloud_funnel.*
+* logs-windows.sysmon_operational-*
+* winlogbeat-*
+
+*Severity*: high
+
+*Risk score*: 73
+
+*Runs every*: 5m
+
+*Searches indices from*: now-9m ({ref}/common-options.html#date-math[Date Math format], see also <<rule-schedule, `Additional look-back time`>>)
+
+*Maximum alerts per execution*: 100
+
+*References*: 
+
+* https://mrd0x.com/filefix-clickfix-alternative/
+
+*Tags*: 
+
+* Domain: Endpoint
+* OS: Windows
+* Use Case: Threat Detection
+* Tactic: Execution
+* Tactic: Initial Access
+* Tactic: Defense Evasion
+* Data Source: Windows Security Event Logs
+* Data Source: Elastic Defend
+* Data Source: Sysmon
+* Data Source: SentinelOne
+* Data Source: Microsoft Defender for Endpoint
+* Resources: Investigation Guide
+
+*Version*: 2
+
+*Rule authors*: 
+
+* Elastic
+
+*Rule license*: Elastic License v2
+
+
+==== Investigation guide
+
+
+
+*Triage and analysis*
+
+
+> **Disclaimer**:
+> This investigation guide was created using generative AI technology and has been reviewed to improve its accuracy and relevance. While every effort has been made to ensure its quality, we recommend validating the content and adapting it to suit your specific environment and operational needs.
+
+
+*Investigating Potential Execution via FileFix Phishing Attack*
+
+
+
+*Possible investigation steps*
+
+
+- Review the process command line and arguments to identify any malicious intent.
+- Review web activity preceeding the alert to identify the initial vector.
+- Investigate any files, network or child process events from the suspected process.
+- Correlate the event with other security alerts or logs from the same host or user to identify patterns or additional indicators of compromise.
+- Assess the risk and impact of the detected activity by considering the context of the environment, such as the presence of sensitive data or critical systems that might be affected.
+
+
+*False positive analysis*
+
+
+- Legitimate administrative scripts containing the suspicious keywords such as CAPTCHA.
+
+
+*Response and remediation*
+
+
+- Immediately isolate the affected system from the network to prevent further spread or communication with potential command and control servers.
+- Terminate any suspicious processes identified by the detection rule to halt ongoing malicious activities.
+- Conduct a thorough scan of the affected system using updated antivirus or endpoint detection and response (EDR) tools to identify and remove any malicious payloads or scripts.
+- Review and clean up any unauthorized changes to system configurations or scheduled tasks that may have been altered by the malicious PowerShell activity.
+- Restore any affected files or system components from known good backups to ensure system integrity and functionality.
+- Escalate the incident to the security operations center (SOC) or incident response team for further analysis and to determine if additional systems are compromised.
+- Implement additional monitoring and logging for PowerShell activities across the network to enhance detection of similar threats in the future.
+
+==== Rule query
+
+
+[source, js]
+----------------------------------
+process where host.os.type == "windows" and event.type == "start" and
+ process.parent.args == "--message-loop-type-ui" and process.parent.args == "--service-sandbox-type=none" and
+ (
+  process.name : ("pwsh.exe", "powershell.exe", "curl.exe", "msiexec.exe", "mshta.exe", "wscript.exe", "cscript.exe", "rundll32.exe", "certutil.exe", "certreq.exe") or
+  process.executable : "?:\\Users\\*\\Downloads\\*"
+  ) and
+not (process.name : "rundll32.exe" and process.args : ("ndfapi.dll,NdfRunDllDiagnoseWithAnswerFile", "shwebsvc.dll,AddNetPlaceRunDll"))
+
+----------------------------------
+
+*Framework*: MITRE ATT&CK^TM^
+
+* Tactic:
+** Name: Execution
+** ID: TA0002
+** Reference URL: https://attack.mitre.org/tactics/TA0002/
+* Technique:
+** Name: Command and Scripting Interpreter
+** ID: T1059
+** Reference URL: https://attack.mitre.org/techniques/T1059/
+* Sub-technique:
+** Name: PowerShell
+** ID: T1059.001
+** Reference URL: https://attack.mitre.org/techniques/T1059/001/
+* Sub-technique:
+** Name: Windows Command Shell
+** ID: T1059.003
+** Reference URL: https://attack.mitre.org/techniques/T1059/003/
+* Technique:
+** Name: User Execution
+** ID: T1204
+** Reference URL: https://attack.mitre.org/techniques/T1204/
+* Sub-technique:
+** Name: Malicious File
+** ID: T1204.002
+** Reference URL: https://attack.mitre.org/techniques/T1204/002/
+* Sub-technique:
+** Name: Malicious Copy and Paste
+** ID: T1204.004
+** Reference URL: https://attack.mitre.org/techniques/T1204/004/
+* Tactic:
+** Name: Defense Evasion
+** ID: TA0005
+** Reference URL: https://attack.mitre.org/tactics/TA0005/
+* Technique:
+** Name: System Binary Proxy Execution
+** ID: T1218
+** Reference URL: https://attack.mitre.org/techniques/T1218/
+* Sub-technique:
+** Name: Mshta
+** ID: T1218.005
+** Reference URL: https://attack.mitre.org/techniques/T1218/005/
+* Tactic:
+** Name: Initial Access
+** ID: TA0001
+** Reference URL: https://attack.mitre.org/tactics/TA0001/
+* Technique:
+** Name: Phishing
+** ID: T1566
+** Reference URL: https://attack.mitre.org/techniques/T1566/
+* Sub-technique:
+** Name: Spearphishing Attachment
+** ID: T1566.001
+** Reference URL: https://attack.mitre.org/techniques/T1566/001/
+* Sub-technique:
+** Name: Spearphishing Link
+** ID: T1566.002
+** Reference URL: https://attack.mitre.org/techniques/T1566/002/

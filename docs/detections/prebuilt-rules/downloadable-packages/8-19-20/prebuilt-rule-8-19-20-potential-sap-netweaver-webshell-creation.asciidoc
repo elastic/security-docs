@@ -1,0 +1,124 @@
+[[prebuilt-rule-8-19-20-potential-sap-netweaver-webshell-creation]]
+=== Potential SAP NetWeaver WebShell Creation
+
+Identifies suspicious Java file creation in the IRJ directory of the SAP NetWeaver application. This may indicate an attempt to deploy a webshell.
+
+*Rule type*: eql
+
+*Rule indices*: 
+
+* auditbeat-*
+* logs-endpoint.events.file*
+
+*Severity*: high
+
+*Risk score*: 73
+
+*Runs every*: 5m
+
+*Searches indices from*: now-9m ({ref}/common-options.html#date-math[Date Math format], see also <<rule-schedule, `Additional look-back time`>>)
+
+*Maximum alerts per execution*: 100
+
+*References*: 
+
+* https://reliaquest.com/blog/threat-spotlight-reliaquest-uncovers-vulnerability-behind-sap-netweaver-compromise/
+* https://onapsis.com/blog/active-exploitation-of-sap-vulnerability-cve-2025-31324/
+
+*Tags*: 
+
+* Domain: Endpoint
+* OS: Linux
+* OS: Windows
+* Use Case: Threat Detection
+* Tactic: Execution
+* Use Case: Vulnerability
+* Data Source: Elastic Defend
+* Resources: Investigation Guide
+
+*Version*: 2
+
+*Rule authors*: 
+
+* Elastic
+
+*Rule license*: Elastic License v2
+
+
+==== Investigation guide
+
+
+
+*Triage and analysis*
+
+
+
+*Investigating Potential SAP NetWeaver WebShell Creation*
+
+
+
+*Possible investigation steps*
+
+
+- Examine the file creation event and the associated HTTP post request logs details to identify the source of the creation.
+- Examine the process tree to verify the parent-child relationship between the Java process and any suspicious child processes such as shell scripts or scripting languages (e.g., sh, bash, curl, python).
+- Check the command line arguments and environment variables of the suspicious child processes to identify any potentially malicious payloads or commands being executed.
+- Investigate the host's recent activity and logs for any other indicators of compromise or unusual behavior that might correlate with the suspected exploitation attempt.
+- Assess the system for any unauthorized changes or new files that may have been introduced as a result of the exploitation attempt, focusing on JSP files under the IRJ root directory.
+
+
+
+*Response and remediation*
+
+
+- Immediately isolate the affected host from the network to prevent further outbound connections and potential lateral movement.
+- Terminate any suspicious Java processes identified in the alert, especially those making outbound connections to LDAP, RMI, or DNS ports.
+- Conduct a thorough review of the affected system for any unauthorized changes or additional malicious processes, focusing on child processes like shell scripts or scripting languages.
+- Restore the affected system from a known good backup if unauthorized changes or malware are detected.
+- Update and patch Java and any related applications to the latest versions to mitigate known vulnerabilities.
+- Escalate the incident to the security operations center (SOC) or incident response team for further investigation and to assess the potential impact on other systems within the network.
+
+==== Rule query
+
+
+[source, js]
+----------------------------------
+file where host.os.type in ("linux", "windows") and event.action == "creation" and
+ file.extension : ("jsp", "java", "class") and
+ file.path : ("/*/sap.com/*/servlet_jsp/irj/root/*",
+              "/*/sap.com/*/servlet_jsp/irj/work/*",
+              "?:\\*\\sap.com\\*\\servlet_jsp\\irj\\root\\*",
+              "?:\\*\\sap.com\\*\\servlet_jsp\\irj\\work\\*")
+
+----------------------------------
+
+*Framework*: MITRE ATT&CK^TM^
+
+* Tactic:
+** Name: Execution
+** ID: TA0002
+** Reference URL: https://attack.mitre.org/tactics/TA0002/
+* Technique:
+** Name: Command and Scripting Interpreter
+** ID: T1059
+** Reference URL: https://attack.mitre.org/techniques/T1059/
+* Sub-technique:
+** Name: JavaScript
+** ID: T1059.007
+** Reference URL: https://attack.mitre.org/techniques/T1059/007/
+* Technique:
+** Name: Exploitation for Client Execution
+** ID: T1203
+** Reference URL: https://attack.mitre.org/techniques/T1203/
+* Tactic:
+** Name: Persistence
+** ID: TA0003
+** Reference URL: https://attack.mitre.org/tactics/TA0003/
+* Technique:
+** Name: Server Software Component
+** ID: T1505
+** Reference URL: https://attack.mitre.org/techniques/T1505/
+* Sub-technique:
+** Name: Web Shell
+** ID: T1505.003
+** Reference URL: https://attack.mitre.org/techniques/T1505/003/

@@ -1,0 +1,134 @@
+[[prebuilt-rule-8-19-20-aws-cloudtrail-log-created]]
+=== AWS CloudTrail Log Created
+
+Detects creation of a new AWS CloudTrail trail via CreateTrail API. While legitimate during onboarding or auditing improvements, adversaries can create trails that write to attacker-controlled destinations, limit regions, or otherwise subvert monitoring objectives. New trails should be validated for destination ownership, encryption, multi-region coverage, and organizational scope.
+
+*Rule type*: query
+
+*Rule indices*: 
+
+* filebeat-*
+* logs-aws.cloudtrail-*
+
+*Severity*: low
+
+*Risk score*: 21
+
+*Runs every*: 5m
+
+*Searches indices from*: now-6m ({ref}/common-options.html#date-math[Date Math format], see also <<rule-schedule, `Additional look-back time`>>)
+
+*Maximum alerts per execution*: 100
+
+*References*: 
+
+* https://docs.aws.amazon.com/awscloudtrail/latest/APIReference/API_CreateTrail.html
+* https://awscli.amazonaws.com/v2/documentation/api/latest/reference/cloudtrail/create-trail.html
+
+*Tags*: 
+
+* Domain: Cloud
+* Data Source: AWS
+* Data Source: Amazon Web Services
+* Data Source: AWS Cloudtrail
+* Use Case: Log Auditing
+* Tactic: Collection
+* Resources: Investigation Guide
+
+*Version*: 213
+
+*Rule authors*: 
+
+* Elastic
+
+*Rule license*: Elastic License v2
+
+
+==== Investigation guide
+
+
+
+*Triage and analysis*
+
+
+
+*Investigating AWS CloudTrail Log Created*
+
+
+AWS CloudTrail is a service that enables governance, compliance, and operational and risk auditing of your AWS account. It logs API calls and related events, providing visibility into user activity. Adversaries may create new trails to capture sensitive data or cover their tracks. This detection identifies
+`CreateTrail` calls so responders can verify destination ownership, encryption, and scope before accepting the change.
+
+
+*Possible investigation steps*
+
+
+- **Identify the actor and context**
+  - Review `aws.cloudtrail.user_identity.arn`, `aws.cloudtrail.user_identity.type`, `user_agent.original`, `source.ip`.
+  - Confirm a related change request exists (onboarding, architecture change).
+- **Validate trail configuration**
+  - In `aws.cloudtrail.request_parameters`, verify:
+    - `S3BucketName`/`CloudWatchLogsLogGroupArn` belong to your org (no external accounts).
+    - `IsMultiRegionTrail=true` and `IncludeGlobalServiceEvents=true` (as per your standard).
+    - `KmsKeyId` is an approved CMK; log file validation enabled.
+- **Correlate activity**
+  - Look for `PutEventSelectors`, `PutInsightSelectors`, `StartLogging` following creation.
+  - Check for prior enumeration: `DescribeTrails`, `ListBuckets`, `GetEventSelectors`.
+
+
+*False positive analysis*
+
+- **Planned creation**: Onboarding or compliance initiatives often add trails. Validate via ticket and standard template.
+- **Automation**: IaC or control-tower pipelines may create trails on account bootstrap.
+
+
+*Response and remediation*
+
+- **If unauthorized**
+  - Disable or delete the trail; verify and secure the destination S3/CloudWatch resources.
+  - Review the actor’s recent changes and rotate credentials if compromise is suspected.
+- **Hardening**
+  - Restrict `cloudtrail:CreateTrail` to admin roles.
+  - Use AWS Config / Security Hub controls to enforce multi-region, global events, and validated destinations.
+
+
+*Additional information*
+
+- **https://github.com/aws-samples/aws-incident-response-playbooks/blob/c151b0dc091755fffd4d662a8f29e2f6794da52c/playbooks/[AWS IR Playbooks]** 
+- **https://github.com/aws-samples/aws-customer-playbook-framework/tree/a8c7b313636b406a375952ac00b2d68e89a991f2/docs[AWS Customer Playbook Framework]** 
+- **Security Best Practices:** https://aws.amazon.com/premiumsupport/knowledge-center/security-best-practices/[AWS Knowledge Center – Security Best Practices].
+
+
+==== Rule query
+
+
+[source, js]
+----------------------------------
+event.dataset: "aws.cloudtrail" 
+    and event.provider: "cloudtrail.amazonaws.com" 
+    and event.action: "CreateTrail" 
+    and event.outcome: "success"
+
+----------------------------------
+
+*Framework*: MITRE ATT&CK^TM^
+
+* Tactic:
+** Name: Collection
+** ID: TA0009
+** Reference URL: https://attack.mitre.org/tactics/TA0009/
+* Technique:
+** Name: Data from Cloud Storage
+** ID: T1530
+** Reference URL: https://attack.mitre.org/techniques/T1530/
+* Tactic:
+** Name: Defense Evasion
+** ID: TA0005
+** Reference URL: https://attack.mitre.org/tactics/TA0005/
+* Technique:
+** Name: Impair Defenses
+** ID: T1562
+** Reference URL: https://attack.mitre.org/techniques/T1562/
+* Sub-technique:
+** Name: Disable or Modify Cloud Logs
+** ID: T1562.008
+** Reference URL: https://attack.mitre.org/techniques/T1562/008/

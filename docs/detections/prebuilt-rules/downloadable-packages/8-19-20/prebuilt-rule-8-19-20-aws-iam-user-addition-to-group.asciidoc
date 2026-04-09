@@ -1,0 +1,148 @@
+[[prebuilt-rule-8-19-20-aws-iam-user-addition-to-group]]
+=== AWS IAM User Addition to Group
+
+Identifies the addition of a user to a specified group in AWS Identity and Access Management (IAM). Any user added to a group automatically gains the permissions that are assigned to the group. If the target group carries elevated or admin privileges, this action can instantly grant high-risk permissions useful for credential misuse, lateral movement, or privilege escalation.
+
+*Rule type*: query
+
+*Rule indices*: 
+
+* filebeat-*
+* logs-aws.cloudtrail-*
+
+*Severity*: low
+
+*Risk score*: 21
+
+*Runs every*: 5m
+
+*Searches indices from*: now-6m ({ref}/common-options.html#date-math[Date Math format], see also <<rule-schedule, `Additional look-back time`>>)
+
+*Maximum alerts per execution*: 100
+
+*References*: 
+
+* https://docs.aws.amazon.com/IAM/latest/APIReference/API_AddUserToGroup.html
+
+*Tags*: 
+
+* Domain: Cloud
+* Data Source: AWS
+* Data Source: Amazon Web Services
+* Use Case: Identity and Access Audit
+* Tactic: Credential Access
+* Tactic: Persistence
+* Resources: Investigation Guide
+
+*Version*: 214
+
+*Rule authors*: 
+
+* Elastic
+
+*Rule license*: Elastic License v2
+
+
+==== Investigation guide
+
+
+
+*Triage and analysis*
+
+
+
+*Investigating AWS IAM User Addition to Group*
+
+
+This rule detects when an IAM user is added to an IAM group via the `AddUserToGroup` API call. If the target group holds elevated privileges, this action may immediately grant that user wide-ranging access useful for credential misuse or lateral movement. This rule helps detect unauthorized privilege escalation via group membership change. Treat as high-risk when the destination group has wide scope (e.g., AdministratorAccess or permissive inline policies).
+
+
+*Possible investigation steps*
+
+
+- **Identify the actor and target**  
+  - Check `aws.cloudtrail.user_identity.arn` for who added the user.  
+  - From `aws.cloudtrail.request_parameters`, capture `userName` (added user) and `groupName` (destination group).  
+  - Check `source.ip`, `user_agent.original`, `cloud.region` for unusual patterns.
+
+- **Examine the group’s privileges**  
+  - Use `GetGroup`, `ListAttachedGroupPolicies` to see what policies the group holds. Look for `AdministratorAccess`, `iam:*`, `s3:*`, `ec2:*` or cross-account permissions.  
+  - Check whether the group was recently created (`CreateGroup`) or recently escalated (`AttachGroupPolicy`). Common attacker pattern: create > attach policy > add user.
+
+- **Correlate with surrounding activity**  
+  - Look for preceding events by the actor: `AssumeRole`, `GetSessionToken`, `CreateAccessKey`, `AttachGroupPolicy`.  
+  - Follow the added user’s activities after group membership. Look for sensitive operations (e.g., IAM actions, S3 policy changes, EC2 snapshot/AMI activity).
+
+
+
+*False positive analysis*
+
+
+- Onboarding or role transitions may legitimately add users to groups.  
+- Automated Identity-Management pipelines may add many users to service groups; validate know
+
+
+*Response and remediation*
+
+
+- **Containment**:
+  - If unapproved, remove the user from the group immediately (`RemoveUserFromGroup`) and rotate their access keys.
+  - Temporarily restrict group policy changes while assessing blast radius.
+
+- **Investigation and scoping**:
+  - Review all actions executed by the newly added user since the change (ex: PutBucketPolicy, CreateAccessKey, PassRole).
+  - Confirm whether other users were added to the same group within the same window. 
+
+- **Recovery and hardening**: 
+  - Enforce least privilege by redesigning large-group membership. 
+  - Restrict `iam:AddUserToGroup` to only appropriate service principals with approval workflow. 
+  - Create detections for AttachGroupPolicy to powerful policies and for mass AddUserToGroup patterns.
+
+
+*Additional information*
+
+https://aws.amazon.com/premiumsupport/knowledge-center/security-best-practices/[AWS Security Best Practices]
+
+
+==== Rule query
+
+
+[source, js]
+----------------------------------
+event.dataset: aws.cloudtrail and 
+    event.provider: iam.amazonaws.com and 
+    event.action: AddUserToGroup and 
+    event.outcome: success
+
+----------------------------------
+
+*Framework*: MITRE ATT&CK^TM^
+
+* Tactic:
+** Name: Credential Access
+** ID: TA0006
+** Reference URL: https://attack.mitre.org/tactics/TA0006/
+* Tactic:
+** Name: Persistence
+** ID: TA0003
+** Reference URL: https://attack.mitre.org/tactics/TA0003/
+* Technique:
+** Name: Account Manipulation
+** ID: T1098
+** Reference URL: https://attack.mitre.org/techniques/T1098/
+* Sub-technique:
+** Name: Additional Cloud Roles
+** ID: T1098.003
+** Reference URL: https://attack.mitre.org/techniques/T1098/003/
+* Tactic:
+** Name: Privilege Escalation
+** ID: TA0004
+** Reference URL: https://attack.mitre.org/tactics/TA0004/
+* Technique:
+** Name: Account Manipulation
+** ID: T1098
+** Reference URL: https://attack.mitre.org/techniques/T1098/
+* Sub-technique:
+** Name: Additional Cloud Roles
+** ID: T1098.003
+** Reference URL: https://attack.mitre.org/techniques/T1098/003/

@@ -1,0 +1,476 @@
+[[prebuilt-rule-8-19-20-potential-powershell-hacktool-script-by-function-names]]
+=== Potential PowerShell HackTool Script by Function Names
+
+Detects PowerShell scripts containing function names and helpers from common offensive frameworks and tools used for discovery, credential access, injection, persistence, and exfiltration. Attackers often reuse these public functions with minimal changes, leaving recognizable function-name artifacts.
+
+*Rule type*: query
+
+*Rule indices*: 
+
+* winlogbeat-*
+* logs-windows.powershell*
+
+*Severity*: medium
+
+*Risk score*: 47
+
+*Runs every*: 5m
+
+*Searches indices from*: now-9m ({ref}/common-options.html#date-math[Date Math format], see also <<rule-schedule, `Additional look-back time`>>)
+
+*Maximum alerts per execution*: 100
+
+*References*: 
+
+* https://github.com/atc-project/atc-data/blob/master/docs/Logging_Policies/LP_0109_windows_powershell_script_block_log.md
+* https://github.com/BC-SECURITY/Empire
+* https://www.microsoft.com/en-us/security/blog/2025/05/27/new-russia-affiliated-actor-void-blizzard-targets-critical-sectors-for-espionage/
+
+*Tags*: 
+
+* Domain: Endpoint
+* OS: Windows
+* Use Case: Threat Detection
+* Tactic: Execution
+* Data Source: PowerShell Logs
+* Resources: Investigation Guide
+
+*Version*: 221
+
+*Rule authors*: 
+
+* Elastic
+
+*Rule license*: Elastic License v2
+
+
+==== Investigation guide
+
+
+
+*Triage and analysis*
+
+
+> **Disclaimer**:
+> This guide was created by humans with the assistance of generative AI. While its contents have been manually curated to include the most valuable information, always validate assumptions and adjust procedures to match your internal runbooks and incident triage and response policies.
+
+
+*Investigating Potential PowerShell HackTool Script by Function Names*
+
+
+This rule identifies PowerShell Script Block Logging events where the captured script content includes function names commonly reused by offensive PowerShell toolkits. Script blocks can contain function definitions (tool staging) and/or function invocation (active use). Prioritize determining what capability is present, how the script was introduced, and whether follow-on activity occurred.
+
+
+*Key alert fields to review*
+
+
+- `user.name`, `user.domain`, `user.id`: Account execution context for correlation, prioritization, and scoping.
+- `host.name`, `host.id`: Host execution context for correlation, prioritization, and scoping.
+- `powershell.file.script_block_text`: Script block content that matched the detection logic.
+- `powershell.file.script_block_id`, `powershell.sequence`, `powershell.total`: Script block metadata to pivot to other fragments or reconstruct full script content when split across multiple events.
+- `file.path`, `file.directory`, `file.name`: File-origin context when the script block is sourced from an on-disk file.
+- `powershell.file.script_block_length`: Script block length (size) context.
+
+
+*Possible investigation steps*
+
+
+- Review `powershell.file.script_block_text` to determine intent and urgency:
+  - Identify the function name(s) present and map them to likely capability. Examples include:
+    - Credential access: `Invoke-Mimikatz`, `Invoke-Kerberoast`, `Invoke-DCSync`, `Get-GPPPassword`, `Get-LSASecret`.
+    - Injection or token manipulation: `Invoke-ReflectivePEInjection`, `Create-RemoteThread`, `Inject-RemoteShellcode`, `Invoke-TokenManipulation`.
+    - Remote execution or lateral movement: `Invoke-PsExec`, `Invoke-SMBExec`, `Invoke-WmiCommand`, `Invoke-PSRemoting`, `Invoke-DCOM`.
+    - Staging, persistence, or exfiltration: `Invoke-DownloadCradle`, `Add-Persistence`, `HTTP-Backdoor`, `Do-Exfiltration`.
+  - Determine whether the script block primarily defines functions (tool staging) or calls them (active use). If only definitions are present, look for follow-on script blocks from the same host and user that invoke the functions.
+  - Capture any embedded targets or indicators visible in the text (other usernames, hostnames, domains, remote paths, URLs, or IP addresses).
+
+- Reconstruct the complete script when it is split across multiple events:
+  - Pivot using `host.name` (or `host.id`) and `powershell.file.script_block_id` to collect related script blocks around `@timestamp`.
+  - Order fragments using `powershell.sequence` and confirm completeness using `powershell.total`.
+  - Use `powershell.file.script_block_length` as a size signal to distinguish a full toolkit/module from a small launcher or single command.
+
+- Establish script origin and execution context:
+  - If `file.path` / `file.name` (and `file.directory`) are present, treat the script as an on-disk artifact. Validate whether its location and naming align with approved scripts and expected administrative workflows for that host and user.
+  - If file fields are not present, treat the activity as potentially interactive or in-memory. Correlate other endpoint telemetry from the same `host.id` and time window to identify how PowerShell was started and what else executed immediately before and after.
+
+- Validate the account and host context:
+  - Review `user.name`, `user.domain`, and `user.id` for privilege level and whether the activity aligns with expected responsibilities and working hours.
+  - Review `host.name` and `host.id` to understand the system role and whether advanced PowerShell activity is expected on that host.
+
+- Scope for additional related activity on the same host:
+  - Search for other script blocks on the same `host.id` and `user.id` near the alert time to identify staging, follow-on commands, or cleanup actions.
+  - Pivot on `powershell.file.script_block_id` to ensure all fragments are reviewed and to detect repeated execution of the same script content.
+
+- Scope for related activity across the environment:
+  - Search for additional script blocks containing the same distinctive function name(s) or matching snippets of `powershell.file.script_block_text` to identify reuse and potential spread.
+  - If `file.path` or `file.name` is present, check for the same script artifact referenced on other hosts.
+
+- Correlate with adjacent telemetry (as available) to confirm impact and intent:
+  - Process telemetry to identify the initiating process (parent of PowerShell) and any suspicious child processes spawned after the script executed.
+  - Authentication telemetry to identify anomalous logons or access patterns involving the same user around the execution window.
+  - Network and DNS telemetry to identify outbound connections, internal scanning, or remote management activity aligned with `@timestamp`.
+  - Persistence telemetry to identify new or modified services, scheduled tasks, autoruns, or registry changes that align with the observed script capability.
+
+
+*False positive analysis*
+
+
+- Internal security or IT teams may run proof-of-concept or validation scripts for training, detection testing, or incident response. Confirm script ownership, change control, and expected distribution.
+
+
+*Response and remediation*
+
+
+- If the activity is unauthorized or suspicious:
+  - Contain the affected host to prevent additional execution and lateral movement.
+  - Preserve evidence by saving all related script block events (reconstruct full content using `powershell.file.script_block_id`, `powershell.sequence`, and `powershell.total`) and collecting any referenced on-disk script identified by `file.path`.
+  - Prioritize impact assessment based on the functions observed (credential access, injection, remote execution, persistence, or exfiltration) and look for corroborating activity in adjacent telemetry.
+  - Scope for additional impacted systems and accounts by searching for the same function names or script snippets across other hosts and users.
+  - Remove identified artifacts and persistence mechanisms, and monitor for re-execution using the same function-name patterns.
+
+- If the activity is confirmed benign:
+  - Document the justification (owner, purpose, expected hosts/users, and time window) and retain the reconstructed script content for future baselining.
+  - Where feasible, limit high-risk PowerShell tooling to controlled administrative hosts and approved accounts to reduce recurrence.
+
+
+==== Setup
+
+
+
+*Setup*
+
+
+PowerShell Script Block Logging must be enabled to generate the events used by this rule (e.g., 4104).
+Setup instructions: https://ela.st/powershell-logging-setup
+
+
+==== Rule query
+
+
+[source, js]
+----------------------------------
+event.category:process and host.os.type:windows and
+  powershell.file.script_block_text : (
+    "Add-DomainGroupMember" or "Add-DomainObjectAcl" or
+    "Add-RemoteConnection" or "Add-ServiceDacl" or
+    "Add-Win32Type" or "Convert-ADName" or
+    "Convert-LDAPProperty" or "ConvertFrom-LDAPLogonHours" or
+    "ConvertFrom-UACValue" or "Copy-ArrayOfMemAddresses" or
+    "Create-NamedPipe" or "Create-ProcessWithToken" or
+    "Create-RemoteThread" or "Create-SuspendedWinLogon" or
+    "Create-WinLogonProcess" or "Emit-CallThreadStub" or
+    "Enable-SeAssignPrimaryTokenPrivilege" or "Enable-SeDebugPrivilege" or
+    "Enum-AllTokens" or "Export-PowerViewCSV" or
+    "Find-AVSignature" or "Find-AppLockerLog" or
+    "Find-DomainLocalGroupMember" or "Find-DomainObjectPropertyOutlier" or
+    "Find-DomainProcess" or "Find-DomainShare" or
+    "Find-DomainUserEvent" or "Find-DomainUserLocation" or
+    "Find-InterestingDomainAcl" or "Find-InterestingDomainShareFile" or
+    "Find-InterestingFile" or "Find-LocalAdminAccess" or
+    "Find-PSScriptsInPSAppLog" or "Find-PathDLLHijack" or
+    "Find-ProcessDLLHijack" or "Find-RDPClientConnection" or
+    "Get-AllAttributesForClass" or "Get-CachedGPPPassword" or
+    "Get-DecryptedCpassword" or "Get-DecryptedSitelistPassword" or
+    "Get-DelegateType" or "New-RelayEnumObject" or
+    "Get-DomainDFSShare" or "Get-DomainDFSShareV1" or
+    "Get-DomainDFSShareV2" or "Get-DomainDNSRecord" or
+    "Get-DomainDNSZone" or "Get-DomainFileServer" or
+    "Get-DomainForeignGroupMember" or "Get-DomainForeignUser" or
+    "Get-DomainGPO" or "Get-DomainGPOComputerLocalGroupMapping" or
+    "Get-DomainGPOLocalGroup" or "Get-DomainGPOUserLocalGroupMapping" or
+    "Get-DomainGUIDMap" or "Get-DomainGroup" or
+    "Get-DomainGroupMember" or "Get-DomainGroupMemberDeleted" or
+    "Get-DomainManagedSecurityGroup" or "Get-DomainOU" or
+    "Get-DomainObject" or "Get-DomainObjectAcl" or
+    "Get-DomainObjectAttributeHistory" or "Get-DomainObjectLinkedAttributeHistory" or
+    "Get-DomainPolicyData" or "Get-DomainSID" or
+    "Get-DomainSPNTicket" or "Get-DomainSearcher" or
+    "Get-DomainSite" or "Get-DomainSubnet" or
+    "Get-DomainTrust" or "Get-DomainTrustMapping" or
+    "Get-DomainUser" or "Get-DomainUserEvent" or
+    "Get-Forest" or "Get-ForestDomain" or
+    "Get-ForestGlobalCatalog" or "Get-ForestSchemaClass" or
+    "Get-ForestTrust" or "Get-GPODelegation" or
+    "Get-GPPAutologon" or "Get-GPPInnerField" or
+    "Get-GPPInnerFields" or "Get-GPPPassword" or
+    "Get-GptTmpl" or "Get-GroupsXML" or
+    "Get-HttpStatus" or "Get-ImageNtHeaders" or
+    "Get-Keystrokes" or "New-SOASerialNumberArray" or
+    "Get-MemoryProcAddress" or "Get-MicrophoneAudio" or
+    "Get-ModifiablePath" or "Get-ModifiableRegistryAutoRun" or
+    "Get-ModifiableScheduledTaskFile" or "Get-ModifiableService" or
+    "Get-ModifiableServiceFile" or "Get-Name" or
+    "Get-NetComputerSiteName" or "Get-NetLocalGroup" or
+    "Get-NetLocalGroupMember" or "Get-NetLoggedon" or
+    "Get-NetRDPSession" or "Get-NetSession" or
+    "Get-NetShare" or "Get-PEArchitecture" or
+    "Get-PEBasicInfo" or "Get-PEDetailedInfo" or
+    "Get-PathAcl" or "Get-PrimaryToken" or
+    "Get-ProcAddress" or "Get-ProcessTokenGroup" or
+    "Get-ProcessTokenPrivilege" or "Get-ProcessTokenType" or
+    "Get-RegLoggedOn" or "Get-RegistryAlwaysInstallElevated" or
+    "Get-RegistryAutoLogon" or "Get-RemoteProcAddress" or
+    "Get-Screenshot" or "Get-ServiceDetail" or
+    "Get-SiteListPassword" or "Get-SitelistField" or
+    "Get-System" or "Get-SystemNamedPipe" or
+    "Get-SystemToken" or "Get-ThreadToken" or
+    "Get-TimedScreenshot" or "Get-TokenInformation" or
+    "Get-TopPort" or "Get-UnattendedInstallFile" or
+    "Get-UniqueTokens" or "Get-UnquotedService" or
+    "Get-VaultCredential" or "Get-VaultElementValue" or
+    "Get-VirtualProtectValue" or "Get-VolumeShadowCopy" or
+    "Get-WMIProcess" or "Get-WMIRegCachedRDPConnection" or
+    "Get-WMIRegLastLoggedOn" or "Get-WMIRegMountedDrive" or
+    "Get-WMIRegProxy" or "Get-WebConfig" or
+    "Get-Win32Constants" or "Get-Win32Functions" or
+    "Get-Win32Types" or "Import-DllImports" or
+    "Import-DllInRemoteProcess" or "Inject-LocalShellcode" or
+    "Inject-RemoteShellcode" or "Install-ServiceBinary" or
+    "Invoke-CompareAttributesForClass" or "Invoke-CreateRemoteThread" or
+    "Invoke-CredentialInjection" or "Invoke-DllInjection" or
+    "Invoke-EventVwrBypass" or "Invoke-ImpersonateUser" or
+    "Invoke-Kerberoast" or "Invoke-MemoryFreeLibrary" or
+    "Invoke-MemoryLoadLibrary" or
+    "Invoke-Mimikatz" or "Invoke-NinjaCopy" or
+    "Invoke-PatchDll" or "Invoke-Portscan" or
+    "Invoke-PrivescAudit" or "Invoke-ReflectivePEInjection" or
+    "Invoke-ReverseDnsLookup" or "Invoke-RevertToSelf" or
+    "Invoke-ServiceAbuse" or "Invoke-Shellcode" or
+    "Invoke-TokenManipulation" or "Invoke-UserImpersonation" or
+    "Invoke-WmiCommand" or "Mount-VolumeShadowCopy" or
+    "New-ADObjectAccessControlEntry" or "New-DomainGroup" or
+    "New-DomainUser" or "New-DynamicParameter" or
+    "New-InMemoryModule" or
+    "New-ThreadedFunction" or "New-VolumeShadowCopy" or
+    "Out-CompressedDll" or "Out-EncodedCommand" or
+    "Out-EncryptedScript" or "Out-Minidump" or
+    "PortScan-Alive" or "Portscan-Port" or
+    "Remove-DomainGroupMember" or "Remove-DomainObjectAcl" or
+    "Remove-RemoteConnection" or "Remove-VolumeShadowCopy" or
+    "Restore-ServiceBinary" or "Set-DesktopACLToAllowEveryone" or
+    "Set-DesktopACLs" or "Set-DomainObject" or
+    "Set-DomainObjectOwner" or "Set-DomainUserPassword" or
+    "Set-ServiceBinaryPath" or "Sub-SignedIntAsUnsigned" or
+    "Test-AdminAccess" or "Test-MemoryRangeValid" or
+    "Test-ServiceDaclPermission" or "Update-ExeFunctions" or
+    "Update-MemoryAddresses" or "Update-MemoryProtectionFlags" or
+    "Write-BytesToMemory" or "Write-HijackDll" or
+    "Write-PortscanOut" or "Write-ServiceBinary" or
+    "Write-UserAddMSI" or "Invoke-Privesc" or
+    "func_get_proc_address" or "Invoke-BloodHound" or
+    "Invoke-HostEnum" or "Get-BrowserInformation" or
+    "Get-DomainAccountPolicy" or "Get-DomainAdmins" or
+    "Get-AVProcesses" or "Get-AVInfo" or
+    "Get-RecycleBin" or "Invoke-BruteForce" or
+    "Get-PassHints" or "Invoke-SessionGopher" or
+    "Get-LSASecret" or "Get-PassHashes" or
+    "Invoke-WdigestDowngrade" or "Get-ChromeDump" or
+    "Invoke-DomainPasswordSpray" or "Get-FoxDump" or
+    "New-HoneyHash" or "Invoke-DCSync" or
+    "Invoke-PowerDump" or "Invoke-SSIDExfil" or
+    "Invoke-PowerShellTCP" or "Add-Exfiltration" or
+    "Do-Exfiltration" or "Invoke-DropboxUpload" or
+    "Invoke-ExfilDataToGitHub" or "Invoke-EgressCheck" or
+    "Invoke-PostExfil" or "Create-MultipleSessions" or
+    "Invoke-NetworkRelay" or "New-GPOImmediateTask" or
+    "Invoke-WMIDebugger" or "Invoke-SQLOSCMD" or
+    "Invoke-SMBExec" or "Invoke-PSRemoting" or
+    "Invoke-ExecuteMSBuild" or "Invoke-DCOM" or
+    "Invoke-InveighRelay" or "Invoke-PsExec" or
+    "Find-ActiveUsersWMI" or
+    "Get-SystemDrivesWMI" or "Get-ActiveNICSWMI" or
+    "Remove-Persistence" or "DNS_TXT_Pwnage" or
+    "Execute-OnTime" or "HTTP-Backdoor" or
+    "Add-ConstrainedDelegationBackdoor" or "Add-RegBackdoor" or
+    "Add-ScrnSaveBackdoor" or "Gupt-Backdoor" or
+    "Invoke-ADSBackdoor" or "Add-Persistence" or
+    "Invoke-ResolverBackdoor" or "Invoke-EventLogBackdoor" or
+    "Invoke-DeadUserBackdoor" or "Invoke-DisableMachineAcctChange" or
+    "Invoke-AccessBinary" or "Add-NetUser" or
+    "Invoke-Schtasks" or "Invoke-JSRatRegsvr" or
+    "Invoke-JSRatRundll" or "Invoke-PoshRatHttps" or
+    "Invoke-PsGcatAgent" or "Remove-PoshRat" or
+    "Install-SSP" or "Invoke-BackdoorLNK" or
+    "PowerBreach" or "InstallEXE-Persistence" or
+    "RemoveEXE-Persistence" or "Install-ServiceLevel-Persistence" or
+    "Remove-ServiceLevel-Persistence" or "Invoke-Prompt" or
+    "Invoke-PacketCapture" or "Start-WebcamRecorder" or
+    "Get-USBKeyStrokes" or "Invoke-KeeThief" or
+    "Get-Keystrokes" or "Invoke-NetRipper" or
+    "Get-EmailItems" or "Invoke-MailSearch" or
+    "Invoke-SearchGAL" or "Get-WebCredentials" or
+    "Start-CaptureServer" or "Invoke-PowerShellIcmp" or
+    "Invoke-PowerShellTcpOneLine" or "Invoke-PowerShellTcpOneLineBind" or
+    "Invoke-PowerShellUdp" or "Invoke-PowerShellUdpOneLine" or
+    "Run-EXEonRemote" or "Download-Execute-PS" or
+    "Out-RundllCommand" or "Set-RemoteWMI" or
+    "Set-DCShadowPermissions" or "Invoke-PowerShellWMI" or
+    "Invoke-Vnc" or "Invoke-LockWorkStation" or
+    "Invoke-EternalBlue" or "Invoke-ShellcodeMSIL" or
+    "Invoke-MetasploitPayload" or "Invoke-DowngradeAccount" or
+    "Invoke-RunAs" or "ExetoText" or
+    "Disable-SecuritySettings" or "Set-MacAttribute" or
+    "Invoke-MS16032" or "Invoke-BypassUACTokenManipulation" or
+    "Invoke-SDCLTBypass" or "Invoke-FodHelperBypass" or
+    "Invoke-EventVwrBypass" or "Invoke-EnvBypass" or
+    "Get-ServiceUnquoted" or "Get-ServiceFilePermission" or
+    "Get-ServicePermission" or
+    "Enable-DuplicateToken" or "Invoke-PsUaCme" or
+    "Invoke-Tater" or "Invoke-WScriptBypassUAC" or
+    "Invoke-AllChecks" or "Find-TrustedDocuments" or
+    "Invoke-Interceptor" or "Invoke-PoshRatHttp" or
+    "Invoke-ExecCommandWMI" or "Invoke-KillProcessWMI" or
+    "Invoke-CreateShareandExecute" or "Invoke-RemoteScriptWithOutput" or
+    "Invoke-SchedJobManipulation" or "Invoke-ServiceManipulation" or
+    "Invoke-PowerOptionsWMI" or "Invoke-DirectoryListing" or
+    "Invoke-FileTransferOverWMI" or "Invoke-WMImplant" or
+    "Invoke-WMIObfuscatedPSCommand" or "Invoke-WMIDuplicateClass" or
+    "Invoke-WMIUpload" or "Invoke-WMIRemoteExtract" or "Invoke-winPEAS" or
+    "Invoke-AzureHound" or "Invoke-SharpHound" or "Invoke-DownloadCradle" or
+    "Invoke-AppPathBypass"
+  ) and
+  not powershell.file.script_block_text : (
+    "sentinelbreakpoints" and "Set-PSBreakpoint"
+  ) and
+  not user.id : ("S-1-5-18" or "S-1-5-19")
+
+----------------------------------
+
+*Framework*: MITRE ATT&CK^TM^
+
+* Tactic:
+** Name: Execution
+** ID: TA0002
+** Reference URL: https://attack.mitre.org/tactics/TA0002/
+* Technique:
+** Name: Command and Scripting Interpreter
+** ID: T1059
+** Reference URL: https://attack.mitre.org/techniques/T1059/
+* Sub-technique:
+** Name: PowerShell
+** ID: T1059.001
+** Reference URL: https://attack.mitre.org/techniques/T1059/001/
+* Tactic:
+** Name: Credential Access
+** ID: TA0006
+** Reference URL: https://attack.mitre.org/tactics/TA0006/
+* Technique:
+** Name: OS Credential Dumping
+** ID: T1003
+** Reference URL: https://attack.mitre.org/techniques/T1003/
+* Sub-technique:
+** Name: LSASS Memory
+** ID: T1003.001
+** Reference URL: https://attack.mitre.org/techniques/T1003/001/
+* Sub-technique:
+** Name: DCSync
+** ID: T1003.006
+** Reference URL: https://attack.mitre.org/techniques/T1003/006/
+* Technique:
+** Name: Unsecured Credentials
+** ID: T1552
+** Reference URL: https://attack.mitre.org/techniques/T1552/
+* Sub-technique:
+** Name: Group Policy Preferences
+** ID: T1552.006
+** Reference URL: https://attack.mitre.org/techniques/T1552/006/
+* Technique:
+** Name: Steal or Forge Kerberos Tickets
+** ID: T1558
+** Reference URL: https://attack.mitre.org/techniques/T1558/
+* Sub-technique:
+** Name: Kerberoasting
+** ID: T1558.003
+** Reference URL: https://attack.mitre.org/techniques/T1558/003/
+* Tactic:
+** Name: Defense Evasion
+** ID: TA0005
+** Reference URL: https://attack.mitre.org/tactics/TA0005/
+* Technique:
+** Name: Process Injection
+** ID: T1055
+** Reference URL: https://attack.mitre.org/techniques/T1055/
+* Technique:
+** Name: Access Token Manipulation
+** ID: T1134
+** Reference URL: https://attack.mitre.org/techniques/T1134/
+* Technique:
+** Name: Abuse Elevation Control Mechanism
+** ID: T1548
+** Reference URL: https://attack.mitre.org/techniques/T1548/
+* Sub-technique:
+** Name: Bypass User Account Control
+** ID: T1548.002
+** Reference URL: https://attack.mitre.org/techniques/T1548/002/
+* Tactic:
+** Name: Discovery
+** ID: TA0007
+** Reference URL: https://attack.mitre.org/tactics/TA0007/
+* Technique:
+** Name: Network Service Discovery
+** ID: T1046
+** Reference URL: https://attack.mitre.org/techniques/T1046/
+* Technique:
+** Name: Account Discovery
+** ID: T1087
+** Reference URL: https://attack.mitre.org/techniques/T1087/
+* Technique:
+** Name: Domain Trust Discovery
+** ID: T1482
+** Reference URL: https://attack.mitre.org/techniques/T1482/
+* Tactic:
+** Name: Exfiltration
+** ID: TA0010
+** Reference URL: https://attack.mitre.org/tactics/TA0010/
+* Technique:
+** Name: Exfiltration Over Web Service
+** ID: T1567
+** Reference URL: https://attack.mitre.org/techniques/T1567/
+* Sub-technique:
+** Name: Exfiltration to Code Repository
+** ID: T1567.001
+** Reference URL: https://attack.mitre.org/techniques/T1567/001/
+* Sub-technique:
+** Name: Exfiltration to Cloud Storage
+** ID: T1567.002
+** Reference URL: https://attack.mitre.org/techniques/T1567/002/
+* Tactic:
+** Name: Persistence
+** ID: TA0003
+** Reference URL: https://attack.mitre.org/tactics/TA0003/
+* Technique:
+** Name: Scheduled Task/Job
+** ID: T1053
+** Reference URL: https://attack.mitre.org/techniques/T1053/
+* Sub-technique:
+** Name: Scheduled Task
+** ID: T1053.005
+** Reference URL: https://attack.mitre.org/techniques/T1053/005/
+* Technique:
+** Name: Boot or Logon Autostart Execution
+** ID: T1547
+** Reference URL: https://attack.mitre.org/techniques/T1547/
+* Sub-technique:
+** Name: Security Support Provider
+** ID: T1547.005
+** Reference URL: https://attack.mitre.org/techniques/T1547/005/
+* Tactic:
+** Name: Lateral Movement
+** ID: TA0008
+** Reference URL: https://attack.mitre.org/tactics/TA0008/
+* Technique:
+** Name: Remote Services
+** ID: T1021
+** Reference URL: https://attack.mitre.org/techniques/T1021/
+* Sub-technique:
+** Name: SMB/Windows Admin Shares
+** ID: T1021.002
+** Reference URL: https://attack.mitre.org/techniques/T1021/002/
+* Sub-technique:
+** Name: Distributed Component Object Model
+** ID: T1021.003
+** Reference URL: https://attack.mitre.org/techniques/T1021/003/
+* Sub-technique:
+** Name: Windows Remote Management
+** ID: T1021.006
+** Reference URL: https://attack.mitre.org/techniques/T1021/006/

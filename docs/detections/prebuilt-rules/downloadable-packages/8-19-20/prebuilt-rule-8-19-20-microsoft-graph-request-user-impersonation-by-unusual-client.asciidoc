@@ -1,0 +1,157 @@
+[[prebuilt-rule-8-19-20-microsoft-graph-request-user-impersonation-by-unusual-client]]
+=== Microsoft Graph Request User Impersonation by Unusual Client
+
+This New Terms rule focuses on the first occurrence of a client application ID (azure.graphactivitylogs.properties.app_id) making a request to Microsoft Graph API for a specific tenant ID (azure.tenant_id) and user principal object ID (azure.graphactivitylogs.properties.user_principal_object_id). This rule may helps identify unauthorized access or actions performed by compromised accounts. Advesaries may succesfully compromise a user's credentials and use the Microsoft Graph API to access resources or perform actions on behalf of the user.
+
+*Rule type*: new_terms
+
+*Rule indices*: 
+
+* logs-azure.graphactivitylogs-*
+
+*Severity*: low
+
+*Risk score*: 21
+
+*Runs every*: 5m
+
+*Searches indices from*: now-9m ({ref}/common-options.html#date-math[Date Math format], see also <<rule-schedule, `Additional look-back time`>>)
+
+*Maximum alerts per execution*: 100
+
+*References*: 
+
+* https://www.volexity.com/blog/2025/04/22/phishing-for-codes-russian-threat-actors-target-microsoft-365-oauth-workflows/
+* https://pushsecurity.com/blog/consentfix
+
+*Tags*: 
+
+* Domain: Cloud
+* Data Source: Azure
+* Data Source: Microsoft Graph
+* Data Source: Microsoft Graph Activity Logs
+* Resources: Investigation Guide
+* Use Case: Identity and Access Audit
+* Tactic: Initial Access
+
+*Version*: 7
+
+*Rule authors*: 
+
+* Elastic
+
+*Rule license*: Elastic License v2
+
+
+==== Investigation guide
+
+
+
+*Triage and analysis*
+
+
+
+*Investigating Microsoft Graph Request User Impersonation by Unusual Client*
+
+
+This rule detects the first observed occurrence of a Microsoft Graph API request by a specific client application ID (`azure.graphactivitylogs.properties.app_id`) in combination with a user principal object ID (`azure.graphactivitylogs.properties.user_principal_object_id`) and tenant ID (`azure.tenant_id`) within specific number of days. This may indicate unauthorized access following a successful phishing attempt, token theft, or abuse of OAuth workflows.
+
+Adversaries frequently exploit legitimate Microsoft or third-party application IDs to avoid raising suspicion during initial access. By using pre-consented or trusted apps to interact with Microsoft Graph, attackers can perform actions on behalf of users without triggering conventional authentication alerts or requiring additional user interaction.
+
+
+*Possible investigation steps*
+
+
+- Review `azure.graphactivitylogs.properties.user_principal_object_id` and correlate with recent sign-in logs for the associated user.
+- Determine whether `azure.graphactivitylogs.properties.app_id` is a known and approved application in your environment.
+- Investigate the `user_agent.original` field for signs of scripted access (e.g., automation tools or libraries).
+- Check the source IP address (`source.ip`) and geolocation data (`source.geo.*`) for unfamiliar origins.
+- Inspect `azure.graphactivitylogs.properties.scopes` to understand the level of access being requested by the app.
+- Examine any follow-up Graph API activity from the same `app_id` or `user_principal_object_id` for signs of data access or exfiltration.
+- Correlate with device or session ID fields (`azure.graphactivitylogs.properties.c_sid`, if present) to detect persistent or repeat activity.
+
+
+*False positive analysis*
+
+
+- First-time use of a legitimate Microsoft or enterprise-approved application.
+- Developer or automation workflows initiating new Graph API requests.
+- Valid end-user activity following device reconfiguration or new client installation.
+- Maintain an allowlist of expected `app_id` values and known developer tools.
+- Suppress detections from known good `user_agent.original` strings or approved source IP ranges.
+- Use device and identity telemetry to distinguish trusted vs. unknown activity sources.
+- Combine with session risk or sign-in anomaly signals where available.
+
+
+*Response and remediation*
+
+
+- Reach out to the user and verify whether they authorized the application access.
+- Revoke active OAuth tokens and reset credentials if unauthorized use is confirmed.
+- Search for additional Graph API calls made by the same `app_id` or `user_principal_object_id`.
+- Investigate whether sensitive resources (mail, files, Teams, contacts) were accessed.
+- Apply Conditional Access policies to limit Graph API access by app type, IP, or device state.
+- Restrict user consent for third-party apps and enforce admin approval workflows.
+- Monitor usage of new or uncommon `app_id` values across your tenant.
+- Provide user education on OAuth phishing tactics and reporting suspicious prompts.
+
+
+==== Rule query
+
+
+[source, js]
+----------------------------------
+event.dataset: "azure.graphactivitylogs"
+    and event.type: "access"
+    and azure.graphactivitylogs.properties.app_id: *
+    and azure.graphactivitylogs.properties.c_idtyp: "user"
+    and azure.graphactivitylogs.properties.client_auth_method: 0
+    and http.response.status_code: 200
+    and url.domain: "graph.microsoft.com"
+    and not url.path: (
+        /v1.0/organization
+        or /v1.0/me/licenseDetails
+        or /v1.0/me/photo*
+        or /v1.0/me/photos*
+        or /beta/me/settings/regionalAndLanguageSettings
+        or /v1.0/me/drive/special/copilotuploads
+        or /v1.0/me/informationProtection/sensitivityLabels
+        or /beta/me/informationProtection/dataLossPreventionPolicies
+    )
+
+----------------------------------
+
+*Framework*: MITRE ATT&CK^TM^
+
+* Tactic:
+** Name: Initial Access
+** ID: TA0001
+** Reference URL: https://attack.mitre.org/tactics/TA0001/
+* Technique:
+** Name: Valid Accounts
+** ID: T1078
+** Reference URL: https://attack.mitre.org/techniques/T1078/
+* Sub-technique:
+** Name: Cloud Accounts
+** ID: T1078.004
+** Reference URL: https://attack.mitre.org/techniques/T1078/004/
+* Tactic:
+** Name: Credential Access
+** ID: TA0006
+** Reference URL: https://attack.mitre.org/tactics/TA0006/
+* Technique:
+** Name: Steal Application Access Token
+** ID: T1528
+** Reference URL: https://attack.mitre.org/techniques/T1528/
+* Tactic:
+** Name: Defense Evasion
+** ID: TA0005
+** Reference URL: https://attack.mitre.org/tactics/TA0005/
+* Technique:
+** Name: Use Alternate Authentication Material
+** ID: T1550
+** Reference URL: https://attack.mitre.org/techniques/T1550/
+* Sub-technique:
+** Name: Application Access Token
+** ID: T1550.001
+** Reference URL: https://attack.mitre.org/techniques/T1550/001/

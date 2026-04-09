@@ -1,0 +1,160 @@
+[[prebuilt-rule-8-19-20-entra-id-oauth-device-code-flow-with-concurrent-sign-ins]]
+=== Entra ID OAuth Device Code Flow with Concurrent Sign-ins
+
+Identifies Entra ID device code authentication flows where multiple user agents are observed within the same session. This pattern is indicative of device code phishing, where an attacker's polling client (e.g., Python script) and the victim's browser both appear in the same authentication session. In legitimate device code flows, the user authenticates via browser while the requesting application polls for tokens - when these have distinctly different user agents (e.g., Python Requests vs Chrome), it may indicate the code was phished and redeemed by an attacker.
+
+*Rule type*: esql
+
+*Rule indices*: None
+
+*Severity*: high
+
+*Risk score*: 73
+
+*Runs every*: 5m
+
+*Searches indices from*: now-9m ({ref}/common-options.html#date-math[Date Math format], see also <<rule-schedule, `Additional look-back time`>>)
+
+*Maximum alerts per execution*: 100
+
+*References*: 
+
+* https://learn.microsoft.com/en-us/entra/identity/
+* https://learn.microsoft.com/en-us/entra/identity/monitoring-health/concept-sign-ins
+* https://docs.microsoft.com/en-us/azure/active-directory/reports-monitoring/reference-azure-monitor-sign-ins-log-schema
+* https://www.volexity.com/blog/2025/04/22/phishing-for-codes-russian-threat-actors-target-microsoft-365-oauth-workflows/
+* https://www.wiz.io/blog/recent-oauth-attacks-detection-strategies
+
+*Tags*: 
+
+* Domain: Cloud
+* Domain: Identity
+* Data Source: Azure
+* Data Source: Entra ID
+* Data Source: Entra ID Sign-in
+* Use Case: Identity and Access Audit
+* Use Case: Threat Detection
+* Tactic: Credential Access
+* Resources: Investigation Guide
+
+*Version*: 5
+
+*Rule authors*: 
+
+* Elastic
+
+*Rule license*: Elastic License v2
+
+
+==== Investigation guide
+
+
+
+*Triage and analysis*
+
+
+
+*Investigating Entra ID OAuth Device Code Flow with Concurrent Sign-ins*
+
+
+
+*Possible investigation steps*
+
+
+- Review the sign-in logs to assess the context and reputation of the source.ip address.
+- Investigate the user account associated with the successful sign-in to determine if the activity aligns with expected behavior or if it appears suspicious.
+- Check for any recent changes or anomalies in the user's account settings or permissions that could indicate compromise.
+- Review the history of sign-ins for the user to identify any patterns or unusual access times that could suggest unauthorized access.
+- Assess the device from which the sign-in was attempted to ensure it is a recognized and authorized device for the user.
+
+
+*Response and remediation*
+
+
+- Immediately revoke the compromised Primary Refresh Tokens (PRTs) to prevent further unauthorized access. This can be done through the Azure portal by navigating to the user's account and invalidating all active sessions.
+- Enforce a password reset for the affected user accounts to ensure that any credentials potentially compromised during the attack are no longer valid.
+- Implement additional Conditional Access policies that require device compliance checks and restrict access to trusted locations or devices only, to mitigate the risk of future PRT abuse.
+- Conduct a thorough review of the affected accounts' recent activity logs to identify any unauthorized actions or data access that may have occurred during the compromise.
+- Escalate the incident to the security operations team for further investigation and to determine if there are any broader implications or additional compromised accounts.
+- Enhance monitoring by configuring alerts for unusual sign-in patterns or device code authentication attempts from unexpected locations or devices, to improve early detection of similar threats.
+- Coordinate with the incident response team to perform a post-incident analysis and update the incident response plan with lessons learned from this event.
+
+==== Setup
+
+
+
+*Required Azure Entra Sign-In Logs*
+
+This rule requires the Azure logs integration be enabled and configured to collect all logs, including sign-in logs from Entra. In Entra, sign-in logs must be enabled and streaming to the Event Hub used for the Azure logs integration.
+
+
+==== Rule query
+
+
+[source, js]
+----------------------------------
+from logs-azure.signinlogs-* metadata _id, _version, _index
+
+| where event.category == "authentication" and event.dataset == "azure.signinlogs" and
+        azure.signinlogs.properties.original_transfer_method == "deviceCodeFlow"
+
+// Track events with deviceCode authentication protocol (browser auth) vs polling client
+| eval is_device_code_auth = case(azure.signinlogs.properties.authentication_protocol == "deviceCode", 1, 0)
+
+| stats Esql.count_logon = count(*),
+        Esql.device_code_auth_count = sum(is_device_code_auth),
+        Esql.timestamp_values = values(@timestamp),
+        Esql.source_ip_count_distinct = count_distinct(source.ip),
+        Esql.user_agent_count_distinct = count_distinct(user_agent.original),
+        Esql.user_agent_values = values(user_agent.original),
+        Esql.authentication_protocol_values = values(azure.signinlogs.properties.authentication_protocol),
+        Esql.azure_signinlogs_properties_client_app_values = values(azure.signinlogs.properties.app_display_name),
+        Esql.azure_signinlogs_properties_app_id_values = values(azure.signinlogs.properties.app_id),
+        Esql.azure_signinlogs_properties_resource_display_name_values = values(azure.signinlogs.properties.resource_display_name),
+        Esql.azure_signinlogs_properties_auth_requirement_values = values(azure.signinlogs.properties.authentication_requirement),
+        Esql.azure_signinlogs_properties_tenant_id = values(azure.tenant_id),
+        Esql.azure_signinlogs_properties_status_error_code_values = values(azure.signinlogs.properties.status.error_code),
+        Esql.message_values = values(message),
+        Esql.azure_signinlogs_properties_resource_id_values = values(azure.signinlogs.properties.resource_id),
+        Esql.source_ip_values = values(source.ip)
+        by azure.signinlogs.properties.session_id, azure.signinlogs.identity
+
+// Require: 2+ events, at least one deviceCode auth protocol event, and either 2+ IPs or 2+ user agents
+| where Esql.count_logon >= 2 and Esql.device_code_auth_count >= 1 and (Esql.source_ip_count_distinct >= 2 or Esql.user_agent_count_distinct >= 2)
+| keep
+       Esql.*,
+       azure.signinlogs.properties.session_id,
+       azure.signinlogs.identity
+
+----------------------------------
+
+*Framework*: MITRE ATT&CK^TM^
+
+* Tactic:
+** Name: Credential Access
+** ID: TA0006
+** Reference URL: https://attack.mitre.org/tactics/TA0006/
+* Technique:
+** Name: Steal Application Access Token
+** ID: T1528
+** Reference URL: https://attack.mitre.org/techniques/T1528/
+* Tactic:
+** Name: Initial Access
+** ID: TA0001
+** Reference URL: https://attack.mitre.org/tactics/TA0001/
+* Technique:
+** Name: Valid Accounts
+** ID: T1078
+** Reference URL: https://attack.mitre.org/techniques/T1078/
+* Sub-technique:
+** Name: Cloud Accounts
+** ID: T1078.004
+** Reference URL: https://attack.mitre.org/techniques/T1078/004/
+* Technique:
+** Name: Phishing
+** ID: T1566
+** Reference URL: https://attack.mitre.org/techniques/T1566/
+* Sub-technique:
+** Name: Spearphishing Link
+** ID: T1566.002
+** Reference URL: https://attack.mitre.org/techniques/T1566/002/

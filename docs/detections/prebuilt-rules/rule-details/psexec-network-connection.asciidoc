@@ -37,7 +37,7 @@ Identifies use of the SysInternals tool PsExec.exe making a network connection. 
 * Data Source: Sysmon
 * Data Source: SentinelOne
 
-*Version*: 212
+*Version*: 213
 
 *Rule authors*: 
 
@@ -98,7 +98,8 @@ This rule identifies PsExec execution by looking for the creation of `PsExec.exe
 [source, js]
 ----------------------------------
 sequence by process.entity_id
-  [process where host.os.type == "windows" and process.name : "PsExec.exe" and event.type == "start" and
+  [process where host.os.type == "windows" and event.type == "start" and
+   (process.name : "PsExec.exe" or ?process.pe.original_file_name : "psexec.c") and
 
    /* This flag suppresses the display of the license dialog and may
       indicate that psexec executed for the first time in the machine */
@@ -109,7 +110,7 @@ sequence by process.entity_id
                              "?:\\Program Files\\Docusnap X\\Bin\\psexec.exe",
                              "?:\\Program Files\\Docusnap X\\Tools\\dsDNS.exe") and
    not process.parent.executable : "?:\\Program Files (x86)\\Cynet\\Cynet Scanner\\CynetScanner.exe"]
-  [network where host.os.type == "windows" and process.name : "PsExec.exe"]
+  [network where host.os.type == "windows"]
 
 ----------------------------------
 

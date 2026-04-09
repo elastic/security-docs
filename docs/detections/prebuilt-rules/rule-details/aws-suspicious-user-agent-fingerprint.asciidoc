@@ -1,0 +1,179 @@
+[[aws-suspicious-user-agent-fingerprint]]
+=== AWS Suspicious User Agent Fingerprint
+
+Identifies successful AWS API calls where the CloudTrail user agent indicates offensive tooling or automated credential verification. This includes the AWS CLI or Boto3 reporting a Kali Linux distribution fingerprint (`distrib#kali`), and clients that identify as TruffleHog, which is commonly used to validate leaked secrets against live AWS APIs. These patterns are uncommon for routine production workloads and may indicate compromised credentials, unauthorized access, or security tooling operating outside approved scope.
+
+*Rule type*: eql
+
+*Rule indices*: 
+
+* logs-aws.cloudtrail-*
+
+*Severity*: medium
+
+*Risk score*: 47
+
+*Runs every*: 5m
+
+*Searches indices from*: now-6m ({ref}/common-options.html#date-math[Date Math format], see also <<rule-schedule, `Additional look-back time`>>)
+
+*Maximum alerts per execution*: 100
+
+*References*: 
+
+* https://docs.aws.amazon.com/awscloudtrail/latest/userguide/cloudtrail-event-reference-user-identity.html
+* https://www.sygnia.co/blog/sygnia-investigation-bybit-hack/
+* https://trufflesecurity.com/blog/trufflehog-in-your-logs
+* https://kudelskisecurity.com/research/investigating-two-variants-of-the-trivy-supply-chain-compromise
+
+*Tags*: 
+
+* Domain: Cloud
+* Data Source: AWS
+* Data Source: Amazon Web Services
+* Data Source: AWS CloudTrail
+* Tactic: Initial Access
+* Use Case: Cloud Threat Detection
+* Resources: Investigation Guide
+
+*Version*: 4
+
+*Rule authors*: 
+
+* Elastic
+
+*Rule license*: Elastic License v2
+
+
+==== Investigation guide
+
+
+
+*Triage and Analysis*
+
+
+
+*Investigating AWS Suspicious User Agent Fingerprint*
+
+
+AWS CloudTrail records the user agent string for API requests, which can reveal the OS distribution and client tooling.
+Two high-signal patterns this rule covers are:
+
+- **Kali Linux fingerprint** — When the AWS CLI or Boto3 reports `distrib#kali`, the request likely came from a Kali
+  environment. Kali is widely used for penetration testing and adversarial tradecraft, so this is worth correlating with
+  identity, network context, and sensitivity of API actions.
+- **TruffleHog** — TruffleHog identifies itself in the user agent when verifying whether recovered credentials are still
+  valid. Observing it against your account may indicate leaked keys are being tested, including through supply-chain or
+  secret-scanning abuse by a third party.
+
+This detection focuses on **successful** API activity. Evaluate who performed the action, what was accessed or modified,
+and whether the source and tooling align with expectations.
+
+
+*Possible investigation steps*
+
+
+**Identify the actor**
+- Review `aws.cloudtrail.user_identity.arn` and `aws.cloudtrail.user_identity.access_key_id` to determine which IAM
+  principal was used.
+- Check whether this principal normally uses CLI/SDK clients and whether Kali or TruffleHog is ever expected for their role.
+
+**Review access patterns and actions**
+- Examine API calls associated with the matched user agent for high-risk activity such as IAM changes, data access,
+  snapshot sharing, logging modification, or persistence-related actions.
+- Look for sequences indicating initial access or expansion, such as `GetSessionToken`, `AssumeRole`, or privilege
+  escalation attempts.
+- Determine whether the activity scope aligns with the principal’s intended permissions and business function.
+
+**Inspect source network and tooling context**
+- Review `source.ip`, `source.geo` fields, and ASN to determine whether the request originated from an expected corporate
+  network, VPN, CI/CD egress, or known security testing infrastructure.
+- Analyze `user_agent.original` to confirm which pattern matched (`distrib#kali` vs `TruffleHog`) and whether usage looks
+  interactive, scripted, or scanner-driven.
+- Sudden shifts from console-based access to CLI from an offensive distribution, or first-time TruffleHog against the
+  account, may indicate credential compromise or unauthorized scanning.
+
+**Correlate with surrounding activity**
+- Search for additional CloudTrail events tied to the same access key or session before and after this detection.
+- Look for evidence of follow-on actions such as resource creation, configuration changes, or attempts to disable logging
+  and monitoring services.
+- Assess whether the activity represents a single isolated request or part of a broader behavioral chain.
+
+
+*False positive analysis*
+
+
+- Internal red team or authorized assessments may produce Kali-based AWS CLI or SDK traffic. Confirm scope, timing, and
+  authorization.
+- Organizational use of TruffleHog in CI to validate rotated keys or scan artifacts may generate this signal; restrict
+  exceptions to known roles, repositories, and egress IPs where possible.
+
+
+*Response and remediation*
+
+
+- If the activity is unauthorized, immediately revoke or rotate the affected access keys or invalidate the active
+  session.
+- Review IAM permissions associated with the identity and reduce scope where possible to enforce least privilege.
+- Investigate for additional indicators of compromise, including unusual role assumptions, new credential creation, or
+  data access from the same identity.
+- Notify security operations and incident response teams if the activity aligns with known adversary behaviors or appears
+  part of a larger intrusion.
+- Consider adding guardrails or conditional access controls (such as source IP restrictions or MFA enforcement) for
+  sensitive IAM principals.
+
+
+*Additional information*
+
+- **https://github.com/aws-samples/aws-incident-response-playbooks/blob/c151b0dc091755fffd4d662a8f29e2f6794da52c/playbooks/[AWS IR Playbooks]**
+- **https://github.com/aws-samples/aws-customer-playbook-framework/tree/a8c7b313636b406a375952ac00b2d68e89a991f2/docs[AWS Customer Playbook Framework]**
+- **https://aws.amazon.com/premiumsupport/knowledge-center/security-best-practices/[AWS Knowledge Center – Security Best Practices]**
+
+
+==== Rule query
+
+
+[source, js]
+----------------------------------
+any where event.dataset == "aws.cloudtrail"
+  and event.outcome == "success"
+  and (
+    (
+      stringContains(user_agent.original, "distrib#kali")
+      or stringContains(user_agent.original, "+kali")
+      or stringContains(user_agent.original, "kali-amd64")
+      or stringContains(user_agent.original, "kali-arm64")
+    ) or (
+      stringContains(user_agent.original, "TruffleHog")
+      or stringContains(user_agent.original, "trufflehog")
+    )
+  )
+
+----------------------------------
+
+*Framework*: MITRE ATT&CK^TM^
+
+* Tactic:
+** Name: Initial Access
+** ID: TA0001
+** Reference URL: https://attack.mitre.org/tactics/TA0001/
+* Technique:
+** Name: Valid Accounts
+** ID: T1078
+** Reference URL: https://attack.mitre.org/techniques/T1078/
+* Sub-technique:
+** Name: Cloud Accounts
+** ID: T1078.004
+** Reference URL: https://attack.mitre.org/techniques/T1078/004/
+* Tactic:
+** Name: Defense Evasion
+** ID: TA0005
+** Reference URL: https://attack.mitre.org/tactics/TA0005/
+* Technique:
+** Name: Valid Accounts
+** ID: T1078
+** Reference URL: https://attack.mitre.org/techniques/T1078/
+* Sub-technique:
+** Name: Cloud Accounts
+** ID: T1078.004
+** Reference URL: https://attack.mitre.org/techniques/T1078/004/
