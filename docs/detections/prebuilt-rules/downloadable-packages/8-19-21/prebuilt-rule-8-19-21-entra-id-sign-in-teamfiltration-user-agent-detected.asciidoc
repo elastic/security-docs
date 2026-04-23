@@ -1,0 +1,169 @@
+[[prebuilt-rule-8-19-21-entra-id-sign-in-teamfiltration-user-agent-detected]]
+=== Entra ID Sign-in TeamFiltration User-Agent Detected
+
+Identifies potential enumeration or password spraying activity using TeamFiltration tool. TeamFiltration is an open-source enumeration, password spraying and exfiltration tool designed for Entra ID and Microsoft 365. Adversaries are known to use TeamFiltration in-the-wild to enumerate users, groups, and roles, as well as to perform password spraying attacks against Microsoft Entra ID and Microsoft 365 accounts. This rule detects the use of TeamFiltration by monitoring for specific user-agent strings associated with the tool in Azure and Microsoft 365 logs.
+
+*Rule type*: query
+
+*Rule indices*: 
+
+* filebeat-*
+* logs-azure.signinlogs-*
+* logs-o365.audit-*
+
+*Severity*: medium
+
+*Risk score*: 47
+
+*Runs every*: 5m
+
+*Searches indices from*: now-9m ({ref}/common-options.html#date-math[Date Math format], see also <<rule-schedule, `Additional look-back time`>>)
+
+*Maximum alerts per execution*: 100
+
+*References*: 
+
+* https://www.proofpoint.com/us/blog/threat-insight/attackers-unleash-teamfiltration-account-takeover-campaign
+* https://github.com/Flangvik/TeamFiltration
+
+*Tags*: 
+
+* Domain: Cloud
+* Data Source: Azure
+* Data Source: Microsoft 365
+* Data Source: Microsoft 365 Audit Logs
+* Data Source: Microsoft Entra ID
+* Data Source: Microsoft Entra ID Sign-in Logs
+* Use Case: Identity and Access Audit
+* Use Case: Threat Detection
+* Tactic: Discovery
+* Resources: Investigation Guide
+
+*Version*: 3
+
+*Rule authors*: 
+
+* Elastic
+
+*Rule license*: Elastic License v2
+
+
+==== Investigation guide
+
+
+
+*Triage and analysis*
+
+
+Identifies potential enumeration or password spraying activity using TeamFiltration tool. TeamFiltration is an open-source enumeration, password spraying and exfiltration tool designed for Entra ID and Microsoft 365. Adversaries are known to use TeamFiltration in-the-wild to enumerate users, groups, and roles, as well as to perform password spraying attacks against Microsoft Entra ID and Microsoft 365 accounts. This rule detects the use of TeamFiltration by monitoring for specific user-agent strings associated with the tool in Azure and Microsoft 365 logs.
+
+The detection is based on TeamFiltration's hardcoded user agent string and/or the use of `Electron` by monitoring multiple log sources, including:
+
+- Azure Graph API Activity Logs
+- Microsoft 365 Audit Logs
+- Entra ID Sign-in Logs
+- Entra ID Audit Logs
+- Azure Activity Logs
+
+
+*Possible investigation steps*
+
+
+- Confirm the tool used via `user_agent.original`.
+- Identify the `user.id`, `user.name`, or `azure.signinlogs.properties.user_principal_name` fields to determine which identity executed the API requests or sign-in attempts.
+- Review `app_id`, `app_display_name`, or `client_id` to identify the application context (e.g., Azure CLI, Graph Explorer, unauthorized app). TeamFiltration uses a list of FOCI compliant applications to perform enumeration and password spraying. TeamFiltration uses Microsoft Teams client ID `1fec8e78-bce4-4aaf-ab1b-5451cc387264` for enumeration.
+- Check `http.request.method`, `http.response.status_code`, and `event.action` for enumeration patterns (many successful GETs in a short period) if Graph API activity logs.
+- Investigate correlated sign-ins (`azure.signinlogs`) by the same user, IP, or app immediately preceding the API calls. Was MFA used? Is the location suspicious?
+- Review `source.ip` or `client.geo.*` fields to determine the origin of the requests. Flag unexpected IPs or ISPs. Check the for the use of several source addresses originating from Amazon ASNs (e.g., `AS16509`, `AS14618`, `AS14618`) which are commonly used by TeamFiltration as it proxies requests through FireProx and Amazon API Gateway.
+- If the event originates in M365 Audit Logs, investigate cross-service activity: Exchange Online, Teams, SharePoint, or role escalations via Unified Audit.
+
+
+*False positive analysis*
+
+
+- This activity may be benign if performed by red teams, internal security auditors, or known security tools under authorization.
+
+
+*Response and remediation*
+
+
+- If confirmed malicious:
+    - Identify successful sign-in attempts or API calls made by the user or app.
+    - Revoke active sessions or tokens associated with the identified user/app.
+    - Disable the account or rotate credentials immediately.
+    - Review the role assignments (`Directory.Read.All`, `AuditLog.Read.All`, `Directory.AccessAsUser.All`) and remove excessive privileges.
+    - Conduct historical analysis to determine how long enumeration has been occurring and what objects were queried.
+    - Enable Conditional Access policies to require MFA for API and CLI-based access.
+    - Validate audit logging and alerting is enabled across Microsoft Graph, Azure Activity Logs, and M365 workloads.
+
+- If legitimate:
+    - Document the source or user (e.g., red team operation, security tool).
+    - Add appropriate allowlist conditions for service principal, user, source address or device if policy allows.
+
+
+
+==== Rule query
+
+
+[source, js]
+----------------------------------
+data_stream.dataset:("azure.signinlogs" or "o365.audit")
+    and ((user_agent.name:"Electron" and user_agent.os.name:"Windows" and user_agent.version:"8.5.1") or
+    user_agent.original:"Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Teams/1.3.00.30866 Chrome/80.0.3987.165 Electron/8.5.1 Safari/537.36")
+
+----------------------------------
+
+*Framework*: MITRE ATT&CK^TM^
+
+* Tactic:
+** Name: Discovery
+** ID: TA0007
+** Reference URL: https://attack.mitre.org/tactics/TA0007/
+* Technique:
+** Name: Permission Groups Discovery
+** ID: T1069
+** Reference URL: https://attack.mitre.org/techniques/T1069/
+* Sub-technique:
+** Name: Cloud Groups
+** ID: T1069.003
+** Reference URL: https://attack.mitre.org/techniques/T1069/003/
+* Technique:
+** Name: System Information Discovery
+** ID: T1082
+** Reference URL: https://attack.mitre.org/techniques/T1082/
+* Technique:
+** Name: Account Discovery
+** ID: T1087
+** Reference URL: https://attack.mitre.org/techniques/T1087/
+* Sub-technique:
+** Name: Cloud Account
+** ID: T1087.004
+** Reference URL: https://attack.mitre.org/techniques/T1087/004/
+* Technique:
+** Name: Password Policy Discovery
+** ID: T1201
+** Reference URL: https://attack.mitre.org/techniques/T1201/
+* Technique:
+** Name: Cloud Service Discovery
+** ID: T1526
+** Reference URL: https://attack.mitre.org/techniques/T1526/
+* Technique:
+** Name: Cloud Infrastructure Discovery
+** ID: T1580
+** Reference URL: https://attack.mitre.org/techniques/T1580/
+* Technique:
+** Name: Virtual Machine Discovery
+** ID: T1673
+** Reference URL: https://attack.mitre.org/techniques/T1673/
+* Tactic:
+** Name: Credential Access
+** ID: TA0006
+** Reference URL: https://attack.mitre.org/tactics/TA0006/
+* Technique:
+** Name: Brute Force
+** ID: T1110
+** Reference URL: https://attack.mitre.org/techniques/T1110/
+* Sub-technique:
+** Name: Password Spraying
+** ID: T1110.003
+** Reference URL: https://attack.mitre.org/techniques/T1110/003/

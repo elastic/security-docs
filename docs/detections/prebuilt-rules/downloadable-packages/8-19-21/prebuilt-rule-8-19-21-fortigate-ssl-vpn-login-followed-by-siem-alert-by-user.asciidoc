@@ -1,0 +1,105 @@
+[[prebuilt-rule-8-19-21-fortigate-ssl-vpn-login-followed-by-siem-alert-by-user]]
+=== FortiGate SSL VPN Login Followed by SIEM Alert by User
+
+Detects when a FortiGate SSL VPN login event is followed by any SIEM detection alert for the same user name within a short time window. This correlation can indicate abuse of VPN access for malicious activity, credential compromise used from a VPN session, or initial access via VPN followed by post-compromise behavior.
+
+*Rule type*: eql
+
+*Rule indices*: 
+
+* logs-fortinet_fortigate.log-*
+* .alerts-security.*
+
+*Severity*: medium
+
+*Risk score*: 47
+
+*Runs every*: 5m
+
+*Searches indices from*: now-9m ({ref}/common-options.html#date-math[Date Math format], see also <<rule-schedule, `Additional look-back time`>>)
+
+*Maximum alerts per execution*: 100
+
+*References*: 
+
+* https://attack.mitre.org/tactics/TA0001/
+* https://www.elastic.co/docs/reference/integrations/fortinet_fortigate
+
+*Tags*: 
+
+* Use Case: Threat Detection
+* Rule Type: Higher-Order Rule
+* Tactic: Initial Access
+* Data Source: Fortinet
+* Resources: Investigation Guide
+
+*Version*: 3
+
+*Rule authors*: 
+
+* Elastic
+
+*Rule license*: Elastic License v2
+
+
+==== Investigation guide
+
+
+
+*Triage and analysis*
+
+
+
+*Investigating FortiGate SSL VPN Login Followed by SIEM Alert by User*
+
+
+This rule correlates a FortiGate SSL VPN login with a subsequent security alert for the same user name, highlighting possible abuse of VPN access or activity shortly after remote access.
+
+
+*Possible investigation steps*
+
+
+- Review the FortiGate login event (source IP, user, time) and the SIEM alert(s) that followed for the same user.
+- Determine whether the user is expected to use VPN and whether the subsequent alert is related to legitimate work (e.g. admin tools, updates).
+- Check for other alerts or logins for the same user in the same time window to assess scope.
+- Correlate with authentication logs to identify impossible travel or credential reuse from the VPN session.
+
+
+*False positive analysis*
+
+
+- Legitimate VPN users triggering detections (e.g. scripted tasks, admin tooling) after login.
+- Security scans or automated jobs that run in the context of a VPN-authenticated user.
+
+
+*Response and remediation*
+
+
+- If abuse or compromise is suspected, disable or reset the user’s VPN access and credentials.
+- Investigate the host and process associated with the SIEM alert.
+- Escalate to the security or incident response team if the alert indicates malicious activity.
+
+
+==== Rule query
+
+
+[source, js]
+----------------------------------
+sequence by user.name with maxspan=10m
+ [authentication where data_stream.dataset == "fortinet_fortigate.log" and event.action == "login" and event.code in ("0101039426", "0101039427") and
+  user.name != "root"]
+ [any where event.kind == "signal" and kibana.alert.rule.name != null and data_stream.dataset != "fortinet_fortigate.log" and
+  kibana.alert.risk_score > 21 and kibana.alert.rule.rule_id != "a7f2c1b4-5d8e-4f3a-9b0c-2e1d4a6b8f3e" and user.name != null]
+
+----------------------------------
+
+*Framework*: MITRE ATT&CK^TM^
+
+* Tactic:
+** Name: Initial Access
+** ID: TA0001
+** Reference URL: https://attack.mitre.org/tactics/TA0001/
+* Technique:
+** Name: Valid Accounts
+** ID: T1078
+** Reference URL: https://attack.mitre.org/techniques/T1078/
