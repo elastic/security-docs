@@ -1,0 +1,127 @@
+[[prebuilt-rule-8-19-21-kubernetes-unusual-decision-by-user-agent]]
+=== Kubernetes Unusual Decision by User Agent
+
+This rule detects unusual request responses in Kubernetes audit logs through the use of the "new_terms" rule type. In production environments, default API requests are typically made by system components or trusted users, who are expected to have a consistent user agent and allowed response annotations. By monitoring for anomalies in the username and response annotations, this rule helps identify potential unauthorized access or misconfigurations in the Kubernetes environment.
+
+*Rule type*: new_terms
+
+*Rule indices*: 
+
+* logs-kubernetes.audit_logs-*
+
+*Severity*: low
+
+*Risk score*: 21
+
+*Runs every*: 5m
+
+*Searches indices from*: None ({ref}/common-options.html#date-math[Date Math format], see also <<rule-schedule, `Additional look-back time`>>)
+
+*Maximum alerts per execution*: 100
+
+*References*: None
+
+*Tags*: 
+
+* Data Source: Kubernetes
+* Domain: Kubernetes
+* Domain: Container
+* Use Case: Threat Detection
+* Tactic: Execution
+* Resources: Investigation Guide
+
+*Version*: 6
+
+*Rule authors*: 
+
+* Elastic
+
+*Rule license*: Elastic License v2
+
+
+==== Investigation guide
+
+
+
+*Triage and analysis*
+
+
+> **Disclaimer**:
+> This investigation guide was created using generative AI technology and has been reviewed to improve its accuracy and relevance. While every effort has been made to ensure its quality, we recommend validating the content and adapting it to suit your specific environment and operational needs.
+
+
+*Investigating Kubernetes Unusual Decision by User Agent*
+
+
+Kubernetes orchestrates containerized applications, relying on API requests for operations. Typically, these requests originate from system components or trusted users with consistent user agents. Adversaries might exploit this by using atypical user agents to mask unauthorized access or misconfigurations. The detection rule identifies anomalies in user agents and response annotations, signaling potential threats in the Kubernetes environment.
+
+
+*Possible investigation steps*
+
+
+- Review the Kubernetes audit logs for entries where the user_agent.original field is present to identify any unusual or unexpected user agents.
+- Cross-reference the identified user agents with known system components and trusted users to determine if the user agent is legitimate or potentially malicious.
+- Examine the kubernetes.audit.stage field for "ResponseComplete" entries to understand the context and outcome of the requests associated with the unusual user agent.
+- Investigate the source IP addresses and associated usernames in the audit logs to identify any patterns or anomalies that could indicate unauthorized access.
+- Check for any recent changes or deployments in the Kubernetes environment that might explain the presence of unusual user agents or unexpected behavior.
+- Assess the risk and impact of the detected anomaly by considering the sensitivity of the accessed resources and the permissions associated with the user account involved.
+
+
+*False positive analysis*
+
+
+- System components or trusted users with legitimate but infrequent user agents may trigger the rule. To manage this, identify these user agents and add them to an exception list to prevent unnecessary alerts.
+- Automated scripts or tools used for maintenance or monitoring might use unique user agents. Regularly review these tools and update the exception list to include their user agents if they are verified as non-threatening.
+- New deployments or updates to Kubernetes components can introduce new user agents temporarily. Monitor these changes and adjust the rule exceptions accordingly to accommodate expected behavior during these periods.
+- Third-party integrations or plugins may use distinct user agents. Validate these integrations and, if deemed safe, include their user agents in the exception list to reduce false positives.
+
+
+*Response and remediation*
+
+
+- Immediately isolate the affected Kubernetes node or cluster to prevent further unauthorized access or potential lateral movement by the adversary.
+- Review and terminate any suspicious or unauthorized sessions identified in the audit logs to cut off any active malicious activity.
+- Revoke and rotate credentials associated with the compromised user agent to prevent further unauthorized access using the same credentials.
+- Conduct a thorough review of the affected system's configurations and permissions to identify and rectify any misconfigurations or overly permissive access controls.
+- Implement additional monitoring and logging for the affected systems to detect any further anomalies or unauthorized activities promptly.
+- Escalate the incident to the security operations team for a comprehensive investigation and to determine if any data exfiltration or further compromise has occurred.
+- Update and enhance detection rules and alerts to better identify similar anomalies in user agents and response annotations in the future, ensuring quicker response times.
+
+
+==== Rule query
+
+
+[source, js]
+----------------------------------
+data_stream.dataset:"kubernetes.audit_logs" and kubernetes.audit.stage:"ResponseComplete" and
+user_agent.original:(* and not (*kubernetes/$Format)) and
+not (
+  user_agent.original:kubelet* and
+  not kubernetes.audit.objectRef.resource:(pods or nodes or csinodes or csidrivers or configmaps or secrets or events or leases or runtimeclasses) and
+  kubernetes.audit.verb:(get or list or watch or patch)
+)
+
+----------------------------------
+
+*Framework*: MITRE ATT&CK^TM^
+
+* Tactic:
+** Name: Execution
+** ID: TA0002
+** Reference URL: https://attack.mitre.org/tactics/TA0002/
+* Tactic:
+** Name: Defense Evasion
+** ID: TA0005
+** Reference URL: https://attack.mitre.org/tactics/TA0005/
+* Technique:
+** Name: Valid Accounts
+** ID: T1078
+** Reference URL: https://attack.mitre.org/techniques/T1078/
+* Tactic:
+** Name: Initial Access
+** ID: TA0001
+** Reference URL: https://attack.mitre.org/tactics/TA0001/
+* Technique:
+** Name: Valid Accounts
+** ID: T1078
+** Reference URL: https://attack.mitre.org/techniques/T1078/

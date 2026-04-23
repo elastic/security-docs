@@ -36,7 +36,7 @@ Specially crafted DNS requests can manipulate a known overflow vulnerability in 
 * Resources: Investigation Guide
 * Use Case: Vulnerability
 
-*Version*: 108
+*Version*: 109
 
 *Rule authors*: 
 
@@ -98,8 +98,11 @@ Detection alerts from this rule indicate possible anomalous activity around larg
 
 [source, js]
 ----------------------------------
-(event.dataset: network_traffic.dns or (event.category: (network or network_traffic) and destination.port: 53)) and
-  (event.dataset:zeek.dns or type:dns or event.type:connection) and network.bytes > 60000
+((event.category:(network or network_traffic) and destination.port:53) 
+      or network.protocol:"dns" 
+      or data_stream.dataset:(network_traffic.dns or zeek.dns))
+    and destination.bytes > 60000
+    and event.type:("allowed" or "end" or "protocol" or "start")
 
 ----------------------------------
 
