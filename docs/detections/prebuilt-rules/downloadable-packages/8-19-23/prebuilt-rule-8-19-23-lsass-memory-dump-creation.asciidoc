@@ -1,0 +1,192 @@
+[[prebuilt-rule-8-19-23-lsass-memory-dump-creation]]
+=== LSASS Memory Dump Creation
+
+Identifies creation of LSASS memory dump artifacts with filenames matching LSASS dumps or common dumping-tool outputs, including dumpert.dmp, Andrew.dmp, SQLDmpr*.mdmp, and Coredump.dmp. This can indicate credential access through trusted utilities such as Task Manager or SQLDumper, or known tooling such as Dumpert and AndrewSpecial.
+
+*Rule type*: eql
+
+*Rule indices*: 
+
+* winlogbeat-*
+* logs-endpoint.events.file-*
+* logs-windows.sysmon_operational-*
+* endgame-*
+* logs-m365_defender.event-*
+* logs-sentinel_one_cloud_funnel.*
+
+*Severity*: high
+
+*Risk score*: 73
+
+*Runs every*: 5m
+
+*Searches indices from*: now-9m ({ref}/common-options.html#date-math[Date Math format], see also <<rule-schedule, `Additional look-back time`>>)
+
+*Maximum alerts per execution*: 100
+
+*References*: 
+
+* https://github.com/outflanknl/Dumpert
+* https://github.com/hoangprod/AndrewSpecial
+
+*Tags*: 
+
+* Domain: Endpoint
+* OS: Windows
+* Use Case: Threat Detection
+* Tactic: Credential Access
+* Data Source: Elastic Endgame
+* Resources: Investigation Guide
+* Data Source: Elastic Defend
+* Data Source: Sysmon
+* Data Source: Microsoft Defender XDR
+* Data Source: SentinelOne
+
+*Version*: 316
+
+*Rule authors*: 
+
+* Elastic
+
+*Rule license*: Elastic License v2
+
+
+==== Investigation guide
+
+
+
+*Triage and analysis*
+
+
+
+*Investigating LSASS Memory Dump Creation*
+
+
+
+*Possible investigation steps*
+
+
+- What dump artifact did the alert record, and does it look like crash handling or credential collection?
+  - Focus: `file.path`, `file.name`, `file.extension`, `file.size`, and the alerting `process.entity_id`.
+  - Implication: escalate when the path is user-writable, remote, hidden, or deceptive, or when `file.name` is "dumpert.dmp", "Andrew.dmp", "Coredump.dmp", or an LSASS-named dump outside a recognized crash location; lower suspicion only when the artifact fits a known crash-analysis, vendor support, or IR acquisition path for this `host.id`.
+  - Hint: the rule already filters common WER LSASS crash paths and expected SQLDumper dump locations, so a remaining SQLDmpr or LSASS dump path needs its own workflow explanation.
+
+- Is the writer an expected dump utility in an expected execution context?
+  - Focus: `process.executable`, `process.pe.original_file_name`, `process.code_signature.subject_name`, `process.code_signature.trusted`, and `process.command_line`. !{investigate{"description":"","label":"Process events by dump writer","providers":[[{"excluded":false,"field":"host.id","queryType":"phrase","value":"{{host.id}}","valueType":"string"},{"excluded":false,"field":"process.entity_id","queryType":"phrase","value":"{{process.entity_id}}","valueType":"string"},{"excluded":false,"field":"event.category","queryType":"phrase","value":"process","valueType":"string"}]],"relativeFrom":"now-1h","relativeTo":"now"}}
+  - Implication: escalate when the writer is unsigned, renamed, user-writable, launched with dump-specific arguments, or matches a "rundll32.exe" Dumpert DLL chain; reduce concern only when signer, path, arguments, and parent context all fit the same recognized diagnostic or IR workflow. Identity alone does not clear LSASS dumping.
+
+- Does the parent chain and user context explain why this account created an LSASS dump?
+  - Focus: `process.parent.executable`, `process.parent.command_line`, `process.Ext.ancestry`, `user.id`, and `user.name`.
+  - Implication: escalate when shells, script hosts, Office, browsers, remote-admin tooling, or an unexpected user launch the writer; lower suspicion only when lineage and `user.id` match the same recognized support, vendor, or forensic collection workflow.
+
+- Did the same writer hide, move, archive, or copy the dump after creation?
+  - Focus: same-writer file events for `host.id` and `process.entity_id`, especially `file.path`, `file.Ext.original.path`, `file.name`, and `file.size`. !{investigate{"description":"","label":"File events by dump writer","providers":[[{"excluded":false,"field":"host.id","queryType":"phrase","value":"{{host.id}}","valueType":"string"},{"excluded":false,"field":"process.entity_id","queryType":"phrase","value":"{{process.entity_id}}","valueType":"string"},{"excluded":false,"field":"event.category","queryType":"phrase","value":"file","valueType":"string"}]],"relativeFrom":"now-1h","relativeTo":"now"}}
+  - Implication: escalate when the dump is renamed, compressed, copied to a share, moved into hidden or user-controlled paths, or removed after staging; unresolved when same-writer file telemetry does not explain the dump's handling.
+  - Hint: use `file.Ext.original.path` on rename events to connect a detected dump name to a later archive, deceptive extension, or alternate staging path.
+
+- Did child processes use or clean up the dump?
+  - Focus: child process events on `host.id` where `process.parent.entity_id` equals the writer `process.entity_id`, with `process.executable`, `process.command_line`, and `@timestamp`. !{investigate{"description":"","label":"Child processes by dump writer","providers":[[{"excluded":false,"field":"host.id","queryType":"phrase","value":"{{host.id}}","valueType":"string"},{"excluded":false,"field":"process.parent.entity_id","queryType":"phrase","value":"{{process.entity_id}}","valueType":"string"},{"excluded":false,"field":"event.category","queryType":"phrase","value":"process","valueType":"string"}]],"relativeFrom":"now-1h","relativeTo":"now"}}
+  - Implication: escalate when archivers, copy tools, PowerShell, "rundll32.exe", dump parsers such as Mimikatz, or deletion commands follow the dump write; no child follow-on only narrows this path and does not rule out in-process or remote retrieval.
+
+- Does the host or session make the exposed credential material high impact?
+  - Focus: `host.id`, `host.name`, `user.domain`, `user.id`, and `process.Ext.session_info.logon_type`; asset or host-role context when available.
+  - Implication: raise urgency when the dump is on a server, jump host, domain controller, privileged admin workstation, or from an unexpected administrative session; a lab or diagnostics host lowers urgency only after artifact, writer, lineage, and handling evidence fit one recognized workflow.
+
+- If local evidence is suspicious or unresolved, do related alerts change scope?
+  - Focus: related credential-access, staging, privilege, or lateral-movement alerts for `user.id`. !{investigate{"description":"","label":"Alerts associated with the user","providers":[[{"excluded":false,"field":"event.kind","queryType":"phrase","value":"signal","valueType":"string"},{"excluded":false,"field":"user.id","queryType":"phrase","value":"{{user.id}}","valueType":"string"}]],"relativeFrom":"now-48h/h","relativeTo":"now"}}
+  - Hint: compare related alerts for `host.id` separately to determine whether activity is isolated to this host or part of broader compromise. !{investigate{"description":"","label":"Alerts associated with the host","providers":[[{"excluded":false,"field":"event.kind","queryType":"phrase","value":"signal","valueType":"string"},{"excluded":false,"field":"host.id","queryType":"phrase","value":"{{host.id}}","valueType":"string"}]],"relativeFrom":"now-48h/h","relativeTo":"now"}}
+  - Implication: broaden containment when the same user or host has related credential-access or post-compromise alerts; keep scope local when related alerts are quiet, but do not use quiet scoping to close unresolved dump evidence.
+
+- Escalate when artifact, writer, lineage, staging, child-process, host-role, or related-alert evidence shows deliberate LSASS collection or broader compromise; close only when those categories bind to one recognized troubleshooting, vendor support, or IR workflow for this host; preserve artifacts and escalate when evidence is mixed or incomplete.
+
+
+*False positive analysis*
+
+
+- Recognized crash analysis, vendor support, Task Manager troubleshooting, SQL Server diagnostics outside filtered paths, or IR/forensic acquisition can legitimately create LSASS dumps. Confirm by aligning identity (`process.executable`, `process.code_signature.subject_name`, `process.pe.original_file_name`), artifact (`file.path`, `file.name`, `file.size`, rename history), lineage (`process.parent.executable`, `process.parent.command_line`), actor (`user.id`, `user.domain`), and host (`host.id`, role) to the same exact workflow. If any dimension contradicts the workflow or telemetry cannot explain why LSASS was dumped, do not close on owner or change-record claims alone.
+- If workflow records or owner confirmation are unavailable, require telemetry-only stability for the same workflow pattern on the same `host.id` and `user.id` across prior alerts before considering closure; a first-time or one-off LSASS dump remains suspicious unless artifact, writer, lineage, and handling evidence are clean.
+- Build exceptions from the minimum confirmed pattern: `process.executable`, `process.code_signature.subject_name`, `process.pe.original_file_name`, parent workflow, `file.path` pattern, `user.id`, and `host.id`. Avoid exceptions on `file.name`, `process.name`, LSASS naming, or host alone.
+
+
+*Response and remediation*
+
+
+- If confirmed benign, reverse temporary containment and document the dump path, writer identity, signer, parent workflow, user, host role, and confirming workflow evidence. Create an exception only when the same workflow recurs consistently for the same scope.
+- If suspicious but unconfirmed, preserve the dump or case-safe copy, `file.path`, rename/archive paths, writer `process.entity_id`, `process.command_line`, parent chain, child-process records, `user.id`, and `host.id` before containment or cleanup. Apply reversible containment first, such as restricting outbound administrative access or suspending the writer when operationally safe. Escalate to host isolation or account containment only when staging, transfer, parsing, or related-alert evidence shows likely credential theft.
+- If confirmed malicious, isolate the host when host role permits, or escalate with the preserved artifact set to the team that can contain it. Record artifacts before terminating processes or deleting dumps, archives, or tools.
+- Treat confirmed LSASS dump exposure on servers, jump hosts, domain controllers, or privileged administration assets as credential compromise risk. Scope which local, cached, service, or administrative credentials may have been present and begin credential hygiene for implicated accounts and systems.
+- Eradicate unauthorized dump utilities, scripts, archives, copied dumps, and persistence mechanisms found during the investigation, then remediate the privilege path or initial access route that allowed dump creation.
+- After containment, hunt for the same writer paths, dump-file naming patterns, "rundll32.exe" Dumpert launch chains, and archive or copy commands across other hosts.
+
+
+==== Setup
+
+
+
+*Setup*
+
+
+This rule is designed for data generated by https://www.elastic.co/security/endpoint-security[Elastic Defend], which provides native endpoint detection and response, along with event enrichments designed to work with our detection rules.
+
+Setup instructions: https://ela.st/install-elastic-defend
+
+
+*Additional data sources*
+
+
+This rule also supports the following third-party data sources. For setup instructions, refer to the links below:
+
+- https://ela.st/m365-defender[Microsoft Defender XDR]
+- https://ela.st/sentinel-one-cloud-funnel[SentinelOne Cloud Funnel]
+- https://ela.st/sysmon-event-11-setup[Sysmon Event ID 11 - File Create]
+
+
+==== Rule query
+
+
+[source, js]
+----------------------------------
+file where host.os.type == "windows" and event.action != "deletion" and
+  file.name : ("lsass*.dmp", "dumpert.dmp", "Andrew.dmp", "SQLDmpr*.mdmp", "Coredump.dmp") and
+
+  not (
+        process.executable : (
+          "?:\\Program Files\\Microsoft SQL Server\\*\\Shared\\SqlDumper.exe",
+          "?:\\Program Files\\Microsoft SQL Server Reporting Services\\SSRS\\ReportServer\\bin\\SqlDumper.exe",
+          "?:\\Windows\\System32\\dllhost.exe"
+        ) and
+        file.path : (
+          "?:\\*\\Reporting Services\\Logfiles\\SQLDmpr*.mdmp",
+          "?:\\Program Files\\Microsoft SQL Server Reporting Services\\SSRS\\Logfiles\\SQLDmpr*.mdmp",
+          "?:\\Program Files\\Microsoft SQL Server\\*\\Shared\\ErrorDumps\\SQLDmpr*.mdmp",
+          "?:\\Program Files\\Microsoft SQL Server\\*\\MSSQL\\LOG\\SQLDmpr*.mdmp"
+        )
+      ) and
+
+  not (
+        process.executable : (
+          "?:\\Windows\\system32\\WerFault.exe",
+          "?:\\Windows\\System32\\WerFaultSecure.exe"
+          ) and
+        file.path : (
+          "?:\\Windows\\System32\\config\\systemprofile\\AppData\\Local\\CrashDumps\\lsass.exe.*.dmp",
+          "?:\\Windows\\System32\\%LOCALAPPDATA%\\CrashDumps\\lsass.exe.*.dmp"
+        )
+  )
+
+----------------------------------
+
+*Framework*: MITRE ATT&CK^TM^
+
+* Tactic:
+** Name: Credential Access
+** ID: TA0006
+** Reference URL: https://attack.mitre.org/tactics/TA0006/
+* Technique:
+** Name: OS Credential Dumping
+** ID: T1003
+** Reference URL: https://attack.mitre.org/techniques/T1003/
+* Sub-technique:
+** Name: LSASS Memory
+** ID: T1003.001
+** Reference URL: https://attack.mitre.org/techniques/T1003/001/

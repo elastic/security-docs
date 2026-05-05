@@ -1,0 +1,133 @@
+[[potential-root-effective-shell-from-non-standard-path-via-auditd]]
+=== Potential Root Effective Shell from Non-Standard Path via Auditd
+
+Identifies process execution events where the effective user is root while the real user is not, the process arguments include the privileged shell flag commonly associated with setuid-capable shells, and the executable path is outside standard system binary directories. That combination is consistent with abuse of setuid shells or similar helpers copied or linked into writable locations, a pattern used to regain a root context after local exploitation.
+
+*Rule type*: query
+
+*Rule indices*: 
+
+* auditbeat-*
+* logs-auditd_manager.auditd-*
+
+*Severity*: high
+
+*Risk score*: 73
+
+*Runs every*: 5m
+
+*Searches indices from*: now-9m ({ref}/common-options.html#date-math[Date Math format], see also <<rule-schedule, `Additional look-back time`>>)
+
+*Maximum alerts per execution*: 100
+
+*References*: 
+
+* https://attack.mitre.org/techniques/T1548/001/
+* https://gtfobins.github.io/gtfobins/bash/
+
+*Tags*: 
+
+* Domain: Endpoint
+* OS: Linux
+* Use Case: Threat Detection
+* Tactic: Privilege Escalation
+* Data Source: Auditd Manager
+* Resources: Investigation Guide
+
+*Version*: 1
+
+*Rule authors*: 
+
+* Elastic
+
+*Rule license*: Elastic License v2
+
+
+==== Investigation guide
+
+
+
+*Triage and analysis*
+
+
+
+*Investigating Potential Root Effective Shell from Non-Standard Path via Auditd*
+
+
+The rule surfaces executed processes where effective UID is root, real UID is not, the argument list contains -p
+(often used with bash, dash, or similar to preserve privileges), and the executable is not under typical distro paths.
+That aligns with interactive or scripted abuse of elevated shells from user-controlled locations.
+
+
+*Possible investigation steps*
+
+
+- Inspect process.executable, process.args, process.parent, and the full command line reconstructed in audit or ECS
+  fields.
+- Confirm user.id versus user.effective.id and map the login session, TTY, and parent chain (SSH, cron, container
+  entrypoint).
+- Check the on-disk binary for setuid bit, ownership, and recent file creation or rename events in the same directory.
+- Correlate with authentication logs and sudo or polkit outcomes around the same timestamp.
+
+
+*False positive analysis*
+
+
+- Rare vendor bundles that place setuid helpers under /opt or /usr/local may need allowlisting after review.
+- Container hosts where audit captures host and namespace PIDs together can add noise; scope by host group if needed.
+
+
+*Response and remediation*
+
+
+- If malicious, isolate the host, remove or quarantine the binary, revoke compromised accounts, audit all setuid
+  binaries on the filesystem, and re-image if integrity cannot be proven.
+
+
+==== Setup
+
+
+
+*Setup*
+
+
+This rule requires data from Auditd Manager or legacy Auditbeat shipping comparable ECS process fields on Linux.
+
+
+*Auditd Manager Integration Setup*
+
+Auditd Manager receives events from the Linux audit subsystem. Deploy the integration from Kibana under Integrations,
+add it to an agent policy, and install the Elastic Agent on Linux hosts that should emit syscall-backed process data.
+
+For integration details, see the https://docs.elastic.co/integrations/auditd_manager[Auditd Manager documentation].
+
+Ensure process execution (for example execve) is audited so `event.action`, `user.id`, `user.effective.id`,
+`process.args`, and `process.executable` are populated consistently for interactive shells.
+
+
+==== Rule query
+
+
+[source, js]
+----------------------------------
+host.os.type:linux and event.category:process and 
+event.action:(exec or executed) and user.id:(* and not 0) and 
+process.executable:(* and not (/bin/* or /nix/store/*/bin/sudo or /run/wrappers/wrappers*/sudo or /sbin/* or /usr/bin/* or /usr/sbin/*)) and 
+user.effective.id:0 and process.args:-p
+
+----------------------------------
+
+*Framework*: MITRE ATT&CK^TM^
+
+* Tactic:
+** Name: Privilege Escalation
+** ID: TA0004
+** Reference URL: https://attack.mitre.org/tactics/TA0004/
+* Technique:
+** Name: Abuse Elevation Control Mechanism
+** ID: T1548
+** Reference URL: https://attack.mitre.org/techniques/T1548/
+* Sub-technique:
+** Name: Setuid and Setgid
+** ID: T1548.001
+** Reference URL: https://attack.mitre.org/techniques/T1548/001/

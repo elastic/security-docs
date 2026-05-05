@@ -1,0 +1,132 @@
+[[potential-kubeletctl-execution]]
+=== Potential Kubeletctl Execution
+
+Detects the execution of kubeletctl on Linux hosts. Kubeletctl is a command-line tool that can be used to interact with the Kubelet API directly, simplifying access to Kubelet endpoints that can be used for discovery and, in some cases, lateral movement within Kubernetes environments.
+
+*Rule type*: eql
+
+*Rule indices*: 
+
+* auditbeat-*
+* logs-auditd_manager.auditd-*
+* logs-endpoint.events.process*
+
+*Severity*: medium
+
+*Risk score*: 47
+
+*Runs every*: 5m
+
+*Searches indices from*: now-9m ({ref}/common-options.html#date-math[Date Math format], see also <<rule-schedule, `Additional look-back time`>>)
+
+*Maximum alerts per execution*: 100
+
+*References*: 
+
+* https://www.cyberark.com/resources/threat-research-blog/using-kubelet-client-to-attack-the-kubernetes-cluster
+* https://github.com/cyberark/kubeletctl
+
+*Tags*: 
+
+* Domain: Endpoint
+* Domain: Container
+* Domain: Kubernetes
+* OS: Linux
+* Use Case: Threat Detection
+* Tactic: Execution
+* Tactic: Discovery
+* Data Source: Elastic Defend
+* Data Source: Auditd Manager
+* Resources: Investigation Guide
+
+*Version*: 1
+
+*Rule authors*: 
+
+* Elastic
+
+*Rule license*: Elastic License v2
+
+
+==== Investigation guide
+
+
+
+*Triage and analysis*
+
+
+> **Disclaimer**:
+> This investigation guide was created using generative AI technology and has been reviewed to improve its accuracy and relevance. While every effort has been made to ensure its quality, we recommend validating the content and adapting it to suit your specific environment and operational needs.
+
+
+*Investigating Potential Kubeletctl Execution*
+
+
+This alert flags kubeletctl execution on a Linux host. Kubeletctl provides direct access to the node’s Kubelet API and can
+be used to enumerate pods and nodes and attempt actions such as exec/attach/portForward. A common attacker pattern is
+running `kubeletctl scan` to find reachable Kubelet endpoints, then using `pods` or `exec/attach` for follow-on access.
+
+
+*Possible investigation steps*
+
+
+- Review the full command line to identify the intended operation (scan/pods/exec/attach/portForward) and the target
+  Kubelet endpoint (node IP/hostname and port via `-s`/`--server`).
+- Correlate with host and container telemetry for connections to Kubelet ports (commonly 10250/10255) and look for
+  scanning patterns across multiple nodes.
+- Check whether Kubernetes credentials were accessed or used (service account tokens, kubeconfigs, client certs) and
+  correlate with Kubernetes audit logs for follow-on actions.
+
+
+*False positive analysis*
+
+
+- Approved operational debugging or incident response activity that uses kubeletctl for diagnostics.
+
+
+*Response and remediation*
+
+
+- Restrict access to Kubelet ports at the network layer and harden Kubelet authentication/authorization.
+- Rotate/revoke any exposed Kubernetes credentials and investigate for follow-on discovery or execution attempts.
+
+
+==== Rule query
+
+
+[source, js]
+----------------------------------
+process where host.os.type == "linux" and event.type == "start" and event.action in ("exec", "executed") and 
+(
+  process.name == "kubeletctl" or
+  (process.args in ("run", "exec", "scan", "pods", "runningpods", "attach", "portForward", "cri", "pid2pod") and process.args:("*:10250*", "*:10255*"))
+)
+
+----------------------------------
+
+*Framework*: MITRE ATT&CK^TM^
+
+* Tactic:
+** Name: Discovery
+** ID: TA0007
+** Reference URL: https://attack.mitre.org/tactics/TA0007/
+* Technique:
+** Name: Container and Resource Discovery
+** ID: T1613
+** Reference URL: https://attack.mitre.org/techniques/T1613/
+* Tactic:
+** Name: Execution
+** ID: TA0002
+** Reference URL: https://attack.mitre.org/tactics/TA0002/
+* Technique:
+** Name: Command and Scripting Interpreter
+** ID: T1059
+** Reference URL: https://attack.mitre.org/techniques/T1059/
+* Sub-technique:
+** Name: Unix Shell
+** ID: T1059.004
+** Reference URL: https://attack.mitre.org/techniques/T1059/004/
+* Technique:
+** Name: Container Administration Command
+** ID: T1609
+** Reference URL: https://attack.mitre.org/techniques/T1609/

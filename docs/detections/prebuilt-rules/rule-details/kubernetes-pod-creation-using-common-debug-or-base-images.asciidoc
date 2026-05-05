@@ -1,0 +1,77 @@
+[[kubernetes-pod-creation-using-common-debug-or-base-images]]
+=== Kubernetes Pod Creation Using Common Debug or Base Images
+
+Detects successful Kubernetes pod creation requests using commonly abused base and debugging container images such as BusyBox, Alpine, Ubuntu, Netshoot, and network multitool variants. These images are frequently used by attackers to deploy short-lived or interactive "throwaway" containers for reconnaissance, payload staging, or command execution due to their small footprint or built-in tooling.
+
+*Rule type*: new_terms
+
+*Rule indices*: 
+
+* logs-kubernetes.audit_logs-*
+
+*Severity*: low
+
+*Risk score*: 21
+
+*Runs every*: 5m
+
+*Searches indices from*: None ({ref}/common-options.html#date-math[Date Math format], see also <<rule-schedule, `Additional look-back time`>>)
+
+*Maximum alerts per execution*: 100
+
+*References*: None
+
+*Tags*: 
+
+* Data Source: Kubernetes
+* Domain: Kubernetes
+* Use Case: Threat Detection
+* Tactic: Execution
+* Tactic: Defense Evasion
+* Rule Type: BBR
+
+*Version*: 1
+
+*Rule authors*: 
+
+* Elastic
+
+*Rule license*: Elastic License v2
+
+
+==== Rule query
+
+
+[source, js]
+----------------------------------
+event.dataset:"kubernetes.audit_logs" and
+kubernetes.audit.stage:"ResponseComplete" and
+kubernetes.audit.annotations.authorization_k8s_io/decision:"allow" and
+kubernetes.audit.objectRef.resource:"pods" and
+kubernetes.audit.verb:"create" and
+kubernetes.audit.requestObject.spec.containers.image:(alpine* or busybox* or ubuntu\:* or debian\:* or *netshoot\:* or *network-multitool\:* or *curl\:*)
+
+----------------------------------
+
+*Framework*: MITRE ATT&CK^TM^
+
+* Tactic:
+** Name: Execution
+** ID: TA0002
+** Reference URL: https://attack.mitre.org/tactics/TA0002/
+* Technique:
+** Name: Deploy Container
+** ID: T1610
+** Reference URL: https://attack.mitre.org/techniques/T1610/
+* Technique:
+** Name: Container Administration Command
+** ID: T1609
+** Reference URL: https://attack.mitre.org/techniques/T1609/
+* Tactic:
+** Name: Defense Evasion
+** ID: TA0005
+** Reference URL: https://attack.mitre.org/tactics/TA0005/
+* Technique:
+** Name: Deploy Container
+** ID: T1610
+** Reference URL: https://attack.mitre.org/techniques/T1610/

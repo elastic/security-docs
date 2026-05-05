@@ -34,7 +34,7 @@ Identifies instances where a process is executed with user/group ID 0 (root), an
 * Data Source: Elastic Defend
 * Resources: Investigation Guide
 
-*Version*: 111
+*Version*: 112
 
 *Rule authors*: 
 
@@ -162,9 +162,11 @@ process where host.os.type == "linux" and event.type == "start" and event.action
     "wc", "wget", "whiptail", "xargs", "xdotool", "xmodmap", "xmore", "xxd", "xz", "yash", "zsh",
     "zsoelim"
   ) or
+  (process.name like ".*" or process.executable like ("/tmp/.*", "/var/tmp/.*", "/dev/shm/.*", "/home/*"))  or 
   (process.name == "ip" and ((process.args == "-force" and process.args in ("-batch", "-b")) or (process.args == "exec"))) or
   (process.name == "find" and process.args in ("-exec", "-execdir")) or
-  (process.name in ("bash", "csh", "dash") and process.args in ("-p", "-b"))
+  (process.name in ("bash", "csh", "dash") and process.args in ("-p", "-b")) or
+  (process.name in ("su", "sudo", "pkexec") and process.args_count == 1)
 ) and not (
   process.parent.name == "spine" or
   process.parent.executable in (

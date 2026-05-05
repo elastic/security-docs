@@ -1,0 +1,232 @@
+[[prebuilt-rule-8-19-23-potential-invoke-mimikatz-powershell-script]]
+=== Potential Invoke-Mimikatz PowerShell Script
+
+Identifies PowerShell script block content containing Invoke-Mimikatz or Mimikatz commands used to dump credentials, extract password stores, export certificates, or use alternate authentication material. These patterns can indicate in-memory credential access and require reconstructed script context and follow-on telemetry to assess impact.
+
+*Rule type*: query
+
+*Rule indices*: 
+
+* logs-windows.powershell*
+* winlogbeat-*
+
+*Severity*: critical
+
+*Risk score*: 99
+
+*Runs every*: 5m
+
+*Searches indices from*: now-9m ({ref}/common-options.html#date-math[Date Math format], see also <<rule-schedule, `Additional look-back time`>>)
+
+*Maximum alerts per execution*: 100
+
+*References*: 
+
+* https://attack.mitre.org/software/S0002/
+* https://raw.githubusercontent.com/EmpireProject/Empire/master/data/module_source/credentials/Invoke-Mimikatz.ps1
+* https://www.elastic.co/security-labs/detect-credential-access
+
+*Tags*: 
+
+* Domain: Endpoint
+* OS: Windows
+* Use Case: Threat Detection
+* Tactic: Credential Access
+* Resources: Investigation Guide
+* Data Source: PowerShell Logs
+
+*Version*: 216
+
+*Rule authors*: 
+
+* Elastic
+
+*Rule license*: Elastic License v2
+
+
+==== Investigation guide
+
+
+
+*Triage and analysis*
+
+
+
+*Investigating Potential Invoke-Mimikatz PowerShell Script*
+
+
+
+*Possible investigation steps*
+
+
+- What Mimikatz behavior does the reconstructed script block show?
+  - Why: Invoke-Mimikatz can run in memory and split or rename command logic; reconstruction separates live credential access from inert matched text.
+  - Focus: read reconstructed `powershell.file.script_block_text`, `file.path`, `host.id`, `user.id`, and `@timestamp`. !{investigate{"description":"","label":"Script block fragments for the same script","providers":[[{"excluded":false,"field":"powershell.file.script_block_id","queryType":"phrase","value":"{{powershell.file.script_block_id}}","valueType":"string"},{"excluded":false,"field":"host.id","queryType":"phrase","value":"{{host.id}}","valueType":"string"}]],"relativeFrom":"now-1h","relativeTo":"now"}}
+  - Hint: reconstruct first with `powershell.file.script_block_id + powershell.sequence + powershell.total`: collect fragments sharing `powershell.file.script_block_id` on the same `host.id`, order by `powershell.sequence`, and treat sequence gaps as unresolved because they can hide targets, outputs, or cleanup.
+  - Hint: runtime string construction, encoding, or command fragmentation can avoid literal command matches in this rule; rely on companion PowerShell obfuscation, AMSI bypass, and loader/injection detections when this exact-content rule does not fire.
+  - Implication: escalate when the rebuilt code performs LSASS, SAM, LSA secrets, cached-credential, DCSync, DPAPI/vault, certificate/private-key, ticket, hash, or renamed/custom Mimikatz activity; lower concern only when reconstruction shows inert sample or training content and no supported recovery shows live targets, output paths, or follow-on use.
+
+- Does the full script declare remote targets or export destinations that change scope?
+  - Focus: reconstructed `powershell.file.script_block_text`, `file.path`, `host.id`, and `user.id` for remote "ComputerName" values, domain targets, export paths, certificate-store, DPAPI/vault, ticket/hash references, or cleanup commands.
+  - Implication: broaden scope when remote targets, private-key export paths, or cleanup logic appear, because the affected hosts or exported material may differ from the alert host; keep scope local when the reconstructed script contains only local test content with no target or output path.
+
+- Can endpoint process recovery explain how PowerShell was launched?
+  - Focus: If endpoint process telemetry is available for this host, recover the matching process via `host.id + process.pid` before using `process.*` or `process.parent.*` for interpretation; then read `process.command_line`, `process.parent.command_line`, and `process.entity_id`. !{investigate{"description":"","label":"Process events for the PowerShell instance","providers":[[{"excluded":false,"field":"process.pid","queryType":"phrase","value":"{{process.pid}}","valueType":"string"},{"excluded":false,"field":"host.id","queryType":"phrase","value":"{{host.id}}","valueType":"string"},{"excluded":false,"field":"event.category","queryType":"phrase","value":"process","valueType":"string"}]],"relativeFrom":"now-1h","relativeTo":"now"}}
+  - Hint: start near `@timestamp` and expand backward if PowerShell started earlier; use `process.parent.executable` for parent identity and keep `process.Ext.authentication_id` only for the authentication bridge. If no process event is available, keep later pivots scoped to `host.id`, `user.id`, and alert time.
+  - Implication: escalate when PowerShell is inline, encoded, remotely invoked, or launched by Office, browser, script-host, scheduled-task, or remote-management ancestry outside the recovered user-host context; lower concern when the launch chain, command line, and session anchor match the same recognized assessment or lab workflow.
+
+- Does the source path show fileless execution or staged module use?
+  - Focus: `file.path`, `file.directory`, `file.name`, and the reconstructed `powershell.file.script_block_text`.
+  - Implication: escalate when no source file is present for active Mimikatz commands, or when the source path points to temp, profile, share, archive, or renamed script locations; lower concern when the path and script content are both confined to a controlled assessment repository or lab image.
+
+- Did the activity create credential dumps, archives, exported certificates, tickets, hashes, or private-key material?
+  - Focus: file activity on `host.id` after `@timestamp`, bounded to the PowerShell `process.pid`, with `file.path`, `file.name`, and `file.directory` for dump, archive, ".pfx", ".pvk", ".p12", ".key", ticket, hash, DPAPI, vault, or cleanup artifacts. !{investigate{"description":"","label":"File events for the PowerShell process","providers":[[{"excluded":false,"field":"host.id","queryType":"phrase","value":"{{host.id}}","valueType":"string"},{"excluded":false,"field":"process.pid","queryType":"phrase","value":"{{process.pid}}","valueType":"string"},{"excluded":false,"field":"event.category","queryType":"phrase","value":"file","valueType":"string"}]],"relativeFrom":"now-1h","relativeTo":"now"}}
+  - Implication: escalate when files appear in writable, external, or collection paths, especially certificate exports or archives matching the reconstructed command. Missing file telemetry is unresolved, not benign.
+
+- Do authentication records show post-alert credential use?
+  - Focus: Windows Security events after `@timestamp`, separating `event.code` 4624/4648/4625 and reading `winlog.event_data.TargetUserName`, `source.ip`, and `winlog.event_data.TargetServerName`. !{investigate{"description":"","label":"Windows Security authentication events on the host","providers":[[{"excluded":false,"field":"host.id","queryType":"phrase","value":"{{host.id}}","valueType":"string"},{"excluded":false,"field":"event.code","queryType":"phrase","value":"4624","valueType":"string"}],[{"excluded":false,"field":"host.id","queryType":"phrase","value":"{{host.id}}","valueType":"string"},{"excluded":false,"field":"event.code","queryType":"phrase","value":"4648","valueType":"string"}],[{"excluded":false,"field":"host.id","queryType":"phrase","value":"{{host.id}}","valueType":"string"},{"excluded":false,"field":"event.code","queryType":"phrase","value":"4625","valueType":"string"}]],"relativeFrom":"now-24h","relativeTo":"now"}}
+  - Hint: If endpoint process telemetry is available for this host, recover the matching process via `host.id + process.pid` before using `process.*` or `process.parent.*` for interpretation; bridge recovered `process.Ext.authentication_id` to `winlog.event_data.TargetLogonId`, and search `winlog.event_data.SubjectLogonId` separately for 4648 explicit-credential events.
+  - Implication: escalate when new privileged logons, explicit-credential use, remote source IPs, or unusual authentication-package patterns follow the script. Missing authentication telemetry is unresolved, not benign.
+
+- If local evidence remains suspicious or incomplete, do related alerts widen account or host scope?
+  - Focus: related alerts for `user.id` showing credential access, execution, defense evasion, or lateral movement. !{investigate{"description":"","label":"Alerts associated with the user","providers":[[{"excluded":false,"field":"event.kind","queryType":"phrase","value":"signal","valueType":"string"},{"excluded":false,"field":"user.id","queryType":"phrase","value":"{{user.id}}","valueType":"string"}]],"relativeFrom":"now-48h/h","relativeTo":"now"}}
+  - Hint: compare `host.id` alerts for precursor access, other credential tools, or follow-on compromise. !{investigate{"description":"","label":"Alerts associated with the host","providers":[[{"excluded":false,"field":"event.kind","queryType":"phrase","value":"signal","valueType":"string"},{"excluded":false,"field":"host.id","queryType":"phrase","value":"{{host.id}}","valueType":"string"}]],"relativeFrom":"now-48h/h","relativeTo":"now"}}
+  - Implication: broaden when either view shows connected credential-access or lateral-movement activity outside the same recognized assessment; keep the case local when surrounding alerts are absent or confined to the same bounded test.
+
+- What disposition is supported by the evidence set?
+  - Focus: credential-dump intent, password-store or DPAPI scope, certificate/private-key export, ticket/hash use, remote targets, launch context, source path, artifacts, authentication, and related alerts.
+  - Implication: escalate when the evidence shows live dumping, password-store extraction, certificate export, alternate-authentication use, remote targeting, or follow-on credential use; close only when reconstruction shows inert content or telemetry plus external exercise confirmation bind the exact activity with no contradictory artifacts or authentication; preserve and escalate if evidence is mixed, partial, or telemetry is missing.
+
+
+*False positive analysis*
+
+
+- Authorized red-team, credential-assessment, malware-analysis, training, or lab validation can legitimately trigger this rule. Confirm by verifying that reconstructed Mimikatz behavior, `user.id`, `host.id`, source `file.path`, recovered launch chain when available, authentication results, and exercise evidence all align to the same bounded test. If exercise evidence is unavailable, close only when telemetry itself proves inert content with no target, output, artifact, or follow-on authentication evidence.
+- Build exceptions from the minimum confirmed pattern: stable `user.id`, `host.id`, source `file.path`, assessment repository or lab image, and recovered launcher context only when endpoint process recovery supports it. Avoid exceptions on `powershell.file.script_block_text`, Mimikatz strings, `user.name`, or `host.id` alone; do not create an exception for a single unconfirmed event.
+
+
+*Response and remediation*
+
+
+- If confirmed benign, document the reconstructed script, source path, host-user scope, recovered launcher context if available, authentication evidence, and exercise evidence that confirmed the bounded test before reversing temporary containment. Create an exception only when that stable evidence set is confirmed, not from one unconfirmed event.
+- If suspicious but unconfirmed, preserve the reconstructed script-block events, source script path, recovered process record if available, dump, password-store, ticket/hash, or certificate-export artifacts, and relevant Windows Security records before containment. Then apply reversible controls tied to the evidence, such as temporary session restriction, heightened monitoring, or limiting access for the affected `user.id` on `host.id`.
+- If confirmed malicious, record evidence before destructive action, then isolate the endpoint or restrict the account based on the artifact and authentication findings. Terminate PowerShell only after evidence capture, then block or quarantine confirmed malicious scripts, artifact hashes, domains, or destinations only when those indicators were recovered during scoping.
+- If credential dumping is confirmed, treat the involved `user.id` and any additional `winlog.event_data.TargetUserName` accounts as exposed only when reconstruction, artifacts, or authentication records support that exposure. Prioritize resets for privileged, service, and lateral-movement-relevant accounts, and review related hosts and users for the same authentication or alert pattern before artifact removal.
+- If certificate, DPAPI, vault, ticket, or hash material is confirmed, preserve the affected `file.path` locations and references in `powershell.file.script_block_text`, then coordinate revocation, re-issuance, reset, or downstream trust updates for the confirmed material.
+- After containment and credential, certificate, or alternate-authentication actions, remove staged scripts, dumps, archives, or exported key material only after scoping related hosts and users for the same source path, account, and authentication evidence.
+
+
+==== Setup
+
+
+
+*Setup*
+
+
+PowerShell Script Block Logging must be enabled to generate the events used by this rule (e.g., 4104).
+Setup instructions: https://ela.st/powershell-logging-setup
+
+
+==== Rule query
+
+
+[source, js]
+----------------------------------
+event.category:process and host.os.type:windows and
+powershell.file.script_block_text:(
+  (DumpCreds and DumpCerts) or
+  "sekurlsa::logonpasswords" or
+  "sekurlsa::ekeys" or
+  "sekurlsa::tickets" or
+  "sekurlsa::pth" or
+  "sekurlsa::minidump" or
+  "lsadump::sam" or
+  "lsadump::secrets" or
+  "lsadump::cache" or
+  "lsadump::dcsync" or
+  "vault::cred" or
+  "dpapi::cred" or
+  ("crypto::certificates" and
+  "CERT_SYSTEM_STORE_LOCAL_MACHINE")
+)
+
+----------------------------------
+
+*Framework*: MITRE ATT&CK^TM^
+
+* Tactic:
+** Name: Credential Access
+** ID: TA0006
+** Reference URL: https://attack.mitre.org/tactics/TA0006/
+* Technique:
+** Name: OS Credential Dumping
+** ID: T1003
+** Reference URL: https://attack.mitre.org/techniques/T1003/
+* Sub-technique:
+** Name: LSASS Memory
+** ID: T1003.001
+** Reference URL: https://attack.mitre.org/techniques/T1003/001/
+* Sub-technique:
+** Name: Security Account Manager
+** ID: T1003.002
+** Reference URL: https://attack.mitre.org/techniques/T1003/002/
+* Sub-technique:
+** Name: LSA Secrets
+** ID: T1003.004
+** Reference URL: https://attack.mitre.org/techniques/T1003/004/
+* Sub-technique:
+** Name: Cached Domain Credentials
+** ID: T1003.005
+** Reference URL: https://attack.mitre.org/techniques/T1003/005/
+* Sub-technique:
+** Name: DCSync
+** ID: T1003.006
+** Reference URL: https://attack.mitre.org/techniques/T1003/006/
+* Technique:
+** Name: Credentials from Password Stores
+** ID: T1555
+** Reference URL: https://attack.mitre.org/techniques/T1555/
+* Sub-technique:
+** Name: Windows Credential Manager
+** ID: T1555.004
+** Reference URL: https://attack.mitre.org/techniques/T1555/004/
+* Technique:
+** Name: Steal or Forge Authentication Certificates
+** ID: T1649
+** Reference URL: https://attack.mitre.org/techniques/T1649/
+* Technique:
+** Name: Steal or Forge Kerberos Tickets
+** ID: T1558
+** Reference URL: https://attack.mitre.org/techniques/T1558/
+* Tactic:
+** Name: Defense Evasion
+** ID: TA0005
+** Reference URL: https://attack.mitre.org/tactics/TA0005/
+* Technique:
+** Name: Use Alternate Authentication Material
+** ID: T1550
+** Reference URL: https://attack.mitre.org/techniques/T1550/
+* Sub-technique:
+** Name: Pass the Hash
+** ID: T1550.002
+** Reference URL: https://attack.mitre.org/techniques/T1550/002/
+* Sub-technique:
+** Name: Pass the Ticket
+** ID: T1550.003
+** Reference URL: https://attack.mitre.org/techniques/T1550/003/
+* Tactic:
+** Name: Lateral Movement
+** ID: TA0008
+** Reference URL: https://attack.mitre.org/tactics/TA0008/
+* Technique:
+** Name: Use Alternate Authentication Material
+** ID: T1550
+** Reference URL: https://attack.mitre.org/techniques/T1550/
+* Sub-technique:
+** Name: Pass the Hash
+** ID: T1550.002
+** Reference URL: https://attack.mitre.org/techniques/T1550/002/
+* Sub-technique:
+** Name: Pass the Ticket
+** ID: T1550.003
+** Reference URL: https://attack.mitre.org/techniques/T1550/003/

@@ -1,0 +1,129 @@
+[[aws-ec2-instance-profile-associated-with-running-instance]]
+=== AWS EC2 Instance Profile Associated with Running Instance
+
+Identifies when an IAM instance profile is associated with a running EC2 instance or replaces the existing association. These APIs change which role credentials the instance obtains via the instance metadata service without terminating the instance. Attackers who can call `AssociateIamInstanceProfile` or `ReplaceIamInstanceProfile` may attach a more privileged role to a workload they control, enabling privilege escalation or lateral movement from the instance.
+
+*Rule type*: query
+
+*Rule indices*: 
+
+* filebeat-*
+* logs-aws.cloudtrail-*
+
+*Severity*: high
+
+*Risk score*: 73
+
+*Runs every*: 5m
+
+*Searches indices from*: now-6m ({ref}/common-options.html#date-math[Date Math format], see also <<rule-schedule, `Additional look-back time`>>)
+
+*Maximum alerts per execution*: 100
+
+*References*: 
+
+* https://docs.aws.amazon.com/AWSEC2/latest/APIReference/API_AssociateIamInstanceProfile.html
+* https://docs.aws.amazon.com/AWSEC2/latest/APIReference/API_ReplaceIamInstanceProfile.html
+
+*Tags*: 
+
+* Domain: Cloud
+* Data Source: AWS
+* Data Source: Amazon Web Services
+* Data Source: AWS EC2
+* Use Case: Threat Detection
+* Tactic: Privilege Escalation
+* Tactic: Lateral Movement
+* Resources: Investigation Guide
+
+*Version*: 1
+
+*Rule authors*: 
+
+* Elastic
+
+*Rule license*: Elastic License v2
+
+
+==== Investigation guide
+
+
+
+*Triage and analysis*
+
+
+
+*Investigating AWS EC2 Instance Profile Associated with Running Instance*
+
+
+`AssociateIamInstanceProfile` adds an instance profile to a running instance (where none was set at launch).
+`ReplaceIamInstanceProfile` swaps the association. Both require `ec2:AssociateIamInstanceProfile` /
+`ec2:ReplaceIamInstanceProfile` and typically `iam:PassRole` on the target instance profile’s role.
+
+
+*Possible investigation steps*
+
+
+- Parse `aws.cloudtrail.request_parameters` for `instanceId` and instance profile name or ARN.
+- Identify the IAM role behind the profile and compare its policies to the prior role (if any).
+- Map the instance to owner, application, and sensitivity; check for recent compromise indicators (SSRF to IMDS,
+  unusual `AssumeRole` from the instance role).
+- Review `aws.cloudtrail.user_identity.arn`, `source.ip`, and `user_agent.original`.
+
+
+*False positive analysis*
+
+
+- Legitimate fixes for missing or wrong profiles at launch; verify with service owners.
+
+
+*Response and remediation*
+
+
+- If unauthorized: disassociate or replace with the correct profile, revoke `PassRole`/`ec2` permissions from the
+  actor, and rotate credentials that may have been issued from the over-privileged role.
+
+
+*Additional information*
+
+
+- https://docs.aws.amazon.com/AWSEC2/latest/APIReference/API_AssociateIamInstanceProfile.html[AssociateIamInstanceProfile]
+- https://docs.aws.amazon.com/AWSEC2/latest/APIReference/API_ReplaceIamInstanceProfile.html[ReplaceIamInstanceProfile]
+
+
+==== Rule query
+
+
+[source, js]
+----------------------------------
+event.dataset: "aws.cloudtrail"
+    and event.provider: "ec2.amazonaws.com"
+    and event.action: ("AssociateIamInstanceProfile" or "ReplaceIamInstanceProfile")
+    and event.outcome: "success"
+    and not aws.cloudtrail.user_identity.type: "AWSService" 
+    and not aws.cloudtrail.user_identity.invoked_by: "ssm.amazonaws.com" 
+
+----------------------------------
+
+*Framework*: MITRE ATT&CK^TM^
+
+* Tactic:
+** Name: Privilege Escalation
+** ID: TA0004
+** Reference URL: https://attack.mitre.org/tactics/TA0004/
+* Technique:
+** Name: Abuse Elevation Control Mechanism
+** ID: T1548
+** Reference URL: https://attack.mitre.org/techniques/T1548/
+* Sub-technique:
+** Name: Temporary Elevated Cloud Access
+** ID: T1548.005
+** Reference URL: https://attack.mitre.org/techniques/T1548/005/
+* Technique:
+** Name: Valid Accounts
+** ID: T1078
+** Reference URL: https://attack.mitre.org/techniques/T1078/
+* Sub-technique:
+** Name: Cloud Accounts
+** ID: T1078.004
+** Reference URL: https://attack.mitre.org/techniques/T1078/004/

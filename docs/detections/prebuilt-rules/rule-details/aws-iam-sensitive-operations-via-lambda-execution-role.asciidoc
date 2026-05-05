@@ -1,0 +1,160 @@
+[[aws-iam-sensitive-operations-via-lambda-execution-role]]
+=== AWS IAM Sensitive Operations via Lambda Execution Role
+
+Detects successful IAM API calls that create or empower IAM users and roles, attach or embed policies, or wire roles to instance profiles when the caller is an assumed role session associated with AWS Lambda. Serverless execution roles are often over-permissioned; an adversary who can run or compromise function code can abuse these APIs for privilege escalation and persistence—for example creating users or roles, issuing keys, attaching managed or inline policies, or preparing EC2 instance profiles for lateral movement.
+
+*Rule type*: query
+
+*Rule indices*: 
+
+* filebeat-*
+* logs-aws.cloudtrail-*
+
+*Severity*: high
+
+*Risk score*: 73
+
+*Runs every*: 5m
+
+*Searches indices from*: now-6m ({ref}/common-options.html#date-math[Date Math format], see also <<rule-schedule, `Additional look-back time`>>)
+
+*Maximum alerts per execution*: 100
+
+*References*: 
+
+* https://docs.aws.amazon.com/lambda/latest/dg/lambda-intro-execution-role.html
+* https://hackingthe.cloud/aws/exploitation/iam_privilege_escalation/
+* https://docs.aws.amazon.com/IAM/latest/APIReference/API_CreateUser.html
+
+*Tags*: 
+
+* Domain: Cloud
+* Domain: Identity
+* Data Source: AWS
+* Data Source: Amazon Web Services
+* Data Source: AWS IAM
+* Data Source: AWS Lambda
+* Use Case: Threat Detection
+* Tactic: Privilege Escalation
+* Tactic: Persistence
+* Resources: Investigation Guide
+
+*Version*: 1
+
+*Rule authors*: 
+
+* Elastic
+
+*Rule license*: Elastic License v2
+
+
+==== Investigation guide
+
+
+
+*Triage and analysis*
+
+
+
+*Investigating AWS IAM Sensitive Operations via Lambda Execution Role*
+
+
+Lambda functions run under an **execution role**. When that role calls sensitive IAM control-plane APIs—user and group
+changes (`CreateUser`, `AddUserToGroup`, …), user or role policies (`AttachUserPolicy`, `PutUserPolicy`,
+`AttachRolePolicy`, `PutRolePolicy`), role and instance-profile wiring (`CreateRole`, `CreateInstanceProfile`,
+`AddRoleToInstanceProfile`), or `CreateAccessKey`—CloudTrail typically records `user_identity.type` as `AssumedRole` and
+may set `user_identity.invoked_by` to `lambda.amazonaws.com`. The session issuer ARN often references the Lambda service
+or the execution role.
+
+
+*Possible investigation steps*
+
+
+- Parse `aws.cloudtrail.user_identity.arn` for the assumed-role session (function name or request id) and map it to the
+  Lambda function and deployment path in the same account.
+- Review `aws.cloudtrail.request_parameters` for targets such as `userName`, `groupName`, `roleName`, `policyArn`,
+  `instanceProfileName`, or access key subject.
+- Compare `user_agent.original` and `source.ip` to expected Lambda service patterns; correlate with CloudWatch Logs for
+  the function around `@timestamp`.
+- Hunt ±30 minutes for follow-on IAM, `sts:AssumeRole`, or data-plane access using any new credentials.
+
+
+*False positive analysis*
+
+
+- Approved infrastructure-as-code or onboarding Lambdas may perform these calls. Tune on execution role ARN or tags.
+
+
+*Response and remediation*
+
+
+- If unauthorized: disable the function, revoke or rotate the execution role credentials, remove rogue IAM users, roles,
+  instance profiles, or keys, detach or delete unintended policies, and review permission boundaries on the role.
+
+
+*Additional information*
+
+
+- https://docs.aws.amazon.com/IAM/latest/APIReference/[IAM API reference]
+- https://docs.aws.amazon.com/lambda/latest/dg/lambda-intro-execution-role.html[Lambda execution role]
+
+
+==== Rule query
+
+
+[source, js]
+----------------------------------
+event.dataset: "aws.cloudtrail"
+    and event.provider: "iam.amazonaws.com"
+    and event.outcome: "success"
+    and aws.cloudtrail.user_identity.type: "AssumedRole"
+    and (
+        aws.cloudtrail.user_identity.invoked_by: "lambda.amazonaws.com"
+        or user_agent.original : *AWS_Lambda*
+    )
+    and event.action: (
+        "AddRoleToInstanceProfile" or
+        "AddUserToGroup" or 
+        "AttachGroupPolicy" or 
+        "AttachRolePolicy" or
+        "AttachUserPolicy" or
+        "CreateAccessKey" or
+        "CreateInstanceProfile" or
+        "CreateRole" or
+        "CreateUser" or
+        "PutRolePolicy" or
+        "PutUserPolicy"
+    )
+
+----------------------------------
+
+*Framework*: MITRE ATT&CK^TM^
+
+* Tactic:
+** Name: Privilege Escalation
+** ID: TA0004
+** Reference URL: https://attack.mitre.org/tactics/TA0004/
+* Technique:
+** Name: Valid Accounts
+** ID: T1078
+** Reference URL: https://attack.mitre.org/techniques/T1078/
+* Sub-technique:
+** Name: Cloud Accounts
+** ID: T1078.004
+** Reference URL: https://attack.mitre.org/techniques/T1078/004/
+* Tactic:
+** Name: Persistence
+** ID: TA0003
+** Reference URL: https://attack.mitre.org/tactics/TA0003/
+* Technique:
+** Name: Create Account
+** ID: T1136
+** Reference URL: https://attack.mitre.org/techniques/T1136/
+* Sub-technique:
+** Name: Cloud Account
+** ID: T1136.003
+** Reference URL: https://attack.mitre.org/techniques/T1136/003/
+* Technique:
+** Name: Account Manipulation
+** ID: T1098
+** Reference URL: https://attack.mitre.org/techniques/T1098/
