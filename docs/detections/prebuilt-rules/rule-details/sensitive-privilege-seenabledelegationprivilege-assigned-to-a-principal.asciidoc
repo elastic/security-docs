@@ -1,0 +1,155 @@
+[[sensitive-privilege-seenabledelegationprivilege-assigned-to-a-principal]]
+=== Sensitive Privilege SeEnableDelegationPrivilege assigned to a Principal
+
+Identifies the assignment of the SeEnableDelegationPrivilege sensitive "user right" to a security principal. This right enables computer and user accounts to be trusted for delegation. Attackers can abuse it to compromise Active Directory accounts and elevate their privileges.
+
+*Rule type*: query
+
+*Rule indices*: 
+
+* winlogbeat-*
+* logs-system.security*
+* logs-windows.forwarded*
+
+*Severity*: high
+
+*Risk score*: 73
+
+*Runs every*: 5m
+
+*Searches indices from*: now-9m ({ref}/common-options.html#date-math[Date Math format], see also <<rule-schedule, `Additional look-back time`>>)
+
+*Maximum alerts per execution*: 100
+
+*References*: 
+
+* https://blog.harmj0y.net/activedirectory/the-most-dangerous-user-right-you-probably-have-never-heard-of/
+* https://github.com/SigmaHQ/sigma/blob/master/rules/windows/builtin/security/win_security_alert_active_directory_user_control.yml
+* https://twitter.com/_nwodtuhs/status/1454049485080907776
+* https://www.thehacker.recipes/ad/movement/kerberos/delegations
+* https://github.com/atc-project/atomic-threat-coverage/blob/master/Atomic_Threat_Coverage/Logging_Policies/LP_0105_windows_audit_authorization_policy_change.md
+
+*Tags*: 
+
+* Domain: Endpoint
+* OS: Windows
+* Use Case: Threat Detection
+* Tactic: Credential Access
+* Tactic: Persistence
+* Data Source: Active Directory
+* Resources: Investigation Guide
+* Use Case: Active Directory Monitoring
+* Data Source: Windows Security Event Logs
+
+*Version*: 219
+
+*Rule authors*: 
+
+* Elastic
+
+*Rule license*: Elastic License v2
+
+
+==== Investigation guide
+
+
+
+*Triage and analysis*
+
+
+
+*Investigating Sensitive Privilege SeEnableDelegationPrivilege assigned to a Principal*
+
+
+
+*Possible investigation steps*
+
+
+- Which principal received SeEnableDelegationPrivilege, and is it narrow enough for delegation administration?
+  - Focus: the "4704" grant's `winlog.event_data.PrivilegeList`, `winlog.event_data.TargetSid`, and `winlog.computer_name`; resolve `winlog.event_data.TargetSid` when the account name is absent.
+  - Implication: escalate when the target is a human user, broad admin cohort, stale account, or identity not dedicated to delegation administration; lower concern only for a narrow delegation-admin or service-management principal with controlled source, rollback, and no follow-on abuse.
+
+- Did a direct actor assign the right, or is the event local policy application?
+  - Why: "4704" often shows "SYSTEM" or the machine account applying policy, which is not the same as identifying the upstream policy editor.
+  - Focus: `winlog.event_data.SubjectUserSid`, `winlog.event_data.SubjectUserName`, `winlog.event_data.SubjectLogonId`, and `winlog.computer_name` to separate a human or service actor from "S-1-5-18" or a machine account.
+  - Implication: escalate when a user-backed or unexpected service account directly assigned the right; when the subject is "SYSTEM" or the machine account, treat it as policy application and keep the upstream policy source unresolved until evidence outside "4704" explains it.
+
+- If the grant came from a user-backed session, does the linked logon fit the admin tier?
+  - Focus: authentication events on `host.id` where `winlog.event_data.TargetLogonId` matches `winlog.event_data.SubjectLogonId`; read `source.ip`, `winlog.logon.type`, and `winlog.event_data.AuthenticationPackageName`. !{investigate{"description":"","label":"Logon events for the assigning session","providers":[[{"excluded":false,"field":"host.id","queryType":"phrase","value":"{{host.id}}","valueType":"string"},{"excluded":false,"field":"winlog.event_data.TargetLogonId","queryType":"phrase","value":"{{winlog.event_data.SubjectLogonId}}","valueType":"string"},{"excluded":false,"field":"event.code","queryType":"phrase","value":"4624","valueType":"string"}],[{"excluded":false,"field":"host.id","queryType":"phrase","value":"{{host.id}}","valueType":"string"},{"excluded":false,"field":"winlog.event_data.SubjectLogonId","queryType":"phrase","value":"{{winlog.event_data.SubjectLogonId}}","valueType":"string"},{"excluded":false,"field":"event.code","queryType":"phrase","value":"4648","valueType":"string"}]],"relativeFrom":"now-24h","relativeTo":"now"}}
+  - Hint: search `winlog.event_data.SubjectLogonId` separately for "4648" explicit-credential context. Missing authentication telemetry is unresolved, not benign; skip this bridge for SYSTEM or machine-account policy application.
+  - Implication: escalate for an unusual admin source, remote-interactive or NewCredentials logon, unexpected NTLM, or explicit-credential use; lower concern when Kerberos and the source host fit the controlled delegation-admin workflow.
+
+- Did authorization-policy activity stay bounded and roll back?
+  - Focus: surrounding grant/removal events on `winlog.computer_name` for the same `winlog.event_data.SubjectUserSid` and `winlog.event_data.SubjectLogonId`, including other `winlog.event_data.PrivilegeList` or `winlog.event_data.TargetSid` values. !{investigate{"description":"","label":"User-right changes by the same source session","providers":[[{"excluded":false,"field":"winlog.computer_name","queryType":"phrase","value":"{{winlog.computer_name}}","valueType":"string"},{"excluded":false,"field":"winlog.event_data.SubjectUserSid","queryType":"phrase","value":"{{winlog.event_data.SubjectUserSid}}","valueType":"string"},{"excluded":false,"field":"winlog.event_data.SubjectLogonId","queryType":"phrase","value":"{{winlog.event_data.SubjectLogonId}}","valueType":"string"},{"excluded":false,"field":"event.code","queryType":"phrase","value":"4704","valueType":"string"}],[{"excluded":false,"field":"winlog.computer_name","queryType":"phrase","value":"{{winlog.computer_name}}","valueType":"string"},{"excluded":false,"field":"winlog.event_data.SubjectUserSid","queryType":"phrase","value":"{{winlog.event_data.SubjectUserSid}}","valueType":"string"},{"excluded":false,"field":"winlog.event_data.SubjectLogonId","queryType":"phrase","value":"{{winlog.event_data.SubjectLogonId}}","valueType":"string"},{"excluded":false,"field":"event.code","queryType":"phrase","value":"4705","valueType":"string"}]],"relativeFrom":"now-24h","relativeTo":"now"}}
+  - Hint: check paired removals for the same `winlog.event_data.TargetSid`, `winlog.event_data.PrivilegeList`, and `winlog.computer_name`. !{investigate{"description":"","label":"User-right removals for the granted principal","providers":[[{"excluded":false,"field":"winlog.computer_name","queryType":"phrase","value":"{{winlog.computer_name}}","valueType":"string"},{"excluded":false,"field":"winlog.event_data.TargetSid","queryType":"phrase","value":"{{winlog.event_data.TargetSid}}","valueType":"string"},{"excluded":false,"field":"winlog.event_data.PrivilegeList","queryType":"phrase","value":"{{winlog.event_data.PrivilegeList}}","valueType":"string"},{"excluded":false,"field":"event.code","queryType":"phrase","value":"4705","valueType":"string"}]],"relativeFrom":"now-24h","relativeTo":"now"}}
+  - Implication: escalate when the same context grants other rights, removes guardrails, touches multiple principals, repeats the grant, or lacks rollback; lower urgency when activity stays bounded to one controlled grant-plus-rollback cycle for the same target.
+
+- Did the actor or newly empowered account modify delegation attributes after the grant?
+  - Why: this right is most dangerous when followed by delegation changes on user or computer objects.
+  - Focus: later "5136" events where `winlog.event_data.SubjectUserSid` matches the assigning or granted principal; review `winlog.event_data.ObjectDN`, `winlog.event_data.AttributeLDAPDisplayName`, and `winlog.event_data.AttributeValue` for "userAccountControl" trusted-for-delegation flags or "msDS-AllowedToDelegateTo" updates. !{investigate{"description":"","label":"Delegation attribute changes by involved principals","providers":[[{"excluded":false,"field":"event.code","queryType":"phrase","value":"5136","valueType":"string"},{"excluded":false,"field":"winlog.event_data.SubjectUserSid","queryType":"phrase","value":"{{winlog.event_data.SubjectUserSid}}","valueType":"string"},{"excluded":false,"field":"winlog.event_data.AttributeLDAPDisplayName","queryType":"phrase","value":"userAccountControl","valueType":"string"}],[{"excluded":false,"field":"event.code","queryType":"phrase","value":"5136","valueType":"string"},{"excluded":false,"field":"winlog.event_data.SubjectUserSid","queryType":"phrase","value":"{{winlog.event_data.SubjectUserSid}}","valueType":"string"},{"excluded":false,"field":"winlog.event_data.AttributeLDAPDisplayName","queryType":"phrase","value":"msDS-AllowedToDelegateTo","valueType":"string"}],[{"excluded":false,"field":"event.code","queryType":"phrase","value":"5136","valueType":"string"},{"excluded":false,"field":"winlog.event_data.SubjectUserSid","queryType":"phrase","value":"{{winlog.event_data.TargetSid}}","valueType":"string"},{"excluded":false,"field":"winlog.event_data.AttributeLDAPDisplayName","queryType":"phrase","value":"userAccountControl","valueType":"string"}],[{"excluded":false,"field":"event.code","queryType":"phrase","value":"5136","valueType":"string"},{"excluded":false,"field":"winlog.event_data.SubjectUserSid","queryType":"phrase","value":"{{winlog.event_data.TargetSid}}","valueType":"string"},{"excluded":false,"field":"winlog.event_data.AttributeLDAPDisplayName","queryType":"phrase","value":"msDS-AllowedToDelegateTo","valueType":"string"}]],"relativeFrom":"now-24h","relativeTo":"now"}}
+  - Hint: if "5136" coverage is unavailable, preserve `winlog.event_data.TargetSid`, `winlog.event_data.SubjectUserSid`, and `winlog.computer_name` for AD follow-up instead of treating absent evidence as benign.
+  - Implication: escalate when either principal soon changes delegation flags or constrained-delegation targets because these values can enable Kerberos S4U abuse against named services; absence of follow-on changes lowers urgency only when target, source, and rollback also align.
+
+- If local evidence remains suspicious or unresolved, do detection alerts for either SID widen scope?
+  - Focus: recent alert-window results for the assigning account SID, `winlog.event_data.SubjectUserSid`. !{investigate{"description":"","label":"Alerts associated with the assigning account","providers":[[{"excluded":false,"field":"event.kind","queryType":"phrase","value":"signal","valueType":"string"},{"excluded":false,"field":"winlog.event_data.SubjectUserSid","queryType":"phrase","value":"{{winlog.event_data.SubjectUserSid}}","valueType":"string"}]],"relativeFrom":"now-48h/h","relativeTo":"now"}}
+  - Hint: compare the same recent window with alerts for the granted account SID, `winlog.event_data.TargetSid`. !{investigate{"description":"","label":"Alerts associated with the granted principal","providers":[[{"excluded":false,"field":"event.kind","queryType":"phrase","value":"signal","valueType":"string"},{"excluded":false,"field":"winlog.event_data.TargetSid","queryType":"phrase","value":"{{winlog.event_data.TargetSid}}","valueType":"string"}]],"relativeFrom":"now-48h/h","relativeTo":"now"}}
+  - Implication: escalate scope when either account has privilege, directory, ticket, or lateral-movement alerts; keep the case local when histories are quiet and local evidence supports a controlled workflow.
+
+- Escalate for unexpected target/source, abnormal session, absent rollback, follow-on delegation changes, or related alerts; close only when target, source, session, rollback, delegation attributes, and scope bind one controlled workflow; preserve and escalate mixed or incomplete evidence.
+
+
+*False positive analysis*
+
+
+- Controlled delegation administration can legitimately trigger this rule when a dedicated delegation-admin or service-management principal is temporarily granted this right. Confirm only when `winlog.event_data.TargetSid`, `winlog.event_data.SubjectUserSid` or SYSTEM/machine policy path, `winlog.computer_name`, direct-session `source.ip`, `winlog.logon.type`, `winlog.event_data.AuthenticationPackageName`, rollback, and bounded `winlog.event_data.AttributeLDAPDisplayName` or `winlog.event_data.ObjectDN` changes all fit the same change; use change records or AD owner confirmation when telemetry cannot prove intent, and do not close if any dimension diverges.
+- Before creating an exception, validate recurrence for the same source, `winlog.event_data.TargetSid`, `winlog.computer_name`, direct-session source when applicable, and bounded delegation-attribute pattern. Build the exception from that minimum workflow, never from "SeEnableDelegationPrivilege" or the rule name alone.
+
+
+*Response and remediation*
+
+
+- If confirmed benign, reverse temporary containment and document the controlled workflow evidence: target SID, assigning or policy-application source, emitting system, linked authentication context, rollback, and bounded delegation-attribute changes. Keep any exception narrow and require the same workflow to recur before suppressing future alerts.
+- If suspicious but unconfirmed, preserve the alert document, exported authorization-policy grant/removal records, linked "4624"/"4648" authentication records, SID-resolution notes, and any related "5136" delegation-change records before containment. Apply reversible containment such as heightened monitoring on both identities or temporary delegation-administration restrictions. Escalate to stronger containment only if follow-on directory changes, repeated grants, or related alerts show broader abuse.
+- If confirmed malicious, preserve the same Windows Security records and SID-resolution evidence before destructive actions. Disable or restrict the granting or granted principal, contain the originating admin workstation when identified from `source.ip`, and hand off to Active Directory or incident response if direct response is unavailable.
+- After containment, remove SeEnableDelegationPrivilege from the granted principal, verify paired removal evidence, revert unauthorized delegation-related attribute changes, and review recent authorization-policy events from the same actor for additional rollback. If delegation abuse is confirmed, prioritize credential hygiene for affected identities.
+- Post-incident hardening: restrict delegation-administration rights to dedicated accounts, keep Windows Security auditing for authorization-policy and directory-service changes enabled on domain controllers, and document the final workflow or abuse pattern for future triage.
+
+
+==== Setup
+
+
+
+*Setup*
+
+
+Audit Authorization Policy Change must be enabled to generate the events used by this rule.
+Setup instructions: https://ela.st/audit-authorization-policy-change
+
+
+==== Rule query
+
+
+[source, js]
+----------------------------------
+event.code:4704 and host.os.type:"windows" and winlog.event_data.PrivilegeList:"SeEnableDelegationPrivilege"
+
+----------------------------------
+
+*Framework*: MITRE ATT&CK^TM^
+
+* Tactic:
+** Name: Credential Access
+** ID: TA0006
+** Reference URL: https://attack.mitre.org/tactics/TA0006/
+* Technique:
+** Name: Steal or Forge Kerberos Tickets
+** ID: T1558
+** Reference URL: https://attack.mitre.org/techniques/T1558/
+* Tactic:
+** Name: Persistence
+** ID: TA0003
+** Reference URL: https://attack.mitre.org/tactics/TA0003/
+* Technique:
+** Name: Account Manipulation
+** ID: T1098
+** Reference URL: https://attack.mitre.org/techniques/T1098/

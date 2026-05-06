@@ -1,0 +1,172 @@
+[[kubelet-api-connection-attempt-to-internal-ip]]
+=== Kubelet API Connection Attempt to Internal IP
+
+Detects network connection attempts to the Kubernetes Kubelet API port (10250/10255) on internal IP ranges from Linux hosts. This rule focuses on common request and scripting utilities (curl, wget, python, node, etc.) and executions from world-writable or ephemeral paths (/tmp, /var/tmp, /dev/shm, /var/run), which are frequently abused during container and cluster lateral movement.
+
+*Rule type*: eql
+
+*Rule indices*: 
+
+* auditbeat-*
+* logs-auditd_manager.auditd-*
+* logs-endpoint.events.network*
+
+*Severity*: medium
+
+*Risk score*: 47
+
+*Runs every*: 5m
+
+*Searches indices from*: now-9m ({ref}/common-options.html#date-math[Date Math format], see also <<rule-schedule, `Additional look-back time`>>)
+
+*Maximum alerts per execution*: 100
+
+*References*: 
+
+* https://attack.mitre.org/techniques/T1021/
+* https://kubernetes.io/docs/reference/command-line-tools-reference/kubelet/
+
+*Tags*: 
+
+* Domain: Endpoint
+* Domain: Container
+* Domain: Kubernetes
+* OS: Linux
+* Use Case: Threat Detection
+* Tactic: Lateral Movement
+* Tactic: Discovery
+* Data Source: Elastic Defend
+* Data Source: Auditd Manager
+* Resources: Investigation Guide
+
+*Version*: 1
+
+*Rule authors*: 
+
+* Elastic
+
+*Rule license*: Elastic License v2
+
+
+==== Investigation guide
+
+
+
+*Triage and analysis*
+
+
+
+*Investigating Kubelet API Connection Attempt to Internal IP*
+
+
+This alert indicates a process on a Linux host attempted to connect to port 10250 (Kubelet API) on an internal or
+loopback IP address, including IPv4 private ranges and IPv6 localhost. Kubelet access is commonly abused to enumerate
+pods, retrieve logs, or execute commands on nodes when authentication or network controls are weak.
+
+
+*Possible investigation steps*
+
+
+- Review the initiating process (`process.*`) and its executable path; prioritize processes running from `/tmp`,
+  `/var/tmp`, `/dev/shm`, or `/var/run`, and suspicious interpreters or downloaders.
+- Determine whether the destination IP is the local node, another node, or a management host, and whether connectivity to
+  10250 is expected for this workload/user.
+- Correlate with process argument telemetry for HTTP URLs, kubelet endpoints (e.g., `/pods`, `/runningpods`, `/exec`), and
+  subsequent Kubernetes API audit activity or credential access.
+
+
+*False positive analysis*
+
+
+- Approved troubleshooting (SRE/cluster operator) sessions that validate Kubelet reachability on the node.
+- In-cluster agents that legitimately scrape or query the Kubelet (confirm vendor, image, and deployment).
+
+
+*Response and remediation*
+
+
+- Restrict pod-to-node access to 10250 using network policies/security groups where possible.
+- Rotate and revoke any exposed Kubernetes credentials and investigate for follow-on cluster discovery or execution.
+
+
+==== Setup
+
+
+
+*Setup*
+
+
+
+*Auditd Manager: emitting network connection telemetry*
+
+
+This rule is written against `event.category:network` events. Elastic Defend provides this natively. For Auditd Manager,
+you typically need to audit network-related syscalls (for example `connect`) and rely on the integration/pipeline to map
+those syscall events into ECS-like network events.
+
+If you are not seeing `event.category:network` for Auditd Manager data, add syscall audit rules for network connections.
+The example below is a starting point and may need to be adjusted for your environment and noise tolerance:
+
+```
+
+*64-bit*
+
+-a always,exit -F arch=b64 -S connect -S accept -S accept4 -S sendto -S recvfrom -k netconn
+
+
+*32-bit (if applicable)*
+
+-a always,exit -F arch=b32 -S connect -S accept -S accept4 -S sendto -S recvfrom -k netconn
+```
+
+After enabling, validate that events include `destination.ip`, `destination.port`, and a populated `process.*` context.
+
+
+==== Rule query
+
+
+[source, js]
+----------------------------------
+network where host.os.type == "linux" and event.type == "start" and event.category == "network" and network.direction == "egress" and 
+  event.action in ("connected-to", "connection_attempted") and (destination.port == 10250 or destination.port == 10255) and
+  cidrmatch(
+    destination.ip,
+    "127.0.0.0/8",
+    "10.0.0.0/8",
+    "172.16.0.0/12",
+    "192.168.0.0/16",
+    "169.254.0.0/16",
+    "100.64.0.0/10",
+    "::1/128",
+    "fc00::/7",
+    "fe80::/10"
+  ) and
+  (
+    process.name in ("curl", "wget", "nc", "ncat", "netcat", "socat", "openssl", "perl", "busybox") or 
+    process.name like ".*" or process.executable like "/*/.*" or 
+    process.name like ("python*", "ruby*", "node*", "java*", "lua*", "apache*", "php*", "nginx", "httpd*", "lighttpd", "caddy", "mongrel_rails", "gunicorn", 
+                       "uwsgi", "openresty", "cherokee", "h2o", "resin", "puma", "unicorn", "traefik", "tornado", "hypercorn", 
+                       "daphne", "twistd", "yaws", "webfsd", "flask", "rails", "mongrel", "catalina.sh", "hiawatha", "lswsctrl") or
+    process.executable like ("/tmp/*", "/var/tmp/*", "/dev/shm/*", "/var/run/*", "/home/*", "/run/user/*", "/busybox/*")
+  )
+
+----------------------------------
+
+*Framework*: MITRE ATT&CK^TM^
+
+* Tactic:
+** Name: Lateral Movement
+** ID: TA0008
+** Reference URL: https://attack.mitre.org/tactics/TA0008/
+* Technique:
+** Name: Remote Services
+** ID: T1021
+** Reference URL: https://attack.mitre.org/techniques/T1021/
+* Tactic:
+** Name: Discovery
+** ID: TA0007
+** Reference URL: https://attack.mitre.org/tactics/TA0007/
+* Technique:
+** Name: Container and Resource Discovery
+** ID: T1613
+** Reference URL: https://attack.mitre.org/techniques/T1613/

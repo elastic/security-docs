@@ -1,0 +1,147 @@
+[[potential-direct-kubelet-access-via-process-arguments]]
+=== Potential Direct Kubelet Access via Process Arguments
+
+Detects potential direct Kubelet API access attempts on Linux by identifying process executions whose arguments contain URLs targeting Kubelet ports (10250/10255). Adversaries may probe or access Kubelet endpoints to enumerate pods, fetch logs, or attempt remote execution, which can enable discovery and lateral movement in Kubernetes environments.
+
+*Rule type*: eql
+
+*Rule indices*: 
+
+* auditbeat-*
+* logs-auditd_manager.auditd-*
+* logs-endpoint.events.process*
+
+*Severity*: high
+
+*Risk score*: 73
+
+*Runs every*: 5m
+
+*Searches indices from*: now-9m ({ref}/common-options.html#date-math[Date Math format], see also <<rule-schedule, `Additional look-back time`>>)
+
+*Maximum alerts per execution*: 100
+
+*References*: 
+
+* https://heilancoos.github.io/research/2025/12/16/kubernetes.html#kubelet-api
+* https://www.cyberark.com/resources/threat-research-blog/using-kubelet-client-to-attack-the-kubernetes-cluster
+* https://www.aquasec.com/blog/kubernetes-exposed-exploiting-the-kubelet-api/
+
+*Tags*: 
+
+* Domain: Endpoint
+* Domain: Container
+* Domain: Kubernetes
+* OS: Linux
+* Use Case: Threat Detection
+* Tactic: Discovery
+* Tactic: Lateral Movement
+* Data Source: Elastic Defend
+* Data Source: Auditd Manager
+* Resources: Investigation Guide
+
+*Version*: 1
+
+*Rule authors*: 
+
+* Elastic
+
+*Rule license*: Elastic License v2
+
+
+==== Investigation guide
+
+
+
+*Triage and analysis*
+
+
+> **Disclaimer**:
+> This investigation guide was created using generative AI technology and has been reviewed to improve its accuracy and relevance. While every effort has been made to ensure its quality, we recommend validating the content and adapting it to suit your specific environment and operational needs.
+
+
+*Investigating Potential Direct Kubelet Access via Process Arguments*
+
+
+This detection flags a process on a Linux host whose arguments include a URL targeting the Kubelet API ports 10250/10255.
+Attackers often use `curl`, `wget`, or scripting runtimes to access endpoints such as `/pods`, `/runningpods`,
+`/metrics`, `/exec`, or `/containerLogs`. Successful access can provide node and workload visibility, and in some cases
+enable actions that facilitate lateral movement within the cluster.
+
+
+*Possible investigation steps*
+
+
+- Extract and reconstruct the full URL from `process.args` / `process.command_line`, including the hostname/IP, port, and
+  path, and determine whether the request intent was discovery or execution.
+- Identify the user and session that launched the process and whether it originated from an interactive shell, scheduled
+  task, or automation.
+- Correlate the timestamp with Kubernetes audit logs and node/Kubelet logs to confirm whether the request was
+  authenticated and whether it returned success.
+- If the destination is a node IP, check whether this host should be allowed to reach node Kubelet ports and whether
+  other nodes were contacted in a scanning pattern.
+
+
+*False positive analysis*
+
+
+- SRE/operator troubleshooting sessions validating Kubelet reachability or TLS/auth behavior.
+- Approved health checks, debugging scripts, or node agents that query Kubelet endpoints.
+
+
+*Response and remediation*
+
+
+- Restrict access to Kubelet ports 10250/10255 at the network layer; block pod-to-node or host-to-node traffic except for
+  approved agents.
+- Rotate any potentially exposed credentials (service account tokens, client certs, kubeconfigs) and assess for follow-on
+  activity such as `exec/attach` and secret reads.
+- Harden Kubelet configuration (disable anonymous auth, enforce webhook authn/authz) and review RBAC/admission controls.
+
+
+==== Rule query
+
+
+[source, js]
+----------------------------------
+process where host.os.type == "linux" and event.type == "start" and event.action in ("exec", "executed") and
+(
+  /* direct utility execution */
+  process.name like ("curl", "wget", "python*", "perl*", "php*", "node*", "java", "ruby*", "lua*", ".*") or
+  
+  process.executable like ("/tmp/*", "/var/tmp/*", "/dev/shm/*", "/var/run/*", "/home/*", "/run/user/*", "/busybox/*")
+) and
+process.args like ("http*:10250/*", "http*:10255/*", "wss:*:10250/*", "wss:*:10255/*")
+
+----------------------------------
+
+*Framework*: MITRE ATT&CK^TM^
+
+* Tactic:
+** Name: Lateral Movement
+** ID: TA0008
+** Reference URL: https://attack.mitre.org/tactics/TA0008/
+* Technique:
+** Name: Remote Services
+** ID: T1021
+** Reference URL: https://attack.mitre.org/techniques/T1021/
+* Tactic:
+** Name: Discovery
+** ID: TA0007
+** Reference URL: https://attack.mitre.org/tactics/TA0007/
+* Technique:
+** Name: Container and Resource Discovery
+** ID: T1613
+** Reference URL: https://attack.mitre.org/techniques/T1613/
+* Tactic:
+** Name: Execution
+** ID: TA0002
+** Reference URL: https://attack.mitre.org/tactics/TA0002/
+* Technique:
+** Name: Command and Scripting Interpreter
+** ID: T1059
+** Reference URL: https://attack.mitre.org/techniques/T1059/
+* Sub-technique:
+** Name: Unix Shell
+** ID: T1059.004
+** Reference URL: https://attack.mitre.org/techniques/T1059/004/

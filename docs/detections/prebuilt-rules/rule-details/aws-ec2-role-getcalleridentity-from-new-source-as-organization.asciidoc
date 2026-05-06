@@ -1,0 +1,122 @@
+[[aws-ec2-role-getcalleridentity-from-new-source-as-organization]]
+=== AWS EC2 Role GetCallerIdentity from New Source AS Organization
+
+Identifies the first time an EC2 instance role session calls AWS STS GetCallerIdentity from a given source autonomous system (AS) organization name within the lookback window. Adversaries who steal instance role credentials often verify them with GetCallerIdentity from infrastructure outside your normal egress paths. Baseline learning on the pairing of identity and source network reduces noise from stable NAT or AWS-classified egress compared to alerting on every call from a non-Amazon ASN.
+
+*Rule type*: new_terms
+
+*Rule indices*: 
+
+* filebeat-*
+* logs-aws.cloudtrail-*
+
+*Severity*: medium
+
+*Risk score*: 47
+
+*Runs every*: 5m
+
+*Searches indices from*: now-6m ({ref}/common-options.html#date-math[Date Math format], see also <<rule-schedule, `Additional look-back time`>>)
+
+*Maximum alerts per execution*: 100
+
+*References*: 
+
+* https://docs.aws.amazon.com/STS/latest/APIReference/API_GetCallerIdentity.html
+* https://detectioninthe.cloud/ttps/discovery/sts_get_caller_identity
+
+*Tags*: 
+
+* Domain: Cloud
+* Domain: Identity
+* Data Source: AWS
+* Data Source: Amazon Web Services
+* Data Source: AWS STS
+* Use Case: Identity and Access Audit
+* Use Case: Threat Detection
+* Tactic: Discovery
+* Resources: Investigation Guide
+
+*Version*: 1
+
+*Rule authors*: 
+
+* Elastic
+
+*Rule license*: Elastic License v2
+
+
+==== Investigation guide
+
+
+
+*Triage and analysis*
+
+
+
+*Investigating AWS EC2 Role GetCallerIdentity from New Source AS Organization*
+
+
+The `GetCallerIdentity` API returns details about the IAM principal owning the credentials. It requires no IAM permissions and is commonly used to validate stolen or exported credentials.
+
+EC2 instance role sessions appear in CloudTrail as `AssumedRole` with a session identifier matching an instance id (for example, `arn:aws:sts::account:assumed-role/role-name/i-0123456789abcdef0`). This complements the rule **AWS STS GetCallerIdentity API Called for the First Time**, which excludes `AssumedRole`. Here, a **New Terms** condition applies to the combination of `aws.cloudtrail.user_identity.arn` and `source.as.organization.name` over a 10-day history window. The first observation of that pair triggers an alert, which suppresses repeated noise when the same role keeps using the same stable egress AS organization (for example, the same NAT or provider label).
+
+
+*Possible investigation steps*
+
+
+- Confirm the assumed-role ARN and instance id; map the instance to an account, VPC, and expected egress (NAT gateway, IGW, proxy).
+- Compare `source.as.organization.name` and `source.ip` to historical CloudTrail for the same role session or role.
+- Review `user_agent.original` for tooling inconsistent with the instance (for example, unexpected OS or CLI version).
+- Correlate with other alerts from the same `aws.cloudtrail.user_identity.access_key_id` or instance over the prior 48 hours.
+
+
+*False positive analysis*
+
+
+- New instances or roles calling GetCallerIdentity once per new AS label are expected to alert once per new term until the baseline ages in.
+- Missing or changing GeoIP enrichment can alter `source.as.organization.name`; ensure the field is populated consistently.
+
+
+*Response and remediation*
+
+
+- If credentials are suspected stolen, revoke the session by stopping the instance, removing the role from the instance profile, or tightening trust and permissions; rotate any long-lived secrets the instance could access.
+- Scope follow-on API activity from the same access key id and investigate the initial access vector (SSRF, IMDS abuse, malware).
+
+
+*Additional information*
+
+
+- https://docs.aws.amazon.com/STS/latest/APIReference/API_GetCallerIdentity.html[GetCallerIdentity]
+
+
+==== Rule query
+
+
+[source, js]
+----------------------------------
+event.dataset: "aws.cloudtrail"
+    and event.provider: "sts.amazonaws.com"
+    and event.action: "GetCallerIdentity"
+    and event.outcome: "success"
+    and aws.cloudtrail.user_identity.type: "AssumedRole"
+    and user.id: *\:i-*
+    and source.as.organization.name:(* and not (AMAZON* or Amazon* or Google* or "MongoDB, Inc."))
+
+----------------------------------
+
+*Framework*: MITRE ATT&CK^TM^
+
+* Tactic:
+** Name: Discovery
+** ID: TA0007
+** Reference URL: https://attack.mitre.org/tactics/TA0007/
+* Technique:
+** Name: Account Discovery
+** ID: T1087
+** Reference URL: https://attack.mitre.org/techniques/T1087/
+* Sub-technique:
+** Name: Cloud Account
+** ID: T1087.004
+** Reference URL: https://attack.mitre.org/techniques/T1087/004/

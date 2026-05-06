@@ -1,0 +1,204 @@
+[[prebuilt-rule-8-19-23-aws-discovery-api-calls-from-vpn-asn-for-the-first-time-by-identity]]
+=== AWS Discovery API Calls from VPN ASN for the First Time by Identity
+
+Flags the first time a given IAM principal invokes a narrow set of high-signal discovery APIs (credential check, account and IAM enumeration, bucket and compute inventory, logging introspection) from a source IP whose autonomous system number (ASN) matches a curated set commonly associated with consumer VPN brands, VPN-heavy hosting, and provider networks referenced in public reporting on TeamPCP activity (for example 31173 Services AB AS39351 and Oy Crea Nova Hosting Solution Ltd). Broad `List*`/`Describe*` patterns are intentionally omitted to reduce noise. Hosting ASNs are heavily dual-use; validate `source.as.number` in your data and extend `event.action` only when your baseline allows it.
+
+*Rule type*: new_terms
+
+*Rule indices*: 
+
+* filebeat-*
+* logs-aws.cloudtrail-*
+
+*Severity*: medium
+
+*Risk score*: 47
+
+*Runs every*: 5m
+
+*Searches indices from*: now-6m ({ref}/common-options.html#date-math[Date Math format], see also <<rule-schedule, `Additional look-back time`>>)
+
+*Maximum alerts per execution*: 100
+
+*References*: 
+
+* https://docs.aws.amazon.com/awscloudtrail/latest/userguide/cloudtrail-event-reference.html
+* https://attack.mitre.org/techniques/T1526/
+* https://github.com/bountyyfi/bad-asn-list/blob/main/all.txt
+
+*Tags*: 
+
+* Domain: Cloud
+* Domain: Identity
+* Data Source: AWS
+* Data Source: Amazon Web Services
+* Data Source: AWS CloudTrail
+* Use Case: Threat Detection
+* Tactic: Discovery
+* Resources: Investigation Guide
+
+*Version*: 1
+
+*Rule authors*: 
+
+* Elastic
+
+*Rule license*: Elastic License v2
+
+
+==== Investigation guide
+
+
+
+*Triage and analysis*
+
+
+
+*Investigating AWS Discovery API Calls from VPN ASN for the First Time by Identity*
+
+
+This rule applies a https://www.elastic.co/guide/en/security/current/rules-ui-create.html#create-new-terms-rule[New Terms] condition on **`source.as.number`** and **`aws.cloudtrail.user_identity.arn`**. It fires the first time a specific principal is observed calling discovery-like APIs from an IP geolocated to one of the ASNs in the rule query (within the 10-day history window).
+
+**High-signal `event.action` values** (explicit allowlist in the rule query): `GetCallerIdentity`; IAM `ListUsers`,
+`ListRoles`, `ListAccessKeys`, `GetAccountSummary`, `ListAccountAliases`, `ListGroups`, `ListMFADevices`; S3 `ListBuckets`;
+EC2 `DescribeInstances`, `DescribeRegions`, `DescribeVpcs`, `DescribeSecurityGroups`; Lambda `ListFunctions`; RDS
+`DescribeDBInstances`, `DescribeDBSnapshots`; DynamoDB `ListTables`; KMS `ListKeys`, `ListAliases`; CloudTrail
+`DescribeTrails`, `LookupEvents`. Clone the rule to add actions (for example ELB or Secrets Manager) if needed.
+
+**Curated VPN-oriented ASNs (verify locally)** — examples this rule matches (subject to registry and enrichment updates):
+
+| ASN | Commonly associated operator (reference only) |
+|-----|-----------------------------------------------|
+| 216025 | Mullvad VPN AB |
+| 57138 | Mullvad supporting infrastructure |
+| 207137 | Tefincom S.A. (NordVPN-related) |
+| 212238 | Nord / Nord Security class VPN egress in many datasets |
+| 199218 | ProtonVPN |
+| 209103 | Proton AG (VPN; confirm in your enrichment source) |
+| 209854 | Surfshark Ltd. |
+| 141039, 147049 | Packet-style VPN/colocation pools often tied to large VPN footprints |
+| 53314 | ExpressVPN-related registration in some registries (often small; validate) |
+| 60068 | Datacamp Limited — CDN/hosting; used by several VPN brands and many legitimate workloads (**high dual-use**) |
+| 9009 | M247 Ltd — colocation and connectivity; common VPN/proxy exit (**high dual-use**) |
+| 20473 | Choopa / Vultr (The Constant Company) — VPS; frequent VPN exit and automation (**high dual-use**) |
+| 63949 | Linode LLC (Akamai cloud) — VPS; VPN exits and dev workloads (**dual-use**) |
+| 39351 | 31173 Services AB (Sweden) — colocation/hosting; cited in TeamPCP-related reporting (**dual-use**). Not the same as **AS31173** (unrelated Ukrainian ISP). |
+| 51765 | Oy Crea Nova Hosting Solution Ltd (Finland) — hosting; cited in TeamPCP-related reporting (**dual-use**) |
+| 204187 | Oy Crea Nova Hosting Solution Ltd — related network under the same operator (**dual-use**) |
+
+Other ASNs sometimes seen for VPN or reseller egress (not in this rule by default) include **16276** (OVH), **14061**
+(DigitalOcean), **24940** (Hetzner), **51167** (Contabo), and **49453** (Global Layer). Add them only if your baseline
+shows manageable false-positive volume.
+
+
+*Possible investigation steps*
+
+
+- Confirm `aws.cloudtrail.user_identity.arn`, `aws.cloudtrail.user_identity.type`, and `aws.cloudtrail.user_identity.access_key_id`.
+- Review `event.action` and `event.provider` in the alert; several distinct allowlisted actions from the same session suggest broader enumeration.
+- Compare `source.ip`, `source.as.organization.name`, and `source.as.number` against your asset inventory and approved remote-access patterns.
+- Hunt ±30 minutes for privilege changes, data access (`GetObject`, snapshot sharing), or credential operations.
+
+
+*False positive analysis*
+
+
+- First-time legitimate VPN or hosting egress per identity produces a single alert per ASN until the term ages out of the window.
+- **Datacamp (60068), M247 (9009), and Vultr (20473)** are especially noisy; consider dropping them locally if alerts exceed capacity.
+- **31173 Services AB (39351)** and **Crea Nova (51765, 204187)** are legitimate hosting providers; only escalation-worthy when paired with unexpected identities or follow-on impact.
+
+
+*Response and remediation*
+
+
+- If unexpected, rotate keys, revoke sessions, and tighten IAM; add exceptions only after documented approval.
+
+
+*Additional information*
+
+
+- https://docs.aws.amazon.com/awscloudtrail/latest/userguide/cloudtrail-event-reference-user-identity.html[CloudTrail userIdentity]
+- https://bgp.tools/[BGP / ASN lookup] (third-party) for validating AS registrations
+
+
+==== Rule query
+
+
+[source, js]
+----------------------------------
+event.dataset: "aws.cloudtrail"
+    and event.outcome: "success"
+    and aws.cloudtrail.user_identity.arn:(* and not *AWSServiceRoleForConfig*)
+    and not aws.cloudtrail.user_identity.type: "AWSService"
+    and event.provider: (
+        "sts.amazonaws.com" or
+        "iam.amazonaws.com" or
+        "s3.amazonaws.com" or
+        "ec2.amazonaws.com" or
+        "lambda.amazonaws.com" or
+        "rds.amazonaws.com" or
+        "dynamodb.amazonaws.com" or
+        "kms.amazonaws.com" or
+        "cloudtrail.amazonaws.com"
+    )
+    and event.action: (
+        "GetCallerIdentity" or
+        "ListUsers" or
+        "ListRoles" or
+        "ListAccessKeys" or
+        "GetAccountSummary" or
+        "ListAccountAliases" or
+        "ListGroups" or
+        "ListMFADevices" or
+        "ListBuckets" or
+        "DescribeInstances" or
+        "DescribeRegions" or
+        "DescribeVpcs" or
+        "DescribeSecurityGroups" or
+        "ListFunctions" or
+        "DescribeDBInstances" or
+        "DescribeDBSnapshots" or
+        "ListTables" or
+        "ListKeys" or
+        "ListAliases" or
+        "DescribeTrails" or
+        "LookupEvents"
+    )
+    and source.as.number: (
+        216025 or
+        57138 or
+        207137 or
+        212238 or
+        199218 or
+        209103 or
+        209854 or
+        141039 or
+        147049 or
+        53314 or
+        60068 or
+        9009 or
+        20473 or
+        63949 or
+        39351 or
+        51765 or
+        204187 or 
+        29066 or 
+        206092
+    )
+
+----------------------------------
+
+*Framework*: MITRE ATT&CK^TM^
+
+* Tactic:
+** Name: Discovery
+** ID: TA0007
+** Reference URL: https://attack.mitre.org/tactics/TA0007/
+* Technique:
+** Name: Cloud Service Discovery
+** ID: T1526
+** Reference URL: https://attack.mitre.org/techniques/T1526/
+* Technique:
+** Name: Cloud Infrastructure Discovery
+** ID: T1580
+** Reference URL: https://attack.mitre.org/techniques/T1580/

@@ -1,0 +1,147 @@
+[[prebuilt-rule-8-19-23-curl-or-wget-execution-from-container-context]]
+=== Curl or Wget Execution from Container Context
+
+Detects execution of curl or wget from processes whose title aligns with **`runc init`**, a common fingerprint for workloads running inside **OCI/runc-backed containers** on Linux hosts instrumented with Auditd Manager. After breaking out of an application container or abusing a privileged workload, attackers often pull ingress tooling (stagers, scripts, implants) or stage exfiltration with minimal HTTP clients. Those utilities are also used benignly in images, so context matters; the `runc init` anchor narrows the signal to the container runtime boundary where unexpected download clients are more worthy of review than the same binaries on a bare-metal admin shell.
+
+*Rule type*: query
+
+*Rule indices*: 
+
+* auditbeat-*
+* logs-auditd_manager.auditd-*
+
+*Severity*: medium
+
+*Risk score*: 47
+
+*Runs every*: 5m
+
+*Searches indices from*: now-9m ({ref}/common-options.html#date-math[Date Math format], see also <<rule-schedule, `Additional look-back time`>>)
+
+*Maximum alerts per execution*: 100
+
+*References*: 
+
+* https://attack.mitre.org/techniques/T1105/
+* https://gtfobins.github.io/gtfobins/curl/
+* https://gtfobins.github.io/gtfobins/wget/
+
+*Tags*: 
+
+* Domain: Endpoint
+* OS: Linux
+* Use Case: Threat Detection
+* Tactic: Command and Control
+* Tactic: Execution
+* Domain: Containers
+* Data Source: Auditd Manager
+* Resources: Investigation Guide
+
+*Version*: 1
+
+*Rule authors*: 
+
+* Elastic
+
+*Rule license*: Elastic License v2
+
+
+==== Investigation guide
+
+
+
+*Triage and analysis*
+
+
+
+*Investigating Curl or Wget Execution from Container Context*
+
+
+The rule matches Auditd-backed process events where `process.title` is `runc init` and the executed program is
+curl/wget (by `process.name`) or the argument vector suggests curl or wget paths. Use it to spot ingress tool 
+transfer or scripted downloads from inside a container as seen at the host audit layer.
+
+
+*Possible investigation steps*
+
+
+- Reconstruct the full command line from `process.args` / `process.command_line` and identify URLs, output paths, and
+  flags such as `-O`, `--post-file`, or TLS bypass (`-k`).
+- Map the event to the container: cgroup, `container.id`, `kubernetes.pod.*`, or runtime metadata if present on the
+  document; identify the image, namespace, and workload owner.
+- Review egress from the host or pod network policy logs for destinations contacted shortly after the execution.
+- Compare against recent image or manifest changes for the workload to rule out intentional startup scripts.
+
+
+*False positive analysis*
+
+
+- Package managers and bootstrap scripts in official images may run curl/wget once at start; document and exclude when
+  verified.
+- Security scanners or health checks running in sidecars could match; validate agent type and schedule.
+
+
+*Response and remediation*
+
+
+- If unauthorized, isolate the node or workload, revoke credentials available to the container, inspect for dropped
+  binaries or cron/systemd additions, and rotate any secrets the container could reach.
+
+
+==== Setup
+
+
+
+*Setup*
+
+
+This rule requires data from **Auditd Manager** (or legacy Auditbeat shipping comparable ECS fields).
+
+
+*Auditd Manager Integration Setup*
+
+The Auditd Manager integration receives audit events from the Linux Audit Framework. With `auditd_manager`,
+administrators can define audit rules, track system events, and generate reports.
+
+
+*Steps to deploy Auditd Manager*
+
+- In Kibana, open **Add integrations**, search for **Auditd Manager**, and add it to an agent policy deployed on Linux
+  hosts that should emit syscall audit data.
+- For integration details, see the https://docs.elastic.co/integrations/auditd_manager[Auditd Manager documentation].
+
+
+*Rule-specific notes*
+
+- Ensure syscall coverage includes **execve** (or equivalent) for processes inside containers so `curl`, `wget`, and
+  argument lists are captured on the host.
+- Confirm that **`process.title`** (or the mapped proctitle field) reflects **`runc init`** for your runtime; other
+  runtimes may use different titles—tune the predicate if you standardize on `crun`, `containerd-shim`, etc.
+
+
+==== Rule query
+
+
+[source, js]
+----------------------------------
+host.os.type:linux and 
+data_stream.dataset:"auditd_manager.auditd" and
+event.action:("executed" or "exec") and
+process.title:"runc init" and
+(
+  process.name:(curl or wget) or
+  process.args:(* curl* or */bin/curl* or *wget*)
+)
+
+----------------------------------
+
+*Framework*: MITRE ATT&CK^TM^
+
+* Tactic:
+** Name: Command and Control
+** ID: TA0011
+** Reference URL: https://attack.mitre.org/tactics/TA0011/
+* Technique:
+** Name: Ingress Tool Transfer
+** ID: T1105
+** Reference URL: https://attack.mitre.org/techniques/T1105/
