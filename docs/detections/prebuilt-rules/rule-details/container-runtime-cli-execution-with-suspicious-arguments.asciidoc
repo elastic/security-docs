@@ -1,0 +1,140 @@
+[[container-runtime-cli-execution-with-suspicious-arguments]]
+=== Container Runtime CLI Execution with Suspicious Arguments
+
+Detects execution of container runtime CLI tools (ctr, crictl, nerdctl) with arguments indicating container creation, command execution inside existing containers, image manipulation, or host filesystem mounting. These tools interact directly with the container runtime socket, bypassing the Kubernetes API server, RBAC authorization, admission webhooks, pod security standards, and Kubernetes audit logging entirely. Attackers with host-level access may use these tools to create privileged ghost containers, exec into other pods to steal service account tokens and secrets, pull attacker-controlled images, and destroy evidence, all while remaining invisible to Kubernetes-level monitoring.
+
+*Rule type*: eql
+
+*Rule indices*: 
+
+* auditbeat-*
+* logs-auditd_manager.auditd-*
+* logs-endpoint.events.process*
+
+*Severity*: medium
+
+*Risk score*: 47
+
+*Runs every*: 5m
+
+*Searches indices from*: now-9m ({ref}/common-options.html#date-math[Date Math format], see also <<rule-schedule, `Additional look-back time`>>)
+
+*Maximum alerts per execution*: 100
+
+*References*: 
+
+* https://attack.mitre.org/techniques/T1609/
+* https://book.hacktricks.xyz/linux-hardening/privilege-escalation/containerd-ctr-privilege-escalation
+
+*Tags*: 
+
+* Data Source: Auditd Manager
+* Data Source: Elastic Defend
+* Domain: Container
+* Domain: Endpoint
+* OS: Linux
+* Use Case: Threat Detection
+* Tactic: Execution
+* Resources: Investigation Guide
+
+*Version*: 1
+
+*Rule authors*: 
+
+* Elastic
+
+*Rule license*: Elastic License v2
+
+
+==== Investigation guide
+
+
+
+*Triage and analysis*
+
+
+
+*Investigating Container Runtime CLI Execution with Suspicious Arguments*
+
+
+Review the full argv list and working directory. Confirm whether the session is interactive, whether the image or bundle
+referenced is trusted, and whether bind mounts or privileged flags target host paths such as `/`, `/etc`, or Docker
+sockets.
+
+
+*Possible investigation steps*
+
+
+- Reconstruct the container ID or snapshot key passed to `tasks`, `snapshots`, or `content` subcommands.
+- Correlate with file, network, and Kubernetes audit activity for pulls from unusual registries or subsequent pod
+  changes.
+- Check whether the parent should legitimately be kubelet, containerd, or systemd on that host class.
+
+
+*Response and remediation*
+
+
+- If unauthorized, isolate the node, revoke credentials available to the session, and hunt for new privileged
+  workloads or image imports.
+
+
+==== Setup
+
+
+
+*Setup*
+
+
+Requires process execution telemetry with arguments from **Elastic Defend** (`logs-endpoint.events.process*`) and/or
+**Auditd Manager** / Auditbeat (`logs-auditd_manager.auditd-*`, `auditbeat-*`).
+
+Ensure exec-related auditing captures full argv for `ctr`, `crictl`, and `nerdctl`. See
+https://docs.elastic.co/integrations/auditd_manager
+
+
+==== Rule query
+
+
+[source, js]
+----------------------------------
+process where host.os.type == "linux" and event.type == "start" and event.action in ("exec", "executed") and
+(
+  (
+    process.name in ("ctr", "crictl", "nerdctl") and
+    (
+      (process.args == "tasks" and process.args == "exec") or
+      (process.args == "run" and process.args in ("--privileged", "--rm", "--mount", "--net-host", "--pid-host")) or
+      (process.args == "snapshots" and process.args == "mount")
+    )
+  ) or
+  (
+    (process.executable like ("/dev/shm/*", "/tmp/*", "/var/tmp/*") or process.name : ".*") and
+    process.args like ("*containerd.sock*", "k8s.io")
+  )
+) and
+not process.parent.executable in (
+  "/usr/bin/kubelet", "/usr/local/bin/kubelet",
+  "/usr/bin/containerd", "/usr/sbin/containerd",
+  "/lib/systemd/systemd", "/usr/lib/systemd/systemd", "/sbin/init"
+)
+
+----------------------------------
+
+*Framework*: MITRE ATT&CK^TM^
+
+* Tactic:
+** Name: Execution
+** ID: TA0002
+** Reference URL: https://attack.mitre.org/tactics/TA0002/
+* Technique:
+** Name: Container Administration Command
+** ID: T1609
+** Reference URL: https://attack.mitre.org/techniques/T1609/
+* Tactic:
+** Name: Privilege Escalation
+** ID: TA0004
+** Reference URL: https://attack.mitre.org/tactics/TA0004/
+* Technique:
+** Name: Escape to Host
+** ID: T1611
+** Reference URL: https://attack.mitre.org/techniques/T1611/

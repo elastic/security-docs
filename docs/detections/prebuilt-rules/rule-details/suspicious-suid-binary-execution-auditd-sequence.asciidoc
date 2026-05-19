@@ -1,0 +1,129 @@
+[[suspicious-suid-binary-execution-auditd-sequence]]
+=== Suspicious SUID Binary Execution (Auditd Sequence)
+
+Detects suspicious sequences where a non-root user launches a high-risk parent process (interpreter, shell one-liner, or execution from user-writable paths) and then quickly executes a common privilege elevation helper (su, sudo, pkexec, passwd, chsh, newgrp) that gains an effective UID of 0 while the real UID remains non-root. This can indicate misuse of SUID/SGID helpers, polkit/sudo abuse, or interactive privilege escalation attempts captured via Auditd Manager telemetry.
+
+*Rule type*: eql
+
+*Rule indices*: 
+
+* auditbeat-*
+* logs-auditd_manager.auditd-*
+
+*Severity*: medium
+
+*Risk score*: 47
+
+*Runs every*: 5m
+
+*Searches indices from*: now-9m ({ref}/common-options.html#date-math[Date Math format], see also <<rule-schedule, `Additional look-back time`>>)
+
+*Maximum alerts per execution*: 100
+
+*References*: 
+
+* https://attack.mitre.org/techniques/T1548/
+* https://docs.elastic.co/integrations/auditd_manager
+
+*Tags*: 
+
+* Data Source: Auditd Manager
+* Domain: Endpoint
+* OS: Linux
+* Use Case: Threat Detection
+* Tactic: Privilege Escalation
+* Resources: Investigation Guide
+
+*Version*: 1
+
+*Rule authors*: 
+
+* Elastic
+
+*Rule license*: Elastic License v2
+
+
+==== Investigation guide
+
+
+
+*Triage and analysis*
+
+
+
+*Investigating Suspicious SUID Binary Execution (Auditd Sequence)*
+
+
+Confirm whether the non-root real user should be invoking su, sudo, pkexec, or account utilities as root. Review the
+parent process chain and whether the parent executable location or shell invocation suggests a one-liner or staging
+from user-writable paths.
+
+
+*Possible investigation steps*
+
+
+- Review process details for script paths, temp directory execution, or suspicious interpreters.
+- Check sudoers / polkit policy changes and recent authentication events for the user.
+- Pivot for follow-on persistence (cron, systemd units) or credential access from the same session.
+
+
+*Response and remediation*
+
+
+- If unauthorized, contain the session, revoke elevated access, and review sudoers and polkit configuration for tampering.
+
+
+==== Rule query
+
+
+[source, js]
+----------------------------------
+sequence by host.id with maxspan=30s
+  [process where host.os.type == "linux" and event.type == "start" and
+   event.action == "executed" and
+   user.id != "0" and user.effective.id != "0" and
+   (
+     process.name like ("python*", "perl*", "ruby*", "php*", "lua*", ".*") or
+     process.name in ("node", "bun", "java") or
+     process.executable like ("/tmp/*", "/var/tmp/*", "/dev/shm/*", "/run/user/*", "/var/run/user/*", "/home/*/*") or
+     (
+       process.name in ("bash", "dash", "sh", "tcsh", "csh", "zsh", "ksh", "fish", "mksh") and
+       process.args in ("-c", "--command", "-ic", "-ci", "-cl", "-lc")
+     )
+   )
+  ] by process.pid
+
+  [process where host.os.type == "linux" and event.type == "start" and
+   event.action == "executed" and
+   user.effective.id == "0" and user.id != "0" and
+   (
+     (process.name in ("sudo", "pkexec") and
+      not process.args like "-*" and
+      not process.args : ("/usr/*", "/bin/*", "/sbin/*", "/opt/*")) or
+     (process.name == "su" and
+      not process.args in ("--command", "-c", "--shell", "-s")) or
+     (process.name in ("passwd", "chsh", "newgrp") and
+      not process.args in ("--shell", "-s", "--help"))
+   )
+  ] by process.parent.pid
+
+----------------------------------
+
+*Framework*: MITRE ATT&CK^TM^
+
+* Tactic:
+** Name: Privilege Escalation
+** ID: TA0004
+** Reference URL: https://attack.mitre.org/tactics/TA0004/
+* Technique:
+** Name: Abuse Elevation Control Mechanism
+** ID: T1548
+** Reference URL: https://attack.mitre.org/techniques/T1548/
+* Sub-technique:
+** Name: Setuid and Setgid
+** ID: T1548.001
+** Reference URL: https://attack.mitre.org/techniques/T1548/001/
+* Sub-technique:
+** Name: Sudo and Sudo Caching
+** ID: T1548.003
+** Reference URL: https://attack.mitre.org/techniques/T1548/003/

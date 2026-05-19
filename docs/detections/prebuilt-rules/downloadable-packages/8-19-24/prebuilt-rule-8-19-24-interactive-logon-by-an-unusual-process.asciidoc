@@ -1,0 +1,156 @@
+[[prebuilt-rule-8-19-24-interactive-logon-by-an-unusual-process]]
+=== Interactive Logon by an Unusual Process
+
+Identifies interactive logon attempt with alternate credentials and by an unusual process. Adversaries may create a new token to escalate privileges and bypass access controls.
+
+*Rule type*: eql
+
+*Rule indices*: 
+
+* logs-system.security*
+* logs-windows.forwarded*
+* winlogbeat-*
+
+*Severity*: high
+
+*Risk score*: 73
+
+*Runs every*: 5m
+
+*Searches indices from*: now-9m ({ref}/common-options.html#date-math[Date Math format], see also <<rule-schedule, `Additional look-back time`>>)
+
+*Maximum alerts per execution*: 100
+
+*References*: 
+
+* https://attack.mitre.org/techniques/T1134/002/
+
+*Tags*: 
+
+* Domain: Endpoint
+* OS: Windows
+* Use Case: Threat Detection
+* Tactic: Privilege Escalation
+* Data Source: Windows Security Event Logs
+* Resources: Investigation Guide
+
+*Version*: 109
+
+*Rule authors*: 
+
+* Elastic
+
+*Rule license*: Elastic License v2
+
+
+==== Investigation guide
+
+
+
+*Triage and analysis*
+
+
+
+*Investigating Interactive Logon by an Unusual Process*
+
+
+*Possible investigation steps*
+
+
+- Did Advapi create an interactive logon for a different target identity?
+  - Focus: `winlog.logon.type`, `winlog.event_data.LogonProcessName`, `winlog.event_data.SubjectUserSid`, `winlog.event_data.TargetUserSid`, and `host.id`.
+  - Implication: escalate when Advapi creates a different Target session without recognized credential-switch use; lower suspicion only for bounded runas or helper use on this host. Subject initiated the action; Target received the session or token.
+- Which process requested the alternate-credential session?
+  - Focus: `process.executable`, `process.name`, `process.pid`, `winlog.event_data.SubjectUserName`, and `winlog.event_data.SubjectDomainName`.
+  - Implication: escalate when the requester is user-writable, temporary, renamed, or unrelated to credential switching; lower suspicion only for System32 runas.exe or a recognized helper tied to the same Subject. Process identity alone does not clear token creation.
+- Did the Target session create privileged or linked-token access?
+  - Focus: `winlog.event_data.TargetUserSid`, `winlog.event_data.TargetLogonId`, `winlog.event_data.TargetLinkedLogonId`, `winlog.event_data.ElevatedToken`, and `winlog.event_data.ImpersonationLevel`.
+  - Implication: escalate on a privileged or unusual Target account, elevated token, linked session, or impersonation-capable token. Keep unresolved when the Target cannot be tied to the requesting Subject and process; a recognized requester does not clear elevated Target token state.
+- Did explicit-credential records show who supplied Target credentials?
+  - Focus: same-host 4648 records using `winlog.event_data.SubjectLogonId`; read `winlog.event_data.TargetUserName`, `winlog.event_data.TargetDomainName`, `winlog.event_data.TargetServerName`, and `source.ip`.
+  - Hint: make-token tooling may leave only Advapi, different Subject/Target SIDs, and Target session fields; do not require endpoint command-line evidence before escalation. !{investigate{"description":"","label":"Explicit-credential events from the subject session","providers":[[{"excluded":false,"field":"host.id","queryType":"phrase","value":"{{host.id}}","valueType":"string"},{"excluded":false,"field":"event.code","queryType":"phrase","value":"4648","valueType":"string"},{"excluded":false,"field":"winlog.event_data.SubjectLogonId","queryType":"phrase","value":"{{winlog.event_data.SubjectLogonId}}","valueType":"string"}]],"relativeFrom":"now-1h","relativeTo":"now"}}
+  - Implication: escalate when 4648 shows the same Subject session presenting Target credentials to an unexpected server or non-local origin. Local or absent `source.ip` can occur in make-token cases and must be weighed with requester, identity pair, and token state; missing Security telemetry is unresolved, not benign.
+- Did the created Target session show follow-on success or authentication-method signals?
+  - Focus: same-host 4624 and 4634 records using `winlog.event_data.TargetLogonId`; read `winlog.event_data.TargetUserSid`, `winlog.event_data.AuthenticationPackageName`, and `source.ip`.
+  - Implication: escalate on unexpected authentication package use, repeated successful session activity, or a non-local origin that contradicts local workflow; absent or local source details should be weighed with Target-token evidence. Missing 4624/4634 telemetry is unresolved, not benign.
+    - !{investigate{"description":"","label":"Target logon records for the created session","providers":[[{"excluded":false,"field":"host.id","queryType":"phrase","value":"{{host.id}}","valueType":"string"},{"excluded":false,"field":"event.code","queryType":"phrase","value":"4624","valueType":"string"},{"excluded":false,"field":"winlog.event_data.TargetLogonId","queryType":"phrase","value":"{{winlog.event_data.TargetLogonId}}","valueType":"string"}]],"relativeFrom":"now-1h","relativeTo":"now"}}
+    - !{investigate{"description":"","label":"Target logoff records for the created session","providers":[[{"excluded":false,"field":"host.id","queryType":"phrase","value":"{{host.id}}","valueType":"string"},{"excluded":false,"field":"event.code","queryType":"phrase","value":"4634","valueType":"string"},{"excluded":false,"field":"winlog.event_data.TargetLogonId","queryType":"phrase","value":"{{winlog.event_data.TargetLogonId}}","valueType":"string"}]],"relativeFrom":"now-1h","relativeTo":"now"}}
+- What activity is tied to the created Target logon session?
+  - Focus: same-host events carrying `winlog.event_data.TargetLogonId`, especially process, privilege, or authentication records tied to the Target identity. !{investigate{"description":"","label":"Events for the created target logon session","providers":[[{"excluded":false,"field":"host.id","queryType":"phrase","value":"{{host.id}}","valueType":"string"},{"excluded":false,"field":"winlog.event_data.TargetLogonId","queryType":"phrase","value":"{{winlog.event_data.TargetLogonId}}","valueType":"string"}],[{"excluded":false,"field":"host.id","queryType":"phrase","value":"{{host.id}}","valueType":"string"},{"excluded":false,"field":"winlog.logon.id","queryType":"phrase","value":"{{winlog.event_data.TargetLogonId}}","valueType":"string"}]],"relativeFrom":"now-1h","relativeTo":"now"}}
+  - Implication: escalate when the Target session performs privileged operations, starts unexpected processes, or chains authentication; no follow-on telemetry narrows activity only when the requester, identity pair, and token state are otherwise explained.
+- If local evidence remains suspicious or unresolved, do related alerts change scope?
+  - Focus: recent alerts for the same `host.id`, Subject SID, and Target SID.
+    - !{investigate{"description":"","label":"Alerts associated with the host","providers":[[{"excluded":false,"field":"event.kind","queryType":"phrase","value":"signal","valueType":"string"},{"excluded":false,"field":"host.id","queryType":"phrase","value":"{{host.id}}","valueType":"string"}]],"relativeFrom":"now-48h/h","relativeTo":"now"}}
+    - !{investigate{"description":"","label":"Alerts associated with the subject identity","providers":[[{"excluded":false,"field":"event.kind","queryType":"phrase","value":"signal","valueType":"string"},{"excluded":false,"field":"winlog.event_data.SubjectUserSid","queryType":"phrase","value":"{{winlog.event_data.SubjectUserSid}}","valueType":"string"}],[{"excluded":false,"field":"event.kind","queryType":"phrase","value":"signal","valueType":"string"},{"excluded":false,"field":"user.id","queryType":"phrase","value":"{{winlog.event_data.SubjectUserSid}}","valueType":"string"}]],"relativeFrom":"now-48h/h","relativeTo":"now"}}
+    - !{investigate{"description":"","label":"Alerts associated with the target identity","providers":[[{"excluded":false,"field":"event.kind","queryType":"phrase","value":"signal","valueType":"string"},{"excluded":false,"field":"winlog.event_data.TargetUserSid","queryType":"phrase","value":"{{winlog.event_data.TargetUserSid}}","valueType":"string"}],[{"excluded":false,"field":"event.kind","queryType":"phrase","value":"signal","valueType":"string"},{"excluded":false,"field":"user.id","queryType":"phrase","value":"{{winlog.event_data.TargetUserSid}}","valueType":"string"}]],"relativeFrom":"now-48h/h","relativeTo":"now"}}
+  - Implication: broaden scope when related alerts show credential access, privilege escalation, persistence, or lateral movement tied to the host or either identity; quiet alert history cannot close unresolved token/session evidence.
+- Escalate on unauthorized Subject-to-Target token creation; close only when the identity pair, requester, Target token, and Security records all bind to one recognized workflow; if mixed, preserve records and use related alerts plus recent session activity to scope the case.
+
+
+*False positive analysis*
+
+
+- Recognized runas, enterprise PAM or credential-broker helpers, and authorized assessment can trigger this rule from monitored admin hosts. Confirm `process.executable`, Subject and Target identities, `host.id`, and explicit-credential or session records bind to the same workflow or validation scope; contradictory Target token details block benign closure.
+- Build exceptions only from the minimum confirmed pattern, such as `process.executable` plus `winlog.event_data.SubjectUserSid`, `winlog.event_data.TargetUserSid`, and a bounded `host.id` or host group. Avoid exceptions on `process.name`, `user.name`, or the Target account alone.
+
+
+*Response and remediation*
+
+
+- If confirmed benign, document the evidence categories, reverse temporary containment, and create only the narrow exception described above.
+- If suspicious but unconfirmed, export the alert and surrounding Windows Security records, preserve the requesting process image and Subject-to-Target session context, and collect the referenced executable before containment.
+- Apply reversible containment first: restrict the affected account or host session, increase monitoring on the involved `host.id` and identities, and weigh host criticality before isolation.
+- If confirmed malicious, preserve the executable referenced by `process.executable`, session records, and Subject/Target identifiers, then contain involved hosts or accounts and invalidate active sessions.
+- Reset or rotate Target credentials only when compromise or unauthorized use is supported; treat Subject as the operator or requesting context before disabling it.
+- Eradicate only confirmed token-abuse tooling or credential material, review local privilege assignments that allowed the session, and retain Windows Security events needed to reconstruct Subject-to-Target token creation.
+
+==== Setup
+
+
+
+*Setup*
+
+
+Audit Logon must be enabled to generate the events used by this rule.
+Setup instructions: https://ela.st/audit-logon
+
+
+==== Rule query
+
+
+[source, js]
+----------------------------------
+authentication where
+ host.os.type : "windows" and winlog.event_data.LogonProcessName : "Advapi*" and
+ winlog.logon.type == "Interactive" and winlog.event_data.SubjectUserSid : ("S-1-5-21*", "S-1-12-*") and
+ winlog.event_data.TargetUserSid : ("S-1-5-21*", "S-1-12-*")  and process.executable : "C:\\*" and
+ not startswith~(winlog.event_data.SubjectUserSid, winlog.event_data.TargetUserSid) and
+ not process.executable :
+            ("?:\\Windows\\System32\\winlogon.exe",
+             "?:\\Windows\\System32\\wininit.exe",
+             "?:\\Program Files\\*.exe",
+             "?:\\Program Files (x86)\\*.exe",
+             "?:\\Windows\\SysWOW64\\inetsrv\\w3wp.exe",
+             "?:\\Windows\\System32\\inetsrv\\w3wp.exe",
+             "?:\\Windows\\SysWOW64\\msiexec.exe")
+
+----------------------------------
+
+*Framework*: MITRE ATT&CK^TM^
+
+* Tactic:
+** Name: Privilege Escalation
+** ID: TA0004
+** Reference URL: https://attack.mitre.org/tactics/TA0004/
+* Technique:
+** Name: Access Token Manipulation
+** ID: T1134
+** Reference URL: https://attack.mitre.org/techniques/T1134/
+* Sub-technique:
+** Name: Create Process with Token
+** ID: T1134.002
+** Reference URL: https://attack.mitre.org/techniques/T1134/002/
+* Sub-technique:
+** Name: Make and Impersonate Token
+** ID: T1134.003
+** Reference URL: https://attack.mitre.org/techniques/T1134/003/

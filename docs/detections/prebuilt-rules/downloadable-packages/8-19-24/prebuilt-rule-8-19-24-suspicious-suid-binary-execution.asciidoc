@@ -1,0 +1,122 @@
+[[prebuilt-rule-8-19-24-suspicious-suid-binary-execution]]
+=== Suspicious SUID Binary Execution
+
+Detects execution of SUID binaries that may be used for privilege escalation under the root effective user when the real user and parent user are not root, combined with minimal argument counts and suspicious parent context (interpreters, short shell -c invocations, or parents running from user-writable paths) to indicate potential misuse of SUID binaries for privilege escalation.
+
+*Rule type*: eql
+
+*Rule indices*: 
+
+* logs-endpoint.events.process*
+
+*Severity*: high
+
+*Risk score*: 73
+
+*Runs every*: 5m
+
+*Searches indices from*: now-6m ({ref}/common-options.html#date-math[Date Math format], see also <<rule-schedule, `Additional look-back time`>>)
+
+*Maximum alerts per execution*: 100
+
+*References*: 
+
+* https://attack.mitre.org/techniques/T1548/
+
+*Tags*: 
+
+* Data Source: Elastic Defend
+* Domain: Endpoint
+* OS: Linux
+* Use Case: Threat Detection
+* Tactic: Privilege Escalation
+* Resources: Investigation Guide
+
+*Version*: 2
+
+*Rule authors*: 
+
+* Elastic
+
+*Rule license*: Elastic License v2
+
+
+==== Investigation guide
+
+
+
+*Triage and analysis*
+
+
+
+*Investigating Suspicious SUID Binary Execution*
+
+
+Confirm whether the non-root real user should be invoking SUID binaries as root. Review the parent process tree, script path, and any preceding download or decode activity.
+
+
+*Possible investigation steps*
+
+
+- Inspect `process.parent.command_line` and working directory for obfuscation or one-liners.
+- Check authentication and sudoers policy for the user.
+- Pivot on the host for additional privilege escalation or persistence in the same session.
+
+
+*Response and remediation*
+
+
+- If unauthorized, contain the session, revoke elevated access, and review sudoers and polkit policy for tampering.
+
+
+==== Rule query
+
+
+[source, js]
+----------------------------------
+process where host.os.type == "linux" and event.type == "start" and event.action == "exec" and (
+  (process.user.id == "0" and process.real_user.id != "0" and process.parent.user.id != "0") or
+  (process.group.id == "0" and process.real_group.id != "0" and process.parent.group.id != "0")
+) and
+(
+  (process.name in ("su", "passwd", "unix_chkpwd") and process.args_count <= 2) or
+  (
+    process.name in ("sudo", "pkexec", "fusermount", "fusermount3", "mount", "umount", "newgrp", "chsh") and
+    process.args_count == 1
+  ) or
+  process.name in (
+    "sudoedit", "gpasswd", "chfn", "polkit-agent-helper-1", "dbus-daemon-launch-helper", "ssh-keysign",
+    "pam_extrausers_chkpwd", "expiry", "chage", "crontab", "wall", "bsd-write", "ssh-agent", "ping",
+    "ping6", "traceroute", "mtr", "ntfs-3g", "Xorg.wrap", "chrome-sandbox", "bwrap"
+  )
+) and
+(
+  process.parent.name like (".*", "python*", "perl*", "ruby*", "lua*", "php*", "node", "deno", "bun", "java") or
+  process.parent.executable like ("./*", "/tmp/*", "/var/tmp/*", "/dev/shm/*", "/run/user/*", "/var/run/user/*", "/home/*/*") or
+  (
+    process.parent.name in ("bash", "dash", "sh", "tcsh", "csh", "zsh", "ksh", "fish", "mksh") and
+    process.parent.args in ("-c", "-cl", "-lc", "--command", "-ic", "-ci", "-bash", "-sh", "-zsh", "-dash", "-fish", "-ksh", "-mksh") and
+    process.parent.args_count <= 4
+  )
+)
+
+----------------------------------
+
+*Framework*: MITRE ATT&CK^TM^
+
+* Tactic:
+** Name: Privilege Escalation
+** ID: TA0004
+** Reference URL: https://attack.mitre.org/tactics/TA0004/
+* Technique:
+** Name: Abuse Elevation Control Mechanism
+** ID: T1548
+** Reference URL: https://attack.mitre.org/techniques/T1548/
+* Sub-technique:
+** Name: Setuid and Setgid
+** ID: T1548.001
+** Reference URL: https://attack.mitre.org/techniques/T1548/001/
+* Sub-technique:
+** Name: Sudo and Sudo Caching
+** ID: T1548.003
+** Reference URL: https://attack.mitre.org/techniques/T1548/003/

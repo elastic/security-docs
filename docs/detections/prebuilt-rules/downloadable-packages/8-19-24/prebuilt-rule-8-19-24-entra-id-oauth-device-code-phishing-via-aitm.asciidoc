@@ -1,0 +1,133 @@
+[[prebuilt-rule-8-19-24-entra-id-oauth-device-code-phishing-via-aitm]]
+=== Entra ID OAuth Device Code Phishing via AiTM
+
+Detects successful Microsoft Entra ID sign-ins that use the OAuth device code authentication protocol with the Microsoft Authentication Broker client requesting first-party Office API resources (Exchange Online, Microsoft Graph, or SharePoint) while flagged as interactive. This pattern is associated with adversary-in-the-middle (AiTM) phishing kits such as Tycoon 2FA, where victims complete device code flows that ultimately broker tokens for mail and collaboration APIs.
+
+*Rule type*: query
+
+*Rule indices*: 
+
+* logs-azure.signinlogs-*
+
+*Severity*: high
+
+*Risk score*: 73
+
+*Runs every*: 5m
+
+*Searches indices from*: now-9m ({ref}/common-options.html#date-math[Date Math format], see also <<rule-schedule, `Additional look-back time`>>)
+
+*Maximum alerts per execution*: 100
+
+*References*: 
+
+* https://any.run/malware-trends/tycoon/
+* https://learn.microsoft.com/en-us/entra/identity/conditional-access/concept-authentication-flows
+* https://www.microsoft.com/en-us/security/blog/2025/02/13/storm-2372-conducts-device-code-phishing-campaign/
+
+*Tags*: 
+
+* Domain: Cloud
+* Domain: Identity
+* Data Source: Azure
+* Data Source: Microsoft Entra ID
+* Data Source: Microsoft Entra ID Sign-in Logs
+* Use Case: Threat Detection
+* Threat: Tycoon2FA
+* Tactic: Initial Access
+* Resources: Investigation Guide
+
+*Version*: 1
+
+*Rule authors*: 
+
+* Elastic
+
+*Rule license*: Elastic License v2
+
+
+==== Investigation guide
+
+
+
+*Triage and analysis*
+
+
+
+*Investigating Entra ID OAuth Device Code Phishing via AiTM*
+
+
+Review `azure.signinlogs.properties.user_principal_name`, `azure.signinlogs.properties.session_id`, `source.ip`,
+`user_agent.original`, and `azure.signinlogs.properties.resource_display_name` for context around the device code
+completion.
+
+Confirm whether the user knowingly entered a device code (for example on a shared or headless device) and whether
+broker-mediated access to Exchange, Graph, or Yammer is expected for that account.
+
+
+*Possible investigation steps*
+
+
+- Interview the user about recent links, QR codes, or prompts to approve a device code.
+- Correlate with `azure.signinlogs` and Microsoft 365 audit logs for mailbox, Teams, or file access from the same
+  session or IP shortly after the event.
+- Review conditional access and MFA satisfaction details for the same `session_id`.
+
+
+*Response and remediation*
+
+
+- If malicious, revoke refresh tokens for the user, reset credentials per policy, and review application consent.
+- Block or monitor the source IP and escalate per incident procedures.
+
+
+==== Rule query
+
+
+[source, js]
+----------------------------------
+data_stream.dataset:"azure.signinlogs" and event.category:"authentication" and event.action:"Sign-in activity" and
+event.outcome:success and azure.signinlogs.properties.app_id:"29d9ed98-a469-4536-ade2-f981bc1d605e" and
+azure.signinlogs.properties.authentication_protocol:deviceCode and
+azure.signinlogs.properties.resource_id:(
+    "00000002-0000-0ff1-ce00-000000000000" or
+    "00000003-0000-0ff1-ce00-000000000000" or
+    "00000005-0000-0ff1-ce00-000000000000"
+) and azure.signinlogs.properties.is_interactive:true
+
+----------------------------------
+
+*Framework*: MITRE ATT&CK^TM^
+
+* Tactic:
+** Name: Initial Access
+** ID: TA0001
+** Reference URL: https://attack.mitre.org/tactics/TA0001/
+* Technique:
+** Name: Phishing
+** ID: T1566
+** Reference URL: https://attack.mitre.org/techniques/T1566/
+* Sub-technique:
+** Name: Spearphishing Link
+** ID: T1566.002
+** Reference URL: https://attack.mitre.org/techniques/T1566/002/
+* Technique:
+** Name: Valid Accounts
+** ID: T1078
+** Reference URL: https://attack.mitre.org/techniques/T1078/
+* Sub-technique:
+** Name: Cloud Accounts
+** ID: T1078.004
+** Reference URL: https://attack.mitre.org/techniques/T1078/004/
+* Tactic:
+** Name: Defense Evasion
+** ID: TA0005
+** Reference URL: https://attack.mitre.org/tactics/TA0005/
+* Technique:
+** Name: Use Alternate Authentication Material
+** ID: T1550
+** Reference URL: https://attack.mitre.org/techniques/T1550/
+* Sub-technique:
+** Name: Application Access Token
+** ID: T1550.001
+** Reference URL: https://attack.mitre.org/techniques/T1550/001/

@@ -1,0 +1,186 @@
+[[prebuilt-rule-8-19-24-incoming-dcom-lateral-movement-with-mmc]]
+=== Incoming DCOM Lateral Movement with MMC
+
+Identifies the use of Distributed Component Object Model (DCOM) to run commands from a remote host, which are launched via the MMC20 Application COM Object. This behavior may indicate an attacker abusing a DCOM application to move laterally.
+
+*Rule type*: eql
+
+*Rule indices*: 
+
+* winlogbeat-*
+* logs-endpoint.events.process-*
+* logs-endpoint.events.network-*
+* logs-windows.sysmon_operational-*
+
+*Severity*: high
+
+*Risk score*: 73
+
+*Runs every*: 5m
+
+*Searches indices from*: now-9m ({ref}/common-options.html#date-math[Date Math format], see also <<rule-schedule, `Additional look-back time`>>)
+
+*Maximum alerts per execution*: 100
+
+*References*: 
+
+* https://enigma0x3.net/2017/01/05/lateral-movement-using-the-mmc20-application-com-object/
+
+*Tags*: 
+
+* Domain: Endpoint
+* OS: Windows
+* Use Case: Threat Detection
+* Tactic: Lateral Movement
+* Data Source: Elastic Defend
+* Data Source: Sysmon
+* Resources: Investigation Guide
+
+*Version*: 213
+
+*Rule authors*: 
+
+* Elastic
+
+*Rule license*: Elastic License v2
+
+
+==== Investigation guide
+
+
+
+*Triage and analysis*
+
+
+
+*Investigating Incoming DCOM Lateral Movement with MMC*
+
+
+
+*Possible investigation steps*
+
+
+- Which Timeline source events define the target MMC instance, spawned child, and remote source?
+  - Why: this asymmetric sequence links incoming "mmc.exe" network activity to a child process, and the alert may not preserve one reliable process identity.
+  - Focus: recover the target MMC network event and child process event, recording target MMC and child `process.entity_id`, `source.ip`, and child `process.command_line`.
+  - Implication: escalate if the chain does not resolve to one incoming MMC process spawning one child; lower suspicion only when it fits a recognized MMC administration source and child, then continue to command and network interpretation.
+- Does the network event fit remote DCOM or RPC traffic into MMC?
+  - Focus: the recovered "mmc.exe" network event: `source.ip`, `source.port`, `destination.port`, `network.direction`, and `network.transport`.
+  - Implication: DCOM-style remote execution is supported by incoming TCP from a non-loopback `source.ip` with both ports in the high RPC range; concern rises when the source is a peer workstation, unrelated server, or unknown management origin.
+- What did MMC execute through MMC20.Application COM automation?
+  - Focus: recovered child `process.executable` and `process.command_line`.
+  - Implication: escalate when MMC launches cmd.exe, PowerShell, script hosts, LOLBins, loaders, or download cradles; lower suspicion only when the exact child command is a recognized MMC snap-in helper or management binary and the source context also fits.
+- Is the child binary identity consistent with the behavior, without treating signer trust as clearance?
+  - Focus: child `process.hash.sha256`, `process.pe.original_file_name`, `process.code_signature.subject_name`, `process.code_signature.trusted`, and entity context.
+  - Implication: mismatched PE metadata, user-writable paths, unexpected publishers, or quick follow-on LOLBin execution increases concern; a trusted signer confirms identity only and does not clear remote command execution.
+- Does the target-side user and session fit remote administration from the recovered source?
+  - Focus: child `user.id`, `user.name`, and `user.domain`, compared with the recovered source and target host.
+  - Implication: escalate when the user, service context, or session is unexpected for that target or cannot explain administrative access from the source; lower suspicion when source, identity, and session match a recognized admin or jump-host path.
+- Did the MMC-spawned child launch descendants after execution?
+  - Focus: same-host process events from the child, checking child-of-child `process.parent.entity_id`. !{investigate{"description":"","label":"Processes spawned by MMC on this host","providers":[[{"excluded":false,"field":"event.category","queryType":"phrase","value":"process","valueType":"string"},{"excluded":false,"field":"host.id","queryType":"phrase","value":"{{host.id}}","valueType":"string"},{"excluded":false,"field":"process.parent.name","queryType":"phrase","value":"mmc.exe","valueType":"string"}]],"relativeFrom":"now-1h","relativeTo":"now"}}
+  - Implication: escalate when the child launches more execution chains; absent descendants keeps the case centered on the recovered remote command, not benign.
+- Did the child make DNS or connection activity?
+  - Focus: same-host network events, checking DNS `dns.question.name` and connection `destination.ip`. !{investigate{"description":"","label":"Network events for MMC on this host","providers":[[{"excluded":false,"field":"event.category","queryType":"phrase","value":"network","valueType":"string"},{"excluded":false,"field":"host.id","queryType":"phrase","value":"{{host.id}}","valueType":"string"},{"excluded":false,"field":"process.name","queryType":"phrase","value":"mmc.exe","valueType":"string"}]],"relativeFrom":"now-1h","relativeTo":"now"}}
+  - Hint: separate DNS events from connection events and keep the pivot bounded to the alert window. Missing network telemetry is unresolved, not benign.
+  - Implication: escalate when the child resolves rare domains or connects to staging or command infrastructure.
+- Does the recovered source or child command appear on other hosts after local triage stays suspicious?
+  - Focus: same-host alerts for `host.id`. !{investigate{"description":"","label":"Alerts associated with the host","providers":[[{"excluded":false,"field":"event.kind","queryType":"phrase","value":"signal","valueType":"string"},{"excluded":false,"field":"host.id","queryType":"phrase","value":"{{host.id}}","valueType":"string"}]],"relativeFrom":"now-48h/h","relativeTo":"now"}}
+  - Hint: if the same account is suspicious, compare same-`user.id` alerts for lateral-movement or credential-access patterns across other hosts. !{investigate{"description":"","label":"Alerts associated with the user","providers":[[{"excluded":false,"field":"event.kind","queryType":"phrase","value":"signal","valueType":"string"},{"excluded":false,"field":"user.id","queryType":"phrase","value":"{{user.id}}","valueType":"string"}]],"relativeFrom":"now-48h/h","relativeTo":"now"}}
+  - Hint: broaden only after local evidence remains suspicious or unresolved; use `source.ip` for spread and a distinctive child `process.command_line` fragment for tool reuse.
+  - Implication: expand scope when the same source touches more targets, the same child command appears elsewhere, or same-host alerts show lateral movement or defense evasion; keep the case local when the pattern stays confined and the workflow is otherwise explained.
+
+- Escalate when source identity, incoming high-RPC network shape, child intent, identity/session, or descendant/DNS/destination evidence supports unauthorized MMC20.Application execution; close only when recovered evidence, with external confirmation when telemetry cannot prove intent, binds one exact recognized MMC administration workflow with no contradictory follow-on evidence; mixed or incomplete evidence means preserve and escalate.
+
+
+*False positive analysis*
+
+
+- Remote MMC, server-management automation, or vendor/internal tooling can legitimately trigger this rule when a management host uses DCOM to drive MMC snap-ins or support commands. Confirm the recovered `source.ip` is a recognized admin, jump, or tooling host; child `process.executable` and `process.command_line` show the exact console/helper action; `user.id` or `user.name` fits that path; child `process.hash.sha256` or `process.code_signature.subject_name` is stable when tooling is involved; and descendant, DNS, and connection evidence stays quiet. If inventory or change records are unavailable, telemetry-only closure still requires current evidence to prove the exact workflow; prior recurrence of the same `source.ip`, child command, and `host.id` pattern is corroboration, not closure by itself.
+- Before creating an exception, anchor it on the minimum confirmed workflow pattern: recognized `source.ip`, child `process.executable`, stable `process.command_line`, expected `user.id` or `user.name`, and the relevant `host.id` scope. Avoid exceptions on `process.parent.name` of "mmc.exe" or high RPC ports alone.
+
+
+*Response and remediation*
+
+
+- If confirmed benign, record the recovered `source.ip`, child `process.executable`, child `process.command_line`, `user.id` or `user.name`, and target `host.id` that established the management workflow, then reverse any temporary containment. Create an exception only if the same pattern recurs consistently across prior alerts.
+- If suspicious but unconfirmed, preserve a case export of the Timeline source events, the target MMC and child process instance IDs, child command line, source socket, and DNS/destination indicators before containment or cleanup.
+- If suspicious but unconfirmed, apply reversible containment tied to the evidence, such as temporary DCOM/RPC restrictions from the recovered `source.ip` to the target `host.id`; isolate the host only when the child command or follow-on activity indicates payload execution and the host role can tolerate it.
+- If confirmed malicious, first preserve the target MMC instance, child command, recovered source, descendant processes, and malicious DNS or destination indicators. Then isolate the target host and contain the recovered source system if it is in response scope; terminate processes or delete artifacts only after preservation and scoping.
+- Review other hosts touched by the same recovered `source.ip` or child `process.command_line` pattern before terminating additional processes or removing artifacts so scoping completes before evidence is destroyed.
+- Eradicate only scripts, binaries, persistence, or configuration changes identified during the investigation, then remediate the account, source host, or remote administration path that allowed the DCOM execution.
+- Post-incident hardening: keep Windows Firewall enabled, disable unnecessary Microsoft Management Console inbound access, restrict DCOM/RPC between workstations, limit remote administrative rights to recognized jump hosts, and record the evidence and control changes for future triage.
+
+==== Setup
+
+
+
+*Setup*
+
+
+This rule is designed for data generated by https://www.elastic.co/security/endpoint-security[Elastic Defend], which provides native endpoint detection and response, along with event enrichments designed to work with our detection rules.
+
+Setup instructions: https://ela.st/install-elastic-defend
+
+
+*Additional data sources*
+
+
+This rule also supports the following third-party data sources. For setup instructions, refer to the links below:
+
+- https://ela.st/sysmon-event-1-setup[Sysmon Event ID 1 - Process Creation]
+- https://ela.st/sysmon-event-3-setup[Sysmon Event ID 3 - Network Connection]
+
+
+==== Rule query
+
+
+[source, js]
+----------------------------------
+sequence by host.id with maxspan=1m
+ [network where host.os.type == "windows" and event.type == "start" and process.name : "mmc.exe" and source.port >= 49152 and
+  destination.port >= 49152 and source.ip != "127.0.0.1" and source.ip != "::1" and
+  network.direction : ("incoming", "ingress") and network.transport == "tcp"
+ ] by process.entity_id
+ [process where host.os.type == "windows" and event.type == "start" and process.parent.name : "mmc.exe"
+ ] by process.parent.entity_id
+
+----------------------------------
+
+*Framework*: MITRE ATT&CK^TM^
+
+* Tactic:
+** Name: Lateral Movement
+** ID: TA0008
+** Reference URL: https://attack.mitre.org/tactics/TA0008/
+* Technique:
+** Name: Remote Services
+** ID: T1021
+** Reference URL: https://attack.mitre.org/techniques/T1021/
+* Sub-technique:
+** Name: Distributed Component Object Model
+** ID: T1021.003
+** Reference URL: https://attack.mitre.org/techniques/T1021/003/
+* Tactic:
+** Name: Defense Evasion
+** ID: TA0005
+** Reference URL: https://attack.mitre.org/tactics/TA0005/
+* Technique:
+** Name: System Binary Proxy Execution
+** ID: T1218
+** Reference URL: https://attack.mitre.org/techniques/T1218/
+* Sub-technique:
+** Name: MMC
+** ID: T1218.014
+** Reference URL: https://attack.mitre.org/techniques/T1218/014/
+* Tactic:
+** Name: Execution
+** ID: TA0002
+** Reference URL: https://attack.mitre.org/tactics/TA0002/
+* Technique:
+** Name: Inter-Process Communication
+** ID: T1559
+** Reference URL: https://attack.mitre.org/techniques/T1559/
+* Sub-technique:
+** Name: Component Object Model
+** ID: T1559.001
+** Reference URL: https://attack.mitre.org/techniques/T1559/001/

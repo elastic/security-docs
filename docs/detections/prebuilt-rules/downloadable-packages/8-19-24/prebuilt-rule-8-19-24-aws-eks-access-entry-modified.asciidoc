@@ -1,0 +1,123 @@
+[[prebuilt-rule-8-19-24-aws-eks-access-entry-modified]]
+=== AWS EKS Access Entry Modified
+
+Detects successful Amazon EKS Access Entries API operations that create, update, attach, detach, or delete authentication mappings between IAM principals and the cluster. Changes to access entries alter who can authenticate to Kubernetes and what Kubernetes-level permissions they receive, without requiring edits to in-cluster RBAC objects. Unexpected callers or timing may indicate persistence or privilege abuse. Common automation identities (service-linked roles, eksctl, Terraform, CloudFormation role patterns) are excluded to reduce noise; tune further for your deployment pipelines.
+
+*Rule type*: query
+
+*Rule indices*: 
+
+* filebeat-*
+* logs-aws.cloudtrail-*
+
+*Severity*: medium
+
+*Risk score*: 47
+
+*Runs every*: 5m
+
+*Searches indices from*: now-6m ({ref}/common-options.html#date-math[Date Math format], see also <<rule-schedule, `Additional look-back time`>>)
+
+*Maximum alerts per execution*: 100
+
+*References*: 
+
+* https://docs.aws.amazon.com/eks/latest/userguide/access-entries.html
+
+*Tags*: 
+
+* Domain: Cloud
+* Domain: Kubernetes
+* Data Source: AWS
+* Data Source: Amazon Web Services
+* Data Source: AWS CloudTrail
+* Use Case: Threat Detection
+* Tactic: Persistence
+* Tactic: Privilege Escalation
+* Resources: Investigation Guide
+
+*Version*: 1
+
+*Rule authors*: 
+
+* Elastic
+
+*Rule license*: Elastic License v2
+
+
+==== Investigation guide
+
+
+
+*Triage and analysis*
+
+
+
+*Investigating AWS EKS Access Entry Modified*
+
+
+Review aws.cloudtrail.user_identity (ARN, type), user.name, source.ip, user_agent.original, cloud.account.id, and
+cloud.region. Map event.action to intent: new principal (CreateAccessEntry), policy binding changes (AssociateAccessPolicy,
+DisassociateAccessPolicy), metadata updates (UpdateAccessEntry), or removal (DeleteAccessEntry).
+
+
+*Possible investigation steps*
+
+
+- Inspect aws.cloudtrail.request_parameters and response_elements for cluster name, principal ARN, and policy ARNs.
+- Compare against change management and infrastructure-as-code deploy windows.
+- Correlate with Kubernetes audit logs for subsequent API activity from identities tied to the affected access entry.
+- Pair with the higher-fidelity rule EKS Access Entry Granted Cluster Admin Policy when AssociateAccessPolicy fires.
+
+
+*Response and remediation*
+
+
+- If unauthorized, revert access entry changes via AWS APIs or console; restrict eks:* permissions and review SCPs.
+- Rotate credentials for compromised IAM principals as appropriate.
+
+
+*Additional information*
+
+
+- https://docs.aws.amazon.com/eks/latest/userguide/access-entries.html[Amazon EKS access entries]
+
+
+==== Rule query
+
+
+[source, js]
+----------------------------------
+data_stream.dataset:"aws.cloudtrail" and event.provider:"eks.amazonaws.com" and
+event.action:("CreateAccessEntry" or "AssociateAccessPolicy" or "UpdateAccessEntry" or "DisassociateAccessPolicy" or "DeleteAccessEntry") and
+event.outcome:"success" and
+not aws.cloudtrail.user_identity.arn:(*AWSServiceRoleForAmazonEKS* or *eksctl* or *terraform* or *AWSCloudFormation*)
+
+----------------------------------
+
+*Framework*: MITRE ATT&CK^TM^
+
+* Tactic:
+** Name: Persistence
+** ID: TA0003
+** Reference URL: https://attack.mitre.org/tactics/TA0003/
+* Technique:
+** Name: Account Manipulation
+** ID: T1098
+** Reference URL: https://attack.mitre.org/techniques/T1098/
+* Sub-technique:
+** Name: Additional Container Cluster Roles
+** ID: T1098.006
+** Reference URL: https://attack.mitre.org/techniques/T1098/006/
+* Tactic:
+** Name: Privilege Escalation
+** ID: TA0004
+** Reference URL: https://attack.mitre.org/tactics/TA0004/
+* Technique:
+** Name: Account Manipulation
+** ID: T1098
+** Reference URL: https://attack.mitre.org/techniques/T1098/
+* Sub-technique:
+** Name: Additional Container Cluster Roles
+** ID: T1098.006
+** Reference URL: https://attack.mitre.org/techniques/T1098/006/

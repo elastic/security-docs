@@ -1,0 +1,133 @@
+[[prebuilt-rule-8-19-24-entra-id-microsoft-authentication-broker-sign-in-to-unusual-resource]]
+=== Entra ID Microsoft Authentication Broker Sign-In to Unusual Resource
+
+Detects successful Microsoft Entra ID sign-ins where the client application is the Microsoft Authentication Broker (MAB) and the requested resource identifier is outside a short list of commonly observed first-party targets. Attackers abuse the broker in phishing and token broker flows to obtain tokens for unexpected APIs or enterprise applications. The exclusion list covers legacy Azure Active Directory, Microsoft Graph, Device Registration Service, Microsoft Intune Enrollment, extend or tune exclusions for your tenant after baselining broker traffic.
+
+*Rule type*: query
+
+*Rule indices*: 
+
+* logs-azure.signinlogs-*
+
+*Severity*: medium
+
+*Risk score*: 47
+
+*Runs every*: 5m
+
+*Searches indices from*: now-9m ({ref}/common-options.html#date-math[Date Math format], see also <<rule-schedule, `Additional look-back time`>>)
+
+*Maximum alerts per execution*: 100
+
+*References*: 
+
+* https://learn.microsoft.com/en-us/troubleshoot/azure/entra/entra-id/governance/verify-first-party-apps-sign-in
+* https://learn.microsoft.com/en-us/azure/azure-monitor/reference/tables/signinlogs
+* https://any.run/malware-trends/tycoon/
+
+*Tags*: 
+
+* Domain: Cloud
+* Domain: Identity
+* Data Source: Azure
+* Data Source: Microsoft Entra ID
+* Data Source: Microsoft Entra ID Sign-in Logs
+* Use Case: Threat Detection
+* Tactic: Initial Access
+* Resources: Investigation Guide
+
+*Version*: 1
+
+*Rule authors*: 
+
+* Elastic
+
+*Rule license*: Elastic License v2
+
+
+==== Investigation guide
+
+
+
+*Triage and analysis*
+
+
+
+*Investigating Entra ID Microsoft Authentication Broker Sign-In to Unusual Resource*
+
+
+Review `azure.signinlogs.properties.user_principal_name`, `azure.signinlogs.properties.resource_id`,
+`azure.signinlogs.properties.resource_display_name`, `azure.signinlogs.properties.session_id`, `source.ip`, and
+`user_agent.original`.
+
+Determine whether the resource is a known line-of-business application, partner integration, or Microsoft service not
+represented in the rule exclusion list.
+
+
+*Possible investigation steps*
+
+
+- Resolve `resource_id` in Entra ID enterprise applications and compare with change records or app governance inventory.
+- Correlate with `azure.signinlogs` and `azure.graphactivitylogs` for follow-on API calls from the same session.
+- Review conditional access results and risk detections for the same user and time window.
+
+
+*Response and remediation*
+
+
+- If unauthorized, revoke refresh tokens for the user, review consent and app permissions, and reset credentials per policy.
+- Escalate per incident procedures when the resource corresponds to sensitive APIs or high-privilege applications.
+
+
+==== Setup
+
+
+Microsoft Entra ID sign-in logs (`logs-azure.signinlogs-*`) must include `azure.signinlogs.properties.app_id` and
+`azure.signinlogs.properties.resource_id`. Tune the exclusion list for first-party resource identifiers your tenant
+expects from the Microsoft Authentication Broker.
+
+
+==== Rule query
+
+
+[source, js]
+----------------------------------
+data_stream.dataset:"azure.signinlogs" and event.category:"authentication" and event.action:"Sign-in activity" and
+event.outcome:success and azure.signinlogs.properties.app_id:"29d9ed98-a469-4536-ade2-f981bc1d605e" and
+azure.signinlogs.properties.resource_id:(* and not 
+    ("00000002-0000-0000-c000-000000000000" or
+    "90a2e5d2-fd7a-4a2e-bc90-3dc50ae8e3ee" or
+    "01cb2876-7ebd-4aa4-9cc9-d28bd4d359a9" or
+    "d4ebce55-015a-49b5-a083-c84d1797ae8c" or
+    "00000003-0000-0000-c000-000000000000" or 
+    "0a5f63c0-b750-4f38-a71c-4fc0d58b89e2")
+)
+
+----------------------------------
+
+*Framework*: MITRE ATT&CK^TM^
+
+* Tactic:
+** Name: Initial Access
+** ID: TA0001
+** Reference URL: https://attack.mitre.org/tactics/TA0001/
+* Technique:
+** Name: Valid Accounts
+** ID: T1078
+** Reference URL: https://attack.mitre.org/techniques/T1078/
+* Sub-technique:
+** Name: Cloud Accounts
+** ID: T1078.004
+** Reference URL: https://attack.mitre.org/techniques/T1078/004/
+* Tactic:
+** Name: Defense Evasion
+** ID: TA0005
+** Reference URL: https://attack.mitre.org/tactics/TA0005/
+* Technique:
+** Name: Use Alternate Authentication Material
+** ID: T1550
+** Reference URL: https://attack.mitre.org/techniques/T1550/
+* Sub-technique:
+** Name: Application Access Token
+** ID: T1550.001
+** Reference URL: https://attack.mitre.org/techniques/T1550/001/

@@ -1,0 +1,156 @@
+[[prebuilt-rule-8-19-24-potential-command-shell-via-netcat]]
+=== Potential Command Shell via NetCat
+
+Identifies potential attempt to execute via a reverse shell using the netcat utility to execute Windows commands using the default interpreters like Cmd.exe and Powershell.
+
+*Rule type*: eql
+
+*Rule indices*: 
+
+* logs-endpoint.events.process-*
+
+*Severity*: high
+
+*Risk score*: 73
+
+*Runs every*: 5m
+
+*Searches indices from*: now-9m ({ref}/common-options.html#date-math[Date Math format], see also <<rule-schedule, `Additional look-back time`>>)
+
+*Maximum alerts per execution*: 100
+
+*References*: None
+
+*Tags*: 
+
+* Domain: Endpoint
+* OS: Windows
+* Use Case: Threat Detection
+* Tactic: Execution
+* Resources: Investigation Guide
+* Data Source: Elastic Defend
+
+*Version*: 3
+
+*Rule authors*: 
+
+* Elastic
+
+*Rule license*: Elastic License v2
+
+
+==== Investigation guide
+
+
+
+*Triage and analysis*
+
+
+
+*Investigating Potential Command Shell via NetCat*
+
+
+
+*Possible investigation steps*
+
+
+- Which remote-shell mode does the alert-local process evidence show?
+  - Focus: `process.parent.command_line`, `process.parent.args_count`, and `process.name`.
+  - Implication: escalate when "-e" wires "cmd.exe" or "powershell.exe" to an explicit IP, unusual port, or "-l"/"-p" listener; lower concern only when shell mode, port or destination, and child shell match a known lab, red-team, or break-glass workflow.
+
+- Does the parent binary identity fit a recognized NetCat-family tool instead of a renamed payload?
+  - Focus: `process.parent.executable`, `process.parent.name`, and code signature.
+  - Implication: escalate when the parent is unsigned, renamed, or runs from temp, downloads, archives, shares, or another user-writable path; identity lowers concern only when path and signer fit the same controlled tool, and never clears the `-e` shell behavior by itself.
+
+- Do recovered parent network events confirm a connect-back destination or exposed listener?
+  - Focus: network events on `host.id` for `process.parent.entity_id`; separate DNS `dns.question.name` from `destination.ip`, `destination.port`, and `network.direction`. !{investigate{"description":"","label":"Network events for the netcat parent process","providers":[[{"excluded":false,"field":"host.id","queryType":"phrase","value":"{{host.id}}","valueType":"string"},{"excluded":false,"field":"process.entity_id","queryType":"phrase","value":"{{process.parent.entity_id}}","valueType":"string"},{"excluded":false,"field":"event.category","queryType":"phrase","value":"network","valueType":"string"}]],"relativeFrom":"now-1h","relativeTo":"now"}}
+  - Hint: network fields come from endpoint network events, not the process alert; compare any command-line IP or port with recovered connections.
+  - Implication: escalate when recovered connections confirm a public or unexpected destination, or a listener is exposed on an unexpected asset; missing network telemetry is unresolved, not benign.
+
+- Did the spawned shell launch operator commands after start?
+  - Focus: child process starts where `process.parent.entity_id` matches the spawned shell `process.entity_id`; review `process.name`, `process.executable`, and `process.command_line`. !{investigate{"description":"","label":"Descendant processes from the spawned shell","providers":[[{"excluded":false,"field":"host.id","queryType":"phrase","value":"{{host.id}}","valueType":"string"},{"excluded":false,"field":"process.parent.entity_id","queryType":"phrase","value":"{{process.entity_id}}","valueType":"string"},{"excluded":false,"field":"event.category","queryType":"phrase","value":"process","valueType":"string"}]],"relativeFrom":"now-1h","relativeTo":"now"}}
+  - Implication: escalate when descendants show reconnaissance, credential, download, persistence, staging, lateral movement, or cleanup; no descendants weakens operator-control evidence but does not make the remote-shell pattern benign.
+
+- Does the user and host context support the shell exposure?
+  - Focus: `user.id`, `user.name`, `host.id`, `host.name`, and `process.parent.command_line`.
+  - Implication: escalate when user-host pairing or account identity conflicts with expected testing or emergency use; lower concern only when the same user, host, and parent command fit one bounded authorized activity.
+
+- If local evidence is suspicious or unresolved, do surrounding alerts expand the scope?
+  - Focus: alerts for the same `user.id`, especially execution, defense-evasion, persistence, credential-access, lateral-movement, or command-and-control tied to the same parent command or recovered destination. !{investigate{"description":"","label":"Alerts associated with the user","providers":[[{"excluded":false,"field":"event.kind","queryType":"phrase","value":"signal","valueType":"string"},{"excluded":false,"field":"user.id","queryType":"phrase","value":"{{user.id}}","valueType":"string"}]],"relativeFrom":"now-48h/h","relativeTo":"now"}}
+  - Hint: also check the same `host.id` to decide whether this remains one process on one asset or part of a broader compromise. !{investigate{"description":"","label":"Alerts associated with the host","providers":[[{"excluded":false,"field":"event.kind","queryType":"phrase","value":"signal","valueType":"string"},{"excluded":false,"field":"host.id","queryType":"phrase","value":"{{host.id}}","valueType":"string"}]],"relativeFrom":"now-48h/h","relativeTo":"now"}}
+  - Implication: expand response scope when surrounding alerts share the user, host, parent command, or recovered destination pattern; keep triage local when no corroborating alerts appear after the parent, network, and descendant checks.
+
+- What disposition is supported by shell mode, parent identity, descendant commands, network recovery, user-host context, and alert scope?
+  - Focus: synthesize shell mode, parent identity, descendants, network recovery, user-host context, and alert scope.
+  - Implication: escalate on alert-local "-e" behavior plus any corroborator: unrecognized parent, external or exposed network evidence, operator descendants, user-host conflict, or related alerts. Close only when all categories bind to one authorized security-testing or break-glass activity with no contradictions; if telemetry cannot prove legitimacy, require outside confirmation. Preserve artifacts and escalate when evidence is mixed or visibility is incomplete.
+
+
+*False positive analysis*
+
+
+- NetCat "-e" shells are an operational anti-pattern outside confirmed security testing or break-glass support. Confirm benign use only when parent path and signer, exact parent command, shell mode, child shell, recovered destination or listen-port evidence, `user.id`, and `host.id` all align to the same bounded workflow. Use schedules, tickets, or owner confirmation only to corroborate that telemetry-matched activity; without them, require telemetry-only confirmation that the same user, host, parent command, and destination or port pattern recur for this rule. Any mismatch keeps the alert suspicious.
+- Before creating an exception, validate stability across prior alerts for the same `user.id` and `host.id`. Anchor the exception on `process.parent.executable`, `process.parent.command_line`, child `process.command_line`, user/host scope, and recovered destination or listen-port pattern. Avoid exceptions on `process.name`, parent basename, or shell name alone.
+
+
+*Response and remediation*
+
+
+- If confirmed benign, reverse any temporary containment and document the parent identity, exact command, shell mode, child shell, user/host scope, and recovered destination or listen-port evidence that proved the workflow. Create an exception only if that same workflow is stable across prior alerts from this rule.
+- If suspicious but unconfirmed, preserve volatile state and case exports first: parent and child process entity IDs, command lines, descendant commands, parent binary path and signer, and recovered network indicators. Apply reversible containment tied to the findings, such as temporary destination blocks, firewall control of the exposed listener, or host isolation when interactive control or broader scope is likely and the host can tolerate it. Avoid process termination or deletion until evidence capture is complete.
+- If confirmed malicious, first record `process.parent.entity_id`, `process.entity_id`, parent and child command lines, descendant commands, and recovered network indicators. Then isolate the host as appropriate, block recovered destination, domain, IP, or port indicators, and terminate the NetCat parent, spawned shell, and malicious descendants after evidence capture. Reset credentials only when descendant commands, user-host context, or related alerts show credential or administrator-command exposure.
+- Eradicate only artifacts found during the investigation: the NetCat binary or script wrapper, staged payloads, persistence, service or listener configuration, tunnels, and cleanup scripts. Then remediate the delivery path that placed the tool on the host.
+- Post-incident hardening: restrict unauthorized NetCat-family binaries and "-e" shell usage, retain process and network telemetry, and document adjacent variants such as renamed utilities, relay mode without "-e", or delayed shell handoff in the case record for future response.
+
+
+==== Setup
+
+
+
+*Setup*
+
+
+This rule is designed for data generated by https://www.elastic.co/security/endpoint-security[Elastic Defend], which provides native endpoint detection and response, along with event enrichments designed to work with our detection rules.
+
+Setup instructions: https://ela.st/install-elastic-defend
+
+
+==== Rule query
+
+
+[source, js]
+----------------------------------
+process where host.os.type == "windows" and event.type == "start" and
+process.name : ("cmd.exe", "powershell.exe") and process.parent.args : "-e" and
+ (
+  (process.parent.args_count == 5 and process.parent.command_line regex~ """.*[0-9]{1,3}(\.[0-9]{1,3}){3}.*""") or
+  (process.parent.args : "-*l*" and process.parent.args : "-*p*" and process.parent.args : ("cmd.exe", "powershell.exe"))
+  )
+
+----------------------------------
+
+*Framework*: MITRE ATT&CK^TM^
+
+* Tactic:
+** Name: Execution
+** ID: TA0002
+** Reference URL: https://attack.mitre.org/tactics/TA0002/
+* Technique:
+** Name: Command and Scripting Interpreter
+** ID: T1059
+** Reference URL: https://attack.mitre.org/techniques/T1059/
+* Sub-technique:
+** Name: PowerShell
+** ID: T1059.001
+** Reference URL: https://attack.mitre.org/techniques/T1059/001/
+* Sub-technique:
+** Name: Windows Command Shell
+** ID: T1059.003
+** Reference URL: https://attack.mitre.org/techniques/T1059/003/
+* Tactic:
+** Name: Command and Control
+** ID: TA0011
+** Reference URL: https://attack.mitre.org/tactics/TA0011/
+* Technique:
+** Name: Non-Application Layer Protocol
+** ID: T1095
+** Reference URL: https://attack.mitre.org/techniques/T1095/
