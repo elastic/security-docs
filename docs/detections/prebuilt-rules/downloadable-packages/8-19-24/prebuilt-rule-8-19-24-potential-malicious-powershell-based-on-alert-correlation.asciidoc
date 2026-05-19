@@ -1,0 +1,155 @@
+[[prebuilt-rule-8-19-24-potential-malicious-powershell-based-on-alert-correlation]]
+=== Potential Malicious PowerShell Based on Alert Correlation
+
+Identifies PowerShell script blocks linked to multiple distinct PowerShell detections via the same ScriptBlock ID, indicating compound suspicious behavior. Attackers often chain obfuscation, decoding, and execution within a single script block.
+
+*Rule type*: esql
+
+*Rule indices*: None
+
+*Severity*: high
+
+*Risk score*: 73
+
+*Runs every*: 5m
+
+*Searches indices from*: now-9m ({ref}/common-options.html#date-math[Date Math format], see also <<rule-schedule, `Additional look-back time`>>)
+
+*Maximum alerts per execution*: 100
+
+*References*: None
+
+*Tags*: 
+
+* Domain: Endpoint
+* OS: Windows
+* Use Case: Threat Detection
+* Tactic: Execution
+* Rule Type: Higher-Order Rule
+* Resources: Investigation Guide
+
+*Version*: 7
+
+*Rule authors*: 
+
+* Elastic
+
+*Rule license*: Elastic License v2
+
+
+==== Investigation guide
+
+
+
+*Triage and analysis*
+
+
+
+*Investigating Potential Malicious PowerShell Based on Alert Correlation*
+
+
+
+*Possible investigation steps*
+
+
+- What does the ES|QL grouped alert preserve about the suspicious PowerShell mix?
+  - Focus: treat `Esql.script_block_id`, `Esql.kibana_alert_rule_name_values`, `Esql._id_values`, preserved `host.id` / `user.id`, and `Esql.kibana_alert_rule_name_count_distinct` as search clues, not evidence.
+  - Implication: escalate if rule names span obfuscation, download, execution, persistence, credential access, or defense evasion for one host/user; lower suspicion only when recovered source alerts/events show one recognized detection-validation script or controlled encoded-content automation pattern.
+
+- Do the contributing alerts bind the summary to one script execution?
+  - Focus: recover contributing alerts around grouped-alert time using preserved host/user, `Esql.kibana_alert_rule_name_values`, and script-block ID; use `Esql._id_values` only when alert search supports those IDs.
+  - Hint: recover contributing alerts before interpreting grouped behavior; ES|QL grouped alerts lack member-event Timeline pivots and reliable source-event time, PID, or entity anchors.
+  - Implication: treat as one execution chain only when source alerts and events align to one host, one user, one source-event window, and one script-block ID; keep unresolved if timestamps, script evidence, PID reuse risk, or entity scope conflict.
+
+- Can you reconstruct and interpret the source PowerShell script block?
+  - Focus: using recovered source-event host, process, and time, query PowerShell 4104 or source events; match `powershell.file.script_block_id`, order `powershell.sequence` / `powershell.total`, and read script-block text.
+  - Implication: escalate when reconstructed text shows encoded/decoded stages, download cradles, reflection, hosted System.Management.Automation execution, credential access, persistence, or defense evasion; missing fragments or source PowerShell telemetry are unresolved, not benign.
+
+- Which process and launch chain executed the script block?
+  - Focus: use recovered time, `host.id`, and process identifiers to find the process start; collect `process.entity_id`, `process.command_line`, `process.parent.command_line`, and `process.Ext.authentication_id`.
+  - Hint: if no process start appears, expand time first; if still missing, scope later file, registry, and network review to recovered source-event host/user/process/time.
+  - Implication: escalate when the launcher is a document, browser, remote-management tool, scheduled task, unexpected script or .NET host, or command line with encoded, hidden, bypass, download, or dynamic evaluation; lower suspicion only when the same parent, command, user, and host bind to the exact recovered benign workflow.
+
+- Did the process stage payloads, persistence, or security-impacting changes?
+  - Focus: scope file and registry events to recovered `process.entity_id` or fallback source-event host/PID/time context; review `file.path`, `file.origin_url`, `registry.path`, `registry.value`, and `registry.data.strings`.
+  - Implication: escalate when the script writes executable or scriptable content to user-writable or startup paths, leaves internet provenance, modifies persistence or security keys, or later executes staged content; lower suspicion only when artifacts stay inside the exact recovered benign workflow. Missing file or registry telemetry does not clear the alert.
+
+- Did network or session evidence fit offensive PowerShell use?
+  - Focus: scope DNS/connections to recovered `process.entity_id` or source-event host/PID/time context; read `dns.question.name`, `destination.ip`, and `destination.port`; when origin matters, bridge `process.Ext.authentication_id` to `winlog.event_data.TargetLogonId`.
+  - Implication: escalate when the script reaches rare or public destinations, pulls content, contacts infrastructure unrelated to the recovered workflow, or runs from an unexpected remote session; missing network or Windows Security telemetry is unresolved, not benign.
+
+- If local evidence is suspicious or unresolved, does the same pattern recur elsewhere enough to change scope?
+  - Focus: related alerts for preserved `user.id` over 48 hours, looking for the same `Esql.kibana_alert_rule_name_values`, reconstructed script fragment, launch context, or extracted indicators. !{investigate{"description":"","label":"Alerts associated with the user","providers":[[{"excluded":false,"field":"event.kind","queryType":"phrase","value":"signal","valueType":"string"},{"excluded":false,"field":"user.id","queryType":"phrase","value":"{{user.id}}","valueType":"string"}]],"relativeFrom":"now-48h/h","relativeTo":"now"}}
+  - Hint: if user-scoped alerts are quiet or ambiguous, compare related alerts for preserved `host.id` over 48 hours. !{investigate{"description":"","label":"Alerts associated with the host","providers":[[{"excluded":false,"field":"event.kind","queryType":"phrase","value":"signal","valueType":"string"},{"excluded":false,"field":"host.id","queryType":"phrase","value":"{{host.id}}","valueType":"string"}]],"relativeFrom":"now-48h/h","relativeTo":"now"}}
+  - Implication: broaden response when the same script body, rule-name mix, or indicators appear on unrelated hosts or users; keep scope local when recurrence stays on the host under review, but do not close from recurrence alone.
+
+- Weigh contributing-alert alignment, reconstructed script, launch chain, artifacts, destinations, and host/user scope; escalate for offensive tooling, unauthorized execution, staged payloads, persistence, or suspicious destinations; close only when source evidence binds to one exact benign workflow, using outside confirmation only for facts telemetry cannot prove; preserve artifacts and escalate on conflicts or missing telemetry.
+
+
+*False positive analysis*
+
+
+- Authorized red-team, lab, or detection-validation can trigger several PowerShell rules on one script. Confirm alert mix, reconstructed script, launch chain, `user.id`, and `host.id` match exact test scope; if records are unavailable, recurrence can support scoping but cannot close the alert.
+- Endpoint management or deployment automation can trigger multiple detections through encoded content, dynamic script generation, or controlled downloads. Confirm `powershell.file.script_block_text`, parent/child command lines, artifacts, and destinations align with one managed workflow. If script body, destinations, or follow-on artifacts diverge, do not close as benign.
+- Before an exception, validate stable benign anchors: `user.id`, `host.id`, parent/child command lines, script fragment, and destination or artifact pattern. Avoid exceptions on ES|QL summary fields or `Esql.script_block_id`; they are alert-local or execution-specific.
+
+
+*Response and remediation*
+
+
+- If confirmed benign, document the alert mix, reconstructed script, launch chain, and recovered host/user context before reversing containment. Build exceptions from stable recovered workflow anchors, not ES|QL summary fields alone.
+- If suspicious but unconfirmed, preserve contributing alerts, `Esql._id_values`, `Esql.script_block_id`, rule-name values, reconstructed script text, recovered parent/child command lines, file/registry paths, and DNS/destination indicators before cleanup. Apply reversible containment first, such as temporary destination restrictions or heightened monitoring on recovered `host.id` and `user.id`; isolate or strengthen account action only if the script is still executing, staging payloads, or reaching suspicious destinations and host role allows.
+- If confirmed malicious, record entity IDs, command lines, and indicators, then isolate the host when lateral-movement or active-payload risk is present. Stop the PowerShell process or descendants only after preserving evidence; if direct response is unavailable, escalate with the evidence set. Block confirmed malicious destinations, URLs, hashes, and script paths; eradicate only tied files, registry changes, tasks, services, and payloads; remediate the launch path; and review related hosts/users before destructive cleanup.
+- Post-incident hardening: preserve or expand PowerShell 4104 logging, source-alert retention, endpoint process telemetry, and Windows Security logs when gaps limited recovery; where operations allow, restrict high-risk PowerShell through signed scripts, Constrained Language Mode, JEA, or WinRM controls. Document the rule-name mix, observables, and adjacent variants such as indirect System.Management.Automation execution.
+
+
+==== Rule query
+
+
+[source, js]
+----------------------------------
+from .alerts-security.* metadata _id
+
+// Filter for PowerShell related alerts
+| where kibana.alert.rule.name like "*PowerShell*"
+
+// as alerts don't have non-ECS fields, parse the script block ID using grok
+| grok message "ScriptBlock ID: (?<Esql.script_block_id>.+)"
+| where Esql.script_block_id is not null
+
+// keep relevant fields for further processing
+| keep kibana.alert.rule.name, Esql.script_block_id, _id, user.id, process.pid, host.id
+
+// count distinct alerts and filter for matches above the threshold
+| stats
+    Esql.kibana_alert_rule_name_count_distinct = count_distinct(kibana.alert.rule.name),
+    Esql.kibana_alert_rule_name_values = values(kibana.alert.rule.name),
+    Esql._id_values = values(_id),
+    Esql.user_id_values = values(user.id),
+    Esql.process_pid_values = values(process.pid),
+    Esql.host_id_values = values(host.id)
+  by Esql.script_block_id
+
+// Apply detection threshold
+| where Esql.kibana_alert_rule_name_count_distinct >= 5
+| eval user.id = MV_MIN(Esql.user_id_values),
+       process.pid = MV_MIN(Esql.process_pid_values),
+       host.id = MV_MIN(Esql.host_id_values)
+| keep host.id, user.id, process.pid, Esql.*
+
+----------------------------------
+
+*Framework*: MITRE ATT&CK^TM^
+
+* Tactic:
+** Name: Execution
+** ID: TA0002
+** Reference URL: https://attack.mitre.org/tactics/TA0002/
+* Technique:
+** Name: Command and Scripting Interpreter
+** ID: T1059
+** Reference URL: https://attack.mitre.org/techniques/T1059/
+* Sub-technique:
+** Name: PowerShell
+** ID: T1059.001
+** Reference URL: https://attack.mitre.org/techniques/T1059/001/

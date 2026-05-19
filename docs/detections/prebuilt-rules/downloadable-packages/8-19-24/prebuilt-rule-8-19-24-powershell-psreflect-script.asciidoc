@@ -1,0 +1,164 @@
+[[prebuilt-rule-8-19-24-powershell-psreflect-script]]
+=== PowerShell PSReflect Script
+
+Detects PowerShell script block content containing PSReflect-style helper indicators, such as Add-Win32Type, New-InMemoryModule, or DllImport patterns, that may support dynamic Win32 API invocation from PowerShell.
+
+*Rule type*: query
+
+*Rule indices*: 
+
+* logs-windows.powershell*
+* winlogbeat-*
+
+*Severity*: high
+
+*Risk score*: 73
+
+*Runs every*: 5m
+
+*Searches indices from*: now-9m ({ref}/common-options.html#date-math[Date Math format], see also <<rule-schedule, `Additional look-back time`>>)
+
+*Maximum alerts per execution*: 100
+
+*References*: 
+
+* https://github.com/mattifestation/PSReflect/blob/master/PSReflect.psm1
+* https://github.com/atc-project/atc-data/blob/master/docs/Logging_Policies/LP_0109_windows_powershell_script_block_log.md
+
+*Tags*: 
+
+* Domain: Endpoint
+* OS: Windows
+* Use Case: Threat Detection
+* Tactic: Execution
+* Resources: Investigation Guide
+* Data Source: PowerShell Logs
+
+*Version*: 318
+
+*Rule authors*: 
+
+* Elastic
+
+*Rule license*: Elastic License v2
+
+
+==== Investigation guide
+
+
+
+*Triage and analysis*
+
+
+
+*Investigating PowerShell PSReflect Script*
+
+
+*Possible investigation steps*
+
+
+- Does the reconstructed script block show active PSReflect native-API wiring?
+  - Why: script block logging can split one script; PSReflect is meaningful only after imports and follow-on logic are visible.
+  - Focus: reconstruct with `powershell.file.script_block_id`, `powershell.sequence`, and `powershell.total`, then read `powershell.file.script_block_text` in `host.id` / `user.id` scope. !{investigate{"description":"","label":"Script block fragments for the same script","providers":[[{"excluded":false,"field":"powershell.file.script_block_id","queryType":"phrase","value":"{{powershell.file.script_block_id}}","valueType":"string"},{"excluded":false,"field":"host.id","queryType":"phrase","value":"{{host.id}}","valueType":"string"}]],"relativeFrom":"now-1h","relativeTo":"now"}}
+  - Implication: escalate when the full script defines New-InMemoryModule, Add-Win32Type, psenum, Reflection.Emit, DefineDynamicAssembly, DefineDynamicModule, or DllImportAttribute and calls wrapped APIs; lower suspicion when it is inert reference text, repository content, or a bounded lab example.
+
+- What native API objective does the script express?
+  - Focus: Imported DLL/function pairs and call sites in reconstructed `powershell.file.script_block_text`.
+  - Hint: renamed wrappers or helper-free variants can show the same behavior when DllImportAttribute, Reflection.Emit, VirtualAlloc, WriteProcessMemory, CreateRemoteThread, OpenProcessToken, or AdjustTokenPrivileges reveal native-API invocation.
+  - Implication: escalate when call sites map to memory manipulation, token or privilege changes, service tampering, registry changes, or network control; lower urgency when imports stay limited to bounded diagnostics or application interop and later evidence does not contradict that use.
+
+- If endpoint process telemetry exists, how was PowerShell launched?
+  - Why: script block events preserve deobfuscated content, not the command line or parent.
+  - Focus: Recover the matching process via `host.id + process.pid` before interpreting `process.*` or `process.parent.*`; read `process.entity_id`, `process.command_line`, `process.parent.executable`, and `process.parent.command_line`. !{investigate{"description":"","label":"Process events for the PowerShell instance","providers":[[{"excluded":false,"field":"process.pid","queryType":"phrase","value":"{{process.pid}}","valueType":"string"},{"excluded":false,"field":"host.id","queryType":"phrase","value":"{{host.id}}","valueType":"string"},{"excluded":false,"field":"event.category","queryType":"phrase","value":"process","valueType":"string"}]],"relativeFrom":"now-1h","relativeTo":"now"}}
+  - Hint: expand the window if no process start appears; without process telemetry, keep later review scoped to `host.id`, `user.id`, `process.pid`, and alert time.
+  - Implication: escalate when a document, browser, chat client, remote session, scheduled task, or user-writable script path launched the helper; lower suspicion when launcher and command fit the same recognized build, admin, interop, or assessment workflow as the script.
+
+- Does script origin fit the recovered workflow?
+  - Focus: `file.path`, `file.directory`, `file.name`, missing file-origin fields, and recovered launch context.
+  - Implication: escalate when fileless on a workstation or sourced from temp, download, mounted-share, or user-writable paths that do not fit the user; lower suspicion when it resolves to a stable repository, deployment path, or test harness matching the same workflow.
+
+- Do same-host effects prove the wrapped APIs were used?
+  - Why: PSReflect is a helper pattern; the decisive follow-up is whether host activity matches the imported API family.
+  - Focus: API-matched effects: child execution for process APIs, staged payloads for write/load APIs, persistence or configuration changes for service/registry APIs, and outbound activity for network APIs. Use same-PID events around `@timestamp` to reduce PID-reuse ambiguity.
+    - !{investigate{"description":"","label":"Child process events for the PowerShell PID","providers":[[{"excluded":false,"field":"event.category","queryType":"phrase","value":"process","valueType":"string"},{"excluded":false,"field":"host.id","queryType":"phrase","value":"{{host.id}}","valueType":"string"},{"excluded":false,"field":"process.parent.pid","queryType":"phrase","value":"{{process.pid}}","valueType":"string"}]],"relativeFrom":"now-1h","relativeTo":"now"}}
+    - !{investigate{"description":"","label":"File and registry events for the PowerShell PID","providers":[[{"excluded":false,"field":"event.category","queryType":"phrase","value":"file","valueType":"string"},{"excluded":false,"field":"host.id","queryType":"phrase","value":"{{host.id}}","valueType":"string"},{"excluded":false,"field":"process.pid","queryType":"phrase","value":"{{process.pid}}","valueType":"string"}],[{"excluded":false,"field":"event.category","queryType":"phrase","value":"registry","valueType":"string"},{"excluded":false,"field":"host.id","queryType":"phrase","value":"{{host.id}}","valueType":"string"},{"excluded":false,"field":"process.pid","queryType":"phrase","value":"{{process.pid}}","valueType":"string"}]],"relativeFrom":"now-1h","relativeTo":"now"}}
+    - !{investigate{"description":"","label":"Network events for the PowerShell PID","providers":[[{"excluded":false,"field":"event.category","queryType":"phrase","value":"network","valueType":"string"},{"excluded":false,"field":"host.id","queryType":"phrase","value":"{{host.id}}","valueType":"string"},{"excluded":false,"field":"process.pid","queryType":"phrase","value":"{{process.pid}}","valueType":"string"}]],"relativeFrom":"now-1h","relativeTo":"now"}}
+  - Implication: escalate when effects appear in recovered process scope or the `host.id`, `user.id`, `process.pid`, and time fallback scope; lower suspicion only when they align with the same bounded workflow. Missing network or endpoint effect telemetry is unresolved, not benign.
+
+- Does related alert scope change urgency?
+  - Focus: 48-hour alerts for the same `user.id` showing repeated PowerShell, execution, defense-evasion, privilege-escalation, or credential-access activity; use same-`host.id` alerts only to confirm repeated script substrings or the same imported API set.
+    - !{investigate{"description":"","label":"Alerts associated with the user","providers":[[{"excluded":false,"field":"event.kind","queryType":"phrase","value":"signal","valueType":"string"},{"excluded":false,"field":"user.id","queryType":"phrase","value":"{{user.id}}","valueType":"string"}]],"relativeFrom":"now-48h/h","relativeTo":"now"}}
+    - !{investigate{"description":"","label":"Alerts associated with the host","providers":[[{"excluded":false,"field":"event.kind","queryType":"phrase","value":"signal","valueType":"string"},{"excluded":false,"field":"host.id","queryType":"phrase","value":"{{host.id}}","valueType":"string"}]],"relativeFrom":"now-48h/h","relativeTo":"now"}}
+  - Implication: broaden the case when related activity shows repeated native-API abuse, follow-on execution, or spread outside the original host; keep scope local when repetition stays confined to one exact benign workflow already supported by local evidence.
+
+- What disposition is supported?
+  - Implication: escalate when content, origin, launch, effects, or scope align on injection, privilege manipulation, persistence, remote activity, or egress that does not fit the user; close only when same-host telemetry proves one exact benign workflow and no contradictory findings remain. Outside confirmation may corroborate but not replace telemetry; if mixed or incomplete, preserve artifacts and escalate.
+
+
+*False positive analysis*
+
+
+- Internal build, admin, interop, diagnostics, compatibility, or security-testing helpers can use PSReflect-style code. Confirm only when reconstructed `powershell.file.script_block_text`, imported API set, `file.path` or fileless delivery, launcher, `user.id`, `host.id`, and same-host effects all fit one bounded workflow without injection, persistence, egress, or privilege abuse. Change records, repository history, test schedules, or recurrence can support closure but not replace telemetry.
+- Before an exception, validate recurrence of the same `user.id`, `host.id`, stable `file.path` when file-backed, recovered launcher, and distinctive `powershell.file.script_block_text` substrings. Avoid exceptions on PSReflect helper strings, `user.name`, or host alone.
+
+
+*Response and remediation*
+
+
+- If confirmed benign, document reconstructed script text, imported DLL/function set, origin, `user.id`, `host.id`, launch context, and same-host effect review before reversing containment. Create exceptions only for recurring workflows.
+- If suspicious but unconfirmed, preserve script block IDs/sequences, reconstructed text, API list, origin, process-start evidence, and same-host effect artifacts before response. Apply reversible containment such as destination restrictions or session limits; isolate only when corroboration shows likely injection, persistence, lateral movement, or credential misuse and the host role permits. Avoid destructive cleanup until scope is clearer.
+- If confirmed malicious, preserve the same artifacts plus related child-process, file-system, persistence, credential, and destination evidence before containment. Isolate the host and terminate PowerShell or child payloads after evidence capture; if direct response is unavailable, escalate with preserved artifacts. Block malicious scripts, payload hashes, and destinations, then review related users/hosts for the same script substrings, API set, or launch chain before eradication.
+- After containment, remove only scripts or payloads identified during investigation, undo persistence or configuration changes tied to the API objective, and remediate the delivery path or automation that launched the helper. If imports or same-host effects suggest credential theft, token abuse, or remote execution, reset affected credentials and review related auth/admin sessions before cleanup.
+- Post-incident hardening: restrict PowerShell interop and unsigned script distribution to controlled build, admin, or test systems; retain script block logging and endpoint process telemetry for `host.id + process.pid` recovery; document renamed-wrapper or helper-free reflection variants.
+
+
+==== Setup
+
+
+
+*Setup*
+
+
+PowerShell Script Block Logging must be enabled to generate the events used by this rule (e.g., 4104).
+Setup instructions: https://ela.st/powershell-logging-setup
+
+
+==== Rule query
+
+
+[source, js]
+----------------------------------
+event.category:process and host.os.type:windows and
+  powershell.file.script_block_text:(
+    "New-InMemoryModule" or
+    "Add-Win32Type" or
+    psenum or
+    DefineDynamicAssembly or
+    DefineDynamicModule or
+    "Reflection.TypeAttributes" or
+    "Reflection.Emit.OpCodes" or
+    "Reflection.Emit.CustomAttributeBuilder" or
+    "Runtime.InteropServices.DllImportAttribute"
+  ) and
+  not user.id : "S-1-5-18"
+
+----------------------------------
+
+*Framework*: MITRE ATT&CK^TM^
+
+* Tactic:
+** Name: Execution
+** ID: TA0002
+** Reference URL: https://attack.mitre.org/tactics/TA0002/
+* Technique:
+** Name: Command and Scripting Interpreter
+** ID: T1059
+** Reference URL: https://attack.mitre.org/techniques/T1059/
+* Sub-technique:
+** Name: PowerShell
+** ID: T1059.001
+** Reference URL: https://attack.mitre.org/techniques/T1059/001/
+* Technique:
+** Name: Native API
+** ID: T1106
+** Reference URL: https://attack.mitre.org/techniques/T1106/

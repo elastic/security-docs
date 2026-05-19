@@ -1,0 +1,106 @@
+[[prebuilt-rule-8-19-24-entra-id-register-device-with-unusual-user-agent-azure-ad-join]]
+=== Entra ID Register Device with Unusual User Agent (Azure AD Join)
+
+Detects successful Microsoft Entra ID audit events for Register device where additional details indicate an Azure AD join and the recorded user agent is not one of the common native registration clients (Dsreg, DeviceRegistrationClient, or Dalvik-based Android enrollment). Legitimate Windows and standard mobile enrollment flows often present predictable user-agent strings; unexpected clients may reflect scripted registration, third-party tooling, or adversary-driven device registration used for persistence or token abuse. Baseline approved provisioning tools and MDM integrations before tuning.
+
+*Rule type*: query
+
+*Rule indices*: 
+
+* logs-azure.auditlogs-*
+
+*Severity*: medium
+
+*Risk score*: 47
+
+*Runs every*: 5m
+
+*Searches indices from*: now-9m ({ref}/common-options.html#date-math[Date Math format], see also <<rule-schedule, `Additional look-back time`>>)
+
+*Maximum alerts per execution*: 100
+
+*References*: 
+
+* https://learn.microsoft.com/en-us/entra/identity/devices/concept-directory-join
+* https://github.com/dirkjanm/ROADtools
+
+*Tags*: 
+
+* Domain: Cloud
+* Domain: Identity
+* Data Source: Azure
+* Data Source: Microsoft Entra ID
+* Data Source: Microsoft Entra ID Audit Logs
+* Use Case: Threat Detection
+* Tactic: Persistence
+* Resources: Investigation Guide
+
+*Version*: 1
+
+*Rule authors*: 
+
+* Elastic
+
+*Rule license*: Elastic License v2
+
+
+==== Investigation guide
+
+
+
+*Triage and analysis*
+
+
+
+*Investigating Entra ID Register Device with Unusual User Agent (Azure AD Join)*
+
+
+Review `azure.auditlogs.properties.initiated_by.user.userPrincipalName`, source IP fields on the audit event,
+`azure.auditlogs.properties.target_resources.0.display_name` for the device name, and
+`azure.correlation_id` for related audit entries.
+
+Compare `azure.auditlogs.properties.userAgent` to your organization's standard Autopilot, Intune, and Windows enrollment
+clients.
+
+
+*Possible investigation steps*
+
+
+- Confirm whether the user intentionally joined a device and whether the user agent matches a known provisioning package.
+- Pivot to `azure.signinlogs` for the same principal and timeframe for risky sign-ins or token broker activity.
+- Search for other `Register device` events from the same IP or user agent across the tenant.
+
+
+*Response and remediation*
+
+
+- If malicious, remove the device in Entra ID, revoke refresh and primary refresh tokens for the user, and reset credentials per policy.
+- Tighten device registration and join controls via Conditional Access and device compliance policies.
+
+
+==== Rule query
+
+
+[source, js]
+----------------------------------
+data_stream.dataset:"azure.auditlogs" and event.action:"Register device" and
+event.outcome:(success or Success) and
+azure.auditlogs.properties.userAgent:(* and not (Dsreg* or DeviceRegistrationClient or Dalvik*)) and
+azure.auditlogs.properties.additional_details.value:"Azure AD join"
+
+----------------------------------
+
+*Framework*: MITRE ATT&CK^TM^
+
+* Tactic:
+** Name: Persistence
+** ID: TA0003
+** Reference URL: https://attack.mitre.org/tactics/TA0003/
+* Technique:
+** Name: Account Manipulation
+** ID: T1098
+** Reference URL: https://attack.mitre.org/techniques/T1098/
+* Sub-technique:
+** Name: Device Registration
+** ID: T1098.005
+** Reference URL: https://attack.mitre.org/techniques/T1098/005/

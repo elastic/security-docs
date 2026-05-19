@@ -1,0 +1,112 @@
+[[prebuilt-rule-8-19-24-kubernetes-ephemeral-container-added-to-pod]]
+=== Kubernetes Ephemeral Container Added to Pod
+
+Detects allowed updates to the pods/ephemeralcontainers subresource by a non-system identity. Ephemeral containers are commonly used for debugging (kubectl debug) but can also be abused to inject tooling into a running pod, access mounted secrets, and execute commands in the target pod context. Attackers with sufficient RBAC may use ephemeral containers to escalate privileges, move laterally, or establish persistence without deploying a new workload.
+
+*Rule type*: query
+
+*Rule indices*: 
+
+* logs-kubernetes.audit_logs-*
+
+*Severity*: medium
+
+*Risk score*: 47
+
+*Runs every*: 5m
+
+*Searches indices from*: now-9m ({ref}/common-options.html#date-math[Date Math format], see also <<rule-schedule, `Additional look-back time`>>)
+
+*Maximum alerts per execution*: 100
+
+*References*: 
+
+* https://kubernetes.io/docs/concepts/workloads/pods/ephemeral-containers/
+
+*Tags*: 
+
+* Data Source: Kubernetes
+* Domain: Kubernetes
+* Use Case: Threat Detection
+* Tactic: Privilege Escalation
+* Tactic: Execution
+* Resources: Investigation Guide
+
+*Version*: 1
+
+*Rule authors*: 
+
+* Elastic
+
+*Rule license*: Elastic License v2
+
+
+==== Investigation guide
+
+
+
+*Triage and analysis*
+
+
+> **Disclaimer**:
+> This investigation guide was created using generative AI technology and has been reviewed to improve its accuracy and relevance. While every effort has been made to ensure its quality, we recommend validating the content and adapting it to suit your specific environment and operational needs.
+
+
+*Investigating Kubernetes Ephemeral Container Added to Pod*
+
+
+Ephemeral containers allow adding a container to an existing pod for troubleshooting. When abused, they can be used to
+gain interactive access to a workload, read sensitive files, and run tools that were not present in the original image.
+
+
+*Possible investigation steps*
+
+
+- Review the actor (user.name, groups), source.ip, and user_agent.original and confirm the identity is authorized to use ephemeral containers.
+- Inspect kubernetes.audit.objectRef (namespace, name) to identify the targeted pod and workload owner.
+- If request bodies are captured, review the ephemeral container image, command, and securityContext for privilege indicators.
+- Correlate with follow-on audit activity such as pod exec, secret reads, TokenRequest, or RBAC modifications.
+
+
+*Response and remediation*
+
+
+- If unauthorized, remove excessive RBAC that grants update/patch on pods/ephemeralcontainers and rotate exposed credentials.
+- Quarantine or redeploy impacted workloads and hunt for additional compromised pods or identities.
+
+
+==== Rule query
+
+
+[source, js]
+----------------------------------
+data_stream.dataset:"kubernetes.audit_logs" and 
+kubernetes.audit.objectRef.resource:"pods" and
+kubernetes.audit.objectRef.subresource:"ephemeralcontainers" and
+kubernetes.audit.verb:("update" or "patch") and
+kubernetes.audit.annotations.authorization_k8s_io/decision:"allow" and
+not user.name:(
+  system\:node\:* or
+  system\:serviceaccount\:kube-system\:*
+)
+
+----------------------------------
+
+*Framework*: MITRE ATT&CK^TM^
+
+* Tactic:
+** Name: Privilege Escalation
+** ID: TA0004
+** Reference URL: https://attack.mitre.org/tactics/TA0004/
+* Technique:
+** Name: Escape to Host
+** ID: T1611
+** Reference URL: https://attack.mitre.org/techniques/T1611/
+* Tactic:
+** Name: Execution
+** ID: TA0002
+** Reference URL: https://attack.mitre.org/tactics/TA0002/
+* Technique:
+** Name: Container Administration Command
+** ID: T1609
+** Reference URL: https://attack.mitre.org/techniques/T1609/

@@ -1,0 +1,133 @@
+[[prebuilt-rule-8-19-24-google-workspace-device-registration-after-oauth-from-suspicious-asn]]
+=== Google Workspace Device Registration After OAuth from Suspicious ASN
+
+Detects when a Google Workspace account completes OAuth authorization for a specific Google OAuth client from a high-risk autonomous system number (ASN), followed within 30 seconds by a device registration event with account state REGISTERED. This sequence can indicate device enrollment or join flows initiated from attacker-controlled or residential-proxy infrastructure after a user authorizes a sensitive client.
+
+*Rule type*: eql
+
+*Rule indices*: 
+
+* logs-google_workspace*
+
+*Severity*: high
+
+*Risk score*: 73
+
+*Runs every*: 5m
+
+*Searches indices from*: now-15m ({ref}/common-options.html#date-math[Date Math format], see also <<rule-schedule, `Additional look-back time`>>)
+
+*Maximum alerts per execution*: 100
+
+*References*: 
+
+* https://www.elastic.co/security-labs/google-workspace-attack-surface-part-one
+* https://support.google.com/a/answer/7061566
+
+*Tags*: 
+
+* Domain: Cloud
+* Data Source: Google Workspace
+* Use Case: Threat Detection
+* Tactic: Persistence
+* Tactic: Initial Access
+* Threat: Tycoon2FA
+* Resources: Investigation Guide
+
+*Version*: 1
+
+*Rule authors*: 
+
+* Elastic
+
+*Rule license*: Elastic License v2
+
+
+==== Investigation guide
+
+
+
+*Triage and analysis*
+
+
+
+*Investigating Google Workspace Device Registration After OAuth from Suspicious ASN*
+
+
+Review `user.name`, `user.email`, `source.ip`, `source.as.organization.name`, `google_workspace.token.client.id`,
+`google_workspace.token.app_name`, and device fields on the second event (for example device display name or ID if
+present in your schema).
+
+Confirm whether the user intentionally registered a device and whether the OAuth client and ASN are expected for your
+mobile device management or enrollment program.
+
+
+*Possible investigation steps*
+
+
+- Correlate both events on `user.name` and timestamps to confirm the sequence is a single enrollment story.
+- Revoke or audit OAuth grants for the client if the authorization was not expected.
+- Search for additional `google_workspace.device` registrations from the same ASN in the same period.
+
+
+*Response and remediation*
+
+
+- If malicious, remove the unauthorized device from the Google Admin console, reset the user password, and revoke
+  active sessions and tokens per incident policy.
+- Restrict device registration and review OAuth app access policies.
+
+
+
+
+*Event lag*
+
+
+Google Workspace audit data can lag minutes to days behind real time. If sequences are missed, increase `from` and
+lower the integration poll interval per Google and Elastic documentation.
+
+==== Setup
+
+
+The Google Workspace Fleet integration or Filebeat Google Workspace module must ingest `google_workspace.token` and
+`google_workspace.device` audit streams.
+
+==== Rule query
+
+
+[source, js]
+----------------------------------
+sequence by user.name with maxspan=30s
+  [iam where data_stream.dataset == "google_workspace.token" and event.action == "authorize" and
+      google_workspace.token.client.id == "77185425430.apps.googleusercontent.com" and
+      source.as.number in (9009, 45102, 215540, 29802, 62240, 204957, 395092)]
+  [any where data_stream.dataset == "google_workspace.device" and google_workspace.device.account_state == "REGISTERED"]
+
+----------------------------------
+
+*Framework*: MITRE ATT&CK^TM^
+
+* Tactic:
+** Name: Persistence
+** ID: TA0003
+** Reference URL: https://attack.mitre.org/tactics/TA0003/
+* Technique:
+** Name: Account Manipulation
+** ID: T1098
+** Reference URL: https://attack.mitre.org/techniques/T1098/
+* Sub-technique:
+** Name: Device Registration
+** ID: T1098.005
+** Reference URL: https://attack.mitre.org/techniques/T1098/005/
+* Tactic:
+** Name: Initial Access
+** ID: TA0001
+** Reference URL: https://attack.mitre.org/tactics/TA0001/
+* Technique:
+** Name: Phishing
+** ID: T1566
+** Reference URL: https://attack.mitre.org/techniques/T1566/
+* Sub-technique:
+** Name: Spearphishing Link
+** ID: T1566.002
+** Reference URL: https://attack.mitre.org/techniques/T1566/002/

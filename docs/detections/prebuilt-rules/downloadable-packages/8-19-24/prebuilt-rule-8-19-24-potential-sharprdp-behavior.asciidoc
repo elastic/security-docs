@@ -1,0 +1,173 @@
+[[prebuilt-rule-8-19-24-potential-sharprdp-behavior]]
+=== Potential SharpRDP Behavior
+
+Identifies potential behavior of SharpRDP, which is a tool that can be used to perform authenticated command execution against a remote target via Remote Desktop Protocol (RDP) for the purposes of lateral movement.
+
+*Rule type*: eql
+
+*Rule indices*: 
+
+* logs-endpoint.events.process-*
+* logs-endpoint.events.registry-*
+* logs-endpoint.events.network-*
+
+*Severity*: high
+
+*Risk score*: 73
+
+*Runs every*: 5m
+
+*Searches indices from*: now-9m ({ref}/common-options.html#date-math[Date Math format], see also <<rule-schedule, `Additional look-back time`>>)
+
+*Maximum alerts per execution*: 100
+
+*References*: 
+
+* https://posts.specterops.io/revisiting-remote-desktop-lateral-movement-8fb905cb46c3
+* https://github.com/sbousseaden/EVTX-ATTACK-SAMPLES/blob/master/Lateral%20Movement/LM_sysmon_3_12_13_1_SharpRDP.evtx
+* https://www.elastic.co/security-labs/hunting-for-lateral-movement-using-event-query-language
+
+*Tags*: 
+
+* Domain: Endpoint
+* OS: Windows
+* Use Case: Threat Detection
+* Tactic: Lateral Movement
+* Data Source: Elastic Defend
+* Resources: Investigation Guide
+
+*Version*: 113
+
+*Rule authors*: 
+
+* Elastic
+
+*Rule license*: Elastic License v2
+
+
+==== Investigation guide
+
+
+
+*Triage and analysis*
+
+
+
+*Investigating Potential SharpRDP Behavior*
+
+
+
+*Possible investigation steps*
+
+
+- Do Timeline source events form one target-side SharpRDP chain?
+  - Focus: same-`host.id` events: inbound `source.ip`, RunMRU `registry.data.strings`, child `process.parent.name`, and child `process.command_line`.
+  - Hint: record the RunMRU time and child `process.entity_id`; the sequence alert may not preserve stage-specific process or registry fields.
+  - Implication: suspicious when non-loopback RDP to port 3389 is followed by a RunMRU shell, Task Manager, or "\\tsclient\" command and child execution; lower suspicion only when all recovered members fit one recognized interactive RDP maintenance action. Missing member events are unresolved, not benign.
+- Which RunMRU method launched execution?
+  - Focus: RunMRU `registry.path`, `registry.data.strings`, child `process.parent.name`, and child `process.command_line`.
+  - Implication: escalate when the RunMRU data selects a shell, Task Manager, or "\\tsclient\" mapped-drive payload and the child process matches that method; normal Run-dialog use is lower risk only when it launches a bounded support utility or installer without shell staging.
+- Does the source and user context fit legitimate RDP use on this target?
+  - Focus: inbound `source.ip`, launched-process `user.id`, and `user.name`.
+  - Implication: escalate when an unusual source uses an end-user or privileged account to start shells, Task Manager, or mapped-drive binaries over RDP; treat a recognized source-user pairing as context only until the RunMRU command and child identity also match the exact RDP task.
+- What ran on the target, and does its identity fit the expected RDP workflow?
+  - Focus: child `process.executable`, `process.command_line`, `process.code_signature.subject_name`, and `process.code_signature.trusted`.
+  - Implication: escalate when the command stages scripts, remote-admin tooling, credential access, or unsigned/user-writable payloads; lower suspicion only when binary identity and command line match the same bounded support or deployment workflow. A trusted signer does not clear suspicious command intent.
+- Did the launched child or its descendants create follow-on activity?
+  - Focus: same-host endpoint events scoped to recovered child `process.entity_id`: descendant `process.parent.entity_id`, persistence `registry.path`, DNS-event `dns.question.name`, and connection-event `destination.ip`.
+  - Hint: query process and registry events tied to the child ID; review DNS and connection events separately because `dns.question.name` and `destination.ip` live on different network event subtypes.
+  - Implication: escalate when descendants, registry changes, DNS lookups, or outbound connections show staging, persistence, command-and-control, or more lateral movement; absence of process-scoped DNS or connection telemetry narrows the case only when other evidence is clean. Missing network telemetry is unresolved, not benign.
+- Do related target-host alerts change scope?
+  - Focus: related RDP, remote-service, credential, and execution alerts for the same `host.id`. !{investigate{"description":"","label":"Alerts associated with the host","providers":[[{"excluded":false,"field":"event.kind","queryType":"phrase","value":"signal","valueType":"string"},{"excluded":false,"field":"host.id","queryType":"phrase","value":"{{host.id}}","valueType":"string"}]],"relativeFrom":"now-48h/h","relativeTo":"now"}}
+  - Hint: if recovered `source.ip` maps to an enrolled internal asset, follow up on outbound RDP to `destination.port` 3389 from a non-standard RDP client; missing source-host telemetry is unresolved, not benign.
+  - Implication: broaden scope when target-host alerts or caveated source-host follow-up show lateral movement beyond one recovered session; keep local only when the suspicious pattern stays confined to this target and the recovered source workflow is otherwise clean.
+- Using RDP source, RunMRU command, child lineage and identity, user context, follow-on process/registry/network evidence, and related alerts, escalate RDP-driven command execution or "\\tsclient\" payload launch without a coherent benign workflow; close only when all categories align to one exact recognized RDP workflow and no contradictory host or source evidence remains; preserve artifacts and escalate when evidence is mixed or visibility is incomplete.
+
+
+*False positive analysis*
+
+
+- Helpdesk or administrator RDP support can trigger when an operator uses Win+R, Task Manager, or a mapped drive to launch a diagnostic or installer. Confirm `source.ip`, `host.id`, `user.id`, `registry.data.strings`, `process.parent.name`, and `process.executable`/`process.command_line` match one task with no suspicious descendant activity. Without telemetry proof, require operator or ticket confirmation; do not close from historical pattern alone.
+- TSClient drive-redirection deployment can explain `\\tsclient\` execution only when a known installer or utility launches with stable `process.hash.sha256` or `process.code_signature.subject_name`, matching `process.parent.name`, `source.ip`, and `host.id`. Do not close if registry, DNS, connection, or descendant evidence contradicts it.
+- Before creating an exception, anchor on: `source.ip`, `host.id`, `user.id`, exact `registry.data.strings`, `process.parent.name`, and `process.executable` or `process.hash.sha256`. Avoid exceptions on `destination.port`, `process.name`, or RunMRU path alone.
+
+
+*Response and remediation*
+
+
+- If confirmed benign, reverse any temporary containment and document the exact `source.ip`, `user.id`, `registry.data.strings`, `process.executable`, and `host.id` that established the confirmed workflow. Create an exception only after the exact activity is confirmed and the exception can be pinned to the narrow workflow pattern.
+- If suspicious but unconfirmed, export the Timeline source events, capture the launched child process record and parent command line, save the RunMRU value data, and collect staged payloads, persistence key/value snapshots, DNS names, and connection destinations before containment or cleanup.
+- If suspicious but unconfirmed, after preservation apply reversible containment: end the active RDP session, temporarily restrict new RDP connections from the recovered `source.ip`, or increase monitoring on the affected `host.id`. Escalate to host isolation only when follow-on activity shows broader abuse and the host role can tolerate isolation.
+- If confirmed malicious, isolate the host when feasible, suspend or block the RDP access path or account that established the session, and terminate the launched child process plus suspicious descendants only after preserving the process and command evidence.
+- Review other hosts and users tied to the same `source.ip`, `user.id`, or distinctive `process.command_line` pattern before deleting artifacts or resetting credentials so scoping completes before evidence is destroyed.
+- Remove staged payloads, persistence changes, or follow-on tooling identified during the investigation, then reset or reissue credentials only when the process, user, and source evidence shows likely account misuse or credential exposure.
+- Post-incident hardening: restrict RDP access to controlled jump hosts, limit drive redirection where it is not required, retain process plus registry plus network telemetry on RDP targets, and document any adjacent detection gaps for the detection engineering team.
+
+
+==== Setup
+
+
+
+*Setup*
+
+
+This rule is designed for data generated by https://www.elastic.co/security/endpoint-security[Elastic Defend], which provides native endpoint detection and response, along with event enrichments designed to work with our detection rules.
+
+Setup instructions: https://ela.st/install-elastic-defend
+
+
+==== Rule query
+
+
+[source, js]
+----------------------------------
+/* Incoming RDP followed by a new RunMRU string value set to cmd, powershell, taskmgr or tsclient, followed by process execution within 1m */
+
+sequence by host.id with maxspan=1m
+  [network where host.os.type == "windows" and event.type == "start" and process.name : "svchost.exe" and destination.port == 3389 and
+   network.direction : ("incoming", "ingress") and network.transport == "tcp" and
+   source.ip != "127.0.0.1" and source.ip != "::1"
+  ]
+
+  [registry where host.os.type == "windows" and event.type == "change" and process.name : "explorer.exe" and
+   registry.path : ("HKEY_USERS\\*\\Software\\Microsoft\\Windows\\CurrentVersion\\Explorer\\RunMRU\\*") and
+   registry.data.strings : ("cmd.exe*", "powershell.exe*", "taskmgr*", "\\\\tsclient\\*.exe\\*")
+  ]
+
+  [process where host.os.type == "windows" and event.type == "start" and
+   (process.parent.name : ("cmd.exe", "powershell.exe", "taskmgr.exe") or process.args : ("\\\\tsclient\\*.exe")) and
+   not process.name : "conhost.exe"
+   ]
+
+----------------------------------
+
+*Framework*: MITRE ATT&CK^TM^
+
+* Tactic:
+** Name: Lateral Movement
+** ID: TA0008
+** Reference URL: https://attack.mitre.org/tactics/TA0008/
+* Technique:
+** Name: Remote Services
+** ID: T1021
+** Reference URL: https://attack.mitre.org/techniques/T1021/
+* Sub-technique:
+** Name: Remote Desktop Protocol
+** ID: T1021.001
+** Reference URL: https://attack.mitre.org/techniques/T1021/001/
+* Tactic:
+** Name: Execution
+** ID: TA0002
+** Reference URL: https://attack.mitre.org/tactics/TA0002/
+* Technique:
+** Name: Command and Scripting Interpreter
+** ID: T1059
+** Reference URL: https://attack.mitre.org/techniques/T1059/
+* Sub-technique:
+** Name: PowerShell
+** ID: T1059.001
+** Reference URL: https://attack.mitre.org/techniques/T1059/001/
+* Sub-technique:
+** Name: Windows Command Shell
+** ID: T1059.003
+** Reference URL: https://attack.mitre.org/techniques/T1059/003/

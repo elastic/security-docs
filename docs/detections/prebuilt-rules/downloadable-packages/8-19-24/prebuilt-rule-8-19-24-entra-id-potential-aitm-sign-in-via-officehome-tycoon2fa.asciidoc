@@ -1,0 +1,121 @@
+[[prebuilt-rule-8-19-24-entra-id-potential-aitm-sign-in-via-officehome-tycoon2fa]]
+=== Entra ID Potential AiTM Sign-In via OfficeHome (Tycoon2FA)
+
+Detects Microsoft Entra ID sign-ins consistent with Tycoon2FA phishing-as-a-service (PhaaS) adversary-in-the-middle (AiTM) activity: the Microsoft Authentication Broker requesting tokens for Microsoft Graph or Exchange Online, or the Office web client application authenticating to itself, combined with Node.js-style user agents (node, axios, undici). Tycoon 2FA bypasses MFA by relaying authentication and capturing session material, often targeting Microsoft 365 and Gmail. Baseline legitimate automation and developer tooling before tuning.
+
+*Rule type*: query
+
+*Rule indices*: 
+
+* logs-azure.signinlogs-*
+
+*Severity*: high
+
+*Risk score*: 73
+
+*Runs every*: 5m
+
+*Searches indices from*: now-9m ({ref}/common-options.html#date-math[Date Math format], see also <<rule-schedule, `Additional look-back time`>>)
+
+*Maximum alerts per execution*: 100
+
+*References*: 
+
+* https://any.run/malware-trends/tycoon/
+
+*Tags*: 
+
+* Domain: Cloud
+* Domain: Identity
+* Data Source: Azure
+* Data Source: Microsoft Entra ID
+* Data Source: Microsoft Entra ID Sign-in Logs
+* Use Case: Threat Detection
+* Threat: Tycoon2FA
+* Tactic: Initial Access
+* Tactic: Credential Access
+* Resources: Investigation Guide
+
+*Version*: 1
+
+*Rule authors*: 
+
+* Elastic
+
+*Rule license*: Elastic License v2
+
+
+==== Investigation guide
+
+
+
+*Triage and analysis*
+
+
+
+*Investigating Entra ID Potential AiTM Sign-In via OfficeHome (Tycoon2FA)*
+
+
+Review user.name, azure.signinlogs.properties.user_principal_name, azure.signinlogs.properties.app_id,
+azure.signinlogs.properties.resource_id, user_agent.original, source.ip, source.geo fields, and
+azure.signinlogs.properties.session_id.
+
+Confirm whether the user intentionally signed in and whether Node.js-style user agents (node, axios, undici) are
+expected for Microsoft Authentication Broker or Office web client flows in your environment.
+
+
+*Possible investigation steps*
+
+
+- Correlate the session with Microsoft Graph activity logs and mailbox audit for follow-on data access.
+- Review conditional access outcomes and MFA detail for the same session.
+- Hunt for other sign-ins from the same source IP with unusual user agents or rapid OAuth patterns.
+
+
+*Response and remediation*
+
+
+- If malicious, revoke refresh tokens for the user, reset credentials per policy, and review application consent.
+- Block or monitor the source IP and escalate per incident procedures.
+
+
+==== Rule query
+
+
+[source, js]
+----------------------------------
+data_stream.dataset:"azure.signinlogs" and event.category:"authentication" and
+event.action:"Sign-in activity" and
+(
+    (
+        azure.signinlogs.properties.app_id:"29d9ed98-a469-4536-ade2-f981bc1d605e" and
+        azure.signinlogs.properties.resource_id:(
+            "00000002-0000-0ff1-ce00-000000000000" or "00000003-0000-0000-c000-000000000000"
+        )
+    ) or
+    (
+        azure.signinlogs.properties.app_id:"4765445b-32c6-49b0-83e6-1d93765276ca" and
+        azure.signinlogs.properties.resource_id:"4765445b-32c6-49b0-83e6-1d93765276ca"
+    )
+) and user_agent.original:(node or axios* or undici)
+
+----------------------------------
+
+*Framework*: MITRE ATT&CK^TM^
+
+* Tactic:
+** Name: Initial Access
+** ID: TA0001
+** Reference URL: https://attack.mitre.org/tactics/TA0001/
+* Technique:
+** Name: Phishing
+** ID: T1566
+** Reference URL: https://attack.mitre.org/techniques/T1566/
+* Tactic:
+** Name: Credential Access
+** ID: TA0006
+** Reference URL: https://attack.mitre.org/tactics/TA0006/
+* Technique:
+** Name: Steal Web Session Cookie
+** ID: T1539
+** Reference URL: https://attack.mitre.org/techniques/T1539/

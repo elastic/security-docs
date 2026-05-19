@@ -1,0 +1,128 @@
+[[aws-eks-access-entry-granted-cluster-admin-policy]]
+=== AWS EKS Access Entry Granted Cluster Admin Policy
+
+Detects when the AmazonEKSClusterAdminPolicy or AmazonEKSAdminPolicy is associated with a principal via the EKS Access Entries API. This grants full cluster-admin equivalent access to the specified IAM user or role. Unlike the legacy aws-auth ConfigMap which is only visible in Kubernetes audit logs, Access Entries modifications appear in CloudTrail, providing an additional detection surface. Attackers who have obtained IAM permissions to manage EKS access entries can use this API to backdoor cluster access for persistence, mapping attacker-controlled IAM identities to cluster-admin privileges without modifying any Kubernetes resources.
+
+*Rule type*: query
+
+*Rule indices*: 
+
+* filebeat-*
+* logs-aws.cloudtrail-*
+
+*Severity*: high
+
+*Risk score*: 73
+
+*Runs every*: 5m
+
+*Searches indices from*: now-6m ({ref}/common-options.html#date-math[Date Math format], see also <<rule-schedule, `Additional look-back time`>>)
+
+*Maximum alerts per execution*: 100
+
+*References*: 
+
+* https://docs.aws.amazon.com/eks/latest/userguide/access-entries.html
+* https://docs.aws.amazon.com/eks/latest/APIReference/API_AssociateAccessPolicy.html
+
+*Tags*: 
+
+* Domain: Cloud
+* Domain: Kubernetes
+* Data Source: AWS
+* Data Source: Amazon Web Services
+* Data Source: AWS CloudTrail
+* Use Case: Threat Detection
+* Tactic: Privilege Escalation
+* Tactic: Persistence
+* Resources: Investigation Guide
+
+*Version*: 1
+
+*Rule authors*: 
+
+* Elastic
+
+*Rule license*: Elastic License v2
+
+
+==== Investigation guide
+
+
+
+*Triage and analysis*
+
+
+
+*Investigating AWS EKS Access Entry Granted Cluster Admin Policy*
+
+
+Successful AssociateAccessPolicy with AmazonEKSClusterAdminPolicy or AmazonEKSAdminPolicy binds highly privileged
+Kubernetes access to an IAM principal. Review who invoked the API (user.name, aws.cloudtrail.user_identity fields),
+source.ip, user_agent.original, cloud.account.id, and cloud.region.
+
+
+*Possible investigation steps*
+
+
+- Parse aws.cloudtrail.request_parameters and response elements for cluster name, access entry ARN, and policy ARN.
+- Confirm whether the IAM principal receiving the policy is expected to have cluster-admin-class access.
+- Correlate with other EKS API calls (CreateAccessEntry, UpdateAccessEntry) and with Kubernetes audit activity from
+  newly authorized principals.
+- Compare against change records for migrations from aws-auth or new administrator onboarding.
+
+
+*Response and remediation*
+
+
+- If unauthorized, disassociate the policy or remove the access entry per AWS guidance; audit who can call eks:*
+  APIs in IAM.
+- Rotate credentials for any suspected compromised IAM principal; review organizational SCPs and cluster auth mode.
+
+
+*Additional information*
+
+
+- https://docs.aws.amazon.com/eks/latest/userguide/access-entries.html[Amazon EKS access entries]
+- https://docs.aws.amazon.com/eks/latest/APIReference/API_AssociateAccessPolicy.html[AssociateAccessPolicy]
+
+
+==== Rule query
+
+
+[source, js]
+----------------------------------
+data_stream.dataset:"aws.cloudtrail" and
+event.provider:"eks.amazonaws.com" and
+event.action:"AssociateAccessPolicy" and
+event.outcome:"success" and
+aws.cloudtrail.request_parameters:(*AmazonEKSClusterAdminPolicy* or *AmazonEKSAdminPolicy*)
+
+----------------------------------
+
+*Framework*: MITRE ATT&CK^TM^
+
+* Tactic:
+** Name: Privilege Escalation
+** ID: TA0004
+** Reference URL: https://attack.mitre.org/tactics/TA0004/
+* Technique:
+** Name: Account Manipulation
+** ID: T1098
+** Reference URL: https://attack.mitre.org/techniques/T1098/
+* Sub-technique:
+** Name: Additional Container Cluster Roles
+** ID: T1098.006
+** Reference URL: https://attack.mitre.org/techniques/T1098/006/
+* Tactic:
+** Name: Persistence
+** ID: TA0003
+** Reference URL: https://attack.mitre.org/tactics/TA0003/
+* Technique:
+** Name: Account Manipulation
+** ID: T1098
+** Reference URL: https://attack.mitre.org/techniques/T1098/
+* Sub-technique:
+** Name: Additional Container Cluster Roles
+** ID: T1098.006
+** Reference URL: https://attack.mitre.org/techniques/T1098/006/

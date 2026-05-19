@@ -1,0 +1,119 @@
+[[prebuilt-rule-8-19-24-m365-potential-aitm-userloggedin-via-office-app-tycoon2fa]]
+=== M365 Potential AiTM UserLoggedIn via Office App (Tycoon2FA)
+
+Detects Microsoft 365 audit "UserLoggedIn" events consistent with Tycoon 2FA phishing-as-a-service (PhaaS) adversary-in-the-middle (AiTM) activity: the Microsoft Authentication Broker requesting access where the object identifier matches Microsoft Graph or Exchange Online, or the Office web client application authenticating to itself, combined with Node.js-style user agents (node, axios, undici). Tycoon 2FA bypasses MFA by relaying authentication and capturing session material, often targeting Microsoft 365 and Gmail. Baseline legitimate automation and developer tooling before tuning.
+
+*Rule type*: query
+
+*Rule indices*: 
+
+* logs-o365.audit-*
+
+*Severity*: high
+
+*Risk score*: 73
+
+*Runs every*: 5m
+
+*Searches indices from*: now-9m ({ref}/common-options.html#date-math[Date Math format], see also <<rule-schedule, `Additional look-back time`>>)
+
+*Maximum alerts per execution*: 100
+
+*References*: 
+
+* https://any.run/malware-trends/tycoon/
+
+*Tags*: 
+
+* Domain: Cloud
+* Domain: Identity
+* Domain: SaaS
+* Data Source: Microsoft 365
+* Data Source: Microsoft 365 Audit Logs
+* Use Case: Threat Detection
+* Threat: Tycoon2FA
+* Tactic: Initial Access
+* Tactic: Credential Access
+* Resources: Investigation Guide
+
+*Version*: 1
+
+*Rule authors*: 
+
+* Elastic
+
+*Rule license*: Elastic License v2
+
+
+==== Investigation guide
+
+
+
+*Triage and analysis*
+
+
+
+*Investigating M365 Potential AiTM UserLoggedIn via Office App (Tycoon2FA)*
+
+
+Review `o365.audit.UserId`, `user_agent.original`, `source.ip` or `o365.audit.ActorIpAddress`, and related Entra ID
+sign-in logs (`azure.signinlogs`) for the same session or time window.
+
+Confirm whether the account owner intentionally authenticated and whether Node.js-style user agents (node, axios, undici)
+are expected for Microsoft Authentication Broker or Office web client flows in your environment.
+
+
+*Possible investigation steps*
+
+
+- Correlate with `azure.signinlogs` for matching user principal name, IP, and session identifiers.
+- Review Microsoft Graph or Exchange audit activity following the login for mailbox or data access anomalies.
+- Hunt for other `UserLoggedIn` events from the same source with unusual user agents or rapid OAuth patterns.
+
+
+*Response and remediation*
+
+
+- If malicious, revoke refresh tokens for the user, reset credentials per policy, and review conditional access outcomes.
+- Block or monitor the source IP and escalate per incident procedures.
+
+
+==== Rule query
+
+
+[source, js]
+----------------------------------
+data_stream.dataset:"o365.audit" and event.category:"authentication" and event.action:"UserLoggedIn" and
+(
+    (
+        o365.audit.ApplicationId:"29d9ed98-a469-4536-ade2-f981bc1d605e" and
+        o365.audit.ObjectId:(
+            "00000002-0000-0ff1-ce00-000000000000" or "00000003-0000-0000-c000-000000000000"
+        )
+    ) or
+    (
+        o365.audit.ApplicationId:"4765445b-32c6-49b0-83e6-1d93765276ca" and
+        o365.audit.ObjectId:"4765445b-32c6-49b0-83e6-1d93765276ca"
+    )
+) and user_agent.original:(node or axios* or undici)
+
+----------------------------------
+
+*Framework*: MITRE ATT&CK^TM^
+
+* Tactic:
+** Name: Initial Access
+** ID: TA0001
+** Reference URL: https://attack.mitre.org/tactics/TA0001/
+* Technique:
+** Name: Phishing
+** ID: T1566
+** Reference URL: https://attack.mitre.org/techniques/T1566/
+* Tactic:
+** Name: Credential Access
+** ID: TA0006
+** Reference URL: https://attack.mitre.org/tactics/TA0006/
+* Technique:
+** Name: Steal Web Session Cookie
+** ID: T1539
+** Reference URL: https://attack.mitre.org/techniques/T1539/
