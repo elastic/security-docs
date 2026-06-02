@@ -33,7 +33,7 @@ Identifies the execution of macOS built-in commands used to dump user account ha
 * Data Source: Elastic Defend
 * Resources: Investigation Guide
 
-*Version*: 111
+*Version*: 112
 
 *Rule authors*: 
 
@@ -131,8 +131,15 @@ For more details on Elastic Defend refer to the https://www.elastic.co/guide/en/
 
 [source, js]
 ----------------------------------
-process where host.os.type == "macos" and event.type in ("start", "process_started") and
- process.name in ("defaults", "mkpassdb") and process.args like~ ("ShadowHashData", "-dump")
+process where host.os.type == "macos" and event.type in ("start","process_started") and (
+  (process.name == "defaults" and process.args like~ "ShadowHashData") or
+  (process.name == "mkpassdb" and process.args == "-dump") or
+  (process.name == "dscl" and process.args like~ "ShadowHashData") or
+  (
+    process.name in ("plutil","cat","strings","xxd","head") and
+    process.args like "/var/db/dslocal/nodes/Default/users/*.plist"
+  )
+)
 
 ----------------------------------
 

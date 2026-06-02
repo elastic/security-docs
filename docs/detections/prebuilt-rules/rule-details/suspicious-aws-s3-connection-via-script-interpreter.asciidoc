@@ -28,7 +28,7 @@ Detects when a script interpreter (osascript, Node.js, Python) with minimal argu
 * Data Source: Elastic Defend
 * Resources: Investigation Guide
 
-*Version*: 3
+*Version*: 4
 
 *Rule authors*: 
 
@@ -85,19 +85,19 @@ This rule flags macOS script interpreters (AppleScript, Node.js, Python) that re
 
 [source, js]
 ----------------------------------
-FROM logs-endpoint.events.network-*
+FROM logs-endpoint.events.network-*  
 | WHERE host.os.type == "macos" 
-    AND event.type == "start"
+    AND event.type == "start"  
     AND (process.name == "osascript" 
-         OR process.name == "node" 
-         OR process.name LIKE "python*")
+            OR process.name == "node" 
+            OR process.name LIKE "python*")  
     AND (destination.domain LIKE "s3.*.amazonaws.com" 
-         OR destination.domain LIKE "*.s3*.amazonaws.com" 
-         OR destination.domain LIKE "*.cloudfront.net")
+            OR destination.domain LIKE "*.s3*.amazonaws.com" 
+            OR destination.domain LIKE "*.cloudfront.net")  
 | STATS Esql.connection_count = COUNT(*) 
-  BY process.executable, user.name, host.name, destination.domain
-| WHERE Esql.connection_count >= 5
-| KEEP Esql.*, process.executable, user.name, host.name, destination.domain
+    BY process.entity_id, process.executable, user.name, host.name, destination.domain  
+| WHERE Esql.connection_count >= 20  
+| KEEP Esql.*, process.entity_id, process.executable, user.name, host.name, destination.domain  
 
 ----------------------------------
 

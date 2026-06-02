@@ -1,0 +1,145 @@
+[[prebuilt-rule-8-19-25-entra-id-microsoft-authentication-broker-sign-in-with-non-standard-user-agent]]
+=== Entra ID Microsoft Authentication Broker Sign-In with Non-Standard User Agent
+
+Detects Microsoft Entra ID sign-in activity where the Microsoft Authentication Broker authenticates is using a user agent that is not consistent with common browser, mobile, or Windows platform authentication clients. Adversary-in-the-middle and OAuth phishing tooling often presents scripted or relayed user agents (for example Node.js, Python, or generic HTTP libraries) while still targeting first-party resources through the broker.
+
+*Rule type*: query
+
+*Rule indices*: 
+
+* logs-azure.signinlogs-*
+
+*Severity*: high
+
+*Risk score*: 73
+
+*Runs every*: 5m
+
+*Searches indices from*: now-9m ({ref}/common-options.html#date-math[Date Math format], see also <<rule-schedule, `Additional look-back time`>>)
+
+*Maximum alerts per execution*: 100
+
+*References*: 
+
+* https://www.volexity.com/blog/2025/04/22/phishing-for-codes-russian-threat-actors-target-microsoft-365-oauth-workflows/
+* https://dirkjanm.io/phishing-for-microsoft-entra-primary-refresh-tokens/
+* https://any.run/malware-trends/tycoon/
+
+*Tags*: 
+
+* Domain: Cloud
+* Domain: Identity
+* Data Source: Azure
+* Data Source: Microsoft Entra ID
+* Data Source: Microsoft Entra ID Sign-In Logs
+* Use Case: Threat Detection
+* Tactic: Initial Access
+* Tactic: Credential Access
+* Resources: Investigation Guide
+
+*Version*: 1
+
+*Rule authors*: 
+
+* Elastic
+
+*Rule license*: Elastic License v2
+
+
+==== Investigation guide
+
+
+
+*Triage and analysis*
+
+
+
+*Investigating Entra ID Microsoft Authentication Broker Sign-In with Non-Standard User Agent*
+
+
+Review `azure.signinlogs.properties.user_principal_name`, `user_agent.original`,
+`azure.signinlogs.properties.resource_display_name`, `azure.signinlogs.properties.session_id`, `source.ip`, and
+`source.as.organization.name`.
+
+Confirm whether the user or application intentionally used a non-browser client against the requested resource.
+
+
+*Possible investigation steps*
+
+
+- Inspect `user_agent.original` for automation libraries (for example `node`, `axios`, `python-requests`, `curl`).
+- Correlate `azure.signinlogs.properties.session_id` with other sign-ins, device registration audit events, or Graph
+  activity in the same time window.
+- Review conditional access outcomes and identity protection signals for the user.
+- Compare `source.ip` and ASN against expected VPN, MDM, and developer egress.
+
+
+*False positive analysis*
+
+
+- Microsoft platform and mobile clients using Mozilla-, Dalvik-, CFNetwork-, or Windows-AzureAD-Authentication-Provider-
+  style user agents are excluded by design.
+- First-party CLI tools and test harnesses that legitimately broker tokens may still match if they use uncommon user
+  agent strings.
+
+
+*Response and remediation*
+
+
+- If malicious, revoke refresh tokens for the user, review newly registered devices, and reset credentials per policy.
+- Escalate when paired with suspicious ASN sign-ins, multi-IP OAuth flows, or follow-on Graph data access.
+
+
+==== Setup
+
+
+Microsoft Entra ID sign-in logs (`logs-azure.signinlogs-*`) must populate `user_agent.original`,
+`azure.signinlogs.properties.app_display_name`, and `azure.signinlogs.properties.resource_display_name`.
+
+
+==== Rule query
+
+
+[source, js]
+----------------------------------
+data_stream.dataset:"azure.signinlogs" and event.action:"Sign-in activity" and event.outcome:(success or Success) and 
+(azure.signinlogs.properties.app_display_name:"Microsoft Authentication Broker" or azure.signinlogs.properties.app_id:"29d9ed98-a469-4536-ade2-f981bc1d605e") and
+user_agent.original:(* and not (Mozilla* or Dalvik* or *CFNetwork* or Windows-AzureAD-Authentication-Provider* or Java*ThinkPad*)) and
+azure.signinlogs.properties.resource_display_name:*
+
+----------------------------------
+
+*Framework*: MITRE ATT&CK^TM^
+
+* Tactic:
+** Name: Initial Access
+** ID: TA0001
+** Reference URL: https://attack.mitre.org/tactics/TA0001/
+* Technique:
+** Name: Phishing
+** ID: T1566
+** Reference URL: https://attack.mitre.org/techniques/T1566/
+* Sub-technique:
+** Name: Spearphishing Link
+** ID: T1566.002
+** Reference URL: https://attack.mitre.org/techniques/T1566/002/
+* Tactic:
+** Name: Defense Evasion
+** ID: TA0005
+** Reference URL: https://attack.mitre.org/tactics/TA0005/
+* Technique:
+** Name: Valid Accounts
+** ID: T1078
+** Reference URL: https://attack.mitre.org/techniques/T1078/
+* Sub-technique:
+** Name: Cloud Accounts
+** ID: T1078.004
+** Reference URL: https://attack.mitre.org/techniques/T1078/004/
+* Tactic:
+** Name: Credential Access
+** ID: TA0006
+** Reference URL: https://attack.mitre.org/tactics/TA0006/
+* Technique:
+** Name: Steal Web Session Cookie
+** ID: T1539
+** Reference URL: https://attack.mitre.org/techniques/T1539/

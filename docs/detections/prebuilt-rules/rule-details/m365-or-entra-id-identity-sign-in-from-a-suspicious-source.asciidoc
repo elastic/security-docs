@@ -11,9 +11,9 @@ This rule correlate Entra-ID or Microsoft 365 mail successful sign-in events wit
 
 *Risk score*: 73
 
-*Runs every*: 5m
+*Runs every*: 1h
 
-*Searches indices from*: now-60m ({ref}/common-options.html#date-math[Date Math format], see also <<rule-schedule, `Additional look-back time`>>)
+*Searches indices from*: now-8h ({ref}/common-options.html#date-math[Date Math format], see also <<rule-schedule, `Additional look-back time`>>)
 
 *Maximum alerts per execution*: 100
 
@@ -34,7 +34,7 @@ This rule correlate Entra-ID or Microsoft 365 mail successful sign-in events wit
 * Resources: Investigation Guide
 * Rule Type: Higher-Order Rule
 
-*Version*: 7
+*Version*: 8
 
 *Rule authors*: 
 
@@ -98,8 +98,6 @@ The Azure Fleet integration, Office 365 Logs Fleet integration, Filebeat module,
 [source, js]
 ----------------------------------
 from logs-o365.audit-*, logs-azure.signinlogs-*, .alerts-security.*
-// query runs every 1 hour looking for activities occurred during last 8 hours to match on disparate events
-| where @timestamp > now() - 8 hours
 // filter for azure or m365 sign-in and external alerts with source.ip not null
 | where to_ip(source.ip) is not null
   and (data_stream.dataset in ("o365.audit", "azure.signinlogs") or kibana.alert.rule.rule_id == "eb079c62-4481-4d6e-9643-3ca499df7aaa")
@@ -117,9 +115,9 @@ from logs-o365.audit-*, logs-azure.signinlogs-*, .alerts-security.*
 
 // classify each source ip based on alert type
 | eval
-  Esql.source_ip_mail_access_case = case(data_stream.dataset == "o365.audit" and event.action == "MailItemsAccessed" and event.outcome == "success", to_ip(source.ip), null),
-  Esql.source_ip_azure_signin_case = case(data_stream.dataset == "azure.signinlogs" and event.outcome == "success", to_ip(source.ip), null),
-  Esql.source_ip_network_alert_case = case(kibana.alert.rule.rule_id == "eb079c62-4481-4d6e-9643-3ca499df7aaa" and not data_stream.dataset in ("o365.audit", "azure.signinlogs"), to_ip(source.ip), null)
+  Esql.source_ip_mail_access_case = case(data_stream.dataset == "o365.audit" and event.action == "MailItemsAccessed" and event.outcome == "success", to_ip(source.ip)),
+  Esql.source_ip_azure_signin_case = case(data_stream.dataset == "azure.signinlogs" and event.outcome == "success", to_ip(source.ip)),
+  Esql.source_ip_network_alert_case = case(kibana.alert.rule.rule_id == "eb079c62-4481-4d6e-9643-3ca499df7aaa" and not data_stream.dataset in ("o365.audit", "azure.signinlogs"), to_ip(source.ip))
 
 // aggregate by source ip
 | stats

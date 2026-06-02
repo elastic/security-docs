@@ -41,7 +41,7 @@ This rule detects network events that may indicate the use of Telnet traffic. Te
 * Data Source: Suricata
 * Resources: Investigation Guide
 
-*Version*: 113
+*Version*: 114
 
 *Rule authors*: 
 
@@ -107,9 +107,12 @@ Telnet, a protocol for remote command-line access, is often used in legacy syste
 (data_stream.dataset:(fortinet_fortigate.log or network_traffic.flow
         or sonicwall_firewall.log or suricata.eve or panw.panos)
     or event.category:(network or network_traffic))
-    and event.type:(connection and not end) and not event.action:(
-        flow_dropped or flow_denied or denied or deny or
-        flow_terminated or timeout or Reject or network_flow)
+    and event.type:(connection and not end)
+    and not event.action:(flow_dropped or flow_denied or denied or deny or
+        flow_terminated or timeout or Reject or network_flow or connection-denied or
+        connection-end or server-rst or client-rst)
+    and not (event.action:netflow_flow and not network.packets > 1)
+    and not network.application:(traceroute or stretchoid-scanning)
     and destination.port:23
 
 ----------------------------------
