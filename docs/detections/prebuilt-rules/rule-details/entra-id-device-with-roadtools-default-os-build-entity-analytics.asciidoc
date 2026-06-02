@@ -1,0 +1,131 @@
+[[entra-id-device-with-roadtools-default-os-build-entity-analytics]]
+=== Entra ID Device with ROADtools Default OS Build (Entity Analytics)
+
+Identifies the first occurrence of a Microsoft Entra ID device, surfaced through the Entra ID Entity Analytics device inventory, whose host name follows the default "DESKTOP-" pattern and whose operating system build is `10.0.19041.928`. This combination is the default device profile that ROADtools (roadtx) uses when registering a device, and the OS build typically differs from the patched OS versions of legitimate hosts in the environment. Adversaries register rogue devices in Entra ID to acquire a Primary Refresh Token (PRT), establish persistence, and obtain trusted, programmatic access to the tenant. Because the OS build is a tool default, this is a high-fidelity but evadable indicator; baseline approved device builds and naming conventions before relying on it.
+
+*Rule type*: new_terms
+
+*Rule indices*: 
+
+* logs-entityanalytics_entra_id.device-*
+
+*Severity*: medium
+
+*Risk score*: 47
+
+*Runs every*: 1h
+
+*Searches indices from*: now-6h ({ref}/common-options.html#date-math[Date Math format], see also <<rule-schedule, `Additional look-back time`>>)
+
+*Maximum alerts per execution*: 100
+
+*References*: 
+
+* https://unit42.paloaltonetworks.com/roadtools-cloud-attacks/
+* https://github.com/dirkjanm/ROADtools
+* https://dirkjanm.io/introducing-roadtools-token-exchange-roadtx/
+
+*Tags*: 
+
+* Domain: Cloud
+* Domain: Identity
+* Data Source: Microsoft Entra ID
+* Data Source: Microsoft Entra ID Entity Analytics
+* Use Case: Asset Visibility
+* Use Case: Threat Detection
+* Tactic: Persistence
+* Resources: Investigation Guide
+
+*Version*: 1
+
+*Rule authors*: 
+
+* Elastic
+
+*Rule license*: Elastic License v2
+
+
+==== Investigation guide
+
+
+
+*Triage and analysis*
+
+
+
+*Investigating Entra ID Device with ROADtools Default OS Build (Entity Analytics)*
+
+
+ROADtools (roadtx) registers a device in Entra ID with a default OS build of `10.0.19041.928` and a default name of
+`DESKTOP-<8 random characters>`. This OS build is the current default value roadtx uses and differs from
+the OS version of legitimate hosts, making the build a useful indicator of ROADtools device registration. This rule runs
+against the Entra ID Entity Analytics device inventory and fires the first time a device matching this fingerprint
+appears, so an alert generally represents a newly observed rogue device rather than a real-time registration event.
+Rogue device registration is typically a precursor to Primary Refresh Token (PRT) acquisition, MFA/Conditional Access
+bypass, and persistent token-based access.
+
+
+*Possible investigation steps*
+
+
+- Confirm the device identity via `host.name`, `host.os.version`, `entityanalytics_entra_id.device.display_name`, and
+`entityanalytics_entra_id.device.id` (or `device.id`). Default `DESKTOP-` names that do not match your naming convention
+are suspicious.
+- Review `entityanalytics_entra_id.device.registration_date_time` and `entityanalytics_entra_id.device.trust_type` to
+establish when and how the device was registered (e.g., Azure AD registered vs. joined).
+- Identify the registered owner via `entityanalytics_entra_id.device.registered_owners.user_principal_name` and determine
+whether that user is expected to register a new device.
+- Check `entityanalytics_entra_id.device.is_managed` and `entityanalytics_entra_id.device.is_compliant`; ROADtools
+devices are typically unmanaged and non-compliant.
+- Pivot to `logs-azure.auditlogs-*` for the corresponding `Add device` event (initiated by the `Device Registration
+Service`) and to `logs-azure.signinlogs-*` for sign-ins by the device owner where the incoming token type is a
+`primaryRefreshToken`.
+- Correlate with the companion audit-log rule "Entra ID Device Registration with ROADtools Default OS Build"
+for the same device name to confirm registration-time activity.
+
+
+*False positive analysis*
+
+
+- Unmanaged or imaged Windows 10 20H1 hosts may legitimately report the `10.0.19041.928` build with a default
+`DESKTOP-` host name. Validate against device inventory and patch baseline.
+- Authorized security assessments using ROADtools will appear in inventory. Document the engagement and add scoped
+exceptions.
+
+
+*Response and remediation*
+
+
+- If confirmed malicious, remove the device from Entra ID and revoke the owner's refresh tokens and primary refresh
+tokens.
+- Disable the account or reset credentials per policy and review for additional persistence (added owners, app
+registrations, or service principal credentials).
+- Tighten device registration and join controls via Conditional Access (restrict who can register/join devices and
+require MFA for registration).
+
+
+==== Rule query
+
+
+[source, js]
+----------------------------------
+data_stream.dataset:"entityanalytics_entra_id.device" and
+    event.provider:"Microsoft Entra ID" and
+    host.name:DESKTOP-* and host.os.version:"10.0.19041.928"
+
+----------------------------------
+
+*Framework*: MITRE ATT&CK^TM^
+
+* Tactic:
+** Name: Persistence
+** ID: TA0003
+** Reference URL: https://attack.mitre.org/tactics/TA0003/
+* Technique:
+** Name: Account Manipulation
+** ID: T1098
+** Reference URL: https://attack.mitre.org/techniques/T1098/
+* Sub-technique:
+** Name: Device Registration
+** ID: T1098.005
+** Reference URL: https://attack.mitre.org/techniques/T1098/005/

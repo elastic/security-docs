@@ -1,0 +1,160 @@
+[[prebuilt-rule-8-19-25-google-workspace-drive-data-transfer-or-takeout-export-initiated]]
+=== Google Workspace Drive Data Transfer or Takeout Export Initiated
+
+Detects when Google Workspace administrators initiate bulk movement or export of user Drive data. This includes admin data transfer requests that reassign a user's Drive files to another account, and Customer Takeout export jobs that package organizational data for download or off-platform transfer. Adversaries with administrative access may abuse these mechanisms to stage or exfiltrate sensitive files.
+
+*Rule type*: query
+
+*Rule indices*: 
+
+* filebeat-*
+* logs-google_workspace.admin-*
+
+*Severity*: medium
+
+*Risk score*: 47
+
+*Runs every*: 10m
+
+*Searches indices from*: now-130m ({ref}/common-options.html#date-math[Date Math format], see also <<rule-schedule, `Additional look-back time`>>)
+
+*Maximum alerts per execution*: 100
+
+*References*: 
+
+* https://support.google.com/a/answer/1247799?hl=en
+* https://support.google.com/a/answer/10276199
+* https://www.elastic.co/security-labs/google-workspace-attack-surface-part-one
+* https://www.elastic.co/security-labs/google-workspace-attack-surface-part-two
+
+*Tags*: 
+
+* Domain: Cloud
+* Data Source: Google Workspace
+* Tactic: Collection
+* Tactic: Exfiltration
+* Resources: Investigation Guide
+
+*Version*: 112
+
+*Rule authors*: 
+
+* Elastic
+
+*Rule license*: Elastic License v2
+
+
+==== Investigation guide
+
+
+
+*Triage and analysis*
+
+
+
+*Investigating Google Workspace Drive Data Transfer or Takeout Export Initiated*
+
+
+Google Drive is a cloud storage service available to Google Workspace users. Administrators can bulk-transfer a
+departing user's Drive files to another in-domain account, or create Customer Takeout exports that package user or
+organizational data for download or transfer to an external destination (for example, another cloud provider).
+
+Adversaries with compromised administrator credentials may abuse these workflows to collect sensitive files without
+relying on per-file sharing changes. This rule detects two related admin audit actions:
+
+- `CREATE_DATA_TRANSFER_REQUEST` with Drive application scope — ownership or bulk transfer to another user.
+- `CUSTOMER_TAKEOUT_CREATED` — initiation of a Customer Takeout export job.
+
+
+*Possible investigation steps*
+
+
+- Review admin logs for involved user accounts.
+- For data transfer requests, confirm the request initiator, source and destination users in `user.email`, `user.target.email`, and `google_workspace.admin.new_value`.
+- For Customer Takeout events (`CUSTOMER_TAKEOUT_CREATED`):
+  - In Elasticsearch, pivot on `google_workspace.admin.OBFUSCATED_CUSTOMER_TAKEOUT_REQUEST_ID` to find related admin events for the same export job (for example completion or failure). The Admin console Data export UI does not expose or accept this ID for search.
+  - In the Admin console, go to Data > Data import & export > Data export and identify the export by correlating `@timestamp`, Set up by (`user.email`), and Last start date / Status. The export Name shown in the console is not present in Workspace admin logs.
+  - Open the matching row and select View archive to review exported data scope and where the archive is stored (Google-provided bucket or customer-owned Cloud Storage).
+- Determine if involved user accounts are active.
+- Check if involved user accounts were recently disabled, suspended, or scheduled for deletion.
+- Review involved user accounts for potentially misconfigured permissions or roles.
+- Review the involved shared drives, My Drive files, or export scope to determine if this action was expected.
+- Triage potentially related alerts based on the users involved.
+
+
+*False positive analysis*
+
+
+- Drive data transfers require Google Workspace administration permissions. Confirm the transfer was planned during offboarding or role change and targets the correct receiver.
+- Customer Takeout exports are common for compliance, migration, and departures. Validate the initiator is authorized and the export scope matches policy.
+
+
+*Response and remediation*
+
+
+- Initiate the incident response process based on the outcome of the triage.
+- Disable or limit the account during the investigation and response.
+- Identify the possible impact of the incident and prioritize accordingly; the following actions can help you gain context:
+    - Identify the account role in the cloud environment.
+    - Assess the criticality of affected services and servers.
+    - Work with your IT team to identify and minimize the impact on users.
+    - Identify if the attacker is moving laterally and compromising other accounts, servers, or services.
+    - Identify any regulatory or legal ramifications related to this activity.
+- Investigate credential exposure on systems compromised or used by the attacker to ensure all compromised accounts are identified. Reset passwords or delete API keys as needed to revoke the attacker's access to the environment. Work with your IT teams to minimize the impact on business operations during these actions.
+- Review the permissions assigned to the implicated user to ensure that the least privilege principle is being followed.
+- Implement security best practices https://support.google.com/a/answer/7587183[outlined] by Google.
+- Determine the initial vector abused by the attacker and take action to prevent reinfection via the same vector.
+- Using the incident response data, update logging and audit policies to improve the mean time to detect (MTTD) and the mean time to respond (MTTR).
+
+
+
+
+*Important Information Regarding Google Workspace Event Lag Times*
+
+- As per Google's documentation, Google Workspace administrators may observe lag times ranging from minutes up to 3 days between the time of an event's occurrence and the event being visible in the Google Workspace admin/audit logs.
+- This rule is configured to run every 10 minutes with a lookback time of 130 minutes.
+- To reduce the risk of false negatives, consider reducing the interval that the Google Workspace (formerly G Suite) Filebeat module polls Google's reporting API for new events.
+- By default, `var.interval` is set to 2 hours (2h). Consider changing this interval to a lower value, such as 10 minutes (10m).
+- See the following references for further information:
+  - https://support.google.com/a/answer/7061566
+  - https://www.elastic.co/guide/en/beats/filebeat/current/filebeat-module-google_workspace.html
+
+==== Setup
+
+
+The Google Workspace Fleet integration, Filebeat module, or similarly structured data is required to be compatible with this rule.
+
+==== Rule query
+
+
+[source, js]
+----------------------------------
+data_stream.dataset:"google_workspace.admin" and (
+  (event.action:"CREATE_DATA_TRANSFER_REQUEST" and google_workspace.admin.application.name:Drive*) or
+  event.action:"CUSTOMER_TAKEOUT_CREATED"
+)
+
+----------------------------------
+
+*Framework*: MITRE ATT&CK^TM^
+
+* Tactic:
+** Name: Collection
+** ID: TA0009
+** Reference URL: https://attack.mitre.org/tactics/TA0009/
+* Technique:
+** Name: Data Staged
+** ID: T1074
+** Reference URL: https://attack.mitre.org/techniques/T1074/
+* Sub-technique:
+** Name: Remote Data Staging
+** ID: T1074.002
+** Reference URL: https://attack.mitre.org/techniques/T1074/002/
+* Tactic:
+** Name: Exfiltration
+** ID: TA0010
+** Reference URL: https://attack.mitre.org/tactics/TA0010/
+* Technique:
+** Name: Transfer Data to Cloud Account
+** ID: T1537
+** Reference URL: https://attack.mitre.org/techniques/T1537/
