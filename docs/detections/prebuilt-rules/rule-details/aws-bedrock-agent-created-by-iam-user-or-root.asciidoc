@@ -1,0 +1,121 @@
+[[aws-bedrock-agent-created-by-iam-user-or-root]]
+=== AWS Bedrock Agent Created by IAM User or Root
+
+Identifies AWS Bedrock Agent creation performed directly by an IAM user or the root account. Bedrock Agents are autonomous AI systems that execute multi-step tasks, invoke Lambda action groups to call external APIs, and query knowledge bases. Adversaries with access to an AWS account can create rogue agents configured to exfiltrate data via action group Lambda functions, pivot to other services, or act as a persistent AI-driven command-and-control channel. This rule is scoped to IAMUser and Root identity types — AssumedRole sessions (which represent automated CI/CD pipelines and SSO-federated engineers) are excluded to avoid global false positives from legitimate deployment automation that varies widely across customer environments.
+
+*Rule type*: query
+
+*Rule indices*: 
+
+* logs-aws.cloudtrail-*
+
+*Severity*: low
+
+*Risk score*: 21
+
+*Runs every*: 5m
+
+*Searches indices from*: now-6m ({ref}/common-options.html#date-math[Date Math format], see also <<rule-schedule, `Additional look-back time`>>)
+
+*Maximum alerts per execution*: 100
+
+*References*: 
+
+* https://docs.aws.amazon.com/bedrock/latest/userguide/agents.html
+* https://docs.aws.amazon.com/bedrock/latest/APIReference/API_agent_CreateAgent.html
+
+*Tags*: 
+
+* Domain: Cloud
+* Domain: LLM
+* Data Source: AWS
+* Data Source: AWS CloudTrail
+* Data Source: Amazon Web Services
+* Data Source: Amazon Bedrock
+* Use Case: Threat Detection
+* Tactic: Persistence
+* Resources: Investigation Guide
+
+*Version*: 1
+
+*Rule authors*: 
+
+* Elastic
+
+*Rule license*: Elastic License v2
+
+
+==== Investigation guide
+
+
+
+*Triage and analysis*
+
+
+
+*Investigating AWS Bedrock Agent Created by IAM User or Root*
+
+
+AWS Bedrock Agents can autonomously perform complex tasks by combining foundation models with action groups
+(Lambda functions) and knowledge bases. A rogue agent could serve as a persistent AI-driven foothold, executing
+attacker-controlled instructions via inference requests.
+
+
+*Possible investigation steps*
+
+
+- **Identity**: `aws.cloudtrail.user_identity.arn` and `aws.cloudtrail.user_identity.type`. This rule fires only
+  for IAMUser or Root — both are direct human credentials, not automated pipeline roles. Confirm the user is
+  known and authorized to create agents.
+
+- **Agent configuration** in `aws.cloudtrail.request_parameters`:
+  - `agentName` — does the name match known internal projects?
+  - `foundationModel` — which model was selected? Expensive models (Claude Opus-class) indicate higher cost risk.
+  - `instruction` — the system prompt. Adversarial, minimal, or exfiltration-oriented instructions are a red flag.
+  - `actionGroupExecutor.lambda` — Lambda ARN presence means the agent can invoke external code.
+
+- **Cross-account indicators**: Lambda ARNs in action groups belonging to a different account than
+  `cloud.account.id` indicate external code execution capability.
+
+- **Follow-on activity**: Look for `PrepareAgent`, `CreateAgentAlias`, `CreateAgentActionGroup`, or
+  `AssociateAgentKnowledgeBase` from the same identity within the next hour.
+
+
+*False positive analysis*
+
+- Developers creating agents interactively with personal IAM user credentials. Confirm the agent is for a known
+  project and the IAM user is authorized. Production agent deployment should use IAM roles — personal key use
+  is itself a misconfiguration worth noting.
+
+
+*Response and remediation*
+
+- Delete the unauthorized agent using `DeleteAgent`.
+- Review and remove associated action groups and aliases.
+- Audit Lambda functions referenced in action group executors for malicious code.
+- Restrict `bedrock:CreateAgent` to specific deployment roles via IAM policy or SCP.
+
+
+==== Rule query
+
+
+[source, js]
+----------------------------------
+data_stream.dataset: "aws.cloudtrail"
+    and event.provider: "bedrock.amazonaws.com"
+    and event.action: "CreateAgent"
+    and event.outcome: "success"
+    and aws.cloudtrail.user_identity.type: ("IAMUser" or "Root")
+
+----------------------------------
+
+*Framework*: MITRE ATT&CK^TM^
+
+* Tactic:
+** Name: Persistence
+** ID: TA0003
+** Reference URL: https://attack.mitre.org/tactics/TA0003/
+* Technique:
+** Name: Server Software Component
+** ID: T1505
+** Reference URL: https://attack.mitre.org/techniques/T1505/

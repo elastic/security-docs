@@ -1,0 +1,146 @@
+[[prebuilt-rule-8-19-26-entra-id-microsoft-authentication-broker-drs-sign-in-from-suspicious-asn]]
+=== Entra ID Microsoft Authentication Broker DRS Sign-In from Suspicious ASN
+
+Detects Microsoft Entra ID sign-in activity where the Microsoft Authentication Broker requests the Device Registration Service from a source autonomous system number (ASN) associated with VPN, residential proxy, or hosting egress commonly observed in OAuth phishing and adversary-in-the-middle device registration flows. This pattern can indicate device join or primary refresh token acquisition staged from attacker-controlled infrastructure after a user completes authentication.
+
+*Rule type*: query
+
+*Rule indices*: 
+
+* logs-azure.signinlogs-*
+
+*Severity*: high
+
+*Risk score*: 73
+
+*Runs every*: 5m
+
+*Searches indices from*: now-9m ({ref}/common-options.html#date-math[Date Math format], see also <<rule-schedule, `Additional look-back time`>>)
+
+*Maximum alerts per execution*: 100
+
+*References*: 
+
+* https://www.volexity.com/blog/2025/04/22/phishing-for-codes-russian-threat-actors-target-microsoft-365-oauth-workflows/
+* https://dirkjanm.io/phishing-for-microsoft-entra-primary-refresh-tokens/
+
+*Tags*: 
+
+* Domain: Cloud
+* Domain: Identity
+* Data Source: Azure
+* Data Source: Microsoft Entra ID
+* Data Source: Microsoft Entra ID Sign-In Logs
+* Use Case: Threat Detection
+* Tactic: Initial Access
+* Tactic: Persistence
+* Resources: Investigation Guide
+
+*Version*: 1
+
+*Rule authors*: 
+
+* Elastic
+
+*Rule license*: Elastic License v2
+
+
+==== Investigation guide
+
+
+
+*Triage and analysis*
+
+
+
+*Investigating Entra ID Microsoft Authentication Broker DRS Sign-In from Suspicious ASN*
+
+
+Review `azure.signinlogs.properties.user_principal_name`, `azure.signinlogs.properties.app_display_name`,
+`azure.signinlogs.properties.resource_display_name`, `azure.signinlogs.properties.session_id`, `source.ip`,
+`source.as.number`, `source.as.organization.name`, and `user_agent.original`.
+
+Confirm whether the user intentionally registered or joined a device and whether the source ASN is expected for your
+enrollment or remote-access programs.
+
+
+*Possible investigation steps*
+
+
+- Correlate `azure.signinlogs.properties.session_id` with other sign-ins for the same user, especially multi-IP OAuth
+  flows or follow-on primary refresh token usage.
+- Review Entra ID audit logs for device registration activity around the same timestamp.
+- Compare `source.as.organization.name` against approved VPN, MDM, and automation egress in your environment.
+- Hunt for additional users signing in from the same ASN with the same application pair in a short window.
+
+
+*False positive analysis*
+
+
+- Corporate or consumer VPN exit nodes that use ASNs in the rule list are a common source of benign matches during
+  standard Windows or mobile device join.
+- Cloud hosting or ISP NAT pools may intermittently map to listed ASNs without indicating compromise.
+
+
+*Response and remediation*
+
+
+- If malicious, revoke refresh tokens for the user, disable suspicious registered devices, and reset credentials per
+  policy.
+- Review conditional access for the Microsoft Authentication Broker and device registration requirements.
+- Escalate per incident procedures when paired with identity protection alerts or impossible travel.
+
+
+==== Rule query
+
+
+[source, js]
+----------------------------------
+data_stream.dataset:"azure.signinlogs" and event.action:"Sign-in activity" and
+source.as.number:(
+    399629 or 14061 or 136787 or 9009 or 45102 or 215540 or 29802 or 62240 or 204957 or 395092 or 393406 or 400940 or
+    59711 or 132203
+) and
+azure.signinlogs.properties.app_display_name:"Microsoft Authentication Broker" and
+azure.signinlogs.properties.resource_display_name:"Device Registration Service"
+
+----------------------------------
+
+*Framework*: MITRE ATT&CK^TM^
+
+* Tactic:
+** Name: Persistence
+** ID: TA0003
+** Reference URL: https://attack.mitre.org/tactics/TA0003/
+* Technique:
+** Name: Account Manipulation
+** ID: T1098
+** Reference URL: https://attack.mitre.org/techniques/T1098/
+* Sub-technique:
+** Name: Device Registration
+** ID: T1098.005
+** Reference URL: https://attack.mitre.org/techniques/T1098/005/
+* Tactic:
+** Name: Initial Access
+** ID: TA0001
+** Reference URL: https://attack.mitre.org/tactics/TA0001/
+* Technique:
+** Name: Phishing
+** ID: T1566
+** Reference URL: https://attack.mitre.org/techniques/T1566/
+* Sub-technique:
+** Name: Spearphishing Link
+** ID: T1566.002
+** Reference URL: https://attack.mitre.org/techniques/T1566/002/
+* Tactic:
+** Name: Defense Evasion
+** ID: TA0005
+** Reference URL: https://attack.mitre.org/tactics/TA0005/
+* Technique:
+** Name: Use Alternate Authentication Material
+** ID: T1550
+** Reference URL: https://attack.mitre.org/techniques/T1550/
+* Sub-technique:
+** Name: Application Access Token
+** ID: T1550.001
+** Reference URL: https://attack.mitre.org/techniques/T1550/001/

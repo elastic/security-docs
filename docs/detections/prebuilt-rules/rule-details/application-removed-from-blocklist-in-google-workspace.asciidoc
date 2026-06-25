@@ -8,7 +8,7 @@ Google Workspace administrators may be aware of malicious applications within th
 *Rule indices*: 
 
 * filebeat-*
-* logs-google_workspace*
+* logs-google_workspace.admin-*
 
 *Severity*: medium
 
@@ -34,7 +34,7 @@ Google Workspace administrators may be aware of malicious applications within th
 * Resources: Investigation Guide
 * Tactic: Defense Evasion
 
-*Version*: 111
+*Version*: 112
 
 *Rule authors*: 
 
@@ -67,11 +67,12 @@ This rule identifies a Marketplace blocklist update that consists of a Google Wo
 
 
 - Identify the associated user accounts by reviewing `user.name` or `user.email` fields in the alert.
+- Review `google_workspace.admin.old_value` and `google_workspace.admin.new_value` to confirm the app moved from blocked to allowed and note the affected organizational unit (`google_workspace.admin.org_unit.name`).
 - This rule relies on data from `google_workspace.admin`, thus indicating the associated user has administrative privileges to the Marketplace.
 - With access to the Google Workspace admin console, visit the `Security > Investigation` tool with filters for the user email and event is `Assign Role` or `Update Role` to determine if new cloud roles were recently updated.
 - After identifying the involved user account, review other potentially related events within the last 48 hours.
 - Re-assess the permissions and reviews of the Marketplace applications to determine if they violate organizational policies or introduce unexpected risks.
-- With access to the Google Workspace admin console, determine if the application was installed domain-wide or individually by visiting `Apps > Google Workspace Marketplace Apps`.
+- With access to the Google Workspace admin console, determine if the application was installed domain-wide or individually by visiting `Apps > Google Workspace Marketplace apps > Apps list`.
 
 
 *False positive analysis*
@@ -122,7 +123,7 @@ The Google Workspace Fleet integration, Filebeat module, or similarly structured
 
 [source, js]
 ----------------------------------
-data_stream.dataset:"google_workspace.admin" and event.category:"iam" and event.type:"change"  and
+data_stream.dataset:"google_workspace.admin" and
   event.action:"CHANGE_APPLICATION_SETTING" and
   google_workspace.admin.application.name:"Google Workspace Marketplace" and
   google_workspace.admin.old_value: *allowed*false* and google_workspace.admin.new_value: *allowed*true*

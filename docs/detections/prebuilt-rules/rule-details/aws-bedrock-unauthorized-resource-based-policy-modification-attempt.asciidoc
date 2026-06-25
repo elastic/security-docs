@@ -1,0 +1,133 @@
+[[aws-bedrock-unauthorized-resource-based-policy-modification-attempt]]
+=== AWS Bedrock Unauthorized Resource-Based Policy Modification Attempt
+
+Detects failed, access-denied attempts to modify or delete resource-based access policies on AWS Bedrock resources via the PutResourcePolicy and DeleteResourcePolicy API calls. Resource-based policies govern which principals (including external accounts) may access Bedrock resources such as agents, knowledge bases, and custom models. A principal that is repeatedly denied when attempting to attach or remove these policies may be a compromised or under-privileged identity probing for the ability to grant external or cross-account access, or to weaken existing access controls. Unlike the companion rule that detects successful changes, this rule surfaces the attempt itself, which is a high-signal indicator of credential boundary-testing even though no change occurred.
+
+*Rule type*: query
+
+*Rule indices*: 
+
+* logs-aws.cloudtrail-*
+
+*Severity*: low
+
+*Risk score*: 21
+
+*Runs every*: 5m
+
+*Searches indices from*: now-6m ({ref}/common-options.html#date-math[Date Math format], see also <<rule-schedule, `Additional look-back time`>>)
+
+*Maximum alerts per execution*: 100
+
+*References*: 
+
+* https://docs.aws.amazon.com/bedrock/latest/APIReference/API_PutResourcePolicy.html
+* https://docs.aws.amazon.com/bedrock/latest/APIReference/API_DeleteResourcePolicy.html
+
+*Tags*: 
+
+* Domain: Cloud
+* Domain: LLM
+* Data Source: AWS
+* Data Source: AWS CloudTrail
+* Data Source: Amazon Web Services
+* Data Source: Amazon Bedrock
+* Use Case: Identity and Access Audit
+* Resources: Investigation Guide
+* Tactic: Persistence
+
+*Version*: 1
+
+*Rule authors*: 
+
+* Elastic
+
+*Rule license*: Elastic License v2
+
+
+==== Investigation guide
+
+
+
+*Triage and analysis*
+
+
+
+*Investigating AWS Bedrock Unauthorized Resource-Based Policy Modification Attempt*
+
+
+AWS Bedrock resource-based policies control which principals can access Bedrock resources such as agents,
+knowledge bases, and custom models. An adversary who has compromised a credential may attempt to attach a policy
+that grants an external principal access for persistence or cross-account access, or delete a policy to break
+existing access controls. This rule detects `PutResourcePolicy` and `DeleteResourcePolicy` calls that were denied
+(`AccessDenied` / unauthorized), which indicates an identity attempting an action it is not permitted to perform —
+a strong signal of boundary-testing by a compromised or under-privileged principal even though the change did not
+take effect.
+
+
+*Possible investigation steps*
+
+
+- **Identify the actor and context**
+  - Review `aws.cloudtrail.user_identity.arn`, `aws.cloudtrail.user_identity.type`,
+    `aws.cloudtrail.user_identity.access_key_id`, `user_agent.original`, and `source.ip`.
+  - Determine whether this identity has any legitimate reason to manage Bedrock resource policies. A denial for an
+    identity that should never touch these APIs is more suspicious than one from an admin with a transient gap.
+- **Assess the attempt**
+  - Inspect `aws.cloudtrail.error_code` and `aws.cloudtrail.error_message` to confirm the denial reason.
+  - For `PutResourcePolicy`, review `aws.cloudtrail.request_parameters` and
+    `aws.cloudtrail.flattened.request_parameters` for the target resource ARN and the attempted policy document.
+    Look for `Principal` values referencing external AWS account IDs, `"*"`, or unfamiliar roles.
+- **Correlate activity**
+  - Look for repeated denials across Bedrock or IAM APIs from the same identity, which can indicate permission
+    enumeration or escalation attempts.
+  - Check whether the identity later succeeded (e.g., after acquiring new permissions) on the same or related
+    resources, and review any IAM changes in the surrounding window.
+
+
+*False positive analysis*
+
+
+- **Permission gaps**: Newly provisioned roles/users or IaC pipelines running before policy grants are applied may
+  generate transient denials. Validate against change tickets and known automation.
+- **Exploration in non-production**: Developers testing in sandbox accounts may hit denials. Confirm the account and
+  identity context.
+
+
+*Response and remediation*
+
+
+- If the attempt is unexpected, treat the identity as potentially compromised: disable or rotate the credentials in
+  `aws.cloudtrail.user_identity.access_key_id` and review the actor's recent activity.
+- Review all Bedrock and IAM activity from the same identity in the surrounding time window for successful access
+  grants, permission changes, or other persistence attempts.
+- Confirm least-privilege on `bedrock:PutResourcePolicy` and `bedrock:DeleteResourcePolicy`, and alert on both denied
+  and successful calls.
+
+
+==== Rule query
+
+
+[source, js]
+----------------------------------
+data_stream.dataset: "aws.cloudtrail" and
+    event.provider: "bedrock.amazonaws.com" and
+    event.action: ("PutResourcePolicy" or "DeleteResourcePolicy") and
+    event.outcome: "failure" and
+    aws.cloudtrail.error_code: (
+        "AccessDenied" or
+        "AccessDeniedException"
+    )
+
+----------------------------------
+
+*Framework*: MITRE ATT&CK^TM^
+
+* Tactic:
+** Name: Persistence
+** ID: TA0003
+** Reference URL: https://attack.mitre.org/tactics/TA0003/
+* Technique:
+** Name: Account Manipulation
+** ID: T1098
+** Reference URL: https://attack.mitre.org/techniques/T1098/

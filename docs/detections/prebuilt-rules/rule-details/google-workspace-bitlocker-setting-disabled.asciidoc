@@ -8,7 +8,7 @@ Google Workspace administrators whom manage Windows devices and have Windows dev
 *Rule indices*: 
 
 * filebeat-*
-* logs-google_workspace*
+* logs-google_workspace.admin-*
 
 *Severity*: medium
 
@@ -34,7 +34,7 @@ Google Workspace administrators whom manage Windows devices and have Windows dev
 * Tactic: Defense Evasion
 * Resources: Investigation Guide
 
-*Version*: 111
+*Version*: 112
 
 *Rule authors*: 
 
@@ -65,9 +65,10 @@ This rule identifies a user with administrative privileges and access to the adm
 
 
 - Identify the associated user accounts by reviewing `user.name` or `user.email` fields in the alert.
+- Review `google_workspace.admin.org_unit.name`, `google_workspace.admin.setting.name`, and `google_workspace.admin.old_value` / `new_value` to confirm BitLocker was disabled and for which OU.
 - After identifying the user, verify if the user should have administrative privileges to disable BitLocker on Windows endpoints.
-- From the Google Workspace admin console, review `Reporting > Audit` and `Investigation > Device` logs, filtering on the user email identified from the alert.
-    - If a Google Workspace user logged into their account using a potentially compromised account, this will create an `Device sync event` event.
+- Review Admin and Device logs, filtering on the user email identified from the alert.
+- Confirm the policy change under `Devices` (Windows device management) or the relevant Chrome/Windows endpoint settings area for the affected OU.
 
 
 *False positive analysis*
@@ -117,7 +118,7 @@ The Google Workspace Fleet integration, Filebeat module, or similarly structured
 
 [source, js]
 ----------------------------------
-data_stream.dataset:"google_workspace.admin" and event.action:"CHANGE_APPLICATION_SETTING" and event.category:(iam or configuration)
+data_stream.dataset:"google_workspace.admin" and event.action:"CHANGE_APPLICATION_SETTING"
     and google_workspace.admin.new_value:"Disabled" and google_workspace.admin.setting.name:BitLocker*
 
 ----------------------------------

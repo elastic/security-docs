@@ -1,0 +1,124 @@
+[[aws-bedrock-unauthorized-foundation-model-access-attempt]]
+=== AWS Bedrock Unauthorized Foundation Model Access Attempt
+
+Identifies failed, access-denied attempts to enable account-level access to an Amazon Bedrock foundation model, either by granting a foundation-model entitlement, submitting a use case for model access, or creating a foundation-model agreement (accepting the EULA). These account-level "model access" actions unlock a foundation model so that it can subsequently be invoked. A principal that is repeatedly denied when attempting these actions may be a compromised or under-privileged identity probing for the ability to unlock expensive models (LLMjacking) or to establish a durable ability to invoke models. Unlike the companion rule that detects successful model-access grants, this rule surfaces the attempt itself, which is a high-signal indicator of credential boundary-testing even though access was not granted.
+
+*Rule type*: query
+
+*Rule indices*: 
+
+* logs-aws.cloudtrail-*
+
+*Severity*: low
+
+*Risk score*: 21
+
+*Runs every*: 5m
+
+*Searches indices from*: now-6m ({ref}/common-options.html#date-math[Date Math format], see also <<rule-schedule, `Additional look-back time`>>)
+
+*Maximum alerts per execution*: 100
+
+*References*: 
+
+* https://docs.aws.amazon.com/bedrock/latest/APIReference/API_PutFoundationModelEntitlement.html
+* https://docs.aws.amazon.com/bedrock/latest/APIReference/API_PutUseCaseForModelAccess.html
+* https://docs.aws.amazon.com/bedrock/latest/APIReference/API_CreateFoundationModelAgreement.html
+
+*Tags*: 
+
+* Domain: Cloud
+* Domain: LLM
+* Data Source: AWS
+* Data Source: AWS CloudTrail
+* Data Source: Amazon Web Services
+* Data Source: Amazon Bedrock
+* Use Case: Threat Detection
+* Tactic: Persistence
+* Resources: Investigation Guide
+
+*Version*: 1
+
+*Rule authors*: 
+
+* Elastic
+
+*Rule license*: Elastic License v2
+
+
+==== Investigation guide
+
+
+
+*Triage and analysis*
+
+
+> **Disclaimer**:
+> This investigation guide was created using generative AI technology and has been reviewed to improve its accuracy and relevance. While every effort has been made to ensure its quality, we recommend validating the content and adapting it to suit your specific environment and operational needs.
+
+
+*Investigating AWS Bedrock Unauthorized Foundation Model Access Attempt*
+
+
+Amazon Bedrock exposes account-level "model access" controls that determine which foundation models a principal is allowed to invoke. Granting an entitlement (`PutFoundationModelEntitlement`), submitting a use case for model access (`PutUseCaseForModelAccess`), or creating a foundation-model agreement (`CreateFoundationModelAgreement`, which accepts the model EULA) all unlock a model for subsequent `InvokeModel`/`InvokeModelWithResponseStream` calls.
+
+This rule detects Bedrock control-plane calls that enable model access at the account level but were denied (`AccessDenied` / unauthorized). A denial indicates an identity attempting an action it is not permitted to perform, which is a strong signal of boundary-testing by a compromised or under-privileged principal even though no model access was granted.
+
+
+*Possible investigation steps*
+
+
+- Identify the principal by reviewing `aws.cloudtrail.user_identity.arn` and `aws.cloudtrail.user_identity.access_key_id`, and determine whether the identity has any legitimate reason to manage Bedrock model access. A denial for an identity that should never touch these APIs is more suspicious than one from an admin with a transient permission gap.
+- Inspect `aws.cloudtrail.error_code` and `aws.cloudtrail.error_message` to confirm the denial reason, and review `event.action` to determine which model-access action was attempted.
+- Verify the `source.ip` and `user_agent.original` of the request. An unexpected IP, geolocation, or automation user agent is suspicious.
+- Confirm the `cloud.account.id` and `cloud.region` are expected for Bedrock usage in your environment.
+- Correlate with recent activity from the same principal, such as new access key creation, IAM permission changes, or repeated denials across Bedrock/IAM APIs, which can indicate permission enumeration or escalation attempts.
+- Determine whether the identity later succeeded on the same or related actions (e.g., after acquiring new permissions), and check for subsequent `InvokeModel`/`InvokeModelWithResponseStream` activity.
+
+
+*False positive analysis*
+
+
+- Newly provisioned roles/users or infrastructure-as-code pipelines running before model-access permissions are applied may generate transient denials. Validate against change-management records and known provisioning workflows.
+- ML teams exploring model adoption in sandbox accounts may hit denials; confirm the account and identity context.
+
+
+*Response and remediation*
+
+
+- If the attempt is unexpected, treat the identity as potentially compromised: disable or rotate the credentials (`aws.cloudtrail.user_identity.access_key_id`) and review the actor's recent activity.
+- Review all Bedrock and IAM activity from the same identity in the surrounding window for successful access grants, permission changes, or other persistence attempts.
+- Review and constrain IAM permissions so that only approved principals can call Bedrock model-access APIs, and alert on both denied and successful calls.
+- Implement preventative guardrails (SCPs, IAM conditions) to limit which principals and models can be enabled.
+
+
+==== Rule query
+
+
+[source, js]
+----------------------------------
+data_stream.dataset: "aws.cloudtrail"
+    and event.provider: "bedrock.amazonaws.com"
+    and event.action: (
+        "PutFoundationModelEntitlement" or
+        "PutUseCaseForModelAccess" or
+        "CreateFoundationModelAgreement"
+    )
+    and event.outcome: "failure"
+    and aws.cloudtrail.error_code: (
+        "AccessDenied" or
+        "AccessDeniedException"
+    )
+
+----------------------------------
+
+*Framework*: MITRE ATT&CK^TM^
+
+* Tactic:
+** Name: Persistence
+** ID: TA0003
+** Reference URL: https://attack.mitre.org/tactics/TA0003/
+* Technique:
+** Name: Account Manipulation
+** ID: T1098
+** Reference URL: https://attack.mitre.org/techniques/T1098/

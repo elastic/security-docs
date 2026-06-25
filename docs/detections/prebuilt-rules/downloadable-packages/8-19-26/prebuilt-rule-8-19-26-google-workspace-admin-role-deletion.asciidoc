@@ -1,0 +1,164 @@
+[[prebuilt-rule-8-19-26-google-workspace-admin-role-deletion]]
+=== Google Workspace Admin Role Deletion
+
+Detects when a custom administrative role is deleted in Google Workspace. Adversaries may delete a custom admin role to disrupt delegated administration, remove security team access, or hinder incident response. Deleting a role removes the privileges it granted from all assigned users and groups, which can cause operational impact or blind spots during an active investigation.
+
+*Rule type*: query
+
+*Rule indices*: 
+
+* filebeat-*
+* logs-google_workspace.admin-*
+
+*Severity*: medium
+
+*Risk score*: 47
+
+*Runs every*: 10m
+
+*Searches indices from*: now-130m ({ref}/common-options.html#date-math[Date Math format], see also <<rule-schedule, `Additional look-back time`>>)
+
+*Maximum alerts per execution*: 100
+
+*References*: 
+
+* https://support.google.com/a/answer/2406043?hl=en
+* https://www.elastic.co/security-labs/google-workspace-attack-surface-part-one
+* https://www.elastic.co/security-labs/google-workspace-attack-surface-part-two
+
+*Tags*: 
+
+* Domain: Cloud
+* Data Source: Google Workspace
+* Use Case: Identity and Access Audit
+* Tactic: Impact
+* Tactic: Defense Evasion
+* Resources: Investigation Guide
+
+*Version*: 211
+
+*Rule authors*: 
+
+* Elastic
+
+*Rule license*: Elastic License v2
+
+
+==== Investigation guide
+
+
+
+*Triage and analysis*
+
+
+
+*Investigating Google Workspace Admin Role Deletion*
+
+
+Google Workspace allows administrators to create custom admin roles with granular privileges across services such as
+Users, Groups, Gmail, Drive, and Security. Deleting a custom role removes it from the tenant and revokes the associated
+privileges for all users and groups that held the role. Threat actors may delete roles to disrupt security operations,
+remove delegated admin access, or cover tracks after privilege escalation. Because the role no longer exists in the
+Admin console after deletion, determining who was assigned the role and what privileges it contained requires reviewing
+historical audit logs.
+
+This rule identifies when a custom administrative role is deleted in the Google Admin console.
+
+
+*Possible investigation steps*
+
+
+- Identify the initiating (actor) account that deleted the role by reviewing `user.email` or `user.name`, and note the `source.ip` and `event.ingested` timestamps.
+- Identify the role deleted by reviewing `google_workspace.admin.role.name`.
+- Determine whether the deletion is expected and authorized:
+  - Validate there is an approved change request/ticket and that the actor account is authorized to delete custom admin roles.
+  - If the actor account or source IP is unusual, treat the alert as higher priority until proven benign.
+- Confirm the role is deleted in the Google Admin console:
+  - Navigate to Account > Admin roles.
+  - Search for the role name from `google_workspace.admin.role.name` and confirm it no longer appears in the role list.
+- Search Kibana for principals previously assigned the role to determine blast radius:
+  - In Discover (or the alert investigation workflow), search Google Workspace admin logs with a time range before the deletion timestamp.
+  - Use the following KQL example, replacing `<ROLE_NAME>` with the value from `google_workspace.admin.role.name`:
+    ```
+    data_stream.dataset: "google_workspace.admin" and event.action: "ASSIGN_ROLE" and google_workspace.admin.role.name: "<ROLE_NAME>"
+    ```
+  - Review `user.target.email` and `user.target.name` for user/group assignments.
+  - Search for `event.action: "UNASSIGN_ROLE"` with the same role name to identify recent removals before deletion.
+- Search Kibana for privileges the deleted role contained:
+  - Use the following KQL example to review any privileges that were granted to the role before deletion:
+    ```
+    data_stream.dataset: "google_workspace.admin" and event.action: "ADD_PRIVILEGE" and google_workspace.admin.role.name: "<ROLE_NAME>"
+    ```
+  - Review `google_workspace.admin.privilege.name` values to understand what access was removed from assigned principals.
+- Scope for related role activity by searching for the same `user.email` (actor) performing other IAM actions such as `DELETE_ROLE`, `ADD_PRIVILEGE`, `ASSIGN_ROLE`, or security policy changes within the last 48 hours.
+- Evaluate whether the deletion coincides with other suspicious activity:
+  - Review admin/audit events around the deletion time for security control changes, additional role deletions, or attempts to modify Super Admin assignments.
+
+
+*False positive analysis*
+
+
+- Verify the role deletion aligns with approved administrative duties, an authorized change window, and the organization's access governance process.
+- Confirm the initiating admin account is legitimate and not deleting roles from unusual IPs, devices, or locations.
+- Validate whether the role was deprecated or consolidated into another role as part of planned IAM cleanup.
+
+
+*Response and remediation*
+
+
+- Initiate the incident response process based on triage findings.
+- If the deletion is not clearly authorized, recreate the role with equivalent privileges and reassign affected users or groups while the investigation proceeds.
+- Identify affected users and groups from historical `ASSIGN_ROLE` events and confirm they retain necessary administrative access through other roles.
+- For suspected compromise of the initiating admin account:
+  - Reset credentials, revoke active sessions, enforce MFA re-enrollment, and review delegation/OAuth grants for persistence.
+  - Validate recovery email/phone settings and account security posture.
+- Review whether the deleted role contained security-relevant privileges (for example, audit log access or security settings management) that could impair detection or response if removed.
+- Implement security best practices https://support.google.com/a/answer/7587183[outlined] by Google.
+- Determine the initial vector abused by the attacker and take action to prevent reinfection via the same vector.
+- Using the incident response data, update logging and audit policies to improve the mean time to detect (MTTD) and the mean time to respond (MTTR).
+
+
+
+
+*Important Information Regarding Google Workspace Event Lag Times*
+
+- As per Google's documentation, Google Workspace administrators may observe lag times ranging from minutes up to 3 days between the time of an event's occurrence and the event being visible in the Google Workspace admin/audit logs.
+- This rule is configured to run every 10 minutes with a lookback time of 130 minutes.
+- To reduce the risk of false negatives, consider reducing the interval that the Google Workspace (formerly G Suite) Filebeat module polls Google's reporting API for new events.
+- By default, `var.interval` is set to 2 hours (2h). Consider changing this interval to a lower value, such as 10 minutes (10m).
+- See the following references for further information:
+  - https://support.google.com/a/answer/7061566
+  - https://www.elastic.co/guide/en/beats/filebeat/current/filebeat-module-google_workspace.html
+
+==== Setup
+
+
+The Google Workspace Fleet integration, Filebeat module, or similarly structured data is required to be compatible with this rule.
+
+==== Rule query
+
+
+[source, js]
+----------------------------------
+data_stream.dataset:google_workspace.admin and event.action:DELETE_ROLE
+
+----------------------------------
+
+*Framework*: MITRE ATT&CK^TM^
+
+* Tactic:
+** Name: Impact
+** ID: TA0040
+** Reference URL: https://attack.mitre.org/tactics/TA0040/
+* Technique:
+** Name: Account Access Removal
+** ID: T1531
+** Reference URL: https://attack.mitre.org/techniques/T1531/
+* Tactic:
+** Name: Defense Evasion
+** ID: TA0005
+** Reference URL: https://attack.mitre.org/tactics/TA0005/
+* Technique:
+** Name: Domain or Tenant Policy Modification
+** ID: T1484
+** Reference URL: https://attack.mitre.org/techniques/T1484/

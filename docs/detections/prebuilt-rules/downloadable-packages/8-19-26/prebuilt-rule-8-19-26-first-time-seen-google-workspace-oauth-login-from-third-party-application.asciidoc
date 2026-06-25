@@ -1,0 +1,179 @@
+[[prebuilt-rule-8-19-26-first-time-seen-google-workspace-oauth-login-from-third-party-application]]
+=== First Time Seen Google Workspace OAuth Login from Third-Party Application
+
+Detects the first time a user authorizes a third-party Google OAuth application that requests identity or sign-in scopes. Adversaries may abuse compromised credentials or phishing-linked consent flows to register novel OAuth clients, obtain refresh tokens, and authenticate as valid users while evading password-only detections.
+
+*Rule type*: new_terms
+
+*Rule indices*: 
+
+* logs-google_workspace.token-*
+
+*Severity*: medium
+
+*Risk score*: 47
+
+*Runs every*: 10m
+
+*Searches indices from*: now-130m ({ref}/common-options.html#date-math[Date Math format], see also <<rule-schedule, `Additional look-back time`>>)
+
+*Maximum alerts per execution*: 100
+
+*References*: 
+
+* https://www.elastic.co/security-labs/google-workspace-attack-surface-part-one
+* https://www.elastic.co/security-labs/google-workspace-attack-surface-part-two
+* https://developers.google.com/apps-script/guides/bound
+* https://developers.google.com/identity/protocols/oauth2
+
+*Tags*: 
+
+* Domain: Cloud
+* Data Source: Google Workspace
+* Tactic: Defense Evasion
+* Tactic: Initial Access
+* Tactic: Persistence
+* Resources: Investigation Guide
+
+*Version*: 12
+
+*Rule authors*: 
+
+* Elastic
+
+*Rule license*: Elastic License v2
+
+
+==== Investigation guide
+
+
+
+*Triage and analysis*
+
+
+
+*Investigating First Time Seen Google Workspace OAuth Login from Third-Party Application*
+
+
+Threat actors may trick users into authorizing adversary-controlled OAuth applications after credential theft, AiTM
+relay, or spearphishing. A successful `authorize` grant issues tokens the application can reuse to act on behalf of the
+user. Novel third-party client IDs are a strong signal as malicious consent often appears as a first-time application in the tenant.
+
+This rule uses `new_terms` to flag the first appearance of a `google_workspace.token.client.id` when
+a user grants at least one identity or sign-in scope in `google_workspace.token.scope.value` (for example `openid`,
+`userinfo.email`, `userinfo.profile`, or `OAuthLogin`).
+
+
+*Possible investigation steps*
+
+
+- Identify the user who authorized the application by reviewing `user.email` or `user.name`, and note `source.ip` and `event.ingested` if present in the alert.
+- Identify the application by reviewing `google_workspace.token.app_name` and `google_workspace.token.client.id`.
+- Review granted scopes in `google_workspace.token.scope.value` to determine whether the app received identity-only access or additional permissions (for example calendar, drive, or mail scopes on the same grant).
+- Determine whether the authorization is expected and authorized:
+  - If `source.ip` or timing is unusual for the user, treat the alert as higher priority until proven benign.'
+
+- Search Kibana for related activity:
+  - Find prior authorizations for the same client in the org:
+    ```
+    data_stream.dataset: "google_workspace.token" and event.action: "authorize" and google_workspace.token.client.id: "<CLIENT_ID>"
+    ```
+  - Correlate with sign-in anomalies for the same user:
+    ```
+    data_stream.dataset: "google_workspace.login" and user.email: "<USER_EMAIL>"
+    ```
+  - Scope for other OAuth or admin changes from the same `user.email` within the last 48 hours.
+
+
+*False positive analysis*
+
+
+- Internal development or QA OAuth clients may appear as new `client.id` values during testing; coordinate with engineering teams and exclude known test clients if needed.
+- Some vendors rotate OAuth client IDs during major upgrades, which can look like a new application, confirm with the vendor or IT owner before closing as benign.
+
+
+*Response and remediation*
+
+
+- Initiate the incident response process based on triage findings.
+- If the authorization is not clearly authorized, revoke the application's access for the affected user under Security > Access and data control > API controls (or remove the user token via admin OAuth reports).
+- If the user account is suspected compromised, reset credentials, revoke active sessions, and review all OAuth grants for that user.
+- Review activity performed with the new token (Drive, Gmail, Calendar, or other services implied by `google_workspace.token.scope.value`).
+- Identify the possible impact of the incident and prioritize accordingly; the following actions can help you gain context:
+    - Identify the account role in the cloud environment.
+    - Assess the criticality of affected services and servers.
+    - Work with your IT team to identify and minimize the impact on users.
+    - Identify if the attacker is moving laterally and compromising other accounts, servers, or services.
+    - Identify any regulatory or legal ramifications related to this activity.
+- Investigate credential exposure on systems compromised or used by the attacker to ensure all compromised accounts are identified. Reset passwords or delete API keys as needed to revoke the attacker's access to the environment. Work with your IT teams to minimize the impact on business operations during these actions.
+- Review the permissions assigned to the implicated user to ensure that the least privilege principle is being followed.
+- Implement security best practices https://support.google.com/a/answer/7587183[outlined] by Google.
+- Determine the initial vector abused by the attacker and take action to prevent reinfection via the same vector.
+- Using the incident response data, update logging and audit policies to improve the mean time to detect (MTTD) and the mean time to respond (MTTR).
+
+
+
+
+*Important Information Regarding Google Workspace Event Lag Times*
+
+- As per Google's documentation, Google Workspace administrators may observe lag times ranging from minutes up to 3 days between the time of an event's occurrence and the event being visible in the Google Workspace admin/audit logs.
+- This rule is configured to run every 10 minutes with a lookback time of 130 minutes.
+- By default, `var.interval` is set to 2 hours (2h). Consider changing this interval to a lower value, such as 10 minutes (10m).
+- See the following references for further information:
+  - https://support.google.com/a/answer/7061566
+
+==== Setup
+
+
+The Google Workspace Fleet integration, Filebeat module, or similarly structured data is required to be compatible with this rule.
+
+==== Rule query
+
+
+[source, js]
+----------------------------------
+data_stream.dataset: "google_workspace.token"
+  and event.action: "authorize"
+  and google_workspace.token.scope.value: (*openid* or *userinfo.email* or *userinfo.profile* or *Login*)
+  and google_workspace.token.client.id: *apps.googleusercontent.com
+
+----------------------------------
+
+*Framework*: MITRE ATT&CK^TM^
+
+* Tactic:
+** Name: Defense Evasion
+** ID: TA0005
+** Reference URL: https://attack.mitre.org/tactics/TA0005/
+* Technique:
+** Name: Use Alternate Authentication Material
+** ID: T1550
+** Reference URL: https://attack.mitre.org/techniques/T1550/
+* Sub-technique:
+** Name: Application Access Token
+** ID: T1550.001
+** Reference URL: https://attack.mitre.org/techniques/T1550/001/
+* Tactic:
+** Name: Initial Access
+** ID: TA0001
+** Reference URL: https://attack.mitre.org/tactics/TA0001/
+* Technique:
+** Name: Valid Accounts
+** ID: T1078
+** Reference URL: https://attack.mitre.org/techniques/T1078/
+* Sub-technique:
+** Name: Cloud Accounts
+** ID: T1078.004
+** Reference URL: https://attack.mitre.org/techniques/T1078/004/
+* Tactic:
+** Name: Persistence
+** ID: TA0003
+** Reference URL: https://attack.mitre.org/tactics/TA0003/
+* Technique:
+** Name: Valid Accounts
+** ID: T1078
+** Reference URL: https://attack.mitre.org/techniques/T1078/
+* Sub-technique:
+** Name: Cloud Accounts
+** ID: T1078.004
+** Reference URL: https://attack.mitre.org/techniques/T1078/004/

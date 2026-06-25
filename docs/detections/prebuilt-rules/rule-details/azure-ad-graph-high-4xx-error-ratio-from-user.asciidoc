@@ -1,0 +1,155 @@
+[[azure-ad-graph-high-4xx-error-ratio-from-user]]
+=== Azure AD Graph High 4xx Error Ratio from User
+
+Detects an unusually high ratio of 4xx HTTP responses from Azure AD Graph (graph.windows.net) per calling identity in a short window. Post-identity compromise leading to recon often leaves a tail of 403s and 404s as tooling walks endpoints it does not have permission for, asks for object IDs it does not have, or uses an OAuth client that has been pulled off the AAD Graph allow-list. Surges or an unexpected ratio of 4xx responses concentrated on a single (user and ASN) pair are characteristic of automated tooling rather than human or first-party traffic.
+
+*Rule type*: esql
+
+*Rule indices*: None
+
+*Severity*: medium
+
+*Risk score*: 47
+
+*Runs every*: 1h
+
+*Searches indices from*: now-8h ({ref}/common-options.html#date-math[Date Math format], see also <<rule-schedule, `Additional look-back time`>>)
+
+*Maximum alerts per execution*: 100
+
+*References*: 
+
+* https://github.com/dirkjanm/ROADtools
+* https://learn.microsoft.com/en-us/graph/migrate-azure-ad-graph-overview
+* https://aadinternals.com/
+
+*Tags*: 
+
+* Domain: Cloud
+* Data Source: Azure
+* Data Source: Azure AD Graph
+* Data Source: Azure AD Graph Activity Logs
+* Use Case: Threat Detection
+* Tactic: Discovery
+* Resources: Investigation Guide
+
+*Version*: 1
+
+*Rule authors*: 
+
+* Elastic
+
+*Rule license*: Elastic License v2
+
+
+==== Investigation guide
+
+
+
+*Triage and analysis*
+
+
+
+*Investigating Azure AD Graph High 4xx Error Ratio from User*
+
+
+A high 4xx rate on AAD Graph from a single calling identity is consistent with automated permission probing,
+recon against endpoints the caller is not authorized for, or a token whose client has been blocked from AAD
+Graph. The pattern is structurally distinct from sparse 4xx in first-party traffic.
+
+
+*Possible investigation steps*
+
+
+- Confirm the surge volume and ratio.
+    - Review `Esql.error_rate` (4xx as a fraction of total) and `Esql.total_calls` to assess the magnitude.
+- Identify the caller and calling client.
+    - `user.id` for the calling identity, `source.ip` for the egress, and `Esql.app_ids` (from `azure.aadgraphactivitylogs.properties.app_id`) for the OAuth client.
+- Review which endpoints produced the errors.
+    - `Esql.sample_paths` captures the distinct `url.path` values that 4xx'd.
+- Correlate with successful calls from the same user / source to understand what reached AAD Graph.
+- Pivot to sign-in logs (`logs-azure.signinlogs-*`) for the same user / source for token-mint context.
+- Confirm the activity is not attributable to authorized testing (red team engagement, penetration test, internal tooling validation) before treating as malicious.
+
+
+*Response and remediation*
+
+
+- Revoke refresh tokens and active sessions for the calling user if the surge indicates unauthorized recon.
+    - `POST /v1.0/users/{id}/revokeSignInSessions`.
+- Temporarily disable the user if the alert is high-confidence or you need to halt activity while investigation continues.
+    - `PATCH /v1.0/users/{id}` with body `{"accountEnabled": false}`.
+- If the calling application has no legitimate AAD Graph dependency, block further use by that app.
+    - `PATCH /beta/applications/{id}` with body `{"authenticationBehaviors": {"blockAzureADGraphAccess": true}}`.
+    - This property lives on the Graph beta endpoint, not v1.0.
+- Apply Conditional Access targeting the AAD Graph audience for the affected user population.
+
+
+==== Setup
+
+
+
+*Azure AD Graph Activity Logs*
+
+Requires Azure AD Graph Activity Logs ingested into `logs-azure.aadgraphactivitylogs-*` via the Elastic Azure
+integration. Enable the `AzureADGraphActivityLogs` diagnostic-settings category on Entra ID.
+
+
+==== Rule query
+
+
+[source, js]
+----------------------------------
+from logs-azure.aadgraphactivitylogs-* metadata _id, _version, _index
+
+| where data_stream.dataset == "azure.aadgraphactivitylogs"
+| eval Esql.is_4xx = case(
+    http.response.status_code >= 400 and
+    http.response.status_code < 500, 1, 0
+  )
+| eval Esql.time_window = date_trunc(2 minutes, @timestamp)
+| stats
+    Esql.total_calls     = count(*),
+    Esql.azure_tenants   = values(azure.tenant_id),
+    Esql.errors          = sum(Esql.is_4xx),
+    Esql.url_path_count  = count_distinct(url.path),
+    Esql.api_versions    = values(azure.aadgraphactivitylogs.properties.api_version),
+    Esql.app_ids         = values(azure.aadgraphactivitylogs.properties.app_id),
+    Esql.source_ips      = values(source.ip),
+    Esql.source_asn_name = values(source.as.organization.name),
+    Esql.user_agents     = values(user_agent.original),
+    Esql.first_seen      = min(@timestamp),
+    Esql.last_seen       = max(@timestamp)
+  by
+    user.id,
+    source.as.number,
+    Esql.time_window
+| eval Esql.error_rate = round(Esql.errors * 1.0 / Esql.total_calls, 2)
+| where 
+    Esql.total_calls > 20 and Esql.errors >= 10 and
+    Esql.error_rate >= 0.4 and Esql.url_path_count >= 15
+| keep
+    user.id,
+    source.as.number,
+    Esql.*
+
+----------------------------------
+
+*Framework*: MITRE ATT&CK^TM^
+
+* Tactic:
+** Name: Discovery
+** ID: TA0007
+** Reference URL: https://attack.mitre.org/tactics/TA0007/
+* Technique:
+** Name: Account Discovery
+** ID: T1087
+** Reference URL: https://attack.mitre.org/techniques/T1087/
+* Sub-technique:
+** Name: Cloud Account
+** ID: T1087.004
+** Reference URL: https://attack.mitre.org/techniques/T1087/004/
+* Technique:
+** Name: Cloud Service Discovery
+** ID: T1526
+** Reference URL: https://attack.mitre.org/techniques/T1526/

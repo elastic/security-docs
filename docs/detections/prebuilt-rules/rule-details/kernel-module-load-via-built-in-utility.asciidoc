@@ -43,7 +43,7 @@ Detects the use of the insmod binary to load a Linux kernel object file. Threat 
 * Data Source: Crowdstrike
 * Resources: Investigation Guide
 
-*Version*: 216
+*Version*: 217
 
 *Rule authors*: 
 
@@ -197,7 +197,15 @@ not (
     "/usr/bin/kcarectl", "/usr/share/ksplice/ksplice-apply", "/opt/commvault/Base/linux_drv", "/usr/sbin/veeamsnap-loader",
     "/bin/falcoctl"
   ) or
-  (?process.parent.name like ("python*", "platform-python*") and ?process.parent.args in ("--smart-update", "--auto-update"))
+  (?process.parent.name like ("python*", "platform-python*") and ?process.parent.args in ("--smart-update", "--auto-update")) or
+  (
+    process.name == "modprobe" and process.args == "-q" and process.args == "--" and process.args in ("net-pf-10", "netdev-", "binfmt-464c")
+  ) or
+  (
+    process.name == "modprobe" and process.args == "-n" and process.args == "-v" and process.args in ("usb-storage", "dccp", "squashfs", "udf", "sctp", "cramfs", "hfsplus")
+  ) or
+  ?process.parent.executable like ("/sbin/iptables-multi*", "/var/ossec/bin/wazuh-modulesd", "/usr/sbin/mkinitramfs", "/usr/share/initramfs-tools/hooks/lvm2") or
+  ?process.parent.args like "/usr/share/initramfs-tools/hooks/*"
 )
 
 ----------------------------------

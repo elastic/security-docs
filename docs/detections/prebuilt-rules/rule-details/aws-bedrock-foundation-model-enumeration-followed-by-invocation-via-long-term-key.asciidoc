@@ -1,0 +1,141 @@
+[[aws-bedrock-foundation-model-enumeration-followed-by-invocation-via-long-term-key]]
+=== AWS Bedrock Foundation Model Enumeration Followed by Invocation via Long-Term Key
+
+Detects when an AWS principal using long-term IAM user credentials (AKIA* access key) enumerates available Bedrock foundation models and then invokes a model within the same 15-minute window. Most legitimate Bedrock workloads run under IAM roles with short-lived credentials; the combination of model enumeration followed by direct model invocation from a long-term IAM user key is unusual in production environments and consistent with an adversary using stolen credentials to discover and exploit available AI model capabilities. This pattern is associated with LLMjacking attacks where threat actors abuse compromised cloud credentials to run high-volume or high-cost model inference at the account owner's expense.
+
+*Rule type*: eql
+
+*Rule indices*: 
+
+* logs-aws.cloudtrail-*
+
+*Severity*: high
+
+*Risk score*: 73
+
+*Runs every*: 10m
+
+*Searches indices from*: now-30m ({ref}/common-options.html#date-math[Date Math format], see also <<rule-schedule, `Additional look-back time`>>)
+
+*Maximum alerts per execution*: 100
+
+*References*: 
+
+* https://docs.aws.amazon.com/bedrock/latest/APIReference/API_ListFoundationModels.html
+* https://docs.aws.amazon.com/bedrock/latest/APIReference/API_InvokeModel.html
+
+*Tags*: 
+
+* Domain: Cloud
+* Domain: LLM
+* Data Source: Amazon Web Services
+* Data Source: AWS
+* Data Source: AWS CloudTrail
+* Use Case: Identity and Access Audit
+* Resources: Investigation Guide
+* Tactic: Discovery
+* Tactic: Initial Access
+
+*Version*: 1
+
+*Rule authors*: 
+
+* Elastic
+
+*Rule license*: Elastic License v2
+
+
+==== Investigation guide
+
+
+
+*Triage and analysis*
+
+
+
+*Investigating AWS Bedrock Foundation Model Enumeration Followed by Invocation via Long-Term Key*
+
+
+This rule fires when the same long-term IAM user access key (AKIA*) calls `ListFoundationModels` and then
+invokes a model within 15 minutes. This sequence — enumerate available models, then immediately use one — is
+consistent with LLMjacking: an adversary using stolen IAM user credentials to discover and abuse available
+AI model capabilities at the account owner's expense.
+
+Long-term access keys (`AKIA*` prefix) belong to IAM users, not roles. Legitimate Bedrock workloads in
+production almost always run under IAM roles with short-lived credentials. A long-term key performing both
+model discovery and invocation is unusual and warrants investigation.
+
+
+*Possible investigation steps*
+
+
+- **Identify the key and owner**: Review `aws.cloudtrail.user_identity.arn` and
+  `aws.cloudtrail.user_identity.access_key_id`. Determine who owns the key and whether it is authorized for
+  Bedrock usage.
+- **Check for credential exposure**: Search for the access key in source code, CI/CD logs, and secret scanning
+  alerts. A key used from an unexpected source IP is a strong indicator of compromise.
+- **Examine the invocation**: Review `aws.cloudtrail.request_parameters` on the `InvokeModel` event to identify
+  which model was invoked. Cross-reference with Bedrock invocation logs for prompt and response content.
+- **Correlate source IP and user agent**: Confirm `source.ip` and `user_agent.original` match the key owner's
+  expected environment. Residential IPs, VPNs, or unexpected tools are suspicious.
+- **Look for volume**: Check whether this is the first invocation or part of a burst of `InvokeModel` calls.
+  High-volume invocations following enumeration are a strong LLMjacking signal.
+
+
+*False positive analysis*
+
+
+- **Developer testing**: Engineers using long-term IAM user keys for local Bedrock development may trigger this
+  rule when they first explore available models. Validate against a known developer identity and source IP.
+  Encourage migration to IAM roles for all Bedrock workloads.
+
+
+*Response and remediation*
+
+
+- Immediately disable or rotate the access key if compromise is suspected.
+- Review all Bedrock invocations made by the key before and after this event.
+- Check whether the same key accessed other AWS services (S3, EC2, Secrets Manager).
+- Enforce IAM roles for all Bedrock workloads and restrict long-term key usage via SCP.
+
+
+==== Rule query
+
+
+[source, js]
+----------------------------------
+sequence by aws.cloudtrail.user_identity.access_key_id with maxspan=15m
+  [any where data_stream.dataset == "aws.cloudtrail"
+    and event.provider == "bedrock.amazonaws.com"
+    and event.action == "ListFoundationModels"
+    and event.outcome == "success"
+    and aws.cloudtrail.user_identity.access_key_id like "AKIA*"]
+  [any where data_stream.dataset == "aws.cloudtrail"
+    and event.provider == "bedrock.amazonaws.com"
+    and event.action : ("InvokeModel", "InvokeModelWithResponseStream", "Converse", "ConverseStream")
+    and event.outcome == "success"]
+
+----------------------------------
+
+*Framework*: MITRE ATT&CK^TM^
+
+* Tactic:
+** Name: Discovery
+** ID: TA0007
+** Reference URL: https://attack.mitre.org/tactics/TA0007/
+* Technique:
+** Name: Cloud Service Discovery
+** ID: T1526
+** Reference URL: https://attack.mitre.org/techniques/T1526/
+* Tactic:
+** Name: Initial Access
+** ID: TA0001
+** Reference URL: https://attack.mitre.org/tactics/TA0001/
+* Technique:
+** Name: Valid Accounts
+** ID: T1078
+** Reference URL: https://attack.mitre.org/techniques/T1078/
+* Sub-technique:
+** Name: Cloud Accounts
+** ID: T1078.004
+** Reference URL: https://attack.mitre.org/techniques/T1078/004/

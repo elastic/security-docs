@@ -1,0 +1,154 @@
+[[prebuilt-rule-8-19-26-application-added-to-google-workspace-domain]]
+=== Application Added to Google Workspace Domain
+
+Detects when an administrator adds a Google Workspace Marketplace application to the domain. Adversaries with administrative access may register a malicious OAuth application to establish long-lived API access to mail, drive, and other Workspace data, maintaining persistence and enabling collection without relying on a single user password alone.
+
+*Rule type*: query
+
+*Rule indices*: 
+
+* filebeat-*
+* logs-google_workspace.admin-*
+
+*Severity*: medium
+
+*Risk score*: 47
+
+*Runs every*: 10m
+
+*Searches indices from*: now-130m ({ref}/common-options.html#date-math[Date Math format], see also <<rule-schedule, `Additional look-back time`>>)
+
+*Maximum alerts per execution*: 100
+
+*References*: 
+
+* https://support.google.com/a/answer/6328701?hl=en#
+* https://www.elastic.co/security-labs/google-workspace-attack-surface-part-one
+* https://www.elastic.co/security-labs/google-workspace-attack-surface-part-two
+
+*Tags*: 
+
+* Domain: Cloud
+* Data Source: Google Workspace
+* Use Case: Configuration Audit
+* Tactic: Persistence
+* Resources: Investigation Guide
+
+*Version*: 211
+
+*Rule authors*: 
+
+* Elastic
+
+*Rule license*: Elastic License v2
+
+
+==== Investigation guide
+
+
+
+*Triage and analysis*
+
+
+
+*Investigating Application Added to Google Workspace Domain*
+
+
+Google Workspace Marketplace applications can request OAuth scopes to read or modify tenant data. When an administrator
+adds an application at the domain level, users may be able to install or authorize it broadly, creating a durable
+third-party access path. Threat actors with admin rights may add an adversary-controlled app to maintain API-based
+persistence and access sensitive resources at scale.
+
+This rule identifies when an administrator adds a Marketplace application via the `ADD_APPLICATION` event in the
+`google_workspace.admin` data stream.
+
+
+*Possible investigation steps*
+
+
+- Identify the initiating (actor) administrator by reviewing `user.email` or `user.name`, and note `@timestamp`.
+- Identify the application added by reviewing `google_workspace.admin.application.name` and related application metadata in the raw event.
+- Determine whether the change is expected and authorized:
+  - Validate there is an approved change request or vendor onboarding record for the application.
+  - If the actor account is unusual, treat the alert as higher priority until proven benign.
+- Review Marketplace apps in the Google Admin console:
+  - Navigate to Apps > Google Workspace Marketplace apps.
+  - Confirm whether the application is allowed domain-wide or for specific organizational units, and review requested API scopes against least-privilege expectations.
+- Search Kibana for related admin and OAuth activity:
+  - Find other Marketplace changes by the same actor:
+    ```
+    data_stream.dataset: "google_workspace.admin" and user.email: "<ACTOR_EMAIL>" and event.action: ("ADD_APPLICATION" or "REMOVE_APPLICATION")
+    ```
+  - After the add, review OAuth authorizations that may indicate users or admins granting access to the app:
+    ```
+    data_stream.dataset: "google_workspace.token" and event.action: "authorize"
+    ```
+  - Scope for other security-weakening admin actions from the same `user.email` within the last 48 hours, such as Marketplace restriction changes, blocklist removals, or role assignments.
+
+
+*False positive analysis*
+
+
+- Verify the application is an approved business tool with documented vendor risk review and scope justification.
+- New application rollouts during migrations or acquisitions can trigger this rule, validate timing against change windows.
+
+
+*Response and remediation*
+
+
+- Initiate the incident response process based on triage findings.
+- If the add is not clearly authorized, remove or block the application under Google Workspace Marketplace apps while the investigation proceeds.
+- Revoke OAuth tokens for the application client if users have already authorized it (`Security` > Access and data control > API controls, or user token review in admin reports).
+- If the initiating admin account is suspected compromised, reset credentials, revoke active sessions, and review delegated admin roles assigned to that account.
+- Identify the possible impact of the incident and prioritize accordingly; the following actions can help you gain context:
+    - Identify the account role in the cloud environment.
+    - Assess the criticality of affected services and servers.
+    - Work with your IT team to identify and minimize the impact on users.
+    - Identify if the attacker is moving laterally and compromising other accounts, servers, or services.
+    - Identify any regulatory or legal ramifications related to this activity.
+- Investigate credential exposure on systems compromised or used by the attacker to ensure all compromised accounts are identified. Reset passwords or delete API keys as needed to revoke the attacker's access to the environment. Work with your IT teams to minimize the impact on business operations during these actions.
+- Review the permissions assigned to the implicated administrator to ensure that the least privilege principle is being followed.
+- Implement security best practices https://support.google.com/a/answer/7587183[outlined] by Google.
+- Determine the initial vector abused by the attacker and take action to prevent reinfection via the same vector.
+- Using the incident response data, update logging and audit policies to improve the mean time to detect (MTTD) and the mean time to respond (MTTR).
+
+
+
+
+*Important Information Regarding Google Workspace Event Lag Times*
+
+- As per Google's documentation, Google Workspace administrators may observe lag times ranging from minutes up to 3 days between the time of an event's occurrence and the event being visible in the Google Workspace admin/audit logs.
+- This rule is configured to run every 10 minutes with a lookback time of 130 minutes.
+- To reduce the risk of false negatives, consider reducing the interval that the Google Workspace (formerly G Suite) Filebeat module polls Google's reporting API for new events. By default, `var.interval` is set to 2 hours (2h). Consider changing this interval to a lower value, such as 10 minutes (10m).
+- See the following references for further information:
+  - https://support.google.com/a/answer/7061566
+  - https://www.elastic.co/guide/en/beats/filebeat/current/filebeat-module-google_workspace.html
+
+==== Setup
+
+
+The Google Workspace Fleet integration, Filebeat module, or similarly structured data is required to be compatible with this rule.
+
+==== Rule query
+
+
+[source, js]
+----------------------------------
+data_stream.dataset:google_workspace.admin and event.action:ADD_APPLICATION
+
+----------------------------------
+
+*Framework*: MITRE ATT&CK^TM^
+
+* Tactic:
+** Name: Persistence
+** ID: TA0003
+** Reference URL: https://attack.mitre.org/tactics/TA0003/
+* Technique:
+** Name: Account Manipulation
+** ID: T1098
+** Reference URL: https://attack.mitre.org/techniques/T1098/
+* Sub-technique:
+** Name: Additional Cloud Credentials
+** ID: T1098.001
+** Reference URL: https://attack.mitre.org/techniques/T1098/001/
