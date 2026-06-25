@@ -1,0 +1,126 @@
+[[aws-bedrock-third-party-or-external-knowledge-base-associated-to-agent]]
+=== AWS Bedrock Third-Party or External Knowledge Base Associated to Agent
+
+Detects when an Amazon Bedrock agent is associated with, or updated to use, a knowledge base via the AssociateAgentKnowledgeBase, or UpdateAgentKnowledgeBase API actions. Bedrock agents consume knowledge base (RAG) content as trusted context for the model. By wiring an agent to an externally controlled or third-party knowledge base, or by swapping in an attacker-controlled knowledge base, an adversary can redraw the agent's trust boundary toward an untrusted source. This is a software-supply-chain compromise and an indirect prompt-injection delivery vector: poisoned or adversarial content served from the associated knowledge base is treated as authoritative by the agent. Validate that the associated knowledge base, and any underlying data source, is owned and controlled by your organization.
+
+*Rule type*: new_terms
+
+*Rule indices*: 
+
+* logs-aws.cloudtrail-*
+
+*Severity*: medium
+
+*Risk score*: 47
+
+*Runs every*: 5m
+
+*Searches indices from*: now-6m ({ref}/common-options.html#date-math[Date Math format], see also <<rule-schedule, `Additional look-back time`>>)
+
+*Maximum alerts per execution*: 100
+
+*References*: 
+
+* https://docs.aws.amazon.com/bedrock/latest/userguide/agents.html
+* https://docs.aws.amazon.com/bedrock/latest/userguide/knowledge-base.html
+
+*Tags*: 
+
+* Domain: Cloud
+* Domain: LLM
+* Data Source: Amazon Web Services
+* Data Source: AWS
+* Data Source: AWS CloudTrail
+* Use Case: Threat Detection
+* Resources: Investigation Guide
+* Tactic: Persistence
+
+*Version*: 1
+
+*Rule authors*: 
+
+* Elastic
+
+*Rule license*: Elastic License v2
+
+
+==== Investigation guide
+
+
+
+*Triage and analysis*
+
+
+
+*Investigating AWS Bedrock Third-Party or External Knowledge Base Associated to Agent*
+
+
+Amazon Bedrock agents use knowledge bases to retrieve content that is injected into the model's context as
+trusted, authoritative information (Retrieval-Augmented Generation). The `AssociateAgentKnowledgeBase`, and 
+`UpdateAgentKnowledgeBase` actions change which knowledge base an agent trusts. Because the model consumes this 
+content as ground truth, redirecting an agent toward an externally controlled or attacker-supplied knowledge base 
+is a supply-chain and indirect prompt-injection delivery vector — distinct from poisoning the content of a knowledge 
+base the agent already trusts.
+
+
+*Possible investigation steps*
+
+
+- **Identify the actor and context**
+  - Review `aws.cloudtrail.user_identity.arn`, `aws.cloudtrail.user_identity.type`, `user_agent.original`, and `source.ip`.
+  - Confirm a related change request exists (RAG pipeline change, agent onboarding, model improvement work).
+- **Validate the association**
+  - In `aws.cloudtrail.flattened.request_parameters`, identify the `agentId`, `knowledgeBaseId`, and any third-party
+    or external endpoint/configuration referenced.
+  - Confirm the knowledge base and its underlying data source are owned by your organization and not an external account.
+- **Assess blast radius**
+  - Determine which applications or users invoke the affected agent and what sensitivity of decisions it drives.
+  - Check `aws.cloudtrail.flattened.response_elements` for the resulting association state.
+- **Correlate activity**
+  - Look for preceding enumeration (`ListAgents`, `ListKnowledgeBases`, `GetAgent`) or creation of new knowledge
+    bases and data sources from the same identity.
+
+
+*False positive analysis*
+
+
+- **Planned RAG changes**: ML/platform teams routinely associate or update knowledge bases. Validate via ticket
+  and confirm the resource is an approved, organization-owned knowledge base.
+- **Automation**: IaC or CI/CD pipelines may manage agent–knowledge base associations during deployment.
+
+
+*Response and remediation*
+
+
+- If unauthorized, dissociate the knowledge base from the agent and restore the approved configuration.
+- Review the associated knowledge base and its data source for attacker-controlled or external content; quarantine if suspect.
+- Audit the actor's recent Bedrock and IAM activity and rotate credentials if compromise is suspected.
+- Restrict `bedrock:AssociateAgentKnowledgeBase`, `bedrock:UpdateAgentKnowledgeBase`, and third-party association
+  permissions to a small set of trusted roles.
+
+
+==== Rule query
+
+
+[source, js]
+----------------------------------
+data_stream.dataset: "aws.cloudtrail"
+    and event.provider: "bedrock.amazonaws.com"
+    and event.action: (
+        "AssociateAgentKnowledgeBase" or
+        "UpdateAgentKnowledgeBase"
+    )
+    and event.outcome: "success"
+
+----------------------------------
+
+*Framework*: MITRE ATT&CK^TM^
+
+* Tactic:
+** Name: Persistence
+** ID: TA0003
+** Reference URL: https://attack.mitre.org/tactics/TA0003/
+* Technique:
+** Name: Server Software Component
+** ID: T1505
+** Reference URL: https://attack.mitre.org/techniques/T1505/

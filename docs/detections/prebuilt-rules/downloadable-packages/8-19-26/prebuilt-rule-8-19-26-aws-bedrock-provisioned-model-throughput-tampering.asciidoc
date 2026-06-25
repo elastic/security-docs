@@ -1,0 +1,145 @@
+[[prebuilt-rule-8-19-26-aws-bedrock-provisioned-model-throughput-tampering]]
+=== AWS Bedrock Provisioned Model Throughput Tampering
+
+Detects creation, modification, or deletion of AWS Bedrock Provisioned Model Throughput via the CreateProvisionedModelThroughput, UpdateProvisionedModelThroughput, and DeleteProvisionedModelThroughput APIs. Provisioned Throughput reserves dedicated, billed model capacity for Amazon Bedrock. An adversary who scales this capacity up can drive large, unauthorized cost (cloud resource/bill hijacking), while deleting reserved throughput can cause denial of service to production workloads that depend on that committed capacity. These control-plane changes should be validated against approved capacity-planning and change-management processes.
+
+*Rule type*: query
+
+*Rule indices*: 
+
+* logs-aws.cloudtrail-*
+
+*Severity*: medium
+
+*Risk score*: 47
+
+*Runs every*: 5m
+
+*Searches indices from*: now-6m ({ref}/common-options.html#date-math[Date Math format], see also <<rule-schedule, `Additional look-back time`>>)
+
+*Maximum alerts per execution*: 100
+
+*References*: 
+
+* https://docs.aws.amazon.com/bedrock/latest/userguide/prov-throughput.html
+* https://docs.aws.amazon.com/bedrock/latest/APIReference/API_CreateProvisionedModelThroughput.html
+* https://docs.aws.amazon.com/bedrock/latest/APIReference/API_DeleteProvisionedModelThroughput.html
+* https://docs.aws.amazon.com/bedrock/latest/APIReference/API_UpdateProvisionedModelThroughput.html
+
+*Tags*: 
+
+* Domain: Cloud
+* Domain: LLM
+* Data Source: AWS
+* Data Source: AWS CloudTrail
+* Data Source: Amazon Web Services
+* Data Source: Amazon Bedrock
+* Use Case: Threat Detection
+* Resources: Investigation Guide
+* Tactic: Impact
+
+*Version*: 1
+
+*Rule authors*: 
+
+* Elastic
+
+*Rule license*: Elastic License v2
+
+
+==== Investigation guide
+
+
+
+*Triage and analysis*
+
+
+
+*Investigating AWS Bedrock Provisioned Model Throughput Tampering*
+
+
+Amazon Bedrock Provisioned Throughput reserves dedicated, billed model capacity for foundation models.
+Because this capacity is committed and metered, adversaries can abuse it in two ways: scaling capacity up to
+incur large, unauthorized cloud spend (resource/bill hijacking), or deleting reserved throughput to deny
+service to production workloads that rely on committed capacity. This rule identifies
+`CreateProvisionedModelThroughput`, `UpdateProvisionedModelThroughput`, and `DeleteProvisionedModelThroughput`
+calls so responders can confirm whether the change was authorized.
+
+
+*Possible investigation steps*
+
+
+- **Identify the actor and context**
+  - Review `aws.cloudtrail.user_identity.arn`, `aws.cloudtrail.user_identity.type`,
+    `aws.cloudtrail.user_identity.access_key_id`, `user_agent.original`, and `source.ip`.
+  - Determine whether the identity is an approved administrator, ML/platform engineer, or automation role.
+  - Confirm a corresponding change request or capacity-planning ticket exists.
+- **Validate the request details**
+  - Inspect `aws.cloudtrail.request_parameters` and `aws.cloudtrail.response_elements` for the model ID,
+    commitment duration, and requested model units. Unusually large model-unit counts or long commitment
+    terms on a Create/Update may indicate cost-driven abuse.
+  - For `DeleteProvisionedModelThroughput`, identify which provisioned model was removed and whether any
+    production workload depended on it.
+- **Correlate activity**
+  - Review other Bedrock control-plane actions (e.g., model invocation logging changes, guardrail changes)
+    and IAM/STS activity from the same identity around the same time.
+  - Check `cloud.account.id` and `cloud.region` for whether the activity occurred in an expected account/region.
+
+
+*False positive analysis*
+
+
+- **Capacity planning**: Platform, ML, or FinOps teams may legitimately create, update, or delete provisioned
+  throughput. Validate against change tickets and standard capacity-management procedures.
+- **Automation**: IaC or deployment pipelines may manage provisioned throughput on bootstrap or teardown.
+  Confirm the source IP and ARN match expected automation infrastructure.
+
+
+*Response and remediation*
+
+
+- If unauthorized, immediately disable the offending access key or role and revert the change (delete
+  unauthorized provisioned throughput, or recreate deleted reserved capacity required by production).
+- Review billing and Cost Explorer for unexpected Bedrock provisioned-throughput charges.
+- Audit the actor's recent activity and rotate credentials if compromise is suspected.
+- Restrict `bedrock:CreateProvisionedModelThroughput`, `bedrock:UpdateProvisionedModelThroughput`, and
+  `bedrock:DeleteProvisionedModelThroughput` to a small set of administrative roles and enforce approval
+  workflows and budget alarms.
+
+
+*Additional information*
+
+
+- **https://docs.aws.amazon.com/bedrock/latest/userguide/prov-throughput.html[Amazon Bedrock Provisioned Throughput]**
+
+
+==== Rule query
+
+
+[source, js]
+----------------------------------
+data_stream.dataset: "aws.cloudtrail" and
+    event.provider: "bedrock.amazonaws.com" and
+    event.action: (
+        "CreateProvisionedModelThroughput" or
+        "UpdateProvisionedModelThroughput" or
+        "DeleteProvisionedModelThroughput"
+    ) and
+    event.outcome: "success"
+
+----------------------------------
+
+*Framework*: MITRE ATT&CK^TM^
+
+* Tactic:
+** Name: Impact
+** ID: TA0040
+** Reference URL: https://attack.mitre.org/tactics/TA0040/
+* Technique:
+** Name: Resource Hijacking
+** ID: T1496
+** Reference URL: https://attack.mitre.org/techniques/T1496/
+* Sub-technique:
+** Name: Cloud Service Hijacking
+** ID: T1496.004
+** Reference URL: https://attack.mitre.org/techniques/T1496/004/

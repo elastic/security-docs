@@ -1,0 +1,121 @@
+[[azure-vm-managed-run-command-created-or-updated-with-unusual-principal]]
+=== Azure VM Managed Run Command Created or Updated with Unusual Principal
+
+Identifies the creation or update of a managed Azure Run Command resource ("MICROSOFT.COMPUTE/VIRTUALMACHINES/RUNCOMMANDS/WRITE" or the virtual machine scale set equivalent) by an identity that has not performed this operation recently. Unlike the action-based Run Command ("runCommand/action"), the managed Run Command is a persistent resource on the VM whose creation or update executes the supplied script as System (Windows) or root (Linux). Because creating a managed run command both executes code and leaves a durable object, adversaries can use it as an alternative to the action invocation to evade detections that only watch "runCommand/action". Alerting on the first time a given principal performs this operation surfaces unusual or unauthorized use while suppressing routine automation that repeatedly manages the same run commands.
+
+*Rule type*: new_terms
+
+*Rule indices*: 
+
+* logs-azure.activitylogs-*
+
+*Severity*: medium
+
+*Risk score*: 47
+
+*Runs every*: 5m
+
+*Searches indices from*: now-9m ({ref}/common-options.html#date-math[Date Math format], see also <<rule-schedule, `Additional look-back time`>>)
+
+*Maximum alerts per execution*: 100
+
+*References*: 
+
+* https://www.netspi.com/blog/technical-blog/adversary-simulation/7-ways-to-execute-command-on-azure-virtual-machine-virtual-machine-scale-sets/
+* https://learn.microsoft.com/en-us/azure/virtual-machines/windows/run-command-managed
+* https://hackingthe.cloud/azure/run-command-abuse/
+* https://blog.pwnedlabs.io/diving-deep-into-azure-vm-attack-vectors
+* https://www.sysdig.com/blog/the-expendable-extension-name-azure-vmaccess-naming-chaos-password-resets-and-a-detection-gap
+
+*Tags*: 
+
+* Domain: Cloud
+* Domain: Endpoint
+* Data Source: Azure
+* Data Source: Azure Activity Logs
+* Use Case: Threat Detection
+* Tactic: Execution
+* Resources: Investigation Guide
+
+*Version*: 1
+
+*Rule authors*: 
+
+* Elastic
+
+*Rule license*: Elastic License v2
+
+
+==== Investigation guide
+
+
+
+*Triage and analysis*
+
+
+
+*Investigating Azure VM Managed Run Command Created or Updated with Unusual Principal*
+
+
+The managed Run Command (`runCommands/write`) creates or updates a persistent run command resource on a VM or VM scale
+set. Creating the resource executes the supplied script as SYSTEM (Windows) or root (Linux). This rule uses a new terms
+approach keyed on the acting principal, so it fires the first time a given identity performs this operation within the
+history window.
+
+
+*Triage checklist*
+
+
+- Identify the acting principal via `azure.activitylogs.identity.authorization.evidence.principal_id` and
+  `azure.activitylogs.identity.authorization.evidence.principal_type` (User vs ServicePrincipal). Service principal or
+  managed identity activity is more suspicious than a known admin user.
+- Is the source IP/ASN consistent with corporate infrastructure or a known VPN?
+- Inspect `azure.resource.id` for the target VM/VMSS and the run command resource name. Attacker-created names are often
+  random or descriptive of intent.
+- Did the same principal recently perform reconnaissance, role assignments, or other VM operations
+  (`runCommand/action`, `extensions/write`, serial console connect)?
+- Correlate with endpoint telemetry on the target host: process activity parented by the Azure guest agent
+  (`WaAppAgent.exe` / `walinuxagent`) within ~120 seconds of the write timestamp.
+
+
+*Possible investigation steps*
+
+
+- Review the principal's Entra ID sign-in logs and RBAC role assignments on the subscription, resource group, and VM.
+- Retrieve the run command script content from the VM (the activity log does not contain the script body) to assess
+  intent.
+- Pivot on the VM for credential access, new local accounts, or outbound C2 connections following execution.
+
+
+*Response and remediation*
+
+
+- If unauthorized, delete the managed run command resource, isolate the VM, rotate credentials reachable from it, and
+  review RBAC on the affected scope.
+- Collect endpoint and activity log artifacts per incident procedures.
+
+
+==== Rule query
+
+
+[source, js]
+----------------------------------
+data_stream.dataset:azure.activitylogs and
+    event.action:(
+        "MICROSOFT.COMPUTE/VIRTUALMACHINES/RUNCOMMANDS/WRITE" or
+        "MICROSOFT.COMPUTE/VIRTUALMACHINESCALESETS/VIRTUALMACHINES/RUNCOMMANDS/WRITE"
+    ) and event.outcome:(success or Success) and
+    azure.activitylogs.identity.authorization.evidence.principal_id: *
+
+----------------------------------
+
+*Framework*: MITRE ATT&CK^TM^
+
+* Tactic:
+** Name: Execution
+** ID: TA0002
+** Reference URL: https://attack.mitre.org/tactics/TA0002/
+* Technique:
+** Name: Cloud Administration Command
+** ID: T1651
+** Reference URL: https://attack.mitre.org/techniques/T1651/

@@ -8,7 +8,7 @@ Detects when the Google Marketplace restrictions are changed to allow any applic
 *Rule indices*: 
 
 * filebeat-*
-* logs-google_workspace*
+* logs-google_workspace.admin-*
 
 *Severity*: medium
 
@@ -34,7 +34,7 @@ Detects when the Google Marketplace restrictions are changed to allow any applic
 * Tactic: Defense Evasion
 * Resources: Investigation Guide
 
-*Version*: 112
+*Version*: 113
 
 *Rule authors*: 
 
@@ -67,6 +67,8 @@ This rule identifies when the global allow-all setting is enabled for Google Wor
 
 
 - Identify the associated user accounts by reviewing `user.name` or `user.email` fields in the alert.
+- Confirm `google_workspace.admin.new_value` is `ALLOW_ALL` and review `google_workspace.admin.old_value` for the prior restriction.
+- In the admin console, verify the change under `Apps > Google Workspace Marketplace apps` (global allowlist access setting).
 - This rule relies on data from `google_workspace.admin`, thus indicating the associated user has administrative privileges to the Marketplace.
 - Search for `event.action` is `ADD_APPLICATION` to identify applications installed after these changes were made.
     - The `google_workspace.admin.application.name` field will help identify what applications were added.
@@ -79,9 +81,8 @@ This rule identifies when the global allow-all setting is enabled for Google Wor
 
 
 - Identify the user account associated with this action and assess their administrative privileges with Google Workspace Marketplace.
-- Google Workspace administrators may intentionally add an application from the marketplace based on organizational needs.
-    - Follow up with the user who added the application to ensure this was intended.
-- Verify the application identified has been assessed thoroughly by an administrator.
+- Google Workspace administrators may intentionally enable allow-all marketplace access based on organizational needs.
+    - Follow up with the administrator who made the change to ensure this was intended.
 
 
 *Response and remediation*
@@ -123,7 +124,7 @@ The Google Workspace Fleet integration, Filebeat module, or similarly structured
 
 [source, js]
 ----------------------------------
-data_stream.dataset:"google_workspace.admin" and event.action:"CHANGE_APPLICATION_SETTING" and event.category:(iam or configuration)
+data_stream.dataset:"google_workspace.admin" and event.action:"CHANGE_APPLICATION_SETTING"
     and google_workspace.event.type:"APPLICATION_SETTINGS" and google_workspace.admin.application.name:"Google Workspace Marketplace"
         and google_workspace.admin.setting.name:"Apps Access Setting Allowlist access"  and google_workspace.admin.new_value:"ALLOW_ALL"
 

@@ -34,7 +34,7 @@ Detects use of the systemsetup command to enable remote SSH Login.
 * Data Source: Elastic Defend
 * Resources: Investigation Guide
 
-*Version*: 111
+*Version*: 112
 
 *Rule authors*: 
 
@@ -133,11 +133,23 @@ For more details on Elastic Defend refer to the https://www.elastic.co/guide/en/
 [source, js]
 ----------------------------------
 process where host.os.type == "macos" and event.type in ("start", "process_started") and
- process.name == "systemsetup" and
- process.args like~ "-setremotelogin" and 
- process.args like~ "on" and
- process.parent.executable != null and
- not process.parent.executable like ("/usr/local/jamf/bin/jamf", "/usr/libexec/xpcproxy", "/usr/bin/sudo")
+(
+  (
+    process.name == "systemsetup" and
+    process.args like~ "-setremotelogin" and
+    process.args like~ "on"
+  ) or
+  (
+    process.name == "launchctl" and
+    process.args in ("load", "bootstrap") and
+    (
+      process.command_line like~ "*/System/Library/LaunchDaemons/ssh.plist*" or
+      process.command_line like~ "*com.openssh.sshd*"
+    )
+  )
+) and
+process.parent.executable != null and
+not process.parent.executable like ("/usr/local/jamf/bin/jamf", "/usr/libexec/xpcproxy", "/usr/bin/sudo")
 
 ----------------------------------
 

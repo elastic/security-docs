@@ -1,0 +1,157 @@
+[[google-workspace-gmail-routing-or-forwarding-rule-created-or-modified]]
+=== Google Workspace Gmail Routing or Forwarding Rule Created or Modified
+
+Detects when a Gmail routing, mail-forwarding, or custom mail-host setting is created or modified in Google Workspace. Adversaries with administrative access can add Routing rules (also deliver to / change envelope recipient), recipient address map forwarding, or mail hosts and outbound gateways to copy or redirect sensitive email for collection.
+
+*Rule type*: query
+
+*Rule indices*: 
+
+* logs-google_workspace.admin-*
+
+*Severity*: medium
+
+*Risk score*: 47
+
+*Runs every*: 10m
+
+*Searches indices from*: now-20m ({ref}/common-options.html#date-math[Date Math format], see also <<rule-schedule, `Additional look-back time`>>)
+
+*Maximum alerts per execution*: 100
+
+*References*: 
+
+* https://support.google.com/a/answer/2685650?hl=en
+* https://www.elastic.co/security-labs/google-workspace-attack-surface-part-one
+* https://www.elastic.co/security-labs/google-workspace-attack-surface-part-two
+
+*Tags*: 
+
+* Domain: Cloud
+* Data Source: Google Workspace
+* Tactic: Collection
+* Resources: Investigation Guide
+
+*Version*: 111
+
+*Rule authors*: 
+
+* Elastic
+
+*Rule license*: Elastic License v2
+
+
+==== Investigation guide
+
+
+
+*Triage and analysis*
+
+
+
+*Investigating Google Workspace Gmail Routing or Forwarding Rule Created or Modified*
+
+
+Gmail administrators can change where mail is delivered using several Admin console areas under Apps > Google Workspace > Gmail:
+
+- Routing — specialized rules (modify message, change route, also deliver to, change envelope recipient). Audit: `UNIFIED_MAIL_ROUTING` or `MESSAGE_SECURITY_RULE` (legacy); `google_workspace.admin.setting.metadata.rule.type` may repeat the legacy type on `RuleState` rows.
+- Email forwarding using recipient address map — rewrite or forward by address mapping. Audit: `ALIAS_TABLE`.
+- Hosts / Outbound gateway — custom SMTP routes. Audit: `EMAIL_ROUTE`.
+
+Google may emit multiple admin audit events per single save (legacy `CREATE_GMAIL_SETTING`, new `CREATE_APPLICATION_SETTING`, rule body, and rule enabled state). Expect duplicate documents at the same `@timestamp`; correlate on `user.name`, `google_workspace.admin.USER_DEFINED_SETTING_NAME` (rule id), and `event.id`.
+
+
+*Possible investigation steps*
+
+
+- Identify the administrator (`user.name`, `user.email`) and confirm the change was authorized.
+- In Admin console, review the rule matching `google_workspace.admin.USER_DEFINED_SETTING_NAME`:
+  - Routing (`UNIFIED_MAIL_ROUTING`, `MESSAGE_SECURITY_RULE`): Apps > Gmail > Routing
+  - Recipient address map (`ALIAS_TABLE`): Apps > Gmail > Default routing > Email forwarding using recipient address map
+  - Mail hosts / outbound gateway (`EMAIL_ROUTE`): Apps > Gmail > Hosts
+- Map the alert to the admin area using `google_workspace.admin.setting.name` and `google_workspace.admin.setting.metadata.rule.type`
+- Review whether the rule adds also deliver to, change envelope recipient, or routes to an external mail host or domain.
+- Review related `event.action` values for the same administrator in the last 48 hours.
+- If licensed for Gmail log events (BigQuery / Enterprise Plus), use Reporting > Audit and investigation > Gmail log events to confirm messages were delivered per the rule (`message_info.flattened_destinations`, `triggered_rule_info`).
+- Submit suspicious URLs or attachments from affected mail to reputational services as needed.
+
+
+*False positive analysis*
+
+
+- Legitimate mail migrations, journaling, compliance archiving, and internal dual-delivery are common.
+- Tune with exceptions for known administrator accounts, rule ids (`USER_DEFINED_SETTING_NAME`), or approved external domains.
+
+
+*Response and remediation*
+
+
+- Initiate the incident response process based on the outcome of the triage.
+- Disable or limit the account during the investigation and response.
+- Identify the possible impact of the incident and prioritize accordingly; the following actions can help you gain context:
+    - Identify the account role in the cloud environment.
+    - Assess the criticality of affected services and servers.
+    - Work with your IT team to identify and minimize the impact on users.
+    - Identify if the attacker is moving laterally and compromising other accounts, servers, or services.
+    - Identify any regulatory or legal ramifications related to this activity.
+- Investigate credential exposure on systems compromised or used by the attacker to ensure all compromised accounts are identified. Reset passwords or delete API keys as needed to revoke the attacker's access to the environment. Work with your IT teams to minimize the impact on business operations during these actions.
+- Review the permissions assigned to the implicated user to ensure that the least privilege principle is being followed.
+- Implement security best practices https://support.google.com/a/answer/7587183[outlined] by Google.
+- Determine the initial vector abused by the attacker and take action to prevent reinfection via the same vector.
+- Using the incident response data, update logging and audit policies to improve the mean time to detect (MTTD) and the mean time to respond (MTTR).
+
+
+
+
+*Important Information Regarding Google Workspace Event Lag Times*
+
+- As per Google's documentation, Google Workspace administrators may observe lag times ranging from minutes up to 3 days between the time of an event's occurrence and the event being visible in the Google Workspace admin/audit logs.
+- This rule uses `timestamp_override = event.ingested` and is configured to run every 10 minutes with a lookback of 20 minutes, aligned with the integration's default Admin poll interval (`interval`: 15m) and lag time (`lag_time`: 3m).
+- See the following references for further information:
+  - https://support.google.com/a/answer/7061566
+  - https://www.elastic.co/docs/reference/integrations/google_workspace
+
+==== Setup
+
+
+The Google Workspace Fleet integration with the Admin data stream (`logs-google_workspace.admin-*`) is required for this rule.
+
+==== Rule query
+
+
+[source, js]
+----------------------------------
+data_stream.dataset:"google_workspace.admin" and event.action:(
+  "CREATE_GMAIL_SETTING" or "CHANGE_GMAIL_SETTING"
+  or "CREATE_APPLICATION_SETTING" or "CHANGE_APPLICATION_SETTING"
+)
+and (
+  google_workspace.admin.setting.name:(
+    "UNIFIED_MAIL_ROUTING"
+    or "ALIAS_TABLE"
+    or "EMAIL_ROUTE"
+    or "MESSAGE_SECURITY_RULE"
+  )
+  or google_workspace.admin.setting.metadata.rule.type:(
+    "UNIFIED_MAIL_ROUTING"
+    or "ALIAS_TABLE"
+    or "EMAIL_ROUTE"
+  )
+)
+
+----------------------------------
+
+*Framework*: MITRE ATT&CK^TM^
+
+* Tactic:
+** Name: Collection
+** ID: TA0009
+** Reference URL: https://attack.mitre.org/tactics/TA0009/
+* Technique:
+** Name: Email Collection
+** ID: T1114
+** Reference URL: https://attack.mitre.org/techniques/T1114/
+* Sub-technique:
+** Name: Email Forwarding Rule
+** ID: T1114.003
+** Reference URL: https://attack.mitre.org/techniques/T1114/003/

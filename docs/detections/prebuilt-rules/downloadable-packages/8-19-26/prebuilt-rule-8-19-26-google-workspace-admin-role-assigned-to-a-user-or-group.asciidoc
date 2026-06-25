@@ -1,0 +1,163 @@
+[[prebuilt-rule-8-19-26-google-workspace-admin-role-assigned-to-a-user-or-group]]
+=== Google Workspace Admin Role Assigned to a User or Group
+
+Assigning an administrative role to a user or group grants elevated privileges within Google Workspace, including access to the Google Admin console and the ability to manage domain resources and applications. Adversaries may assign administrator roles to an existing account or a newly created account/group to establish persistence, facilitate privilege escalation, and enable follow-on actions across the tenant. In particular, users with Super Admin privileges can bypass single sign-on (SSO) if it is enabled in Google Workspace.
+
+*Rule type*: query
+
+*Rule indices*: 
+
+* filebeat-*
+* logs-google_workspace.admin-*
+
+*Severity*: high
+
+*Risk score*: 73
+
+*Runs every*: 10m
+
+*Searches indices from*: now-130m ({ref}/common-options.html#date-math[Date Math format], see also <<rule-schedule, `Additional look-back time`>>)
+
+*Maximum alerts per execution*: 100
+
+*References*: 
+
+* https://support.google.com/a/answer/172176?hl=en
+* https://www.elastic.co/security-labs/google-workspace-attack-surface-part-one
+* https://www.elastic.co/security-labs/google-workspace-attack-surface-part-two
+
+*Tags*: 
+
+* Domain: Cloud
+* Data Source: Google Workspace
+* Use Case: Identity and Access Audit
+* Tactic: Persistence
+* Tactic: Privilege Escalation
+* Resources: Investigation Guide
+
+*Version*: 212
+
+*Rule authors*: 
+
+* Elastic
+
+*Rule license*: Elastic License v2
+
+
+==== Investigation guide
+
+
+
+*Triage and analysis*
+
+
+
+*Investigating Google Workspace Admin Role Assigned to a User or Group*
+
+
+Google Workspace roles allow administrators to assign specific permissions to users or groups. Because these roles can
+grant broad administrative control over identity, devices, and security settings, role assignments should follow the
+principle of least privilege (PoLP) and be carefully controlled. Threat actors may assign high-privilege roles (for
+example, Super Admin or other *_ADMIN_ROLE roles) to establish persistence, expand access, and perform follow-on actions
+such as creating OAuth tokens, modifying security controls, changing mail routing, or altering SSO settings. Unexpected
+admin privileges can also lead to operational impact if changes are made unintentionally.
+
+This rule identifies when a Google Workspace administrative role is assigned to a user or a group.
+
+
+*Possible investigation steps*
+
+
+- Identify the initiating (actor) account that performed the change by reviewing `user.email` or `user.name`, and note the `source.ip` and `event.ingested` timestamps.
+- Identify the target principal that received the role assignment:
+  - For assignments, review `user.target.email` and `user.target.name`.
+  - For group assignments, determine which users are members of that group at the time of assignment.
+- Identify the role assigned by reviewing `google_workspace.admin.role.name`.
+- Determine whether the assignment is expected and authorized:
+  - Validate there is an approved change request/ticket and that the actor account is authorized to grant this level of access.
+  - If the role is high privilege (for example, Super Admin), treat as urgent until proven benign.
+- Scope for additional role assignments by searching for `event.action: ASSIGN_ROLE` over an expanded time window and filtering on:
+  - The same `user.email` (actor) to find other role changes performed by the same account.
+  - The same `google_workspace.admin.role.name` to identify other principals granted the role.
+  - The same target (`user.target.email`) to identify multiple roles granted to the same principal.
+- Evaluate whether the target user (or group members) performed suspicious activity after receiving the role:
+  - Review the last 48 hours of admin/audit events for security control changes, user or group changes, and Gmail configuration changes.
+  - If available, correlate with sign-in events for unusual geolocation, impossible travel, unfamiliar devices, or sign-ins from the `source.ip`.
+- Determine whether the target user account was recently created by searching for `event.action: CREATE_USER` and filtering for `user.target.email`.
+
+
+*False positive analysis*
+
+
+- Verify the role assignment aligns with approved administrative duties, an authorized change window, and the organization’s access governance process.
+- Confirm the initiating admin account is legitimate and not performing role assignments from unusual IPs, devices, or locations.
+- For group assignments, verify the group is intended for administrative delegation and validate recent membership changes that could expand who effectively received the privilege.
+
+
+*Response and remediation*
+
+
+- Initiate the incident response process based on triage findings.
+- If the assignment is not clearly authorized, remove the role assignment from the user/group and/or place the target account(s) under administrative restriction while the investigation proceeds.
+- For suspected compromise of the initiating admin account:
+  - Reset credentials, revoke active sessions, enforce MFA re-enrollment, and review delegation/OAuth grants for persistence.
+  - Validate recovery email/phone settings and account security posture.
+- Review the permissions assigned to the implicated user/group to ensure PoLP is being followed, and consider replacing broad roles with narrower delegated roles where feasible.
+- Implement security best practices https://support.google.com/a/answer/7587183[outlined] by Google.
+- Determine the initial vector abused by the attacker and take action to prevent reinfection via the same vector.
+- Using the incident response data, update logging and audit policies to improve the mean time to detect (MTTD) and the mean time to respond (MTTR).
+
+
+
+
+*Important Information Regarding Google Workspace Event Lag Times*
+
+- As per Google's documentation, Google Workspace administrators may observe lag times ranging from minutes up to 3 days between the time of an event's occurrence and the event being visible in the Google Workspace admin/audit logs.
+- This rule is configured to run every 10 minutes with a lookback time of 130 minutes.
+- To reduce the risk of false negatives, consider reducing the interval that the Google Workspace (formerly G Suite) Filebeat module polls Google's reporting API for new events.
+- By default, `var.interval` is set to 2 hours (2h). Consider changing this interval to a lower value, such as 10 minutes (10m).
+- See the following references for further information:
+  - https://support.google.com/a/answer/7061566
+  - https://www.elastic.co/guide/en/beats/filebeat/current/filebeat-module-google_workspace.html
+
+==== Setup
+
+
+The Google Workspace Fleet integration, Filebeat module, or similarly structured data is required to be compatible with this rule.
+
+==== Rule query
+
+
+[source, js]
+----------------------------------
+data_stream.dataset:"google_workspace.admin" and event.action:"ASSIGN_ROLE"
+  and google_workspace.admin.role.name : *_ADMIN_ROLE
+
+----------------------------------
+
+*Framework*: MITRE ATT&CK^TM^
+
+* Tactic:
+** Name: Persistence
+** ID: TA0003
+** Reference URL: https://attack.mitre.org/tactics/TA0003/
+* Technique:
+** Name: Account Manipulation
+** ID: T1098
+** Reference URL: https://attack.mitre.org/techniques/T1098/
+* Sub-technique:
+** Name: Additional Cloud Roles
+** ID: T1098.003
+** Reference URL: https://attack.mitre.org/techniques/T1098/003/
+* Tactic:
+** Name: Privilege Escalation
+** ID: TA0004
+** Reference URL: https://attack.mitre.org/tactics/TA0004/
+* Technique:
+** Name: Account Manipulation
+** ID: T1098
+** Reference URL: https://attack.mitre.org/techniques/T1098/
+* Sub-technique:
+** Name: Additional Cloud Roles
+** ID: T1098.003
+** Reference URL: https://attack.mitre.org/techniques/T1098/003/

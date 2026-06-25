@@ -1,0 +1,137 @@
+[[prebuilt-rule-8-19-26-azure-vm-serial-console-connection-with-unusual-user-and-asn]]
+=== Azure VM Serial Console Connection with Unusual User and ASN
+
+Identifies a connection to the Azure Serial Console of a virtual machine (VM) by an identity and source network combination that has not been observed recently. The Serial Console provides text-based console access to a VM through the boot diagnostics serial port, independent of the VM's network state. Because it does not traverse the VM's network interface, a Serial Console session bypasses Network Security Groups (NSGs), Just-in-Time (JIT) access policies, and other network controls. An adversary with a privileged Azure RBAC role (for example Virtual Machine Contributor) and boot diagnostics enabled on the target can use the Serial Console to obtain an interactive session as SYSTEM (Windows) or root (Linux).
+
+*Rule type*: new_terms
+
+*Rule indices*: 
+
+* logs-azure.activitylogs-*
+
+*Severity*: medium
+
+*Risk score*: 47
+
+*Runs every*: 5m
+
+*Searches indices from*: now-9m ({ref}/common-options.html#date-math[Date Math format], see also <<rule-schedule, `Additional look-back time`>>)
+
+*Maximum alerts per execution*: 100
+
+*References*: 
+
+* https://learn.microsoft.com/en-us/troubleshoot/azure/virtual-machines/serial-console-overview
+* https://blog.pwnedlabs.io/diving-deep-into-azure-vm-attack-vectors
+* https://www.netspi.com/blog/technical-blog/adversary-simulation/7-ways-to-execute-command-on-azure-virtual-machine-virtual-machine-scale-sets/
+
+*Tags*: 
+
+* Domain: Cloud
+* Data Source: Azure
+* Data Source: Azure Activity Logs
+* Use Case: Threat Detection
+* Tactic: Lateral Movement
+* Tactic: Defense Evasion
+* Resources: Investigation Guide
+
+*Version*: 1
+
+*Rule authors*: 
+
+* Elastic
+
+*Rule license*: Elastic License v2
+
+
+==== Investigation guide
+
+
+
+*Triage and analysis*
+
+
+
+*Investigating Azure VM Serial Console Connection with Unusual User and ASN*
+
+
+The Azure Serial Console gives text-based console access to a VM over the boot diagnostics serial port. It works even
+when the VM has no inbound network connectivity, so a session bypasses NSGs, JIT, and other network controls. This rule
+flags successful `MICROSOFT.SERIALCONSOLE/SERIALPORTS/CONNECT/ACTION` operations where the combination of acting
+principal and source ASN has not been seen in the history window.
+
+This rule uses a new terms approach keyed on the acting principal and source ASN, so it surfaces a
+known identity connecting from an unusual network as well as any new identity using the Serial Console.
+
+
+*Triage checklist*
+
+
+- Identify the caller via `azure.activitylogs.identity.authorization.evidence.principal_id` and
+  `azure.activitylogs.identity.authorization.evidence.principal_type` (User vs ServicePrincipal). Service principal
+  Serial Console access is unusual and warrants scrutiny.
+- Review `source.as.organization.name`, `source.as.number`, and `source.geo.country_name` - is the network a known
+  corporate/VPN ASN or an unexpected hosting/residential provider?
+- Was the connect preceded by reconnaissance, role assignment changes, or Run Command / extension activity on the same VM?
+- Were there preceding failed Serial Console connect attempts (`event.outcome:failure`) suggesting access probing?
+- Does the target VM normally require Serial Console access, or is it a production system that should be reachable over
+  the network?
+
+
+*Possible investigation steps*
+
+
+- Review `azure.resource.id` to identify the VM and confirm boot diagnostics is enabled.
+- Correlate with Entra ID sign-in logs for the caller and review MFA / conditional access posture.
+- Pivot on the VM for endpoint telemetry around the connect timestamp (interactive shell, new local accounts, credential
+  access) since Serial Console sessions execute as SYSTEM/root.
+- Review the principal's RBAC role assignments on the subscription, resource group, and VM.
+
+
+*Response and remediation*
+
+
+- If unauthorized, terminate the session, rotate credentials reachable from the VM, and review RBAC on the affected scope.
+- Consider disabling the subscription-level Serial Console where it is not operationally required.
+- Isolate the VM and collect endpoint and activity log artifacts per incident procedures.
+
+
+==== Rule query
+
+
+[source, js]
+----------------------------------
+data_stream.dataset:azure.activitylogs and
+  azure.activitylogs.operation_name:"MICROSOFT.SERIALCONSOLE/SERIALPORTS/CONNECT/ACTION" and
+  event.outcome:("success" or "Success") and
+  azure.activitylogs.identity.authorization.evidence.principal_id:* and
+  source.as.number:*
+
+----------------------------------
+
+*Framework*: MITRE ATT&CK^TM^
+
+* Tactic:
+** Name: Lateral Movement
+** ID: TA0008
+** Reference URL: https://attack.mitre.org/tactics/TA0008/
+* Technique:
+** Name: Remote Services
+** ID: T1021
+** Reference URL: https://attack.mitre.org/techniques/T1021/
+* Sub-technique:
+** Name: Direct Cloud VM Connections
+** ID: T1021.008
+** Reference URL: https://attack.mitre.org/techniques/T1021/008/
+* Tactic:
+** Name: Initial Access
+** ID: TA0001
+** Reference URL: https://attack.mitre.org/tactics/TA0001/
+* Technique:
+** Name: Valid Accounts
+** ID: T1078
+** Reference URL: https://attack.mitre.org/techniques/T1078/
+* Sub-technique:
+** Name: Cloud Accounts
+** ID: T1078.004
+** Reference URL: https://attack.mitre.org/techniques/T1078/004/
