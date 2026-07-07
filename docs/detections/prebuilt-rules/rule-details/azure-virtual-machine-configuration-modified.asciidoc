@@ -1,0 +1,74 @@
+[[azure-virtual-machine-configuration-modified]]
+=== Azure Virtual Machine Configuration Modified
+
+Identifies a successful write to an Azure virtual machine resource ("MICROSOFT.COMPUTE/VIRTUALMACHINES/WRITE"). This operation is the parent action behind VM userData injection, where an adversary with VM contributor rights writes a base64 startup payload into the VM "userData" field that executes on the next reboot (a control-plane persistence technique requiring no guest access). The Azure activity log does not record the "userData" value or which property changed, so this behavior is indistinguishable from any other VM write at detection time. This is a building block rule and does not generate alerts on its own; it captures the VM write population so it can be correlated with other signals and baselined over time to tune a higher-fidelity userData-injection detection. To investigate a candidate, retrieve the live "userData" from the VM with an Azure Resource Manager GET using "$expand=userData".
+
+*Rule type*: query
+
+*Rule indices*: 
+
+* logs-azure.activitylogs-*
+
+*Severity*: low
+
+*Risk score*: 21
+
+*Runs every*: 5m
+
+*Searches indices from*: now-9m ({ref}/common-options.html#date-math[Date Math format], see also <<rule-schedule, `Additional look-back time`>>)
+
+*Maximum alerts per execution*: 100
+
+*References*: 
+
+* https://blog.pwnedlabs.io/diving-deep-into-azure-vm-attack-vectors
+* https://learn.microsoft.com/en-us/azure/virtual-machines/user-data
+
+*Tags*: 
+
+* Domain: Cloud
+* Domain: Endpoint
+* Data Source: Azure
+* Data Source: Azure Activity Logs
+* Use Case: Asset Visibility
+* Tactic: Persistence
+* Rule Type: BBR
+
+*Version*: 1
+
+*Rule authors*: 
+
+* Elastic
+
+*Rule license*: Elastic License v2
+
+
+==== Rule query
+
+
+[source, js]
+----------------------------------
+data_stream.dataset:azure.activitylogs and
+    event.action:"MICROSOFT.COMPUTE/VIRTUALMACHINES/WRITE" and
+    event.outcome:(success or Success)
+
+----------------------------------
+
+*Framework*: MITRE ATT&CK^TM^
+
+* Tactic:
+** Name: Persistence
+** ID: TA0003
+** Reference URL: https://attack.mitre.org/tactics/TA0003/
+* Technique:
+** Name: Boot or Logon Initialization Scripts
+** ID: T1037
+** Reference URL: https://attack.mitre.org/techniques/T1037/
+* Tactic:
+** Name: Execution
+** ID: TA0002
+** Reference URL: https://attack.mitre.org/tactics/TA0002/
+* Technique:
+** Name: Cloud Administration Command
+** ID: T1651
+** Reference URL: https://attack.mitre.org/techniques/T1651/

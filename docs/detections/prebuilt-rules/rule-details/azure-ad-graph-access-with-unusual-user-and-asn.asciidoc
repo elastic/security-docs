@@ -1,0 +1,136 @@
+[[azure-ad-graph-access-with-unusual-user-and-asn]]
+=== Azure AD Graph Access with Unusual User and ASN
+
+Identifies Azure AD Graph (graph.windows.net) requests originating from network sources outside the major public-cloud and Microsoft ASNs that legitimate first-party callers normally come from. Adversary tooling typically rides on commodity hosting (residential ISPs, VPS providers, anonymisers) which produces an ASN distribution very different from the Microsoft / AWS / GCP / Akamai / Cloudflare ranges that dominate legitimate AAD Graph traffic.
+
+*Rule type*: new_terms
+
+*Rule indices*: 
+
+* logs-azure.aadgraphactivitylogs-*
+
+*Severity*: medium
+
+*Risk score*: 47
+
+*Runs every*: 5m
+
+*Searches indices from*: now-9m ({ref}/common-options.html#date-math[Date Math format], see also <<rule-schedule, `Additional look-back time`>>)
+
+*Maximum alerts per execution*: 100
+
+*References*: 
+
+* https://learn.microsoft.com/en-us/graph/migrate-azure-ad-graph-overview
+* https://github.com/dirkjanm/ROADtools
+
+*Tags*: 
+
+* Domain: Cloud
+* Data Source: Azure
+* Data Source: Azure AD Graph
+* Data Source: Azure AD Graph Activity Logs
+* Use Case: Identity and Access Audit
+* Use Case: Threat Detection
+* Tactic: Initial Access
+* Resources: Investigation Guide
+
+*Version*: 1
+
+*Rule authors*: 
+
+* Elastic
+
+*Rule license*: Elastic License v2
+
+
+==== Investigation guide
+
+
+
+*Triage and analysis*
+
+
+
+*Investigating Azure AD Graph Access with Unusual User and ASN*
+
+
+Legitimate AAD Graph callers in most tenants come from a small set of ASNs: Microsoft itself, the major
+hyperscalers (AWS, GCP), and a handful of CDN / edge -networks that proxy first-party traffic. AAD Graph
+traffic originating from outside that set, especially from residential ISPs, generic VPS providers, or
+anonymising networks, is a signal worth a closer look. This rule excludes the common Microsoft / AWS /
+GCP / Akamai / Cloudflare ASN organisations and surfaces everything else.
+
+
+*Possible investigation steps*
+
+
+- Identify the ASN and the geographic context.
+    - `source.as.organization.name`, `source.as.number`, `source.geo.country_name`, `source.geo.city_name`.
+- Identify the user and whether the source matches normal behavior.
+    - `user.id` and recent legitimate sign-in geo / network for the same user.
+- Cross-check user-agent and calling client for known offensive tooling fingerprints.
+    - `user_agent.original` (`aiohttp`, `AADInternals`, `curl`, etc.) and `azure.aadgraphactivitylogs.properties.app_id` (FOCI / first-party client IDs).
+- Pivot to sign-in logs (`logs-azure.signinlogs-*`) for the same user / source IP to understand how the calling token was obtained.
+- Check tenant-wide blast radius.
+    - Are other users in the tenant calling from the same ASN within the window? If so, treat as a systematic intrusion rather than a single account compromise.
+- Confirm the activity is not attributable to authorized testing (red team engagement, penetration test, internal tooling validation) before treating as malicious.
+
+
+*Response and remediation*
+
+
+- Revoke refresh tokens and active sessions for the calling user.
+    - `POST /v1.0/users/{id}/revokeSignInSessions`.
+- Temporarily disable the user if the alert is high-confidence or you need to halt further activity while investigation continues.
+    - `PATCH /v1.0/users/{id}` with body `{"accountEnabled": false}`.
+- Check for device registrations created by the user during or around the burst window and remove rogue devices.
+    - `GET /v1.0/users/{id}/registeredDevices` and `GET /v1.0/users/{id}/ownedDevices`, then `DELETE /v1.0/devices/{deviceObjectId}`.
+    - Do this BEFORE session revocation: device-bound PRTs survive `revokeSignInSessions`.
+- Apply Conditional Access requiring compliant device or trusted network for AAD Graph access for the affected user population.
+- If the ASN belongs to known abusive infrastructure, add it to a tenant block list (Named Locations / CA policy).
+
+
+==== Setup
+
+
+
+*Azure AD Graph Activity Logs*
+
+Requires Azure AD Graph Activity Logs ingested into `logs-azure.aadgraphactivitylogs-*` via the Elastic Azure
+integration. Enable the `AzureADGraphActivityLogs` diagnostic-settings category on Entra ID. ASN enrichment
+depends on the geoip / ASN ingest pipelines applied during integration ingestion.
+
+
+==== Rule query
+
+
+[source, js]
+----------------------------------
+data_stream.dataset:azure.aadgraphactivitylogs and
+    user.id:* and source.as.number:(* and
+        not (
+            3598 or 7224 or 8068 or 8069 or 8070 or
+            8071 or 8072 or 8073 or 8074 or 8075 or
+            8987 or 12076 or 14618 or 15169 or 16509 or
+            19527 or 36040 or 36384 or 36385 or 36492 or
+            39111 or 394089 or 396982
+        )
+    )
+
+----------------------------------
+
+*Framework*: MITRE ATT&CK^TM^
+
+* Tactic:
+** Name: Initial Access
+** ID: TA0001
+** Reference URL: https://attack.mitre.org/tactics/TA0001/
+* Technique:
+** Name: Valid Accounts
+** ID: T1078
+** Reference URL: https://attack.mitre.org/techniques/T1078/
+* Sub-technique:
+** Name: Cloud Accounts
+** ID: T1078.004
+** Reference URL: https://attack.mitre.org/techniques/T1078/004/

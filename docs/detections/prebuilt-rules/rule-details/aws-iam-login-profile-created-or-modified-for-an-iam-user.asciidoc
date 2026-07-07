@@ -1,0 +1,121 @@
+[[aws-iam-login-profile-created-or-modified-for-an-iam-user]]
+=== AWS IAM Login Profile Created or Modified for an IAM User
+
+Identifies creation or modification of a console login profile for an AWS IAM user via CreateLoginProfile or UpdateLoginProfile. A login profile enables password-based console sign-in for an IAM user. Adversaries who obtain programmatic credentials may create a login profile to add persistent interactive console access, or update an existing profile to reset another user's password and take over the account, even after the original access keys are rotated. Because console access for IAM users is increasingly provisioned through federation or IAM Identity Center, direct use of these APIs by an unexpected principal warrants review. This rule targets IAM users (the userName parameter is present); creation of a login profile for the account root user is covered by a separate rule.
+
+*Rule type*: query
+
+*Rule indices*: 
+
+* logs-aws.cloudtrail-*
+
+*Severity*: medium
+
+*Risk score*: 47
+
+*Runs every*: 5m
+
+*Searches indices from*: now-6m ({ref}/common-options.html#date-math[Date Math format], see also <<rule-schedule, `Additional look-back time`>>)
+
+*Maximum alerts per execution*: 100
+
+*References*: 
+
+* https://docs.aws.amazon.com/IAM/latest/APIReference/API_CreateLoginProfile.html
+* https://docs.aws.amazon.com/IAM/latest/APIReference/API_UpdateLoginProfile.html
+
+*Tags*: 
+
+* Domain: Cloud
+* Domain: Identity
+* Data Source: AWS
+* Data Source: Amazon Web Services
+* Data Source: AWS IAM
+* Use Case: Identity and Access Audit
+* Tactic: Persistence
+* Resources: Investigation Guide
+
+*Version*: 1
+
+*Rule authors*: 
+
+* Elastic
+
+*Rule license*: Elastic License v2
+
+
+==== Investigation guide
+
+
+
+*Triage and analysis*
+
+
+
+*Investigating AWS IAM Login Profile Created or Modified for an IAM User*
+
+
+A login profile enables password-based AWS console access for an IAM user. "CreateLoginProfile" adds a console password to a user that did not have one, and "UpdateLoginProfile" changes the password of an existing profile. An adversary operating with stolen programmatic credentials can use "CreateLoginProfile" to establish persistent interactive access, or "UpdateLoginProfile" to reset a privileged user's password and hijack the account, retaining access even if the compromised access keys are later disabled.
+
+Because IAM-user console access is commonly provisioned through federation or IAM Identity Center rather than these APIs directly, unexpected use is a meaningful signal. Note that a user changing their own password uses ChangePassword, not UpdateLoginProfile, so UpdateLoginProfile typically reflects an administrative (or adversarial) reset of another user.
+
+
+*Possible investigation steps*
+
+
+- Identify the actor in "aws.cloudtrail.user_identity.arn", "aws.cloudtrail.user_identity.type", and "aws.cloudtrail.user_identity.session_context.session_issuer.arn", and review "source.ip", "source.as.organization.name", and "user_agent.original" to determine whether the action came from an expected network path or automation platform.
+- Identify the target user in "aws.cloudtrail.request_parameters" and determine whether that user normally has console access and how privileged it is.
+- Check "aws.cloudtrail.request_parameters" for "passwordResetRequired"; a value of false (or omitted) may indicate the actor set a password they intend to reuse.
+- Correlate with surrounding activity by the same principal, such as CreateAccessKey, AttachUserPolicy, PutUserPolicy, virtual MFA registration, or a subsequent ConsoleLogin for the target user, which may indicate persistence or account takeover.
+
+
+*False positive analysis*
+
+
+- Onboarding, password resets, and break-glass procedures legitimately use these APIs. Confirm the change is expected and exclude known administration roles or provisioning automation on "aws.cloudtrail.user_identity.arn" after validation.
+
+
+*Response and remediation*
+
+
+- If the change is unauthorized, delete the login profile or reset the affected user's password, and revoke active console sessions for that user.
+- Rotate or restrict credentials for the acting principal if compromise is suspected, and review any IAM permission changes or access keys created by the same session.
+- Restrict "iam:CreateLoginProfile" and "iam:UpdateLoginProfile" to a small set of trusted administrators, and prefer federation or IAM Identity Center for console access.
+
+
+==== Setup
+
+
+This rule requires AWS CloudTrail logs ingested via the Elastic AWS integration. See https://docs.elastic.co/integrations/aws/cloudtrail for setup details.
+
+==== Rule query
+
+
+[source, js]
+----------------------------------
+data_stream.dataset: "aws.cloudtrail"
+    and event.provider: "iam.amazonaws.com"
+    and event.action: ("CreateLoginProfile" or "UpdateLoginProfile")
+    and event.outcome: "success"
+    and not aws.cloudtrail.user_identity.type: "AWSService"
+    and not user_agent.original: (*terraform* or *pulumi* or *ansible*)
+    and not aws.cloudtrail.user_identity.arn: (*terraform* or *pulumi* or *ansible*)
+    and not source.as.organization.name: (Amazon* or AMAZON* or Google*)
+    and not source.address: ("cloudformation.amazonaws.com" or "servicecatalog.amazonaws.com")
+
+----------------------------------
+
+*Framework*: MITRE ATT&CK^TM^
+
+* Tactic:
+** Name: Persistence
+** ID: TA0003
+** Reference URL: https://attack.mitre.org/tactics/TA0003/
+* Technique:
+** Name: Account Manipulation
+** ID: T1098
+** Reference URL: https://attack.mitre.org/techniques/T1098/
+* Sub-technique:
+** Name: Additional Cloud Credentials
+** ID: T1098.001
+** Reference URL: https://attack.mitre.org/techniques/T1098/001/

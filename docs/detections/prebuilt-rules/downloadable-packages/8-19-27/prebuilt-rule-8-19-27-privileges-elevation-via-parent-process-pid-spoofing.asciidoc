@@ -1,0 +1,199 @@
+[[prebuilt-rule-8-19-27-privileges-elevation-via-parent-process-pid-spoofing]]
+=== Privileges Elevation via Parent Process PID Spoofing
+
+Identifies parent process spoofing used to create an elevated child process. Adversaries may spoof the parent process identifier (PPID) of a new process to evade process-monitoring defenses or to elevate privileges.
+
+*Rule type*: eql
+
+*Rule indices*: 
+
+* logs-endpoint.events.process-*
+
+*Severity*: high
+
+*Risk score*: 73
+
+*Runs every*: 5m
+
+*Searches indices from*: now-9m ({ref}/common-options.html#date-math[Date Math format], see also <<rule-schedule, `Additional look-back time`>>)
+
+*Maximum alerts per execution*: 100
+
+*References*: 
+
+* https://gist.github.com/xpn/a057a26ec81e736518ee50848b9c2cd6
+* https://blog.didierstevens.com/2017/03/20/that-is-not-my-child-process/
+* https://learn.microsoft.com/en-us/windows/win32/api/processthreadsapi/nf-processthreadsapi-updateprocthreadattribute
+* https://github.com/redcanaryco/atomic-red-team/blob/master/atomics/T1134.002/T1134.002.md
+
+*Tags*: 
+
+* Domain: Endpoint
+* OS: Windows
+* Use Case: Threat Detection
+* Tactic: Privilege Escalation
+* Data Source: Elastic Defend
+* Resources: Investigation Guide
+
+*Version*: 13
+
+*Rule authors*: 
+
+* Elastic
+
+*Rule license*: Elastic License v2
+
+
+==== Investigation guide
+
+
+
+*Triage and analysis*
+
+
+
+*Investigating Privileges Elevation via Parent Process PID Spoofing*
+
+
+
+*Possible investigation steps*
+
+
+- Does the alert show a SYSTEM child with a spoofed parent relationship?
+  - Focus: `user.id`, token integrity, `process.parent.pid`, `process.parent.Ext.real.pid`, and `process.parent.executable`.
+  - Implication: escalate when a SYSTEM child has a nonzero real-creator PID that differs from the reported parent, especially when that parent gives trusted system, service, or desktop cover; treat a recognized broker or authorized test as only a candidate benign path until creator and child intent are checked.
+  - Why: PPID spoofing can make process-tree views show the selected parent instead of the process that requested creation.
+- Which process actually requested the spoofed launch?
+  - Focus: recovered creator for `process.parent.Ext.real.pid`: `process.entity_id`, `process.executable`, `process.command_line`, signer, and trust state.
+  - Implication: escalate when the creator is unsigned, user-writable, a shell or script launcher, or unrelated to the reported parent; lower suspicion only for a stable signed vendor, update, accessibility, audit, or test component tied to the same workflow.
+  - Why: the Windows parent-process attribute can select a parent handle, so the recovered creator is the actor path the visible parent may hide.
+  - Hint: search the same `host.id` around `@timestamp` for `process.pid` = `process.parent.Ext.real.pid`; keep PID windows tight because PIDs are reused. !{investigate{"description":"","label":"Real creator process event","providers":[[{"excluded":false,"field":"event.category","queryType":"phrase","value":"process","valueType":"string"},{"excluded":false,"field":"host.id","queryType":"phrase","value":"{{host.id}}","valueType":"string"},{"excluded":false,"field":"process.pid","queryType":"phrase","value":"{{process.parent.Ext.real.pid}}","valueType":"string"}]],"relativeFrom":"now-15m","relativeTo":"now"}}
+- Does the SYSTEM child identity and command line fit the recovered creator workflow?
+  - Focus: `process.executable`, `process.command_line`, `process.pe.original_file_name`, signer, and trust state.
+  - Implication: escalate when the child is a shell, script host, renamed binary, user-writable executable, unsigned or untrusted, or has commands that do not belong to the recovered creator; trusted signing reduces identity concern but does not clear PPID spoofing without launch-context fit.
+- Did the spoofed SYSTEM child launch follow-on activity?
+  - Focus: child process events from `process.entity_id`, reviewing `process.executable`, `process.command_line`, and `user.id`. !{investigate{"description":"","label":"Descendant process events for the spoofed child","providers":[[{"excluded":false,"field":"event.category","queryType":"phrase","value":"process","valueType":"string"},{"excluded":false,"field":"host.id","queryType":"phrase","value":"{{host.id}}","valueType":"string"},{"excluded":false,"field":"process.parent.entity_id","queryType":"phrase","value":"{{process.entity_id}}","valueType":"string"}]],"relativeFrom":"now-1h","relativeTo":"now"}}
+  - Implication: escalate when it spawns shells, scripting, credential, service, or lateral-movement tooling under SYSTEM; no descendants lowers immediate impact but does not clear a suspicious creator or child identity.
+  - Hint: if `process.entity_id` is unavailable, fall back to `host.id`, `process.pid`, and a tight alert-time window.
+- If escalation is likely, what is the immediate scope?
+  - Focus: prior process alerts for `host.id` and `user.id` with matching child executable or hash, reported parent, and real-creator PID.
+    - !{investigate{"description":"","label":"Alerts associated with the host","providers":[[{"excluded":false,"field":"event.kind","queryType":"phrase","value":"signal","valueType":"string"},{"excluded":false,"field":"host.id","queryType":"phrase","value":"{{host.id}}","valueType":"string"}]],"relativeFrom":"now-48h/h","relativeTo":"now"}}
+    - !{investigate{"description":"","label":"Alerts associated with the user","providers":[[{"excluded":false,"field":"event.kind","queryType":"phrase","value":"signal","valueType":"string"},{"excluded":false,"field":"user.id","queryType":"phrase","value":"{{user.id}}","valueType":"string"}]],"relativeFrom":"now-48h/h","relativeTo":"now"}}
+  - Implication: expand containment and scoping when the same child or creator appears on other hosts or unrelated users; keep scope local when the tuple is isolated and no descendant activity contradicts it. Do not use recurrence alone to close.
+  - Range: use a lookback that fits endpoint retention.
+
+Disposition: escalate when PPID spoofing to SYSTEM has an unrecognized creator, suspicious child, misleading parent, SYSTEM follow-on activity, or cross-host scope. Close only when alert and recovered telemetry tie the event to one exact recognized broker or authorized test and no descendant evidence contradicts it; preserve evidence and escalate when recovery is incomplete or evidence conflicts.
+
+
+*False positive analysis*
+
+
+- Signed broker cases require the exact telemetry tuple: child path, signer, and command; reported parent path; recovered creator path, signer, and command; and host/user cohort. Authorized PPID-spoofing tests require exact host, time, tester, test binary, parent PID, real creator PID, and child command line. Without that tie to one product or test, treat as suspicious because the rule already filters common Windows Error Reporting, update, accessibility, remote-support, and Netwrix patterns.
+- Build exceptions only from the minimum confirmed tuple: `process.hash.sha256` or `process.code_signature.thumbprint_sha256`, `process.executable`, `process.parent.executable`, recovered creator identity, `host.id` or managed host group, and the test or product command pattern. Avoid exceptions on `process.name`, `process.parent.name`, or signer alone.
+
+
+*Response and remediation*
+
+
+- If confirmed benign: document the exact child, reported parent, real creator, signer, command line, host, and user evidence that proved the workflow; reverse any temporary containment and create only a narrow exception for the same tuple.
+- If suspicious but unconfirmed: preserve the alert, process event, recovered creator and descendant process records, process entity IDs and PIDs, command lines, hashes, signers, and current process state before containment. Use reversible containment such as host isolation or temporary policy controls based on host criticality; avoid killing the child or creator until evidence is preserved.
+- If confirmed malicious: isolate the affected host when identity, lineage, or descendant evidence shows unauthorized SYSTEM execution. Before termination, record `process.entity_id`, `process.parent.Ext.real.pid`, `process.command_line`, and `process.hash.sha256`; then terminate malicious child or descendant processes and remove only the binaries, scripts, services, or persistence found during follow-on investigation.
+- Reset or rotate credentials only for accounts, services, or remote-access paths whose misuse is confirmed by additional evidence. Do not treat SYSTEM context alone as proof that a named user credential was compromised.
+- Post-incident hardening: restrict administrative paths that can obtain parent-process creation privileges, review who can run PPID-spoofing test tools, and document the confirmed tuple or malicious artifact set so future analysts can separate repeated product behavior from repeated abuse.
+
+==== Setup
+
+
+
+*Setup*
+
+
+This rule is designed for data generated by https://www.elastic.co/security/endpoint-security[Elastic Defend], which provides native endpoint detection and response, along with event enrichments designed to work with our detection rules.
+
+Setup instructions: https://ela.st/install-elastic-defend
+
+
+==== Rule query
+
+
+[source, js]
+----------------------------------
+/* This rule is compatible with Elastic Endpoint only */
+
+process where host.os.type == "windows" and event.action == "start" and
+
+ /* process creation via seclogon */
+ process.parent.Ext.real.pid > 0 and process.parent.executable != null and
+
+ /* PrivEsc to SYSTEM */
+ user.id : "S-1-5-18"  and
+
+ /* Common FPs - evasion via hollowing is possible, should be covered by code injection */
+ not process.executable : ("?:\\Windows\\System32\\WerFault.exe",
+                           "?:\\Windows\\SysWOW64\\WerFault.exe",
+                           "?:\\Windows\\System32\\WerFaultSecure.exe",
+                           "?:\\Windows\\SysWOW64\\WerFaultSecure.exe",
+                           "?:\\Windows\\System32\\Wermgr.exe",
+                           "?:\\Windows\\SysWOW64\\Wermgr.exe",
+                           "?:\\Windows\\SoftwareDistribution\\Download\\Install\\securityhealthsetup.exe") and
+ /* Logon Utilities */
+ not (process.parent.executable : "?:\\Windows\\System32\\Utilman.exe" and
+     process.executable : ("?:\\Windows\\System32\\osk.exe",
+                           "?:\\Windows\\System32\\Narrator.exe",
+                           "?:\\Windows\\System32\\Magnify.exe",
+                           "?:\\Windows\\System32\\VoiceAccess.exe")) and
+
+ not process.parent.executable : "?:\\Windows\\System32\\AtBroker.exe" and
+
+ not (process.code_signature.subject_name in
+           ("philandro Software GmbH", "Freedom Scientific Inc.", "TeamViewer Germany GmbH", "Projector.is, Inc.",
+            "TeamViewer GmbH", "Cisco WebEx LLC", "Dell Inc") and process.code_signature.trusted == true) and
+
+ /* AM_Delta_Patch Windows Update */
+ not (process.executable : ("?:\\Windows\\System32\\MpSigStub.exe", "?:\\Windows\\SysWOW64\\MpSigStub.exe") and
+      process.parent.executable : ("?:\\Windows\\System32\\wuauclt.exe",
+                                   "?:\\Windows\\SysWOW64\\wuauclt.exe",
+                                   "?:\\Windows\\UUS\\Packages\\Preview\\*\\wuaucltcore.exe",
+                                   "?:\\Windows\\UUS\\amd64\\wuauclt.exe",
+                                   "?:\\Windows\\UUS\\amd64\\wuaucltcore.exe",
+                                   "?:\\ProgramData\\Microsoft\\Windows\\UUS\\*\\wuaucltcore.exe")) and
+
+ /* Other third party SW */
+ not process.parent.executable :
+                   ("?:\\Program Files (x86)\\HEAT Software\\HEAT Remote\\HEATRemoteServer.exe",
+                    "?:\\Program Files (x86)\\VisualCron\\VisualCronService.exe",
+                    "?:\\Program Files\\BinaryDefense\\Vision\\Agent\\bds-vision-agent-app.exe",
+                    "?:\\Program Files\\Tablet\\Wacom\\WacomHost.exe",
+                    "?:\\Program Files (x86)\\LogMeIn\\x64\\LogMeIn.exe",
+                    "?:\\Program Files (x86)\\EMC Captiva\\Captiva Cloud Runtime\\Emc.Captiva.WebCaptureRunner.exe",
+                    "?:\\Program Files\\Freedom Scientific\\*.exe",
+                    "?:\\Program Files (x86)\\Google\\Chrome Remote Desktop\\*\\remoting_host.exe",
+                    "?:\\Program Files (x86)\\GoToAssist Remote Support Customer\\*\\g2ax_comm_customer.exe") and
+ not (
+    process.code_signature.trusted == true and process.code_signature.subject_name == "Netwrix Corporation" and
+    process.name : ("adcrcpy.exe", "addumpcaller.exe") and process.parent.name : (
+      "Netwrix.ADA.EventCollector.exe",
+      "Netwrix.ADA.Analyzer.exe"
+    )
+ )
+
+----------------------------------
+
+*Framework*: MITRE ATT&CK^TM^
+
+* Tactic:
+** Name: Privilege Escalation
+** ID: TA0004
+** Reference URL: https://attack.mitre.org/tactics/TA0004/
+* Technique:
+** Name: Access Token Manipulation
+** ID: T1134
+** Reference URL: https://attack.mitre.org/techniques/T1134/
+* Sub-technique:
+** Name: Create Process with Token
+** ID: T1134.002
+** Reference URL: https://attack.mitre.org/techniques/T1134/002/
+* Sub-technique:
+** Name: Parent PID Spoofing
+** ID: T1134.004
+** Reference URL: https://attack.mitre.org/techniques/T1134/004/

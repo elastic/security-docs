@@ -35,7 +35,7 @@ Identifies suspicious child processes executed via a web server, which may sugge
 * Resources: Investigation Guide
 * Data Source: Elastic Defend
 
-*Version*: 115
+*Version*: 116
 
 *Rule authors*: 
 
@@ -278,9 +278,20 @@ not (
   ) or
   (
     process.parent.command_line == "/bin/sh /etc/init.d/nginx rotate" and
-    process.working_directory == "/var/lib/logrotate" and
     process.name == "cat"
-  )
+  ) or
+  (
+    process.parent.name == "asterisk" and
+    process.executable like (
+      "/var/www/html/dialapplet-web/agi/*.php", "/var/lib/asterisk/bin/faxnotify.php"
+    )
+  ) or
+  (
+    process.parent.executable == "/home/jiraContractor/jira.install/jre/bin/java" and
+    process.executable == "/home/jiraContractor/jira.install/jre/lib/jspawnhelper"
+  ) or
+  process.parent.args like "/home/agent/Claude/*" or
+  (process.parent.executable == "/usr/lib/jvm/java-21-openjdk/bin/java" and process.name == "ln")
 )
 
 ----------------------------------

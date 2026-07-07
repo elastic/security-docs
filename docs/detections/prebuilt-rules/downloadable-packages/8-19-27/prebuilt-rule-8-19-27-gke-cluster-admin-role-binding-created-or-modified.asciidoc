@@ -1,0 +1,118 @@
+[[prebuilt-rule-8-19-27-gke-cluster-admin-role-binding-created-or-modified]]
+=== GKE Cluster-Admin Role Binding Created or Modified
+
+Detects creation or modification of a GKE ClusterRoleBinding that grants the cluster-admin ClusterRole, providing unrestricted cluster access and enabling rapid privilege escalation or persistence.
+
+*Rule type*: query
+
+*Rule indices*: 
+
+* logs-gcp.audit-*
+
+*Severity*: medium
+
+*Risk score*: 47
+
+*Runs every*: 5m
+
+*Searches indices from*: None ({ref}/common-options.html#date-math[Date Math format], see also <<rule-schedule, `Additional look-back time`>>)
+
+*Maximum alerts per execution*: 100
+
+*References*: 
+
+* https://cloud.google.com/kubernetes-engine/docs/how-to/role-based-access-control
+* https://heilancoos.github.io/research/2025/12/16/kubernetes.html#overly-permissive-role-based-access-control
+
+*Tags*: 
+
+* Domain: Cloud
+* Domain: Kubernetes
+* Data Source: GCP
+* Data Source: Google Cloud Platform
+* Use Case: Threat Detection
+* Tactic: Persistence
+* Tactic: Privilege Escalation
+* Resources: Investigation Guide
+
+*Version*: 1
+
+*Rule authors*: 
+
+* Elastic
+
+*Rule license*: Elastic License v2
+
+
+==== Investigation guide
+
+
+
+*Triage and analysis*
+
+
+
+*Investigating GKE Cluster-Admin Role Binding Created or Modified*
+
+
+Identify who created or changed the binding and which subject received cluster-admin.
+
+
+*Investigation steps*
+
+
+- Review `user.email`, `source.ip`, and `gcp.audit.request` for the bound subject.
+- Hunt for secret reads, privileged pod creation, or webhook changes from the same actor or new subject.
+
+
+*False positives*
+
+
+- Bootstrap, recovery, or GitOps workflows may recreate cluster-admin bindings during approved changes.
+
+==== Setup
+
+
+The GCP Fleet integration with GKE audit logs enabled is required to be compatible with this rule.
+
+==== Rule query
+
+
+[source, js]
+----------------------------------
+data_stream.dataset:gcp.audit and service.name:"k8s.io" and event.outcome:success and
+event.action:(
+  "io.k8s.authorization.rbac.v1.clusterrolebindings.create" or
+  "io.k8s.authorization.rbac.v1.clusterrolebindings.patch" or
+  "io.k8s.authorization.rbac.v1.clusterrolebindings.update"
+) and gcp.audit.request.kind:"ClusterRoleBinding" and
+gcp.audit.resource_name:"rbac.authorization.k8s.io/v1/clusterrolebindings/cluster-admin"
+
+----------------------------------
+
+*Framework*: MITRE ATT&CK^TM^
+
+* Tactic:
+** Name: Persistence
+** ID: TA0003
+** Reference URL: https://attack.mitre.org/tactics/TA0003/
+* Technique:
+** Name: Account Manipulation
+** ID: T1098
+** Reference URL: https://attack.mitre.org/techniques/T1098/
+* Sub-technique:
+** Name: Additional Container Cluster Roles
+** ID: T1098.006
+** Reference URL: https://attack.mitre.org/techniques/T1098/006/
+* Tactic:
+** Name: Privilege Escalation
+** ID: TA0004
+** Reference URL: https://attack.mitre.org/tactics/TA0004/
+* Technique:
+** Name: Account Manipulation
+** ID: T1098
+** Reference URL: https://attack.mitre.org/techniques/T1098/
+* Sub-technique:
+** Name: Additional Container Cluster Roles
+** ID: T1098.006
+** Reference URL: https://attack.mitre.org/techniques/T1098/006/

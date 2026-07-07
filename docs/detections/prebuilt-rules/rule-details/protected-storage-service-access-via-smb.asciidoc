@@ -1,0 +1,146 @@
+[[protected-storage-service-access-via-smb]]
+=== Protected Storage Service Access via SMB
+
+Identifies remote access to the Windows Protected Storage Service through the IPC$ share. Attackers may abuse this named pipe to interact with the Protected Storage Service and extract sensitive credentials, certificates, or DPAPI backup keys.
+
+*Rule type*: query
+
+*Rule indices*: 
+
+* logs-system.security*
+* logs-windows.forwarded*
+* winlogbeat-*
+
+*Severity*: high
+
+*Risk score*: 73
+
+*Runs every*: 5m
+
+*Searches indices from*: now-9m ({ref}/common-options.html#date-math[Date Math format], see also <<rule-schedule, `Additional look-back time`>>)
+
+*Maximum alerts per execution*: 100
+
+*References*: 
+
+* https://threathunterplaybook.com/hunts/windows/190620-DomainDPAPIBackupKeyExtraction/notebook.html
+* https://www.elastic.co/security-labs/detect-credential-access
+
+*Tags*: 
+
+* Domain: Endpoint
+* OS: Windows
+* Use Case: Threat Detection
+* Tactic: Credential Access
+* Tactic: Lateral Movement
+* Resources: Investigation Guide
+* Use Case: Active Directory Monitoring
+* Data Source: Active Directory
+* Data Source: Windows Security Event Logs
+
+*Version*: 1
+
+*Rule authors*: 
+
+* Elastic
+
+*Rule license*: Elastic License v2
+
+
+==== Investigation guide
+
+
+
+*Triage and analysis*
+
+
+
+*Investigating Protected Storage Service Access via SMB*
+
+
+The Protected Storage Service manages sensitive user data such as passwords, certificates, and private keys. Remote
+access to the `protected_storage` named pipe over the IPC$ share is unusual and may indicate an attempt to extract
+credentials or abuse DPAPI to retrieve domain backup keys from domain controllers.
+
+
+*Possible investigation steps*
+
+
+- Identify the source system and user account that initiated the access by reviewing `source.ip`, `user.name`, and
+  `winlog.event_data.SubjectUserName`.
+- Determine whether the target host is a domain controller or other high-value system that stores DPAPI backup keys.
+- Review authentication events (4624, 4625) around the alert time to identify how the source authenticated to the
+  target.
+- Investigate other alerts associated with the source host or user during the past 48 hours.
+- Check for follow-on credential access activity such as registry hive access, LSASS access, or lateral movement.
+
+
+*False positive analysis*
+
+
+- This activity is rarely expected in most environments. If legitimate administrative tooling accesses this pipe,
+  confirm the source, account, and target system before adding an exception.
+
+
+*Response and remediation*
+
+
+- Initiate the incident response process based on the outcome of the triage.
+- Isolate the source host if unauthorized access is confirmed.
+- Investigate credential exposure and reset passwords for potentially compromised accounts.
+- Review domain controller DPAPI backup key exposure if the target is a domain controller.
+
+
+==== Setup
+
+
+
+*Setup*
+
+
+Audit Detailed File Share must be enabled to generate the events used by this rule.
+Setup instructions: https://ela.st/audit-detailed-file-share
+
+
+==== Rule query
+
+
+[source, js]
+----------------------------------
+host.os.type:windows and event.category:file and event.code:5145 and
+  winlog.event_data.ShareName:"\\\\*\\IPC$" and
+  winlog.event_data.RelativeTargetName:"protected_storage" and
+  not source.ip:("::" or "::1" or "0.0.0.0" or "127.0.0.1")
+
+----------------------------------
+
+*Framework*: MITRE ATT&CK^TM^
+
+* Tactic:
+** Name: Credential Access
+** ID: TA0006
+** Reference URL: https://attack.mitre.org/tactics/TA0006/
+* Technique:
+** Name: Credentials from Password Stores
+** ID: T1555
+** Reference URL: https://attack.mitre.org/techniques/T1555/
+* Technique:
+** Name: Unsecured Credentials
+** ID: T1552
+** Reference URL: https://attack.mitre.org/techniques/T1552/
+* Sub-technique:
+** Name: Private Keys
+** ID: T1552.004
+** Reference URL: https://attack.mitre.org/techniques/T1552/004/
+* Tactic:
+** Name: Lateral Movement
+** ID: TA0008
+** Reference URL: https://attack.mitre.org/tactics/TA0008/
+* Technique:
+** Name: Remote Services
+** ID: T1021
+** Reference URL: https://attack.mitre.org/techniques/T1021/
+* Sub-technique:
+** Name: SMB/Windows Admin Shares
+** ID: T1021.002
+** Reference URL: https://attack.mitre.org/techniques/T1021/002/
