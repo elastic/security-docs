@@ -1,0 +1,108 @@
+[[prebuilt-rule-8-19-27-gke-privileged-pod-created]]
+=== GKE Privileged Pod Created
+
+Detects successful GKE audit events where a pod is created with allowPrivilegeEscalation enabled. This weakens container isolation and can help an attacker escalate toward host access. Standalone pods are included; workloads owned by ReplicaSet, DaemonSet, or StatefulSet controllers are excluded.
+
+*Rule type*: query
+
+*Rule indices*: 
+
+* logs-gcp.audit-*
+
+*Severity*: medium
+
+*Risk score*: 47
+
+*Runs every*: 5m
+
+*Searches indices from*: None ({ref}/common-options.html#date-math[Date Math format], see also <<rule-schedule, `Additional look-back time`>>)
+
+*Maximum alerts per execution*: 100
+
+*References*: 
+
+* https://cloud.google.com/kubernetes-engine/docs/how-to/audit-logging
+* https://kubernetes.io/docs/tasks/configure-pod-container/security-context/
+
+*Tags*: 
+
+* Domain: Cloud
+* Domain: Kubernetes
+* Data Source: GCP
+* Data Source: Google Cloud Platform
+* Use Case: Threat Detection
+* Tactic: Privilege Escalation
+* Tactic: Execution
+* Resources: Investigation Guide
+
+*Version*: 1
+
+*Rule authors*: 
+
+* Elastic
+
+*Rule license*: Elastic License v2
+
+
+==== Investigation guide
+
+
+
+*Triage and analysis*
+
+
+
+*Investigating GKE Privileged Pod Created*
+
+
+Review `user.email`, `orchestrator.resource.name`, `orchestrator.namespace`, and the pod spec in `gcp.audit.request`.
+Confirm whether allowPrivilegeEscalation is required for the workload.
+
+
+*Investigation steps*
+
+
+- Identify the actor and source (`user.email`, `source.ip`, `user_agent.original`).
+- Inspect container images and securityContext in the audit request payload.
+- Correlate with RBAC changes, secret access, or exec activity from the same identity.
+
+
+*False positives*
+
+
+- One-off admin debugging pods; tune by user or namespace when documented.
+
+==== Setup
+
+
+The GCP Fleet integration with GKE audit logs enabled is required to be compatible with this rule.
+
+==== Rule query
+
+
+[source, js]
+----------------------------------
+data_stream.dataset:gcp.audit and event.action:"io.k8s.core.v1.pods.create" and event.outcome:success and
+gcp.audit.request.spec.containers.securityContext.allowPrivilegeEscalation:true and
+not gcp.audit.request.metadata.ownerReferences.kind:("ReplicaSet" or "DaemonSet" or "StatefulSet")
+
+----------------------------------
+
+*Framework*: MITRE ATT&CK^TM^
+
+* Tactic:
+** Name: Privilege Escalation
+** ID: TA0004
+** Reference URL: https://attack.mitre.org/tactics/TA0004/
+* Technique:
+** Name: Escape to Host
+** ID: T1611
+** Reference URL: https://attack.mitre.org/techniques/T1611/
+* Tactic:
+** Name: Execution
+** ID: TA0002
+** Reference URL: https://attack.mitre.org/tactics/TA0002/
+* Technique:
+** Name: Deploy Container
+** ID: T1610
+** Reference URL: https://attack.mitre.org/techniques/T1610/

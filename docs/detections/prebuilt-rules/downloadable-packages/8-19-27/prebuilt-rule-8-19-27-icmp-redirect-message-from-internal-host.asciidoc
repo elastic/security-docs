@@ -1,0 +1,123 @@
+[[prebuilt-rule-8-19-27-icmp-redirect-message-from-internal-host]]
+=== ICMP Redirect Message from Internal Host
+
+Identifies ICMP Redirect messages (type 5 for IPv4, type 137 for IPv6) sourced from an internal IPv4 or IPv6 address. Legitimate redirects are normally sent only by on-path routers. A workstation or server emitting redirects can indicate route manipulation for adversary-in-the-middle activity.
+
+*Rule type*: query
+
+*Rule indices*: 
+
+* logs-network_traffic.icmp-*
+
+*Severity*: high
+
+*Risk score*: 73
+
+*Runs every*: 5m
+
+*Searches indices from*: now-9m ({ref}/common-options.html#date-math[Date Math format], see also <<rule-schedule, `Additional look-back time`>>)
+
+*Maximum alerts per execution*: 100
+
+*References*: 
+
+* https://www.rfc-editor.org/rfc/rfc792
+* https://www.rfc-editor.org/rfc/rfc4443
+* https://zimperium.com/blog/doubledirect-zimperium-discovers-full-duplex-icmp-redirect-attacks-in-the-wild
+
+*Tags*: 
+
+* Domain: Network
+* Tactic: Credential Access
+* Use Case: Threat Detection
+* Use Case: Network Security Monitoring
+* Data Source: Network Traffic
+* Resources: Investigation Guide
+
+*Version*: 1
+
+*Rule authors*: 
+
+* Elastic
+
+*Rule license*: Elastic License v2
+
+
+==== Investigation guide
+
+
+
+*Triage and analysis*
+
+
+> **Disclaimer**:
+> This investigation guide was created using generative AI technology and has been reviewed to improve its accuracy and relevance. While every effort has been made to ensure its quality, we recommend validating the content and adapting it to suit your specific environment and operational needs.
+
+
+*Investigating ICMP Redirect Message from Internal Host*
+
+
+ICMP Redirect instructs a host to send traffic for a destination through a different next hop. On most enterprise
+segments, only infrastructure routers should emit redirects; a user workstation or server doing so is a strong
+adversary-in-the-middle indicator.
+
+
+*Possible investigation steps*
+
+
+- Identify the redirect source in `source.ip` and locate the asset on the VLAN. Confirm whether it is an authorized
+  router or gateway.
+- Review the redirect target and affected destination in ICMP fields and adjacent flow records to see which routes or
+  resolvers were being manipulated.
+- Check whether affected clients show DNS, gateway, or VPN routing changes around the alert time.
+- Correlate with DHCP, ARP, or LLMNR/NBT-NS alerts on the same segment for combined MITM activity.
+
+
+*False positive analysis*
+
+
+- Some legacy network appliances, hypervisor gateways, or misconfigured Linux hosts with IP forwarding enabled may
+  emit redirects. Maintain exceptions for known router and gateway IPs after validation.
+- Lab networks that intentionally test route injection should be scoped out by source subnet.
+
+
+*Response and remediation*
+
+
+- Isolate the emitting host if it is not an authorized router.
+- Disable ICMP redirect acceptance on affected clients where policy allows, and block redirect-generating hosts at the
+  access layer.
+- Review segment routing, default gateways, and DHCP options for unauthorized changes.
+
+==== Setup
+
+
+
+*Setup*
+
+
+This rule requires ICMP transaction telemetry from the Elastic network_traffic integration (`network_traffic.icmp`
+data stream). Flow-only exporters that do not record ICMP type/code will not satisfy this rule.
+
+
+==== Rule query
+
+
+[source, js]
+----------------------------------
+data_stream.dataset:network_traffic.icmp
+  and (network_traffic.icmp.request.type:(5 or 137) or icmp.request.type:(5 or 137))
+  and source.ip:(10.0.0.0/8 or 172.16.0.0/12 or 192.168.0.0/16 or "FC00::/7" or "FE80::/10")
+
+----------------------------------
+
+*Framework*: MITRE ATT&CK^TM^
+
+* Tactic:
+** Name: Credential Access
+** ID: TA0006
+** Reference URL: https://attack.mitre.org/tactics/TA0006/
+* Technique:
+** Name: Adversary-in-the-Middle
+** ID: T1557
+** Reference URL: https://attack.mitre.org/techniques/T1557/

@@ -1,0 +1,107 @@
+[[gke-pod-created-with-hostipc]]
+=== GKE Pod Created With HostIPC
+
+Detects GKE pod create, update, or patch events that enable host IPC namespace sharing. This exposes host inter-process communication mechanisms and can support privilege escalation. Controller-owned workloads are excluded.
+
+*Rule type*: query
+
+*Rule indices*: 
+
+* logs-gcp.audit-*
+
+*Severity*: medium
+
+*Risk score*: 47
+
+*Runs every*: 5m
+
+*Searches indices from*: None ({ref}/common-options.html#date-math[Date Math format], see also <<rule-schedule, `Additional look-back time`>>)
+
+*Maximum alerts per execution*: 100
+
+*References*: 
+
+* https://kubernetes.io/docs/concepts/security/pod-security-standards/
+* https://bishopfox.com/blog/kubernetes-pod-privilege-escalation
+
+*Tags*: 
+
+* Domain: Cloud
+* Domain: Kubernetes
+* Data Source: GCP
+* Data Source: Google Cloud Platform
+* Use Case: Threat Detection
+* Tactic: Privilege Escalation
+* Tactic: Execution
+* Resources: Investigation Guide
+
+*Version*: 1
+
+*Rule authors*: 
+
+* Elastic
+
+*Rule license*: Elastic License v2
+
+
+==== Investigation guide
+
+
+
+*Triage and analysis*
+
+
+
+*Investigating GKE Pod Created With HostIPC*
+
+
+Host IPC lets a pod interact with host IPC facilities. Review the pod spec, actor, and whether the change was expected.
+
+
+*Investigation steps*
+
+
+- Confirm `gcp.audit.request.spec.hostIPC` and targeted namespace or pod.
+- Review `user.email` and correlate with other risky pod modifications.
+
+
+*False positives*
+
+
+- Break-glass debugging on nodes; allowlist known admin identities.
+
+==== Setup
+
+
+The GCP Fleet integration with GKE audit logs enabled is required to be compatible with this rule.
+
+==== Rule query
+
+
+[source, js]
+----------------------------------
+data_stream.dataset:gcp.audit and event.outcome:success and
+event.action:("io.k8s.core.v1.pods.create" or "io.k8s.core.v1.pods.update" or "io.k8s.core.v1.pods.patch") and
+gcp.audit.request.spec.hostIPC:true and
+not gcp.audit.request.metadata.ownerReferences.kind:("ReplicaSet" or "DaemonSet" or "StatefulSet")
+
+----------------------------------
+
+*Framework*: MITRE ATT&CK^TM^
+
+* Tactic:
+** Name: Privilege Escalation
+** ID: TA0004
+** Reference URL: https://attack.mitre.org/tactics/TA0004/
+* Technique:
+** Name: Escape to Host
+** ID: T1611
+** Reference URL: https://attack.mitre.org/techniques/T1611/
+* Tactic:
+** Name: Execution
+** ID: TA0002
+** Reference URL: https://attack.mitre.org/tactics/TA0002/
+* Technique:
+** Name: Deploy Container
+** ID: T1610
+** Reference URL: https://attack.mitre.org/techniques/T1610/

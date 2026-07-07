@@ -1,0 +1,96 @@
+[[prebuilt-rule-8-19-27-gke-user-exec-into-pod]]
+=== GKE User Exec into Pod
+
+Detects the first occurrence of a non-system GKE identity establishing an exec session into a pod. kubectl exec enables interactive command execution inside workloads and is a common post-compromise technique to access secrets and expand access.
+
+*Rule type*: new_terms
+
+*Rule indices*: 
+
+* logs-gcp.audit-*
+
+*Severity*: medium
+
+*Risk score*: 47
+
+*Runs every*: 5m
+
+*Searches indices from*: now-6m ({ref}/common-options.html#date-math[Date Math format], see also <<rule-schedule, `Additional look-back time`>>)
+
+*Maximum alerts per execution*: 100
+
+*References*: 
+
+* https://kubernetes.io/docs/tasks/debug/debug-application/get-shell-running-container/
+
+*Tags*: 
+
+* Domain: Cloud
+* Domain: Kubernetes
+* Data Source: GCP
+* Data Source: Google Cloud Platform
+* Use Case: Threat Detection
+* Tactic: Execution
+* Resources: Investigation Guide
+
+*Version*: 1
+
+*Rule authors*: 
+
+* Elastic
+
+*Rule license*: Elastic License v2
+
+
+==== Investigation guide
+
+
+
+*Triage and analysis*
+
+
+
+*Investigating GKE User Exec into Pod*
+
+
+This new-terms rule alerts on the first exec into a given pod by a user identity in the lookback window.
+
+
+*Investigation steps*
+
+
+- Review `user.email`, `orchestrator.resource.name`, `source.ip`, and `user_agent.original`.
+- Determine whether the target pod holds sensitive data or cluster credentials.
+- Correlate with secret access or RBAC changes from the same identity.
+
+
+*False positives*
+
+
+- Approved admin debugging; exclude stable operator identities after review.
+
+==== Setup
+
+
+The GCP Fleet integration with GKE audit logs enabled is required to be compatible with this rule.
+
+==== Rule query
+
+
+[source, js]
+----------------------------------
+data_stream.dataset:gcp.audit and event.action:("io.k8s.core.v1.pods.exec.create" or "io.k8s.core.v1.pods.exec.get") and
+not user.email:system\:*
+
+----------------------------------
+
+*Framework*: MITRE ATT&CK^TM^
+
+* Tactic:
+** Name: Execution
+** ID: TA0002
+** Reference URL: https://attack.mitre.org/tactics/TA0002/
+* Technique:
+** Name: Container Administration Command
+** ID: T1609
+** Reference URL: https://attack.mitre.org/techniques/T1609/
