@@ -35,7 +35,7 @@ Detects creation or modification of a GKE ClusterRoleBinding that grants the clu
 * Tactic: Privilege Escalation
 * Resources: Investigation Guide
 
-*Version*: 1
+*Version*: 2
 
 *Rule authors*: 
 
@@ -61,14 +61,16 @@ Identify who created or changed the binding and which subject received cluster-a
 *Investigation steps*
 
 
-- Review `user.email`, `source.ip`, and `gcp.audit.request` for the bound subject.
+- Review `client.user.email`, `source.ip`, and `gcp.audit.request` for the bound subject.
 - Hunt for secret reads, privileged pod creation, or webhook changes from the same actor or new subject.
 
 
 *False positives*
 
 
-- Bootstrap, recovery, or GitOps workflows may recreate cluster-admin bindings during approved changes.
+- Bootstrap and recovery may recreate cluster-admin bindings via `system:apiserver` during control plane reconciliation (excluded).
+
+
 
 ==== Setup
 
@@ -86,7 +88,8 @@ event.action:(
   "io.k8s.authorization.rbac.v1.clusterrolebindings.patch" or
   "io.k8s.authorization.rbac.v1.clusterrolebindings.update"
 ) and gcp.audit.request.kind:"ClusterRoleBinding" and
-gcp.audit.resource_name:"rbac.authorization.k8s.io/v1/clusterrolebindings/cluster-admin"
+gcp.audit.resource_name:"rbac.authorization.k8s.io/v1/clusterrolebindings/cluster-admin" and
+not client.user.email:"system:apiserver"
 
 ----------------------------------
 

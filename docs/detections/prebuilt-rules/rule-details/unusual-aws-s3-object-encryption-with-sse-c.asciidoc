@@ -35,7 +35,7 @@ Identifies when AWS S3 objects stored in a bucket are encrypted using Server-Sid
 * Use Case: Threat Detection
 * Tactic: Impact
 
-*Version*: 8
+*Version*: 9
 
 *Rule authors*: 
 
@@ -77,7 +77,8 @@ This rule identifies the use of Server-Side Encryption with Customer-Provided Ke
 **Correlate with recent events**:
    - Look for any suspicious activity in proximity to the encryption event, such as new access key creation, policy changes, or unusual access patterns from the same user or IP.
    - Identify `ListBucket` or `GetObject` operations on the same bucket to determine all affected objects.
-   - For `PutObject` events, identify any other unusual objecs uploaded such as a ransom note.
+   - For `PutObject` events, identify any other unusual objects uploaded such as a ransom note.
+   - For `CopyObject` events, determine if existing objects are being re-encrypted in place using SSE-C, a common ransomware workflow that overwrites objects with attacker-controlled keys without uploading new data.
 
 **Validate access permissions**:
    - Check the IAM policies and roles associated with the user to verify if they had legitimate access to encrypt objects.
@@ -125,7 +126,7 @@ AWS S3 data event types need to be enabled in the CloudTrail trail configuration
 ----------------------------------
 data_stream.dataset: "aws.cloudtrail"
     and event.provider: "s3.amazonaws.com"
-    and event.action: "PutObject"
+    and event.action: ("PutObject" or "CopyObject")
     and event.outcome: "success"
     and aws.cloudtrail.flattened.request_parameters.x-amz-server-side-encryption-customer-algorithm: "AES256"
 

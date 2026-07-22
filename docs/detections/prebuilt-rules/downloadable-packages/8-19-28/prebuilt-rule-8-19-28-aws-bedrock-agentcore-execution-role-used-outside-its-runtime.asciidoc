@@ -1,0 +1,137 @@
+[[prebuilt-rule-8-19-28-aws-bedrock-agentcore-execution-role-used-outside-its-runtime]]
+=== AWS Bedrock AgentCore Execution Role Used Outside Its Runtime
+
+Identifies an Amazon Bedrock AgentCore execution role (an AssumedRole identity whose role name begins with "AgentCore-" or contains "BedrockAgentCore") making an AWS API call to a service it has not previously called. AgentCore runtimes normally interact only with Bedrock inference, AgentCore data-plane, and observability services (CloudWatch Logs, X-Ray, CloudWatch metrics), so an execution role suddenly calling STS, EC2, IAM, Secrets Manager, or other services is a strong indicator that the role's temporary credentials were exfiltrated from the agent's microVM (for example, via the Code Interpreter instance-metadata-service credential theft) and are being used outside the runtime for reconnaissance, privilege escalation, or lateral movement. Because the stolen credentials are recorded in CloudTrail under the execution role's own identity, the anomalous service usage, not the identity, is the detectable signal.
+
+*Rule type*: new_terms
+
+*Rule indices*: 
+
+* logs-aws.cloudtrail-*
+
+*Severity*: high
+
+*Risk score*: 73
+
+*Runs every*: 5m
+
+*Searches indices from*: now-9m ({ref}/common-options.html#date-math[Date Math format], see also <<rule-schedule, `Additional look-back time`>>)
+
+*Maximum alerts per execution*: 100
+
+*References*: 
+
+* https://sonraisecurity.com/blog/sandboxed-to-compromised-new-research-exposes-credential-exfiltration-paths-in-aws-code-interpreters/
+* https://unit42.paloaltonetworks.com/bypass-of-aws-sandbox-network-isolation-mode/
+
+*Tags*: 
+
+* Domain: Cloud
+* Data Source: AWS
+* Data Source: AWS CloudTrail
+* Data Source: Amazon Web Services
+* Data Source: Amazon Bedrock
+* Use Case: Threat Detection
+* Tactic: Privilege Escalation
+* Tactic: Credential Access
+* Resources: Investigation Guide
+
+*Version*: 1
+
+*Rule authors*: 
+
+* Elastic
+
+*Rule license*: Elastic License v2
+
+
+==== Investigation guide
+
+
+
+*Triage and analysis*
+
+
+
+*Investigating AWS Bedrock AgentCore Execution Role Used Outside Its Runtime*
+
+
+AgentCore runtime and tool execution roles are assumed by the AgentCore service and normally only call Bedrock inference, AgentCore data-plane, and observability (CloudWatch Logs, X-Ray, CloudWatch metrics) APIs, all of which this rule excludes. Public research has shown the Code Interpreter microVM exposes the execution role's temporary credentials through the instance metadata service (IMDS), and that a string-filter bypass allows exfiltrating them outside the sandbox. Once stolen, the credentials are used to call other AWS services, but those calls are logged in CloudTrail under the execution role's identity rather than the attacker's, creating an attribution gap. This rule flags the first time an AgentCore execution role ("AgentCore-*" or "*BedrockAgentCore*") calls a non-Bedrock service, which is the point at which exfiltrated credentials are put to use.
+
+
+*Possible investigation steps*
+
+
+- Identify the execution role in "aws.cloudtrail.user_identity.session_context.session_issuer.arn" and map it to its AgentCore runtime, gateway, or code interpreter.
+- Review "event.provider" and "event.action" for reconnaissance (sts:GetCallerIdentity, ec2:Describe*, iam:List*/Get*), privilege escalation (sts:AssumeRole, iam:Put*/Attach*), or data access, and assess what the role can reach.
+- Compare "source.ip", "source.as.organization.name", and "user_agent.original" against the AgentCore service origin; calls from an external network strongly indicate exfiltrated credentials.
+- Determine whether the agent design legitimately added this integration, or whether the activity is unexpected for the role.
+
+
+*False positive analysis*
+
+
+- A newly designed agent integration produces a first-time non-Bedrock call for its execution role. Confirm the integration is approved and exclude the role and service after validation.
+
+
+*Response and remediation*
+
+
+- If unauthorized, revoke the execution role's active sessions, rotate any associated secrets, and review every action the role took since the first anomalous call.
+- Restrict the execution role to least privilege, prefer VPC network mode for code interpreters, and ensure the metadata service requires session tokens.
+
+
+==== Setup
+
+
+This rule requires AWS CloudTrail logs ingested via the Elastic AWS integration. See https://docs.elastic.co/integrations/aws/cloudtrail for setup details. The AgentCore execution-role name prefix may differ in your environment; tune the role-name filter accordingly.
+
+==== Rule query
+
+
+[source, js]
+----------------------------------
+data_stream.dataset: "aws.cloudtrail"
+    and aws.cloudtrail.user_identity.type: "AssumedRole"
+    and aws.cloudtrail.user_identity.session_context.session_issuer.arn: (*role/AgentCore-* or *role/*BedrockAgentCore*)
+    and event.outcome: "success"
+    and not event.provider: (
+        "bedrock.amazonaws.com" or
+        "bedrock-runtime.amazonaws.com" or
+        "bedrock-agentcore.amazonaws.com" or
+        "bedrock-agentcore-control.amazonaws.com" or
+        "logs.amazonaws.com" or
+        "xray.amazonaws.com" or
+        "monitoring.amazonaws.com" or
+        "ecr.amazonaws.com" or
+        "ecr-public.amazonaws.com"
+    )
+
+----------------------------------
+
+*Framework*: MITRE ATT&CK^TM^
+
+* Tactic:
+** Name: Privilege Escalation
+** ID: TA0004
+** Reference URL: https://attack.mitre.org/tactics/TA0004/
+* Technique:
+** Name: Valid Accounts
+** ID: T1078
+** Reference URL: https://attack.mitre.org/techniques/T1078/
+* Sub-technique:
+** Name: Cloud Accounts
+** ID: T1078.004
+** Reference URL: https://attack.mitre.org/techniques/T1078/004/
+* Tactic:
+** Name: Credential Access
+** ID: TA0006
+** Reference URL: https://attack.mitre.org/tactics/TA0006/
+* Technique:
+** Name: Unsecured Credentials
+** ID: T1552
+** Reference URL: https://attack.mitre.org/techniques/T1552/
+* Sub-technique:
+** Name: Cloud Instance Metadata API
+** ID: T1552.005
+** Reference URL: https://attack.mitre.org/techniques/T1552/005/

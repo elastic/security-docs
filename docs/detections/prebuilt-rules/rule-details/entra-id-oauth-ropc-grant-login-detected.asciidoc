@@ -25,6 +25,8 @@ Detects unusual resource owner password credential (ROPC) login attempts by a us
 * https://www.proofpoint.com/us/blog/threat-insight/attackers-unleash-teamfiltration-account-takeover-campaign
 * https://dirkjanm.io/assets/raw/Finding%20Entra%20ID%20CA%20Bypasses%20-%20the%20structured%20way.pdf
 * https://learn.microsoft.com/en-us/entra/identity-platform/v2-oauth-ropc
+* https://redcanary.com/blog/threat-detection/bav2ropc/
+* https://www.huntress.com/blog/lshiy-password-spray-attack
 
 *Tags*: 
 
@@ -37,7 +39,7 @@ Detects unusual resource owner password credential (ROPC) login attempts by a us
 * Tactic: Initial Access
 * Resources: Investigation Guide
 
-*Version*: 4
+*Version*: 5
 
 *Rule authors*: 
 
@@ -95,7 +97,10 @@ This rule detects unusual login attempts using the Resource Owner Password Crede
 [source, js]
 ----------------------------------
 data_stream.dataset: "azure.signinlogs" and
-    azure.signinlogs.properties.authentication_protocol: "ropc" and
+    (
+        azure.signinlogs.properties.authentication_protocol: "ropc" or
+        user_agent.original: "BAV2ROPC"
+    ) and
     azure.signinlogs.properties.authentication_requirement: "singleFactorAuthentication" and
     azure.signinlogs.properties.user_type: "Member" and
     event.outcome: "success"

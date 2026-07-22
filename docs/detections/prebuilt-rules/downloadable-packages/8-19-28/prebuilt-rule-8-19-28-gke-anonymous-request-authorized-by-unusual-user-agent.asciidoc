@@ -1,0 +1,105 @@
+[[prebuilt-rule-8-19-28-gke-anonymous-request-authorized-by-unusual-user-agent]]
+=== GKE Anonymous Request Authorized by Unusual User Agent
+
+Detects successful GKE API requests from unauthenticated anonymous identities using an unusual user agent. Attackers may rely on anonymous access for initial cluster access or to avoid attribution. Matches "system:anonymous" / "system:unauthenticated" and GKE audit rows where the principal is missing (common for unauthenticated clients). Common kube-probe health checks (readyz/livez/healthz/version) are excluded.
+
+*Rule type*: new_terms
+
+*Rule indices*: 
+
+* logs-gcp.audit-*
+
+*Severity*: medium
+
+*Risk score*: 47
+
+*Runs every*: 5m
+
+*Searches indices from*: now-6m ({ref}/common-options.html#date-math[Date Math format], see also <<rule-schedule, `Additional look-back time`>>)
+
+*Maximum alerts per execution*: 100
+
+*References*: 
+
+* https://media.defense.gov/2022/Aug/29/2003066362/-1/-1/0/CTR_KUBERNETES_HARDENING_GUIDANCE_1.2_20220829.PDF
+* https://cloud.google.com/kubernetes-engine/docs/how-to/audit-logging
+
+*Tags*: 
+
+* Domain: Cloud
+* Domain: Kubernetes
+* Data Source: GCP
+* Data Source: Google Cloud Platform
+* Use Case: Threat Detection
+* Tactic: Initial Access
+* Tactic: Defense Evasion
+* Resources: Investigation Guide
+
+*Version*: 1
+
+*Rule authors*: 
+
+* Elastic
+
+*Rule license*: Elastic License v2
+
+
+==== Investigation guide
+
+
+
+*Triage and analysis*
+
+
+
+*Investigating GKE Anonymous Request Authorized by Unusual User Agent*
+
+
+Anonymous success outside health endpoints can indicate a publicly reachable API server or overly permissive RBAC for
+`system:anonymous` / `system:unauthenticated`. On GKE via GCP audit, some unauthenticated clients omit
+`client.user.email`; those successes are included when the user agent is unusual.
+
+
+*Investigation steps*
+
+
+- Review `client.user.email`, `event.action`, `gcp.audit.resource_name`, `source.ip`, and `user_agent.original`.
+- Confirm whether the API server is Internet-exposed and whether anonymous auth is intentionally enabled.
+- Hunt for follow-on anonymous pod mutations, secret reads, or RBAC changes from the same source.
+
+
+*False positives*
+
+
+- Custom health or readiness endpoints not covered by the built-in exclusions; add environment-specific exceptions after review.
+
+
+
+==== Setup
+
+
+The GCP Fleet integration with GKE audit logs enabled is required to be compatible with this rule.
+
+==== Rule query
+
+
+[source, js]
+----------------------------------
+data_stream.dataset:gcp.audit and service.name:k8s.io and event.outcome:success and client.user.email:("system:anonymous" or "system:unauthenticated" or not *) and user_agent.original:(* and not (*kubernetes/$Format or kube-probe*)) and not gcp.audit.resource_name:(healthz or livez or readyz or version or .well-known*)
+
+----------------------------------
+
+*Framework*: MITRE ATT&CK^TM^
+
+* Tactic:
+** Name: Initial Access
+** ID: TA0001
+** Reference URL: https://attack.mitre.org/tactics/TA0001/
+* Technique:
+** Name: Valid Accounts
+** ID: T1078
+** Reference URL: https://attack.mitre.org/techniques/T1078/
+* Sub-technique:
+** Name: Default Accounts
+** ID: T1078.001
+** Reference URL: https://attack.mitre.org/techniques/T1078/001/

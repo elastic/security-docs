@@ -1,0 +1,148 @@
+[[prebuilt-rule-8-19-28-aws-ec2-createkeypair-by-new-principal-from-non-cloud-as-organization]]
+=== AWS EC2 CreateKeyPair by New Principal from Non-Cloud AS Organization
+
+Identifies the first time a given IAM principal successfully creates an EC2 key pair when the request is sourced from a network whose autonomous system organization is not attributed to common cloud or hyperscaler providers in your GeoIP data. Adversaries may call CreateKeyPair to stage SSH access material before launching or accessing instances. A new terms baseline on `user_identity.arn` suppresses repeated noise from the same principal while still surfacing the initial suspicious creation from an unusual egress label.
+
+*Rule type*: new_terms
+
+*Rule indices*: 
+
+* filebeat-*
+* logs-aws.cloudtrail-*
+
+*Severity*: high
+
+*Risk score*: 73
+
+*Runs every*: 5m
+
+*Searches indices from*: now-6m ({ref}/common-options.html#date-math[Date Math format], see also <<rule-schedule, `Additional look-back time`>>)
+
+*Maximum alerts per execution*: 100
+
+*References*: 
+
+* https://docs.aws.amazon.com/AWSEC2/latest/APIReference/API_CreateKeyPair.html
+
+*Tags*: 
+
+* Domain: Cloud
+* Domain: Identity
+* Data Source: AWS
+* Data Source: Amazon Web Services
+* Data Source: Amazon EC2
+* Use Case: Threat Detection
+* Tactic: Persistence
+* Tactic: Credential Access
+* Tactic: Lateral Movement
+* Resources: Investigation Guide
+
+*Version*: 2
+
+*Rule authors*: 
+
+* Elastic
+
+*Rule license*: Elastic License v2
+
+
+==== Investigation guide
+
+
+
+*Triage and analysis*
+
+
+
+*Investigating AWS EC2 CreateKeyPair by New Principal from Non-Cloud AS Organization*
+
+
+`CreateKeyPair` creates an Amazon EC2 SSH key pair in the account; the private key material is returned to the caller
+once. This is useful for persistence or preparation for instance access.
+
+This **new terms** rule alerts the **first** time `aws.cloudtrail.user_identity.arn` matches the query within the
+configured history window. Subsequent key-pair creations by the same principal (still matching the query) are
+suppressed until the term ages out of the window.
+
+
+*Possible investigation steps*
+
+
+- Review `aws.cloudtrail.request_parameters` / `response_elements` for `keyName` and whether the key aligns with change
+  management.
+- Correlate `source.ip`, `source.geo`, and `user_agent.original` with the principal’s normal admin paths.
+- Hunt for `RunInstances`, `ImportKeyPair`, or Instance Connect activity involving the same key name or actor.
+
+
+*False positive analysis*
+
+
+- First-time legitimate admin activity from a new office or VPN provider.
+- Missing `source.as.organization.name` enrichment would **not** match the query’s positive wildcard; confirm fields are
+  populated if you expect coverage.
+
+
+*Response and remediation*
+
+
+- If unauthorized: delete the key pair (`DeleteKeyPair`), review IAM for `ec2:CreateKeyPair`, and rotate any credentials
+  used by the actor.
+
+
+*Additional information*
+
+
+- https://docs.aws.amazon.com/AWSEC2/latest/APIReference/API_CreateKeyPair.html[CreateKeyPair]
+
+
+==== Rule query
+
+
+[source, js]
+----------------------------------
+event.dataset: "aws.cloudtrail"
+    and event.provider: "ec2.amazonaws.com"
+    and event.action: "CreateKeyPair"
+    and event.outcome: "success"
+    and source.as.organization.name: (
+        * and not (
+            "Amazon.com, Inc." or AMAZ* or "Google LLC" or "Microsoft Corporation"
+        )
+    )
+
+----------------------------------
+
+*Framework*: MITRE ATT&CK^TM^
+
+* Tactic:
+** Name: Persistence
+** ID: TA0003
+** Reference URL: https://attack.mitre.org/tactics/TA0003/
+* Technique:
+** Name: Account Manipulation
+** ID: T1098
+** Reference URL: https://attack.mitre.org/techniques/T1098/
+* Tactic:
+** Name: Credential Access
+** ID: TA0006
+** Reference URL: https://attack.mitre.org/tactics/TA0006/
+* Technique:
+** Name: Unsecured Credentials
+** ID: T1552
+** Reference URL: https://attack.mitre.org/techniques/T1552/
+* Sub-technique:
+** Name: Private Keys
+** ID: T1552.004
+** Reference URL: https://attack.mitre.org/techniques/T1552/004/
+* Tactic:
+** Name: Lateral Movement
+** ID: TA0008
+** Reference URL: https://attack.mitre.org/tactics/TA0008/
+* Technique:
+** Name: Remote Services
+** ID: T1021
+** Reference URL: https://attack.mitre.org/techniques/T1021/
+* Sub-technique:
+** Name: SSH
+** ID: T1021.004
+** Reference URL: https://attack.mitre.org/techniques/T1021/004/

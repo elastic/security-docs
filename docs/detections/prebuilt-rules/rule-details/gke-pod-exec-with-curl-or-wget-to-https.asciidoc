@@ -1,0 +1,127 @@
+[[gke-pod-exec-with-curl-or-wget-to-https]]
+=== GKE Pod Exec with Curl or Wget to HTTPS
+
+Detects successful GKE pod exec sessions where the executed command implies curl or wget fetching an HTTPS URL. Attackers with pods/exec often run one-liners to stage tooling, pull scripts or binaries, or exfiltrate data over HTTPS—activity that should be rare compared to shells, debuggers, or expected health checks. Common cluster health, localhost, and OIDC/JWKS endpoint patterns are excluded to reduce benign automation noise. GKE records the command in gcp.audit.labels.command.gke.io/command when an explicit command is passed to exec.
+
+*Rule type*: query
+
+*Rule indices*: 
+
+* logs-gcp.audit-*
+
+*Severity*: high
+
+*Risk score*: 73
+
+*Runs every*: 5m
+
+*Searches indices from*: now-6m ({ref}/common-options.html#date-math[Date Math format], see also <<rule-schedule, `Additional look-back time`>>)
+
+*Maximum alerts per execution*: 100
+
+*References*: 
+
+* https://attack.mitre.org/techniques/T1609/
+* https://attack.mitre.org/techniques/T1105/
+
+*Tags*: 
+
+* Domain: Cloud
+* Domain: Kubernetes
+* Data Source: GCP
+* Data Source: GCP Audit Logs
+* Data Source: Google Cloud Platform
+* Use Case: Threat Detection
+* Tactic: Execution
+* Tactic: Command and Control
+* Resources: Investigation Guide
+
+*Version*: 1
+
+*Rule authors*: 
+
+* Elastic
+
+*Rule license*: Elastic License v2
+
+
+==== Investigation guide
+
+
+
+*Triage and analysis*
+
+
+
+*Investigating GKE Pod Exec with Curl or Wget to HTTPS*
+
+
+This alert fires when a successful pods/exec API call includes a curl or wget command targeting HTTPS.
+Review `gcp.audit.labels.command.gke.io/command` for the full command and destination URL.
+
+
+*Possible investigation steps*
+
+
+- Confirm who may exec into the target namespace: `client.user.email`, source IP, and user agent (kubectl, CI, automation).
+- Map `gcp.audit.resource_name` to the pod/workload owner and retrieve the exact command from the alert document.
+- Search for adjacent audit events from the same identity: secret reads, additional execs, RBAC changes, or anonymous access.
+- If malicious, revoke credentials used for exec, review RoleBindings for pods/exec, and inspect the pod for dropped artifacts.
+
+
+*False positive analysis*
+
+
+- Approved egress or tool-download tests may match; allowlist those identities after validation.
+- Some cluster components use HTTPS to kubernetes.default.svc or .well-known endpoints; expand exclusions if needed.
+
+
+*Response and remediation*
+
+
+- Rotate secrets accessible from the pod, cordon or delete the workload if compromised, and tighten RBAC so only
+  required principals retain pods/exec on sensitive namespaces.
+
+
+==== Setup
+
+
+The GCP Fleet integration with GKE audit logs enabled is required to be compatible with this rule.
+
+==== Rule query
+
+
+[source, js]
+----------------------------------
+data_stream.dataset:gcp.audit and service.name:"k8s.io" and event.outcome:success and
+event.type:start and
+event.action:("io.k8s.core.v1.pods.exec.create" or "io.k8s.core.v1.pods.exec.get") and
+gcp.audit.labels.command.gke.io/command:(
+  (*curl*https* or *wget*https*) and not (
+    */.well-known/jwks.json* or */.well-known/openid-configuration* or
+    */api/v1/health* or */healthz* or */livez* or */readyz* or
+    */openid-connect/certs* or */openid/v1/jwks* or
+    *127.0.0.1* or *kubernetes.default.svc* or *localhost*
+  )
+)
+
+----------------------------------
+
+*Framework*: MITRE ATT&CK^TM^
+
+* Tactic:
+** Name: Execution
+** ID: TA0002
+** Reference URL: https://attack.mitre.org/tactics/TA0002/
+* Technique:
+** Name: Container Administration Command
+** ID: T1609
+** Reference URL: https://attack.mitre.org/techniques/T1609/
+* Tactic:
+** Name: Command and Control
+** ID: TA0011
+** Reference URL: https://attack.mitre.org/tactics/TA0011/
+* Technique:
+** Name: Ingress Tool Transfer
+** ID: T1105
+** Reference URL: https://attack.mitre.org/techniques/T1105/

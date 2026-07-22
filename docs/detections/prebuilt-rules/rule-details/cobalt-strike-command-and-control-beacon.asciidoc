@@ -3,14 +3,9 @@
 
 Cobalt Strike is a threat emulation platform commonly modified and used by adversaries to conduct network attack and exploitation campaigns. This rule detects a network activity algorithm leveraged by Cobalt Strike implant beacons for command and control.
 
-*Rule type*: query
+*Rule type*: esql
 
-*Rule indices*: 
-
-* packetbeat-*
-* auditbeat-*
-* filebeat-*
-* logs-network_traffic.*
+*Rule indices*: None
 
 *Severity*: high
 
@@ -35,7 +30,7 @@ Cobalt Strike is a threat emulation platform commonly modified and used by adver
 * Domain: Endpoint
 * Resources: Investigation Guide
 
-*Version*: 109
+*Version*: 111
 
 *Rule authors*: 
 
@@ -104,9 +99,13 @@ This activity has been observed in FIN7 campaigns.
 
 [source, js]
 ----------------------------------
-((event.category: (network OR network_traffic) AND network.protocol: (tls OR http))
-    OR data_stream.dataset: (network_traffic.tls OR network_traffic.http)
-) AND destination.domain:/[a-z]{3}.stage.[0-9]{8}\..*/
+from packetbeat-*, filebeat-*, logs-network_traffic.* metadata _id, _version, _index
+| where (
+    (event.category in ("network", "network_traffic") and network.protocol in ("tls", "http")) or
+    data_stream.dataset in ("network_traffic.tls", "network_traffic.http")
+  )
+| where destination.domain RLIKE "[a-z]{3}\\.stage\\.[0-9]{8}\\..*"
+| keep @timestamp, destination.domain, source.ip, destination.ip, network.protocol, data_stream.dataset, _id, _version, _index
 
 ----------------------------------
 

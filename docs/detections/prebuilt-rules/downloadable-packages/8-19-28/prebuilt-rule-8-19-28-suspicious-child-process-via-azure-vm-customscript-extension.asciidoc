@@ -1,0 +1,158 @@
+[[prebuilt-rule-8-19-28-suspicious-child-process-via-azure-vm-customscript-extension]]
+=== Suspicious Child Process via Azure VM CustomScript Extension
+
+Identifies a suspicious process executing as a descendant of the Azure VM CustomScript extension handler (CustomScriptHandler.exe) on a Windows host. The Azure CustomScript extension runs an attacker-supplied script with high privilege (SYSTEM) via the guest agent, and is a common cloud-to-host code-execution and persistence primitive. Because the extension's resource name is attacker-controlled and absent from on-host telemetry, this rule anchors on the type-bearing handler binary ('Microsoft.Compute.CustomScriptExtension\...\CustomScriptHandler.exe') rather than the spoofable extension name, making it resistant to renaming. CustomScript legitimately launches PowerShell and cmd, so the rule fires only when the descendant is an execution-proxy, download, or discovery LOLBin, or PowerShell exhibiting suspicious tradecraft.
+
+*Rule type*: eql
+
+*Rule indices*: 
+
+* logs-endpoint.events.process-*
+
+*Severity*: medium
+
+*Risk score*: 47
+
+*Runs every*: 5m
+
+*Searches indices from*: now-9m ({ref}/common-options.html#date-math[Date Math format], see also <<rule-schedule, `Additional look-back time`>>)
+
+*Maximum alerts per execution*: 100
+
+*References*: 
+
+* https://blog.pwnedlabs.io/diving-deep-into-azure-vm-attack-vectors
+* https://www.sysdig.com/blog/the-expendable-extension-name-azure-vmaccess-naming-chaos-password-resets-and-a-detection-gap
+* https://learn.microsoft.com/en-us/azure/virtual-machines/extensions/custom-script-windows
+
+*Tags*: 
+
+* Domain: Endpoint
+* OS: Windows
+* Use Case: Threat Detection
+* Tactic: Execution
+* Tactic: Defense Evasion
+* Data Source: Elastic Defend
+* Resources: Investigation Guide
+
+*Version*: 1
+
+*Rule authors*: 
+
+* Elastic
+
+*Rule license*: Elastic License v2
+
+
+==== Investigation guide
+
+
+
+*Triage and analysis*
+
+
+
+*Investigating Suspicious Child Process via Azure VM CustomScript Extension*
+
+
+The Azure CustomScript extension executes a script as SYSTEM via the guest agent. The extension's resource name is
+attacker-controlled and not present on the host, so this rule anchors on the handler binary path
+(`Microsoft.Compute.CustomScriptExtension\...\CustomScriptHandler.exe`), which is rename-proof, and alerts when a
+LOLBin or suspicious PowerShell runs anywhere in its process tree.
+
+
+*Possible investigation steps*
+
+
+- Review the full process tree from `CustomScriptHandler.exe` to the alerting process, including `process.command_line`
+  and `process.args`.
+- Identify the descendant: execution proxies (`mshta`, `regsvr32`, `rundll32`, `installutil`, `msbuild`), download tools
+  (`certutil`, `bitsadmin`), script hosts (`wscript`, `cscript`), or discovery utilities (`whoami`, `net`, `nltest`,
+  `wmic`) are not expected children of a benign CustomScript payload.
+- Correlate with the control-plane event: a `MICROSOFT.COMPUTE/VIRTUALMACHINES/EXTENSIONS/WRITE` in
+  `logs-azure.activitylogs-*` for this host around the same time, and the acting principal/source behind it.
+- Retrieve the extension's settings/protectedSettings from the VM (the activity log does not contain the script body) to
+  assess intent.
+- Pivot on the host for credential access, new local accounts, persistence, or outbound C2 following the execution.
+- Review who deployed the extension (Entra sign-in logs and RBAC for the principal in the correlated activity log event).
+
+
+*False positive analysis*
+
+
+- Infrastructure-as-code and configuration-management scripts deployed via CustomScript may legitimately run discovery
+  utilities (`whoami`, `net`, `nltest`, `systeminfo`, `wmic`, `tasklist`, `arp`) for bootstrap or inventory. If the
+  activity recurs from known automation, baseline it and exclude by `process.command_line`/`process.args`.
+- Software installation and bootstrapping via CustomScript can invoke `msbuild`, `installutil`, `regsvr32`, `regasm`,
+  `regsvcs`, `certutil`, or `bitsadmin` to build, register, or download legitimate components. Verify the target
+  file/URL and, if benign, scope the exclusion to the specific command or signed binary rather than the whole LOLBin.
+- Legitimate setup scripts (DSC bootstrap, agent installers) may use PowerShell download cradles
+  (`Invoke-WebRequest`, `DownloadString`, `-EncodedCommand`) against trusted internal or Microsoft endpoints. Confirm
+  the destination host and content before excluding, and exclude by the specific command line, not by host.
+- A known automation principal deploying the extension from expected corporate egress (corroborated by the correlated
+  `MICROSOFT.COMPUTE/VIRTUALMACHINES/EXTENSIONS/WRITE` and an approved change) lowers confidence, but still review the
+  executed content. Prefer narrow, command- or argument-scoped exclusions over broad host or LOLBin exclusions, since
+  the same execution chain is exactly what an attacker abuses.
+
+
+*Response and remediation*
+
+
+- If unauthorized, remove the extension, isolate the host, rotate credentials reachable from it, and review RBAC on the affected subscription/resource group.
+
+
+==== Rule query
+
+
+[source, js]
+----------------------------------
+sequence by host.id with maxspan=1m
+  /* Azure CustomScript extension handler */
+  [process where host.os.type == "windows" and event.type == "start" and
+     (process.name : "CustomScriptHandler.exe" or
+      process.executable : "?:\\Packages\\Plugins\\*CustomScript*\\*\\CustomScriptHandler.exe")] by process.entity_id
+  /* Abused LOLBin / suspicious PowerShell anywhere in its tree */
+  [process where host.os.type == "windows" and event.type == "start" and
+   (
+     process.name : ("mshta.exe", "regsvr32.exe", "rundll32.exe", "installutil.exe", "msbuild.exe", "regasm.exe",
+                     "regsvcs.exe", "wscript.exe", "cscript.exe", "bitsadmin.exe", "nltest.exe", "whoami.exe",
+                     "net.exe", "net1.exe", "wmic.exe", "systeminfo.exe", "quser.exe", "arp.exe", "tasklist.exe") or
+     (process.name : "certutil.exe" and process.args : ("*urlcache*", "*-decode*", "*-encode*")) or
+     (process.name : ("powershell.exe", "pwsh.exe") and
+      process.command_line : ("*-enc*", "*EncodedCommand*", "*FromBase64String*", "*DownloadString*", "*DownloadFile*",
+                              "*Invoke-Expression*", "*IEX *", "*IEX(*", "*|IEX*", "*-w hidden*", "*WindowStyle Hidden*",
+                              "*Net.WebClient*", "*Invoke-WebRequest*", "*Start-BitsTransfer*"))
+   )] by process.Ext.ancestry
+
+----------------------------------
+
+*Framework*: MITRE ATT&CK^TM^
+
+* Tactic:
+** Name: Execution
+** ID: TA0002
+** Reference URL: https://attack.mitre.org/tactics/TA0002/
+* Technique:
+** Name: Cloud Administration Command
+** ID: T1651
+** Reference URL: https://attack.mitre.org/techniques/T1651/
+* Technique:
+** Name: Command and Scripting Interpreter
+** ID: T1059
+** Reference URL: https://attack.mitre.org/techniques/T1059/
+* Sub-technique:
+** Name: PowerShell
+** ID: T1059.001
+** Reference URL: https://attack.mitre.org/techniques/T1059/001/
+* Sub-technique:
+** Name: Windows Command Shell
+** ID: T1059.003
+** Reference URL: https://attack.mitre.org/techniques/T1059/003/
+* Tactic:
+** Name: Defense Evasion
+** ID: TA0005
+** Reference URL: https://attack.mitre.org/tactics/TA0005/
+* Technique:
+** Name: System Binary Proxy Execution
+** ID: T1218
+** Reference URL: https://attack.mitre.org/techniques/T1218/

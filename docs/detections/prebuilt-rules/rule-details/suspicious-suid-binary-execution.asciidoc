@@ -32,7 +32,7 @@ Detects execution of SUID binaries that may be used for privilege escalation und
 * Tactic: Privilege Escalation
 * Resources: Investigation Guide
 
-*Version*: 2
+*Version*: 3
 
 *Rule authors*: 
 
@@ -81,12 +81,12 @@ process where host.os.type == "linux" and event.type == "start" and event.action
 (
   (process.name in ("su", "passwd", "unix_chkpwd") and process.args_count <= 2) or
   (
-    process.name in ("sudo", "pkexec", "fusermount", "fusermount3", "mount", "umount", "newgrp", "chsh") and
+    process.name in ("pkexec", "fusermount", "fusermount3", "mount", "umount", "newgrp", "chsh") and
     process.args_count == 1
   ) or
   process.name in (
     "sudoedit", "gpasswd", "chfn", "polkit-agent-helper-1", "dbus-daemon-launch-helper", "ssh-keysign",
-    "pam_extrausers_chkpwd", "expiry", "chage", "crontab", "wall", "bsd-write", "ssh-agent", "ping",
+    "pam_extrausers_chkpwd", "expiry", "chage", "crontab", "wall", "bsd-write", "ssh-agent",
     "ping6", "traceroute", "mtr", "ntfs-3g", "Xorg.wrap", "chrome-sandbox", "bwrap"
   )
 ) and
@@ -98,6 +98,10 @@ process where host.os.type == "linux" and event.type == "start" and event.action
     process.parent.args in ("-c", "-cl", "-lc", "--command", "-ic", "-ci", "-bash", "-sh", "-zsh", "-dash", "-fish", "-ksh", "-mksh") and
     process.parent.args_count <= 4
   )
+) and
+not (
+  (process.name == "crontab" and process.args in ("-l", "-e")) or
+  (process.name in ("passwd", "chsh") and process.args == "--version")
 )
 
 ----------------------------------
