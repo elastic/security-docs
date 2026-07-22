@@ -1,0 +1,135 @@
+[[gke-api-request-impersonating-privileged-identity]]
+=== GKE API Request Impersonating Privileged Identity
+
+Detects GKE API requests where a caller is impersonating a privileged cluster identity such as system:kube-controller-manager, system:admin, system:anonymous, or a kube-system service account. These identities have broad cluster-wide permissions including unrestricted access to secrets, the ability to create tokens for any service account, schedule pods on any node, and modify RBAC. Impersonating system:kube-controller-manager grants access to secrets across namespaces and service account token minting for lateral movement.
+
+*Rule type*: query
+
+*Rule indices*: 
+
+* logs-gcp.audit-*
+
+*Severity*: high
+
+*Risk score*: 73
+
+*Runs every*: 5m
+
+*Searches indices from*: now-6m ({ref}/common-options.html#date-math[Date Math format], see also <<rule-schedule, `Additional look-back time`>>)
+
+*Maximum alerts per execution*: 100
+
+*References*: 
+
+* https://kubernetes.io/docs/reference/access-authn-authz/authentication/#user-impersonation
+* https://kubernetes.io/docs/reference/access-authn-authz/user-impersonation/
+
+*Tags*: 
+
+* Domain: Cloud
+* Domain: Kubernetes
+* Data Source: GCP
+* Data Source: Google Cloud Platform
+* Use Case: Threat Detection
+* Tactic: Privilege Escalation
+* Tactic: Defense Evasion
+* Resources: Investigation Guide
+
+*Version*: 1
+
+*Rule authors*: 
+
+* Elastic
+
+*Rule license*: Elastic License v2
+
+
+==== Investigation guide
+
+
+
+*Triage and analysis*
+
+
+
+*Investigating GKE API Request Impersonating Privileged Identity*
+
+
+Compare the real actor (`client.user.email`, `source.ip`, `user_agent.original`) with the impersonated identity in
+`gcp.audit.authentication_info.authority_selector` (Cloud Audit `authenticationInfo.authoritySelector`). Confirm
+whether impersonation is authorized for that principal and target identity.
+
+
+*Possible investigation steps*
+
+
+- Review `event.action` and `gcp.audit.resource_name` for the scope of the operation performed while impersonating.
+- Determine whether the real user or service account should have `impersonate` rights against the target user or group;
+  inspect RBAC bindings and any recent changes.
+- Correlate with adjacent audit activity (secrets, TokenRequest, RBAC writes, CSR approval) from the same source
+  identity.
+- Hunt for repeated impersonation across namespaces or rapid pivoting after the event.
+
+
+*False positive analysis*
+
+
+- Approved admin or scanner workflows that intentionally use `kubectl --as` against privileged targets may match.
+  Allowlist those identities after review.
+
+
+*Response and remediation*
+
+
+- Revoke or tighten `impersonate` permissions for unexpected identities; rotate credentials for any account that may
+  have abused impersonation.
+- If unauthorized, treat as cluster-wide credential risk: review secrets exposure, issued tokens, and RBAC drift.
+
+
+
+==== Setup
+
+
+The GCP Fleet integration with GKE audit logs enabled is required. Kubernetes impersonation (`kubectl --as`) maps to
+`gcp.audit.authentication_info.authority_selector` in Fleet.
+
+
+==== Rule query
+
+
+[source, js]
+----------------------------------
+data_stream.dataset:gcp.audit and service.name:"k8s.io" and event.outcome:success and
+gcp.audit.authentication_info.authority_selector:(
+  "admin" or "cluster-admin" or "kubernetes-admin" or "system:admin" or "system:anonymous" or
+  "system:apiserver" or "system:kube-controller-manager" or "system:kube-proxy" or
+  "system:kube-scheduler" or "system:volume-scheduler" or
+  system\:node\:* or system\:serviceaccount\:kube-system\:*
+) and
+not client.user.email:(
+  "system:kube-controller-manager" or
+  "system:kube-scheduler" or
+  system\:node\:* or
+  system\:serviceaccount\:kube-system\:*
+)
+
+----------------------------------
+
+*Framework*: MITRE ATT&CK^TM^
+
+* Tactic:
+** Name: Privilege Escalation
+** ID: TA0004
+** Reference URL: https://attack.mitre.org/tactics/TA0004/
+* Technique:
+** Name: Access Token Manipulation
+** ID: T1134
+** Reference URL: https://attack.mitre.org/techniques/T1134/
+* Tactic:
+** Name: Defense Evasion
+** ID: TA0005
+** Reference URL: https://attack.mitre.org/tactics/TA0005/
+* Technique:
+** Name: Access Token Manipulation
+** ID: T1134
+** Reference URL: https://attack.mitre.org/techniques/T1134/

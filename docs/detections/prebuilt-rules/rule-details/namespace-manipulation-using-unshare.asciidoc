@@ -40,7 +40,7 @@ Identifies suspicious usage of unshare to manipulate system namespaces. Unshare 
 * Data Source: Auditd Manager
 * Resources: Investigation Guide
 
-*Version*: 116
+*Version*: 117
 
 *Rule authors*: 
 
@@ -155,12 +155,12 @@ Auditbeat is a lightweight shipper that you can install on your servers to audit
 [source, js]
 ----------------------------------
 process where host.os.type == "linux" and event.type == "start" and event.action in ("exec", "exec_event", "start", "executed") and
-process.name: "unshare" and not (
-  ?process.parent.executable: ("/usr/bin/udevadm", "*/lib/systemd/systemd-udevd", "/usr/bin/unshare") or
+process.name == "unshare" and not (
+  ?process.parent.executable like ("/usr/bin/udevadm", "*/lib/systemd/systemd-udevd", "/usr/bin/unshare") or
   ?process.args == "/usr/bin/snap" and not ?process.parent.name in ("zz-proxmox-boot", "java") or
   ?process.parent.args like (
     "/etc/kernel/postinst.d/zz-proxmox-boot", "/opt/openssh/sbin/sshd", "/usr/sbin/sshd",
-    "/snap/*", "/home/*/.local/share/JetBrains/Toolbox/*"
+    "/snap/*", "/home/*/.local/share/JetBrains/Toolbox/*", "/var/tmp/foreman-ssh-cmd-*"
   )
 )
 

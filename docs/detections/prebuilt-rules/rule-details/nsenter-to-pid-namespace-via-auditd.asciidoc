@@ -35,7 +35,7 @@ Detects nsenter executions that target PID with a namespace target flag, a patte
 * Data Source: Auditd Manager
 * Resources: Investigation Guide
 
-*Version*: 1
+*Version*: 2
 
 *Rule authors*: 
 
@@ -100,10 +100,15 @@ See https://docs.elastic.co/integrations/auditd_manager for integration details.
 
 [source, js]
 ----------------------------------
-host.os.type:linux and 
-event.category:process and event.action:(executed or exec) and 
-(process.name:nsenter or process.args:nsenter) and 
-process.args:((--target* or -t) and not --net=/run/netns/* and not (--assertion and snap) and not (is-active and snap.*))
+host.os.type:linux and event.category:process and event.action:(exec or executed) and
+(process.name:nsenter or process.args:nsenter) and
+process.args:(
+  (-t or --target*) and
+  not --net=/run/netns/* and
+  not (--assertion and snap) and
+  not (is-active and snap.*) and
+  not (-anp and netstat)
+)
 
 ----------------------------------
 

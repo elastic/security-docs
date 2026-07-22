@@ -1,0 +1,175 @@
+[[prebuilt-rule-8-19-28-google-workspace-api-access-granted-via-domain-wide-delegation]]
+=== Google Workspace API Access Granted via Domain-Wide Delegation
+
+Detects when a super administrator authorizes domain-wide delegation (DWD) API client access for a Google Cloud service account or OAuth client. DWD lets an application impersonate users and access Workspace APIs across the tenant. Adversaries with admin access may register or authorize a malicious client with broad scopes to maintain API-based persistence and access mail, drive, and directory data without relying on a single user's password alone.
+
+*Rule type*: query
+
+*Rule indices*: 
+
+* filebeat-*
+* logs-google_workspace.admin-*
+
+*Severity*: high
+
+*Risk score*: 73
+
+*Runs every*: 10m
+
+*Searches indices from*: now-130m ({ref}/common-options.html#date-math[Date Math format], see also <<rule-schedule, `Additional look-back time`>>)
+
+*Maximum alerts per execution*: 100
+
+*References*: 
+
+* https://developers.google.com/admin-sdk/directory/v1/guides/delegation
+* https://www.elastic.co/security-labs/google-workspace-attack-surface-part-one
+* https://www.elastic.co/security-labs/google-workspace-attack-surface-part-two
+
+*Tags*: 
+
+* Domain: Cloud
+* Data Source: Google Workspace
+* Use Case: Identity and Access Audit
+* Resources: Investigation Guide
+* Tactic: Persistence
+* Tactic: Privilege Escalation
+
+*Version*: 213
+
+*Rule authors*: 
+
+* Elastic
+
+*Rule license*: Elastic License v2
+
+
+==== Investigation guide
+
+
+
+*Triage and analysis*
+
+
+
+*Investigating Google Workspace API Access Granted via Domain-Wide Delegation*
+
+
+Domain-wide delegation (DWD) allows a Google Cloud service account or OAuth client to access Workspace user data on
+behalf of users across the domain. Only super administrators can authorize DWD, and each grant specifies API scopes
+that define what the client can read or modify (for example Gmail, Drive, Directory, or Calendar APIs). Over-scoped DWD
+grants create durable third-party access paths that survive individual user password resets.
+
+This rule matches `AUTHORIZE_API_CLIENT_ACCESS` events in the `google_workspace.admin` data stream.
+
+
+*Possible investigation steps*
+
+
+- Identify the administrator who authorized access by reviewing `user.email` or `user.name`, and note `user.domain` and
+  `event.ingested` if present in the alert.
+- Identify the authorized client by reviewing `google_workspace.admin.api.client.name` and confirm the affected tenant
+  with `google_workspace.admin.domain.name`.
+- Review granted API scopes in `google_workspace.admin.api.scopes` against least-privilege expectations. Broad scopes
+  (for example full mail or drive access) warrant higher urgency.
+- Determine whether the change is expected and authorized:
+  - Validate there is an approved change request or vendor onboarding record for the client and scopes.
+  - If the actor account is unusual or the scopes exceed documented requirements, treat as higher priority until proven benign.
+- Review DWD configuration in the Google Admin console:
+  - Sign in to https://admin.google.com[admin.google.com] with an authorized administrator account.
+  - Navigate to Security > Access and data control > API controls > Domain-wide delegation.
+  - Confirm the client ID, client name, and scopes match the alert fields.
+- Search Kibana for related admin activity:
+  - Find other DWD grants or revocations by the same administrator:
+    ```
+    data_stream.dataset: "google_workspace.admin" and user.email: "<ACTOR_EMAIL>" and event.action: ("AUTHORIZE_API_CLIENT_ACCESS" or "REVOKE_API_CLIENT_ACCESS")
+    ```
+  - Scope for all grants to the same API client:
+    ```
+    data_stream.dataset: "google_workspace.admin" and event.action: "AUTHORIZE_API_CLIENT_ACCESS" and google_workspace.admin.api.client.name: "<CLIENT_NAME>"
+    ```
+  - Correlate with other high-risk admin actions from the same actor in the last 48 hours:
+    ```
+    data_stream.dataset: "google_workspace.admin" and user.email: "<ACTOR_EMAIL>" and event.action: ("ASSIGN_ROLE" or "ADD_APPLICATION" or "CREATE_ROLE")
+    ```
+- If GCP audit logs are ingested, pivot on the service account or client:
+  - Search for the client name in `gcp.audit.resource_name` and review `event.action` over the last 48 hours to determine
+    how the service account is being used after authorization.
+
+
+*False positive analysis*
+
+
+- Platform or security teams may authorize DWD for approved automation, backup, or migration tooling — validate against
+  known service accounts and documented scope requirements.
+- Vendor onboarding sometimes requires temporary broad scopes; confirm timing against change windows before closing as benign.
+
+
+*Response and remediation*
+
+
+- Initiate the incident response process based on triage findings.
+- If the grant is not clearly authorized, revoke domain-wide delegation for the client under Security > Access and data
+  control > API controls > Domain-wide delegation while the investigation proceeds.
+- Rotate or disable the associated GCP service account keys if the client is suspected malicious.
+- If the initiating admin account is suspected compromised, reset credentials, revoke active sessions, and review
+  delegated admin roles assigned to that account.
+- Review activity performed with the authorized client based on scopes in `google_workspace.admin.api.scopes`.
+- Identify the possible impact of the incident and prioritize accordingly; the following actions can help you gain context:
+    - Identify the account role in the cloud environment.
+    - Assess the criticality of affected services and servers.
+    - Work with your IT team to identify and minimize the impact on users.
+    - Identify if the attacker is moving laterally and compromising other accounts, servers, or services.
+    - Identify any regulatory or legal ramifications related to this activity.
+- Investigate credential exposure on systems compromised or used by the attacker to ensure all compromised accounts are identified. Reset passwords or delete API keys as needed to revoke the attacker's access to the environment. Work with your IT teams to minimize the impact on business operations during these actions.
+- Review the permissions assigned to the implicated administrator to ensure that the least privilege principle is being followed.
+- Implement security best practices https://support.google.com/a/answer/7587183[outlined] by Google.
+- Determine the initial vector abused by the attacker and take action to prevent reinfection via the same vector.
+- Using the incident response data, update logging and audit policies to improve the mean time to detect (MTTD) and the mean time to respond (MTTR).
+
+
+
+
+*Important Information Regarding Google Workspace Event Lag Times*
+
+- As per Google's documentation, Google Workspace administrators may observe lag times ranging from minutes up to 3 days between the time of an event's occurrence and the event being visible in the Google Workspace admin/audit logs.
+- This rule is configured to run every 10 minutes with a lookback time of 130 minutes.
+- To reduce the risk of false negatives, consider reducing the interval that the Google Workspace (formerly G Suite) Filebeat module polls Google's reporting API for new events.
+- By default, `var.interval` is set to 2 hours (2h). Consider changing this interval to a lower value, such as 10 minutes (10m).
+- See the following references for further information:
+  - https://support.google.com/a/answer/7061566
+  - https://www.elastic.co/guide/en/beats/filebeat/current/filebeat-module-google_workspace.html
+
+==== Setup
+
+
+The Google Workspace Fleet integration, Filebeat module, or similarly structured data is required to be compatible with this rule.
+
+==== Rule query
+
+
+[source, js]
+----------------------------------
+data_stream.dataset:google_workspace.admin
+  and event.action:AUTHORIZE_API_CLIENT_ACCESS
+
+----------------------------------
+
+*Framework*: MITRE ATT&CK^TM^
+
+* Tactic:
+** Name: Persistence
+** ID: TA0003
+** Reference URL: https://attack.mitre.org/tactics/TA0003/
+* Technique:
+** Name: Account Manipulation
+** ID: T1098
+** Reference URL: https://attack.mitre.org/techniques/T1098/
+* Tactic:
+** Name: Privilege Escalation
+** ID: TA0004
+** Reference URL: https://attack.mitre.org/tactics/TA0004/
+* Technique:
+** Name: Account Manipulation
+** ID: T1098
+** Reference URL: https://attack.mitre.org/techniques/T1098/

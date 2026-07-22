@@ -1,0 +1,136 @@
+[[prebuilt-rule-8-19-28-aws-attempt-to-leave-organization]]
+=== AWS Attempt to Leave Organization
+
+Detects any attempt, successful or denied, for a member account to leave an AWS Organization via the LeaveOrganization API. Leaving an organization immediately strips the account of every Service Control Policy (SCP) guardrail the organization enforces, removes it from centralized CloudTrail aggregation, and eliminates the management account's ability to audit or control it going forward. An adversary who has gained root or organization-management-capable access in a member account may use this technique to escape organizational security controls and operate unmonitored. Denied attempts are included because a blocked call is just as strong a signal of intent as a successful one, and is often the only trace left when the account's default permissions correctly prevent the action.
+
+*Rule type*: query
+
+*Rule indices*: 
+
+* logs-aws.cloudtrail-*
+
+*Severity*: medium
+
+*Risk score*: 47
+
+*Runs every*: 5m
+
+*Searches indices from*: now-6m ({ref}/common-options.html#date-math[Date Math format], see also <<rule-schedule, `Additional look-back time`>>)
+
+*Maximum alerts per execution*: 100
+
+*References*: 
+
+* https://docs.aws.amazon.com/organizations/latest/APIReference/API_LeaveOrganization.html
+* https://docs.aws.amazon.com/organizations/latest/userguide/orgs_manage_accounts_remove.html
+* https://stratus-red-team.cloud/attack-techniques/AWS/aws.defense-evasion.organizations-leave/
+
+*Tags*: 
+
+* Domain: Cloud
+* Data Source: AWS
+* Data Source: Amazon Web Services
+* Data Source: AWS CloudTrail
+* Data Source: AWS Organizations
+* Use Case: Threat Detection
+* Tactic: Defense Evasion
+* Tactic: Impact
+* Resources: Investigation Guide
+
+*Version*: 1
+
+*Rule authors*: 
+
+* Elastic
+
+*Rule license*: Elastic License v2
+
+
+==== Investigation guide
+
+
+
+*Triage and analysis*
+
+
+
+*Investigating AWS Attempt to Leave Organization*
+
+
+Leaving an AWS Organization removes every SCP-based guardrail from the account, cuts it off from centralized
+monitoring (CloudTrail, GuardDuty, Security Hub aggregation at the organization level), and eliminates the management
+account's ability to audit or control it. This is one of the most consequential defense-evasion actions available to
+an adversary with sufficient access in a member account.
+
+This rule fires on any `LeaveOrganization` call regardless of outcome — a denied attempt (for example, `AccessDenied`
+because the calling principal lacks the permission) is still a critical indicator that someone attempted this action.
+
+
+*Possible investigation steps*
+
+
+- **Identify the actor**: review `aws.cloudtrail.user_identity.arn` and `aws.cloudtrail.user_identity.type` —
+  only root or a principal with an explicit `organizations:LeaveOrganization` grant can succeed at this.
+- **Check the outcome**: if `event.outcome` is `success`, treat this as an active, ongoing incident — the account has
+  already left the organization. If denied, determine why the attempt was made and whether the same actor has
+  broader access that could be escalated to succeed.
+- **Review source context**: check `source.ip`, `user_agent.original`, and `source.geo` for anomalies.
+- **Correlate with other defense evasion or persistence activity**: look for recent IAM changes (new roles, policy
+  attachments), root login events, or other attempts to shed organizational oversight around the same time.
+- **Contact the account and organization owners immediately** to confirm whether this was an authorized, planned
+  departure.
+
+
+*False positive analysis*
+
+
+- Legitimate organizational restructuring (account divestiture, company split) can trigger this. Confirm with
+  organization administrators and require documented change management before treating as benign.
+
+
+*Response and remediation*
+
+
+- If successful and unauthorized, use `InviteAccountToOrganization` from the management account to re-invite the
+  departed account as soon as possible, and treat the account as compromised in the interim.
+- If denied, investigate how the calling principal obtained enough access to attempt this at all, and whether it can
+  reach the required permission through another path (privilege escalation).
+- Revoke or rotate credentials for the identity that made the call.
+- Review the account's activity for the period immediately before and after the attempt for other compromise
+  indicators.
+
+
+
+==== Rule query
+
+
+[source, js]
+----------------------------------
+data_stream.dataset: "aws.cloudtrail"
+    and event.provider: "organizations.amazonaws.com"
+    and event.action: "LeaveOrganization"
+
+----------------------------------
+
+*Framework*: MITRE ATT&CK^TM^
+
+* Tactic:
+** Name: Defense Evasion
+** ID: TA0005
+** Reference URL: https://attack.mitre.org/tactics/TA0005/
+* Technique:
+** Name: Impair Defenses
+** ID: T1562
+** Reference URL: https://attack.mitre.org/techniques/T1562/
+* Sub-technique:
+** Name: Disable or Modify Tools
+** ID: T1562.001
+** Reference URL: https://attack.mitre.org/techniques/T1562/001/
+* Tactic:
+** Name: Impact
+** ID: TA0040
+** Reference URL: https://attack.mitre.org/tactics/TA0040/
+* Technique:
+** Name: Account Access Removal
+** ID: T1531
+** Reference URL: https://attack.mitre.org/techniques/T1531/

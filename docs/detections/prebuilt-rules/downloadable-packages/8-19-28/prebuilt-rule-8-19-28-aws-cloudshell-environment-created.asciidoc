@@ -1,0 +1,149 @@
+[[prebuilt-rule-8-19-28-aws-cloudshell-environment-created]]
+=== AWS CloudShell Environment Created
+
+Identifies the creation of a new AWS CloudShell environment. CloudShell is a browser-based shell that provides command-line access to AWS resources directly from the AWS Management Console. The CreateEnvironment API is called when a user launches CloudShell for the first time or when accessing CloudShell in a new AWS region. Adversaries with console access may use CloudShell to execute commands, install tools, or interact with AWS services without needing local CLI credentials. Monitoring environment creation helps detect unauthorized CloudShell usage from compromised console sessions.
+
+*Rule type*: query
+
+*Rule indices*: 
+
+* filebeat-*
+* logs-aws.cloudtrail-*
+
+*Severity*: high
+
+*Risk score*: 73
+
+*Runs every*: 5m
+
+*Searches indices from*: now-6m ({ref}/common-options.html#date-math[Date Math format], see also <<rule-schedule, `Additional look-back time`>>)
+
+*Maximum alerts per execution*: 100
+
+*References*: 
+
+* https://aws-samples.github.io/threat-technique-catalog-for-aws/Techniques/T1059.009.html
+* https://permiso.io/blog/lucr-3-scattered-spider-getting-saas-y-in-the-cloud
+
+*Tags*: 
+
+* Domain: Cloud
+* Data Source: AWS
+* Data Source: Amazon Web Services
+* Data Source: AWS CloudTrail
+* Data Source: AWS CloudShell
+* Use Case: Threat Detection
+* Tactic: Execution
+* Resources: Investigation Guide
+
+*Version*: 4
+
+*Rule authors*: 
+
+* Elastic
+
+*Rule license*: Elastic License v2
+
+
+==== Investigation guide
+
+
+
+*Triage and analysis*
+
+
+
+*Investigating AWS CloudShell Environment Created*
+
+
+AWS CloudShell is a browser-based shell environment that provides instant command-line access to AWS resources without requiring local CLI installation or credential configuration. While this is convenient for legitimate administrators, it also provides adversaries with a powerful tool if they gain access to a compromised AWS console session.
+
+This rule detects when a CloudShell environment is created via the `CreateEnvironment` API. This event occurs when a user launches CloudShell for the first time or when accessing CloudShell in a new AWS region (each region maintains a separate environment). 
+
+
+*Possible investigation steps*
+
+
+- **Identify the actor**
+  - Review `aws.cloudtrail.user_identity.arn` or `user.name` to determine which IAM principal created the CloudShell environment.
+  - Check `aws.cloudtrail.user_identity.type` to identify whether this is an IAM user or an assumed role session.
+  - Verify if this user typically performs command-line or administrative operations.
+
+- **Analyze the source context**
+  - Review `source.ip` and `source.geo` fields to verify the request origin matches expected administrator locations.
+  - Check `user_agent.original` to confirm the request came from a browser session.
+  - Look for the preceding `ConsoleLogin` event to understand how the session was established.
+
+- **Correlate with surrounding activity**
+  - Look for any IAM operations (CreateAccessKey, CreateUser, AttachRolePolicy) that occurred after CloudShell was accessed.
+  - Check for data exfiltration patterns or reconnaissance activity from the same session.
+
+- **Assess the broader context**
+  - Determine if this user has a legitimate need for CloudShell access based on their role.
+  - Review recent access patterns for the console session that initiated CloudShell.
+  - Check if MFA was used for the console login.
+
+
+*False positive analysis*
+
+
+- Administrators routinely using CloudShell for AWS management tasks will trigger this rule. Consider tuning for known admin users if noise is a concern.
+- Users accessing CloudShell in a new AWS region will generate a `CreateEnvironment` event even if they have used CloudShell before in other regions.
+- Training or certification activities may involve CloudShell environment creation.
+
+
+*Response and remediation*
+
+
+- If unauthorized, immediately terminate the console session to revoke CloudShell access.
+- Review and revoke any credentials or resources created during the CloudShell session.
+- Consider restricting CloudShell access via SCPs or IAM policies for sensitive accounts or users who do not require it.
+- Implement session duration limits to reduce the window of opportunity for console session abuse.
+- Enable MFA for all console logins to reduce the risk of session compromise.
+
+
+*Additional information*
+
+
+- **https://github.com/aws-samples/aws-incident-response-playbooks/[AWS IR Playbooks]**
+- **https://github.com/aws-samples/aws-customer-playbook-framework/tree/a8c7b313636b406a375952ac00b2d68e89a991f2/docs[AWS Customer Playbook Framework]** 
+
+
+==== Rule query
+
+
+[source, js]
+----------------------------------
+data_stream.dataset: "aws.cloudtrail"
+    and event.provider: "cloudshell.amazonaws.com"
+    and event.action: "CreateEnvironment"
+    and event.outcome: "success"
+
+----------------------------------
+
+*Framework*: MITRE ATT&CK^TM^
+
+* Tactic:
+** Name: Execution
+** ID: TA0002
+** Reference URL: https://attack.mitre.org/tactics/TA0002/
+* Technique:
+** Name: Command and Scripting Interpreter
+** ID: T1059
+** Reference URL: https://attack.mitre.org/techniques/T1059/
+* Sub-technique:
+** Name: Cloud API
+** ID: T1059.009
+** Reference URL: https://attack.mitre.org/techniques/T1059/009/
+* Tactic:
+** Name: Initial Access
+** ID: TA0001
+** Reference URL: https://attack.mitre.org/tactics/TA0001/
+* Technique:
+** Name: Valid Accounts
+** ID: T1078
+** Reference URL: https://attack.mitre.org/techniques/T1078/
+* Sub-technique:
+** Name: Cloud Accounts
+** ID: T1078.004
+** Reference URL: https://attack.mitre.org/techniques/T1078/004/

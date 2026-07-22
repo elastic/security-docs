@@ -1,0 +1,134 @@
+[[prebuilt-rule-8-19-28-aws-bedrock-api-key-used-for-destructive-or-anti-recovery-action]]
+=== AWS Bedrock API Key Used for Destructive or Anti-Recovery Action
+
+Identifies an Amazon Bedrock API key (bearer token) being used to perform a destructive or anti-recovery control-plane action, such as deleting a guardrail, deleting a custom or imported model, removing provisioned throughput, or disabling model invocation logging. Bedrock API keys are bearer credentials intended for model invocation (InvokeModel, Converse); using one to delete Bedrock resources or disable logging is inconsistent with that purpose and is characteristic of LLMjacking or sabotage following key theft. Every Bedrock API key call is identifiable in CloudTrail by "additionalEventData.callWithBearerToken" being true. The rule matches regardless of outcome, because a destructive attempt via a bearer token is suspicious even when denied.
+
+*Rule type*: esql
+
+*Rule indices*: None
+
+*Severity*: high
+
+*Risk score*: 73
+
+*Runs every*: 5m
+
+*Searches indices from*: now-30m ({ref}/common-options.html#date-math[Date Math format], see also <<rule-schedule, `Additional look-back time`>>)
+
+*Maximum alerts per execution*: 100
+
+*References*: 
+
+* https://www.beyondtrust.com/blog/entry/aws-bedrock-security-guide-api-keys-detection-response
+* https://www.beyondtrust.com/blog/entry/aws-bedrock-security-api-keys
+* https://docs.aws.amazon.com/bedrock/latest/userguide/api-keys.html
+
+*Tags*: 
+
+* Domain: Cloud
+* Data Source: AWS
+* Data Source: Amazon Web Services
+* Data Source: AWS CloudTrail
+* Data Source: Amazon Bedrock
+* Use Case: Threat Detection
+* Tactic: Impact
+* Tactic: Defense Evasion
+* Resources: Investigation Guide
+
+*Version*: 1
+
+*Rule authors*: 
+
+* Elastic
+
+*Rule license*: Elastic License v2
+
+
+==== Investigation guide
+
+
+
+*Triage and analysis*
+
+
+
+*Investigating AWS Bedrock API Key Used for Destructive or Anti-Recovery Action*
+
+
+Amazon Bedrock API keys are bearer tokens created for model invocation. In CloudTrail, every request made with one carries "additionalEventData.callWithBearerToken" set to true, which distinguishes it from a standard SigV4-signed call. The AmazonBedrockLimitedAccess policy attached to Bedrock API key phantom users also permits destructive Bedrock control-plane actions, so a stolen or misused key can delete guardrails and models or disable logging.
+
+Using an API key to delete guardrails, custom or imported models, or provisioned throughput, or to disable model invocation logging, is inconsistent with the credential's purpose. It is characteristic of LLMjacking operations (which frequently disable guardrails and logging) or of sabotage following credential theft.
+
+
+*Possible investigation steps*
+
+
+- Identify the specific action in "event.action" and the affected resource in "aws.cloudtrail.request_parameters".
+- Identify the principal in "aws.cloudtrail.user_identity.arn"/"aws.cloudtrail.user_identity.type" and review "source.ip", "source.as.number", and "user_agent.original"; generic HTTP clients (python-requests, aiohttp, curl) are a further LLMjacking indicator.
+- Review the same principal's other Bedrock API key activity for model-invocation spikes, cross-region use, or additional destructive actions.
+- Determine whether model invocation logging or guardrails were disabled, and when, to scope any window of reduced visibility.
+
+
+*False positive analysis*
+
+
+- Sanctioned automation may manage Bedrock resources with an API key. Confirm the principal and change, and exclude known maintenance identities after validation.
+
+
+*Response and remediation*
+
+
+- If unauthorized, revoke the Bedrock API key (attach an inline deny on "bedrock:CallWithBearerToken" to the phantom user or deactivate the service-specific credential) and restore the deleted resource or re-enable logging.
+- Check the phantom user for IAM access keys created as a persistence pivot and revoke them.
+- Review the principal's recent activity and prefer short-term keys or STS going forward.
+
+
+==== Setup
+
+
+This rule requires AWS CloudTrail logs ingested via the Elastic AWS integration. See https://docs.elastic.co/integrations/aws/cloudtrail for setup details.
+
+==== Rule query
+
+
+[source, js]
+----------------------------------
+FROM logs-aws.cloudtrail-* METADATA _id, _version, _index
+| WHERE event.provider == "bedrock.amazonaws.com"
+    AND aws.cloudtrail.additional_eventdata RLIKE """.*callWithBearerToken=true.*"""
+    AND event.action IN (
+        "DeleteGuardrail",
+        "DeleteModelInvocationLoggingConfiguration",
+        "PutModelInvocationLoggingConfiguration",
+        "DeleteImportedModel",
+        "DeleteCustomModel",
+        "DeleteModelCustomizationJob",
+        "DeleteProvisionedModelThroughput",
+        "DeleteMarketplaceModelEndpoint"
+    )
+| KEEP _id, _version, _index, @timestamp, aws.*, cloud.*, event.*, source.*, user.*, user_agent.*
+
+----------------------------------
+
+*Framework*: MITRE ATT&CK^TM^
+
+* Tactic:
+** Name: Impact
+** ID: TA0040
+** Reference URL: https://attack.mitre.org/tactics/TA0040/
+* Technique:
+** Name: Data Destruction
+** ID: T1485
+** Reference URL: https://attack.mitre.org/techniques/T1485/
+* Tactic:
+** Name: Defense Evasion
+** ID: TA0005
+** Reference URL: https://attack.mitre.org/tactics/TA0005/
+* Technique:
+** Name: Impair Defenses
+** ID: T1562
+** Reference URL: https://attack.mitre.org/techniques/T1562/
+* Sub-technique:
+** Name: Disable or Modify Tools
+** ID: T1562.001
+** Reference URL: https://attack.mitre.org/techniques/T1562/001/

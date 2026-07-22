@@ -1,0 +1,151 @@
+[[prebuilt-rule-8-19-28-gke-api-server-proxying-request-to-kubelet]]
+=== GKE API Server Proxying Request to Kubelet
+
+Detects non-system identities using the GKE nodes/proxy API to reach a node's Kubelet through the API server. The nodes/proxy subresource allows any principal with this permission to call the Kubelet API without direct node network access or Kubelet TLS certificates. Through this path an attacker can list pod specs (including environment secrets), read Kubelet configuration, retrieve container logs, and access running pod metadata on the target node. Monitoring endpoints such as metrics, healthz, and stats/summary are excluded to reduce noise from observability tooling.
+
+*Rule type*: query
+
+*Rule indices*: 
+
+* logs-gcp.audit-*
+
+*Severity*: medium
+
+*Risk score*: 47
+
+*Runs every*: 5m
+
+*Searches indices from*: now-6m ({ref}/common-options.html#date-math[Date Math format], see also <<rule-schedule, `Additional look-back time`>>)
+
+*Maximum alerts per execution*: 100
+
+*References*: 
+
+* https://kubernetes.io/docs/concepts/cluster-administration/proxies/
+* https://stratus-red-team.cloud/attack-techniques/kubernetes/k8s.privilege-escalation.nodes-proxy/
+
+*Tags*: 
+
+* Domain: Cloud
+* Domain: Kubernetes
+* Data Source: GCP
+* Data Source: Google Cloud Platform
+* Use Case: Threat Detection
+* Tactic: Privilege Escalation
+* Tactic: Lateral Movement
+* Tactic: Discovery
+* Resources: Investigation Guide
+
+*Version*: 1
+
+*Rule authors*: 
+
+* Elastic
+
+*Rule license*: Elastic License v2
+
+
+==== Investigation guide
+
+
+
+*Triage and analysis*
+
+
+
+*Investigating GKE API Server Proxying Request to Kubelet*
+
+
+Review `client.user.email`, `source.ip`, and `user_agent.original` to determine who initiated the proxy request.
+Examine `gcp.audit.resource_name` and `event.action` to identify which Kubelet path was accessed after `/proxy/`.
+
+
+*Possible investigation steps*
+
+
+- Check the proxied Kubelet path for attacker intent:
+  - `/proxy/pods` — pod spec enumeration, including environment variable secrets
+  - `/proxy/exec` or `/proxy/run` — command execution inside containers on that node
+  - `/proxy/configz` — Kubelet configuration and authentication settings
+  - `/proxy/runningpods` — active workload enumeration
+  - `/proxy/containerLogs` — log harvesting for leaked credentials
+- Identify how the principal obtained `nodes/proxy` permission by reviewing RBAC bindings.
+- Correlate with TokenRequest activity from the same actor shortly before the proxy call.
+- Review whether the same principal proxied multiple nodes in a short window.
+
+
+*False positive analysis*
+
+
+- Monitoring agents that scrape paths other than the excluded metrics/health endpoints may match. Add approved paths
+  or identities after baselining.
+- Cluster admin tools that inspect node health via the proxy API can match during maintenance windows.
+
+
+*Response and remediation*
+
+
+- Review and remove unauthorized RBAC granting `nodes/proxy`.
+- If `/proxy/pods` was accessed, rotate secrets and credentials that may have been exposed via environment variables
+  on that node.
+- If `/proxy/exec` or `/proxy/run` was accessed, treat the node as compromised and isolate it.
+- Restrict `nodes/proxy` to infrastructure automation only.
+
+
+
+==== Setup
+
+
+The GCP Fleet integration with GKE audit logs enabled is required.
+
+
+==== Rule query
+
+
+[source, js]
+----------------------------------
+data_stream.dataset:gcp.audit and service.name:"k8s.io" and event.outcome:success and
+event.action:(
+  "io.k8s.core.v1.nodes.proxy.get" or
+  "io.k8s.core.v1.nodes.proxy.create"
+) and
+not gcp.audit.resource_name:(*metrics* or *healthz* or *stats/summary* or *elastic-agent* or *configz*) and
+not client.user.email:(
+  "system:kube-controller-manager" or
+  "system:kube-scheduler" or
+  system\:serviceaccount\:kube-system\:* or
+  system\:node\:*
+)
+
+----------------------------------
+
+*Framework*: MITRE ATT&CK^TM^
+
+* Tactic:
+** Name: Privilege Escalation
+** ID: TA0004
+** Reference URL: https://attack.mitre.org/tactics/TA0004/
+* Technique:
+** Name: Escape to Host
+** ID: T1611
+** Reference URL: https://attack.mitre.org/techniques/T1611/
+* Tactic:
+** Name: Lateral Movement
+** ID: TA0008
+** Reference URL: https://attack.mitre.org/tactics/TA0008/
+* Technique:
+** Name: Use Alternate Authentication Material
+** ID: T1550
+** Reference URL: https://attack.mitre.org/techniques/T1550/
+* Sub-technique:
+** Name: Application Access Token
+** ID: T1550.001
+** Reference URL: https://attack.mitre.org/techniques/T1550/001/
+* Tactic:
+** Name: Discovery
+** ID: TA0007
+** Reference URL: https://attack.mitre.org/tactics/TA0007/
+* Technique:
+** Name: Container and Resource Discovery
+** ID: T1613
+** Reference URL: https://attack.mitre.org/techniques/T1613/

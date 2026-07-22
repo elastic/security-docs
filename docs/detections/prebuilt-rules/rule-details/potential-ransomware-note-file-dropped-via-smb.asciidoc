@@ -1,14 +1,13 @@
 [[potential-ransomware-note-file-dropped-via-smb]]
 === Potential Ransomware Note File Dropped via SMB
 
-Identifies an incoming SMB connection followed by the creation of a file with a name similar to ransomware note files. This may indicate a remote ransomware attack via the SMB protocol.
+Identifies the creation of a file with a name similar to ransomware note files by the Windows System process (PID 4). This may indicate a remote ransomware attack via the SMB protocol.
 
 *Rule type*: eql
 
 *Rule indices*: 
 
 * logs-endpoint.events.file-*
-* logs-endpoint.events.network-*
 
 *Severity*: high
 
@@ -16,7 +15,7 @@ Identifies an incoming SMB connection followed by the creation of a file with a 
 
 *Runs every*: 5m
 
-*Searches indices from*: now-9m ({ref}/common-options.html#date-math[Date Math format], see also <<rule-schedule, `Additional look-back time`>>)
+*Searches indices from*: now-5m ({ref}/common-options.html#date-math[Date Math format], see also <<rule-schedule, `Additional look-back time`>>)
 
 *Maximum alerts per execution*: 100
 
@@ -31,7 +30,7 @@ Identifies an incoming SMB connection followed by the creation of a file with a 
 * Resources: Investigation Guide
 * Data Source: Elastic Defend
 
-*Version*: 8
+*Version*: 9
 
 *Rule authors*: 
 
@@ -120,16 +119,12 @@ Setup instructions: https://ela.st/install-elastic-defend
 
 [source, js]
 ----------------------------------
-sequence by host.id with maxspan=1s
- [network where host.os.type == "windows" and
-  event.action == "connection_accepted" and destination.port == 445 and source.port >= 49152 and process.pid == 4 and
-  source.ip != "127.0.0.1" and source.ip != "::1" and
-  network.type == "ipv4" and not endswith(source.address, destination.address)]
+sequence by host.id, file.name with maxspan=1m
  [file where host.os.type == "windows" and event.action == "creation" and
   process.pid == 4 and user.id : ("S-1-5-21*", "S-1-12-*") and file.extension : ("hta", "txt", "readme", "htm*") and
-  file.path : "C:\\Users\\*" and
    /* ransom file name keywords */
-    file.name : ("*read*me*", "*lock*", "*@*", "*RECOVER*", "*decrypt*", "*restore*file*", "*FILES_BACK*", "*how*to*")] with runs=3
+    file.name : ("*read*me*", "*lock*", "*@*", "*RECOVER*", "*decrypt*", "*restore*file*", "*FILES_BACK*", "*how*to*") and 
+    (file.path : ("C:\\Users\\*", "C:\\aaAntiRansom*") or (file.path : "C:\\*" and not file.path : "C:\\*\\*"))] with runs=3
 
 ----------------------------------
 

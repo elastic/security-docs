@@ -1,0 +1,165 @@
+[[gke-creation-or-modification-of-sensitive-role]]
+=== GKE Creation or Modification of Sensitive Role
+
+Detects creation or modification of GKE Roles or ClusterRoles that grant high-risk permissions, such as wildcard access or RBAC escalation verbs (bind, escalate, impersonate), which may enable privilege escalation or unauthorized access within the cluster.
+
+*Rule type*: query
+
+*Rule indices*: 
+
+* logs-gcp.audit-*
+
+*Severity*: medium
+
+*Risk score*: 47
+
+*Runs every*: 5m
+
+*Searches indices from*: now-6m ({ref}/common-options.html#date-math[Date Math format], see also <<rule-schedule, `Additional look-back time`>>)
+
+*Maximum alerts per execution*: 100
+
+*References*: 
+
+* https://kubernetes.io/docs/reference/access-authn-authz/rbac/
+* https://heilancoos.github.io/research/2025/12/16/kubernetes.html#overly-permissive-role-based-access-control
+
+*Tags*: 
+
+* Domain: Cloud
+* Domain: Kubernetes
+* Data Source: GCP
+* Data Source: Google Cloud Platform
+* Use Case: Threat Detection
+* Tactic: Persistence
+* Tactic: Privilege Escalation
+* Resources: Investigation Guide
+
+*Version*: 1
+
+*Rule authors*: 
+
+* Elastic
+
+*Rule license*: Elastic License v2
+
+
+==== Investigation guide
+
+
+
+*Triage and analysis*
+
+
+
+*Investigating GKE Creation or Modification of Sensitive Role*
+
+
+This rule detects allowed create, update, or patch actions on Roles and ClusterRoles that introduce high-risk RBAC
+permissions, including wildcard access and escalation verbs like bind, escalate, or impersonate.
+
+
+*Possible investigation steps*
+
+
+- Identify `client.user.email`, `source.ip`, and `user_agent.original`.
+- Review `gcp.audit.resource_name`, `event.action`, and `gcp.audit.request` for the changed role.
+- Enumerate RoleBindings or ClusterRoleBindings that reference the role and hunt for follow-on secret or exec activity.
+
+
+*False positive analysis*
+
+
+- GitOps or platform bootstrap may create broad roles during onboarding. `system:addon-manager` patch reconciliation on built-in Roles and ClusterRoles is excluded.
+
+
+*Response and remediation*
+
+
+- Revert unauthorized roles, remove unexpected bindings, and restrict RBAC change permissions to governed pipelines.
+
+
+
+==== Setup
+
+
+The GCP Fleet integration with GKE audit logs enabled is required. Request body capture on RBAC resources is required.
+
+==== Rule query
+
+
+[source, js]
+----------------------------------
+data_stream.dataset:gcp.audit and service.name:"k8s.io" and event.outcome:success and
+event.action:(
+  "io.k8s.authorization.rbac.v1.roles.create" or
+  "io.k8s.authorization.rbac.v1.roles.update" or
+  "io.k8s.authorization.rbac.v1.roles.patch" or
+  "io.k8s.authorization.rbac.v1.clusterroles.create" or
+  "io.k8s.authorization.rbac.v1.clusterroles.update" or
+  "io.k8s.authorization.rbac.v1.clusterroles.patch"
+) and not source.ip:("::1" or "127.0.0.1") and not (
+  client.user.email:"system:serviceaccount:kube-system:clusterrole-aggregation-controller" and
+  gcp.audit.request.metadata.name:(admin or edit) and
+  event.action:"io.k8s.authorization.rbac.v1.clusterroles.patch"
+) and not (
+  client.user.email:"system:addon-manager" and
+  event.action:(
+    "io.k8s.authorization.rbac.v1.roles.patch" or
+    "io.k8s.authorization.rbac.v1.clusterroles.patch"
+  )
+) and (
+  gcp.audit.request.rules.verbs:("*" or escalate or bind or impersonate) or
+  (
+    gcp.audit.request.rules.verbs:("*" or create or patch or update) and
+    gcp.audit.request.rules.resources:(
+      "*" or clusterroles or clusterrolebindings or roles or rolebindings or
+      pods/exec or serviceaccounts/token or nodes/proxy or daemonsets
+    )
+  ) or
+  (
+    gcp.audit.request.rules.verbs:("*" or get or list) and
+    gcp.audit.request.rules.resources:("*" or secrets)
+  ) or
+  gcp.audit.response.rules.verbs:("*" or escalate or bind or impersonate) or
+  (
+    gcp.audit.response.rules.verbs:("*" or create or patch or update) and
+    gcp.audit.response.rules.resources:(
+      "*" or clusterroles or clusterrolebindings or roles or rolebindings or
+      pods/exec or serviceaccounts/token or nodes/proxy or daemonsets
+    )
+  ) or
+  (
+    gcp.audit.response.rules.verbs:("*" or get or list) and
+    gcp.audit.response.rules.resources:("*" or secrets)
+  )
+)
+
+----------------------------------
+
+*Framework*: MITRE ATT&CK^TM^
+
+* Tactic:
+** Name: Persistence
+** ID: TA0003
+** Reference URL: https://attack.mitre.org/tactics/TA0003/
+* Technique:
+** Name: Account Manipulation
+** ID: T1098
+** Reference URL: https://attack.mitre.org/techniques/T1098/
+* Sub-technique:
+** Name: Additional Container Cluster Roles
+** ID: T1098.006
+** Reference URL: https://attack.mitre.org/techniques/T1098/006/
+* Tactic:
+** Name: Privilege Escalation
+** ID: TA0004
+** Reference URL: https://attack.mitre.org/tactics/TA0004/
+* Technique:
+** Name: Account Manipulation
+** ID: T1098
+** Reference URL: https://attack.mitre.org/techniques/T1098/
+* Sub-technique:
+** Name: Additional Container Cluster Roles
+** ID: T1098.006
+** Reference URL: https://attack.mitre.org/techniques/T1098/006/
