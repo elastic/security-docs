@@ -1,0 +1,200 @@
+[[prebuilt-rule-8-19-29-gke-sensitive-rbac-change-followed-by-workload-modification]]
+=== GKE Sensitive RBAC Change Followed by Workload Modification
+
+Detects when the same GKE identity creates or modifies a Role or ClusterRole with high-risk permissions (wildcard access, RBAC escalation verbs, or access to secrets / privileged APIs) and also creates or patches a DaemonSet, Deployment, or CronJob within five minutes. This correlation is consistent with RBAC-based privilege escalation followed by payload deployment.
+
+*Rule type*: esql
+
+*Rule indices*: None
+
+*Severity*: medium
+
+*Risk score*: 47
+
+*Runs every*: 5m
+
+*Searches indices from*: now-11m ({ref}/common-options.html#date-math[Date Math format], see also <<rule-schedule, `Additional look-back time`>>)
+
+*Maximum alerts per execution*: 100
+
+*References*: 
+
+* https://heilancoos.github.io/research/2025/12/16/kubernetes.html#overly-permissive-role-based-access-control
+* https://kubernetes.io/docs/reference/access-authn-authz/rbac/
+
+*Tags*: 
+
+* Domain: Cloud
+* Domain: Kubernetes
+* Data Source: GCP
+* Data Source: Google Cloud Platform
+* Use Case: Threat Detection
+* Tactic: Privilege Escalation
+* Tactic: Persistence
+* Resources: Investigation Guide
+
+*Version*: 1
+
+*Rule authors*: 
+
+* Elastic
+
+*Rule license*: Elastic License v2
+
+
+==== Investigation guide
+
+
+
+*Triage and analysis*
+
+
+
+*Investigating GKE Sensitive RBAC Change Followed by Workload Modification*
+
+
+This ES|QL rule correlates two successful GKE audit behaviors from the same `client.user.email` within five
+minutes:
+
+1. Role or ClusterRole create/update/patch that grants high-risk permissions (wildcards, `escalate` /
+   `bind` / `impersonate`, secret read, or privileged API resources such as `pods/exec` and
+   `serviceaccounts/token`)
+2. DaemonSet, Deployment, or CronJob create or patch after the sensitive RBAC change
+
+`Esql.rbac_to_workload_minutes` is the gap from the latest sensitive RBAC event to the earliest workload
+modification in the lookback window.
+
+
+*Possible investigation steps*
+
+
+- Review `Esql.event_action_values` and `Esql.gcp_audit_resource_name_values` for the Role/ClusterRole and
+  workload objects touched.
+- Inspect `Esql.user_agent_original_values` and `Esql.source_ip_values` for unexpected clients or networks.
+- Check for RoleBinding or ClusterRoleBinding activity around the same identity and time window.
+- Correlate with secret access, pod exec, or token creation from the same actor.
+
+
+*False positive analysis*
+
+
+- GitOps pipelines that manage both RBAC manifests and workloads in one sync cycle.
+- Platform bootstrap that patches built-in roles and reconciles addon workloads.
+
+
+*Response and remediation*
+
+
+- Roll back unauthorized Role/ClusterRole and workload changes, revoke the actor's credentials, and
+  tighten who can mutate RBAC and sensitive workloads.
+
+
+==== Setup
+
+
+The GCP Fleet integration with GKE audit logs enabled is required. Request body capture on RBAC
+resources is required so Role and ClusterRole rule verbs and resources are present in
+`gcp.audit.request`.
+
+
+==== Rule query
+
+
+[source, js]
+----------------------------------
+from logs-gcp.audit-* metadata _id, _index, _version
+| where data_stream.dataset == "gcp.audit"
+    and service.name == "k8s.io"
+    and event.outcome == "success"
+    and client.user.email is not null
+    and source.ip is not null
+    and not to_string(source.ip) in ("127.0.0.1", "::1")
+    and not client.user.email in (
+      "system:addon-manager",
+      "system:apiserver",
+      "system:kube-controller-manager"
+    )
+    and (
+      (
+        event.action in (
+          "io.k8s.authorization.rbac.v1.roles.create",
+          "io.k8s.authorization.rbac.v1.roles.update",
+          "io.k8s.authorization.rbac.v1.roles.patch",
+          "io.k8s.authorization.rbac.v1.clusterroles.create",
+          "io.k8s.authorization.rbac.v1.clusterroles.update",
+          "io.k8s.authorization.rbac.v1.clusterroles.patch"
+        )
+        and not (
+          client.user.email == "system:serviceaccount:kube-system:clusterrole-aggregation-controller"
+          and event.action == "io.k8s.authorization.rbac.v1.clusterroles.patch"
+        )
+        and (
+          KQL("""gcp.audit.request.rules.verbs:("*" or "escalate" or "bind" or "impersonate")""")
+          or KQL("""gcp.audit.request.rules.verbs:("*" or "create" or "patch" or "update") and gcp.audit.request.rules.resources:("*" or "clusterroles" or "clusterrolebindings" or "roles" or "rolebindings" or "pods/exec" or "serviceaccounts/token" or "nodes/proxy" or "daemonsets")""")
+          or KQL("""gcp.audit.request.rules.verbs:("*" or "get" or "list") and gcp.audit.request.rules.resources:("*" or "secrets")""")
+        )
+      )
+      or event.action in (
+        "io.k8s.apps.v1.daemonsets.create",
+        "io.k8s.apps.v1.daemonsets.patch",
+        "io.k8s.apps.v1.deployments.create",
+        "io.k8s.apps.v1.deployments.patch",
+        "io.k8s.batch.v1.cronjobs.create",
+        "io.k8s.batch.v1.cronjobs.patch"
+      )
+    )
+| eval Esql.is_sensitive_rbac = case(event.action like "io.k8s.authorization.rbac.*", 1, 0),
+    Esql.is_workload_modification = case(event.action like "io.k8s.apps.*" or event.action like "io.k8s.batch.*", 1, 0),
+    Esql.sensitive_rbac_timestamp = case(event.action like "io.k8s.authorization.rbac.*", @timestamp, null),
+    Esql.workload_modification_timestamp = case(event.action like "io.k8s.apps.*" or event.action like "io.k8s.batch.*", @timestamp, null)
+| stats
+    Esql.sensitive_rbac_count = sum(Esql.is_sensitive_rbac),
+    Esql.workload_modification_count = sum(Esql.is_workload_modification),
+    Esql.latest_sensitive_rbac_timestamp = max(Esql.sensitive_rbac_timestamp),
+    Esql.earliest_workload_modification_timestamp = min(Esql.workload_modification_timestamp),
+    Esql.event_action_values = values(event.action),
+    Esql.gcp_audit_resource_name_values = values(gcp.audit.resource_name),
+    Esql.user_agent_original_values = values(user_agent.original),
+    Esql.source_ip_values = values(source.ip)
+  by client.user.email
+| where Esql.sensitive_rbac_count > 0
+    and Esql.workload_modification_count > 0
+    and Esql.latest_sensitive_rbac_timestamp <= Esql.earliest_workload_modification_timestamp
+| eval Esql.rbac_to_workload_minutes = date_diff(
+    "minute",
+    Esql.latest_sensitive_rbac_timestamp,
+    Esql.earliest_workload_modification_timestamp
+  )
+| where Esql.rbac_to_workload_minutes <= 5
+| keep
+    client.user.email,
+    Esql.*
+
+----------------------------------
+
+*Framework*: MITRE ATT&CK^TM^
+
+* Tactic:
+** Name: Privilege Escalation
+** ID: TA0004
+** Reference URL: https://attack.mitre.org/tactics/TA0004/
+* Technique:
+** Name: Account Manipulation
+** ID: T1098
+** Reference URL: https://attack.mitre.org/techniques/T1098/
+* Sub-technique:
+** Name: Additional Container Cluster Roles
+** ID: T1098.006
+** Reference URL: https://attack.mitre.org/techniques/T1098/006/
+* Tactic:
+** Name: Persistence
+** ID: TA0003
+** Reference URL: https://attack.mitre.org/tactics/TA0003/
+* Technique:
+** Name: Account Manipulation
+** ID: T1098
+** Reference URL: https://attack.mitre.org/techniques/T1098/
+* Sub-technique:
+** Name: Additional Container Cluster Roles
+** ID: T1098.006
+** Reference URL: https://attack.mitre.org/techniques/T1098/006/

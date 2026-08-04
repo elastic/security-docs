@@ -44,7 +44,7 @@ Identifies the execution of PowerShell with suspicious argument values. This beh
 * Data Source: Elastic Endgame
 * Resources: Investigation Guide
 
-*Version*: 214
+*Version*: 215
 
 *Rule authors*: 
 
@@ -155,7 +155,6 @@ process where host.os.type == "windows" and event.type == "start" and
           "*[*Convert]*",
           "*.Compression.*",
           "*-join($*",
-          "*.replace*",
           "*MemoryStream*",
           "*WriteAllBytes*",
           "* -enc *",
@@ -208,6 +207,15 @@ process where host.os.type == "windows" and event.type == "start" and
           "*=iwr $*;iex $*",
           "*ServerXmlHttp*IEX*",
           "*XmlDocument*IEX*"
+    ) or
+
+    (
+      process.command_line : "*.replace*" and
+      /* exclude known process and network inventory collection patterns */
+      not process.command_line : (
+        "*Get-CimInstance -Class Win32_Process*ConvertTo-Csv*Select-Object*$_.Replace*",
+        "*function replace_unallowed*$s.replace*Get-Counter*Network Adapter*"
+      )
     ) or
 
     (process.args : "-c" and process.args : "&{'*") or

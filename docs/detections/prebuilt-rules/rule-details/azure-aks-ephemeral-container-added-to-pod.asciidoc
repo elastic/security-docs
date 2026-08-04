@@ -1,0 +1,140 @@
+[[azure-aks-ephemeral-container-added-to-pod]]
+=== Azure AKS Ephemeral Container Added to Pod
+
+Detects an identity injecting an ephemeral (debug) container into a running AKS (Azure Kubernetes Service) pod via the pods/ephemeralcontainers subresource, excluding known AKS control-plane and platform identities. Ephemeral containers share the target pod's namespaces and give stealthy interactive access to its processes and mounted secrets without creating a new pod. Coverage includes workload service accounts (system:serviceaccount:*), so a compromised in-cluster token used to attach a debug container is not excluded.
+
+*Rule type*: query
+
+*Rule indices*: 
+
+* logs-azure.platformlogs-*
+
+*Severity*: medium
+
+*Risk score*: 47
+
+*Runs every*: 5m
+
+*Searches indices from*: now-9m ({ref}/common-options.html#date-math[Date Math format], see also <<rule-schedule, `Additional look-back time`>>)
+
+*Maximum alerts per execution*: 100
+
+*References*: 
+
+* https://kubernetes.io/docs/tasks/debug/debug-application/debug-running-pod/#ephemeral-container
+* https://microsoft.github.io/Threat-Matrix-for-Kubernetes/
+* https://unit42.paloaltonetworks.com/hildegard-malware-teamtnt/
+
+*Tags*: 
+
+* Domain: Cloud
+* Domain: Kubernetes
+* Data Source: Azure
+* Data Source: Azure Platform Logs
+* Data Source: Kubernetes
+* Use Case: Threat Detection
+* Tactic: Execution
+* Resources: Investigation Guide
+
+*Version*: 1
+
+*Rule authors*: 
+
+* Elastic
+
+*Rule license*: Elastic License v2
+
+
+==== Investigation guide
+
+
+
+*Triage and analysis*
+
+
+
+*Investigating Azure AKS Ephemeral Container Added to Pod*
+
+
+AKS kube-audit events are carried under the flattened `azure.platformlogs.properties.log.*` subtree and share the ARM
+operation `event.action: Microsoft.ContainerService/managedClusters/diagnosticLogs/Read`. An ephemeral container is
+attached to a running pod (via `kubectl debug`) and shares that pod's process and network namespaces. Adversaries use it
+as a stealthier alternative to `exec` to read mounted secrets and interact with the workload.
+
+
+*Possible investigation steps*
+
+
+- Identify the acting identity in `azure.platformlogs.properties.log.user.username` (and its groups in
+  `azure.platformlogs.properties.log.user.groups`) and whether it should debug pods. A username of `masterclient` with
+  the `system:masters` group is the AKS local cluster-admin certificate (`az aks get-credentials --admin`); on clusters
+  with local accounts disabled it should not appear at all, so its presence is itself notable. Entra-integrated admins
+  appear as their UPN/objectId instead.
+- Inspect the injected container in the `azure.platformlogs.properties.log.requestObject.spec.ephemeralContainers.*`
+  fields: the `image`, `command`, and `targetContainerName` show what was run and against which container, and
+  `securityContext.capabilities.add` (e.g. `SYS_PTRACE`, `SYS_ADMIN`) or a privileged context indicates offensive
+  debugging.
+- Review `azure.platformlogs.properties.log.userAgent` to distinguish an interactive `kubectl debug` from automation or
+  custom tooling, and `azure.platformlogs.properties.log.responseStatus.code` to tell a successful injection (200) from
+  a denied attempt (403) by an identity lacking RBAC.
+- Identify the target pod in `azure.platformlogs.properties.log.objectRef.name` /
+  `azure.platformlogs.properties.log.objectRef.namespace`.
+- Evaluate the source in `azure.platformlogs.properties.log.sourceIPs` and pivot on it for related exec sessions, secret
+  reads, or RBAC changes.
+
+
+*False positive analysis*
+
+
+- Operators and support tooling use ephemeral containers for legitimate troubleshooting; baseline expected users and
+  exclude verified break-glass or platform identities.
+
+
+*Response and remediation*
+
+
+- If unauthorized, remove the ephemeral container (delete or replace the pod), revoke the acting identity's tokens, and
+  review the RBAC that permitted the injection.
+- Inspect the target pod for accessed secrets or tampering and rotate any exposed credentials.
+- Collect kube-audit and identity artifacts per incident response procedures.
+
+
+==== Setup
+
+
+The Azure Fleet integration collecting AKS diagnostic logs forwarded through Event Hub into the `azure.platformlogs`
+data stream is required for this rule. Enable either the `kube-audit` or the `kube-audit-admin` log category (Microsoft
+recommends `kube-audit-admin` alone to reduce volume, as it only drops read-only get/list events). Mutating
+ephemeral-container writes are recorded in both categories with the same `auditID`, so clusters that enable both
+categories may generate two alerts per injection.
+
+
+==== Rule query
+
+
+[source, js]
+----------------------------------
+data_stream.dataset:azure.platformlogs and
+  event.action:"Microsoft.ContainerService/managedClusters/diagnosticLogs/Read" and
+  azure.platformlogs.category:("kube-audit" or "kube-audit-admin") and
+  azure.platformlogs.properties.log.stage:"ResponseComplete" and
+  azure.platformlogs.properties.log.objectRef.resource:"pods" and
+  azure.platformlogs.properties.log.objectRef.subresource:"ephemeralcontainers" and
+  azure.platformlogs.properties.log.verb:("update" or "patch") and
+  not azure.platformlogs.properties.log.user.username:(
+    system\:node\:* or "aksService" or "hcpService" or "readinessChecker" or
+    system\:serviceaccount\:kube-system\:*
+  )
+
+----------------------------------
+
+*Framework*: MITRE ATT&CK^TM^
+
+* Tactic:
+** Name: Execution
+** ID: TA0002
+** Reference URL: https://attack.mitre.org/tactics/TA0002/
+* Technique:
+** Name: Deploy Container
+** ID: T1610
+** Reference URL: https://attack.mitre.org/techniques/T1610/

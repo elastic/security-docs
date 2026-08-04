@@ -29,6 +29,7 @@ Identifies high risk Microsoft Entra ID sign-ins by leveraging Microsoft's Ident
 *Tags*: 
 
 * Domain: Cloud
+* Domain: Identity
 * Data Source: Azure
 * Data Source: Microsoft Entra ID
 * Data Source: Microsoft Entra ID Sign-in Logs
@@ -36,7 +37,7 @@ Identifies high risk Microsoft Entra ID sign-ins by leveraging Microsoft's Ident
 * Resources: Investigation Guide
 * Tactic: Initial Access
 
-*Version*: 111
+*Version*: 112
 
 *Rule authors*: 
 
@@ -57,7 +58,7 @@ Identifies high risk Microsoft Entra ID sign-ins by leveraging Microsoft's Ident
 *Investigating Entra ID High Risk Sign-in*
 
 
-This rule detects high-risk sign-ins in Microsoft Entra ID as identified by Identity Protection. These sign-ins are flagged with a risk level of `high` during the authentication process, indicating a strong likelihood of compromise based on Microsoft’s machine learning and heuristics. This alert is valuable for identifying accounts under active attack or compromise using valid credentials.
+This rule detects high-risk sign-ins in Microsoft Entra ID as identified by Identity Protection. These sign-ins are flagged with a risk level of `high` during the authentication process, indicating a strong likelihood of compromise based on Microsoft's machine learning and heuristics. This alert is valuable for identifying accounts under active attack or compromise using valid credentials.
 
 
 *Possible investigation steps*
@@ -104,7 +105,9 @@ data_stream.dataset:azure.signinlogs and
   (
     azure.signinlogs.properties.risk_level_during_signin:high or
     azure.signinlogs.properties.risk_level_aggregated:high
-  )
+  ) and
+  not (event.outcome:failure and azure.signinlogs.properties.risk_level_aggregated:none and azure.signinlogs.properties.risk_state:none) and
+  not azure.signinlogs.properties.risk_state:(dismissed or confirmedSafe)
 
 ----------------------------------
 
