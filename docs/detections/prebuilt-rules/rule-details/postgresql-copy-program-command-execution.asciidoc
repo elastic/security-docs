@@ -1,0 +1,121 @@
+[[postgresql-copy-program-command-execution]]
+=== PostgreSQL COPY PROGRAM Command Execution
+
+Identifies PostgreSQL "COPY" statements that invoke an operating-system command through the "PROGRAM" option. A superuser or role with "pg_execute_server_program" can use this feature to execute arbitrary commands as the PostgreSQL service account, a technique used after credential compromise and by cryptomining campaigns.
+
+*Rule type*: eql
+
+*Rule indices*: 
+
+* logs-network_traffic.pgsql-*
+
+*Severity*: high
+
+*Risk score*: 73
+
+*Runs every*: 5m
+
+*Searches indices from*: now-9m ({ref}/common-options.html#date-math[Date Math format], see also <<rule-schedule, `Additional look-back time`>>)
+
+*Maximum alerts per execution*: 100
+
+*References*: 
+
+* https://www.postgresql.org/docs/current/sql-copy.html
+* https://www.aquasec.com/blog/pg_mem-a-malware-hidden-in-the-postgres-processes/
+* https://www.wiz.io/blog/postgresql-cryptomining
+* https://attack.mitre.org/techniques/T1059/
+
+*Tags*: 
+
+* Domain: Network
+* Use Case: Network Security Monitoring
+* Use Case: Threat Detection
+* Tactic: Execution
+* Data Source: Network Packet Capture
+* Resources: Investigation Guide
+
+*Version*: 1
+
+*Rule authors*: 
+
+* Elastic
+
+*Rule license*: Elastic License v2
+
+
+==== Investigation guide
+
+
+
+*Triage and analysis*
+
+
+
+*Investigating PostgreSQL COPY PROGRAM Command Execution*
+
+
+PostgreSQL supports `COPY ... FROM PROGRAM` and `COPY ... TO PROGRAM` for server-side process execution. Attackers who obtain a privileged database identity can use this feature to launch shells, download payloads, establish persistence, or deploy cryptominers from the PostgreSQL process context.
+
+
+*Possible investigation steps*
+
+
+- Review `client.ip`, `server.ip`, `network.community_id`, `network_traffic.pgsql.query`, and PostgreSQL error fields.
+- Extract the command passed to `PROGRAM` and identify referenced shells, interpreters, downloaders, files, or network destinations.
+- Confirm the database role and whether it has superuser or `pg_execute_server_program` privileges using PostgreSQL audit and server logs.
+- Correlate the event with endpoint telemetry for `postgres` spawning `sh`, `bash`, `curl`, `wget`, `python`, `perl`, `nc`, miners, or other unusual child processes.
+- Search earlier events from the client for authentication failures, role changes, extension creation, or database enumeration.
+
+
+*False positive analysis*
+
+
+- Approved ETL, backup, and administrative automation can use COPY PROGRAM.
+- Scope exceptions to a documented client, command family, and maintenance context; do not globally exclude the `PROGRAM` keyword.
+
+
+*Response and remediation*
+
+
+- Terminate the database session and isolate the server if unauthorized process execution is confirmed.
+- Preserve PostgreSQL, endpoint, and network evidence and remove malicious processes or persistence.
+- Rotate affected credentials and revoke unnecessary superuser and `pg_execute_server_program` privileges.
+
+
+==== Setup
+
+
+
+*Setup*
+
+
+This rule requires the Elastic Network Packet Capture integration with the PostgreSQL protocol analyzer enabled and
+cleartext visibility into PostgreSQL query traffic. TLS-encrypted sessions, prepared statements, packet loss, and
+asymmetric capture can hide or fragment query text. Use PostgreSQL audit logs and endpoint process telemetry to confirm
+the database identity and command execution outcome.
+
+
+==== Rule query
+
+
+[source, js]
+----------------------------------
+any where data_stream.dataset == "network_traffic.pgsql" and
+    (
+        network_traffic.pgsql.query like~ "*copy*from*program*" or
+        network_traffic.pgsql.query like~ "*copy*to*program*"
+    )
+
+----------------------------------
+
+*Framework*: MITRE ATT&CK^TM^
+
+* Tactic:
+** Name: Execution
+** ID: TA0002
+** Reference URL: https://attack.mitre.org/tactics/TA0002/
+* Technique:
+** Name: Command and Scripting Interpreter
+** ID: T1059
+** Reference URL: https://attack.mitre.org/techniques/T1059/

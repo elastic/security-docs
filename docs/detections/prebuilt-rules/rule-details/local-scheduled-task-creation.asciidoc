@@ -38,7 +38,7 @@ Indicates the creation of a scheduled task. Adversaries can use these to establi
 * Data Source: Sysmon
 * Resources: Investigation Guide
 
-*Version*: 213
+*Version*: 214
 
 *Rule authors*: 
 
@@ -128,7 +128,26 @@ sequence with maxspan=1m
     process.pe.original_file_name : ("cmd.exe", "wscript.exe", "rundll32.exe", "regsvr32.exe", "wmic.exe", "mshta.exe",
                                      "powershell.exe", "pwsh.dll", "powershell_ise.exe", "WmiPrvSe.exe", "wsmprovhost.exe",
                                      "winrshost.exe")) or
-    ?process.code_signature.trusted == false)] by process.entity_id
+    ?process.code_signature.trusted == false) and
+    /* exclude legitimate software creating its own scheduled tasks */
+    not (
+      process.name : "cmd.exe" and
+      (
+        (
+          process.parent.executable : "?:\\Program Files\\Adobe\\Adobe Creative Cloud Experience\\libs\\node.exe" and
+          process.command_line : "*?:\\Program Files\\Adobe\\Adobe Creative Cloud Experience\\CCXProcess.exe*"
+        ) or
+        (
+          process.parent.executable : "?:\\Program Files (x86)\\LG Software\\LG App Count\\LGAppCountObserver.exe" and
+          process.command_line : "*?:\\Program Files (x86)\\LG Software\\LG App Count\\*"
+        ) or
+        (
+          process.parent.executable : "?:\\Program Files (x86)\\LG Software\\LG Update & Recovery\\URAlarm.exe" and
+          process.command_line : "*?:\\Program Files (x86)\\LG Software\\LG Update & Recovery\\Support\\*"
+        )
+      )
+    )
+  ] by process.entity_id
   [process where host.os.type == "windows" and event.type == "start" and
     (process.name : "schtasks.exe" or process.pe.original_file_name == "schtasks.exe") and
     process.args : ("/create", "-create") and process.args : ("/RU", "/SC", "/TN", "/TR", "/F", "/XML") and

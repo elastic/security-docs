@@ -48,7 +48,7 @@ Detects the use of curl to upload files to an internet server. Threat actors oft
 * Data Source: Auditd Manager
 * Data Source: Windows Security Event Logs
 
-*Version*: 8
+*Version*: 9
 
 *Rule authors*: 
 
@@ -163,9 +163,16 @@ not (
   process.args : (
     "https://*/ap/fleet/*", "https://*/api/saved_objects/*", "http*localhost:*", "http*127.0.0.*", "*ApiKey*", "http*.us-central1.run.app/*",
     "*Authorization*", "*session.id*", "http*.elastic-cloud.com*", "http*.elastic.dev*", "http*.elastic.cloud*", "http*.aws.found.io*",
-    "http*.gcp.cloud.es.io*", "http*.cisco.com/api/*", "-u", "http://192.168*"
+    "http*.gcp.cloud.es.io*", "http*.cisco.com/api/*", "-u", "http://192.168*",
+    "*incoming.telemetry.mozilla.org*", "*cloudamize.com*"
   ) or
+  process.args == "--unix-socket" or
+  process.parent.name like "clevis*" or
   process.parent.executable in ("/usr/bin/clevis-decrypt-tang", "/bin/clevis-decrypt-tang") or
+  (
+    process.parent.command_line like "*oracle/retina/vvaa-*" and
+    process.working_directory == "/home/oracle"
+  ) or
   (
     process.working_directory == "/home/oracle" and
     process.args == "--trace" and

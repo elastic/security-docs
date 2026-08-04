@@ -1,0 +1,235 @@
+[[prebuilt-rule-8-19-29-system-public-ip-discovery-via-dns-query]]
+=== System Public IP Discovery via DNS Query
+
+Identifies DNS queries to known public IP address lookup web services from suspicious Windows processes, which can reveal external IP or internet-connectivity discovery before follow-on activity.
+
+*Rule type*: eql
+
+*Rule indices*: 
+
+* endgame-*
+* logs-endpoint.events.network-*
+* logs-sentinel_one_cloud_funnel.*
+* logs-crowdstrike.fdr*
+* logs-windows.forwarded*
+* logs-windows.sysmon_operational-*
+* winlogbeat-*
+
+*Severity*: high
+
+*Risk score*: 73
+
+*Runs every*: 5m
+
+*Searches indices from*: now-9m ({ref}/common-options.html#date-math[Date Math format], see also <<rule-schedule, `Additional look-back time`>>)
+
+*Maximum alerts per execution*: 100
+
+*References*: 
+
+* https://attack.mitre.org/techniques/T1016/
+
+*Tags*: 
+
+* Domain: Endpoint
+* OS: Windows
+* Use Case: Threat Detection
+* Tactic: Discovery
+* Tactic: Command and Control
+* Resources: Investigation Guide
+* Data Source: Elastic Endgame
+* Data Source: Elastic Defend
+* Data Source: SentinelOne
+* Data Source: Crowdstrike
+* Data Source: Sysmon
+
+*Version*: 5
+
+*Rule authors*: 
+
+* Elastic
+
+*Rule license*: Elastic License v2
+
+
+==== Investigation guide
+
+
+
+*Triage and analysis*
+
+
+
+*Investigating System Public IP Discovery via DNS Query*
+
+
+
+*Possible investigation steps*
+
+
+- Does the alert-local DNS event show request-only, successful resolution, or lookup failure for a public-IP service?
+  - Why: request events show intent to resolve the service; result events plus `dns.resolved_ip` show resolver response, not a connection.
+  - Focus: `dns.question.name`, `event.action`, `dns.resolved_ip`, `dns.Ext.status`, and `@timestamp`.
+  - Implication: escalate faster when a suspicious process resolves a service that reports public egress IP; lower concern only when the lookup failed or stayed request-only and identity, lineage, and network checks all fit the same recognized connectivity test.
+
+- Is the alerting binary a recognized tool or a suspicious LOLBin/script host in this context?
+  - Focus: alert or recovered process identity: `process.name`, `process.executable`, `process.hash.sha256`, `process.code_signature.subject_name`, and `process.code_signature.trusted`.
+  - Implication: escalate when the lookup comes from a LOLBin, scripting runtime, unsigned binary, user-writable path, or signer mismatch; lower concern when a stable signed updater, endpoint-management, or managed connectivity-check component owns the exact binary. Identity alone does not close the alert.
+
+- Does the launch chain explain why this process needed external-IP discovery?
+  - Focus: recovered process start and parent context on `host.id` and `process.entity_id`: `process.command_line`, `process.parent.executable`, `process.parent.command_line`, `user.id`, and `process.Ext.session_info.logon_type`. !{investigate{"description":"","label":"Process events for the DNS-querying process","providers":[[{"excluded":false,"field":"host.id","queryType":"phrase","value":"{{host.id}}","valueType":"string"},{"excluded":false,"field":"process.entity_id","queryType":"phrase","value":"{{process.entity_id}}","valueType":"string"},{"excluded":false,"field":"event.category","queryType":"phrase","value":"process","valueType":"string"}]],"relativeFrom":"now-1h","relativeTo":"now"}}
+  - Implication: escalate when Office, a browser child, a script host, a service session, or an unexpected remote session launched the lookup; lower concern when parent, command line, user, and session all match one recognized troubleshooting, updater, endpoint-management, or managed connectivity-check workflow.
+
+- Did the process connect to the resolved public-IP service or pivot to other external infrastructure?
+  - Focus: same-process network events on `host.id` and `process.entity_id`, separating DNS results from connections and correlating `dns.resolved_ip` to `destination.ip`, `destination.port`, and `destination.as.organization.name`. !{investigate{"description":"","label":"Network events for the DNS-querying process","providers":[[{"excluded":false,"field":"host.id","queryType":"phrase","value":"{{host.id}}","valueType":"string"},{"excluded":false,"field":"process.entity_id","queryType":"phrase","value":"{{process.entity_id}}","valueType":"string"},{"excluded":false,"field":"event.category","queryType":"phrase","value":"network","valueType":"string"}]],"relativeFrom":"now-1h","relativeTo":"now"}}
+  - Hint: Missing network telemetry is unresolved, not benign. When present, treat `dns.question.name` as DNS evidence and `destination.ip` as connection evidence, including direct public-IP connections that bypass DNS.
+  - Implication: escalate when the process reaches the resolved service, contacts unrelated public infrastructure, or later connects directly to public IPs without DNS; lower concern only when connection telemetry shows no related external connection or an environment-confirmed proxy path aligned with the same workflow.
+
+- Did the same process launch follow-on commands that turn the lookup into staging, discovery, or C2 preparation?
+  - Focus: child process starts where `process.parent.entity_id` matches `process.entity_id`: `process.name`, `process.command_line`, `process.executable`, and `process.code_signature.subject_name`. !{investigate{"description":"","label":"Child processes spawned by the DNS-querying process","providers":[[{"excluded":false,"field":"host.id","queryType":"phrase","value":"{{host.id}}","valueType":"string"},{"excluded":false,"field":"process.parent.entity_id","queryType":"phrase","value":"{{process.entity_id}}","valueType":"string"},{"excluded":false,"field":"event.category","queryType":"phrase","value":"process","valueType":"string"}]],"relativeFrom":"now-1h","relativeTo":"now"}}
+  - Implication: escalate when shells, downloaders, installers, reconnaissance commands, or persistence tooling follow the lookup; lower concern when no child activity appears and earlier identity and lineage support one recognized connectivity check.
+
+- If local evidence stays suspicious or unresolved, do related alerts show the same binary-and-domain tuple around this user or host?
+  - Focus: related alert history for `user.id` and `host.id`: `dns.question.name`, `process.hash.sha256`, `process.code_signature.subject_name`, and recovered `process.parent.executable`. Review user and host alerts only after local DNS result, lineage, and follow-on network checks stay suspicious or unresolved.
+    - !{investigate{"description":"","label":"Alerts associated with the user","providers":[[{"excluded":false,"field":"event.kind","queryType":"phrase","value":"signal","valueType":"string"},{"excluded":false,"field":"user.id","queryType":"phrase","value":"{{user.id}}","valueType":"string"}]],"relativeFrom":"now-48h/h","relativeTo":"now"}}
+    - !{investigate{"description":"","label":"Alerts associated with the host","providers":[[{"excluded":false,"field":"event.kind","queryType":"phrase","value":"signal","valueType":"string"},{"excluded":false,"field":"host.id","queryType":"phrase","value":"{{host.id}}","valueType":"string"}]],"relativeFrom":"now-48h/h","relativeTo":"now"}}
+  - Implication: broaden the case when the same hash, signer, parent, and public-IP service recur across other hosts for the same user or other users on the same host; keep response local when related alerts remain limited to one confirmed maintenance cohort.
+
+- Based on DNS outcome, binary identity, launch chain, same-process network behavior, child processes, and scope, what disposition is supported?
+  - Implication: escalate on unauthorized public-IP discovery plus suspicious lineage, external egress, child commands, or spread; close only when DNS outcome, binary identity, parent chain, user/session context, connection behavior, child activity, and scope bind one recognized workflow with no contradictions; preserve mixed or incomplete cases and escalate.
+
+
+*False positive analysis*
+
+
+- Administrative troubleshooting, software updater, endpoint-management, and managed connectivity-check workflows may query public-IP services to confirm egress or NAT behavior. Confirm that identity (`process.executable`, `process.hash.sha256`, `process.code_signature.subject_name`), lineage (`process.parent.executable`, `process.parent.command_line`), user/session context, DNS evidence (`dns.question.name`, `dns.resolved_ip`), and any connection evidence converge on the same exact workflow. Without organizational confirmation, close only when telemetry proves the exact component and workflow; otherwise treat the pattern as candidate exception evidence.
+- Before creating an exception, require a stable `process.hash.sha256` or `process.code_signature.subject_name`, `process.parent.executable`, the specific `dns.question.name`, and scope anchor (`host.id`, `host.name`, or `user.id`). Avoid exceptions on `dns.question.name` alone, `process.name` alone, or the full public-IP service list because benign tooling and malware use the same services.
+
+
+*Response and remediation*
+
+
+- If confirmed benign, document the exact evidence that proved the workflow: binary identity, parent chain, user/session context, DNS result, connection behavior, and recurrence scope. Then reverse any temporary containment and build a narrow exception only for that confirmed workflow.
+- If suspicious but unconfirmed, preserve the alert, process start, DNS result, same-process connection events, child process starts, and related alert history before containment. Apply reversible containment such as temporary domain or DNS blocking, outbound restrictions for the affected process or host, or heightened monitoring on the affected `host.id` or `user.id`; escalate to host isolation only if follow-on child processes, suspicious external egress, or broader spread appears and host criticality allows it.
+- If confirmed malicious, isolate the host or restrict egress when binary identity, lineage, DNS, connection, or child-process evidence shows unauthorized internet discovery or pre-C2 activity. Block confirmed malicious `dns.question.name`, `dns.resolved_ip`, `destination.ip`, `process.hash.sha256`, and related domains, then scope other hosts and users for the same indicators before terminating processes or deleting artifacts.
+- Eradicate only the scripts, binaries, scheduled tasks, run keys, or configuration changes identified during the investigation after scoping related hosts and users. Remediate the launcher, user context, or deployment path that introduced the public-IP lookup.
+- Post-incident hardening: restrict unsigned or user-writable scripting and LOLBin execution where feasible, keep endpoint DNS and network telemetry enabled, and document any connectivity-check pattern or visibility gap for future triage.
+
+
+==== Setup
+
+
+
+*Setup*
+
+
+This rule is designed for data generated by https://www.elastic.co/security/endpoint-security[Elastic Defend], which provides native endpoint detection and response, along with event enrichments designed to work with our detection rules.
+
+Setup instructions: https://ela.st/install-elastic-defend
+
+
+*Additional data sources*
+
+
+This rule also supports the following third-party data sources. For setup instructions, refer to the links below:
+
+- https://ela.st/crowdstrike-integration[CrowdStrike]
+- https://ela.st/sentinel-one-cloud-funnel[SentinelOne Cloud Funnel]
+- https://ela.st/sysmon-event-22-setup[Sysmon Event ID 22 - DNS Query]
+
+
+==== Rule query
+
+
+[source, js]
+----------------------------------
+network where host.os.type == "windows" and dns.question.name != null and process.name != null and
+(
+  process.name : ("MSBuild.exe", "mshta.exe", "wscript.exe", "powershell.exe", "pwsh.exe", "msiexec.exe", "rundll32.exe",
+  "bitsadmin.exe", "InstallUtil.exe", "RegAsm.exe", "vbc.exe", "RegSvcs.exe", "python.exe", "regsvr32.exe", "dllhost.exe",
+  "node.exe", "javaw.exe", "java.exe", "*.pif", "*.com", "curl.exe", "bun.exe") or
+
+  (?process.code_signature.trusted == false or ?process.code_signature.exists == false) or
+
+  ?process.code_signature.subject_name : ("AutoIt Consulting Ltd", "OpenJS Foundation", "Python Software Foundation") or
+
+  ?process.executable : (
+    "?:\\Users\\Public\\*.exe", "?:\\ProgramData\\*.exe", "?:\\Users\\*\\Downloads\\*.exe",
+    "\\Device\\HarddiskVolume*\\Users\\Public\\*.exe", "\\Device\\HarddiskVolume*\\ProgramData\\*.exe", "\\Device\\HarddiskVolume*\\Users\\*\\Downloads\\*.exe"
+  )
+ ) and
+ dns.question.name :
+         (
+          "ip-api.com",
+          "checkip.dyndns.org",
+          "api.ipify.org",
+          "api.ipify.com",
+          "whatismyip.akamai.com",
+          "bot.whatismyipaddress.com",
+          "ifcfg.me",
+          "ident.me",
+          "ipof.in",
+          "ip.tyk.nu",
+          "icanhazip.com",
+          "curlmyip.com",
+          "wgetip.com",
+          "eth0.me",
+          "ipecho.net",
+          "ip.appspot.com",
+          "api.myip.com",
+          "geoiptool.com",
+          "api.2ip.ua",
+          "api.ip.sb",
+          "ipinfo.io",
+          "checkip.amazonaws.com",
+          "wtfismyip.com",
+          "iplogger.*",
+          "freegeoip.net",
+          "freegeoip.app",
+          "geoplugin.net",
+          "myip.dnsomatic.com",
+          "www.geoplugin.net",
+          "api64.ipify.org",
+          "ip4.seeip.org",
+          "*.geojs.io",
+          "*portmap.io",
+          "api.db-ip.com",
+          "geolocation-db.com",
+          "httpbin.org",
+          "myip.opendns.com"
+         ) and
+not (
+  process.executable : (
+    "?:\\ProgramData\\Microsoft\\Windows Defender\\platform\\*\\*.exe",
+    "\\Device\\HarddiskVolume*\\ProgramData\\Microsoft\\Windows Defender\\platform\\*\\*.exe"
+  ) and user.id in ("S-1-5-18", "S-1-5-19")
+)
+
+----------------------------------
+
+*Framework*: MITRE ATT&CK^TM^
+
+* Tactic:
+** Name: Discovery
+** ID: TA0007
+** Reference URL: https://attack.mitre.org/tactics/TA0007/
+* Technique:
+** Name: System Network Configuration Discovery
+** ID: T1016
+** Reference URL: https://attack.mitre.org/techniques/T1016/
+* Sub-technique:
+** Name: Internet Connection Discovery
+** ID: T1016.001
+** Reference URL: https://attack.mitre.org/techniques/T1016/001/
+* Tactic:
+** Name: Command and Control
+** ID: TA0011
+** Reference URL: https://attack.mitre.org/tactics/TA0011/
+* Technique:
+** Name: Application Layer Protocol
+** ID: T1071
+** Reference URL: https://attack.mitre.org/techniques/T1071/
+* Sub-technique:
+** Name: DNS
+** ID: T1071.004
+** Reference URL: https://attack.mitre.org/techniques/T1071/004/

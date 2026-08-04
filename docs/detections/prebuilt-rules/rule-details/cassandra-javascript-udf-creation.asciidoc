@@ -1,0 +1,123 @@
+[[cassandra-javascript-udf-creation]]
+=== Cassandra JavaScript UDF Creation
+
+Identifies Cassandra Query Language statements that create a JavaScript user-defined function. On vulnerable and dangerously configured Cassandra servers, adversaries can abuse scripted UDF creation to escape the JavaScript sandbox and execute operating-system commands, including through CVE-2021-44521.
+
+*Rule type*: eql
+
+*Rule indices*: 
+
+* logs-network_traffic.cassandra-*
+
+*Severity*: high
+
+*Risk score*: 73
+
+*Runs every*: 5m
+
+*Searches indices from*: now-9m ({ref}/common-options.html#date-math[Date Math format], see also <<rule-schedule, `Additional look-back time`>>)
+
+*Maximum alerts per execution*: 100
+
+*References*: 
+
+* https://jfrog.com/blog/cve-2021-44521-exploiting-apache-cassandra-user-defined-functions-for-remote-code-execution/
+* https://nvd.nist.gov/vuln/detail/CVE-2021-44521
+* https://attack.mitre.org/techniques/T1059/007/
+
+*Tags*: 
+
+* Domain: Network
+* Use Case: Network Security Monitoring
+* Use Case: Threat Detection
+* Use Case: Vulnerability
+* Tactic: Execution
+* Data Source: Network Packet Capture
+* Resources: Investigation Guide
+
+*Version*: 1
+
+*Rule authors*: 
+
+* Elastic
+
+*Rule license*: Elastic License v2
+
+
+==== Investigation guide
+
+
+
+*Triage and analysis*
+
+
+
+*Investigating Cassandra JavaScript UDF Creation*
+
+
+CVE-2021-44521 allows a JavaScript UDF to escape the Nashorn sandbox when Cassandra is vulnerable and scripted UDFs are enabled with unsafe thread settings. Even on patched systems, JavaScript UDF creation is a sensitive control-plane operation that should be rare and restricted to approved administrators.
+
+
+*Possible investigation steps*
+
+
+- Review `client.ip`, `server.ip`, `network.community_id`, and `network_traffic.cassandra.request.query`.
+- Extract the function name, keyspace, declared language, and function body.
+- Look for Java interoperability, reflection, process execution, class loading, file access, or network-access strings in the UDF body.
+- Confirm the Cassandra version and the values of `enable_user_defined_functions`, `enable_scripted_user_defined_functions`, and `enable_user_defined_functions_threads`.
+- Correlate with Cassandra audit logs and endpoint telemetry for child processes, file creation, or outbound connections from the Cassandra service.
+
+
+*False positive analysis*
+
+
+- Approved application deployments may create JavaScript UDFs, though this should be uncommon.
+- Scope exceptions to known deployment clients and reviewed function definitions rather than excluding UDF creation globally.
+
+
+*Response and remediation*
+
+
+- Terminate unauthorized sessions and isolate the Cassandra node if code execution is suspected.
+- Disable scripted UDFs where they are not required and upgrade Cassandra to a version that fixes CVE-2021-44521.
+- Remove unauthorized functions, rotate affected credentials, and review role permissions and cluster-wide activity.
+
+
+==== Setup
+
+
+
+*Setup*
+
+
+This rule requires the Elastic Network Packet Capture integration with the Cassandra protocol analyzer enabled and
+cleartext visibility into native CQL traffic. Prepared statements expose query text during `PREPARE`, while later
+`EXECUTE` frames may not repeat it. TLS-encrypted traffic is opaque. Use Cassandra audit logs and endpoint telemetry to
+confirm the database identity and execution outcome.
+
+
+==== Rule query
+
+
+[source, js]
+----------------------------------
+any where data_stream.dataset == "network_traffic.cassandra" and
+    network_traffic.cassandra.request.query like~ "*create*function*" and
+    network_traffic.cassandra.request.query like~ "*language*javascript*"
+
+----------------------------------
+
+*Framework*: MITRE ATT&CK^TM^
+
+* Tactic:
+** Name: Execution
+** ID: TA0002
+** Reference URL: https://attack.mitre.org/tactics/TA0002/
+* Technique:
+** Name: Command and Scripting Interpreter
+** ID: T1059
+** Reference URL: https://attack.mitre.org/techniques/T1059/
+* Sub-technique:
+** Name: JavaScript
+** ID: T1059.007
+** Reference URL: https://attack.mitre.org/techniques/T1059/007/
