@@ -1,39 +1,17 @@
-# Elastic Security docs
+> [!IMPORTANT]
+> Starting with Elastic Stack v9.0.0 the source files in this repo have been moved to other repos.
+>
+> **If you need to update the docs for a version prior to 9.0.0**, you can open a PR in this repo targeting the specific version branch and backport to other branches using the [Backport CLI tool](https://github.com/sorenlouv/backport?tab=readme-ov-file#backport-cli-tool).
+>
+> **If you're updating the docs for version 9.0 or later**, you can open a PR in the content's new home:
+>
+> * Security guide and serverless docs: [elastic/docs-content](https://github.com/elastic/docs-content/tree/main/solutions/security) (stateless and serverless docs have been consolidated into one doc set)
+>
+> **If you want to open a documentation issue or request**, please open an issue in [elastic/docs-content](https://github.com/elastic/docs-content/issues).
 
-Elastic Security Docs home page: https://www.elastic.co/guide/en/security/current/index.html
+# security-docs
 
-Serverless docs: https://docs.elastic.co/serverless/security/what-is-security-serverless
-
-Documentation Manager: Janeen Roberts (Github: `@jmikell821`)
-
-
-## Contributing to Elastic Security docs
-
-You can open an issue using the appropriate [template](https://github.com/elastic/security-docs/issues/new/choose).
-
-> [!NOTE]
-> Please report any **known issues** that need to be documented by creating an issue in our [private repo](https://github.com/elastic/security-docs-internal/issues) using the known issue template.
-
-To contribute directly to Elastic Security documentation:
-
-1. Please fork and clone the `security-docs` repo.
-1. Check out the `main` branch and fetch the latest changes.
-1. Check out a new branch and make your changes.
-1. Save your changes and open a pull request.
-1. Add all appropriate Github users as reviewers.
-1. Add the appropriate release version label, backport version label if appropriate, and team label to the PR.
-1. Once the docs team approves all changes, you can merge it. If a backport version label was added to a PR for stack versions 7.14.0 and newer, mergify will automatically open a backport PR.
-1. Merge the backport PR once it passes all CI checks.
-
-### Preview documentation changes
-
-When you open a pull request, preview links are automatically added as a comment in the PR. Once the CI check builds successfully, the links will be live and you can click them to preview your changes.
-
-You also might want to add targeted links to help reviewers find specific pages related to your PR. Preview URLs include the following pattern (replace `<YOUR_PR_NUMBER_HERE>` with the PR number):
-
-```
-https://security-docs_bk_<YOUR_PR_NUMBER_HERE>.docs-preview.app.elstc.co/guide/en/security/master/
-```
+The home of Elastic Security documentation prior to version 9.0.0.
 
 ## License
 
