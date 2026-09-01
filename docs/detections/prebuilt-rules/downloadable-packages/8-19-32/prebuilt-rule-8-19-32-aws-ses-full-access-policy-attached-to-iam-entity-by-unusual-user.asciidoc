@@ -1,0 +1,130 @@
+[[prebuilt-rule-8-19-32-aws-ses-full-access-policy-attached-to-iam-entity-by-unusual-user]]
+=== AWS SES Full Access Policy Attached to IAM Entity by Unusual User
+
+Detects the first occurrence in 7 days of an AWS identity attaching the managed policy AmazonSESFullAccess to an IAM user, role, or group. AmazonSESFullAccess grants unrestricted permission to send email, manage identities and templates, manage suppression lists, and access SES account-level settings. Granting this policy to an unexpected IAM entity, particularly a newly created user or a role not previously associated with email operations, is a documented technique used by threat actors to establish phishing infrastructure on compromised AWS accounts, enabling them to send email on behalf of the victim organization's trusted sending domain. Using new terms on the calling identity suppresses recurring attachments by known email automation while surfacing identities performing this action for the first time.
+
+*Rule type*: new_terms
+
+*Rule indices*: 
+
+* logs-aws.cloudtrail-*
+
+*Severity*: medium
+
+*Risk score*: 47
+
+*Runs every*: 5m
+
+*Searches indices from*: now-6m ({ref}/common-options.html#date-math[Date Math format], see also <<rule-schedule, `Additional look-back time`>>)
+
+*Maximum alerts per execution*: 100
+
+*References*: 
+
+* https://docs.aws.amazon.com/ses/latest/dg/control-user-access.html
+
+*Tags*: 
+
+* Domain: Cloud
+* Platform: AWS
+* Data Source: AWS
+* Data Source: Amazon Web Services
+* Service: AWS IAM
+* Service: AWS SES
+* Rule Type: New Terms
+* Tactic: Persistence
+* Tactic: Resource Development
+* Resources: Investigation Guide
+
+*Version*: 1
+
+*Rule authors*: 
+
+* Elastic
+
+*Rule license*: Elastic License v2
+
+
+==== Investigation guide
+
+
+
+*Triage and analysis*
+
+
+
+*Investigating AWS SES Full Access Policy Attached to IAM Entity by Unusual User*
+
+
+AWS Simple Email Service (SES) is a cost-effective bulk email platform with a reputation built on a customer's verified sending domains. Threat actors who compromise an AWS account often establish phishing infrastructure by granting SES access to a new or existing IAM identity and then using that identity's credentials to send phishing emails under the victim organization's trusted domain. Attaching the managed policy `AmazonSESFullAccess` is the simplest way to grant the full range of SES capabilities (send, manage identities, manage suppression lists, configure sending settings).
+
+This is a new terms rule that alerts only when the calling identity (`aws.cloudtrail.user_identity.arn`) has not attached this policy within the previous 7 days, prioritizing anomalous or first-time activity over recurring automation.
+
+
+*Possible investigation steps*
+
+
+- Identify the caller in `aws.cloudtrail.user_identity.arn` and `user.name`. Determine whether the caller is a legitimate administrator or an anomalous identity.
+- Identify the target IAM entity in `user.target.name` and `aws.cloudtrail.flattened.request_parameters.userName` (or `groupName` or `roleName`). Is this a known email automation account, or an entity created recently?
+- Query CloudTrail for all SES API calls (`event.provider: ses.amazonaws.com`) from the target entity in the time window after this attachment. Look for `SendEmail`, `SendRawEmail`, `VerifyEmailIdentity`, `SetIdentityMailFromDomain`, or `UpdateAccountSendingEnabled`.
+- Review whether the attachment corresponds to a legitimate change management process. Check for a corresponding IAM change window ticket.
+- Verify whether SES sending is enabled for the account (`ses:GetAccountSendingEnabled`) and whether there are existing or recently created SES identities.
+
+
+*False positive analysis*
+
+
+- Legitimate email automation services (transactional email, notification services) may attach AmazonSESFullAccess. Confirm the target entity is a known service role.
+- CI/CD pipelines that manage email notification infrastructure may attach this policy. Validate via pipeline execution logs and source IP.
+
+
+*Response and remediation*
+
+
+- If unauthorized, immediately detach AmazonSESFullAccess from the target entity and review all SES calls made under that identity.
+- Review SES account sending status and disable sending if any unauthorized email was sent.
+- Check SES suppression list for any unauthorized modifications (attackers may add or remove entries to influence deliverability).
+- Rotate all credentials associated with both the calling identity and the target entity.
+- Enable SES event publishing to review any emails sent during the unauthorized period.
+
+
+==== Setup
+
+
+The AWS integration must be ingesting management events into `logs-aws.cloudtrail-*`. No additional data event selectors are required — `iam:AttachUserPolicy`, `iam:AttachRolePolicy`, and `iam:AttachGroupPolicy` are management-plane APIs logged by default.
+
+==== Rule query
+
+
+[source, js]
+----------------------------------
+data_stream.dataset: "aws.cloudtrail"
+    and event.provider: "iam.amazonaws.com"
+    and event.action: ("AttachUserPolicy" or "AttachRolePolicy" or "AttachGroupPolicy")
+    and event.outcome: "success"
+    and aws.cloudtrail.flattened.request_parameters.policyArn: "arn:aws:iam::aws:policy/AmazonSESFullAccess"
+
+----------------------------------
+
+*Framework*: MITRE ATT&CK^TM^
+
+* Tactic:
+** Name: Persistence
+** ID: TA0003
+** Reference URL: https://attack.mitre.org/tactics/TA0003/
+* Technique:
+** Name: Account Manipulation
+** ID: T1098
+** Reference URL: https://attack.mitre.org/techniques/T1098/
+* Sub-technique:
+** Name: Additional Cloud Roles
+** ID: T1098.003
+** Reference URL: https://attack.mitre.org/techniques/T1098/003/
+* Tactic:
+** Name: Resource Development
+** ID: TA0042
+** Reference URL: https://attack.mitre.org/tactics/TA0042/
+* Technique:
+** Name: Stage Capabilities
+** ID: T1608
+** Reference URL: https://attack.mitre.org/techniques/T1608/

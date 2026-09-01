@@ -1,0 +1,157 @@
+[[prebuilt-rule-8-19-32-entra-id-user-sign-in-with-unusual-authentication-type]]
+=== Entra ID User Sign-in with Unusual Authentication Type
+
+Identifies rare instances of authentication methods for Microsoft Entra ID principal users. An adversary with stolen credentials may attempt to authenticate with an unusual method, which may indicate an attempt to bypass conditional access policies (CAP) and multi-factor authentication (MFA) requirements. The authentication method may not be commonly used by the user based on their historical sign-in activity.
+
+*Rule type*: new_terms
+
+*Rule indices*: 
+
+* filebeat-*
+* logs-azure.signinlogs-*
+
+*Severity*: medium
+
+*Risk score*: 47
+
+*Runs every*: 5m
+
+*Searches indices from*: now-9m ({ref}/common-options.html#date-math[Date Math format], see also <<rule-schedule, `Additional look-back time`>>)
+
+*Maximum alerts per execution*: 100
+
+*References*: None
+
+*Tags*: 
+
+* Domain: Cloud
+* Data Source: Azure
+* Data Source: Microsoft Entra ID
+* Data Source: Microsoft Entra ID Sign-in Logs
+* Platform: Entra ID
+* Use Case: Identity and Access Audit
+* Use Case: Threat Detection
+* Tactic: Initial Access
+* Resources: Investigation Guide
+
+*Version*: 9
+
+*Rule authors*: 
+
+* Elastic
+
+*Rule license*: Elastic License v2
+
+
+==== Investigation guide
+
+
+
+*Triage and analysis*
+
+
+
+*Investigating Entra ID User Sign-in with Unusual Authentication Type*
+
+
+Identifies rare instances of authentication methods for Microsoft Entra ID principal users. An adversary with stolen credentials may attempt to authenticate with an unusual method, which may indicate an attempt to bypass conditional access policies (CAP) and multi-factor authentication (MFA) requirements. The authentication method may not be commonly used by the user based on their historical sign-in activity.
+
+**This is a New Terms rule that focuses on the first occurrence of an Entra ID principal user `azure.signinlogs.properties.user_principal_name` and their authentication method `azure.signinlogs.properties.authentication_details.authentication_method` in the last 14 days.**
+
+
+*Possible investigation steps*
+
+
+- Identify the source IP address by reviewing `source.ip`. Determine whether it is associated with known malicious activity, an unexpected location or hosting provider, or approved corporate infrastructure.
+- Review `azure.signinlogs.properties.user_principal_name` to determine whether the account is privileged or otherwise high value, and compare the sign-in with the user's recent activity.
+- Examine `azure.signinlogs.properties.authentication_details.authentication_method` and determine whether the method is expected for the user. Review recent authentication-method registration or modification events.
+- Review `azure.signinlogs.properties.app_id`, `azure.signinlogs.properties.client_app_used`, and the target resource to determine whether the application and access pattern are expected.
+- Examine device, browser, user-agent, authentication protocol, and token details for signs of an unfamiliar client or session.
+- Review `azure.signinlogs.properties.authentication_requirement` and the applicable conditional access policies to determine why the sign-in did not require MFA.
+
+
+*False positive analysis*
+
+
+
+*Common benign scenarios*
+
+- Users enrolling in or switching to a different authentication method may trigger this detection the first time the method is observed.
+- Automated scripts or applications using non-interactive authentication may trigger this detection, particularly if they rely on legacy authentication protocols recorded in `azure.signinlogs.properties.authentication_protocol`.
+- Changes to an organization's authentication or conditional access policies may cause a previously unseen authentication method to be recorded for a user.
+
+
+*How to reduce false positives*
+
+- Exclude known trusted IPs, such as corporate infrastructure, from alerts by filtering `source.ip`.
+- Exclude known custom applications from `azure.signinlogs.properties.app_id` that are authorized to use non-interactive authentication.
+- Correlate alerts with approved authentication-method enrollment or policy changes before adding exceptions.
+
+
+*Response and remediation*
+
+
+
+*Immediate actions*
+
+- Block the source IP address in `source.ip` if determined to be malicious.
+- If the sign-in is unauthorized, disable the affected account, revoke active sessions and tokens, and reset its credentials.
+- Ensure basic authentication is disabled for all applications using legacy authentication protocols listed in `azure.signinlogs.properties.authentication_protocol`.
+- Enable multi-factor authentication (MFA) for impacted accounts to mitigate credential-based attacks.
+- Review conditional access policies to enforce risk-based authentication and block unauthorized access recorded in `azure.signinlogs.properties.authentication_requirement`.
+
+
+*Long-term mitigation*
+
+- Implement a zero-trust security model by enforcing least privilege access and continuous authentication.
+- Regularly review and update conditional access policies to ensure they are effective against evolving threats.
+- Restrict the use of legacy authentication protocols by disabling authentication methods listed in `azure.signinlogs.properties.client_app_used`.
+- Regularly audit authentication logs in `azure.signinlogs` to detect abnormal login behavior and ensure early detection of potential attacks.
+- Regularly rotate client credentials and secrets for applications using non-interactive authentication to reduce the risk of credential theft.
+
+
+==== Rule query
+
+
+[source, js]
+----------------------------------
+data_stream.dataset: "azure.signinlogs" and event.category: "authentication"
+    and azure.signinlogs.properties.user_type: "Member"
+    and not azure.signinlogs.properties.device_detail.browser: *
+    and not source.as.organization.name: "MICROSOFT-CORP-MSN-AS-BLOCK"
+    and not azure.signinlogs.properties.authentication_requirement: "multiFactorAuthentication"
+    and azure.signinlogs.properties.authentication_details.authentication_method:*
+    and event.outcome:success
+
+----------------------------------
+
+*Framework*: MITRE ATT&CK^TM^
+
+* Tactic:
+** Name: Initial Access
+** ID: TA0001
+** Reference URL: https://attack.mitre.org/tactics/TA0001/
+* Technique:
+** Name: Valid Accounts
+** ID: T1078
+** Reference URL: https://attack.mitre.org/techniques/T1078/
+* Sub-technique:
+** Name: Cloud Accounts
+** ID: T1078.004
+** Reference URL: https://attack.mitre.org/techniques/T1078/004/
+* Tactic:
+** Name: Defense Evasion
+** ID: TA0005
+** Reference URL: https://attack.mitre.org/tactics/TA0005/
+* Technique:
+** Name: Use Alternate Authentication Material
+** ID: T1550
+** Reference URL: https://attack.mitre.org/techniques/T1550/
+* Technique:
+** Name: Modify Authentication Process
+** ID: T1556
+** Reference URL: https://attack.mitre.org/techniques/T1556/
+* Sub-technique:
+** Name: Multi-Factor Authentication
+** ID: T1556.006
+** Reference URL: https://attack.mitre.org/techniques/T1556/006/

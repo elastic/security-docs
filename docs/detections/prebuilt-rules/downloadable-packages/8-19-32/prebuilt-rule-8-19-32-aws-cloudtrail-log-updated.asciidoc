@@ -1,0 +1,142 @@
+[[prebuilt-rule-8-19-32-aws-cloudtrail-log-updated]]
+=== AWS CloudTrail Log Updated
+
+Detects updates to an existing CloudTrail trail via UpdateTrail API which may reduce visibility, change destinations, or weaken integrity (e.g., removing global events, moving the S3 destination, or disabling validation). Adversaries can modify trails to evade detection while maintaining a semblance of logging. Validate any configuration change against approved baselines.
+
+*Rule type*: query
+
+*Rule indices*: 
+
+* filebeat-*
+* logs-aws.cloudtrail-*
+
+*Severity*: high
+
+*Risk score*: 73
+
+*Runs every*: 5m
+
+*Searches indices from*: now-6m ({ref}/common-options.html#date-math[Date Math format], see also <<rule-schedule, `Additional look-back time`>>)
+
+*Maximum alerts per execution*: 100
+
+*References*: 
+
+* https://docs.aws.amazon.com/awscloudtrail/latest/APIReference/API_UpdateTrail.html
+* https://awscli.amazonaws.com/v2/documentation/api/latest/reference/cloudtrail/update-trail.html
+
+*Tags*: 
+
+* Domain: Cloud
+* Platform: AWS
+* Data Source: AWS CloudTrail
+* Tactic: Impact
+* Rule Type: Custom Query (KQL)
+* Resources: Investigation Guide
+
+*Version*: 217
+
+*Rule authors*: 
+
+* Elastic
+
+*Rule license*: Elastic License v2
+
+
+==== Investigation guide
+
+
+
+*Triage and analysis*
+
+
+
+*Investigating AWS CloudTrail Log Updated*
+
+
+AWS CloudTrail is a service that enables governance, compliance, and operational and risk auditing of your AWS account. It logs API calls and related events, providing visibility into user activity. Trail modifications can be used by attackers to redirect logs to non-approved buckets, drop regions, or disable valuable selectors. This rule identifies a modification on CloudTrail settings using the `UpdateTrail` API. 
+
+
+*Possible investigation steps*
+
+- **Actor and context**
+  - Check `aws.cloudtrail.user_identity.arn`, `user_agent.original`, `source.ip`; verify approved change.
+- **Assess the modification**
+  - In `aws.cloudtrail.request_parameters`, note changes to:
+    - `S3BucketName`, `CloudWatchLogsLogGroupArn`, `KmsKeyId`
+    - `IsMultiRegionTrail`, `IncludeGlobalServiceEvents`
+    - Event or insight selectors (management vs data events)
+- **Correlate**
+  - Look for preceding `StopLogging` or following `DeleteTrail`.
+  - Review concurrent IAM policy edits or role changes by the same actor.
+
+
+*False positive analysis*
+
+- **Planned changes**: Baseline drift during region onboarding or encryption rotation.
+- **Automation**: IaC pipelines updating trails as templates evolve.
+
+
+*Response and remediation*
+
+- **If unauthorized**
+  - Revert to baseline; validate destination ownership and KMS policy.
+  - Investigate time ranges where visibility may have been reduced.
+- **Hardening**
+  - Constrain `cloudtrail:UpdateTrail`, require approvals, and monitor with AWS Config rules.
+
+
+*Additional information*
+
+- **https://github.com/aws-samples/aws-incident-response-playbooks/blob/c151b0dc091755fffd4d662a8f29e2f6794da52c/playbooks/[AWS IR Playbooks]** 
+- **https://github.com/aws-samples/aws-customer-playbook-framework/tree/a8c7b313636b406a375952ac00b2d68e89a991f2/docs[AWS Customer Playbook Framework]** 
+- **Security Best Practices:** https://aws.amazon.com/premiumsupport/knowledge-center/security-best-practices/[AWS Knowledge Center – Security Best Practices].
+
+
+==== Rule query
+
+
+[source, js]
+----------------------------------
+data_stream.dataset: "aws.cloudtrail" 
+    and event.provider: "cloudtrail.amazonaws.com" 
+    and event.action: "UpdateTrail" 
+    and event.outcome: "success"
+    and not user_agent.original: (*Pulumi* or *Terraform*)
+
+----------------------------------
+
+*Framework*: MITRE ATT&CK^TM^
+
+* Tactic:
+** Name: Impact
+** ID: TA0040
+** Reference URL: https://attack.mitre.org/tactics/TA0040/
+* Technique:
+** Name: Data Manipulation
+** ID: T1565
+** Reference URL: https://attack.mitre.org/techniques/T1565/
+* Sub-technique:
+** Name: Stored Data Manipulation
+** ID: T1565.001
+** Reference URL: https://attack.mitre.org/techniques/T1565/001/
+* Tactic:
+** Name: Collection
+** ID: TA0009
+** Reference URL: https://attack.mitre.org/tactics/TA0009/
+* Technique:
+** Name: Data from Cloud Storage
+** ID: T1530
+** Reference URL: https://attack.mitre.org/techniques/T1530/
+* Tactic:
+** Name: Defense Evasion
+** ID: TA0005
+** Reference URL: https://attack.mitre.org/tactics/TA0005/
+* Technique:
+** Name: Impair Defenses
+** ID: T1562
+** Reference URL: https://attack.mitre.org/techniques/T1562/
+* Sub-technique:
+** Name: Disable or Modify Cloud Logs
+** ID: T1562.008
+** Reference URL: https://attack.mitre.org/techniques/T1562/008/
