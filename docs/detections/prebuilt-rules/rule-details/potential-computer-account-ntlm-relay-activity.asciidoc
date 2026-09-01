@@ -38,7 +38,7 @@ Identifies potential relay activities against a Computer account by identifying 
 * Data Source: Windows Security Event Logs
 * Resources: Investigation Guide
 
-*Version*: 112
+*Version*: 113
 
 *Rule authors*: 
 
@@ -127,7 +127,12 @@ authentication where host.os.type == "windows" and event.code in ("4624", "4625"
 
  /* Verify if the Source IP belongs to the host */
  not endswith(string(source.ip), string(host.ip)) and
- indexOf(string(host.ip), string(source.ip)) == null
+ indexOf(string(host.ip), string(source.ip)) == null and
+
+ /* Exclude self-authentication from multi-homed hosts where the NTLM workstation name matches the machine account */
+ not (source.domain != null and
+      startswith~(user.name, source.domain) and
+      startswith~(source.domain, substring(user.name, 0, -1)))
 
 ----------------------------------
 

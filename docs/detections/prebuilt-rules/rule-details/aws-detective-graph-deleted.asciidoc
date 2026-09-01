@@ -1,0 +1,113 @@
+[[aws-detective-graph-deleted]]
+=== AWS Detective Graph Deleted
+
+Detects the deletion of an Amazon Detective behavior graph via the DeleteGraph API. Amazon Detective automatically collects log data from AWS services and uses machine learning, statistical analysis, and graph theory to build an interactive model of resource behaviors and interactions. Deleting a behavior graph destroys its historical analysis data and removes the ability to investigate security incidents using Detective's relationship mapping. An attacker with sufficient IAM permissions may delete the Detective graph to impair forensic investigation of a compromise.
+
+*Rule type*: query
+
+*Rule indices*: 
+
+* logs-aws.cloudtrail-*
+
+*Severity*: low
+
+*Risk score*: 21
+
+*Runs every*: 5m
+
+*Searches indices from*: now-6m ({ref}/common-options.html#date-math[Date Math format], see also <<rule-schedule, `Additional look-back time`>>)
+
+*Maximum alerts per execution*: 100
+
+*References*: 
+
+* https://docs.aws.amazon.com/detective/latest/APIReference/API_DeleteGraph.html
+
+*Tags*: 
+
+* Domain: Cloud
+* Platform: AWS
+* Data Source: AWS CloudTrail
+* Service: AWS Detective
+* Rule Type: Custom Query (KQL)
+* Tactic: Defense Evasion
+* Resources: Investigation Guide
+
+*Version*: 1
+
+*Rule authors*: 
+
+* Elastic
+
+*Rule license*: Elastic License v2
+
+
+==== Investigation guide
+
+
+
+*Triage and analysis*
+
+
+
+*Investigating AWS Detective Graph Deleted*
+
+
+Amazon Detective builds a behavior graph from CloudTrail, VPC Flow Logs, and GuardDuty findings, enabling investigation teams to trace the full scope and timeline of a security incident. `DeleteGraph` is a rare, irreversible operation — the historical graph data cannot be recovered after deletion. An adversary who deletes the Detective graph removes a key forensic investigation tool, making it harder to understand the scope of a compromise.
+
+
+*Possible investigation steps*
+
+
+- Identify the caller in `aws.cloudtrail.user_identity.arn` and `user.name`. Confirm whether this is an authorized cloud administrator or an anomalous identity.
+- Check whether the deletion was preceded by other defense-evasion actions in the same time window: GuardDuty detector deletion, CloudTrail StopLogging, Security Hub disable.
+- Determine how long the Detective graph had been active and what historical data was lost.
+- Review all IAM actions by this identity in the 24 hours before the deletion.
+
+
+*False positive analysis*
+
+
+- Account decommissioning workflows may include Detective graph deletion as part of teardown. Verify via change management records.
+
+
+*Response and remediation*
+
+
+- Re-enable Amazon Detective for the affected account and region.
+- Reconstruct investigation context from raw CloudTrail, VPC Flow Logs, and GuardDuty findings.
+- Revoke active sessions for the deleting identity if the action was unauthorized.
+- Add an SCP restricting `detective:DeleteGraph` to break-glass administrator roles.
+
+
+==== Setup
+
+
+The AWS integration must be ingesting management events into `logs-aws.cloudtrail-*`. Amazon Detective must be enabled in the account for this event to appear.
+
+==== Rule query
+
+
+[source, js]
+----------------------------------
+data_stream.dataset: "aws.cloudtrail"
+    and event.provider: "detective.amazonaws.com"
+    and event.action: "DeleteGraph"
+    and event.outcome: "success"
+
+----------------------------------
+
+*Framework*: MITRE ATT&CK^TM^
+
+* Tactic:
+** Name: Defense Evasion
+** ID: TA0005
+** Reference URL: https://attack.mitre.org/tactics/TA0005/
+* Technique:
+** Name: Impair Defenses
+** ID: T1562
+** Reference URL: https://attack.mitre.org/techniques/T1562/
+* Sub-technique:
+** Name: Disable or Modify Tools
+** ID: T1562.001
+** Reference URL: https://attack.mitre.org/techniques/T1562/001/

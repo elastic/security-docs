@@ -1,0 +1,227 @@
+[[suspicious-child-process-of-papercut-server-component]]
+=== Suspicious Child Process of PaperCut Server Component
+
+Detects suspicious child process execution originating from PaperCut server components, including the PaperCut NG/MF Application Server (pc-app.exe) and PaperCut Hive print job spooler (pc-printjob-spooler.exe). Active exploitation of CVE-2026-82078 and CVE-2026-81578 abuses unsafe dynamic class loading and an authentication bypass to achieve pre-authenticated remote code execution under pc-app.exe. Similar suspicious shell spawning has also been observed from PaperCut Hive's pc-printjob-spooler.exe (for example cmd.exe executing echo/test-style commands). Observed NG/MF in-the-wild activity includes discovery utilities such as whoami and tasklist; proof-of-concept exploitation has spawned unexpected Windows utilities such as charmap.exe as SYSTEM.
+
+*Rule type*: eql
+
+*Rule indices*: 
+
+* logs-endpoint.events.process-*
+* winlogbeat-*
+* logs-windows.sysmon_operational-*
+* logs-windows.forwarded*
+* logs-system.security*
+* endgame-*
+* logs-m365_defender.event-*
+* logs-sentinel_one_cloud_funnel.*
+* logs-crowdstrike.fdr*
+
+*Severity*: high
+
+*Risk score*: 73
+
+*Runs every*: 5m
+
+*Searches indices from*: now-9m ({ref}/common-options.html#date-math[Date Math format], see also <<rule-schedule, `Additional look-back time`>>)
+
+*Maximum alerts per execution*: 100
+
+*References*: 
+
+* https://www.papercut.com/kb/Main/security-bulletin-27-aug-2026-urgent-security-advisory/
+* https://www.huntress.com/blog/papercut-actively-exploited
+
+*Tags*: 
+
+* Domain: Endpoint
+* OS: Windows
+* Use Case: Threat Detection
+* Use Case: Vulnerability
+* Tactic: Initial Access
+* Tactic: Execution
+* Data Source: Elastic Defend
+* Data Source: Elastic Endgame
+* Data Source: Sysmon
+* Data Source: Windows Security Event Logs
+* Data Source: Microsoft Defender XDR
+* Data Source: SentinelOne
+* Data Source: Crowdstrike
+* Resources: Investigation Guide
+
+*Version*: 1
+
+*Rule authors*: 
+
+* Elastic
+
+*Rule license*: Elastic License v2
+
+
+==== Investigation guide
+
+
+
+*Triage and analysis*
+
+
+
+*Investigating Suspicious Child Process of PaperCut Server Component*
+
+
+PaperCut NG/MF Application Server (`pc-app.exe`) and PaperCut Hive components such as `pc-printjob-spooler.exe` should
+not routinely spawn interactive shells, download utilities, or discovery tools. CVE-2026-81578 (authentication bypass)
+chained with CVE-2026-82078 (unsafe dynamic class loading) enables pre-authentication remote code execution under
+`pc-app.exe`. Huntress observed short exploitation windows with base64-encoded commands such as `whoami & ver` and
+`whoami & ver & tasklist`, and reproduced RCE that spawned `charmap.exe` as SYSTEM under `pc-app.exe`. Separate telemetry
+has also shown `pc-printjob-spooler.exe` under `Program Files\PaperCut Hive\` launching `cmd.exe` with attacker- or
+test-controlled command lines.
+
+
+*Possible investigation steps*
+
+
+- Review the parent-child chain: `process.parent.name`/`process.parent.executable` (for example `pc-app.exe` or
+  `pc-printjob-spooler.exe` under `PaperCut*` install paths); inspect child `process.name`, `process.executable`, and
+  `process.command_line` for shells, LOLBins, discovery tools, or trivial probing commands such as `echo test`.
+- Confirm PaperCut product (NG/MF vs Hive), version, and internet exposure of management or print-related services.
+  Unpatched or publicly reachable servers are high priority.
+- For NG/MF parents, search the same `host.id` for `.class` file creation under `server\lib` (for example `Udydn.class`,
+  `Moo97.class`) and related artifacts under `server\data\content` (`*.cmd`, `*.out`).
+- Inspect PaperCut logs for hex-encoded payloads, base64 command strings, Derby boot messages referencing
+  `memory:...\pwn`, `jdbc:derby:memory:pwn`, `ERROR No suitable driver found for jdbc:no:x`, or truncated/deleted logs.
+- Correlate with inbound web or print-service requests around `@timestamp` (proxy, WAF, firewall).
+- Pivot on `user.id` and `host.id` for follow-on credential access, persistence, or lateral movement within 48 hours.
+
+
+*False positive analysis*
+
+
+- PaperCut upgrades, support tooling, or rare admin scripts might spawn expected helpers. Validate change windows,
+  signed binaries, and command lines before exceptioning.
+- Do not exclude on `pc-app.exe` or `pc-printjob-spooler.exe` alone; require a stable benign child path and command pattern.
+
+
+*Response and remediation*
+
+
+- Isolate or restrict network access to the implicated PaperCut service immediately if public-facing.
+- Preserve PaperCut logs, configuration, process trees from the parent binary, and any `.class`/`.cmd`/`.out` artifacts
+  before upgrade or reboot.
+- Apply PaperCut Emergency Patch Release 2 (or newer fixed builds) for NG/MF, including site/secondary servers; validate
+  Hive component versions and vendor guidance for Hive-specific hosts.
+- Hunt estate-wide for the same child-process and `.class` drop patterns; rotate credentials if compromise is confirmed.
+
+
+==== Setup
+
+
+
+*Setup*
+
+
+This rule is designed for data generated by https://www.elastic.co/security/endpoint-security[Elastic Defend], which provides native endpoint detection and response, along with event enrichments designed to work with our detection rules.
+
+Setup instructions: https://ela.st/install-elastic-defend
+
+
+*Additional data sources*
+
+
+This rule also supports the following third-party data sources. For setup instructions, refer to the links below:
+
+- https://ela.st/sysmon-event-1-setup[Sysmon Event ID 1 - Process Creation]
+- https://ela.st/audit-process-creation[Windows Process Creation Logs]
+- https://ela.st/m365-defender[Microsoft Defender XDR]
+- https://ela.st/sentinel-one-cloud-funnel[SentinelOne Cloud Funnel]
+- https://ela.st/crowdstrike-integration[CrowdStrike]
+
+
+==== Rule query
+
+
+[source, js]
+----------------------------------
+process where host.os.type == "windows" and event.type == "start" and
+  process.parent.name : ("pc-app.exe", "pc-printjob-spooler.exe") and
+  (
+    process.name : (
+      "cmd.exe",
+      "powershell.exe",
+      "pwsh.exe",
+      "powershell_ise.exe",
+      "wscript.exe",
+      "cscript.exe",
+      "mshta.exe",
+      "rundll32.exe",
+      "regsvr32.exe",
+      "bitsadmin.exe",
+      "certutil.exe",
+      "curl.exe",
+      "wget.exe",
+      "net.exe",
+      "net1.exe",
+      "whoami.exe",
+      "tasklist.exe",
+      "ipconfig.exe",
+      "nltest.exe",
+      "systeminfo.exe",
+      "charmap.exe",
+      "calc.exe",
+      "mspaint.exe"
+    ) or
+    ?process.pe.original_file_name : (
+      "Cmd.Exe",
+      "PowerShell.EXE",
+      "pwsh.dll",
+      "powershell_ise.EXE",
+      "wscript.exe",
+      "cscript.exe",
+      "MSHTA.EXE",
+      "RUNDLL32.EXE",
+      "REGSVR32.EXE",
+      "bitsadmin.exe",
+      "CertUtil.exe",
+      "curl.exe",
+      "wget.exe",
+      "net.exe",
+      "net1.exe",
+      "whoami.exe",
+      "tasklist.exe",
+      "ipconfig.exe",
+      "nltest.exe",
+      "systeminfo.exe",
+      "charmap.exe",
+      "CALC.EXE",
+      "mspaint.exe"
+    )
+  )
+
+----------------------------------
+
+*Framework*: MITRE ATT&CK^TM^
+
+* Tactic:
+** Name: Initial Access
+** ID: TA0001
+** Reference URL: https://attack.mitre.org/tactics/TA0001/
+* Technique:
+** Name: Exploit Public-Facing Application
+** ID: T1190
+** Reference URL: https://attack.mitre.org/techniques/T1190/
+* Tactic:
+** Name: Execution
+** ID: TA0002
+** Reference URL: https://attack.mitre.org/tactics/TA0002/
+* Technique:
+** Name: Command and Scripting Interpreter
+** ID: T1059
+** Reference URL: https://attack.mitre.org/techniques/T1059/
+* Sub-technique:
+** Name: PowerShell
+** ID: T1059.001
+** Reference URL: https://attack.mitre.org/techniques/T1059/001/
+* Sub-technique:
+** Name: Windows Command Shell
+** ID: T1059.003
+** Reference URL: https://attack.mitre.org/techniques/T1059/003/

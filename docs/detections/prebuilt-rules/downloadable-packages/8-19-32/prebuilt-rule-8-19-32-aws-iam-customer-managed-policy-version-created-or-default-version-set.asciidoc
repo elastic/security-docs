@@ -1,0 +1,128 @@
+[[prebuilt-rule-8-19-32-aws-iam-customer-managed-policy-version-created-or-default-version-set]]
+=== AWS IAM Customer Managed Policy Version Created or Default Version Set
+
+Identifies successful IAM API calls that create a new customer managed policy version or set the default version for an existing customer managed policy. Attackers with `iam:CreatePolicyVersion` or `iam:SetDefaultPolicyVersion` on a privileged policy can introduce a permissive policy document and activate it, escalating effective permissions without attaching a new policy. These APIs are high impact when the target policy is attached to powerful roles or users.
+
+*Rule type*: query
+
+*Rule indices*: 
+
+* filebeat-*
+* logs-aws.cloudtrail-*
+
+*Severity*: medium
+
+*Risk score*: 47
+
+*Runs every*: 5m
+
+*Searches indices from*: now-6m ({ref}/common-options.html#date-math[Date Math format], see also <<rule-schedule, `Additional look-back time`>>)
+
+*Maximum alerts per execution*: 100
+
+*References*: 
+
+* https://docs.aws.amazon.com/IAM/latest/APIReference/API_CreatePolicyVersion.html
+* https://docs.aws.amazon.com/IAM/latest/APIReference/API_SetDefaultPolicyVersion.html
+* https://rhinosecuritylabs.com/aws/aws-privilege-escalation-methods-mitigation/
+
+*Tags*: 
+
+* Domain: Cloud
+* Domain: Identity
+* Platform: AWS
+* Data Source: AWS CloudTrail
+* Service: AWS IAM
+* Tactic: Privilege Escalation
+* Rule Type: Custom Query (KQL)
+* Resources: Investigation Guide
+
+*Version*: 2
+
+*Rule authors*: 
+
+* Elastic
+
+*Rule license*: Elastic License v2
+
+
+==== Investigation guide
+
+
+
+*Triage and analysis*
+
+
+
+*Investigating AWS IAM Customer Managed Policy Version Created or Default Version Set*
+
+
+`CreatePolicyVersion` uploads a new immutable version of a customer managed policy. `SetDefaultPolicyVersion` switches
+which version principals evaluate—immediately changing effective access if the policy is already attached.
+
+
+*Possible investigation steps*
+
+
+- From `aws.cloudtrail.request_parameters`, extract `policyArn`, `policyDocument` (if present), and `setAsDefault`.
+- Map the policy ARN to attached users, groups, and roles; prioritize policies attached to admin or break-glass roles.
+- Compare the new or selected version to prior versions in IAM or version history for added `Action`/`Resource` wildcards.
+- Review `aws.cloudtrail.user_identity.arn`, `source.ip`, and `user_agent.original` for interactive vs automation context.
+- Correlate with `AttachUserPolicy`, `AttachRolePolicy`, or `CreatePolicyVersion` spikes from the same principal.
+
+
+*False positive analysis*
+
+
+- Planned policy releases and rollbacks are expected in mature shops; baseline known publishers.
+
+
+*Response and remediation*
+
+
+- If malicious: set default to a known-good version, delete bad versions where supported, detach policy if necessary, and
+  revoke excess `iam:*` on the actor.
+
+
+*Additional information*
+
+
+- https://docs.aws.amazon.com/IAM/latest/APIReference/API_CreatePolicyVersion.html[CreatePolicyVersion]
+- https://docs.aws.amazon.com/IAM/latest/APIReference/API_SetDefaultPolicyVersion.html[SetDefaultPolicyVersion]
+
+
+==== Rule query
+
+
+[source, js]
+----------------------------------
+event.dataset: "aws.cloudtrail"
+    and event.provider: "iam.amazonaws.com"
+    and event.action: ("CreatePolicyVersion" or "SetDefaultPolicyVersion")
+    and event.outcome: "success"
+    and not aws.cloudtrail.user_identity.type: "AWSService" 
+    and not aws.cloudtrail.user_identity.arn:arn*/terraform 
+    and not source.as.organization.name:(Amazon* or AMAZON* or "Google LLC" or "MongoDB, Inc.")
+    and not source.address: ( "cloudformation.amazonaws.com" or "servicecatalog.amazonaws.com")
+    and not user_agent.original: (*Terraform* or *Pulumi*)
+
+----------------------------------
+
+*Framework*: MITRE ATT&CK^TM^
+
+* Tactic:
+** Name: Privilege Escalation
+** ID: TA0004
+** Reference URL: https://attack.mitre.org/tactics/TA0004/
+* Technique:
+** Name: Account Manipulation
+** ID: T1098
+** Reference URL: https://attack.mitre.org/techniques/T1098/
+* Technique:
+** Name: Abuse Elevation Control Mechanism
+** ID: T1548
+** Reference URL: https://attack.mitre.org/techniques/T1548/
+* Sub-technique:
+** Name: Temporary Elevated Cloud Access
+** ID: T1548.005
+** Reference URL: https://attack.mitre.org/techniques/T1548/005/

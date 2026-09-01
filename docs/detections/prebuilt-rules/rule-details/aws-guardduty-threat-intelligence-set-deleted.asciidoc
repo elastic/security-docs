@@ -1,0 +1,110 @@
+[[aws-guardduty-threat-intelligence-set-deleted]]
+=== AWS GuardDuty Threat Intelligence Set Deleted
+
+Detects the deletion of an Amazon GuardDuty threat intelligence set. Threat intelligence sets are custom lists of known-malicious IP addresses or domains that GuardDuty uses to generate findings when monitored resources communicate with those indicators. Deleting a threat intel set degrades GuardDuty's detection capability for known adversary infrastructure, allowing communication with threat-actor-controlled IP ranges to go undetected.
+
+*Rule type*: query
+
+*Rule indices*: 
+
+* logs-aws.cloudtrail-*
+
+*Severity*: medium
+
+*Risk score*: 47
+
+*Runs every*: 5m
+
+*Searches indices from*: now-6m ({ref}/common-options.html#date-math[Date Math format], see also <<rule-schedule, `Additional look-back time`>>)
+
+*Maximum alerts per execution*: 100
+
+*References*: 
+
+* https://docs.aws.amazon.com/guardduty/latest/APIReference/API_DeleteThreatIntelSet.html
+* https://hackingthe.cloud/aws/avoiding-detection/modify-guardduty-config/
+
+*Tags*: 
+
+* Domain: Cloud
+* Platform: AWS
+* Data Source: AWS CloudTrail
+* Service: AWS GuardDuty
+* Rule Type: Custom Query (KQL)
+* Tactic: Defense Evasion
+* Resources: Investigation Guide
+
+*Version*: 1
+
+*Rule authors*: 
+
+* Elastic
+
+*Rule license*: Elastic License v2
+
+
+==== Investigation guide
+
+
+
+*Triage and analysis*
+
+
+
+*Investigating AWS GuardDuty Threat Intelligence Set Deleted*
+
+
+GuardDuty threat intelligence sets allow security teams to upload custom lists of known-malicious IP addresses and domains. GuardDuty generates high-priority findings when monitored resources contact addresses in these sets. Deleting a threat intel set reduces GuardDuty's ability to detect communication with known adversary infrastructure.
+
+Legitimate deletions occur during feed rotation (replacing an old set with an updated version) or when decommissioning a threat intel feed. Both operations should be planned and documented.
+
+
+*Possible investigation steps*
+
+
+- Identify the caller from `aws.cloudtrail.user_identity.arn` and `user.name`.
+- Check `aws.cloudtrail.request_parameters` for the threat intel set ID and detector ID. Determine whether any threat intel sets remain active in the detector.
+- Review CloudTrail for adjacent GuardDuty control-plane modifications: `CreateThreatIntelSet`, `UpdateThreatIntelSet`, `CreateIPSet`, `UpdateIPSet`, `DeleteDetector`, `CreateFilter`.
+- Determine whether a replacement threat intel set was created before or after the deletion.
+- Correlate with other defense-evasion indicators such as GuardDuty detector updates or suppression rule creation.
+
+
+*Response and remediation*
+
+
+- Re-create or restore the threat intelligence set if the deletion was unauthorized.
+- Rotate credentials for the calling identity and review all actions taken by those credentials.
+- Apply an SCP or IAM policy restricting `guardduty:DeleteThreatIntelSet` to a dedicated security operations role.
+
+
+==== Setup
+
+
+The AWS integration must be ingesting management events into `logs-aws.cloudtrail-*`. GuardDuty management events are logged by default.
+
+==== Rule query
+
+
+[source, js]
+----------------------------------
+data_stream.dataset: "aws.cloudtrail"
+    and event.provider: "guardduty.amazonaws.com"
+    and event.action: "DeleteThreatIntelSet"
+    and event.outcome: "success"
+
+----------------------------------
+
+*Framework*: MITRE ATT&CK^TM^
+
+* Tactic:
+** Name: Defense Evasion
+** ID: TA0005
+** Reference URL: https://attack.mitre.org/tactics/TA0005/
+* Technique:
+** Name: Impair Defenses
+** ID: T1562
+** Reference URL: https://attack.mitre.org/techniques/T1562/
+* Sub-technique:
+** Name: Disable or Modify Tools
+** ID: T1562.001
+** Reference URL: https://attack.mitre.org/techniques/T1562/001/

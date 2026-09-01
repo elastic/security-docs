@@ -1,0 +1,180 @@
+[[prebuilt-rule-8-19-32-aws-kms-customer-managed-key-disabled-or-scheduled-for-deletion]]
+=== AWS KMS Customer Managed Key Disabled or Scheduled for Deletion
+
+Identifies attempts to disable or schedule the deletion of an AWS customer managed KMS Key. Disabling or scheduling a KMS key for deletion removes the ability to decrypt data encrypted under that key and can permanently destroy access to critical resources. Adversaries may use these operations to cause irreversible data loss, disrupt business operations, impede incident response, or hide evidence of prior activity. Because KMS keys often protect sensitive or regulated data, any modification to their lifecycle should be considered highly sensitive and investigated promptly.
+
+*Rule type*: query
+
+*Rule indices*: 
+
+* filebeat-*
+* logs-aws.cloudtrail-*
+
+*Severity*: medium
+
+*Risk score*: 47
+
+*Runs every*: 5m
+
+*Searches indices from*: now-6m ({ref}/common-options.html#date-math[Date Math format], see also <<rule-schedule, `Additional look-back time`>>)
+
+*Maximum alerts per execution*: 100
+
+*References*: 
+
+* https://docs.aws.amazon.com/cli/latest/reference/kms/disable-key.html
+* https://docs.aws.amazon.com/cli/latest/reference/kms/schedule-key-deletion.html
+
+*Tags*: 
+
+* Domain: Cloud
+* Platform: AWS
+* Data Source: AWS CloudTrail
+* Service: AWS KMS
+* Tactic: Impact
+* Rule Type: Custom Query (KQL)
+* Resources: Investigation Guide
+
+*Version*: 114
+
+*Rule authors*: 
+
+* Xavier Pich
+
+*Rule license*: Elastic License v2
+
+
+==== Investigation guide
+
+
+
+*Triage and analysis*
+
+
+
+*Investigating AWS KMS Customer Managed Key Disabled or Scheduled for Deletion*
+
+
+AWS KMS keys underpin encryption for S3, EBS, RDS, Secrets Manager, Lambda, and numerous other AWS services. Disabling a KMS key or scheduling its deletion immediately disrupts encryption and decryption workflows, and, once deleted, renders all data encrypted with that key unrecoverable.
+
+Because these operations are rare, highly privileged, and tightly controlled in mature environments, they should be treated as high-risk, destructive actions when performed unexpectedly. Adversaries may disable or delete KMS keys to sabotage recovery, impede forensic analysis, or destroy evidence after exfiltration.
+
+
+
+*Possible investigation steps*
+
+
+- **Identify the actor and authentication context**
+  - Review `aws.cloudtrail.user_identity.arn` and `aws.cloudtrail.user_identity.access_key_id` to determine the caller.
+  - Check `source.ip`, `source.geo` fields, and `user_agent.original` to determine whether the action originated from an expected network path or automation platform.
+  - Compare the actor and access key to historical usage patterns.
+
+- **Determine what key was affected and its criticality**
+  - Inspect `aws.cloudtrail.resources.arn` to identify the KMS key.
+  - Determine:
+    - The services and data protected by the key (e.g., RDS, EBS, S3, Secrets Manager).
+    - The environment (prod vs. dev).
+    - Owner or application team.
+
+- **Understand the scope and intent of the change**
+  - For `DisableKey`, determine whether a dependent service immediately began failing or experienced decryption errors.
+  - For `ScheduleKeyDeletion`, examine the `PendingWindowInDays` value within `aws.cloudtrail.request_parameters`.
+  - Check whether the key was previously rotated, enabled/disabled, or had its policy recently modified.
+
+- **Correlate with surrounding events**
+  - Look for:
+    - IAM policy changes granting new KMS privileges.
+    - Access anomalies involving the same principal.
+    - File system, database, or backup deletions near the same timeframe.
+    - S3, EBS, or RDS resources showing encryption failures.
+  - Determine whether other keys were modified in the same window (possible broader sabotage attempt).
+
+- **Validate intent with owners**
+  - Confirm with the application, data, or security owners:
+    - Whether deactivation or scheduled deletion was requested.
+    - Whether the key was being replaced, migrated, or retired.
+
+
+*False positive analysis*
+
+
+- **Planned key lifecycle activities**
+  - Some organizations disable KMS keys before rotation, migration, or decommissioning.
+  - Scheduled deletion during infrastructure teardown may be expected in CI/CD-driven ephemeral environments.
+
+- **Configuration errors**
+  - Misapplied tags or incorrect CloudFormation teardown workflows can unintentionally disable or schedule deletion of KMS keys.
+
+If any of the above conditions apply, consider adjusting rule exceptions based on IAM principal, environment tag, or automation role.
+
+
+*Response and remediation*
+
+
+- **Contain and validate**
+  - Immediately confirm whether the key disablement or deletion schedule was intentional.
+  - If unauthorized, cancel scheduled deletion (`CancelKeyDeletion`) and re-enable the key (`EnableKey`) as appropriate.
+  - Rotate credentials or access keys used by the actor if compromise is suspected.
+
+- **Assess impact**
+  - Identify all AWS services and data encrypted with the affected KMS key.
+  - Review logs and service metrics for failures involving:
+    - EBS volume attachments
+    - RDS instance decryption
+    - S3 object access
+    - Secrets Manager retrieval
+    - Lambda environment variable decryption
+
+- **Investigate for compromise**
+  - Review CloudTrail activity for the principal:
+    - Permission escalations
+    - Unusual STS role assumptions
+    - S3, EC2, RDS destructive behavior
+  - Look for preceding data access or exfiltration attempts.
+
+- **Strengthen controls**
+  - Restrict AWS KMS lifecycle permissions (`kms:DisableKey`, `kms:ScheduleKeyDeletion`) to a very small privileged set.
+  - Use AWS Organizations SCPs to prevent KMS key deletion in production accounts.
+  - Enable AWS Config rules for KMS key state monitoring.
+  - Require MFA for administrators capable of key management.
+
+- **Post-incident improvement**
+  - Update runbooks to include KMS lifecycle change approvals.
+  - Implement tagging standards to designate high-risk keys.
+  - Enhance monitoring for key policy modifications or changes to principal permissions.
+
+
+*Additional information*
+
+- **https://github.com/aws-samples/aws-incident-response-playbooks/blob/c151b0dc091755fffd4d662a8f29e2f6794da52c/playbooks/[AWS IR Playbooks]** 
+- **https://github.com/aws-samples/aws-customer-playbook-framework/tree/a8c7b313636b406a375952ac00b2d68e89a991f2/docs[AWS Customer Playbook Framework]** 
+- **Security Best Practices:** https://aws.amazon.com/premiumsupport/knowledge-center/security-best-practices/[AWS Knowledge Center – Security Best Practices].
+
+
+==== Rule query
+
+
+[source, js]
+----------------------------------
+data_stream.dataset: "aws.cloudtrail"
+    and event.provider: "kms.amazonaws.com" 
+    and event.action: ("DisableKey" or "ScheduleKeyDeletion") 
+    and event.outcome: "success"
+    and not user_agent.original: (*Terraform* or *Pulumi*)
+
+----------------------------------
+
+*Framework*: MITRE ATT&CK^TM^
+
+* Tactic:
+** Name: Impact
+** ID: TA0040
+** Reference URL: https://attack.mitre.org/tactics/TA0040/
+* Technique:
+** Name: Data Destruction
+** ID: T1485
+** Reference URL: https://attack.mitre.org/techniques/T1485/
+* Sub-technique:
+** Name: Lifecycle-Triggered Deletion
+** ID: T1485.001
+** Reference URL: https://attack.mitre.org/techniques/T1485/001/

@@ -10,6 +10,7 @@ This rule detects network events that may indicate inbound Windows file sharing 
 * logs-corelight.*
 * logs-network_traffic.*
 * logs-panw.panos*
+* logs-fortinet_fortigate.log-*
 * logs-pfsense.log-*
 * logs-zeek.*
 
@@ -34,13 +35,14 @@ This rule detects network events that may indicate inbound Windows file sharing 
 * Domain: Network
 * Use Case: Threat Detection
 * Data Source: Corelight
+* Data Source: Fortinet
 * Data Source: PAN-OS
 * Data Source: Network Traffic
 * Data Source: pfSense
 * Data Source: Zeek
 * Resources: Investigation Guide
 
-*Version*: 1
+*Version*: 2
 
 *Rule authors*: 
 
@@ -99,6 +101,7 @@ This rule requires network flow or firewall log data that captures inbound TCP c
 
 - **Elastic Network Traffic** integration (Packetbeat)
 - **Corelight** integration (network and SMB telemetry)
+- **Fortinet FortiGate** integration (firewall traffic logs)
 - **PAN-OS** integration (Palo Alto Networks firewall logs)
 - **pfSense** integration (syslog-based firewall flow logs; requires pfSense syslog forwarding enabled)
 - **Zeek** integration (SMB-specific log types: `smb_cmd`, `smb_files`, `smb_mapping`)
@@ -110,7 +113,7 @@ For pfSense, ensure the firewall logging rules are configured to log connection 
 
 This rule requires network flow or firewall log data that captures inbound TCP connections with 5-tuple information (source IP, destination IP, destination port). Compatible data sources include:
 
-Elastic Network Traffic integration (Packetbeat)Corelight integration (network and SMB telemetry)PAN-OS integration (Palo Alto Networks firewall logs)pfSense integration (syslog-based firewall flow logs; requires pfSense syslog forwarding enabled)Zeek integration (SMB-specific log types: `smb_cmd`, `smb_files`, `smb_mapping`)
+Elastic Network Traffic integration (Packetbeat)Corelight integration (network and SMB telemetry)Fortinet FortiGate integration (firewall traffic logs)PAN-OS integration (Palo Alto Networks firewall logs)pfSense integration (syslog-based firewall flow logs; requires pfSense syslog forwarding enabled)Zeek integration (SMB-specific log types: `smb_cmd`, `smb_files`, `smb_mapping`)
 For pfSense, ensure the firewall logging rules are configured to log connection events and that the Elastic pfSense integration is forwarding logs to the `logs-pfsense.log-*` data stream.
 
 ==== Rule query
@@ -118,7 +121,7 @@ For pfSense, ensure the firewall logging rules are configured to log connection 
 
 [source, js]
 ----------------------------------
-(data_stream.dataset:(network_traffic.flow or zeek.smb_cmd or zeek.smb_files or zeek.smb_mapping or pfsense.log) or event.category:(network or network_traffic))
+(data_stream.dataset:(fortinet_fortigate.log or network_traffic.flow or pfsense.log or zeek.smb_cmd or zeek.smb_files or zeek.smb_mapping) or event.category:(network or network_traffic))
   and network.transport:tcp and destination.port:(139 or 445)
   and destination.ip:(10.0.0.0/8 or 172.16.0.0/12 or 192.168.0.0/16)
   and not source.ip:(

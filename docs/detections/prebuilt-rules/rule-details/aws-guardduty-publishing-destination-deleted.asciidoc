@@ -1,0 +1,111 @@
+[[aws-guardduty-publishing-destination-deleted]]
+=== AWS GuardDuty Publishing Destination Deleted
+
+Detects the deletion of an Amazon GuardDuty publishing destination. Publishing destinations export GuardDuty findings to S3, Security Lake, or EventBridge for long-term retention and SIEM ingestion. An adversary with GuardDuty administrative access may delete a publishing destination to prevent findings from reaching external storage or a security operations center, reducing the visibility of their activity while leaving the GuardDuty detector active.
+
+*Rule type*: query
+
+*Rule indices*: 
+
+* logs-aws.cloudtrail-*
+
+*Severity*: medium
+
+*Risk score*: 47
+
+*Runs every*: 5m
+
+*Searches indices from*: now-6m ({ref}/common-options.html#date-math[Date Math format], see also <<rule-schedule, `Additional look-back time`>>)
+
+*Maximum alerts per execution*: 100
+
+*References*: 
+
+* https://docs.aws.amazon.com/guardduty/latest/APIReference/API_DeletePublishingDestination.html
+* https://hackingthe.cloud/aws/avoiding-detection/modify-guardduty-config/
+
+*Tags*: 
+
+* Domain: Cloud
+* Platform: AWS
+* Data Source: AWS CloudTrail
+* Service: AWS GuardDuty
+* Rule Type: Custom Query (KQL)
+* Tactic: Defense Evasion
+* Resources: Investigation Guide
+
+*Version*: 1
+
+*Rule authors*: 
+
+* Elastic
+
+*Rule license*: Elastic License v2
+
+
+==== Investigation guide
+
+
+
+*Triage and analysis*
+
+
+
+*Investigating AWS GuardDuty Publishing Destination Deleted*
+
+
+Amazon GuardDuty publishing destinations export threat findings to S3 buckets, Amazon Security Lake, or EventBridge buses for retention and downstream SIEM ingestion. Deleting a publishing destination severs this pipeline: findings still appear in the GuardDuty console but are no longer exported, making it harder for security operations to correlate GuardDuty alerts with other event sources.
+
+This action is uncommon in production environments. Legitimate deletions occur during planned migrations to a new destination or when decommissioning GuardDuty in an account.
+
+
+*Possible investigation steps*
+
+
+- Identify the caller from `aws.cloudtrail.user_identity.arn` and `user.name`. Verify this identity has a documented reason to modify GuardDuty configuration.
+- Check `aws.cloudtrail.request_parameters` for the destination ID and detector ID. Query GuardDuty to confirm whether any publishing destination remains configured.
+- Review CloudTrail for other GuardDuty control-plane actions by the same identity in the surrounding time window: `DeleteDetector`, `UpdateDetector`, `CreateFilter`, `CreateIPSet`.
+- Determine whether a replacement destination was configured before or after the deletion.
+- Correlate with IAM changes that may have granted GuardDuty administrative access to the calling identity.
+
+
+*Response and remediation*
+
+
+- If unauthorized, immediately re-create the publishing destination to restore findings export.
+- Rotate credentials for the calling identity and review all actions taken by those credentials.
+- Apply an SCP or IAM policy restricting `guardduty:DeletePublishingDestination` to a dedicated security operations role.
+- Review GuardDuty member account configurations to confirm the action was not replicated across multiple accounts.
+
+
+==== Setup
+
+
+The AWS integration must be ingesting management events into `logs-aws.cloudtrail-*`. GuardDuty management events are logged by default.
+
+==== Rule query
+
+
+[source, js]
+----------------------------------
+data_stream.dataset: "aws.cloudtrail"
+    and event.provider: "guardduty.amazonaws.com"
+    and event.action: "DeletePublishingDestination"
+    and event.outcome: "success"
+
+----------------------------------
+
+*Framework*: MITRE ATT&CK^TM^
+
+* Tactic:
+** Name: Defense Evasion
+** ID: TA0005
+** Reference URL: https://attack.mitre.org/tactics/TA0005/
+* Technique:
+** Name: Impair Defenses
+** ID: T1562
+** Reference URL: https://attack.mitre.org/techniques/T1562/
+* Sub-technique:
+** Name: Disable or Modify Tools
+** ID: T1562.001
+** Reference URL: https://attack.mitre.org/techniques/T1562/001/

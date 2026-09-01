@@ -1,0 +1,124 @@
+[[prebuilt-rule-8-19-32-potential-privilege-escalation-via-suid-sgid]]
+=== Potential Privilege Escalation via SUID/SGID
+
+Detects potential privilege escalation under the root effective user when the real user and parent user are not root, indicative of the execution of binaries with SUID or SGID bits set.
+
+*Rule type*: eql
+
+*Rule indices*: 
+
+* logs-endpoint.events.process*
+
+*Severity*: high
+
+*Risk score*: 73
+
+*Runs every*: 5m
+
+*Searches indices from*: now-6m ({ref}/common-options.html#date-math[Date Math format], see also <<rule-schedule, `Additional look-back time`>>)
+
+*Maximum alerts per execution*: 100
+
+*References*: 
+
+* https://attack.mitre.org/techniques/T1548/
+
+*Tags*: 
+
+* Data Source: Elastic Defend
+* Domain: Endpoint
+* OS: Linux
+* Use Case: Threat Detection
+* Tactic: Privilege Escalation
+* Resources: Investigation Guide
+
+*Version*: 3
+
+*Rule authors*: 
+
+* Elastic
+
+*Rule license*: Elastic License v2
+
+
+==== Investigation guide
+
+
+
+*Triage and analysis*
+
+
+
+*Investigating Potential Privilege Escalation via SUID/SGID*
+
+
+Adversaries exploit misconfigured SUID/SGID binaries to gain elevated access or persistence. This rule identifies processes running with root privileges but initiated by non-root users, flagging potential misuse of SUID/SGID permissions.
+
+
+*Possible investigation steps*
+
+
+- Inspect `process.parent.command_line` and working directory for obfuscation or one-liners.
+- Check authentication and sudoers policy for the user.
+- Pivot on the host for additional privilege escalation or persistence in the same session.
+
+
+*Response and remediation*
+
+
+- If unauthorized, contain the session, revoke elevated access, and review sudoers and polkit policy for tampering.
+
+
+==== Rule query
+
+
+[source, js]
+----------------------------------
+process where host.os.type == "linux" and event.type == "start" and event.action == "exec" and (
+  (process.user.id == "0" and process.real_user.id != "0" and process.parent.user.id != "0") or
+  (process.group.id == "0" and process.real_group.id != "0" and process.parent.group.id != "0")
+) and
+(
+  startsWith(process.executable, process.command_line) or
+  startsWith(process.name, process.command_line)
+) and
+(
+  process.parent.name like (".*", "python*", "perl*", "ruby*", "lua*", "php*", "node", "deno", "bun", "java") or
+  process.parent.executable like ("./*", "/tmp/*", "/var/tmp/*", "/dev/shm/*", "/run/user/*", "/var/run/user/*", "/home/*/*") or
+  (
+    process.parent.name in ("bash", "dash", "sh", "tcsh", "csh", "zsh", "ksh", "fish", "mksh") and
+    process.parent.args in ("-c", "-cl", "-lc", "--command", "-ic", "-ci", "-bash", "-sh", "-zsh", "-dash", "-fish", "-ksh", "-mksh") and
+    process.parent.args_count <= 4
+  )
+) and
+not (
+  /* Common SUID/SGID binaries (subset also covered by e7856173-6489-449f-80ec-c1f5fcd7b87c); excluded here to reduce noise */
+  process.name in (
+    "unix_chkpwd", "fusermount", "fusermount3", "umount", "newgrp", "chsh", "sudoedit", "gpasswd", "chfn", "polkit-agent-helper-1",
+    "dbus-daemon-launch-helper", "ssh-keysign", "pam_extrausers_chkpwd", "expiry", "chage", "wall", "bsd-write", "ssh-agent",
+    "ping6", "traceroute", "mtr", "ntfs-3g", "Xorg.wrap", "chrome-sandbox", "bwrap", "hostname", "sudo", "su", "pkexec", "passwd",
+    "mount"
+  ) or
+  (process.executable == "/usr/lib/landscape/apt-update" and process.args == "/usr/lib/landscape/apt-update") or
+  (process.executable == "/usr/bin/mount" and process.args in ("/usr/bin/mount", "mount")) or
+  (process.executable like "/u0?/app/agent/agent_*/sbin/nmo" and process.args like "/u0?/app/agent/agent_*/sbin/nmo") or
+  (process.executable == "/usr/bin/screen" and process.args == "screen") or
+  (process.executable == "/usr/sbin/playpen" and process.args == "/usr/sbin/playpen")
+)
+
+----------------------------------
+
+*Framework*: MITRE ATT&CK^TM^
+
+* Tactic:
+** Name: Privilege Escalation
+** ID: TA0004
+** Reference URL: https://attack.mitre.org/tactics/TA0004/
+* Technique:
+** Name: Abuse Elevation Control Mechanism
+** ID: T1548
+** Reference URL: https://attack.mitre.org/techniques/T1548/
+* Sub-technique:
+** Name: Setuid and Setgid
+** ID: T1548.001
+** Reference URL: https://attack.mitre.org/techniques/T1548/001/

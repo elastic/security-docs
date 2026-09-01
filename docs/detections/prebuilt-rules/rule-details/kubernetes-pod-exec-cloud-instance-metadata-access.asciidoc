@@ -25,14 +25,16 @@ Detects Kubernetes pod exec sessions whose decoded command line references cloud
 *Tags*: 
 
 * Data Source: Kubernetes
+* Data Source: Kubernetes API Server Audit Logs
 * Domain: Kubernetes
+* Platform: Kubernetes
 * Domain: Cloud
 * Use Case: Threat Detection
 * Tactic: Credential Access
 * Tactic: Execution
 * Resources: Investigation Guide
 
-*Version*: 1
+*Version*: 2
 
 *Rule authors*: 
 
@@ -94,8 +96,8 @@ code.
 FROM logs-kubernetes.audit_logs-* metadata _id, _index, _version
 | WHERE kubernetes.audit.objectRef.subresource == "exec"
   AND kubernetes.audit.requestURI LIKE "*command=*"
-| EVAL decoded_uri = URL_DECODE(kubernetes.audit.requestURI)
-| GROK decoded_uri "%{DATA}/exec\\?%{DATA:raw_commands}&(?:container|stdin|stdout|stderr)=%{GREEDYDATA}"
+| EVAL Esql.decoded_uri = URL_DECODE(kubernetes.audit.requestURI)
+| GROK Esql.decoded_uri "%{DATA}/exec\\?%{DATA:raw_commands}&(?:container|stdin|stdout|stderr)=%{GREEDYDATA}"
 | EVAL command = REPLACE(raw_commands, "command=", "")
 | EVAL command = REPLACE(command, "&", " ")
 | EVAL Esql.executed_command = REPLACE(command, "\\+", " ")
@@ -111,7 +113,7 @@ FROM logs-kubernetes.audit_logs-* metadata _id, _index, _version
     Esql.executed_command RLIKE """.*(security-credentials|/api/token|oauth2/token|service-accounts/.*/token).*""", "yes",
     "recon"
   )
-| KEEP *
+| KEEP Esql.*, user.name, user_agent.original, event.*, source.ip, kubernetes.audit.*, _id, _version, _index, data_stream.namespace
 
 ----------------------------------
 

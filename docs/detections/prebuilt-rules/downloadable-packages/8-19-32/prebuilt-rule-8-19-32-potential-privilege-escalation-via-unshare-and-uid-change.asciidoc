@@ -1,0 +1,155 @@
+[[prebuilt-rule-8-19-32-potential-privilege-escalation-via-unshare-and-uid-change]]
+=== Potential Privilege Escalation via unshare and UID Change
+
+Identifies potentially suspicious use of unshare to create a user namespace context followed by a UID change event indicating a transition to root. Adversaries may use unshare-based primitives as part of local privilege escalation chains. This rule is intentionally generic and can surface multiple local privesc patterns beyond a single CVE.
+
+*Rule type*: eql
+
+*Rule indices*: 
+
+* logs-endpoint.events.process*
+
+*Severity*: high
+
+*Risk score*: 73
+
+*Runs every*: 5m
+
+*Searches indices from*: now-9m ({ref}/common-options.html#date-math[Date Math format], see also <<rule-schedule, `Additional look-back time`>>)
+
+*Maximum alerts per execution*: 100
+
+*References*: 
+
+* https://www.wiz.io/blog/ubuntu-overlayfs-vulnerability
+* https://twitter.com/liadeliyahu/status/1684841527959273472
+
+*Tags*: 
+
+* Domain: Endpoint
+* OS: Linux
+* Use Case: Threat Detection
+* Tactic: Privilege Escalation
+* Use Case: Vulnerability
+* Data Source: Elastic Defend
+* Resources: Investigation Guide
+
+*Version*: 13
+
+*Rule authors*: 
+
+* Elastic
+* Massimo Bertocchi
+
+*Rule license*: Elastic License v2
+
+
+==== Investigation guide
+
+
+
+*Triage and analysis*
+
+
+> **Disclaimer**:
+> This investigation guide was created using generative AI technology and has been reviewed to improve its accuracy and relevance. While every effort has been made to ensure its quality, we recommend validating the content and adapting it to suit your specific environment and operational needs.
+
+
+*Investigating Potential Privilege Escalation via unshare and UID Change*
+
+
+The unshare utility can create new namespaces, including user namespaces. In some exploit chains, an attacker uses
+unshare (often with user namespace flags) as a precursor step and then achieves a transition to root. This rule detects
+a short sequence where a non-root user executes unshare with user-namespace related arguments and a subsequent uid_change
+event indicates the user became root, which can represent a successful local privilege escalation attempt.
+
+
+*Possible investigation steps*
+
+
+- Review unshare arguments in the first event to confirm user namespace related flags were used (for example -U/--user or -r).
+- Check the process tree and parent context (process.parent.entity_id) to understand what launched unshare and whether it originated from an interactive session or user-writable path.
+- Confirm whether the uid_change corresponds to the same activity and identify the first root process spawned after the uid_change event.
+- Review other host signals around the same time for exploit activity such as compilation in /tmp, suspicious downloads, or execution of unusual binaries.
+
+
+*False positive analysis*
+
+
+- Legitimate sandboxing or container tooling may use unshare and then legitimately trigger uid_change events; validate the parent process and user context.
+- Security testing, exploit validation, or developer environments may intentionally exercise namespace-related behavior; tune by users, hosts, or maintenance windows.
+
+
+*Response and remediation*
+
+
+- Immediately isolate the affected host to prevent further privilege abuse or lateral movement.
+- Terminate suspicious processes and collect forensic data (process tree, binaries, and relevant files in temp locations).
+- Patch and harden the host; review policies that allow unprivileged user namespaces if not required in your environment.
+- Escalate for incident response when root access is confirmed and scope for follow-on persistence.
+
+
+==== Setup
+
+
+
+*Setup*
+
+
+This rule requires data coming in from Elastic Defend.
+
+
+*Elastic Defend Integration Setup*
+
+Elastic Defend is integrated into the Elastic Agent using Fleet. Upon configuration, the integration allows the Elastic Agent to monitor events on your host and send data to the Elastic Security app.
+
+
+*Prerequisite Requirements:*
+
+- Fleet is required for Elastic Defend.
+- To configure Fleet Server refer to the https://www.elastic.co/guide/en/fleet/current/fleet-server.html[documentation].
+
+
+*The following steps should be executed in order to add the Elastic Defend integration on a Linux System:*
+
+- Go to the Kibana home page and click "Add integrations".
+- In the query bar, search for "Elastic Defend" and select the integration to see more details about it.
+- Click "Add Elastic Defend".
+- Configure the integration name and optionally add a description.
+- Select the type of environment you want to protect, either "Traditional Endpoints" or "Cloud Workloads".
+- Select a configuration preset. Each preset comes with different default settings for Elastic Agent, you can further customize these later by configuring the Elastic Defend integration policy. https://www.elastic.co/guide/en/security/current/configure-endpoint-integration-policy.html[Helper guide].
+- We suggest selecting "Complete EDR (Endpoint Detection and Response)" as a configuration setting, that provides "All events; all preventions"
+- Enter a name for the agent policy in "New agent policy name". If other agent policies already exist, you can click the "Existing hosts" tab and select an existing policy instead.
+For more details on Elastic Agent configuration settings, refer to the https://www.elastic.co/guide/en/fleet/8.10/agent-policy.html[helper guide].
+- Click "Save and Continue".
+- To complete the integration, select "Add Elastic Agent to your hosts" and continue to the next section to install the Elastic Agent on your hosts.
+For more details on Elastic Defend refer to the https://www.elastic.co/guide/en/security/current/install-endpoint.html[helper guide].
+
+
+==== Rule query
+
+
+[source, js]
+----------------------------------
+sequence by process.parent.entity_id, host.id with maxspan=60s
+  [process where host.os.type == "linux" and event.type == "start" and event.action == "exec" and
+    process.name == "unshare" and process.args : ("-r", "-rm", "-m", "-U", "--user") and user.id != "0"]
+  [process where host.os.type == "linux" and event.action == "uid_change" and event.type == "change" and
+    user.id == "0"]
+
+----------------------------------
+
+*Framework*: MITRE ATT&CK^TM^
+
+* Tactic:
+** Name: Privilege Escalation
+** ID: TA0004
+** Reference URL: https://attack.mitre.org/tactics/TA0004/
+* Technique:
+** Name: Exploitation for Privilege Escalation
+** ID: T1068
+** Reference URL: https://attack.mitre.org/techniques/T1068/
+* Technique:
+** Name: Abuse Elevation Control Mechanism
+** ID: T1548
+** Reference URL: https://attack.mitre.org/techniques/T1548/

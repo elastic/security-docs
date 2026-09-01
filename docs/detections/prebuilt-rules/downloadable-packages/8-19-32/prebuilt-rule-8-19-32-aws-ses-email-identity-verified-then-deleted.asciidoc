@@ -1,0 +1,137 @@
+[[prebuilt-rule-8-19-32-aws-ses-email-identity-verified-then-deleted]]
+=== AWS SES Email Identity Verified Then Deleted
+
+Detects an SES email identity being verified and subsequently deleted within a 30-minute window, performed by the same AWS identity. Amazon SES requires email addresses and domains to be verified before they can be used as senders. An adversary who obtains SES credentials may verify a domain or address they control, use it to send phishing or spam email, then delete the identity to remove evidence of the sending domain from the account's verified identity list. This verify-use-delete pattern is a recognized attacker technique for SES abuse.
+
+*Rule type*: esql
+
+*Rule indices*: None
+
+*Severity*: medium
+
+*Risk score*: 47
+
+*Runs every*: 30m
+
+*Searches indices from*: now-60m ({ref}/common-options.html#date-math[Date Math format], see also <<rule-schedule, `Additional look-back time`>>)
+
+*Maximum alerts per execution*: 100
+
+*References*: 
+
+* https://docs.aws.amazon.com/ses/latest/APIReference/API_VerifyEmailIdentity.html
+* https://docs.aws.amazon.com/ses/latest/APIReference/API_DeleteIdentity.html
+* https://permiso.io/blog/s/aws-ses-pionage-detecting-ses-abuse/
+
+*Tags*: 
+
+* Domain: Cloud
+* Platform: AWS
+* Data Source: AWS CloudTrail
+* Service: AWS SES
+* Rule Type: ESQL
+* Tactic: Resource Development
+* Tactic: Defense Evasion
+* Resources: Investigation Guide
+
+*Version*: 2
+
+*Rule authors*: 
+
+* Elastic
+
+*Rule license*: Elastic License v2
+
+
+==== Investigation guide
+
+
+
+*Triage and analysis*
+
+
+
+*Investigating AWS SES Email Identity Verified Then Deleted*
+
+
+Amazon SES requires that email addresses and domains be verified (via DNS record or a verification email) before they can be used as `From:` addresses. An adversary who obtains SES write credentials can verify a domain they control, send bulk email from that domain using the victim account's sending quota and reputation, then delete the identity to hide the sending domain from security reviews.
+
+The verify-then-delete sequence is the evidence-destruction component of the SES phishing technique: it removes the compromised identity from `ListIdentities` output, making post-incident attribution harder.
+
+This is an ES|QL rule that aggregates SES verification and deletion events per calling identity within 30-minute windows and alerts when the same identity performed both, with the verification preceding the deletion.
+
+
+*Possible investigation steps*
+
+
+- Identify the caller from `aws.cloudtrail.user_identity.arn` and the aggregated `user_names` column.
+- Pivot to the raw CloudTrail events for this ARN in the `first_verify` to `last_delete` time range to determine the verified identity from the `VerifyEmailIdentity` or `VerifyDomainIdentity` request parameters and the deleted identity from the `DeleteIdentity` request parameters.
+- Query SES `SendEmail` / `SendRawEmail` CloudTrail events (if CloudTrail management events are being collected) or SES sending statistics between the verification and deletion timestamps to determine whether email was sent from the verified identity.
+- Check your email service provider's delivery logs for any email sourced from the SES identity.
+- Review all SES actions taken by this identity in the surrounding time window.
+
+
+*Response and remediation*
+
+
+- If unauthorized email was sent, notify affected recipients and file an SES abuse report.
+- Rotate all IAM credentials that had SES write access during the incident window.
+- Enable SES sending quotas and alerts to detect unusual send volume in real time.
+- Restrict `ses:VerifyEmailIdentity`, `ses:VerifyDomainIdentity`, and `ses:DeleteIdentity` to a dedicated SES-management role via IAM policy.
+
+
+==== Setup
+
+
+The AWS integration must be ingesting management events into `logs-aws.cloudtrail-*`. SES management APIs are logged by default.
+
+==== Rule query
+
+
+[source, js]
+----------------------------------
+from logs-aws.cloudtrail-* metadata _id, _version, _index
+| where data_stream.dataset == "aws.cloudtrail"
+    and event.provider == "ses.amazonaws.com"
+    and event.action in ("VerifyEmailIdentity", "VerifyDomainIdentity", "VerifyEmailAddress", "VerifyDomainDkim", "DeleteIdentity")
+    and event.outcome == "success"
+    and aws.cloudtrail.user_identity.arn is not null
+| eval Esql.ses_verify_flag = case(event.action != "DeleteIdentity", 1, 0),
+       Esql.ses_delete_flag = case(event.action == "DeleteIdentity", 1, 0)
+| stats Esql.ses_verify_count = sum(Esql.ses_verify_flag),
+        Esql.ses_delete_count = sum(Esql.ses_delete_flag),
+        Esql.ses_verify_timestamp_min = min(case(Esql.ses_verify_flag == 1, @timestamp)),
+        Esql.ses_delete_timestamp_max = max(case(Esql.ses_delete_flag == 1, @timestamp)),
+        Esql.event_action_values = values(event.action),
+        Esql_priv.user_name_values = values(user.name),
+        Esql.cloud_account_id_values = values(cloud.account.id)
+    by aws.cloudtrail.user_identity.arn
+| where Esql.ses_verify_count > 0 and Esql.ses_delete_count > 0
+    and Esql.ses_verify_timestamp_min < Esql.ses_delete_timestamp_max
+    and date_diff("minutes", Esql.ses_verify_timestamp_min, Esql.ses_delete_timestamp_max) <= 30
+| keep aws.cloudtrail.user_identity.arn, Esql.ses_verify_count, Esql.ses_delete_count, Esql.ses_verify_timestamp_min, Esql.ses_delete_timestamp_max, Esql.event_action_values, Esql_priv.user_name_values, Esql.cloud_account_id_values
+
+----------------------------------
+
+*Framework*: MITRE ATT&CK^TM^
+
+* Tactic:
+** Name: Resource Development
+** ID: TA0042
+** Reference URL: https://attack.mitre.org/tactics/TA0042/
+* Technique:
+** Name: Acquire Infrastructure
+** ID: T1583
+** Reference URL: https://attack.mitre.org/techniques/T1583/
+* Sub-technique:
+** Name: Domains
+** ID: T1583.001
+** Reference URL: https://attack.mitre.org/techniques/T1583/001/
+* Tactic:
+** Name: Defense Evasion
+** ID: TA0005
+** Reference URL: https://attack.mitre.org/tactics/TA0005/
+* Technique:
+** Name: Indicator Removal
+** ID: T1070
+** Reference URL: https://attack.mitre.org/techniques/T1070/
