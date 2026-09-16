@@ -26,13 +26,17 @@ Detects a sequence where a principal creates or modifies a Role/ClusterRole to i
 *Tags*: 
 
 * Data Source: Kubernetes
+* Data Source: Kubernetes API Server Audit Logs
+* Domain: Containers
 * Domain: Kubernetes
+* Platform: Kubernetes
 * Use Case: Threat Detection
 * Tactic: Privilege Escalation
 * Tactic: Persistence
 * Resources: Investigation Guide
+* Rule Type: Event Correlation (EQL)
 
-*Version*: 3
+*Version*: 4
 
 *Rule authors*: 
 
@@ -93,7 +97,13 @@ sequence by user.name with maxspan=5m
   [any where data_stream.dataset == "kubernetes.audit_logs" and
    `kubernetes.audit.annotations.authorization_k8s_io/decision` == "allow" and
     kubernetes.audit.objectRef.resource in ("roles", "clusterroles") and
-    kubernetes.audit.verb in ("create", "update", "patch")]
+    kubernetes.audit.verb in ("create", "update", "patch") and
+    /* GitOps controllers reconcile RBAC then workloads in the same window */
+    not user.name in (
+      "system:serviceaccount:flux-system:kustomize-controller",
+      "system:serviceaccount:flux-system:helm-controller",
+      "system:serviceaccount:flux-system:source-controller"
+    )]
   [any where data_stream.dataset == "kubernetes.audit_logs" and
    `kubernetes.audit.annotations.authorization_k8s_io/decision` == "allow" and
     kubernetes.audit.objectRef.resource in ("daemonsets", "deployments", "cronjobs") and

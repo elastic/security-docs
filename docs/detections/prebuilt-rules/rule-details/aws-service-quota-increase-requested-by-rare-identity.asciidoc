@@ -1,0 +1,105 @@
+[[aws-service-quota-increase-requested-by-rare-identity]]
+=== AWS Service Quota Increase Requested by Rare Identity
+
+Detects the first time an AWS identity requests a service quota increase via the AWS Service Quotas API within a 7-day history window. Service quota increases are submitted to AWS Support and, when approved, raise the limits on EC2 instances, Lambda concurrency, VPC resources, and other services. An adversary who obtains AWS credentials may request quota increases as infrastructure preparation for large-scale cryptomining, DDoS amplification, phishing campaigns, or data exfiltration operations that require compute or network resources beyond the account's current limits.
+
+*Rule type*: new_terms
+
+*Rule indices*: 
+
+* logs-aws.cloudtrail-*
+
+*Severity*: medium
+
+*Risk score*: 47
+
+*Runs every*: 5m
+
+*Searches indices from*: now-6m ({ref}/common-options.html#date-math[Date Math format], see also <<rule-schedule, `Additional look-back time`>>)
+
+*Maximum alerts per execution*: 100
+
+*References*: 
+
+* https://docs.aws.amazon.com/servicequotas/2019-06-24/apireference/API_RequestServiceQuotaIncrease.html
+* https://www.rapid7.com/blog/post/dr-threat-actors-aws-workmail-phishing-campaigns/
+
+*Tags*: 
+
+* Domain: Cloud
+* Platform: AWS
+* Data Source: AWS CloudTrail
+* Service: AWS Service Quotas
+* Rule Type: New Terms
+* Tactic: Resource Development
+* Resources: Investigation Guide
+
+*Version*: 1
+
+*Rule authors*: 
+
+* Elastic
+
+*Rule license*: Elastic License v2
+
+
+==== Investigation guide
+
+
+
+*Triage and analysis*
+
+
+
+*Investigating AWS Service Quota Increase Requested by Rare Identity*
+
+
+AWS Service Quotas (formerly Service Limits) cap how many resources of each type an account can create. Default limits exist to prevent accidental runaway provisioning, but an adversary who requests an increase can scale operations far beyond what the default limits allow: requesting 1000 EC2 On-Demand vCPUs enables cryptomining at industrial scale; requesting higher SES sending limits enables large-scale phishing campaigns; requesting higher Lambda concurrency enables large-scale credential-stuffing operations.
+
+
+*Possible investigation steps*
+
+
+- Identify the caller from aws.cloudtrail.user_identity.arn and user.name.
+- Review aws.cloudtrail.request_parameters for the serviceCode (which AWS service), the quotaCode (which specific limit), and the requested value.
+- Determine whether the requested quota increase aligns with a known infrastructure project.
+- Check whether the same identity has recently created resources in the service being scaled (EC2 RunInstances, Lambda CreateFunction, SES SendEmail).
+- Review whether this is the first quota increase request for this service from this identity or a continuation of a known capacity planning effort.
+
+
+*Response and remediation*
+
+
+- If unauthorized, submit a cancellation request to AWS Support for the quota increase.
+- Revoke active sessions for the requesting identity.
+- Apply an SCP restricting servicequotas:RequestServiceQuotaIncrease to approved cloud-operations roles that require prior approval.
+
+
+==== Setup
+
+
+The AWS integration must be ingesting management events into `logs-aws.cloudtrail-*`. Service Quotas management events are logged by default.
+
+==== Rule query
+
+
+[source, js]
+----------------------------------
+data_stream.dataset: "aws.cloudtrail"
+    and event.provider: "servicequotas.amazonaws.com"
+    and event.action: "RequestServiceQuotaIncrease"
+    and event.outcome: "success"
+    and not user_agent.original: (*Terraform* or *Pulumi* or *Ansible* or "cloudformation.amazonaws.com")
+
+----------------------------------
+
+*Framework*: MITRE ATT&CK^TM^
+
+* Tactic:
+** Name: Resource Development
+** ID: TA0042
+** Reference URL: https://attack.mitre.org/tactics/TA0042/
+* Technique:
+** Name: Acquire Infrastructure
+** ID: T1583
+** Reference URL: https://attack.mitre.org/techniques/T1583/

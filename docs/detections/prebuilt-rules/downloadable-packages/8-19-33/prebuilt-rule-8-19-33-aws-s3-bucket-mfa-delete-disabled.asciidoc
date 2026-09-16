@@ -1,0 +1,110 @@
+[[prebuilt-rule-8-19-33-aws-s3-bucket-mfa-delete-disabled]]
+=== AWS S3 Bucket MFA Delete Disabled
+
+Detects when MFA Delete is disabled on an Amazon S3 bucket. MFA Delete is an additional layer of security for versioned S3 buckets that requires multi-factor authentication to permanently delete object versions or disable versioning. When MFA Delete is disabled, an adversary with S3 write access and a compromised long-term access key can permanently delete object versions, a critical step in ransomware attacks that target S3 versioning as a backup mechanism. MFA Delete is configured via PutBucketVersioning with the MfaDelete parameter set to Disabled.
+
+*Rule type*: query
+
+*Rule indices*: 
+
+* logs-aws.cloudtrail-*
+
+*Severity*: high
+
+*Risk score*: 73
+
+*Runs every*: 5m
+
+*Searches indices from*: now-6m ({ref}/common-options.html#date-math[Date Math format], see also <<rule-schedule, `Additional look-back time`>>)
+
+*Maximum alerts per execution*: 100
+
+*References*: 
+
+* https://docs.aws.amazon.com/AmazonS3/latest/userguide/MultiFactorAuthenticationDelete.html
+* https://docs.aws.amazon.com/AmazonS3/latest/API/API_PutBucketVersioning.html
+* https://rhinosecuritylabs.com/aws/s3-ransomware-part-1-attack-vector/
+* https://www.halcyon.ai/blog/abusing-aws-native-services-ransomware-encrypting-s3-buckets-with-sse-c
+
+*Tags*: 
+
+* Domain: Cloud
+* Platform: AWS
+* Data Source: AWS CloudTrail
+* Service: AWS S3
+* Rule Type: Custom Query (KQL)
+* Tactic: Impact
+* Resources: Investigation Guide
+
+*Version*: 1
+
+*Rule authors*: 
+
+* Elastic
+
+*Rule license*: Elastic License v2
+
+
+==== Investigation guide
+
+
+
+*Triage and analysis*
+
+
+
+*Investigating AWS S3 Bucket MFA Delete Disabled*
+
+
+MFA Delete protects versioned S3 buckets by requiring MFA authentication to permanently delete object versions or change the versioning state. This protection is specifically designed to prevent ransomware from destroying version history after encrypting the current object copies. Disabling MFA Delete removes this safeguard and is a recognized ransomware preparation step.
+
+Importantly, only the AWS account root user can enable or disable MFA Delete. A `PutBucketVersioning` call disabling MFA Delete from a non-root identity is a strong indicator of root credential compromise or unauthorized use.
+
+
+*Possible investigation steps*
+
+
+- Identify the caller from `aws.cloudtrail.user_identity.type`. If this is not a `Root` identity, treat it as high-confidence unauthorized access.
+- Check `aws.cloudtrail.request_parameters` to confirm `VersioningConfiguration={... MfaDelete=Disabled}` is present.
+- Review all API calls by the same identity in the surrounding window for other data-destruction or encryption-related actions.
+- Check whether object versioning remains enabled on the affected bucket. If both versioning and MFA Delete are disabled, the bucket has no object-level recovery protection.
+- Investigate whether MFA was presented (`aws.cloudtrail.additional_eventdata` contains MFA information for requests that required it).
+
+
+*Response and remediation*
+
+
+- If unauthorized, immediately re-enable MFA Delete using root credentials and verify that object version history is intact.
+- Rotate all credentials associated with the calling identity.
+- Review S3 object versions for any permanent deletions that occurred after MFA Delete was disabled.
+- Enable AWS Config rules to detect versioning and MFA Delete configuration changes.
+
+
+==== Setup
+
+
+The AWS integration must be ingesting management events into `logs-aws.cloudtrail-*`. S3 management events are logged by default.
+
+==== Rule query
+
+
+[source, js]
+----------------------------------
+data_stream.dataset: "aws.cloudtrail"
+    and event.provider: "s3.amazonaws.com"
+    and event.action: "PutBucketVersioning"
+    and event.outcome: "success"
+    and aws.cloudtrail.flattened.request_parameters.VersioningConfiguration.MfaDelete: "Disabled"
+
+----------------------------------
+
+*Framework*: MITRE ATT&CK^TM^
+
+* Tactic:
+** Name: Impact
+** ID: TA0040
+** Reference URL: https://attack.mitre.org/tactics/TA0040/
+* Technique:
+** Name: Inhibit System Recovery
+** ID: T1490
+** Reference URL: https://attack.mitre.org/techniques/T1490/

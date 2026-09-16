@@ -39,7 +39,7 @@ Monitors for the execution of different processes that might be used by attacker
 * Data Source: SentinelOne
 * Resources: Investigation Guide
 
-*Version*: 109
+*Version*: 110
 
 *Rule authors*: 
 
@@ -68,7 +68,7 @@ Linux environments often utilize various tools for system administration and sec
 *Possible investigation steps*
 
 
-- Review the process name that triggered the alert to determine if it matches any known hacking tools listed in the query, such as "crackmapexec" or "sqlmap".
+- Review the process name and command-line arguments that triggered the alert to determine if they identify any known hacking tools listed in the query, such as "crackmapexec" or "sqlmap".
 - Check the user account associated with the process execution to assess if it is a legitimate user or potentially compromised.
 - Investigate the source and destination IP addresses involved in the process execution to identify any unusual or unauthorized network activity.
 - Examine the command line arguments used during the process execution to understand the intent and scope of the activity.
@@ -142,22 +142,38 @@ For more details on Elastic Defend refer to the https://www.elastic.co/guide/en/
 ----------------------------------
 process where host.os.type == "linux" and event.type == "start" and
 event.action in ("exec", "exec_event", "start", "ProcessRollup2", "executed", "process_started") and
-process.name in~ (
-  // exploitation frameworks
-  "crackmapexec", "msfconsole", "msfvenom", "sliver-client", "sliver-server", "havoc",
-  // network scanners (nmap left out to reduce noise)
-  "zenmap", "nuclei", "netdiscover", "legion",
-  // web enumeration
-  "gobuster", "dirbuster", "dirb", "wfuzz", "ffuf", "whatweb", "eyewitness",
-  // web vulnerability scanning
-  "wpscan", "joomscan", "droopescan", "nikto",
-  // exploitation tools
-  "sqlmap", "commix", "yersinia",
-  // cracking and brute forcing
-  "john", "hashcat", "hydra", "ncrack", "cewl", "fcrackzip", "rainbowcrack",
-  // host and network
-  "linenum.sh", "linpeas.sh", "pspy32", "pspy32s", "pspy64", "pspy64s", "binwalk", "evil-winrm",
-  "linux-exploit-suggester-2.pl", "linux-exploit-suggester.sh", "panix.sh"
+(
+  process.name in~ (
+    // exploitation frameworks
+    "crackmapexec", "msfconsole", "msfvenom", "sliver-client", "sliver-server", "havoc",
+    // network scanners (nmap left out to reduce noise)
+    "zenmap", "nuclei", "netdiscover", "legion",
+    // web enumeration
+    "gobuster", "dirbuster", "dirb", "wfuzz", "ffuf", "whatweb", "eyewitness",
+    // web vulnerability scanning
+    "wpscan", "joomscan", "droopescan", "nikto",
+    // exploitation tools
+    "sqlmap", "commix", "yersinia",
+    // cracking and brute forcing
+    "john", "hashcat", "hydra", "ncrack", "cewl", "fcrackzip", "rainbowcrack",
+    // host and network
+    "linenum.sh", "linpeas.sh", "pspy32", "pspy32s", "pspy64", "pspy64s", "binwalk", "evil-winrm",
+    "linux-exploit-suggester-2.pl", "linux-exploit-suggester.sh", "panix.sh"
+  ) or
+  (
+    process.name : "python*" and
+    process.args : ("*sqlmap.py", "*crackmapexec", "*commix.py")
+  ) or
+  (
+    process.name : "ruby*" and process.args : "*wpscan"
+  ) or
+  (
+    process.name in~ ("bash", "dash", "sh", "zsh", "ksh", "fish", "busybox") and
+    process.args : ("*linenum.sh*", "*linpeas.sh*", "*linux-exploit-suggester.sh*", "*panix.sh*")
+  ) or
+  (
+    process.name : "perl*" and process.args : "*linux-exploit-suggester-2.pl"
+  )
 )
 
 ----------------------------------

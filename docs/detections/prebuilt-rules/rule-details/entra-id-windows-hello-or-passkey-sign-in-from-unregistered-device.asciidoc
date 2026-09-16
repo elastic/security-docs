@@ -1,0 +1,129 @@
+[[entra-id-windows-hello-or-passkey-sign-in-from-unregistered-device]]
+=== Entra ID Windows Hello or Passkey Sign-in from Unregistered Device
+
+Identifies a Microsoft Entra ID sign-in that is satisfied by a phishing-resistant, device-bound credential (Windows Hello for Business, FIDO2 security key, or passkey) while carrying no device identifier. Windows Hello for Business (WHfB) and passkey credentials are bound to a device's TPM, so a genuine sign-in with one of these methods is normally accompanied by the registered device it lives on. A WHfB or passkey assertion that authenticates with an empty `device_detail.device_id` indicates the underlying key material is being used away from its bound device, for example by an adversary who extracted the key (or signed an assertion with it) and replayed it from attacker infrastructure to mint device-agnostic tokens. This is the core primitive of the "borrowing Windows Hello keys" technique and is a strong precursor to attacker device registration and Primary Refresh Token (PRT) issuance. Cross-tenant (B2B) sign-ins are excluded because they are a common benign source of empty device identifiers.
+
+*Rule type*: new_terms
+
+*Rule indices*: 
+
+* logs-azure.signinlogs-*
+
+*Severity*: medium
+
+*Risk score*: 47
+
+*Runs every*: 5m
+
+*Searches indices from*: now-9m ({ref}/common-options.html#date-math[Date Math format], see also <<rule-schedule, `Additional look-back time`>>)
+
+*Maximum alerts per execution*: 100
+
+*References*: 
+
+* https://dirkjanm.io/borrowing-windows-hello-keys/
+* https://dirkjanm.io/phishing-for-microsoft-entra-primary-refresh-tokens/
+
+*Tags*: 
+
+* Domain: Cloud
+* Domain: Identity
+* Platform: Entra ID
+* Use Case: Threat Detection
+* Tactic: Defense Evasion
+* Tactic: Initial Access
+* Rule Type: New Terms
+* Data Source: Azure
+* Data Source: Microsoft Entra ID
+* Data Source: Microsoft Entra ID Sign-in Logs
+* Resources: Investigation Guide
+
+*Version*: 1
+
+*Rule authors*: 
+
+* Elastic
+
+*Rule license*: Elastic License v2
+
+
+==== Investigation guide
+
+
+
+*Triage and analysis*
+
+
+
+*Investigating Entra ID Windows Hello or Passkey Sign-in from Unregistered Device*
+
+
+WHfB and passkey credentials are bound to a device's TPM, so a legitimate sign-in with one of these methods is normally accompanied by its registered device. A same-tenant sign-in with an empty `device_detail.device_id` means the key material is being used away from its bound device - the core signal of the "borrowing Windows Hello keys" technique, where an adversary replays a WHfB/NGC key or passkey to mint device-agnostic tokens from their own infrastructure.
+
+
+*Possible investigation steps*
+
+- Identify the user via `user_principal_name` and confirm `authentication_details.authentication_method` is WHfB, FIDO2, or a passkey with `device_detail.device_id` empty (a `device_id` present on an unmanaged device is a different, noisier condition, not this rule).
+- Review `app_id`/`resource_display_name` for Graph or Device Registration Service access right after, check `source.ip`, `source.geo.*`, and `user_agent.original` for automation (python-requests) or hosting/VPS ASNs (ROADtools/roadtx), and pivot on `user_id` in `azure.auditlogs` for a subsequent "Register device" or "Add Windows Hello for Business credential" event; if the user didn't enroll a new key/passkey, treat it as compromised.
+
+
+*False positive analysis*
+
+- Initial passwordless onboarding can briefly produce this sign-in before device registration completes; correlate with the registration timeline.
+
+
+*Response and remediation*
+
+- Treat the key/passkey as compromised: delete the credential and any attacker-registered device via Graph/the Entra portal, revoke sessions/refresh tokens (delete devices first, since that breaks device-bound PRT persistence), and re-enroll from a trusted device.
+- Hunt for device registrations and PRT issuance after the sign-in, and consider Conditional Access requiring device compliance for sensitive resources.
+
+
+==== Setup
+
+
+
+*Required Microsoft Entra ID Sign-In Logs*
+
+This rule requires the Azure integration with Microsoft Entra ID Sign-In logs to be enabled and configured to collect sign-in logs via Azure Event Hub.
+
+
+==== Rule query
+
+
+[source, js]
+----------------------------------
+data_stream.dataset: "azure.signinlogs" and
+    event.category: "authentication" and
+    azure.signinlogs.result_signature: "SUCCESS" and
+    azure.signinlogs.properties.user_type: "Member" and
+    azure.signinlogs.properties.authentication_details.authentication_method: (
+        "Windows Hello for Business" or *passkey* or FIDO2* or *Passkey*
+    ) and
+    azure.signinlogs.properties.device_detail.device_id: ("" or not *) and
+    azure.signinlogs.properties.cross_tenant_access_type: "none" and
+    azure.signinlogs.properties.user_principal_name: *
+
+----------------------------------
+
+*Framework*: MITRE ATT&CK^TM^
+
+* Tactic:
+** Name: Defense Evasion
+** ID: TA0005
+** Reference URL: https://attack.mitre.org/tactics/TA0005/
+* Technique:
+** Name: Use Alternate Authentication Material
+** ID: T1550
+** Reference URL: https://attack.mitre.org/techniques/T1550/
+* Tactic:
+** Name: Initial Access
+** ID: TA0001
+** Reference URL: https://attack.mitre.org/tactics/TA0001/
+* Technique:
+** Name: Valid Accounts
+** ID: T1078
+** Reference URL: https://attack.mitre.org/techniques/T1078/
+* Sub-technique:
+** Name: Cloud Accounts
+** ID: T1078.004
+** Reference URL: https://attack.mitre.org/techniques/T1078/004/
