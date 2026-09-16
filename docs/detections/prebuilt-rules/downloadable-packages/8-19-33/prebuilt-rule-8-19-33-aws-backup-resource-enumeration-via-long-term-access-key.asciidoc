@@ -1,0 +1,118 @@
+[[prebuilt-rule-8-19-33-aws-backup-resource-enumeration-via-long-term-access-key]]
+=== AWS Backup Resource Enumeration via Long-Term Access Key
+
+Detects enumeration of AWS Backup resources using long-term IAM access keys (AKIA* prefix). AWS Backup protects EC2 instances, EBS volumes, RDS databases, DynamoDB tables, EFS file systems, and S3 buckets. An adversary who obtains long-term access keys may enumerate backup vaults, backup plans, and protected resources as a precursor to ransomware. Identifying which resources have recent backups (indicating high-value data) and what vault access policies can be modified to delete or corrupt the backups before encrypting the primary data.
+
+*Rule type*: query
+
+*Rule indices*: 
+
+* logs-aws.cloudtrail-*
+
+*Severity*: low
+
+*Risk score*: 21
+
+*Runs every*: 5m
+
+*Searches indices from*: now-6m ({ref}/common-options.html#date-math[Date Math format], see also <<rule-schedule, `Additional look-back time`>>)
+
+*Maximum alerts per execution*: 100
+
+*References*: 
+
+* https://docs.aws.amazon.com/aws-backup/latest/devguide/API_ListBackupVaults.html
+* https://hackingthe.cloud/aws/enumeration/enumerate_services_via_aws_backup/
+
+*Tags*: 
+
+* Domain: Cloud
+* Platform: AWS
+* Data Source: AWS CloudTrail
+* Service: AWS Backup
+* Rule Type: Custom Query (KQL)
+* Tactic: Discovery
+* Resources: Investigation Guide
+
+*Version*: 1
+
+*Rule authors*: 
+
+* Elastic
+
+*Rule license*: Elastic License v2
+
+
+==== Investigation guide
+
+
+
+*Triage and analysis*
+
+
+
+*Investigating AWS Backup Resource Enumeration via Long-Term Access Key*
+
+
+AWS Backup vaults and plans are the last line of recovery for ransomware victims. Adversaries performing ransomware preparation systematically enumerate backup vaults to locate recovery points, assess vault lock configuration, and identify which vaults can be deleted or which backup plans can be disabled before encrypting the primary data stores.
+
+Long-term access keys (AKIA* prefix) are the most commonly exfiltrated credential type, appearing in source code, .env files, and CI/CD configurations. Their use for backup enumeration is particularly suspicious because backup management is almost never performed by individual IAM users with static keys in modern environments.
+
+
+*Possible investigation steps*
+
+
+- Identify the IAM user from aws.cloudtrail.user_identity.arn and confirm whether this user should have backup management access.
+- Review source.ip and source.as.organization.name against known infrastructure. Backup enumeration from an unexpected IP with a long-term key is a high-risk indicator.
+- Query for subsequent backup write operations by this key: DeleteBackupVault, DeleteRecoveryPoint, DeleteBackupPlan, UpdateRegionSettings.
+- Correlate with other enumeration activity from the same access key: EC2 Describe calls, S3 ListBuckets, RDS DescribeDBInstances — broad enumeration suggests ransomware reconnaissance.
+- Determine whether Vault Lock is enabled on critical backup vaults (GetBackupVaultLockConfiguration).
+
+
+*Response and remediation*
+
+
+- Immediately deactivate the long-term access key.
+- Enable Vault Lock (WORM) on critical backup vaults to prevent deletion for a compliance period.
+- Review all backup vault access policies for unauthorized modifications.
+- Enable AWS Backup audit manager reports to detect future unauthorized backup modifications.
+
+
+==== Setup
+
+
+The AWS integration must be ingesting management events into `logs-aws.cloudtrail-*`. AWS Backup management events are logged by default.
+
+==== Rule query
+
+
+[source, js]
+----------------------------------
+data_stream.dataset: "aws.cloudtrail"
+    and event.provider: "backup.amazonaws.com"
+    and event.action: (
+        "ListBackupVaults" or
+        "ListBackupJobs" or
+        "ListBackupPlans" or
+        "ListProtectedResources" or
+        "ListRecoveryPointsByBackupVault" or
+        "GetBackupPlan" or
+        "GetBackupVaultAccessPolicy" or
+        "DescribeBackupJob" or
+        "DescribeRecoveryPoint"
+    )
+    and event.outcome: "success"
+    and aws.cloudtrail.user_identity.access_key_id: AKIA*
+
+----------------------------------
+
+*Framework*: MITRE ATT&CK^TM^
+
+* Tactic:
+** Name: Discovery
+** ID: TA0007
+** Reference URL: https://attack.mitre.org/tactics/TA0007/
+* Technique:
+** Name: Cloud Service Discovery
+** ID: T1526
+** Reference URL: https://attack.mitre.org/techniques/T1526/

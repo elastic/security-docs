@@ -1,0 +1,171 @@
+[[azure-wireserver-http-request-from-unexpected-user-agent]]
+=== Azure WireServer HTTP Request from Unexpected User Agent
+
+Identifies HTTP requests to Azure WireServer (168.63.129.16) for GoalState, certificates, versions, or HostGAPlugin vmSettings that do not use a known guest-agent user agent. These requests retrieve transport certificates and extension protectedSettings, including embedded SAS URLs. Azure Linux Agent, Windows guest agent, and related platform UAs are excluded. Requests with no user agent are also excluded; that pattern is common for the Windows guest agent.
+
+*Rule type*: eql
+
+*Rule indices*: 
+
+* logs-network_traffic.http*
+
+*Severity*: medium
+
+*Risk score*: 47
+
+*Runs every*: 5m
+
+*Searches indices from*: now-9m ({ref}/common-options.html#date-math[Date Math format], see also <<rule-schedule, `Additional look-back time`>>)
+
+*Maximum alerts per execution*: 100
+
+*References*: 
+
+* https://cybercx.com.au/blog/azure-ssrf-metadata/
+* https://www.netspi.com/blog/technical-blog/cloud-pentesting/decrypting-vm-extension-settings-with-azure-wireserver/
+* https://cloud.google.com/blog/topics/threat-intelligence/escalating-privileges-azure-kubernetes-services
+* https://learn.microsoft.com/en-us/azure/virtual-network/what-is-ip-address-168-63-129-16
+
+*Tags*: 
+
+* Domain: Cloud
+* Domain: Network
+* OS: Linux
+* OS: Windows
+* Platform: Azure
+* Use Case: Threat Detection
+* Tactic: Credential Access
+* Tactic: Discovery
+* Data Source: Network Packet Capture
+* Resources: Investigation Guide
+
+*Version*: 1
+
+*Rule authors*: 
+
+* Elastic
+
+*Rule license*: Elastic License v2
+
+
+==== Investigation guide
+
+
+
+*Triage and analysis*
+
+
+
+*Investigating Azure WireServer HTTP Request from Unexpected User Agent*
+
+
+Network Packet Capture with HTTP decoding on ports 80 and 32526 shows the URI that Elastic Defend network events
+lack. The match is the WireServer path or query, not a scripting-tool user-agent allowlist.
+
+- `url.query` contains `comp=versions` (discovery)
+- `url.query` contains `comp=goalstate` (incarnation, container, extension list, statusUploadBlob pointer)
+- `url.query` contains `comp=certificates` (often with request header `x-ms-guest-agent-public-x509-cert`)
+- `destination.port == 32526` and `url.path` in `/versions`, `/vmSettings`
+
+Excluded user agents from lab guest-agent traffic: `WALinuxAgent/*`, `VMAgent/*`, `Python-urllib/*`,
+`cpprestsdk/*`, `ACMS/*`, and a missing user agent (Windows guest agent). Curl and Windows PowerShell are not
+excluded and will fire.
+
+`/vmSettings` response bodies are often dropped when they exceed keyword `ignore_above`. The URI, port, and user
+agent are sufficient. Do not enable body capture to chase this rule.
+
+
+*Possible investigation steps*
+
+
+- Confirm `url.path`, `url.query`, `destination.port`, and `user_agent.original`.
+- GoalState (`comp=goalstate`) is reconnaissance; `comp=certificates` means the client presented a transport
+  certificate. Look on the host for `openssl req ... LinuxTransport` or a stolen `.crt`/`.key`.
+- Correlate with endpoint network events from the same `host.name` to `168.63.129.16` and process start events for
+  openssl cms decrypt.
+- Search StorageRead platform logs for anonymous or SAS GetBlob against the same storage account after the scrape.
+
+
+*False positive analysis*
+
+
+- Administrative curl or other non-agent clients against WireServer during incident response. Exclude the specific
+  user agent or host after the change window.
+- A new Microsoft guest-agent build with an unfamiliar user agent will fire until that UA is excluded.
+- Omitting the user agent looks like the Windows guest agent and is not matched. Do not treat a missing UA as
+  suspicious on its own.
+
+
+*Response and remediation*
+
+
+- Isolate the VM, rotate secrets recovered from vmSettings, and review extension protectedSettings.
+- Enable Metadata Security Protocol in audit or enforce mode to restrict WireServer callers.
+
+
+==== Setup
+
+
+
+*Setup*
+
+
+Deploy the https://www.elastic.co/docs/reference/integrations/network_traffic[Network Packet Capture] integration
+via Fleet on Azure virtual machines. Default HTTP port lists do not include HostGAPlugin.
+
+Required integration settings:
+
+- Enable **Capture HTTP Traffic**.
+- Set HTTP ports to include **80** (WireServer GoalState, versions, certificates) and **32526** (HostGAPlugin
+  `/versions`, `/vmSettings`). Without 32526, HostGAPlugin requests are invisible.
+- Enable **Monitor Processes** so HTTP events include `process.*` when available.
+- Optional: **Send all headers** to retain `x-ms-version` and `x-ms-guest-agent-public-x509-cert` for investigation.
+  The rule matches URI, port, and user agent, not the certificate PEM.
+- Do not enable request or response body capture for this rule. `/vmSettings` bodies are large and often dropped;
+  other WireServer XML is not required for the match.
+
+
+==== Rule query
+
+
+[source, js]
+----------------------------------
+network where event.module == "network_traffic" and
+destination.ip == "168.63.129.16" and
+user_agent.original != null and
+not user_agent.original : (
+  "WALinuxAgent*",
+  "VMAgent*",
+  "Python-urllib*",
+  "cpprestsdk*",
+  "ACMS/*"
+) and
+(
+  url.query : ("*comp=versions*", "*comp=goalstate*", "*comp=certificates*") or
+  (destination.port == 32526 and url.path : ("/versions", "/vmSettings"))
+)
+
+----------------------------------
+
+*Framework*: MITRE ATT&CK^TM^
+
+* Tactic:
+** Name: Credential Access
+** ID: TA0006
+** Reference URL: https://attack.mitre.org/tactics/TA0006/
+* Technique:
+** Name: Unsecured Credentials
+** ID: T1552
+** Reference URL: https://attack.mitre.org/techniques/T1552/
+* Sub-technique:
+** Name: Cloud Instance Metadata API
+** ID: T1552.005
+** Reference URL: https://attack.mitre.org/techniques/T1552/005/
+* Tactic:
+** Name: Discovery
+** ID: TA0007
+** Reference URL: https://attack.mitre.org/tactics/TA0007/
+* Technique:
+** Name: System Information Discovery
+** ID: T1082
+** Reference URL: https://attack.mitre.org/techniques/T1082/

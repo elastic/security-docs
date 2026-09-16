@@ -36,7 +36,7 @@ Detects successful `AssumeRoleWithWebIdentity` where the caller identity is a Ku
 * Tactic: Initial Access
 * Resources: Investigation Guide
 
-*Version*: 2
+*Version*: 3
 
 *Rule authors*: 
 
@@ -104,7 +104,15 @@ data_stream.dataset:aws.cloudtrail and
  event.provider:sts.amazonaws.com and 
  event.action:AssumeRoleWithWebIdentity and 
  event.outcome:success and user.name:(system\:serviceaccount\:* and not system\:serviceaccount\:kube-system\:aws-load-balancer-controller) and 
- source.as.organization.name:(* and not (Amazon* or AMAZON*))
+ source.as.organization.name:(* and not (Amazon* or AMAZON*)) and 
+ not (
+  user.id:(
+    *oic.prod-aks.azure.com* or
+    *container.googleapis.com*
+  ) and
+  source.as.organization.name:("Microsoft Corporation" or "Google LLC")
+) and 
+not user.id:((*oidc.s3* and *ocp*) or (*s3* and *amazonaws.com* and *oidc*))
 
 ----------------------------------
 

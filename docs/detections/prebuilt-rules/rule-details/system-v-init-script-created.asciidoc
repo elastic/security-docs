@@ -39,7 +39,7 @@ Files that are placed in the "/etc/init.d/" directory in Unix can be used to sta
 * Data Source: Elastic Defend
 * Data Source: SentinelOne
 
-*Version*: 119
+*Version*: 120
 
 *Rule authors*: 
 
@@ -76,7 +76,7 @@ This rule looks for the creation of new files within the `/etc/init.d/` director
   - !{osquery{"label":"Osquery - Retrieve File Information","query":"SELECT * FROM file WHERE path = {{file.path}}"}}
 - Investigate whether any other files in the `/etc/init.d/` or `/run/systemd/generator.late/` directories have been altered.
   - !{osquery{"label":"Osquery - Retrieve File Listing Information","query":"SELECT * FROM file WHERE path LIKE '/etc/init.d/%'"}}
-  - !{osquery{"label":"Osquery - Retrieve Additional File Listing Information","query":"SELECT f.path, u.username AS file_owner, g.groupname AS group_owner, datetime(f.atime, 'unixepoch') AS\nfile_last_access_time, datetime(f.mtime, 'unixepoch') AS file_last_modified_time, datetime(f.ctime, 'unixepoch') AS\nfile_last_status_change_time, datetime(f.btime, 'unixepoch') AS file_created_time, f.size AS size_bytes FROM file f LEFT\nJOIN users u ON f.uid = u.uid LEFT JOIN groups g ON f.gid = g.gid WHERE path LIKE '/etc/init.d/%'\n"}}
+  - !{osquery{"label":"Osquery - Retrieve Additional File Listing Information","query":"SELECT f.path, u.username AS file_owner, g.groupname AS group_owner, datetime(f.atime, 'unixepoch') AS\nfile_last_access_time, datetime(f.mtime, 'unixepoch') AS file_last_modified_time, datetime(f.ctime, 'unixepoch') AS\nfile_last_status_change_time, datetime(f.btime, 'unixepoch') AS file_created_time, f.size AS size_bytes FROM file f LEFT\nJOIN users u ON f.uid = u.uid LEFT JOIN groups g ON f.gid = g.gid WHERE path LIKE '/etc/init.d/%' OR path LIKE '/etc/init/%' OR path IN ('/etc/init', '/etc/inittab', '/etc/inittab2')\n\n"}}
 - Investigate the script execution chain (parent process tree) for unknown processes. Examine their executable files for prevalence and whether they are located in expected locations.
   - !{osquery{"label":"Osquery - Retrieve Running Processes by User","query":"SELECT pid, username, name FROM processes p JOIN users u ON u.uid = p.uid ORDER BY username"}}
 - Investigate syslog through the `sudo cat /var/log/syslog | grep 'LSB'` command to find traces of the LSB header of the script (if present). If syslog is being ingested into Elasticsearch, the same can be accomplished through Kibana.
@@ -169,7 +169,8 @@ For more details on Elastic Defend refer to the https://www.elastic.co/guide/en/
 [source, js]
 ----------------------------------
 file where host.os.type == "linux" and event.action in ("creation", "file_create_event", "rename", "file_rename_event")
-and file.path like "/etc/init.d/*" and not (
+and file.path like ("/etc/init.d/*", "/etc/init/*", "/etc/init", "/etc/inittab*") and
+not (
   process.executable in (
     "/bin/dpkg", "/usr/bin/dpkg", "/bin/dockerd", "/usr/bin/dockerd", "/usr/sbin/dockerd", "/bin/microdnf",
     "/usr/bin/microdnf", "/bin/rpm", "/usr/bin/rpm", "/bin/snapd", "/usr/bin/snapd", "/bin/yum", "/usr/bin/yum",
