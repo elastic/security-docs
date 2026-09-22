@@ -1,0 +1,185 @@
+[[prebuilt-rule-8-19-34-azcopy-or-azure-storage-explorer-usage-on-unusual-host]]
+=== AzCopy or Azure Storage Explorer Usage on Unusual Host
+
+Identifies the first time, in a historical window, a host runs AzCopy copy or sync to Azure Blob, Data Lake, or File storage, or starts Azure Storage Explorer. These Microsoft utilities are legitimate data-transfer tools; ransomware and cloud-ransomware operators drop portable copies and use SAS-authenticated jobs to pull data from victim storage and push it to attacker-controlled accounts.
+
+*Rule type*: new_terms
+
+*Rule indices*: 
+
+* logs-crowdstrike.fdr*
+* logs-endpoint.events.process-*
+* logs-m365_defender.event-*
+* logs-windows.sysmon_operational-*
+
+*Severity*: medium
+
+*Risk score*: 47
+
+*Runs every*: 5m
+
+*Searches indices from*: now-9m ({ref}/common-options.html#date-math[Date Math format], see also <<rule-schedule, `Additional look-back time`>>)
+
+*Maximum alerts per execution*: 100
+
+*References*: 
+
+* https://www.cisa.gov/news-events/cybersecurity-advisories/aa23-319a
+* https://www.cisa.gov/sites/default/files/2025-04/aa23-319a-stopransomware-rhysida-ransomware_2.pdf
+* https://learn.microsoft.com/en-us/azure/storage/common/storage-use-azcopy-v10
+* https://learn.microsoft.com/en-us/azure/storage/storage-explorer/vs-azure-tools-storage-explorer-blobs
+* https://www.microsoft.com/en-us/security/blog/2025/08/27/storm-0501s-evolving-techniques-lead-to-cloud-based-ransomware/
+
+*Tags*: 
+
+* Domain: Endpoint
+* OS: Windows
+* Platform: Windows
+* Use Case: Threat Detection
+* Tactic: Exfiltration
+* Tactic: Collection
+* Tactic: Execution
+* Rule Type: New Terms
+* Threat: Rhysida
+* Threat: Ransomware
+* Use Case: Ransomware
+* Resources: Investigation Guide
+* Data Source: Elastic Defend
+* Data Source: Sysmon
+* Data Source: Microsoft Defender XDR
+* Data Source: Crowdstrike
+
+*Version*: 2
+
+*Rule authors*: 
+
+* Elastic
+
+*Rule license*: Elastic License v2
+
+
+==== Investigation guide
+
+
+
+*Triage and analysis*
+
+
+
+*Investigating AzCopy or Azure Storage Explorer Usage on Unusual Host*
+
+
+AzCopy and Azure Storage Explorer are Microsoft utilities for moving data to and from Azure Storage. Threat actors abuse them as living-off-the-land binaries: they run `azcopy copy` with SAS URLs against `*.blob.core.windows.net` (GetBlob from a victim account, PutBlob to an attacker account, or Blob-to-Blob between them) and launch Storage Explorer to browse or move the same data. CISA's Rhysida advisory is one example of that tradecraft.
+
+This is a new-terms rule: it alerts the first time a `host.id` matches in the history window (7 days). AzCopy `copy`/`sync` whose command line includes an Azure Storage hostname, or Storage Explorer (`StorageExplorer.exe`, `StorageExplorer-windows-x64.exe`, `StorageExplorer-windows-arm64.exe`, `StorageExplorer-windowsx64.exe`), fires once per host. Recurring use on the same host will not re-alert until the history window expires.
+
+
+*Possible investigation steps*
+
+
+- Confirm which utility fired the alert. For AzCopy, inspect `process.command_line` for `copy` vs `sync`, `--from-to` (`BlobLocal`, `LocalBlob`, `BlobBlob`), and the SAS URL host, container, and `sp`/`se` parameters. For Storage Explorer, note the installer vs application name and silent-install flags such as `/VERYSILENT`.
+- Identify source and destination. AzCopy command lines often contain a local path and one or two `https://<account>.blob.core.windows.net/...` URLs. Treat Blob-to-Blob copies as direct tenant-to-attacker movement even when no files touch disk.
+- Check `process.executable` and `process.parent.executable`. A copy from a user-writable or staging path, especially spawned by PowerShell or a scripting host, is more suspicious than a packaged install.
+- Compare `process.name` with `process.pe.original_file_name` and `process.code_signature.subject_name`. A Microsoft-signed binary from an unusual path is still the Rhysida/Storm-0501 tradecraft; a renamed unsigned copy is additional evasion.
+- Pivot to Azure Storage diagnostic logs for the same window: GetBlob, PutBlob, and BlobBlob with user agent `AzCopy*` or `Microsoft Azure Storage Explorer*` and SAS authentication. Correlate with the SIEM rule "Azure Storage Blob Retrieval via AzCopy".
+- Review network telemetry from the same `process.entity_id` to `*.blob.core.windows.net` or `*.dfs.core.windows.net` and estimate volume.
+- Hunt sibling activity on the host: other Azure LOLBINs, rclone, or bulk archive creation preceding the copy.
+
+
+*False positive analysis*
+
+
+- Authorized AzCopy migrations and first-time Storage Explorer use on a host will match. This rule alerts only the first time a given `host.id` matches within 7 days; allowlist by host, user, or approved destination if that first alert is expected.
+- Do not treat a trusted Microsoft signature as benign by itself; CISA's Rhysida advisory describes the official AzCopy and Storage Explorer binaries.
+
+
+*Response and remediation*
+
+
+- If exfiltration is confirmed, isolate the host, stop AzCopy and Storage Explorer processes, and preserve the command line (SAS URLs are credentials).
+- Revoke the SAS tokens and account keys that appear in the command line; rotate storage account keys and any related Entra ID credentials.
+- Identify which blobs were read or written (GetBlob/PutBlob/ListBlobs for the same account and time window) and assess data exposure.
+- Remove staged binaries under unusual paths and investigate how they were delivered.
+- Hunt for additional AzCopy, Storage Explorer, or rclone activity on other hosts in the same window.
+
+
+*Related rules*
+
+
+- Azure Storage Blob Retrieval via AzCopy: cloud-side GetBlob with AzCopy user agent and SAS authentication.
+- Potential Data Exfiltration via Rclone: similar endpoint abuse of a different cloud-sync utility.
+
+
+==== Setup
+
+
+
+*Setup*
+
+
+This rule is designed for data generated by https://www.elastic.co/security/endpoint-security[Elastic Defend], which provides native endpoint detection and response, along with event enrichments designed to work with our detection rules.
+
+Setup instructions: https://ela.st/install-elastic-defend
+
+
+*Additional data sources*
+
+
+This rule also supports the following third-party data sources. For setup instructions, refer to the links below:
+
+- https://ela.st/crowdstrike-integration[CrowdStrike]
+- https://ela.st/m365-defender[Microsoft Defender XDR]
+- https://ela.st/sysmon-event-1-setup[Sysmon Event ID 1 - Process Creation]
+
+
+==== Rule query
+
+
+[source, js]
+----------------------------------
+host.os.type:windows and event.category:process and event.type:start and
+(
+  (
+    (process.name:"azcopy.exe" or process.pe.original_file_name:"azcopy.exe") and
+    process.args:("copy" or "sync") and
+    process.command_line:(*blob.core.windows.net* or *dfs.core.windows.net* or *file.core.windows.net* or *blob.storage.azure.net*)
+  ) or
+  process.name:("StorageExplorer.exe" or "StorageExplorer-windows-x64.exe" or "StorageExplorer-windows-arm64.exe" or "StorageExplorer-windowsx64.exe")
+)
+
+----------------------------------
+
+*Framework*: MITRE ATT&CK^TM^
+
+* Tactic:
+** Name: Exfiltration
+** ID: TA0010
+** Reference URL: https://attack.mitre.org/tactics/TA0010/
+* Technique:
+** Name: Exfiltration Over Web Service
+** ID: T1567
+** Reference URL: https://attack.mitre.org/techniques/T1567/
+* Sub-technique:
+** Name: Exfiltration to Cloud Storage
+** ID: T1567.002
+** Reference URL: https://attack.mitre.org/techniques/T1567/002/
+* Tactic:
+** Name: Collection
+** ID: TA0009
+** Reference URL: https://attack.mitre.org/tactics/TA0009/
+* Technique:
+** Name: Data from Cloud Storage
+** ID: T1530
+** Reference URL: https://attack.mitre.org/techniques/T1530/
+* Tactic:
+** Name: Execution
+** ID: TA0002
+** Reference URL: https://attack.mitre.org/tactics/TA0002/
+* Technique:
+** Name: Command and Scripting Interpreter
+** ID: T1059
+** Reference URL: https://attack.mitre.org/techniques/T1059/
+* Sub-technique:
+** Name: Cloud API
+** ID: T1059.009
+** Reference URL: https://attack.mitre.org/techniques/T1059/009/
