@@ -42,8 +42,15 @@ This rule detects network events that may indicate the use of Telnet traffic. Te
 * Data Source: SonicWall
 * Data Source: Suricata
 * Resources: Investigation Guide
+* Noise: High
+* Performance: Normal
+* Profile: Aggressive
+* Rule Type: Custom Query (KQL)
+* Domain: Network
+* Data Source: Network Packet Capture
+* Data Source: SonicWall Firewall Logs
 
-*Version*: 117
+*Version*: 119
 
 *Rule authors*: 
 
@@ -115,6 +122,10 @@ Telnet, a protocol for remote command-line access, is often used in legacy syste
         flow_terminated or network_flow or server-rst or timeout)
     and not (event.action:netflow_flow and not network.packets > 1)
     and not network.application:(stretchoid-scanning or traceroute)
+    and not (
+        data_stream.dataset:panw.panos and
+        network.application:("incomplete" or "insufficient-data" or "not-applicable")
+    )
     and destination.port:23
     and (network.protocol:(telnet or not *) or data_stream.dataset:fortinet_fortigate.log)
 
