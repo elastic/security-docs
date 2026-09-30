@@ -1,0 +1,114 @@
+[[privilege-escalation-via-parallels-appliance-extract-argument-injection]]
+=== Privilege Escalation via Parallels Appliance Extract Argument Injection
+
+Identifies the Parallels Desktop root dispatcher (prl_disp_service) spawning tar/bsdtar with more arguments than its fixed extract command uses. The dispatcher always runs a 5-token command (tar -xf <archive> -C <dir>), so any additional arguments indicate an attacker-controlled folder name injecting extra tar flags. On macOS these flags let tar read or write attacker-chosen paths or execute an external program as root, resulting in local privilege escalation (CVE-2026-90894, Parallels Desktop < 27.0.0).
+
+*Rule type*: esql
+
+*Rule indices*: None
+
+*Severity*: high
+
+*Risk score*: 73
+
+*Runs every*: 5m
+
+*Searches indices from*: now-9m ({ref}/common-options.html#date-math[Date Math format], see also <<rule-schedule, `Additional look-back time`>>)
+
+*Maximum alerts per execution*: 100
+
+*References*: 
+
+* https://research.jfrog.com/vulnerabilities/parallels-desktop-is-vulnerable-to-a-local-privilege-escalation-via-appliance-extract-argument-injection-cve-2026-90894/
+* https://www.cve.org/CVERecord?id=CVE-2026-90894
+
+*Tags*: 
+
+* Domain: Endpoint
+* Platform: macOS
+* OS: macOS
+* Rule Type: ESQL
+* Use Case: Threat Detection
+* Tactic: Privilege Escalation
+* Tactic: Defense Evasion
+* Data Source: Elastic Defend
+* Vuln: CVE-2026-90894
+* Resources: Investigation Guide
+* Use Case: Vulnerability
+
+*Version*: 1
+
+*Rule authors*: 
+
+* Elastic
+
+*Rule license*: Elastic License v2
+
+
+==== Investigation guide
+
+
+
+*Triage and analysis*
+
+
+
+*Investigating Privilege Escalation via Parallels Appliance Extract Argument Injection*
+
+
+Parallels Desktop runs prl_disp_service as root and exposes a world-writable socket that any local account can
+reach without admin rights. On builds before 27.0.0 the appliance-install path re-tokenizes a tar command
+string, letting an attacker-controlled folder name inject additional tar flags. A --use-compress-program value
+pointing at an attacker-writable path (commonly /tmp) is executed as root.
+
+- Review process.args for the injected flag and the program it points to; a path under /tmp, /var/tmp, or a
+user-writable location is a strong signal of exploitation.
+- Inspect the child process the injected program spawned (parent tar/bsdtar, running as root) and any files it
+created or modified.
+- Confirm the host's Parallels version; builds on the 26.x line remain affected.
+
+
+*Response and remediation*
+
+
+- Isolate the host and terminate the injected program and any root children it spawned.
+- Upgrade Parallels Desktop to 27.0.0 or later; on hosts still on 26.x, restrict local login as an interim
+control since any local account can reach the dispatcher socket.
+
+
+==== Rule query
+
+
+[source, js]
+----------------------------------
+FROM logs-endpoint.events.process-* METADATA _id, _index, _version
+| WHERE host.os.type == "macos"
+    AND process.parent.name == "prl_disp_service"
+    AND process.name IN ("tar", "bsdtar")
+    AND process.args_count > 5
+    AND KQL("""process.args : "-xf" AND event.type : "start" """)
+| EVAL process_args_joined = MV_CONCAT(process.args, " ")
+| KEEP _id, _index, _version, @timestamp, data_stream.namespace, host.id, host.name, user.id, user.name,
+    process.entity_id, process.parent.name, process.parent.entity_id, process.name, process.executable,
+    process.args_count, process_args_joined
+
+----------------------------------
+
+*Framework*: MITRE ATT&CK^TM^
+
+* Tactic:
+** Name: Privilege Escalation
+** ID: TA0004
+** Reference URL: https://attack.mitre.org/tactics/TA0004/
+* Technique:
+** Name: Exploitation for Privilege Escalation
+** ID: T1068
+** Reference URL: https://attack.mitre.org/techniques/T1068/
+* Tactic:
+** Name: Defense Evasion
+** ID: TA0005
+** Reference URL: https://attack.mitre.org/tactics/TA0005/
+* Technique:
+** Name: Indirect Command Execution
+** ID: T1202
+** Reference URL: https://attack.mitre.org/techniques/T1202/

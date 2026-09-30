@@ -40,7 +40,7 @@ Indicates the creation and deletion of a scheduled task within a short time inte
 * Rule Type: Event Correlation (EQL)
 * Platform: Windows
 
-*Version*: 115
+*Version*: 116
 
 *Rule authors*: 
 
@@ -114,7 +114,26 @@ Setup instructions: https://ela.st/audit-other-object-access-events
 [source, js]
 ----------------------------------
 sequence by winlog.computer_name, winlog.event_data.TaskName with maxspan=5m
-   [iam where host.os.type == "windows" and event.action == "scheduled-task-created" and not user.name : "*$"]
+   [iam where host.os.type == "windows" and event.action == "scheduled-task-created" and not user.name : "*$" and
+    not winlog.event_data.TaskName : (
+      "\\SoftLanding\\*",
+      "*PRTG*",
+      "\\MicrosoftEdgeMaintenance*",
+      "*\\Microsoft\\Windows\\DeviceLicensingService\\*",
+      "\\OneDrive Standalone Update*",
+      "\\PowerToys\\*",
+      "*Hewlett-Packard*",
+      "*\\HP\\HP Support Assistant\\*",
+      "*\\Mozilla\\*",
+      "\\AMDLinkUpdate",
+      "\\AMDInstallLauncher",
+      "*\\GoogleUserPEH\\*",
+      "\\CreateExplorerShellUnelevatedTask",
+      "*\\RunAADCHTestConnectivityAsSystem",
+      "*WaveBrowser*",
+      "\\CCleanerCrashReporting",
+      "\\TVInstallRestore"
+    )]
    [iam where host.os.type == "windows" and event.action == "scheduled-task-deleted" and not user.name : "*$"]
 
 ----------------------------------

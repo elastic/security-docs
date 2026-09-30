@@ -1,0 +1,124 @@
+[[prebuilt-rule-8-19-35-anthropic-excessive-chat-snapshot-creation]]
+=== Anthropic Excessive Chat Snapshot Creation
+
+Detects an unusually high number of successful Claude chat snapshot creation events for the same user email within a rolling 24-hour window. Chat snapshots package conversation content into shareable exports; sustained creation volume can indicate staging of organizational chat data for exfiltration via Anthropic's web service or automated bulk export of sensitive prompts and responses.
+
+*Rule type*: esql
+
+*Rule indices*: None
+
+*Severity*: medium
+
+*Risk score*: 47
+
+*Runs every*: 1h
+
+*Searches indices from*: now-24h ({ref}/common-options.html#date-math[Date Math format], see also <<rule-schedule, `Additional look-back time`>>)
+
+*Maximum alerts per execution*: 100
+
+*References*: 
+
+* https://platform.claude.com/docs/en/api/compliance/activities/list
+
+*Tags*: 
+
+* Domain: GenAI
+* Platform: Anthropic
+* Data Source: Anthropic Audit Logs
+* Use Case: Threat Detection
+* Use Case: UEBA
+* Resources: Investigation Guide
+* Rule Type: ES|QL
+* Tactic: Exfiltration
+
+*Version*: 1
+
+*Rule authors*: 
+
+* Elastic
+
+*Rule license*: Elastic License v2
+
+
+==== Investigation guide
+
+
+
+*Triage and analysis*
+
+
+
+*Investigating Anthropic Excessive Chat Snapshot Creation*
+
+
+One mailbox created many chat snapshots in 24 hours. Snapshots can package conversation content for handoff — or for
+exfiltration staging. Source IP/UA are investigation fields, not grouping keys, so multi-IP bursts still accumulate.
+
+Escalate when scripting UA, concurrent file uploads / public artifact sharing / data exports / chat deletions appear,
+or snapshots span many unrelated chats. Close as FP for documented knowledge handoffs, training packaging, or
+compliance archival automation.
+
+
+*Possible investigation steps*
+
+
+- Review event count and snapshot/chat ID lists — many distinct chats is stronger than repeated snapshots of one chat.
+- Inspect IP/UA values for automation. Correlate with uploads, public artifact sharing, exports, or deletions from
+  the same email.
+- Note actor type and whether the same email appears across organizations (`organization_id` values).
+
+
+*False positive analysis*
+
+
+- Power-user archival and compliance snapshot jobs commonly exceed the threshold.
+
+
+*Response and remediation*
+
+
+- On unauthorized staging: revoke sessions, review snapshot destinations and shared links, and tighten chat sharing
+  or export policy for the actor.
+
+
+==== Rule query
+
+
+[source, js]
+----------------------------------
+from logs-anthropic.audit-*
+| where
+    data_stream.dataset == "anthropic.audit" and
+    mv_contains(event.category, "file") and
+    event.action == "claude_chat_snapshot_created" and
+    event.outcome == "success" and
+    user.email is not null
+| stats
+    Esql.event_count = count(*),
+    Esql.event_id_values = values(event.id),
+    Esql.anthropic_audit_claude_chat_snapshot_id_values = values(anthropic.audit.claude_chat_snapshot_id),
+    Esql.anthropic_audit_claude_chat_id_values = values(anthropic.audit.claude_chat_id),
+    Esql.source_ip_values = values(source.ip),
+    Esql.user_agent_original_values = values(user_agent.original),
+    Esql.anthropic_audit_actor_type_values = values(anthropic.audit.actor.type),
+    Esql.organization_id_values = values(organization.id),
+    Esql.user_id_values = values(user.id),
+    Esql.timestamp_first_seen = min(@timestamp),
+    Esql.timestamp_last_seen = max(@timestamp)
+  by user.email
+| where Esql.event_count >= 10
+| keep user.email, Esql.*
+
+----------------------------------
+
+*Framework*: MITRE ATT&CK^TM^
+
+* Tactic:
+** Name: Exfiltration
+** ID: TA0010
+** Reference URL: https://attack.mitre.org/tactics/TA0010/
+* Technique:
+** Name: Exfiltration Over Web Service
+** ID: T1567
+** Reference URL: https://attack.mitre.org/techniques/T1567/

@@ -1,0 +1,122 @@
+[[anthropic-excessive-chat-deletion]]
+=== Anthropic Excessive Chat Deletion
+
+Detects an unusually high number of Claude chat deletion events for the same user email within a single calendar day. Mass chat deletion can indicate an attempt to remove conversation history, cover tracks after misuse of Claude, or automated cleanup following data staging or prompt abuse.
+
+*Rule type*: esql
+
+*Rule indices*: None
+
+*Severity*: medium
+
+*Risk score*: 47
+
+*Runs every*: 1h
+
+*Searches indices from*: now-24h ({ref}/common-options.html#date-math[Date Math format], see also <<rule-schedule, `Additional look-back time`>>)
+
+*Maximum alerts per execution*: 100
+
+*References*: 
+
+* https://platform.claude.com/docs/en/api/compliance/activities/list
+
+*Tags*: 
+
+* Domain: GenAI
+* Platform: Anthropic
+* Data Source: Anthropic Audit Logs
+* Use Case: Threat Detection
+* Use Case: UEBA
+* Resources: Investigation Guide
+* Rule Type: ES|QL
+* Tactic: Defense Evasion
+
+*Version*: 1
+
+*Rule authors*: 
+
+* Elastic
+
+*Rule license*: Elastic License v2
+
+
+==== Investigation guide
+
+
+
+*Triage and analysis*
+
+
+
+*Investigating Anthropic Excessive Chat Deletion*
+
+
+One mailbox deleted many chats in a UTC day bucket. Deleted content may no longer be viewable in the product UI —
+preserve audit history early.
+
+Escalate when deletions follow uploads/exports/sharing, UA looks scripted, or compliance logging was disabled nearby.
+Close as FP for scheduled retention cleanup or migration tooling with a ticket.
+
+
+*Possible investigation steps*
+
+
+- Capture chat/project ID values from the alert while they remain in audit history.
+- Compare deletion volume to prior `claude_chat_created` / `claude_file_uploaded` from the same email — delete-after-
+  upload is higher priority than cleanup of empty chats.
+- Inspect IP/UA for scripted patterns; correlate with logging disablement, SSO changes, or data exports.
+
+
+*False positive analysis*
+
+
+- Project closure cleanup and migration tooling often bulk-delete in one session.
+
+
+*Response and remediation*
+
+
+- On malicious deletion: preserve remaining audit exports, revoke sessions, and investigate whether sensitive content
+  was uploaded or shared before deletion.
+
+
+==== Rule query
+
+
+[source, js]
+----------------------------------
+from logs-anthropic.audit-*
+| where
+    data_stream.dataset == "anthropic.audit" and
+    event.action == "claude_chat_deleted" and
+    event.outcome == "success" and
+    user.email is not null
+| eval Esql.time_bucket = DATE_TRUNC(1 day, @timestamp)
+| stats
+    Esql.event_count = count(*),
+    Esql.event_id_values = values(event.id),
+    Esql.anthropic_audit_claude_chat_id_values = values(anthropic.audit.claude_chat_id),
+    Esql.anthropic_audit_claude_project_id_values = values(anthropic.audit.claude_project_id),
+    Esql.source_ip_values = values(source.ip),
+    Esql.user_agent_original_values = values(user_agent.original),
+    Esql.anthropic_audit_actor_type_values = values(anthropic.audit.actor.type),
+    Esql.user_id_values = values(user.id),
+    Esql.timestamp_first_seen = min(@timestamp),
+    Esql.timestamp_last_seen = max(@timestamp)
+  by user.email, Esql.time_bucket
+| where Esql.event_count >= 30
+| keep user.email, Esql.*
+
+----------------------------------
+
+*Framework*: MITRE ATT&CK^TM^
+
+* Tactic:
+** Name: Defense Evasion
+** ID: TA0005
+** Reference URL: https://attack.mitre.org/tactics/TA0005/
+* Technique:
+** Name: Indicator Removal
+** ID: T1070
+** Reference URL: https://attack.mitre.org/techniques/T1070/

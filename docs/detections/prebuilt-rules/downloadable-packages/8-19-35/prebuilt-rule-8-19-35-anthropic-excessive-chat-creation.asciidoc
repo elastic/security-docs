@@ -1,0 +1,120 @@
+[[prebuilt-rule-8-19-35-anthropic-excessive-chat-creation]]
+=== Anthropic Excessive Chat Creation
+
+Detects an unusually high number of Claude chat creation events for the same user email within a 24-hour period. Burst chat creation can indicate automated LLM abuse, resource hijacking to burn organizational quotas, or scripted workflows used to stage many parallel conversations for data processing or prompt-injection campaigns.
+
+*Rule type*: esql
+
+*Rule indices*: None
+
+*Severity*: medium
+
+*Risk score*: 47
+
+*Runs every*: 1h
+
+*Searches indices from*: now-24h ({ref}/common-options.html#date-math[Date Math format], see also <<rule-schedule, `Additional look-back time`>>)
+
+*Maximum alerts per execution*: 100
+
+*References*: 
+
+* https://platform.claude.com/docs/en/api/compliance/activities/list
+
+*Tags*: 
+
+* Domain: GenAI
+* Platform: Anthropic
+* Data Source: Anthropic Audit Logs
+* Use Case: Threat Detection
+* Use Case: UEBA
+* Resources: Investigation Guide
+* Rule Type: ES|QL
+* Tactic: Impact
+
+*Version*: 1
+
+*Rule authors*: 
+
+* Elastic
+
+*Rule license*: Elastic License v2
+
+
+==== Investigation guide
+
+
+
+*Triage and analysis*
+
+
+
+*Investigating Anthropic Excessive Chat Creation*
+
+
+One mailbox created a large burst of Claude chats in 24 hours — fits automation, quota burn, or scripted parallel
+workflows.
+
+True-positive signals: scripting UA (curl/python/Go-http-client), many distinct project IDs, concurrent file uploads
+or deletions, or follow-on exports. False-positive signals: known eval/load-test accounts, onboarding templates from
+one admin with browser UA and no data-access follow-ons.
+
+
+*Possible investigation steps*
+
+
+- Prefer alerts with scripting UA and/or many distinct project IDs over browser UA confined to one known project.
+- Correlate with high file uploads, chat deletions, or org data export from the same email in the same window.
+
+
+*False positive analysis*
+
+
+- Known eval/load-test seats and onboarding template creators with browser UA and no data-access follow-ons are FP.
+
+
+*Response and remediation*
+
+
+- When TP signals hold: revoke sessions, review project membership, and apply rate limits or policy changes for the
+  actor.
+
+
+==== Rule query
+
+
+[source, js]
+----------------------------------
+from logs-anthropic.audit-*
+| where
+    data_stream.dataset == "anthropic.audit" and
+    event.action == "claude_chat_created" and
+    event.outcome == "success" and
+    user.email is not null
+| stats
+    Esql.event_count = count(*),
+    Esql.event_id_values = values(event.id),
+    Esql.anthropic_audit_claude_chat_id_values = values(anthropic.audit.claude_chat_id),
+    Esql.anthropic_audit_claude_project_id_values = values(anthropic.audit.claude_project_id),
+    Esql.source_ip_values = values(source.ip),
+    Esql.user_agent_original_values = values(user_agent.original),
+    Esql.anthropic_audit_actor_type_values = values(anthropic.audit.actor.type),
+    Esql.user_id_values = values(user.id),
+    Esql.timestamp_first_seen = min(@timestamp),
+    Esql.timestamp_last_seen = max(@timestamp)
+  by user.email
+| where Esql.event_count >= 20
+| keep user.email, Esql.*
+
+----------------------------------
+
+*Framework*: MITRE ATT&CK^TM^
+
+* Tactic:
+** Name: Impact
+** ID: TA0040
+** Reference URL: https://attack.mitre.org/tactics/TA0040/
+* Technique:
+** Name: Resource Hijacking
+** ID: T1496
+** Reference URL: https://attack.mitre.org/techniques/T1496/

@@ -1,0 +1,113 @@
+[[prebuilt-rule-8-19-35-anthropic-admin-api-key-created]]
+=== Anthropic Admin API Key Created
+
+Admin API keys grant programmatic access to organization and compliance APIs outside an interactive browser session. An attacker who creates one after compromise can automate role grants, exports, and logging changes without holding a user session that would time out under SSO. The key also survives password resets and IdP lockout if defenders revoke the interactive account but miss the API credential.
+
+*Rule type*: esql
+
+*Rule indices*: None
+
+*Severity*: medium
+
+*Risk score*: 47
+
+*Runs every*: 5m
+
+*Searches indices from*: now-9m ({ref}/common-options.html#date-math[Date Math format], see also <<rule-schedule, `Additional look-back time`>>)
+
+*Maximum alerts per execution*: 100
+
+*References*: 
+
+* https://platform.claude.com/docs/en/api/compliance/activities/list
+
+*Tags*: 
+
+* Domain: GenAI
+* Platform: Anthropic
+* Data Source: Anthropic Audit Logs
+* Use Case: Identity and Access Audit
+* Use Case: Threat Detection
+* Resources: Investigation Guide
+* Rule Type: ES|QL
+* Tactic: Persistence
+
+*Version*: 1
+
+*Rule authors*: 
+
+* Elastic
+
+*Rule license*: Elastic License v2
+
+
+==== Investigation guide
+
+
+
+*Triage and analysis*
+
+
+
+*Investigating Anthropic Admin API Key Created*
+
+
+Admin API keys provide durable programmatic org/compliance access that survives interactive session revocation.
+Scopes at creation determine blast radius.
+
+Unauthorized = key not in the approved credentials inventory, no integration/onboarding ticket, or creation by an
+actor who just received admin / ownership and immediately mints a key — especially before exports or SSO changes.
+
+
+*Possible investigation steps*
+
+
+- Record `anthropic.audit.admin_api_key_id` and `anthropic.audit.scopes` for later revoke and correlation.
+- Branch actor: `user_actor` → is `user.email` / `source.ip` / UA a known platform admin? Scripting UA is higher
+  priority than a normal browser admin console session.
+- Check whether the actor recently gained admin or primary ownership; look ±hours for exports, SSO changes, or
+  compliance logging changes from the same org.
+- Close as FP when inventory + ticket match. Escalate when the key is unknown or precedes control-plane abuse.
+
+
+*False positive analysis*
+
+
+- Fleet / SIEM onboarding and scheduled rotation routinely create admin keys — require inventory evidence.
+
+
+*Response and remediation*
+
+
+- On unauthorized creation: revoke the key in Anthropic admin, rotate other admin credentials, and review API activity
+  attributable to that `anthropic.audit.admin_api_key_id` during the exposure window.
+
+
+==== Rule query
+
+
+[source, js]
+----------------------------------
+from logs-anthropic.audit-* metadata _id, _version, _index
+| where
+    data_stream.dataset == "anthropic.audit" and
+    mv_contains(event.category, "iam") and
+    event.action == "admin_api_key_created"
+| keep _id, _version, _index, @timestamp, event.*, organization.*, user.*, source.*, user_agent.*, anthropic.audit.*, data_stream.*
+
+----------------------------------
+
+*Framework*: MITRE ATT&CK^TM^
+
+* Tactic:
+** Name: Persistence
+** ID: TA0003
+** Reference URL: https://attack.mitre.org/tactics/TA0003/
+* Technique:
+** Name: Account Manipulation
+** ID: T1098
+** Reference URL: https://attack.mitre.org/techniques/T1098/
+* Sub-technique:
+** Name: Additional Cloud Credentials
+** ID: T1098.001
+** Reference URL: https://attack.mitre.org/techniques/T1098/001/

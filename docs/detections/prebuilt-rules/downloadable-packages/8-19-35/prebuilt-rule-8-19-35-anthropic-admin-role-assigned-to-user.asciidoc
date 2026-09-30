@@ -1,0 +1,129 @@
+[[prebuilt-rule-8-19-35-anthropic-admin-role-assigned-to-user]]
+=== Anthropic Admin Role Assigned to User
+
+The organization admin role controls organization settings, integrations, membership, and security configuration in Anthropic Claude for Enterprise. Membership role changes are reported as `claude_user_role_updated` with `anthropic.audit.current_role`. An attacker can promote a compromised or newly invited account to org admin to turn initial access into durable control-plane access. From admin, they can disable SSO, mint admin API keys for automation, start data exports, and weaken audit logging. Workspace-scoped `role_assignment_granted` grants (for example bare `admin` on a workspace) are out of scope for this rule.
+
+*Rule type*: esql
+
+*Rule indices*: None
+
+*Severity*: high
+
+*Risk score*: 73
+
+*Runs every*: 5m
+
+*Searches indices from*: now-9m ({ref}/common-options.html#date-math[Date Math format], see also <<rule-schedule, `Additional look-back time`>>)
+
+*Maximum alerts per execution*: 100
+
+*References*: 
+
+* https://www.elastic.co/security-labs/elastic-advances-llm-security
+* https://platform.claude.com/docs/en/api/compliance/activities/list
+
+*Tags*: 
+
+* Domain: GenAI
+* Platform: Anthropic
+* Data Source: Anthropic Audit Logs
+* Use Case: Identity and Access Audit
+* Use Case: Threat Detection
+* Resources: Investigation Guide
+* Rule Type: ES|QL
+* Tactic: Persistence
+* Tactic: Privilege Escalation
+
+*Version*: 1
+
+*Rule authors*: 
+
+* Elastic
+
+*Rule license*: Elastic License v2
+
+
+==== Investigation guide
+
+
+
+*Triage and analysis*
+
+
+
+*Investigating Anthropic Admin Role Assigned to User*
+
+
+Org admin can change SSO, API keys, exports, and integrations. This rule matches `claude_user_role_updated` where
+`anthropic.audit.current_role` is the literal `admin` (organization membership role — not workspace
+`role_assignment_granted`, not project `chat_project:*` roles, not `rbac_role_assigned`).
+
+Unauthorized = no IAM ticket naming the target as org admin, target recently invited from an unexpected domain, or
+the promotion is followed by key creation / SSO weakening / exports by the same actor or target.
+
+
+*Possible investigation steps*
+
+
+- Identify target (`user.target.id`, `user.target.email`, `related.user`) and assigner (`anthropic.audit.actor.type`;
+  for `user_actor` check email/IP/UA).
+- Compare `anthropic.audit.previous_role` → `anthropic.audit.current_role` and check whether the target was invited or
+  otherwise role-changed shortly before becoming admin.
+- After the promotion, review ~48h of target activity and org IAM (primary owner transfer, admin keys, SSO, exports).
+- Close as FP when ticket + job function match. Escalate when the change is untracked or precedes control-plane abuse.
+
+
+*False positive analysis*
+
+
+- Onboarding and IR staffing promotions to org admin are valid — require change request when policy demands one.
+
+
+*Response and remediation*
+
+
+- On unauthorized promotion: revoke org admin (downgrade membership role), rotate credentials for assigner and
+  target, audit admin API keys and integration changes for the organization.
+
+
+==== Rule query
+
+
+[source, js]
+----------------------------------
+from logs-anthropic.audit-* metadata _id, _version, _index
+| where
+    data_stream.dataset == "anthropic.audit" and
+    mv_contains(event.category, "iam") and
+    event.action == "claude_user_role_updated" and
+    anthropic.audit.current_role == "admin"
+| keep _id, _version, _index, @timestamp, event.*, organization.*, user.*, source.*, user_agent.*, anthropic.audit.*, data_stream.*
+
+----------------------------------
+
+*Framework*: MITRE ATT&CK^TM^
+
+* Tactic:
+** Name: Persistence
+** ID: TA0003
+** Reference URL: https://attack.mitre.org/tactics/TA0003/
+* Technique:
+** Name: Account Manipulation
+** ID: T1098
+** Reference URL: https://attack.mitre.org/techniques/T1098/
+* Sub-technique:
+** Name: Additional Cloud Roles
+** ID: T1098.003
+** Reference URL: https://attack.mitre.org/techniques/T1098/003/
+* Tactic:
+** Name: Privilege Escalation
+** ID: TA0004
+** Reference URL: https://attack.mitre.org/tactics/TA0004/
+* Technique:
+** Name: Account Manipulation
+** ID: T1098
+** Reference URL: https://attack.mitre.org/techniques/T1098/
+* Sub-technique:
+** Name: Additional Cloud Roles
+** ID: T1098.003
+** Reference URL: https://attack.mitre.org/techniques/T1098/003/

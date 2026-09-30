@@ -1,0 +1,117 @@
+[[prebuilt-rule-8-19-35-anthropic-primary-owner-transferred]]
+=== Anthropic Primary Owner Transferred
+
+Primary ownership is the highest administrative authority in an Anthropic organization, covering billing, membership, and organization-wide settings. Transferring ownership to an attacker-controlled account can lock out the legitimate administrator from recovery paths that depend on the original owner. Attackers often do this after role escalation so defenders cannot reverse earlier privilege changes through normal administration.
+
+*Rule type*: esql
+
+*Rule indices*: None
+
+*Severity*: high
+
+*Risk score*: 73
+
+*Runs every*: 5m
+
+*Searches indices from*: now-9m ({ref}/common-options.html#date-math[Date Math format], see also <<rule-schedule, `Additional look-back time`>>)
+
+*Maximum alerts per execution*: 100
+
+*References*: 
+
+* https://platform.claude.com/docs/en/api/compliance/activities/list
+
+*Tags*: 
+
+* Domain: GenAI
+* Platform: Anthropic
+* Data Source: Anthropic Audit Logs
+* Use Case: Identity and Access Audit
+* Use Case: Threat Detection
+* Resources: Investigation Guide
+* Rule Type: ES|QL
+* Tactic: Privilege Escalation
+
+*Version*: 1
+
+*Rule authors*: 
+
+* Elastic
+
+*Rule license*: Elastic License v2
+
+
+==== Investigation guide
+
+
+
+*Triage and analysis*
+
+
+
+*Investigating Anthropic Primary Owner Transferred*
+
+
+Primary ownership is the highest Anthropic org authority (billing, membership, org-wide settings). Transfers should
+be rare and ticketed. Actor fields identify who initiated the transfer — not the new owner
+(`anthropic.audit.previous_owner_id` / `new_owner_id`).
+
+Unauthorized = no HR/IT offboarding or ownership-change ticket naming both parties, or the new owner was recently
+invited / granted admin and immediately received ownership, especially with follow-on SSO/key/export changes.
+
+
+*Possible investigation steps*
+
+
+- Map `anthropic.audit.previous_owner_id` → `new_owner_id` and resolve initiator (`actor.type`; for `user_actor`
+  check email/IP/UA).
+- Before the transfer: look for `claude_user_role_updated` with `anthropic.audit.current_role: admin`, invite accept,
+  or admin API key creation for the new owner path.
+- After the transfer: look for SSO changes, exports, compliance logging disablement, or IP restriction deletes by the
+  new owner.
+- Contact previous and new owners only after ticket/timeline triage; escalate when ticket is missing or the new owner
+  chain looks staged.
+
+
+*False positive analysis*
+
+
+- Reorgs and admin departures are valid — require matching change management / HR records.
+
+
+*Response and remediation*
+
+
+- On unauthorized transfer: engage Anthropic support and internal IT to recover ownership, revoke the new owner's
+  sessions/keys, and review every admin change made under the new owner account.
+
+
+==== Rule query
+
+
+[source, js]
+----------------------------------
+from logs-anthropic.audit-* metadata _id, _version, _index
+| where
+    data_stream.dataset == "anthropic.audit" and
+    mv_contains(event.category, "iam") and
+    event.action == "primary_owner_transferred" and
+    event.outcome == "success"
+| keep _id, _version, _index, @timestamp, event.*, organization.*, user.*, source.*, user_agent.*, anthropic.audit.*, data_stream.*
+
+----------------------------------
+
+*Framework*: MITRE ATT&CK^TM^
+
+* Tactic:
+** Name: Privilege Escalation
+** ID: TA0004
+** Reference URL: https://attack.mitre.org/tactics/TA0004/
+* Technique:
+** Name: Account Manipulation
+** ID: T1098
+** Reference URL: https://attack.mitre.org/techniques/T1098/
+* Sub-technique:
+** Name: Additional Cloud Roles
+** ID: T1098.003
+** Reference URL: https://attack.mitre.org/techniques/T1098/003/

@@ -1,0 +1,113 @@
+[[anthropic-organization-deletion]]
+=== Anthropic Organization Deletion
+
+Organization deletion and bulk delete remove tenant data, projects, and member access in a single administrative action. An attacker can use this to break AI-assisted workflows as an impact technique, to extort the organization, or to destroy evidence after finishing a data export. Once deletion progresses, recovery options shrink and earlier exfiltration activity is harder to reconstruct from the tenant itself.
+
+*Rule type*: esql
+
+*Rule indices*: None
+
+*Severity*: critical
+
+*Risk score*: 99
+
+*Runs every*: 5m
+
+*Searches indices from*: now-9m ({ref}/common-options.html#date-math[Date Math format], see also <<rule-schedule, `Additional look-back time`>>)
+
+*Maximum alerts per execution*: 100
+
+*References*: 
+
+* https://platform.claude.com/docs/en/api/compliance/activities/list
+
+*Tags*: 
+
+* Domain: GenAI
+* Platform: Anthropic
+* Data Source: Anthropic Audit Logs
+* Use Case: Threat Detection
+* Resources: Investigation Guide
+* Rule Type: ES|QL
+* Tactic: Impact
+
+*Version*: 1
+
+*Rule authors*: 
+
+* Elastic
+
+*Rule license*: Elastic License v2
+
+
+==== Investigation guide
+
+
+
+*Triage and analysis*
+
+
+
+*Investigating Anthropic Organization Deletion*
+
+
+Organization deletion / bulk delete removes tenant data, projects, and member access. Treat early actions as urgent —
+recovery options shrink as the workflow progresses.
+
+Unauthorized = no offboarding / lab-teardown ticket naming this org and actor, or deletion preceded by owner transfer,
+admin grants, key creation, or data exports without a matching business project.
+
+
+*Possible investigation steps*
+
+
+- Identify actor (`user_actor` → email/IP/UA) and `organization.id`.
+- Urgency by action:
+  - `org_deletion_requested`: intervene immediately if unauthorized.
+  - `org_bulk_delete_initiated`: bulk delete started — escalate IR now.
+  - `org_deleted_via_bulk`: completed — prioritize evidence preservation outside the tenant.
+- Look for preceding primary owner transfer, admin grants, admin API key creation, or data exports.
+- Close as FP only when platform owners confirm scheduled decommission with matching ticket/time/actor.
+
+
+*False positive analysis*
+
+
+- Sandbox teardown and contract termination are valid — require change management or offboarding records.
+
+
+*Response and remediation*
+
+
+- On unauthorized activity: engage Anthropic support and internal IR immediately, preserve remaining audit logs
+  (including prior exports), and rotate administrative credentials for the organization.
+
+
+==== Rule query
+
+
+[source, js]
+----------------------------------
+from logs-anthropic.audit-* metadata _id, _version, _index
+| where
+    data_stream.dataset == "anthropic.audit" and
+    mv_contains(event.category, "configuration") and
+    event.action in ("org_deletion_requested", "org_bulk_delete_initiated", "org_deleted_via_bulk")
+| keep _id, _version, _index, @timestamp, event.*, organization.*, user.*, source.*, user_agent.*, anthropic.audit.*, data_stream.*
+
+----------------------------------
+
+*Framework*: MITRE ATT&CK^TM^
+
+* Tactic:
+** Name: Impact
+** ID: TA0040
+** Reference URL: https://attack.mitre.org/tactics/TA0040/
+* Technique:
+** Name: Data Destruction
+** ID: T1485
+** Reference URL: https://attack.mitre.org/techniques/T1485/
+* Technique:
+** Name: Account Access Removal
+** ID: T1531
+** Reference URL: https://attack.mitre.org/techniques/T1531/
