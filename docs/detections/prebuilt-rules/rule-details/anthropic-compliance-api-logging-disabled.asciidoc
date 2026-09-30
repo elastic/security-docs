@@ -1,0 +1,116 @@
+[[anthropic-compliance-api-logging-disabled]]
+=== Anthropic Compliance API Logging Disabled
+
+Compliance API logging feeds the anthropic.audit dataset that Anthropic audit detections run on. An attacker with administrative access can disable it so later role grants, API key creation, exports, and authentication changes stop reaching this data source. This rule detects the disable action itself. Activity that happens after logging stops may not appear in logs-anthropic.audit-*.
+
+*Rule type*: esql
+
+*Rule indices*: None
+
+*Severity*: high
+
+*Risk score*: 73
+
+*Runs every*: 5m
+
+*Searches indices from*: now-9m ({ref}/common-options.html#date-math[Date Math format], see also <<rule-schedule, `Additional look-back time`>>)
+
+*Maximum alerts per execution*: 100
+
+*References*: 
+
+* https://platform.claude.com/docs/en/api/compliance/activities/list
+* https://www.elastic.co/docs/reference/integrations/anthropic
+
+*Tags*: 
+
+* Domain: GenAI
+* Platform: Anthropic
+* Data Source: Anthropic Audit Logs
+* Use Case: Log Auditing
+* Use Case: Threat Detection
+* Resources: Investigation Guide
+* Rule Type: ES|QL
+* Tactic: Defense Evasion
+
+*Version*: 1
+
+*Rule authors*: 
+
+* Elastic
+
+*Rule license*: Elastic License v2
+
+
+==== Investigation guide
+
+
+
+*Triage and analysis*
+
+
+
+*Investigating Anthropic Compliance API Logging Disabled*
+
+
+Compliance API logging feeds `logs-anthropic.audit-*`. Disabling it creates a **blind window**: later admin actions
+may not appear in this data source even if other logging remains. Do not assume the timeline after disable is complete.
+
+Unauthorized = no platform/security ticket for Fleet/integration work, and logging was not re-enabled promptly — or
+disable is paired with role grants, key creation, exports, or SSO changes.
+
+
+*Possible investigation steps*
+
+
+- Confirm `anthropic.audit.compliance_api_logging_enabled == false`. Do not confuse with
+  `compliance_api_enabled` (whether the Compliance API itself is on).
+- Branch actor: `admin_api_key_actor` → which key (`anthropic.audit.actor.admin_api_key_id`); `user_actor` →
+  email/IP/UA vs known admins.
+- Pivot the same `organization.id` for admin grants, key creation, exports, or SSO changes **before** the disable
+  (still visible) and note the blind window start time.
+- Gate re-enable: treat the case as open until logging is back on and fresh events appear in `logs-anthropic.audit-*`.
+
+
+*False positive analysis*
+
+
+- Integration testing / pipeline migrations can disable logging briefly — require a ticket and verify re-enable.
+
+
+*Response and remediation*
+
+
+- Re-enable compliance API logging first and confirm ingestion resumes. Then reconstruct the blind window via any
+  prior exports, Anthropic support, or other data sources, and review configuration changes around the disable.
+
+
+==== Rule query
+
+
+[source, js]
+----------------------------------
+from logs-anthropic.audit-* metadata _id, _version, _index
+| where
+    data_stream.dataset == "anthropic.audit" and
+    mv_contains(event.category, "configuration") and
+    event.action == "org_compliance_api_settings_updated" and
+    anthropic.audit.compliance_api_logging_enabled == false
+| keep _id, _version, _index, @timestamp, event.*, organization.*, user.*, source.*, user_agent.*, anthropic.audit.*, data_stream.*
+
+----------------------------------
+
+*Framework*: MITRE ATT&CK^TM^
+
+* Tactic:
+** Name: Defense Evasion
+** ID: TA0005
+** Reference URL: https://attack.mitre.org/tactics/TA0005/
+* Technique:
+** Name: Impair Defenses
+** ID: T1562
+** Reference URL: https://attack.mitre.org/techniques/T1562/
+* Sub-technique:
+** Name: Disable or Modify Cloud Logs
+** ID: T1562.008
+** Reference URL: https://attack.mitre.org/techniques/T1562/008/

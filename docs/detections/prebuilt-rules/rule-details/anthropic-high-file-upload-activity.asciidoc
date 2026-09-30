@@ -1,0 +1,126 @@
+[[anthropic-high-file-upload-activity]]
+=== Anthropic High File Upload Activity
+
+Detects an unusually high volume of Claude file uploads from the same user email and source IP within a rolling 24-hour period. Sustained upload activity can indicate staging of sensitive documents in Claude chats for later retrieval, automated ingestion of data into LLM workflows, or abuse of organizational Claude access to move files into the cloud service.
+
+*Rule type*: esql
+
+*Rule indices*: None
+
+*Severity*: medium
+
+*Risk score*: 47
+
+*Runs every*: 1h
+
+*Searches indices from*: now-24h ({ref}/common-options.html#date-math[Date Math format], see also <<rule-schedule, `Additional look-back time`>>)
+
+*Maximum alerts per execution*: 100
+
+*References*: 
+
+* https://platform.claude.com/docs/en/api/compliance/activities/list
+
+*Tags*: 
+
+* Domain: GenAI
+* Platform: Anthropic
+* Data Source: Anthropic Audit Logs
+* Use Case: Threat Detection
+* Use Case: UEBA
+* Resources: Investigation Guide
+* Rule Type: ES|QL
+* Tactic: Exfiltration
+
+*Version*: 1
+
+*Rule authors*: 
+
+* Elastic
+
+*Rule license*: Elastic License v2
+
+
+==== Investigation guide
+
+
+
+*Triage and analysis*
+
+
+
+*Investigating Anthropic High File Upload Activity*
+
+
+One `user.email` + `source.ip` pair uploaded a large volume of Claude files in 24 hours — possible staging for later
+retrieval, automated ingestion, or abuse of org Claude access.
+
+Unauthorized / escalate when filenames look sensitive, uploads target shared/sensitive projects, UA looks automated
+(curl/python vs browser), or artifact sharing / exports follow. Close as FP for documented migrations, RAG pilots, or
+batch attach jobs with expected project IDs.
+
+
+*Possible investigation steps*
+
+
+- Start with `Esql.event_count`, `Esql.file_name_values`, and chat/project ID lists — sensitive names or shared
+  project IDs raise priority.
+- Triage `user_agent` on raw uploads: browser-like vs scripting clients. Scripting UAs with many distinct file IDs
+  look more like automation than interactive work.
+- Pivot raw `logs-anthropic.audit-*` for individual `anthropic.audit.claude_file_id` / filenames and whether
+  `claude_file_viewed` or chat activity matches the upload volume.
+- Correlate with artifact sharing, data exports, or compliance key creation from the same user.
+
+
+*False positive analysis*
+
+
+- Document migrations and RAG indexing from one seat commonly exceed the threshold.
+
+
+*Response and remediation*
+
+
+- On unauthorized staging: revoke sessions, review uploaded names/file IDs for sensitive content, and tighten project
+  sharing or upload policy for the actor.
+
+
+==== Rule query
+
+
+[source, js]
+----------------------------------
+from logs-anthropic.audit-*
+| where
+    data_stream.dataset == "anthropic.audit" and
+    event.action == "claude_file_uploaded" and
+    event.outcome == "success" and
+    user.email is not null and
+    source.ip is not null
+| stats
+    Esql.event_count = count(*),
+    Esql.event_id_values = values(event.id),
+    Esql.file_name_values = values(file.name),
+    Esql.anthropic_audit_claude_file_id_values = values(anthropic.audit.claude_file_id),
+    Esql.anthropic_audit_claude_chat_id_values = values(anthropic.audit.claude_chat_id),
+    Esql.anthropic_audit_claude_project_id_values = values(anthropic.audit.claude_project_id),
+    Esql.user_agent_original_values = values(user_agent.original),
+    Esql.anthropic_audit_actor_type_values = values(anthropic.audit.actor.type),
+    Esql.timestamp_first_seen = min(@timestamp),
+    Esql.timestamp_last_seen = max(@timestamp)
+  by user.email, source.ip
+| where Esql.event_count >= 100
+| keep user.email, source.ip, Esql.*
+
+----------------------------------
+
+*Framework*: MITRE ATT&CK^TM^
+
+* Tactic:
+** Name: Exfiltration
+** ID: TA0010
+** Reference URL: https://attack.mitre.org/tactics/TA0010/
+* Technique:
+** Name: Exfiltration Over Web Service
+** ID: T1567
+** Reference URL: https://attack.mitre.org/techniques/T1567/

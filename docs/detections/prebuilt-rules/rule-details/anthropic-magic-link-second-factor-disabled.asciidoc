@@ -1,0 +1,115 @@
+[[anthropic-magic-link-second-factor-disabled]]
+=== Anthropic Magic Link Second Factor Disabled
+
+Magic link second factor adds an extra authentication step to passwordless sign-in for Anthropic. An attacker with administrative access can turn it off so magic link logins no longer require the second factor, which makes stolen or attacker-controlled mailboxes usable for interactive access. This often shows up alongside SSO weakening when the attacker wants a fallback authentication path outside the corporate IdP.
+
+*Rule type*: esql
+
+*Rule indices*: None
+
+*Severity*: high
+
+*Risk score*: 73
+
+*Runs every*: 5m
+
+*Searches indices from*: now-9m ({ref}/common-options.html#date-math[Date Math format], see also <<rule-schedule, `Additional look-back time`>>)
+
+*Maximum alerts per execution*: 100
+
+*References*: 
+
+* https://platform.claude.com/docs/en/api/compliance/activities/list
+
+*Tags*: 
+
+* Domain: GenAI
+* Domain: Identity
+* Platform: Anthropic
+* Data Source: Anthropic Audit Logs
+* Use Case: Identity and Access Audit
+* Use Case: Threat Detection
+* Resources: Investigation Guide
+* Rule Type: ES|QL
+* Tactic: Defense Evasion
+
+*Version*: 1
+
+*Rule authors*: 
+
+* Elastic
+
+*Rule license*: Elastic License v2
+
+
+==== Investigation guide
+
+
+
+*Triage and analysis*
+
+
+
+*Investigating Anthropic Magic Link Second Factor Disabled*
+
+
+Magic link second factor is an extra step on passwordless sign-in. Disabling it means anyone who can receive the
+mailbox's magic link can authenticate without that second check — a useful fallback if an attacker also weakens SSO.
+
+Treat as unauthorized unless identity has a change ticket / maintenance window that names this control, or the setting
+was re-enabled (or replaced with equivalent MFA) within the same change window.
+
+
+*Possible investigation steps*
+
+
+- Identify the actor (`anthropic.audit.actor.type`). For `user_actor`, check whether `user.email`, `source.ip`, and
+  `user_agent.original` match a known admin; a scripting UA or unfamiliar IP raises priority.
+- In the same `organization.id` and ±hours window, look for SSO disable/deactivate/delete, admin role grants, or a
+  burst of `magic_link_login_succeeded` after the change.
+- Close as FP when the ticket matches the actor and time, and second factor (or equivalent IdP MFA) was restored.
+  Escalate when there is no ticket, the actor is unexpected, or sibling auth-weakening events appear.
+
+
+*False positive analysis*
+
+
+- Auth migrations and troubleshooting sometimes disable this briefly; require a ticket and restoration evidence.
+
+
+*Response and remediation*
+
+
+- On unauthorized disable: re-enable magic link second factor, review magic-link sign-ins since the change, and
+  investigate concurrent SSO / admin IAM events for the same organization.
+
+
+==== Rule query
+
+
+[source, js]
+----------------------------------
+from logs-anthropic.audit-* metadata _id, _version, _index
+| where
+    data_stream.dataset == "anthropic.audit" and
+    mv_contains(event.category, "configuration") and
+    event.action == "org_magic_link_second_factor_toggled" and
+    anthropic.audit.enabled == false
+| keep _id, _version, _index, @timestamp, event.*, organization.*, user.*, source.*, user_agent.*, anthropic.audit.*, data_stream.*
+
+----------------------------------
+
+*Framework*: MITRE ATT&CK^TM^
+
+* Tactic:
+** Name: Defense Evasion
+** ID: TA0005
+** Reference URL: https://attack.mitre.org/tactics/TA0005/
+* Technique:
+** Name: Modify Authentication Process
+** ID: T1556
+** Reference URL: https://attack.mitre.org/techniques/T1556/
+* Sub-technique:
+** Name: Multi-Factor Authentication
+** ID: T1556.006
+** Reference URL: https://attack.mitre.org/techniques/T1556/006/

@@ -1,0 +1,133 @@
+[[prebuilt-rule-8-19-35-anthropic-organization-member-and-group-enumeration]]
+=== Anthropic Organization Member and Group Enumeration
+
+Detects a single user performing at least two distinct organization discovery actions within a 10-minute window: listing users, exporting members, or viewing groups. Chaining these read actions maps membership and group structure and commonly precedes targeted role grants, invites, or data collection against high-value accounts.
+
+*Rule type*: esql
+
+*Rule indices*: None
+
+*Severity*: medium
+
+*Risk score*: 47
+
+*Runs every*: 10m
+
+*Searches indices from*: now-11m ({ref}/common-options.html#date-math[Date Math format], see also <<rule-schedule, `Additional look-back time`>>)
+
+*Maximum alerts per execution*: 100
+
+*References*: 
+
+* https://platform.claude.com/docs/en/api/compliance/activities/list
+
+*Tags*: 
+
+* Domain: GenAI
+* Platform: Anthropic
+* Data Source: Anthropic Audit Logs
+* Use Case: Threat Detection
+* Use Case: UEBA
+* Resources: Investigation Guide
+* Rule Type: ES|QL
+* Tactic: Discovery
+
+*Version*: 1
+
+*Rule authors*: 
+
+* Elastic
+
+*Rule license*: Elastic License v2
+
+
+==== Investigation guide
+
+
+
+*Triage and analysis*
+
+
+
+*Investigating Anthropic Organization Member and Group Enumeration*
+
+
+One email performed at least two distinct discovery actions among `org_users_listed`, `org_members_exported`, and
+`group_list_viewed` in a short window — reconnaissance of who is in the tenant.
+
+Escalate when scripting UA, follow-on invites/role grants/SSO changes/exports appear, or the actor is not an identity
+admin. Close as FP for scheduled access reviews or onboarding console browsing with a ticket.
+
+
+*Possible investigation steps*
+
+
+- Read `Esql.event_action_values` to see which discovery actions combined; all three in one window is stronger than
+  two.
+- Inspect IP/UA/actor type for automation or unfamiliar clients.
+- Pivot the same actor/org for follow-on admin or project role grants, invites, SSO changes, or data exports.
+- Note: some `org_members_exported` without user email (e.g. certain `anthropic_actor` cases) are out of scope.
+
+
+*False positive analysis*
+
+
+- Membership exports during access reviews commonly combine two of these actions briefly.
+
+
+*Response and remediation*
+
+
+- On unauthorized recon: revoke sessions, review recent role and invite changes, and tighten least privilege on
+  identity read actions where possible.
+
+
+==== Rule query
+
+
+[source, js]
+----------------------------------
+from logs-anthropic.audit-*
+| where
+    data_stream.dataset == "anthropic.audit" and
+    event.action in ("org_members_exported", "org_users_listed", "group_list_viewed") and
+    user.email is not null
+| stats
+    Esql.event_action_count_distinct = count_distinct(event.action),
+    Esql.event_action_values = values(event.action),
+    Esql.event_count = count(*),
+    Esql.event_id_values = values(event.id),
+    Esql.source_ip_values = values(source.ip),
+    Esql.user_agent_original_values = values(user_agent.original),
+    Esql.anthropic_audit_actor_type_values = values(anthropic.audit.actor.type),
+    Esql.user_id_values = values(user.id),
+    Esql.timestamp_first_seen = min(@timestamp),
+    Esql.timestamp_last_seen = max(@timestamp)
+  by user.email, organization.id
+| where Esql.event_action_count_distinct >= 2
+| keep user.email, organization.id, Esql.*
+
+----------------------------------
+
+*Framework*: MITRE ATT&CK^TM^
+
+* Tactic:
+** Name: Discovery
+** ID: TA0007
+** Reference URL: https://attack.mitre.org/tactics/TA0007/
+* Technique:
+** Name: Permission Groups Discovery
+** ID: T1069
+** Reference URL: https://attack.mitre.org/techniques/T1069/
+* Sub-technique:
+** Name: Cloud Groups
+** ID: T1069.003
+** Reference URL: https://attack.mitre.org/techniques/T1069/003/
+* Technique:
+** Name: Account Discovery
+** ID: T1087
+** Reference URL: https://attack.mitre.org/techniques/T1087/
+* Sub-technique:
+** Name: Cloud Account
+** ID: T1087.004
+** Reference URL: https://attack.mitre.org/techniques/T1087/004/

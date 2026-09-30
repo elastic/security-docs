@@ -1,0 +1,128 @@
+[[prebuilt-rule-8-19-35-anthropic-sensitive-claude-project-role-assigned-to-user]]
+=== Anthropic Sensitive Claude Project Role Assigned to User
+
+Detects when a Claude project owner or editor role is granted through a `role_assignment_granted` event. Project owners and editors can access project chats, artifacts, and knowledge bases that may hold sensitive data. An attacker with organization access can grant these roles to persist access to high-value project content without holding organization admin privileges.
+
+*Rule type*: new_terms
+
+*Rule indices*: 
+
+* logs-anthropic.audit-*
+
+*Severity*: medium
+
+*Risk score*: 47
+
+*Runs every*: 5m
+
+*Searches indices from*: now-9m ({ref}/common-options.html#date-math[Date Math format], see also <<rule-schedule, `Additional look-back time`>>)
+
+*Maximum alerts per execution*: 100
+
+*References*: 
+
+* https://platform.claude.com/docs/en/api/compliance/activities/list
+
+*Tags*: 
+
+* Domain: GenAI
+* Platform: Anthropic
+* Data Source: Anthropic Audit Logs
+* Use Case: Identity and Access Audit
+* Use Case: Threat Detection
+* Use Case: UEBA
+* Resources: Investigation Guide
+* Rule Type: New Terms
+* Tactic: Persistence
+* Tactic: Privilege Escalation
+
+*Version*: 1
+
+*Rule authors*: 
+
+* Elastic
+
+*Rule license*: Elastic License v2
+
+
+==== Investigation guide
+
+
+
+*Triage and analysis*
+
+
+
+*Investigating Anthropic Sensitive Claude Project Role Assigned to User*
+
+
+First-seen grant of `chat_project:owner` or `chat_project:editor` on a Claude project (`organization.id` +
+`anthropic.audit.resource_id`). Organization membership `admin` promotions (`claude_user_role_updated`) are covered
+by **Anthropic Admin Role Assigned to User**. Self-assignment at project creation is common; `user.id` may be absent
+for `anthropic_actor`.
+
+Unauthorized = grant to an unexpected collaborator (especially external), no project onboarding ticket, or followed
+by export / public artifact sharing / logging changes on the same project. Close as FP for known team staffing with
+ticket or a recurring collaborator baseline on that project.
+
+
+*Possible investigation steps*
+
+
+- When `user_actor`, identify assigner via email/IP/UA. Review role, `anthropic.audit.resource_id`, and grantee fields
+  (`anthropic.audit.target_id` / `target_type` / `related.user`) when present.
+- Correlate with org membership changes, exports, or artifact sharing involving the same project or users.
+- Escalate when the grantee is new/external or privileged data access follows; close when ticket/baseline matches.
+
+
+*False positive analysis*
+
+
+- Routine project staffing and self-assignment at creation are expected — baseline recurring collaborators.
+
+
+*Response and remediation*
+
+
+- On unauthorized grant: revoke the project role on that `anthropic.audit.resource_id`, review other changes on the
+  same project/org, and audit project content access and recent exports.
+
+
+==== Rule query
+
+
+[source, js]
+----------------------------------
+data_stream.dataset: "anthropic.audit" and
+    event.category: "iam" and
+    event.action: "role_assignment_granted" and
+    user.target.roles: ("chat_project:owner" or "chat_project:editor")
+
+----------------------------------
+
+*Framework*: MITRE ATT&CK^TM^
+
+* Tactic:
+** Name: Persistence
+** ID: TA0003
+** Reference URL: https://attack.mitre.org/tactics/TA0003/
+* Technique:
+** Name: Account Manipulation
+** ID: T1098
+** Reference URL: https://attack.mitre.org/techniques/T1098/
+* Sub-technique:
+** Name: Additional Cloud Roles
+** ID: T1098.003
+** Reference URL: https://attack.mitre.org/techniques/T1098/003/
+* Tactic:
+** Name: Privilege Escalation
+** ID: TA0004
+** Reference URL: https://attack.mitre.org/tactics/TA0004/
+* Technique:
+** Name: Account Manipulation
+** ID: T1098
+** Reference URL: https://attack.mitre.org/techniques/T1098/
+* Sub-technique:
+** Name: Additional Cloud Roles
+** ID: T1098.003
+** Reference URL: https://attack.mitre.org/techniques/T1098/003/

@@ -1,0 +1,109 @@
+[[anthropic-mcp-server-created]]
+=== Anthropic MCP Server Created
+
+Detects the first successful creation of a Model Context Protocol (MCP) server integration name in an Anthropic organization within the rule history window. MCP servers add external data pathways into Claude and can expose organizational data to third-party infrastructure. This is a New Terms rule keyed on `organization.id` and `anthropic.audit.mcp_server_name` so the same connector name can still alert in another tenant, while routine re-creation of an already-seen name in the same organization does not.
+
+*Rule type*: new_terms
+
+*Rule indices*: 
+
+* logs-anthropic.audit-*
+
+*Severity*: medium
+
+*Risk score*: 47
+
+*Runs every*: 5m
+
+*Searches indices from*: now-9m ({ref}/common-options.html#date-math[Date Math format], see also <<rule-schedule, `Additional look-back time`>>)
+
+*Maximum alerts per execution*: 100
+
+*References*: 
+
+* https://platform.claude.com/docs/en/api/compliance/activities/list
+
+*Tags*: 
+
+* Domain: GenAI
+* Platform: Anthropic
+* Data Source: Anthropic Audit Logs
+* Use Case: Threat Detection
+* Use Case: UEBA
+* Resources: Investigation Guide
+* Rule Type: New Terms
+* Tactic: Persistence
+
+*Version*: 1
+
+*Rule authors*: 
+
+* Elastic
+
+*Rule license*: Elastic License v2
+
+
+==== Investigation guide
+
+
+
+*Triage and analysis*
+
+
+
+*Investigating Anthropic MCP Server Created*
+
+
+First-seen MCP server name for this `organization.id` within the rule history window. MCP connectors add external
+data pathways into Claude.
+
+Unauthorized = server name not on approved integration inventory, actor is unexpected/contractor without a request,
+or creation pairs with data export / public artifact sharing / privilege changes. Close as FP when inventory and
+pilot/onboarding ticket match.
+
+
+*Possible investigation steps*
+
+
+- Record `anthropic.audit.mcp_server_name` / `mcp_server_id` and actor. For `user_actor`, validate email/IP/UA
+  against platform admins.
+- Search `mcp_server_updated` / `mcp_server_deleted` for the same server ID; look for exports, artifact sharing, or
+  admin role grants in the same window.
+- Close as FP when inventory + pilot ticket match the name; escalate unknown connector names immediately.
+
+
+*False positive analysis*
+
+
+- Claude pilots commonly introduce first-seen approved connector names from platform teams.
+
+
+*Response and remediation*
+
+
+- On unauthorized creation: remove the MCP server and review data accessed through the connector during the exposure
+  window.
+
+
+==== Rule query
+
+
+[source, js]
+----------------------------------
+data_stream.dataset: "anthropic.audit" and
+    event.category: "configuration" and
+    event.action: "mcp_server_created" and
+    event.outcome: "success"
+
+----------------------------------
+
+*Framework*: MITRE ATT&CK^TM^
+
+* Tactic:
+** Name: Persistence
+** ID: TA0003
+** Reference URL: https://attack.mitre.org/tactics/TA0003/
+* Technique:
+** Name: Software Extensions
+** ID: T1176
+** Reference URL: https://attack.mitre.org/techniques/T1176/

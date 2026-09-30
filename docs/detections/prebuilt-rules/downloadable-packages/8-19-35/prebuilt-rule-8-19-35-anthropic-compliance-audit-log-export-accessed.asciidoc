@@ -1,0 +1,107 @@
+[[prebuilt-rule-8-19-35-anthropic-compliance-audit-log-export-accessed]]
+=== Anthropic Compliance Audit Log Export Accessed
+
+An audit log export archive was accessed, meaning the actor downloaded exported audit activity. Attackers pull audit exports to see what defenders can observe, look for detection gaps, or remove evidence before making other control-plane changes.
+
+*Rule type*: esql
+
+*Rule indices*: None
+
+*Severity*: medium
+
+*Risk score*: 47
+
+*Runs every*: 5m
+
+*Searches indices from*: now-9m ({ref}/common-options.html#date-math[Date Math format], see also <<rule-schedule, `Additional look-back time`>>)
+
+*Maximum alerts per execution*: 100
+
+*References*: 
+
+* https://platform.claude.com/docs/en/api/compliance/activities/list
+
+*Tags*: 
+
+* Domain: GenAI
+* Platform: Anthropic
+* Data Source: Anthropic Audit Logs
+* Use Case: Threat Detection
+* Resources: Investigation Guide
+* Rule Type: ES|QL
+* Tactic: Collection
+
+*Version*: 1
+
+*Rule authors*: 
+
+* Elastic
+
+*Rule license*: Elastic License v2
+
+
+==== Investigation guide
+
+
+
+*Triage and analysis*
+
+
+
+*Investigating Anthropic Compliance Audit Log Export Accessed*
+
+
+An audit-log export archive was downloaded. Attackers use this to see what defenders can observe or to stage before
+further control-plane changes. Correlate with `audit_log_export_started` for the same org.
+
+Unauthorized = no security/compliance ticket, export window covering recent IAM/logging changes without investigation
+context, or download followed by compliance logging disablement / SSO changes / data exports.
+
+
+*Possible investigation steps*
+
+
+- Use `anthropic.audit.from_date` / `to_date` to see which admin activity the actor pulled; match actor email/IP/UA to
+  known IR/compliance staff.
+- Find preceding `audit_log_export_started`. Flag if the window covers recent IAM or logging changes the actor then
+  altered.
+- Sequence check: download → logging disable / SSO change / org data export is a common recon-then-abuse pattern.
+
+
+*False positive analysis*
+
+
+- SIEM validation and regulatory requests are expected — require an approved ticket.
+
+
+*Response and remediation*
+
+
+- On unauthorized access: revoke actor access, determine whether export data left the org, and review whether
+  compliance logging was disabled or modified around the same time.
+
+
+==== Rule query
+
+
+[source, js]
+----------------------------------
+from logs-anthropic.audit-* metadata _id, _version, _index
+| where
+    data_stream.dataset == "anthropic.audit" and
+    mv_contains(event.category, "file") and
+    event.action == "audit_log_export_accessed"
+| keep _id, _version, _index, @timestamp, event.*, organization.*, user.*, source.*, user_agent.*, anthropic.audit.*, data_stream.*
+
+----------------------------------
+
+*Framework*: MITRE ATT&CK^TM^
+
+* Tactic:
+** Name: Collection
+** ID: TA0009
+** Reference URL: https://attack.mitre.org/tactics/TA0009/
+* Technique:
+** Name: Data from Cloud Storage
+** ID: T1530
+** Reference URL: https://attack.mitre.org/techniques/T1530/

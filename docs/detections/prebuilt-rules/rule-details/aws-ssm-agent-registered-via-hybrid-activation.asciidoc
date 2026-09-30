@@ -1,0 +1,172 @@
+[[aws-ssm-agent-registered-via-hybrid-activation]]
+=== AWS SSM Agent Registered via Hybrid Activation
+
+Identifies the Amazon SSM Agent invoked with "-register" and a hybrid activation argument on a Linux host. Hybrid activation is how non-EC2 hosts are onboarded as managed nodes, but adversaries with local access can repurpose the pre-installed, root-privileged SSM Agent as a covert remote access trojan by registering it to an attacker-controlled AWS account, gaining a persistent command channel that blends in with legitimate management traffic. On an EC2 instance that already runs the agent under an instance profile, a hybrid registration is highly unusual. The query cannot tell which account received the registration; the investigation guide explains how to confirm it.
+
+*Rule type*: query
+
+*Rule indices*: 
+
+* logs-endpoint.events.process*
+* logs-crowdstrike.fdr*
+* logs-sentinel_one_cloud_funnel.*
+
+*Severity*: medium
+
+*Risk score*: 47
+
+*Runs every*: 5m
+
+*Searches indices from*: now-9m ({ref}/common-options.html#date-math[Date Math format], see also <<rule-schedule, `Additional look-back time`>>)
+
+*Maximum alerts per execution*: 100
+
+*References*: 
+
+* https://www.mitiga.io/blog/abusing-the-amazon-web-services-ssm-agent-as-a-remote-access-trojan
+* https://thehackernews.com/2023/08/researchers-uncover-aws-ssm-agent.html
+* https://www.paloaltonetworks.com/blog/security-operations/aws-systems-manager-attack-vectors/
+
+*Tags*: 
+
+* Domain: Endpoint
+* Domain: Cloud
+* Platform: AWS
+* Platform: Linux
+* OS: Linux
+* Service: AWS SSM
+* Tactic: Command and Control
+* Tactic: Persistence
+* Data Source: Elastic Defend
+* Data Source: Crowdstrike
+* Data Source: SentinelOne
+* Rule Type: Custom Query (KQL)
+* Resources: Investigation Guide
+
+*Version*: 1
+
+*Rule authors*: 
+
+* Elastic
+
+*Rule license*: Elastic License v2
+
+
+==== Investigation guide
+
+
+
+*Triage and analysis*
+
+
+
+*Investigating AWS SSM Agent Registered via Hybrid Activation*
+
+
+This rule detects the Amazon SSM Agent being registered with a hybrid activation code or ID on a Linux host. On EC2 instances that already run the agent this is anomalous and may indicate an adversary hijacking the agent as a persistent command channel to an AWS account they control. On non-EC2 hosts it is the normal onboarding path and must be confirmed against provisioning records.
+
+
+*Possible investigation steps*
+
+
+- Review the process arguments for the activation code, activation ID, and region. These do not reveal the AWS account; use the next two steps to determine it.
+- Read `/var/lib/amazon/ssm/registration` on the host. A `ManagedInstanceID` starting with `mi-` means the agent is hybrid-registered; on an EC2 instance this should be an `i-` instance ID.
+- Search CloudTrail across all organization accounts for `RegisterManagedInstance` and `CreateActivation` events with that activation ID. If none of your accounts recorded it, the agent was registered to an external account.
+- Investigate the parent process and user session to understand how the registration command was initiated and whether it was interactive.
+- Determine if the user session that ran the command was interactive or came from an automated process.
+
+
+*False positive analysis*
+
+
+- Hybrid activation is a legitimate operation when onboarding on-premises or non-EC2 hosts as managed nodes for the first time. On already-registered EC2 instances this sequence is anomalous.
+- Allowlist known provisioning automation identities if this fires in expected environments.
+
+
+*Response and remediation*
+
+
+- Initiate the incident response process based on the outcome of the triage.
+- Isolate the affected host to prevent the attacker from issuing further SSM commands.
+- Re-register the SSM Agent with the correct organization-owned AWS account.
+- Rotate any instance credentials that may have been accessible to the attacker during the rogue registration window.
+- Review SSM Session Manager history for commands executed through the rogue registration.
+
+
+==== Setup
+
+
+
+*Setup*
+
+
+This rule requires data coming in from Elastic Defend.
+
+
+*Elastic Defend Integration Setup*
+
+Elastic Defend is integrated into the Elastic Agent using Fleet. Upon configuration, the integration allows the
+Elastic Agent to monitor events on your host and send data to the Elastic Security app.
+
+
+*Prerequisite Requirements:*
+
+- Fleet is required for Elastic Defend.
+- To configure Fleet Server refer to the https://www.elastic.co/guide/en/fleet/current/fleet-server.html[documentation].
+
+
+*The following steps should be executed in order to add the Elastic Defend integration:*
+
+- Go to the Kibana home page and click "Add integrations".
+- In the query bar, search for "Elastic Defend" and select the integration to see more details about it.
+- Click "Add Elastic Defend".
+- Configure the integration name and optionally add a description.
+- Select the type of environment you want to protect, either "Traditional Endpoints" or "Cloud Workloads".
+- Enter a name for the agent policy in "New agent policy name". If other agent policies already exist, you can
+  click the "Existing hosts" tab and select an existing policy instead.
+- Click "Save and Continue".
+- To complete the integration, select "Add Elastic Agent to your hosts" and install Elastic Agent on your hosts.
+For more details on Elastic Defend refer to the https://www.elastic.co/guide/en/security/current/install-endpoint.html[helper guide].
+
+
+==== Rule query
+
+
+[source, js]
+----------------------------------
+event.category : process and host.os.type : linux and event.type : start and
+event.action : (ProcessRollup2 or exec or exec_event or start) and
+(
+  process.name : (amazon-ssm-agent or ssm-agent-worker or ssm-setup-cli) or
+  process.executable : (/snap/amazon-ssm-agent/*/amazon-ssm-agent or /usr/bin/amazon-ssm-agent or /usr/bin/ssm-setup-cli)
+) and
+process.args : (
+  (-register or --register) and
+  (
+    -activation-code or -activation-code=* or --activation-code or --activation-code=* or
+    -activation-id or -activation-id=* or --activation-id or --activation-id=* or
+    -code or -code=* or --code or --code=* or
+    -id or -id=* or --id or --id=*
+  )
+)
+
+----------------------------------
+
+*Framework*: MITRE ATT&CK^TM^
+
+* Tactic:
+** Name: Command and Control
+** ID: TA0011
+** Reference URL: https://attack.mitre.org/tactics/TA0011/
+* Technique:
+** Name: Remote Access Tools
+** ID: T1219
+** Reference URL: https://attack.mitre.org/techniques/T1219/
+* Tactic:
+** Name: Persistence
+** ID: TA0003
+** Reference URL: https://attack.mitre.org/tactics/TA0003/
+* Technique:
+** Name: External Remote Services
+** ID: T1133
+** Reference URL: https://attack.mitre.org/techniques/T1133/
