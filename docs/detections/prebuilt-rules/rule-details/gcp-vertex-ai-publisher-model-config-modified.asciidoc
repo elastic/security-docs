@@ -1,0 +1,143 @@
+[[gcp-vertex-ai-publisher-model-config-modified]]
+=== GCP Vertex AI Publisher Model Config Modified
+
+Detects changes to Vertex AI publisher model configuration via SetPublisherModelConfig (for example enabling or retargeting prompt/response BigQuery logging). Unexpected config changes can disable security-relevant logging or redirect logs.
+
+*Rule type*: esql
+
+*Rule indices*: None
+
+*Severity*: medium
+
+*Risk score*: 47
+
+*Runs every*: 10m
+
+*Searches indices from*: now-60m ({ref}/common-options.html#date-math[Date Math format], see also <<rule-schedule, `Additional look-back time`>>)
+
+*Maximum alerts per execution*: 100
+
+*References*: 
+
+* https://www.elastic.co/docs/reference/integrations/gcp_vertexai
+* https://cloud.google.com/vertex-ai/generative-ai/docs/multimodal/request-response-logging
+
+*Tags*: 
+
+* Domain: GenAI
+* Domain: Cloud
+* Data Source: GCP Vertex AI
+* Data Source: GCP
+* Data Source: Google Cloud Platform
+* Platform: GCP
+* Service: GCP Vertex AI
+* Use Case: Threat Detection
+* Tactic: Defense Evasion
+* Threat: Unauthorized AI Usage
+* Mitre Atlas: AML.T0015
+* Resources: Investigation Guide
+* Rule Type: ES|QL
+
+*Version*: 1
+
+*Rule authors*: 
+
+* Elastic
+
+*Rule license*: Elastic License v2
+
+
+==== Investigation guide
+
+
+
+*Triage and analysis*
+
+
+
+*Investigating GCP Vertex AI Publisher Model Config Modified*
+
+
+Someone called `SetPublisherModelConfig` on a publisher model. That API can enable, disable, or
+retarget prompt/response BigQuery logging and related publisher settings. Unexpected changes can
+blind detection (logging off or redirected) or move sensitive prompt data to an unapproved sink.
+
+
+*Possible investigation steps*
+
+
+- Note `@timestamp`, `event.action`, `source.ip`, `client.user.email`,
+  `gcp.vertexai.audit.resource_name`, and `user_agent.original` on the alert.
+- Confirm the actor is an approved platform owner. Check change tickets / IaC pipelines for a
+  matching change.
+- In GCP, verify the publisher model config still points at the expected BigQuery dataset/table and
+  sampling rate.
+- Compare `prompt_response_logs` volume before and after the change for gaps or a sudden destination
+  shift.
+- Hunt for other privilege or config changes by the same principal around the same time.
+
+
+*False positive analysis*
+
+
+- Approved platform engineering work that enables or retargets logging. Validate with the change
+  ticket and expected actor/IP before escalating.
+
+
+*Response and remediation*
+
+
+- Revert unauthorized config to the last known-good logging destination and sampling settings.
+- Restrict IAM who can call `SetPublisherModelConfig`; rotate credentials for the actor if
+  compromise is suspected.
+
+
+==== Setup
+
+
+
+*Setup*
+
+
+Requires GCP Vertex AI `auditlogs` via Pub/Sub sink for `aiplatform.googleapis.com`.
+
+
+==== Rule query
+
+
+[source, js]
+----------------------------------
+from logs-gcp_vertexai.auditlogs-* metadata _id, _version, _index
+| where
+    data_stream.dataset == "gcp_vertexai.auditlogs" and
+    event.action like "*SetPublisherModelConfig*" and
+    (gcp.vertexai.audit.status.code is null or gcp.vertexai.audit.status.code == 0)
+| keep
+    _id,
+    _version,
+    _index,
+    @timestamp,
+    event.action,
+    cloud.project.id,
+    source.ip,
+    gcp.vertexai.audit.service_name,
+    gcp.vertexai.audit.resource_name,
+    client.user.email,
+    user_agent.original
+
+----------------------------------
+
+*Framework*: MITRE ATT&CK^TM^
+
+* Tactic:
+** Name: Defense Evasion
+** ID: TA0005
+** Reference URL: https://attack.mitre.org/tactics/TA0005/
+* Technique:
+** Name: Impair Defenses
+** ID: T1562
+** Reference URL: https://attack.mitre.org/techniques/T1562/
+* Sub-technique:
+** Name: Disable or Modify Cloud Logs
+** ID: T1562.008
+** Reference URL: https://attack.mitre.org/techniques/T1562/008/

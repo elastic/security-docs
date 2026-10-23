@@ -1,0 +1,185 @@
+[[prebuilt-rule-8-19-36-zimbra-swatchdog-snmp-command-injection-execution]]
+=== Zimbra Swatchdog SNMP Command Injection Execution
+
+Detects a Unix shell launched by Perl from a generated Zimbra ".swatchdog_script" when the shell command line contains an "snmptrap" invocation and Zimbra SNMP service fields, followed by an unexpected child process other than "snmptrap". This sequence provides high-confidence evidence of external command execution through CVE-2026-73570, an unauthenticated command-injection vulnerability in Zimbra's SNMP monitoring path.
+
+*Rule type*: eql
+
+*Rule indices*: 
+
+* logs-endpoint.events.process-*
+
+*Severity*: critical
+
+*Risk score*: 99
+
+*Runs every*: 5m
+
+*Searches indices from*: now-9m ({ref}/common-options.html#date-math[Date Math format], see also <<rule-schedule, `Additional look-back time`>>)
+
+*Maximum alerts per execution*: 100
+
+*References*: 
+
+* https://www.microsoft.com/en-us/security/blog/2026/09/30/unauthenticated-command-injection-on-internet-facing-mail-servers-tracking-cve-2026-73570/
+* https://wiki.zimbra.com/wiki/Zimbra_Releases/10.1.20
+* https://wiki.zimbra.com/wiki/Zimbra_Security_Advisories
+* https://www.cisa.gov/known-exploited-vulnerabilities-catalog?search=CVE-2026-73570
+* https://www.pruva.dev/reproductions/REPRO-2026-00327
+
+*Tags*: 
+
+* Domain: Endpoint
+* OS: Linux
+* Use Case: Threat Detection
+* Use Case: Vulnerability
+* Tactic: Initial Access
+* Tactic: Execution
+* Data Source: Elastic Defend
+* Resources: Investigation Guide
+* Threat: Vulnerability Exploit
+* Rule Type: Event Correlation (EQL)
+* Platform: Linux
+* Vuln: CVE-2026-73570
+
+*Version*: 1
+
+*Rule authors*: 
+
+* Elastic
+
+*Rule license*: Elastic License v2
+
+
+==== Investigation guide
+
+
+
+*Triage and analysis*
+
+
+
+*Investigating Zimbra Swatchdog SNMP Command Injection Execution*
+
+
+CVE-2026-73570 affects Zimbra Collaboration installations before 10.1.20 when the optional `zimbra-snmp` package is
+installed, SNMP notifications are enabled, `zmswatch` is running, and SMTP is attacker-reachable. A crafted SMTP
+request can poison `/var/log/zimbra.log` with a forged service-status record. Vulnerable Swatchdog processing captures
+the attacker-controlled service value and interpolates it into a Perl backtick expression, causing a Unix shell to
+interpret shell grammar embedded in an `snmptrap` command.
+
+This rule targets execution immediately after the vulnerable boundary rather than one payload, callback domain, or
+utility. It requires a shell child of Perl, a generated `.swatchdog_script` parent command line, `snmptrap`, the Zimbra
+SNMP service fields, and an additional child process spawned by that shell. A match is very high-confidence evidence
+of command injection, even if a downloaded payload was encoded, changed, or never written to disk. Shell-only payloads
+that use built-ins or redirection without starting another process are outside this rule and require the companion
+network or poisoned-log detection.
+
+
+*Possible investigation steps*
+
+
+- Preserve the complete process tree, command lines, process entity identifiers, executable hashes, environment, open
+  files, network connections, and memory for the matching shell, Perl parent, and descendant processes.
+- Identify the unexpected child process from the second event in the sequence and determine what command, script, or
+  interpreter it executed.
+- Extract the injected command without executing it. Identify callback destinations, downloaded files, output
+  redirection, background execution, decoders, and commands chained after `snmptrap`.
+- Search `/var/log/zimbra.log`, Postfix logs, remote syslog, and rotated records for the preceding forged
+  `Service status change` text and determine the originating SMTP source.
+- Pivot on the shell's `process.entity_id` and descendants for `curl`, `wget`, `ping`, `nslookup`, `id`, interpreters,
+  JSP writes, Java or `jspawnhelper` shells, named pipes, `openssl s_client`, systemd units, PAM or sudo changes,
+  `memfd` execution, Zimbra credential access, SSH or rsync, archive creation, and AzCopy.
+- Review all Zimbra mailbox and MTA peers for matching process ancestry, files, hashes, service units, webshells, and
+  cluster movement. Do not scope the incident to only the first server.
+- Verify the Zimbra release, `zimbra-mta-patch` level, `zimbra-snmp` package state, notification configuration, and
+  whether `zmswatch` was running when the event occurred.
+
+
+*False positive analysis*
+
+
+- Confirm whether an approved security test or detection exercise intentionally generated the process event.
+- Review the full ancestry and command line before considering an exception. Legitimate vulnerable-path monitoring
+  should launch `snmptrap`, but not the additional child process required by this rule.
+- If a benign fixture is confirmed, constrain any exception to the dedicated test host and time window rather than
+  excluding Perl, shells, `snmptrap`, or Zimbra paths globally.
+
+
+*Response and remediation*
+
+
+- Isolate the affected Zimbra node while preserving volatile evidence and mail-flow continuity through a known-clean
+  peer where possible.
+- Upgrade all affected nodes to Zimbra Collaboration 10.1.20 or later. Patching does not remove persistence or prove
+  the server was not previously compromised.
+- Scope every cluster node and remove redundant webshells, unauthorized services, PAM or sudo modifications, SSH keys,
+  local accounts, cron jobs, memory-backed payloads, and remote-access tooling.
+- Rebuild confirmed compromised hosts from trusted media.
+- Rotate Zimbra service credentials, LDAP/MySQL/Postfix/Amavis secrets, domain pre-authentication keys, token-signing
+  keys, exposed two-factor secrets, certificates and private keys, active sessions, and cloud transfer tokens.
+
+
+==== Setup
+
+
+
+*Setup*
+
+
+This rule requires process events from Elastic Defend on every Zimbra MTA and mailbox node. Use a policy that records
+Linux process starts with complete child and parent command lines. Confirm that `process.parent.command_line` retains
+the generated `.swatchdog_script` path and that `process.command_line` retains the shell's `snmptrap` command.
+
+Forward Zimbra and Postfix logs off-host as a companion data source. The matching process sequence proves external
+execution behavior, while the preceding poisoned log record can identify the remote SMTP source and submitted text.
+
+
+==== Rule query
+
+
+[source, js]
+----------------------------------
+sequence by host.id with maxspan=30s
+  [process where
+    host.os.type == "linux" and
+    event.type == "start" and
+    event.action in ("exec", "exec_event", "start") and
+    process.name in ("sh", "bash", "dash", "ash", "zsh", "ksh") and
+    process.parent.name like~ "perl*" and
+    process.parent.command_line like~ "*.swatchdog_script*" and
+    process.command_line like~ "*snmptrap*" and
+    process.command_line like~ "*zmservicename*" and
+    process.command_line like~ "*zmservicestatus*"
+  ] by process.entity_id
+  [process where
+    host.os.type == "linux" and
+    event.type == "start" and
+    event.action in ("exec", "exec_event", "start") and
+    process.name != "snmptrap"
+  ] by process.parent.entity_id
+
+----------------------------------
+
+*Framework*: MITRE ATT&CK^TM^
+
+* Tactic:
+** Name: Execution
+** ID: TA0002
+** Reference URL: https://attack.mitre.org/tactics/TA0002/
+* Technique:
+** Name: Command and Scripting Interpreter
+** ID: T1059
+** Reference URL: https://attack.mitre.org/techniques/T1059/
+* Sub-technique:
+** Name: Unix Shell
+** ID: T1059.004
+** Reference URL: https://attack.mitre.org/techniques/T1059/004/
+* Tactic:
+** Name: Initial Access
+** ID: TA0001
+** Reference URL: https://attack.mitre.org/tactics/TA0001/
+* Technique:
+** Name: Exploit Public-Facing Application
+** ID: T1190
+** Reference URL: https://attack.mitre.org/techniques/T1190/

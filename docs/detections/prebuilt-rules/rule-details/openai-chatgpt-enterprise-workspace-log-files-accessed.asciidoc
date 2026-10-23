@@ -1,0 +1,129 @@
+[[openai-chatgpt-enterprise-workspace-log-files-accessed]]
+=== OpenAI ChatGPT Enterprise Workspace Log Files Accessed
+
+Detects ChatGPT Enterprise audit events where workspace compliance log files are listed or downloaded. Attackers pull audit and conversation exports to understand defender visibility or stage sensitive transcript data before further abuse.
+
+*Rule type*: esql
+
+*Rule indices*: None
+
+*Severity*: medium
+
+*Risk score*: 47
+
+*Runs every*: 5m
+
+*Searches indices from*: now-9m ({ref}/common-options.html#date-math[Date Math format], see also <<rule-schedule, `Additional look-back time`>>)
+
+*Maximum alerts per execution*: 100
+
+*References*: 
+
+* https://www.elastic.co/docs/reference/integrations/openai_chatgpt_enterprise
+* https://platform.openai.com/docs/compliance
+
+*Tags*: 
+
+* Domain: GenAI
+* Platform: OpenAI
+* Data Source: OpenAI ChatGPT Enterprise
+* Service: OpenAI ChatGPT Enterprise
+* Use Case: Threat Detection
+* Resources: Investigation Guide
+* Rule Type: ES|QL
+* Tactic: Collection
+* Mitre Atlas: AML.T0085
+
+*Version*: 1
+
+*Rule authors*: 
+
+* Elastic
+
+*Rule license*: Elastic License v2
+
+
+==== Investigation guide
+
+
+
+*Triage and analysis*
+
+
+
+*Investigating OpenAI ChatGPT Enterprise Workspace Log Files Accessed*
+
+
+A workspace compliance log archive was listed or downloaded by an account user. These exports can include authentication,
+conversation, and Codex activity that is useful for both legitimate compliance work and attacker reconnaissance.
+
+Escalate when the actor is unexpected or exports coincide with other privileged changes. Close as a false positive for
+documented SIEM or compliance collection jobs performed by approved admins.
+
+
+*Possible investigation steps*
+
+
+- Identify the actor (`user.id`, `user.email`) and source IP.
+- Note which log types were requested in `openai_chatgpt_enterprise.audit_log.action_data` (for example AUTH_LOG,
+  CONVERSATION_MESSAGE, or CODEX_LOG).
+- Correlate with other privileged audit activity from the same actor in the surrounding window, such as role changes,
+  invites, or feature toggles.
+- Confirm whether the download matches an approved compliance or SIEM collection workflow.
+
+
+*False positive analysis*
+
+
+- Security and compliance teams routinely download workspace logs for investigations, SIEM ingestion, or regulatory
+  requests when using approved admin accounts.
+
+
+*Response and remediation*
+
+
+- Revoke unauthorized sessions and determine whether export data left the organization.
+- If the download was unauthorized, inventory other exports by the same actor and tighten who can access workspace logs.
+
+
+==== Setup
+
+
+
+*Setup*
+
+
+This rule requires the OpenAI ChatGPT Enterprise integration to collect compliance logs into Elasticsearch.
+
+https://www.elastic.co/docs/reference/integrations/openai_chatgpt_enterprise
+
+
+==== Rule query
+
+
+[source, js]
+----------------------------------
+from logs-openai_chatgpt_enterprise.audit_log-* metadata _id, _version, _index
+| where
+    data_stream.dataset == "openai_chatgpt_enterprise.audit_log" and
+    event.action in ("download_workspace_log_file", "list_workspace_log_files") and
+    openai_chatgpt_enterprise.audit_log.actor.type == "ACCOUNT_USER"
+| keep
+    _id, _version, _index, @timestamp, event.action, user.id, user.email, source.ip,
+    openai_chatgpt_enterprise.audit_log.action_data.event_type,
+    openai_chatgpt_enterprise.audit_log.action_data.log_file_id,
+    openai_chatgpt_enterprise.audit_log.action_privilege,
+    openai_chatgpt_enterprise.audit_log.actor.type, data_stream.*
+
+----------------------------------
+
+*Framework*: MITRE ATT&CK^TM^
+
+* Tactic:
+** Name: Collection
+** ID: TA0009
+** Reference URL: https://attack.mitre.org/tactics/TA0009/
+* Technique:
+** Name: Data from Cloud Storage
+** ID: T1530
+** Reference URL: https://attack.mitre.org/techniques/T1530/

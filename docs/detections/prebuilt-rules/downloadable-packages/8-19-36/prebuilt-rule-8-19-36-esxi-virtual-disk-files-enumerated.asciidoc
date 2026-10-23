@@ -1,0 +1,111 @@
+[[prebuilt-rule-8-19-36-esxi-virtual-disk-files-enumerated]]
+=== ESXi Virtual Disk Files Enumerated
+
+Detects a shell search under `/vmfs/volumes` for virtual disk and snapshot files (`vmdk`, `vmsn`, `vmsd`). Those files are the guest disks and their on-host recovery points. Listing them builds the set of files a later process can encrypt or delete.
+
+*Rule type*: query
+
+*Rule indices*: 
+
+* logs-vsphere.log-*
+
+*Severity*: low
+
+*Risk score*: 21
+
+*Runs every*: 5m
+
+*Searches indices from*: now-9m ({ref}/common-options.html#date-math[Date Math format], see also <<rule-schedule, `Additional look-back time`>>)
+
+*Maximum alerts per execution*: 100
+
+*References*: 
+
+* https://lolesxi-project.github.io/LOLESXi/#
+* https://blogs.vmware.com/security/2022/10/esxi-targeting-ransomware-tactics-and-techniques-part-2.html
+* https://detect.fyi/vmware-esxi-logging-detection-opportunities-4fb56411ec21
+
+*Tags*: 
+
+* Domain: Endpoint
+* Data Source: VMware vSphere
+* Use Case: Threat Detection
+* Tactic: Discovery
+* Resources: Investigation Guide
+* Rule Type: Custom Query (KQL)
+* Platform: VMware ESXi
+* Threat: Ransomware
+
+*Version*: 1
+
+*Rule authors*: 
+
+* Elastic
+
+*Rule license*: Elastic License v2
+
+
+==== Investigation guide
+
+
+
+*Triage and analysis*
+
+
+
+*Investigating ESXi Virtual Disk Files Enumerated*
+
+
+The datastore path and the vmdk family of extensions are how ESXi ransomware chooses what to encrypt. The search itself does not change files.
+
+
+*Possible investigation steps*
+
+
+- Read the exact find arguments in message, including any -name filter.
+- Correlate with later vm process kill, power.off, or snapshot.removeall from the same session.
+- If the command stands alone during a known support window, it is often benign.
+
+
+*False positive analysis*
+
+
+Support bundles and storage reports list virtual disks. Escalation is for a search followed by VM shutdown or snapshot deletion.
+
+
+*Response and remediation*
+
+
+- If the same session starts killing VMs or deleting snapshots, isolate the host.
+- Otherwise record the account and command for hunting across other ESXi hosts.
+
+
+==== Setup
+
+
+
+*Setup*
+
+
+This rule requires ESXi host logs collected by the Elastic vSphere integration: https://www.elastic.co/docs/reference/integrations/vsphere
+
+
+==== Rule query
+
+
+[source, js]
+----------------------------------
+data_stream.dataset:vsphere.log and message:("/vmfs/volumes" and find and (vmdk or vmsd or vmsn))
+
+----------------------------------
+
+*Framework*: MITRE ATT&CK^TM^
+
+* Tactic:
+** Name: Discovery
+** ID: TA0007
+** Reference URL: https://attack.mitre.org/tactics/TA0007/
+* Technique:
+** Name: File and Directory Discovery
+** ID: T1083
+** Reference URL: https://attack.mitre.org/techniques/T1083/

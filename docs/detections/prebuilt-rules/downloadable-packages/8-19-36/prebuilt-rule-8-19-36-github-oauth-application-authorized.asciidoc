@@ -1,0 +1,136 @@
+[[prebuilt-rule-8-19-36-github-oauth-application-authorized]]
+=== GitHub OAuth Application Authorized
+
+Detects when a user authorizes a GitHub OAuth application. Stolen OAuth grants persist after password changes until revoked and can clone or ZIP private repositories. This is not a GitHub App installation (integration_installation.create).
+
+*Rule type*: esql
+
+*Rule indices*: None
+
+*Severity*: low
+
+*Risk score*: 21
+
+*Runs every*: 5m
+
+*Searches indices from*: now-9m ({ref}/common-options.html#date-math[Date Math format], see also <<rule-schedule, `Additional look-back time`>>)
+
+*Maximum alerts per execution*: 100
+
+*References*: 
+
+* https://securitylabs.datadoghq.com/articles/mapping-out-your-unknown-threat-hunters-guide-to-github/
+* https://github.blog/news-insights/company-news/security-alert-stolen-oauth-user-tokens/
+* https://github.blog/news-insights/company-news/security-alert-new-phishing-campaign-targets-github-users/
+* https://docs.github.com/en/apps/oauth-apps/using-oauth-apps/authorizing-oauth-apps
+
+*Tags*: 
+
+* Domain: Cloud
+* Domain: SaaS
+* Domain: Identity
+* Platform: GitHub
+* Profile: Beta
+* Use Case: Threat Detection
+* Tactic: Credential Access
+* Tactic: Persistence
+* Threat: OAuth App Consent
+* Data Source: Github
+* Data Source: GitHub Audit Logs
+* Rule Type: ESQL
+* Resources: Investigation Guide
+
+*Version*: 1
+
+*Rule authors*: 
+
+* Elastic
+
+*Rule license*: Elastic License v2
+
+
+==== Investigation guide
+
+
+
+*Triage and analysis*
+
+
+
+*Investigating GitHub OAuth Application Authorized*
+
+
+`oauth_authorization.create` is a user grant of an OAuth App. It is distinct from installing a GitHub App. After a grant, look for `git.clone` or `repo.download_zip` with `programmatic_access_type` of OAuth access token.
+
+
+*Possible investigation steps*
+
+
+- Identify `user.name`, `github.oauth_application_name` / `github.oauth_application_id`, `github.actor_ip`, and `github.user_agent`.
+- Confirm the app is approved by the organization. Review requested scopes.
+- Pivot to clone, ZIP, and `api.request` activity from the same user shortly after the grant.
+
+
+*False positive analysis*
+
+
+- First-time login to an approved CI, IDE, or SaaS integration.
+
+
+*Response and remediation*
+
+
+- If unauthorized, revoke the OAuth grant and the application's tokens, then force a password reset and session invalidation.
+- Review org third-party application restrictions.
+
+
+==== Rule query
+
+
+[source, js]
+----------------------------------
+from logs-github.audit-* metadata _id, _index, _version
+| where
+  event.module == "github" and data_stream.dataset == "github.audit"
+    and event.action == "oauth_authorization.create"
+| keep
+    _id,
+    _index,
+    _version,
+    @timestamp,
+    event.action,
+    user.name,
+    github.org,
+    github.repo,
+    github.actor_ip,
+    github.hashed_token,
+    github.oauth_application_name,
+    github.oauth_application_id,
+    github.programmatic_access_type,
+    github.user_agent,
+    github.name
+
+----------------------------------
+
+*Framework*: MITRE ATT&CK^TM^
+
+* Tactic:
+** Name: Persistence
+** ID: TA0003
+** Reference URL: https://attack.mitre.org/tactics/TA0003/
+* Technique:
+** Name: Valid Accounts
+** ID: T1078
+** Reference URL: https://attack.mitre.org/techniques/T1078/
+* Sub-technique:
+** Name: Cloud Accounts
+** ID: T1078.004
+** Reference URL: https://attack.mitre.org/techniques/T1078/004/
+* Tactic:
+** Name: Credential Access
+** ID: TA0006
+** Reference URL: https://attack.mitre.org/tactics/TA0006/
+* Technique:
+** Name: Steal Application Access Token
+** ID: T1528
+** Reference URL: https://attack.mitre.org/techniques/T1528/

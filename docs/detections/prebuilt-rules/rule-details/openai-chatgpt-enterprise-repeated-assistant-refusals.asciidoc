@@ -1,0 +1,160 @@
+[[openai-chatgpt-enterprise-repeated-assistant-refusals]]
+=== OpenAI ChatGPT Enterprise Repeated Assistant Refusals
+
+Detects three or more ChatGPT Enterprise assistant messages for the same user whose text matches common policy-refusal phrases (cannot assist, cannot help, cannot fulfill, unable to assist, against my guidelines, and similar) within the lookback window. A refusal burst can indicate jailbreak probing, policy-bypass attempts, or automated unsafe prompting intended to evade model safety controls.
+
+*Rule type*: esql
+
+*Rule indices*: None
+
+*Severity*: high
+
+*Risk score*: 73
+
+*Runs every*: 10m
+
+*Searches indices from*: now-60m ({ref}/common-options.html#date-math[Date Math format], see also <<rule-schedule, `Additional look-back time`>>)
+
+*Maximum alerts per execution*: 100
+
+*References*: 
+
+* https://www.elastic.co/docs/reference/integrations/openai_chatgpt_enterprise
+* https://platform.openai.com/docs/compliance
+
+*Tags*: 
+
+* Domain: GenAI
+* Platform: OpenAI
+* Data Source: OpenAI ChatGPT Enterprise
+* Service: OpenAI ChatGPT Enterprise
+* Use Case: Policy Violation
+* Use Case: Threat Detection
+* Resources: Investigation Guide
+* Rule Type: ES|QL
+* Tactic: Defense Evasion
+* Mitre Atlas: AML.T0051
+* Mitre Atlas: AML.T0054
+
+*Version*: 1
+
+*Rule authors*: 
+
+* Elastic
+
+*Rule license*: Elastic License v2
+
+
+==== Investigation guide
+
+
+
+*Triage and analysis*
+
+
+
+*Investigating OpenAI ChatGPT Enterprise Repeated Assistant Refusals*
+
+
+One user received three or more assistant replies whose text matches common refusal phrasing in the lookback window.
+That pattern can indicate jailbreak probing, attempts to elicit disallowed content, or scripted unsafe prompting.
+
+Escalate when the sampled messages are clear hard refusals, nearby prompts look adversarial, or the same user also
+triggers credential-exposure or unusual Codex MCP activity. Close as a false positive for approved security evaluations
+or partial phrases inside otherwise helpful answers.
+
+
+*Possible investigation steps*
+
+
+- Review `Esql.message_values`, `Esql.event_count`, and `Esql.conversation_id_count_distinct` on the alert.
+- Pull surrounding user messages in the same conversation IDs for jailbreak or malware-request themes.
+- Correlate with credential-in-conversation, Codex MCP, share, and download activity from the same `user.email`.
+- Confirm whether the account is used for approved prompt-security testing.
+
+
+*False positive analysis*
+
+
+- Approved red-team or model-evaluation traffic that intentionally elicits refusals.
+- Soft refusals embedded in longer helpful answers (for example, declining malware assistance while offering defensive
+  guidance).
+
+
+*Response and remediation*
+
+
+- If probing is unauthorized, restrict the account, review recent conversations, and hunt for successful bypasses after
+  the refusal burst.
+- Use confirmed jailbreak prompts to improve prompt-security controls and user awareness where appropriate.
+
+
+==== Setup
+
+
+
+*Setup*
+
+
+This rule requires the OpenAI ChatGPT Enterprise integration to collect conversation message compliance logs into
+Elasticsearch.
+
+https://www.elastic.co/docs/reference/integrations/openai_chatgpt_enterprise
+
+
+==== Rule query
+
+
+[source, js]
+----------------------------------
+from logs-openai_chatgpt_enterprise.conversation_message-*
+| where
+    data_stream.dataset == "openai_chatgpt_enterprise.conversation_message" and
+    openai_chatgpt_enterprise.conversation_message.message.author.type == "assistant" and
+    message is not null and
+    user.email is not null
+| eval Esql.message_text = to_lower(message)
+| where
+    Esql.message_text like "*i can't assist*" or
+    Esql.message_text like "*i can't help*" or
+    Esql.message_text like "*i cannot fulfill*" or
+    Esql.message_text like "*i cannot help*" or
+    Esql.message_text like "*i cannot provide*" or
+    Esql.message_text like "*i can't provide*" or
+    Esql.message_text like "*i will not provide*" or
+    Esql.message_text like "*i won't provide*" or
+    Esql.message_text like "*i cannot answer*" or
+    Esql.message_text like "*i can't answer*" or
+    Esql.message_text like "*unable to assist*" or
+    Esql.message_text like "*against my guidelines*"
+| stats
+    Esql.event_count = count(*),
+    Esql.conversation_id_count_distinct = count_distinct(openai_chatgpt_enterprise.conversation_message.conversation.id),
+    Esql.message_values = values(message),
+    Esql.timestamp_first_seen = min(@timestamp),
+    Esql.timestamp_last_seen = max(@timestamp)
+  by
+    user.email,
+    organization.id
+| where Esql.event_count >= 3
+| keep
+    user.email,
+    organization.id,
+    Esql.event_count,
+    Esql.conversation_id_count_distinct,
+    Esql.message_values,
+    Esql.timestamp_first_seen,
+    Esql.timestamp_last_seen
+
+----------------------------------
+
+*Framework*: MITRE ATT&CK^TM^
+
+* Tactic:
+** Name: Defense Evasion
+** ID: TA0005
+** Reference URL: https://attack.mitre.org/tactics/TA0005/
+* Technique:
+** Name: Impair Defenses
+** ID: T1562
+** Reference URL: https://attack.mitre.org/techniques/T1562/

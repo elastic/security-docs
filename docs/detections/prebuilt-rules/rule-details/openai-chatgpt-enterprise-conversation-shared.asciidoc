@@ -1,0 +1,123 @@
+[[openai-chatgpt-enterprise-conversation-shared]]
+=== OpenAI ChatGPT Enterprise Conversation Shared
+
+Detects ChatGPT Enterprise audit events where a conversation is shared. Sharing can expose prompts, completions, and attached files outside the original conversation participants and may be used to exfiltrate sensitive content.
+
+*Rule type*: esql
+
+*Rule indices*: None
+
+*Severity*: medium
+
+*Risk score*: 47
+
+*Runs every*: 5m
+
+*Searches indices from*: now-9m ({ref}/common-options.html#date-math[Date Math format], see also <<rule-schedule, `Additional look-back time`>>)
+
+*Maximum alerts per execution*: 100
+
+*References*: 
+
+* https://www.elastic.co/docs/reference/integrations/openai_chatgpt_enterprise
+* https://platform.openai.com/docs/compliance
+
+*Tags*: 
+
+* Domain: GenAI
+* Platform: OpenAI
+* Data Source: OpenAI ChatGPT Enterprise
+* Service: OpenAI ChatGPT Enterprise
+* Use Case: Threat Detection
+* Resources: Investigation Guide
+* Rule Type: ES|QL
+* Tactic: Exfiltration
+* Mitre Atlas: AML.T0025
+
+*Version*: 1
+
+*Rule authors*: 
+
+* Elastic
+
+*Rule license*: Elastic License v2
+
+
+==== Investigation guide
+
+
+
+*Triage and analysis*
+
+
+
+*Investigating OpenAI ChatGPT Enterprise Conversation Shared*
+
+
+A conversation was shared. Sharing can expose prompts, responses, and attached context beyond the original participants.
+
+Escalate when the audience is external or overly broad, the conversation contains sensitive data, or sharing coincides with downloads or mass deletion. Close as a false positive for expected collaboration inside the organization.
+
+
+*Possible investigation steps*
+
+
+- Identify the user, conversation, and share-related fields on the alert.
+- Determine the intended audience and whether it matches workspace sharing policy.
+- Review nearby message content, file downloads, or additional shares from the same user.
+- Check whether the conversation includes credentials, proprietary code, or customer data.
+
+
+*False positive analysis*
+
+
+- Users intentionally share conversations for collaboration within the organization when that sharing path is approved.
+
+
+*Response and remediation*
+
+
+- Revoke unauthorized shares and review other sharing activity by the same actor.
+- If sensitive content was exposed, follow your data-incident process for the recipients and channel used.
+
+
+==== Setup
+
+
+
+*Setup*
+
+
+This rule requires the OpenAI ChatGPT Enterprise integration to collect compliance logs into Elasticsearch.
+
+https://www.elastic.co/docs/reference/integrations/openai_chatgpt_enterprise
+
+
+==== Rule query
+
+
+[source, js]
+----------------------------------
+from logs-openai_chatgpt_enterprise.audit_log-* metadata _id, _version, _index
+| where
+    data_stream.dataset == "openai_chatgpt_enterprise.audit_log" and
+    event.action == "conversation_share"
+| keep
+    _id, _version, _index, @timestamp, event.action, user.id, user.email, source.ip,
+    openai_chatgpt_enterprise.audit_log.action_data.conversation_id,
+    openai_chatgpt_enterprise.audit_log.action_data.shared_conversation_id,
+    openai_chatgpt_enterprise.audit_log.action_data.already_exists,
+    openai_chatgpt_enterprise.audit_log.action_privilege, data_stream.*
+
+----------------------------------
+
+*Framework*: MITRE ATT&CK^TM^
+
+* Tactic:
+** Name: Exfiltration
+** ID: TA0010
+** Reference URL: https://attack.mitre.org/tactics/TA0010/
+* Technique:
+** Name: Exfiltration Over Web Service
+** ID: T1567
+** Reference URL: https://attack.mitre.org/techniques/T1567/

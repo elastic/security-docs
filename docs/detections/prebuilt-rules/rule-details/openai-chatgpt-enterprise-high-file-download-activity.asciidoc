@@ -1,0 +1,129 @@
+[[openai-chatgpt-enterprise-high-file-download-activity]]
+=== OpenAI ChatGPT Enterprise High File Download Activity
+
+Detects a high number of ChatGPT Enterprise file download audit events for the same user within a rolling 24-hour lookback. Bulk downloads can indicate staging of conversation attachments or workspace files for exfiltration.
+
+*Rule type*: esql
+
+*Rule indices*: None
+
+*Severity*: medium
+
+*Risk score*: 47
+
+*Runs every*: 1h
+
+*Searches indices from*: now-24h ({ref}/common-options.html#date-math[Date Math format], see also <<rule-schedule, `Additional look-back time`>>)
+
+*Maximum alerts per execution*: 100
+
+*References*: 
+
+* https://www.elastic.co/docs/reference/integrations/openai_chatgpt_enterprise
+* https://platform.openai.com/docs/compliance
+
+*Tags*: 
+
+* Domain: GenAI
+* Platform: OpenAI
+* Data Source: OpenAI ChatGPT Enterprise
+* Service: OpenAI ChatGPT Enterprise
+* Use Case: Threat Detection
+* Resources: Investigation Guide
+* Rule Type: ES|QL
+* Tactic: Exfiltration
+* Mitre Atlas: AML.T0025
+
+*Version*: 1
+
+*Rule authors*: 
+
+* Elastic
+
+*Rule license*: Elastic License v2
+
+
+==== Investigation guide
+
+
+
+*Triage and analysis*
+
+
+
+*Investigating OpenAI ChatGPT Enterprise High File Download Activity*
+
+
+One user downloaded a large number of files in a rolling 24-hour window. Bulk downloads can stage conversation
+attachments or workspace files for exfiltration.
+
+Escalate when there is no business justification, downloads coincide with unusual geo or user agents, or shares and deletions follow. Close as a false positive for approved research, migration, or export projects.
+
+
+*Possible investigation steps*
+
+
+- Review `Esql.event_count` and file identifiers associated with the user.
+- Check nearby conversation or share activity and whether downloads align with an approved project.
+- Compare source IP, geo, and user agent with the user's normal baseline.
+- Determine where downloaded content may have been stored or forwarded.
+
+
+*False positive analysis*
+
+
+- Users downloading many attachments during legitimate research, migration, or e-discovery work.
+
+
+*Response and remediation*
+
+
+- Suspend access if the downloads appear unauthorized and inventory the downloaded content.
+- Revoke sessions and review other exfiltration-oriented activity by the same user.
+
+
+==== Setup
+
+
+
+*Setup*
+
+
+This rule requires the OpenAI ChatGPT Enterprise integration to collect compliance logs into Elasticsearch.
+
+https://www.elastic.co/docs/reference/integrations/openai_chatgpt_enterprise
+
+
+==== Rule query
+
+
+[source, js]
+----------------------------------
+from logs-openai_chatgpt_enterprise.audit_log-*
+| where
+    data_stream.dataset == "openai_chatgpt_enterprise.audit_log" and
+    event.action == "file_download" and
+    user.id is not null
+| stats
+    Esql.event_count = count(*),
+    Esql.file_id_values = values(openai_chatgpt_enterprise.audit_log.action_data.file_id),
+    Esql.file_format_values = values(openai_chatgpt_enterprise.audit_log.action_data.file_format),
+    Esql.source_ip_values = values(source.ip),
+    Esql.timestamp_first_seen = min(@timestamp),
+    Esql.timestamp_last_seen = max(@timestamp)
+  by user.id, user.email
+| where Esql.event_count >= 30
+| keep user.id, user.email, Esql.*
+
+----------------------------------
+
+*Framework*: MITRE ATT&CK^TM^
+
+* Tactic:
+** Name: Exfiltration
+** ID: TA0010
+** Reference URL: https://attack.mitre.org/tactics/TA0010/
+* Technique:
+** Name: Exfiltration Over Web Service
+** ID: T1567
+** Reference URL: https://attack.mitre.org/techniques/T1567/

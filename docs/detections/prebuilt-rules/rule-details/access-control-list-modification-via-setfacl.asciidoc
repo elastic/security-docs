@@ -46,7 +46,7 @@ This rule detects Linux Access Control List (ACL) modification via the setfacl c
 * Rule Type: Event Correlation (EQL)
 * Platform: Linux
 
-*Version*: 108
+*Version*: 110
 
 *Rule authors*: 
 
@@ -109,14 +109,15 @@ Access Control Lists (ACLs) in Linux enhance file permission management by allow
 ----------------------------------
 process where host.os.type == "linux" and event.type == "start" and
 event.action in ("exec", "exec_event", "start", "ProcessRollup2", "executed", "process_started") and
-process.name == "setfacl" and not (
+process.name == "setfacl" and
+not (
   ?process.parent.executable in (
     "/opt/puppetlabs/puppet/bin/ruby", "/usr/libexec/dirsrv/ds_systemd_ask_password_acl", "/usr/lib/systemd/systemd-udevd",
     "/usr/bin/udevadm", "/usr/sbin/ds_systemd_ask_password_acl", "/usr/bin/su", "/bin/su"
   ) or
   process.command_line == "/bin/setfacl --restore=-" or
   process.args == "/var/log/journal/" or
-  ?process.parent.name in ("stats.pl", "perl", "find") or
+  process.parent.name in ("stats.pl", "perl", "find") or
   ?process.parent.command_line like~ "*ansible*" or
   ?process.parent.args == "/opt/audit-log-acl.sh"
 )

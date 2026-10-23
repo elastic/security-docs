@@ -1,0 +1,131 @@
+[[openai-chatgpt-enterprise-codex-security-scan-configuration-changed]]
+=== OpenAI ChatGPT Enterprise Codex Security Scan Configuration Changed
+
+Detects ChatGPT Enterprise Codex security-log events that create or update a repository scan configuration. Changing scan scope, lookback, or notification rules can weaken secrets scanning coverage or redirect findings.
+
+*Rule type*: esql
+
+*Rule indices*: None
+
+*Severity*: medium
+
+*Risk score*: 47
+
+*Runs every*: 5m
+
+*Searches indices from*: now-9m ({ref}/common-options.html#date-math[Date Math format], see also <<rule-schedule, `Additional look-back time`>>)
+
+*Maximum alerts per execution*: 100
+
+*References*: 
+
+* https://www.elastic.co/docs/reference/integrations/openai_chatgpt_enterprise
+* https://platform.openai.com/docs/compliance
+
+*Tags*: 
+
+* Domain: GenAI
+* Platform: OpenAI
+* Data Source: OpenAI ChatGPT Enterprise
+* Service: OpenAI ChatGPT Enterprise
+* Use Case: Threat Detection
+* Resources: Investigation Guide
+* Rule Type: ES|QL
+* Tactic: Defense Evasion
+* Mitre Atlas: AML.T0081
+
+*Version*: 1
+
+*Rule authors*: 
+
+* Elastic
+
+*Rule license*: Elastic License v2
+
+
+==== Investigation guide
+
+
+
+*Triage and analysis*
+
+
+
+*Investigating OpenAI ChatGPT Enterprise Codex Security Scan Configuration Changed*
+
+
+A Codex security scan configuration was created or updated. Changes to repository scope, lookback, or notification rules can weaken secrets-scanning coverage or redirect findings.
+
+Escalate when the repository is unexpected, notification targets change, or the actor is not on the security engineering team. Close as a false positive for documented onboarding or tuning of approved repositories.
+
+
+*Possible investigation steps*
+
+
+- Identify the actor and the scan configuration fields on the alert (repository URL, scan type, state, lookback).
+- Confirm repository ownership and whether the change matches an approved security-engineering request.
+- Review related Codex security findings or follow-on activity after the configuration change.
+- Compare with other admin or security-configuration changes by the same actor.
+
+
+*False positive analysis*
+
+
+- Security engineering teams legitimately onboard repositories and tune scan lookback windows during rollout.
+
+
+*Response and remediation*
+
+
+- Revert unauthorized scan configuration changes and review related findings.
+- If coverage was reduced, restore the prior configuration and investigate why it was changed.
+
+
+==== Setup
+
+
+
+*Setup*
+
+
+This rule requires the OpenAI ChatGPT Enterprise integration to collect compliance logs into Elasticsearch.
+
+https://www.elastic.co/docs/reference/integrations/openai_chatgpt_enterprise
+
+
+==== Rule query
+
+
+[source, js]
+----------------------------------
+from logs-openai_chatgpt_enterprise.codex_security_log-* metadata _id, _version, _index
+| where
+    data_stream.dataset == "openai_chatgpt_enterprise.codex_security_log" and
+    event.action in ("scan_configuration_created", "scan_configuration_updated")
+| keep
+    _id, _version, _index, @timestamp, event.action, user.id, user.email,
+    openai_chatgpt_enterprise.codex_security_log.client_id,
+    openai_chatgpt_enterprise.codex_security_log.workspace_id,
+    openai_chatgpt_enterprise.codex_security_log.event_details.scan_configuration_id,
+    openai_chatgpt_enterprise.codex_security_log.event_details.scan_configuration_fields.repo_url,
+    openai_chatgpt_enterprise.codex_security_log.event_details.scan_configuration_fields.scan_type,
+    openai_chatgpt_enterprise.codex_security_log.event_details.scan_configuration_fields.state,
+    openai_chatgpt_enterprise.codex_security_log.event_details.scan_configuration_fields.lookback_days,
+    data_stream.*
+
+----------------------------------
+
+*Framework*: MITRE ATT&CK^TM^
+
+* Tactic:
+** Name: Defense Evasion
+** ID: TA0005
+** Reference URL: https://attack.mitre.org/tactics/TA0005/
+* Technique:
+** Name: Impair Defenses
+** ID: T1562
+** Reference URL: https://attack.mitre.org/techniques/T1562/
+* Sub-technique:
+** Name: Disable or Modify Tools
+** ID: T1562.001
+** Reference URL: https://attack.mitre.org/techniques/T1562/001/

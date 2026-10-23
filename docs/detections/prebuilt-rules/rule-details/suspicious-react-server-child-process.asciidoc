@@ -52,7 +52,7 @@ This rule detects suspicious child process activity from a React server applicat
 * Vuln: CVE-2025-66478
 * Threat: React2Shell
 
-*Version*: 4
+*Version*: 6
 
 *Rule authors*: 
 
@@ -139,14 +139,16 @@ and (
     "*react-dom*", "*.next*", "*node_modules/next*", "*react-server*", "*bin/next*", "*.pnpm/next*", "*next/dist/server*", "*react-scripts*") or
   (
     process.parent.name in ("node", "bun", "node.exe", "bun.exe") and
-    process.parent.command_line : (
-      "*react-dom*", "*.next*", "*node_modules/next*", "*react-server*", "*next-server*", "* server.js*",  "*start-server.js*", "*bin/next*",
-      "*--experimental-https*", "*app/server*", "*.pnpm/next*", "*next start*", "*next dev*", "*react-scripts start*", "*next/dist/server*"
+    (
+      ?process.parent.command_line : (
+        "*react-dom*", "*.next*", "*node_modules/next*", "*react-server*", "*next-server*", "* server.js*",  "*start-server.js*", "*bin/next*",
+        "*--experimental-https*", "*app/server*", "*.pnpm/next*", "*next start*", "*next dev*", "*react-scripts start*", "*next/dist/server*"
+      ) and ?process.parent.command_line != null
     )
   )
 ) and not (
-  ?process.parent.executable in ("./runc", "/opt/google/chrome/chrome") or
-  process.command_line like "/bin/sh -c git config*"
+  (?process.parent.executable in ("./runc", "/opt/google/chrome/chrome") and ?process.parent.executable != null) or
+  (?process.command_line like "/bin/sh -c git config*" and ?process.command_line != null)
 )
 
 ----------------------------------

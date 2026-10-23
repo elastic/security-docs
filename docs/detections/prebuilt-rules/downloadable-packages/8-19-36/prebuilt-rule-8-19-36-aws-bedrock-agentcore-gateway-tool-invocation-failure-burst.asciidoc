@@ -1,0 +1,118 @@
+[[prebuilt-rule-8-19-36-aws-bedrock-agentcore-gateway-tool-invocation-failure-burst]]
+=== AWS Bedrock AgentCore Gateway Tool Invocation Failure Burst
+
+Identifies a burst of failed tool invocations against a single AWS Bedrock AgentCore Gateway within a short window. Individual tool calls fail routinely from bad input or transient upstream errors, but a concentrated run of failures against one gateway can indicate an attacker, or a compromised tool wrapper, probing a tool's parameter surface for an injection point, an authorization bypass, or a schema weakness. Failures can be attributed only to the gateway, not to a specific tool, target, or caller, and a target that is broken for every caller produces the same burst as one caller probing it, so confirm gateway and target health before treating a burst as malicious.
+
+*Rule type*: threshold
+
+*Rule indices*: 
+
+* logs-aws_bedrock_agentcore.gateway_application_logs-*
+
+*Severity*: medium
+
+*Risk score*: 47
+
+*Runs every*: 10m
+
+*Searches indices from*: now-60m ({ref}/common-options.html#date-math[Date Math format], see also <<rule-schedule, `Additional look-back time`>>)
+
+*Maximum alerts per execution*: 100
+
+*References*: 
+
+* https://docs.aws.amazon.com/bedrock-agentcore/latest/devguide/gateway.html
+
+*Tags*: 
+
+* Domain: Cloud
+* Domain: GenAI
+* Platform: AWS
+* Data Source: AWS Bedrock
+* Service: AWS Bedrock
+* Use Case: Threat Detection
+* Tactic: Initial Access
+* Threat: Unauthorized AI Usage
+* Rule Type: Threshold
+* Mitre Atlas: AML.T0053
+* Resources: Investigation Guide
+* Profile: Beta
+
+*Version*: 1
+
+*Rule authors*: 
+
+* Elastic
+
+*Rule license*: Elastic License v2
+
+
+==== Investigation guide
+
+
+
+*Triage and analysis*
+
+
+
+*Investigating AWS Bedrock AgentCore Gateway Tool Invocation Failure Burst*
+
+
+This rule detects many failed tool invocations against one AgentCore Gateway in a short window.
+
+
+*Possible investigation steps*
+
+
+- Determine whether the gateway's target is simply unhealthy: review the target's upstream service, recent deployments,
+  and any credential or permission changes. A target failing for every caller is the most common cause.
+- Review `aws.bedrock_agentcore.gateway.payload_object` on the failing events; the nested `log` field contains the
+  underlying error (message, type, stack) and helps separate a genuine fault from probing.
+- Identify the gateway from `aws.bedrock_agentcore.gateway.resource_arn` and confirm which tools and targets it fronts.
+- The alert count reflects distinct failed invocations (deduplicated by `aws.bedrock_agentcore.gateway.request_id`),
+  not raw log lines.
+- Correlate with the AgentCore runtime logs for the same window to identify the agent or session driving the calls,
+  since the gateway error events do not carry a caller identity.
+
+
+*False positive analysis*
+
+
+- A broken or misconfigured target fails identically for all callers and will trigger this rule. The error events carry
+  no caller, target, or tool identity, so separating probing from an outage requires reviewing target health.
+
+
+*Response and remediation*
+
+
+- If the underlying errors indicate varied or malformed inputs rather than a plain outage, treat the calling agent
+  context as potentially compromised, review its tool configuration and input validation, and restrict the gateway
+  target's permissions.
+
+
+==== Setup
+
+
+The AWS Bedrock AgentCore integration must be enabled with the gateway_application_logs data stream collecting into logs-aws_bedrock_agentcore.gateway_application_logs-*.
+
+
+==== Rule query
+
+
+[source, js]
+----------------------------------
+data_stream.dataset: "aws_bedrock_agentcore.gateway_application_logs" and
+aws.bedrock_agentcore.gateway.payload_object.isError: "true"
+
+----------------------------------
+
+*Framework*: MITRE ATT&CK^TM^
+
+* Tactic:
+** Name: Initial Access
+** ID: TA0001
+** Reference URL: https://attack.mitre.org/tactics/TA0001/
+* Technique:
+** Name: Exploit Public-Facing Application
+** ID: T1190
+** Reference URL: https://attack.mitre.org/techniques/T1190/

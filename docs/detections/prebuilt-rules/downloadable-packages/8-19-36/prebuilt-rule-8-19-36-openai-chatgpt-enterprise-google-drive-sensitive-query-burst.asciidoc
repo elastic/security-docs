@@ -1,0 +1,187 @@
+[[prebuilt-rule-8-19-36-openai-chatgpt-enterprise-google-drive-sensitive-query-burst]]
+=== OpenAI ChatGPT Enterprise Google Drive Sensitive Query Burst
+
+Detects a ChatGPT Enterprise user issuing five or more distinct Google Drive app search queries in a five-minute bucket where at least one query matches sensitive-data themes (payroll, payslip, confidential, payment, NDA, credentials, and similar). Adversaries who abuse a linked Drive connector after session compromise often run rapid multi-term searches to locate high-value files before download or sharing.
+
+*Rule type*: esql
+
+*Rule indices*: None
+
+*Severity*: medium
+
+*Risk score*: 47
+
+*Runs every*: 5m
+
+*Searches indices from*: now-30m ({ref}/common-options.html#date-math[Date Math format], see also <<rule-schedule, `Additional look-back time`>>)
+
+*Maximum alerts per execution*: 100
+
+*References*: 
+
+* https://www.elastic.co/docs/reference/integrations/openai_chatgpt_enterprise
+* https://platform.openai.com/docs/compliance
+
+*Tags*: 
+
+* Domain: GenAI
+* Platform: OpenAI
+* Data Source: OpenAI ChatGPT Enterprise
+* Service: OpenAI ChatGPT Enterprise
+* Use Case: Threat Detection
+* Resources: Investigation Guide
+* Rule Type: ES|QL
+* Tactic: Collection
+* Tactic: Discovery
+* Mitre Atlas: AML.T0053
+* Mitre Atlas: AML.T0085
+
+*Version*: 1
+
+*Rule authors*: 
+
+* Elastic
+
+*Rule license*: Elastic License v2
+
+
+==== Investigation guide
+
+
+
+*Triage and analysis*
+
+
+
+*Investigating OpenAI ChatGPT Enterprise Google Drive Sensitive Query Burst*
+
+
+One user ran five or more distinct Google Drive searches in five minutes, with at least one query matching
+sensitive-data themes. That pattern can indicate using ChatGPT's Google Drive connector to discover payroll,
+confidential, payment, NDA, or credential-related files ahead of collection or exfiltration.
+
+Escalate when queries look like bulk sensitive discovery, downloads or shares follow, or the actor is unexpected for
+those document types. Close as a false positive for approved HR, legal, or finance research.
+
+
+*Possible investigation steps*
+
+
+- Review `Esql.query_values`, `Esql.sensitive_query_count`, and `Esql.query_count_distinct` on the alert.
+- Correlate with nearby conversation messages asking ChatGPT to search or download Drive files.
+- Check subsequent file downloads, conversation shares, or Codex MCP Drive tool calls from the same user.
+- Confirm whether the Google Drive connector is approved for that user and whether the search matches their role.
+
+
+*False positive analysis*
+
+
+- HR, payroll, legal, and vendor teams commonly search for NDA, payroll, or contract terms.
+- Raise `Esql.query_count_distinct` (default 5) or `Esql.sensitive_query_count` above your baseline if approved roles
+  remain noisy.
+
+
+*Response and remediation*
+
+
+- If unauthorized, revoke Google Drive connector access for the user, review retrieved files, and treat exposed
+  documents per your data-incident process.
+- Hunt for follow-on downloads, shares, or external forwarding of the matched content.
+
+
+==== Setup
+
+
+
+*Setup*
+
+
+This rule requires the OpenAI ChatGPT Enterprise integration to collect `app_log` events for the Google Drive app,
+including request logs with `openai_chatgpt_enterprise.app_log.query` populated.
+
+https://www.elastic.co/docs/reference/integrations/openai_chatgpt_enterprise
+
+
+==== Rule query
+
+
+[source, js]
+----------------------------------
+from logs-openai_chatgpt_enterprise.app_log-*
+| where
+    data_stream.dataset == "openai_chatgpt_enterprise.app_log" and
+    openai_chatgpt_enterprise.app_log.app_name == "Google Drive" and
+    openai_chatgpt_enterprise.app_log.log_type == "request" and
+    openai_chatgpt_enterprise.app_log.query is not null and
+    user.email is not null
+| eval Esql.query_text = to_lower(openai_chatgpt_enterprise.app_log.query)
+| eval Esql.is_sensitive = case(
+    Esql.query_text like "*payslip*" or
+    Esql.query_text like "*payroll*" or
+    Esql.query_text like "*salary*" or
+    Esql.query_text like "*compensation*" or
+    Esql.query_text like "*confidential*" or
+    Esql.query_text like "*privileged*" or
+    Esql.query_text like "*payment*" or
+    Esql.query_text like "*ssn*" or
+    Esql.query_text like "*social security*" or
+    Esql.query_text like "*passport*" or
+    Esql.query_text like "*bank account*" or
+    Esql.query_text like "*w2*" or
+    Esql.query_text like "*w-2*" or
+    Esql.query_text like "*tax return*" or
+    Esql.query_text like "*offer letter*" or
+    Esql.query_text like "*nda*" or
+    Esql.query_text like "*secret*" or
+    Esql.query_text like "*password*" or
+    Esql.query_text like "*api key*" or
+    Esql.query_text like "*credential*",
+    1,
+    0
+)
+| eval Esql.time_bucket = date_trunc(5 minutes, @timestamp)
+| stats
+    Esql.query_count_distinct = count_distinct(openai_chatgpt_enterprise.app_log.query),
+    Esql.event_count = count(*),
+    Esql.sensitive_query_count = sum(Esql.is_sensitive),
+    Esql.query_values = values(openai_chatgpt_enterprise.app_log.query),
+    Esql.timestamp_first_seen = min(@timestamp),
+    Esql.timestamp_last_seen = max(@timestamp)
+  by
+    user.email,
+    organization.id,
+    Esql.time_bucket
+| where
+    Esql.query_count_distinct >= 5 and
+    Esql.sensitive_query_count >= 1
+| keep
+    user.email,
+    organization.id,
+    Esql.time_bucket,
+    Esql.query_count_distinct,
+    Esql.sensitive_query_count,
+    Esql.event_count,
+    Esql.query_values,
+    Esql.timestamp_first_seen,
+    Esql.timestamp_last_seen
+
+----------------------------------
+
+*Framework*: MITRE ATT&CK^TM^
+
+* Tactic:
+** Name: Collection
+** ID: TA0009
+** Reference URL: https://attack.mitre.org/tactics/TA0009/
+* Technique:
+** Name: Data from Information Repositories
+** ID: T1213
+** Reference URL: https://attack.mitre.org/techniques/T1213/
+* Tactic:
+** Name: Discovery
+** ID: TA0007
+** Reference URL: https://attack.mitre.org/tactics/TA0007/
+* Technique:
+** Name: File and Directory Discovery
+** ID: T1083
+** Reference URL: https://attack.mitre.org/techniques/T1083/

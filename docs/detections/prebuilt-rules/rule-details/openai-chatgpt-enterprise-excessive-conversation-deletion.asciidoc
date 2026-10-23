@@ -1,0 +1,128 @@
+[[openai-chatgpt-enterprise-excessive-conversation-deletion]]
+=== OpenAI ChatGPT Enterprise Excessive Conversation Deletion
+
+Detects an unusually high number of ChatGPT Enterprise conversation deletion events for the same user within a rolling 24-hour lookback. Mass deletion can indicate an attempt to remove conversation history or cover tracks after misuse.
+
+*Rule type*: esql
+
+*Rule indices*: None
+
+*Severity*: medium
+
+*Risk score*: 47
+
+*Runs every*: 1h
+
+*Searches indices from*: now-24h ({ref}/common-options.html#date-math[Date Math format], see also <<rule-schedule, `Additional look-back time`>>)
+
+*Maximum alerts per execution*: 100
+
+*References*: 
+
+* https://www.elastic.co/docs/reference/integrations/openai_chatgpt_enterprise
+* https://platform.openai.com/docs/compliance
+
+*Tags*: 
+
+* Domain: GenAI
+* Platform: OpenAI
+* Data Source: OpenAI ChatGPT Enterprise
+* Service: OpenAI ChatGPT Enterprise
+* Use Case: Threat Detection
+* Resources: Investigation Guide
+* Rule Type: ES|QL
+* Use Case: UEBA
+* Tactic: Defense Evasion
+* Mitre Atlas: AML.T0092
+
+*Version*: 1
+
+*Rule authors*: 
+
+* Elastic
+
+*Rule license*: Elastic License v2
+
+
+==== Investigation guide
+
+
+
+*Triage and analysis*
+
+
+
+*Investigating OpenAI ChatGPT Enterprise Excessive Conversation Deletion*
+
+
+One user deleted a large number of conversations in a rolling 24-hour window. Mass deletion can remove useful
+investigative context after misuse or data staging.
+
+Escalate when deletions follow downloads, shares, or credential-bearing prompts, or when the user has no retention-cleanup role. Close as a false positive for documented retention cleanup or migration tooling.
+
+
+*Possible investigation steps*
+
+
+- Capture conversation identifiers from the alert while they remain in audit history.
+- Review `Esql.event_count` and the time window for the user.
+- Compare with preceding file downloads, conversation shares, or prompts containing secrets from the same user.
+- Confirm whether a retention or migration process accounts for the volume.
+
+
+*False positive analysis*
+
+
+- Approved retention cleanup jobs and workspace migration tooling can delete many conversations in a short period.
+
+
+*Response and remediation*
+
+
+- Preserve remaining audit exports, revoke sessions if the activity appears malicious, and investigate prior data access by the same user.
+
+
+==== Setup
+
+
+
+*Setup*
+
+
+This rule requires the OpenAI ChatGPT Enterprise integration to collect compliance logs into Elasticsearch.
+
+https://www.elastic.co/docs/reference/integrations/openai_chatgpt_enterprise
+
+
+==== Rule query
+
+
+[source, js]
+----------------------------------
+from logs-openai_chatgpt_enterprise.audit_log-*
+| where
+    data_stream.dataset == "openai_chatgpt_enterprise.audit_log" and
+    event.action == "conversation_delete" and
+    user.id is not null
+| stats
+    Esql.event_count = count(*),
+    Esql.conversation_id_values = values(openai_chatgpt_enterprise.audit_log.action_data.conversation_id),
+    Esql.source_ip_values = values(source.ip),
+    Esql.timestamp_first_seen = min(@timestamp),
+    Esql.timestamp_last_seen = max(@timestamp)
+  by user.id, user.email
+| where Esql.event_count >= 20
+| keep user.id, user.email, Esql.*
+
+----------------------------------
+
+*Framework*: MITRE ATT&CK^TM^
+
+* Tactic:
+** Name: Defense Evasion
+** ID: TA0005
+** Reference URL: https://attack.mitre.org/tactics/TA0005/
+* Technique:
+** Name: Indicator Removal
+** ID: T1070
+** Reference URL: https://attack.mitre.org/techniques/T1070/

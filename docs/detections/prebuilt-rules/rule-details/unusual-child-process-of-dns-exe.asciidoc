@@ -56,7 +56,7 @@ Identifies an unexpected process spawning from dns.exe, the process responsible 
 * Rule Type: Event Correlation (EQL)
 * Platform: Windows
 
-*Version*: 321
+*Version*: 323
 
 *Rule authors*: 
 
@@ -158,16 +158,19 @@ This rule also supports the following third-party data sources. For setup instru
 ----------------------------------
 process where host.os.type == "windows" and event.type == "start" and
   process.parent.name : "dns.exe" and
-  not process.executable : (
-    "?:\\Windows\\System32\\conhost.exe",
-    "?:\\Windows\\System32\\dns.exe",
-
-    /* Crowdstrike specific exclusion as it uses NT Object paths */
-    "\\Device\\HarddiskVolume*\\Windows\\System32\\conhost.exe",
-    "\\Device\\HarddiskVolume*\\Windows\\System32\\dns.exe",
-    "\\Device\\HarddiskVolume*\\Program Files\\ReasonLabs\\*"
-  ) and
-  not ?process.parent.executable : "?:\\Program Files\\ReasonLabs\\DNS\\ui\\DNS.exe"
+  not (
+    process.executable : (
+      "?:\\Windows\\System32\\conhost.exe",
+      "?:\\Windows\\System32\\dns.exe",
+      /* Crowdstrike specific exclusion as it uses NT Object paths */
+      "\\Device\\HarddiskVolume*\\Windows\\System32\\conhost.exe",
+      "\\Device\\HarddiskVolume*\\Windows\\System32\\dns.exe",
+      "\\Device\\HarddiskVolume*\\Program Files\\ReasonLabs\\*"
+    ) or
+    (
+      ?process.parent.executable : "?:\\Program Files\\ReasonLabs\\DNS\\ui\\DNS.exe"
+    )
+  )
 
 ----------------------------------
 

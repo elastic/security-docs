@@ -3,7 +3,7 @@
 
 This rule identifies the execution of commands that can be used to query the Windows Registry. Adversaries may query the registry to gain situational awareness about the host, like installed security software, programs and settings.
 
-*Rule type*: new_terms
+*Rule type*: eql
 
 *Rule indices*: 
 
@@ -13,9 +13,9 @@ This rule identifies the execution of commands that can be used to query the Win
 
 *Risk score*: 21
 
-*Runs every*: 12h
+*Runs every*: 5m
 
-*Searches indices from*: now-24h ({ref}/common-options.html#date-math[Date Math format], see also <<rule-schedule, `Additional look-back time`>>)
+*Searches indices from*: now-9m ({ref}/common-options.html#date-math[Date Math format], see also <<rule-schedule, `Additional look-back time`>>)
 
 *Maximum alerts per execution*: 100
 
@@ -29,10 +29,10 @@ This rule identifies the execution of commands that can be used to query the Win
 * Tactic: Discovery
 * Rule Type: BBR
 * Data Source: Elastic Defend
-* Rule Type: New Terms
+* Rule Type: Event Correlation (EQL)
 * Platform: Windows
 
-*Version*: 109
+*Version*: 110
 
 *Rule authors*: 
 
@@ -46,22 +46,17 @@ This rule identifies the execution of commands that can be used to query the Win
 
 [source, js]
 ----------------------------------
-host.os.type:windows and event.category:process and event.type:start and
+process where host.os.type == "windows" and event.type == "start" and
   (
-    (process.name.caseless:"reg.exe" and process.args:"query") or
-    (process.name.caseless:("powershell.exe" or "powershell_ise.exe" or "pwsh.exe") and
-     process.args:(
-       ("get-childitem" or "Get-ChildItem" or "gci" or "dir" or "ls" or
-        "get-item" or "Get-Item" or "gi" or
-        "get-itemproperty" or "Get-ItemProperty" or "gp") and
-       ("hkcu" or "HKCU" or "hkey_current_user" or "HKEY_CURRENT_USER" or
-        "hkey_local_machine" or "HKEY_LOCAL_MACHINE" or
-        "hklm" or "HKLM" or registry\:\:*)
-      )
+    (process.name : "reg.exe" and process.args : "query") or
+    (
+      process.name : ("powershell.exe", "powershell_ise.exe", "pwsh.exe") and
+      process.args : ("get-childitem", "gci", "dir", "ls", "get-item", "gi", "get-itemproperty", "gp") and
+      process.args : ("hkcu", "hkey_current_user", "hkey_local_machine", "hklm", "registry::*")
     )
   ) and
   not process.command_line : (
-    "C:\\Windows\\system32\\reg.exe  query hklm\\software\\microsoft\\windows\\softwareinventorylogging /v collectionstate /reg:64" or
+    "C:\\Windows\\system32\\reg.exe  query hklm\\software\\microsoft\\windows\\softwareinventorylogging /v collectionstate /reg:64",
     "reg  query \"HKLM\\Software\\WOW6432Node\\Npcap\" /ve  "
   )
 

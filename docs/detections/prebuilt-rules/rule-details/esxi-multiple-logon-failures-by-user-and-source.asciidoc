@@ -1,0 +1,131 @@
+[[esxi-multiple-logon-failures-by-user-and-source]]
+=== ESXi Multiple Logon Failures by User and Source
+
+Detects three or more failed ESXi logons for the same account from the same remote address within 10 minutes. Hostd records each failure from `pam_do_authenticate` with the login name and `rhost`. Repeated failures from one source are password guessing against that account and can lock it or come just before a successful login.
+
+*Rule type*: esql
+
+*Rule indices*: None
+
+*Severity*: medium
+
+*Risk score*: 47
+
+*Runs every*: 5m
+
+*Searches indices from*: now-9m ({ref}/common-options.html#date-math[Date Math format], see also <<rule-schedule, `Additional look-back time`>>)
+
+*Maximum alerts per execution*: 100
+
+*References*: 
+
+* https://lolesxi-project.github.io/LOLESXi/#
+* https://blogs.vmware.com/security/2022/10/esxi-targeting-ransomware-tactics-and-techniques-part-2.html
+* https://detect.fyi/vmware-esxi-logging-detection-opportunities-4fb56411ec21
+
+*Tags*: 
+
+* Domain: Endpoint
+* Data Source: VMware vSphere
+* Use Case: Threat Detection
+* Tactic: Credential Access
+* Resources: Investigation Guide
+* Rule Type: ES|QL
+* Platform: VMware ESXi
+
+*Version*: 1
+
+*Rule authors*: 
+
+* Elastic
+
+*Rule license*: Elastic License v2
+
+
+==== Investigation guide
+
+
+
+*Triage and analysis*
+
+
+
+*Investigating ESXi Multiple Logon Failures by User and Source*
+
+
+Each failed Host Client or API logon is a hostd line pam_do_authenticate: error with rhost=<address> and
+login:<account>. The query uses GROK to take those two values from message, then counts failures for the
+same account and remote address. The rule lookback is 9 minutes, and the alert requires at least 3 failures
+within 10 minutes apart.
+
+
+*Possible investigation steps*
+
+
+- Read user.name, source.ip, and Esql.failure_count.
+- Compare source.ip with known jump hosts and administrator workstations.
+- Look for a following Accepted password for user for the same account from that address.
+- On the host, check whether the account is locked: esxcli system account list.
+
+
+*False positive analysis*
+
+
+A short run of mistyped passwords from one workstation is commonly benign. Failures from an unknown address, or failures followed by a successful login, deserve review.
+
+
+*Response and remediation*
+
+
+- If the source is not approved, block it and rotate the targeted account password.
+- Unlock the account if the lockout threshold was reached and the activity was not approved.
+- Preserve hostd.log for the source address and account.
+
+
+==== Setup
+
+
+
+*Setup*
+
+
+This rule requires ESXi host logs collected by the Elastic vSphere integration: https://www.elastic.co/docs/reference/integrations/vsphere
+
+
+==== Rule query
+
+
+[source, js]
+----------------------------------
+FROM logs-vsphere.log-*
+| WHERE data_stream.dataset == "vsphere.log" AND event.module == "vsphere"
+    AND message LIKE "*pam_do_authenticate: error*"
+| GROK message "%{DATA}rhost=%{IP:source_ip}%{DATA}login:%{DATA:user}]%{GREEDYDATA}"
+| WHERE user IS NOT NULL AND source_ip IS NOT NULL
+| EVAL user.name = user, source.ip = source_ip
+| STATS
+    Esql.failure_count = COUNT(*),
+    Esql.first_seen = MIN(@timestamp),
+    Esql.last_seen = MAX(@timestamp),
+    Esql.message_values = VALUES(message)
+  BY user.name, source.ip, host.ip
+| WHERE Esql.failure_count >= 3
+| EVAL message = MV_FIRST(Esql.message_values)
+| KEEP message, user.name, source.ip, host.ip, Esql.failure_count, Esql.first_seen, Esql.last_seen, Esql.message_values
+
+----------------------------------
+
+*Framework*: MITRE ATT&CK^TM^
+
+* Tactic:
+** Name: Credential Access
+** ID: TA0006
+** Reference URL: https://attack.mitre.org/tactics/TA0006/
+* Technique:
+** Name: Brute Force
+** ID: T1110
+** Reference URL: https://attack.mitre.org/techniques/T1110/
+* Sub-technique:
+** Name: Password Guessing
+** ID: T1110.001
+** Reference URL: https://attack.mitre.org/techniques/T1110/001/

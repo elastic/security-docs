@@ -1,0 +1,115 @@
+[[prebuilt-rule-8-19-36-esxi-firewall-disabled]]
+=== ESXi Firewall Disabled
+
+Detects the ESXi firewall being turned off or switched to a default allow. The firewall is the host filter for management services. Disabling it, or setting the default action to accept, lets later connections reach services that were previously blocked.
+
+*Rule type*: query
+
+*Rule indices*: 
+
+* logs-vsphere.log-*
+
+*Severity*: high
+
+*Risk score*: 73
+
+*Runs every*: 5m
+
+*Searches indices from*: now-9m ({ref}/common-options.html#date-math[Date Math format], see also <<rule-schedule, `Additional look-back time`>>)
+
+*Maximum alerts per execution*: 100
+
+*References*: 
+
+* https://lolesxi-project.github.io/LOLESXi/#
+* https://blogs.vmware.com/security/2022/10/esxi-targeting-ransomware-tactics-and-techniques-part-2.html
+* https://detect.fyi/vmware-esxi-logging-detection-opportunities-4fb56411ec21
+
+*Tags*: 
+
+* Domain: Endpoint
+* Data Source: VMware vSphere
+* Use Case: Threat Detection
+* Tactic: Defense Evasion
+* Resources: Investigation Guide
+* Rule Type: Custom Query (KQL)
+* Platform: VMware ESXi
+
+*Version*: 1
+
+*Rule authors*: 
+
+* Elastic
+
+*Rule license*: Elastic License v2
+
+
+==== Investigation guide
+
+
+
+*Triage and analysis*
+
+
+
+*Investigating ESXi Firewall Disabled*
+
+
+The ESXi firewall is the host filter for management services. Disabling it, or setting the default action to accept, lets later connections skip that control.
+
+
+*Possible investigation steps*
+
+
+- Read message to see whether the firewall was disabled or the default action was set to true.
+- Check a later esxcli network firewall get or hostd message showing the firewall enabled again.
+- Correlate with SSH enablement, syslog changes, and VM shutdown commands.
+
+
+*False positive analysis*
+
+
+A short troubleshooting window that turns the firewall off and back on can be benign. A disable that is still in effect, with no ticket, should be treated as hostile.
+
+
+*Response and remediation*
+
+
+- Re-enable the firewall and set the default action back to DROP: esxcli network firewall set --enabled true --default-action false.
+- Review ruleset changes made in the same session.
+- If the change was unauthorized, isolate the host and rotate credentials.
+
+
+==== Setup
+
+
+
+*Setup*
+
+
+This rule requires ESXi host logs collected by the Elastic vSphere integration: https://www.elastic.co/docs/reference/integrations/vsphere
+
+
+==== Rule query
+
+
+[source, js]
+----------------------------------
+data_stream.dataset:vsphere.log and message:("Firewall has been disabled" or "network firewall set" and ("--default-action true" or "--default-action=true" or "--enabled false" or "--enabled=false"))
+
+----------------------------------
+
+*Framework*: MITRE ATT&CK^TM^
+
+* Tactic:
+** Name: Defense Evasion
+** ID: TA0005
+** Reference URL: https://attack.mitre.org/tactics/TA0005/
+* Technique:
+** Name: Impair Defenses
+** ID: T1562
+** Reference URL: https://attack.mitre.org/techniques/T1562/
+* Sub-technique:
+** Name: Disable or Modify System Firewall
+** ID: T1562.004
+** Reference URL: https://attack.mitre.org/techniques/T1562/004/

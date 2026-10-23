@@ -40,7 +40,7 @@ Identifies when an MFA enrollment, registration, or security notification email 
 * Domain: Email
 * Service: Microsoft Exchange Online
 
-*Version*: 4
+*Version*: 6
 
 *Rule authors*: 
 
@@ -102,6 +102,12 @@ web where data_stream.dataset == "o365.audit" and
     event.provider == "Exchange" and
     event.action in ("SoftDelete", "HardDelete", "MoveToDeletedItems") and
     event.outcome == "success" and
+
+    /* Exclude server-side and automated Exchange processing */
+    o365.audit.ClientInfoString != null and
+    not o365.audit.ClientInfoString like~ "Client=OwsBackground*" and
+    not (o365.audit.ClientInfoString == "Client=MSExchangeRPC" and ?o365.audit.AppId == null) and
+
     (
         o365.audit.AffectedItems.Subject like~ (
             /* new + (mfa|multi-|factor|method|device|security) */

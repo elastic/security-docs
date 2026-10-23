@@ -1,0 +1,147 @@
+[[openai-chatgpt-enterprise-account-owner-role-assigned]]
+=== OpenAI ChatGPT Enterprise Account Owner Role Assigned
+
+Detects ChatGPT Enterprise audit events where a user role is updated to account-owner. Account owners control workspace membership, connectors, usage limits, and other security-sensitive settings. An adversary who promotes a compromised account to owner gains durable control-plane access.
+
+*Rule type*: esql
+
+*Rule indices*: None
+
+*Severity*: high
+
+*Risk score*: 73
+
+*Runs every*: 5m
+
+*Searches indices from*: now-9m ({ref}/common-options.html#date-math[Date Math format], see also <<rule-schedule, `Additional look-back time`>>)
+
+*Maximum alerts per execution*: 100
+
+*References*: 
+
+* https://www.elastic.co/docs/reference/integrations/openai_chatgpt_enterprise
+* https://platform.openai.com/docs/compliance
+
+*Tags*: 
+
+* Domain: GenAI
+* Platform: OpenAI
+* Data Source: OpenAI ChatGPT Enterprise
+* Service: OpenAI ChatGPT Enterprise
+* Use Case: Threat Detection
+* Resources: Investigation Guide
+* Rule Type: ES|QL
+* Domain: Identity
+* Use Case: Identity and Access Audit
+* Tactic: Persistence
+* Tactic: Privilege Escalation
+* Mitre Atlas: AML.T0012
+
+*Version*: 1
+
+*Rule authors*: 
+
+* Elastic
+
+*Rule license*: Elastic License v2
+
+
+==== Investigation guide
+
+
+
+*Triage and analysis*
+
+
+
+*Investigating OpenAI ChatGPT Enterprise Account Owner Role Assigned*
+
+
+A user role was updated to `account-owner`. Account owners control workspace membership, connectors, usage limits, and other security-sensitive settings.
+
+Escalate when the promotion lacks change management, the actor is unexpected, or privileged activity follows. Close as a false positive for planned ownership transfers with an approved request.
+
+
+*Possible investigation steps*
+
+
+- Identify the actor (`user.id` / `user.email`) and the target user in `openai_chatgpt_enterprise.audit_log.action_data`.
+- Confirm whether a ticket or change request authorized the promotion.
+- Review invites, usage-limit changes, plugin or feature policy updates, and log exports after the promotion.
+- Check authentication anomalies for the actor or target around the same time.
+
+
+*False positive analysis*
+
+
+- IT administrators legitimately promote users to account-owner during staffing or ownership changes when the request is approved.
+
+
+*Response and remediation*
+
+
+- Downgrade unauthorized owners, revoke sessions, and audit other IAM changes by the same actor.
+
+
+==== Setup
+
+
+
+*Setup*
+
+
+This rule requires the OpenAI ChatGPT Enterprise integration to collect compliance logs into Elasticsearch.
+
+https://www.elastic.co/docs/reference/integrations/openai_chatgpt_enterprise
+
+
+==== Rule query
+
+
+[source, js]
+----------------------------------
+from logs-openai_chatgpt_enterprise.audit_log-* metadata _id, _version, _index
+| where
+    data_stream.dataset == "openai_chatgpt_enterprise.audit_log" and
+    event.action == "user_role_updated" and
+    (
+        openai_chatgpt_enterprise.audit_log.action_data.new_role == "account-owner" or
+        openai_chatgpt_enterprise.audit_log.action_data.role == "account-owner"
+    )
+| keep
+    _id, _version, _index, @timestamp, event.action, event.outcome, user.id, user.email, source.ip,
+    source.geo.country_iso_code, openai_chatgpt_enterprise.audit_log.action_data.role,
+    openai_chatgpt_enterprise.audit_log.action_data.new_role,
+    openai_chatgpt_enterprise.audit_log.action_data.previous_role,
+    openai_chatgpt_enterprise.audit_log.action_data.user_id,
+    openai_chatgpt_enterprise.audit_log.action_privilege,
+    openai_chatgpt_enterprise.audit_log.actor.type, data_stream.*
+
+----------------------------------
+
+*Framework*: MITRE ATT&CK^TM^
+
+* Tactic:
+** Name: Persistence
+** ID: TA0003
+** Reference URL: https://attack.mitre.org/tactics/TA0003/
+* Technique:
+** Name: Account Manipulation
+** ID: T1098
+** Reference URL: https://attack.mitre.org/techniques/T1098/
+* Sub-technique:
+** Name: Additional Cloud Roles
+** ID: T1098.003
+** Reference URL: https://attack.mitre.org/techniques/T1098/003/
+* Tactic:
+** Name: Privilege Escalation
+** ID: TA0004
+** Reference URL: https://attack.mitre.org/tactics/TA0004/
+* Technique:
+** Name: Account Manipulation
+** ID: T1098
+** Reference URL: https://attack.mitre.org/techniques/T1098/
+* Sub-technique:
+** Name: Additional Cloud Roles
+** ID: T1098.003
+** Reference URL: https://attack.mitre.org/techniques/T1098/003/
