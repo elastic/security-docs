@@ -1,0 +1,130 @@
+[[prebuilt-rule-8-19-36-openai-chatgpt-enterprise-app-authentication-linked]]
+=== OpenAI ChatGPT Enterprise App Authentication Linked
+
+Detects ChatGPT Enterprise app authentication events that link a third-party app to a user or workspace. Linking apps establishes durable OAuth-style access that adversaries can use to persist connectors after initial compromise.
+
+*Rule type*: esql
+
+*Rule indices*: None
+
+*Severity*: medium
+
+*Risk score*: 47
+
+*Runs every*: 5m
+
+*Searches indices from*: now-9m ({ref}/common-options.html#date-math[Date Math format], see also <<rule-schedule, `Additional look-back time`>>)
+
+*Maximum alerts per execution*: 100
+
+*References*: 
+
+* https://www.elastic.co/docs/reference/integrations/openai_chatgpt_enterprise
+* https://platform.openai.com/docs/compliance
+
+*Tags*: 
+
+* Domain: GenAI
+* Platform: OpenAI
+* Data Source: OpenAI ChatGPT Enterprise
+* Service: OpenAI ChatGPT Enterprise
+* Use Case: Threat Detection
+* Resources: Investigation Guide
+* Rule Type: ES|QL
+* Tactic: Persistence
+* Mitre Atlas: AML.T0081
+
+*Version*: 1
+
+*Rule authors*: 
+
+* Elastic
+
+*Rule license*: Elastic License v2
+
+
+==== Investigation guide
+
+
+
+*Triage and analysis*
+
+
+
+*Investigating OpenAI ChatGPT Enterprise App Authentication Linked*
+
+
+A third-party app was linked to a user or workspace. Linking establishes durable OAuth-style access that can persist after the initial session ends.
+
+Escalate when the app is unapproved, the actor recently had suspicious authentication activity, or multiple unusual apps are linked in a short window. Close as a false positive for expected onboarding of approved apps.
+
+
+*Possible investigation steps*
+
+
+- Identify the user and the linked app details on the alert.
+- Confirm the app is in the approved workspace inventory.
+- Correlate with suspicious user agents, impossible travel, or privileged audit activity nearby.
+- Review whether the linked app can access sensitive data or connectors.
+
+
+*False positive analysis*
+
+
+- Users legitimately connect approved apps during onboarding or project setup.
+
+
+*Response and remediation*
+
+
+- Unlink unauthorized apps and rotate related OAuth credentials.
+- Review other persistence-oriented changes by the same actor.
+
+
+==== Setup
+
+
+
+*Setup*
+
+
+This rule requires the OpenAI ChatGPT Enterprise integration to collect compliance logs into Elasticsearch.
+
+https://www.elastic.co/docs/reference/integrations/openai_chatgpt_enterprise
+
+
+==== Rule query
+
+
+[source, js]
+----------------------------------
+from logs-openai_chatgpt_enterprise.app_auth_log-* metadata _id, _version, _index
+| where
+    data_stream.dataset == "openai_chatgpt_enterprise.app_auth_log" and
+    event.action == "link" and
+    not openai_chatgpt_enterprise.app_auth_log.app_id in (
+        "connector_5f3c8c41a1e54ad7a76272c89e2554fa",
+        "connector_2128aebfecb84f64a069897515042a44",
+        "connector_947e0d954944416db111db556030eea6",
+        "asdk_app_69a1d78e929881919bba0dbda1f6436d"
+    )
+| keep
+    _id, _version, _index, @timestamp, event.action, user.id, user.email,
+    openai_chatgpt_enterprise.app_auth_log.app_id,
+    openai_chatgpt_enterprise.app_auth_log.link_id,
+    openai_chatgpt_enterprise.app_auth_log.actor.type,
+    openai_chatgpt_enterprise.app_auth_log.principal.type,
+    data_stream.*
+
+----------------------------------
+
+*Framework*: MITRE ATT&CK^TM^
+
+* Tactic:
+** Name: Persistence
+** ID: TA0003
+** Reference URL: https://attack.mitre.org/tactics/TA0003/
+* Technique:
+** Name: Account Manipulation
+** ID: T1098
+** Reference URL: https://attack.mitre.org/techniques/T1098/

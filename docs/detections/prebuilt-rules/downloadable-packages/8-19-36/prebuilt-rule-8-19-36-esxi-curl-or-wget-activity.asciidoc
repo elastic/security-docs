@@ -1,0 +1,111 @@
+[[prebuilt-rule-8-19-36-esxi-curl-or-wget-activity]]
+=== ESXi Curl or Wget Activity
+
+Detects `curl` or `wget` from the ESXi shell. These tools download a file or contact a remote URL from the hypervisor. A successful transfer can place a package or script on the host, often under `/tmp`, where a later command can execute it against the datastore.
+
+*Rule type*: query
+
+*Rule indices*: 
+
+* logs-vsphere.log-*
+
+*Severity*: medium
+
+*Risk score*: 47
+
+*Runs every*: 5m
+
+*Searches indices from*: now-9m ({ref}/common-options.html#date-math[Date Math format], see also <<rule-schedule, `Additional look-back time`>>)
+
+*Maximum alerts per execution*: 100
+
+*References*: 
+
+* https://lolesxi-project.github.io/LOLESXi/#
+* https://blogs.vmware.com/security/2022/10/esxi-targeting-ransomware-tactics-and-techniques-part-2.html
+* https://detect.fyi/vmware-esxi-logging-detection-opportunities-4fb56411ec21
+
+*Tags*: 
+
+* Domain: Endpoint
+* Data Source: VMware vSphere
+* Use Case: Threat Detection
+* Tactic: Command and Control
+* Resources: Investigation Guide
+* Rule Type: Custom Query (KQL)
+* Platform: VMware ESXi
+* Threat: Ransomware
+
+*Version*: 1
+
+*Rule authors*: 
+
+* Elastic
+
+*Rule license*: Elastic License v2
+
+
+==== Investigation guide
+
+
+
+*Triage and analysis*
+
+
+
+*Investigating ESXi Curl or Wget Activity*
+
+
+curl and wget download a file or check a URL from the ESXi shell. The shell log records the command even when the binary is missing or the host has no route to the destination.
+
+
+*Possible investigation steps*
+
+
+- Read the URL and output path in message.
+- Check the same session for a file under /tmp, chmod, or execution of the downloaded file.
+- Confirm the URL with the virtualization owner.
+
+
+*False positive analysis*
+
+
+A documented download of a vendor package is commonly benign. A download of an unknown file into /tmp, followed by chmod, deserves review.
+
+
+*Response and remediation*
+
+
+- If the download was not approved, remove the file and end the shell session.
+- Preserve shell.log and review commands issued after the download.
+
+
+==== Setup
+
+
+
+*Setup*
+
+
+This rule requires ESXi host logs collected by the Elastic vSphere integration: https://www.elastic.co/docs/reference/integrations/vsphere
+
+
+==== Rule query
+
+
+[source, js]
+----------------------------------
+data_stream.dataset: "vsphere.log" and event.module: "vsphere" and message: ("curl" or "wget")
+
+----------------------------------
+
+*Framework*: MITRE ATT&CK^TM^
+
+* Tactic:
+** Name: Command and Control
+** ID: TA0011
+** Reference URL: https://attack.mitre.org/tactics/TA0011/
+* Technique:
+** Name: Ingress Tool Transfer
+** ID: T1105
+** Reference URL: https://attack.mitre.org/techniques/T1105/

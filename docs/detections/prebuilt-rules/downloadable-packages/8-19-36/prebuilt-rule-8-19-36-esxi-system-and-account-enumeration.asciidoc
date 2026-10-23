@@ -1,0 +1,125 @@
+[[prebuilt-rule-8-19-36-esxi-system-and-account-enumeration]]
+=== ESXi System and Account Enumeration
+
+Detects shell commands that collect ESXi host details or the local account list, including `uname -a`, system version, hostname, and `esxcli system account list`. The output identifies the build and the accounts that can log in. Listing accounts shows which identities exist before one of them is changed or used.
+
+*Rule type*: query
+
+*Rule indices*: 
+
+* logs-vsphere.log-*
+
+*Severity*: low
+
+*Risk score*: 21
+
+*Runs every*: 5m
+
+*Searches indices from*: now-9m ({ref}/common-options.html#date-math[Date Math format], see also <<rule-schedule, `Additional look-back time`>>)
+
+*Maximum alerts per execution*: 100
+
+*References*: 
+
+* https://lolesxi-project.github.io/LOLESXi/#
+* https://blogs.vmware.com/security/2022/10/esxi-targeting-ransomware-tactics-and-techniques-part-2.html
+* https://detect.fyi/vmware-esxi-logging-detection-opportunities-4fb56411ec21
+
+*Tags*: 
+
+* Domain: Endpoint
+* Data Source: VMware vSphere
+* Use Case: Threat Detection
+* Tactic: Discovery
+* Resources: Investigation Guide
+* Rule Type: Custom Query (KQL)
+* Platform: VMware ESXi
+* Threat: Ransomware
+
+*Version*: 1
+
+*Rule authors*: 
+
+* Elastic
+
+*Rule license*: Elastic License v2
+
+
+==== Investigation guide
+
+
+
+*Triage and analysis*
+
+
+
+*Investigating ESXi System and Account Enumeration*
+
+
+These commands collect the OS build, product version, hostname, or the local account list. Account listing is the higher-interest command. Version and hostname checks are common on their own.
+
+
+*Possible investigation steps*
+
+
+- Read message to see which command ran.
+- Check the same session for vm process list, vm process kill, chmod, or a search under /vmfs/volumes.
+- For esxcli system account list, compare the listed accounts with the known set for that host.
+
+
+*False positive analysis*
+
+
+A single version or hostname check during maintenance is commonly benign. Several of these commands in one session, especially account listing followed by VM shutdown, deserves review.
+
+
+*Response and remediation*
+
+
+- If the same session kills virtual machines or writes a file under /tmp, isolate the host.
+- Otherwise record the account and source for hunting on other hosts.
+
+
+==== Setup
+
+
+
+*Setup*
+
+
+This rule requires ESXi host logs collected by the Elastic vSphere integration: https://www.elastic.co/docs/reference/integrations/vsphere
+
+
+==== Rule query
+
+
+[source, js]
+----------------------------------
+data_stream.dataset: "vsphere.log" and event.module: "vsphere" and 
+message: (
+  "uname -a" or
+  "esxcli system version get" or
+  "esxcli system hostname get" or
+  "esxcli system account list"
+)
+
+----------------------------------
+
+*Framework*: MITRE ATT&CK^TM^
+
+* Tactic:
+** Name: Discovery
+** ID: TA0007
+** Reference URL: https://attack.mitre.org/tactics/TA0007/
+* Technique:
+** Name: System Information Discovery
+** ID: T1082
+** Reference URL: https://attack.mitre.org/techniques/T1082/
+* Technique:
+** Name: Account Discovery
+** ID: T1087
+** Reference URL: https://attack.mitre.org/techniques/T1087/
+* Sub-technique:
+** Name: Local Account
+** ID: T1087.001
+** Reference URL: https://attack.mitre.org/techniques/T1087/001/

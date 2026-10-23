@@ -1,0 +1,115 @@
+[[prebuilt-rule-8-19-36-esxi-attempt-to-force-install-a-vmware-vib-package]]
+=== ESXi Attempt to Force Install a VMware VIB Package
+
+Detects an attempt to install a VMware VIB with `--force`. A VIB is how ESXi adds drivers and host software, and signature checks normally block an unsigned package. `--force` skips that validation, so an untrusted package can be written onto the hypervisor and affect every virtual machine it runs.
+
+*Rule type*: query
+
+*Rule indices*: 
+
+* logs-vsphere.log-*
+
+*Severity*: medium
+
+*Risk score*: 47
+
+*Runs every*: 5m
+
+*Searches indices from*: now-9m ({ref}/common-options.html#date-math[Date Math format], see also <<rule-schedule, `Additional look-back time`>>)
+
+*Maximum alerts per execution*: 100
+
+*References*: 
+
+* https://lolesxi-project.github.io/LOLESXi/#
+* https://blogs.vmware.com/security/2022/10/esxi-targeting-ransomware-tactics-and-techniques-part-2.html
+* https://detect.fyi/vmware-esxi-logging-detection-opportunities-4fb56411ec21
+
+*Tags*: 
+
+* Domain: Endpoint
+* Data Source: VMware vSphere
+* Use Case: Threat Detection
+* Tactic: Defense Evasion
+* Resources: Investigation Guide
+* Rule Type: Custom Query (KQL)
+* Platform: VMware ESXi
+
+*Version*: 1
+
+*Rule authors*: 
+
+* Elastic
+
+*Rule license*: Elastic License v2
+
+
+==== Investigation guide
+
+
+
+*Triage and analysis*
+
+
+
+*Investigating ESXi Attempt to Force Install a VMware VIB Package*
+
+
+esxcli software vib install --force writes the package even when its signature or acceptance level would block it. The shell records the command in shell.log, including attempts that fail because the file is missing.
+
+
+*Possible investigation steps*
+
+
+- Read the VIB path in message (-v, -d, or --viburl). A path under /tmp is worth a closer look.
+- On the host, run esxcli software vib list and compare new packages with the approved image.
+- Check the same session for ExecInstalledOnly set to FALSE and SSH being enabled.
+
+
+*False positive analysis*
+
+
+A forced install of a known vendor VIB during an approved window can be expected. The package name should match the ticket.
+
+
+*Response and remediation*
+
+
+- If the package was not approved, remove it with esxcli software vib remove and review files left under /tmp.
+- Set ExecInstalledOnly back to TRUE if it was turned off in the same session.
+- Preserve shell.log before rotating credentials.
+
+
+==== Setup
+
+
+
+*Setup*
+
+
+This rule requires ESXi host logs collected by the Elastic vSphere integration: https://www.elastic.co/docs/reference/integrations/vsphere
+
+
+==== Rule query
+
+
+[source, js]
+----------------------------------
+data_stream.dataset:vsphere.log and event.module:vsphere and message:("vib install" and ("--force" or "-f" or "--no-sig-check"))
+
+----------------------------------
+
+*Framework*: MITRE ATT&CK^TM^
+
+* Tactic:
+** Name: Defense Evasion
+** ID: TA0005
+** Reference URL: https://attack.mitre.org/tactics/TA0005/
+* Technique:
+** Name: Subvert Trust Controls
+** ID: T1553
+** Reference URL: https://attack.mitre.org/techniques/T1553/
+* Sub-technique:
+** Name: Code Signing Policy Modification
+** ID: T1553.006
+** Reference URL: https://attack.mitre.org/techniques/T1553/006/

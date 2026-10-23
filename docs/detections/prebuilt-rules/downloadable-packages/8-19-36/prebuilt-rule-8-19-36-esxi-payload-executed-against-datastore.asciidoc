@@ -1,0 +1,125 @@
+[[prebuilt-rule-8-19-36-esxi-payload-executed-against-datastore]]
+=== ESXi Payload Executed Against Datastore
+
+Detects a program launched from the ESXi shell against `/vmfs/volumes`. The datastore holds the virtual disks of every guest. A process pointed at that path can read or encrypt those disks and take the hosted virtual machines offline.
+
+*Rule type*: query
+
+*Rule indices*: 
+
+* logs-vsphere.log-*
+
+*Severity*: high
+
+*Risk score*: 73
+
+*Runs every*: 5m
+
+*Searches indices from*: now-9m ({ref}/common-options.html#date-math[Date Math format], see also <<rule-schedule, `Additional look-back time`>>)
+
+*Maximum alerts per execution*: 100
+
+*References*: 
+
+* https://lolesxi-project.github.io/LOLESXi/#
+* https://blogs.vmware.com/security/2022/10/esxi-targeting-ransomware-tactics-and-techniques-part-2.html
+* https://detect.fyi/vmware-esxi-logging-detection-opportunities-4fb56411ec21
+
+*Tags*: 
+
+* Domain: Endpoint
+* Data Source: VMware vSphere
+* Use Case: Threat Detection
+* Tactic: Execution
+* Tactic: Impact
+* Resources: Investigation Guide
+* Rule Type: Custom Query (KQL)
+* Platform: VMware ESXi
+* Threat: Ransomware
+
+*Version*: 1
+
+*Rule authors*: 
+
+* Elastic
+
+*Rule license*: Elastic License v2
+
+
+==== Investigation guide
+
+
+
+*Triage and analysis*
+
+
+
+*Investigating ESXi Payload Executed Against Datastore*
+
+
+This is the launch command. A path under /tmp, or python, is invoked with /vmfs/volumes as an argument. Ragnar Locker uses /tmp/<filename> /vmfs/volumes/<UUID>/. Pysa uses Python and passes the datastore path.
+
+
+*Possible investigation steps*
+
+
+- Read message for the executable path and the datastore argument.
+- Check the same session for chmod +x, VM process kills, snapshot removal, and find commands for vmdk files.
+- On the host, identify the file that was executed and whether it is still under /tmp or on a datastore.
+
+
+*False positive analysis*
+
+
+Approved maintenance can run a known script from /tmp against a datastore. An unknown filename, especially after a chmod in the same session, is the ransomware launch pattern.
+
+
+*Response and remediation*
+
+
+- If the program was not approved, isolate the host. Leave powered-on VMs running so their disks stay locked.
+- Remove the file under /tmp and preserve shell.log.
+- Restore any datastore that was modified from an off-host backup.
+
+
+==== Setup
+
+
+
+*Setup*
+
+
+This rule requires ESXi host logs collected by the Elastic vSphere integration: https://www.elastic.co/docs/reference/integrations/vsphere
+
+
+==== Rule query
+
+
+[source, js]
+----------------------------------
+data_stream.dataset:vsphere.log and event.module:vsphere and message:("/vmfs/volumes" and ("/tmp/" or python))
+
+----------------------------------
+
+*Framework*: MITRE ATT&CK^TM^
+
+* Tactic:
+** Name: Execution
+** ID: TA0002
+** Reference URL: https://attack.mitre.org/tactics/TA0002/
+* Technique:
+** Name: Command and Scripting Interpreter
+** ID: T1059
+** Reference URL: https://attack.mitre.org/techniques/T1059/
+* Sub-technique:
+** Name: Unix Shell
+** ID: T1059.004
+** Reference URL: https://attack.mitre.org/techniques/T1059/004/
+* Tactic:
+** Name: Impact
+** ID: TA0040
+** Reference URL: https://attack.mitre.org/tactics/TA0040/
+* Technique:
+** Name: Data Encrypted for Impact
+** ID: T1486
+** Reference URL: https://attack.mitre.org/techniques/T1486/

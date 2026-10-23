@@ -1,0 +1,150 @@
+[[openai-chatgpt-enterprise-user-activity-from-high-number-of-countries]]
+=== OpenAI ChatGPT Enterprise User Activity From High Number of Countries
+
+Detects ChatGPT Enterprise activity for the same user email from at least three countries and two unique user agents within a four-hour interval across any compliance data stream. Stolen session cookies often produce post-auth activity (conversation views, deletions, downloads) without a new login event, so this rule is not limited to authentication logs.
+
+*Rule type*: esql
+
+*Rule indices*: None
+
+*Severity*: critical
+
+*Risk score*: 99
+
+*Runs every*: 5m
+
+*Searches indices from*: now-4h ({ref}/common-options.html#date-math[Date Math format], see also <<rule-schedule, `Additional look-back time`>>)
+
+*Maximum alerts per execution*: 100
+
+*References*: 
+
+* https://www.elastic.co/docs/reference/integrations/openai_chatgpt_enterprise
+* https://platform.openai.com/docs/compliance
+
+*Tags*: 
+
+* Domain: GenAI
+* Platform: OpenAI
+* Data Source: OpenAI ChatGPT Enterprise
+* Service: OpenAI ChatGPT Enterprise
+* Use Case: Threat Detection
+* Resources: Investigation Guide
+* Rule Type: ES|QL
+* Domain: Identity
+* Use Case: Identity and Access Audit
+* Tactic: Credential Access
+* Tactic: Initial Access
+* Mitre Atlas: AML.T0012
+* Threat: Impossible Travel
+
+*Version*: 1
+
+*Rule authors*: 
+
+* Elastic
+
+*Rule license*: Elastic License v2
+
+
+==== Investigation guide
+
+
+
+*Triage and analysis*
+
+
+
+*Investigating OpenAI ChatGPT Enterprise User Activity From High Number of Countries*
+
+
+Activity for the same email spans multiple countries and user agents in a short window across ChatGPT Enterprise compliance streams. That pattern can indicate session reuse, token abuse, or shared-account access through distant egress points, including cases where no new authentication event is logged.
+
+Escalate when countries and user agents diverge sharply, the user denies travel or VPN use, or privileged actions appear on distant IPs. Close as a false positive for documented dual-homed VPN or cloud egress with consistent corporate clients.
+
+
+*Possible investigation steps*
+
+
+- Review `Esql.source_geo_country_iso_code_values`, `Esql.source_geo_region_name_values`, and `Esql.user_agent_original_values`.
+- Compare source IPs and timestamps (`Esql.timestamp_first_seen`, `Esql.timestamp_last_seen`) for physical travel feasibility.
+- Check for privileged audit actions, downloads, or shares from the distant IPs.
+- Contact the user only after geo and user-agent triage to confirm expected VPN or travel.
+
+
+*False positive analysis*
+
+
+- Split-tunnel, dual-homed, or VPN egress that geo-resolves through multiple regions is the most common false positive. Corroborate with ASN and user-agent consistency before escalating.
+
+
+*Response and remediation*
+
+
+- On suspected compromise: force logout, revoke sessions, reset credentials and MFA, and review role changes or exports for the same email after the distant activity.
+
+
+==== Setup
+
+
+
+*Setup*
+
+
+This rule requires the OpenAI ChatGPT Enterprise integration to collect compliance logs into Elasticsearch.
+
+https://www.elastic.co/docs/reference/integrations/openai_chatgpt_enterprise
+
+
+==== Rule query
+
+
+[source, js]
+----------------------------------
+from logs-openai_chatgpt_enterprise.*
+| where
+    user.email is not null and
+    source.ip is not null and
+    source.geo.country_iso_code is not null
+| stats
+    Esql.country_count = count_distinct(source.geo.country_iso_code),
+    Esql.region_count = count_distinct(source.geo.region_name),
+    Esql.source_ip_count = count_distinct(source.ip),
+    Esql.user_agent_count = count_distinct(user_agent.original),
+    Esql.event_count = count(*),
+    Esql.event_action_values = values(event.action),
+    Esql.source_ip_values = values(source.ip),
+    Esql.source_geo_country_iso_code_values = values(source.geo.country_iso_code),
+    Esql.source_geo_region_name_values = values(source.geo.region_name),
+    Esql.source_geo_city_name_values = values(source.geo.city_name),
+    Esql.user_agent_original_values = values(user_agent.original),
+    Esql.timestamp_first_seen = min(@timestamp),
+    Esql.timestamp_last_seen = max(@timestamp)
+  by user.email
+| where Esql.country_count >= 3 and Esql.user_agent_count >= 2
+| keep user.email, Esql.*
+
+----------------------------------
+
+*Framework*: MITRE ATT&CK^TM^
+
+* Tactic:
+** Name: Credential Access
+** ID: TA0006
+** Reference URL: https://attack.mitre.org/tactics/TA0006/
+* Technique:
+** Name: Steal Web Session Cookie
+** ID: T1539
+** Reference URL: https://attack.mitre.org/techniques/T1539/
+* Tactic:
+** Name: Initial Access
+** ID: TA0001
+** Reference URL: https://attack.mitre.org/tactics/TA0001/
+* Technique:
+** Name: Valid Accounts
+** ID: T1078
+** Reference URL: https://attack.mitre.org/techniques/T1078/
+* Sub-technique:
+** Name: Cloud Accounts
+** ID: T1078.004
+** Reference URL: https://attack.mitre.org/techniques/T1078/004/

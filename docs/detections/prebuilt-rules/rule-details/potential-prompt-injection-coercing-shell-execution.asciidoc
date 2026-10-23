@@ -1,0 +1,201 @@
+[[potential-prompt-injection-coercing-shell-execution]]
+=== Potential Prompt Injection Coercing Shell Execution
+
+Detects shells or scripting interpreters launched from a parent command line that contains common LLM prompt-injection or jailbreak language. Attackers (or malicious content ingested by an agent) use instruction-override, DAN/developer- mode, system-prompt extraction, and safety-filter bypass phrasing to coerce GenAI coding agents and automation wrappers into running attacker-chosen commands. When that injected text reaches a child shell or interpreter, it is a strong signal that untrusted prompt content is crossing into local code execution, enabling credential theft, data exfiltration, persistence, or further tool abuse under the user's privileges.
+
+*Rule type*: eql
+
+*Rule indices*: 
+
+* logs-endpoint.events.process-*
+
+*Severity*: medium
+
+*Risk score*: 47
+
+*Runs every*: 5m
+
+*Searches indices from*: now-9m ({ref}/common-options.html#date-math[Date Math format], see also <<rule-schedule, `Additional look-back time`>>)
+
+*Maximum alerts per execution*: 100
+
+*References*: 
+
+* https://cymulate.com/blog/cve-2025-547954-54795-claude-inverseprompt/
+* https://specterops.io/blog/2025/11/21/an-evening-with-claude-code/
+* https://www.elastic.co/security-labs/elastic-advances-llm-security
+
+*Tags*: 
+
+* Domain: Endpoint
+* Domain: GenAI
+* OS: Linux
+* OS: macOS
+* OS: Windows
+* Use Case: Threat Detection
+* Tactic: Execution
+* Tactic: Defense Evasion
+* Data Source: Elastic Defend
+* Resources: Investigation Guide
+* Threat: Unauthorized AI Usage
+* Rule Type: Event Correlation (EQL)
+* Platform: Windows
+* Platform: Linux
+* Platform: macOS
+* Mitre Atlas: AML.T0051
+* Mitre Atlas: AML.T0054
+
+*Version*: 1
+
+*Rule authors*: 
+
+* Elastic
+
+*Rule license*: Elastic License v2
+
+
+==== Investigation guide
+
+
+
+*Triage and analysis*
+
+
+
+*Investigating Potential Prompt Injection Coercing Shell Execution*
+
+
+A shell or scripting interpreter started with a parent command line that matched common jailbreak /
+instruction-override language (for example "ignore previous instructions", DAN/"Do Anything Now", or
+"bypass the safety filter"). This can indicate a GenAI agent or wrapper being coerced by untrusted prompt
+text into local code execution. The alert is a content heuristic on command-line text — confirm whether the
+strings are adversarial injection versus security testing or documentation.
+
+
+*Possible investigation steps*
+
+
+- Review `process.parent.command_line` and `process.command_line` for the matched jailbreak phrases and the
+  surrounding payload (paths, URLs, credentials, download/execute patterns).
+- Identify the parent process tree (`process.parent.name`, `process.parent.executable`) and whether it is a
+  known GenAI client (Claude, Cursor, Codex, Copilot, Windsurf, etc.) or a shell-snapshot wrapper.
+- Correlate with other GenAI-related alerts on the same `host.id` / `user.name` in the same window
+  (unsafe permission bypass, suspicious shell via GenAI client, credential-path access).
+- Check recent GenAI config or MCP changes and any outbound network activity from the same process tree.
+- Determine whether the activity aligns with approved red-team / detection-engineering work.
+
+
+*False positive analysis*
+
+
+- Approved red-team, evaluation, or detection-engineering tests that deliberately include jailbreak
+  strings. Exclude known lab hosts or users.
+- Claude Code / similar agents wrap user commands in `zsh -c` / `bash -c` shell-snapshots, so the phrase may
+  appear in both parent and child command lines for a single user action.
+
+
+*Response and remediation*
+
+
+- If not an approved test, isolate the host/user session, review the GenAI conversation or agent history for
+  the injection source, and rotate credentials accessible to that user.
+- Audit GenAI tool configs, MCP servers, and skills loaded during the session.
+- Block or restrict the responsible agent/automation if compromise or successful coercion is confirmed.
+
+
+==== Rule query
+
+
+[source, js]
+----------------------------------
+process where event.type == "start" and event.action in ("exec", "start") and
+(
+  process.name like~ (
+    "bash", "dash", "sh", "tcsh", "csh", "zsh", "ksh", "fish", "busybox", "mksh",
+    "timeout", "env", "bun",
+    "bash.exe", "sh.exe", "env.exe", "timeout.exe", "bun.exe",
+    "cmd.exe", "powershell.exe", "pwsh", "pwsh.exe", "powershell_ise.exe",
+    "osascript",
+    "wscript.exe", "cscript.exe", "mshta.exe"
+  ) or
+  ?process.pe.original_file_name in (
+    "Cmd.Exe", "PowerShell.EXE", "pwsh.dll", "powershell_ise.EXE",
+    "wscript.exe", "cscript.exe", "MSHTA.EXE"
+  ) or
+  process.name like~ (
+    ".*",
+    "python*", "perl*", "php*", "ruby*", "lua*", "node*", "deno*"
+  )
+) and
+process.parent.command_line : (
+  "*ignore previous instructions*", "*ignore prior instructions*",
+  "*ignore all previous*", "*ignore your previous*",
+  "*ignore the content policy*",
+  "*disregard previous instructions*", "*disregard prior instructions*",
+  "*disregard all previous*",
+  "*disregard your system instructions*", "*disregard the system instructions*",
+  "*disregard all system instructions*",
+  "*disregard your developer instructions*", "*disregard the developer instructions*",
+  "*dan mode*", "*stan mode*", "*aim mode*", "*dude mode*",
+  "*do anything now*", "*you are dan*",
+  "*bypass the safety*", "*bypass the safety filter*", "*bypass safety filter*",
+  "*bypass the content filter*", "*bypass content filter*",
+  "*bypass the content policy*", "*bypass content policy*",
+  "*bypass your guidelines*",
+  "*no safety filter*", "*no content restriction*",
+  "*without any restrictions*", "*without your restrictions*",
+  "*without content restrictions*", "*without safety restrictions*",
+  "*unrestricted ai*", "*unrestricted developer mode*",
+  "*jailbreak the*", "*jailbreak mode *", "*jailbreak mode,*", "*jailbreak mode.*",
+  "*jailbreak mode!*", "*jailbreak prompt*",
+  "*forget everything you were told*", "*forget previous instructions*",
+  "*you are now in*developer mode*",
+  "*override your safety*",
+  "*hidden system prompt*",
+  "*reveal your system prompt*", "*reveal the system prompt*",
+  "*dump your system prompt*", "*dump the system prompt*",
+  "*print your system prompt*", "*print the system prompt*",
+  "*show your system prompt*", "*show the system prompt*",
+  "*override your system prompt*", "*override the system prompt*"
+)
+
+----------------------------------
+
+*Framework*: MITRE ATT&CK^TM^
+
+* Tactic:
+** Name: Execution
+** ID: TA0002
+** Reference URL: https://attack.mitre.org/tactics/TA0002/
+* Technique:
+** Name: Command and Scripting Interpreter
+** ID: T1059
+** Reference URL: https://attack.mitre.org/techniques/T1059/
+* Sub-technique:
+** Name: PowerShell
+** ID: T1059.001
+** Reference URL: https://attack.mitre.org/techniques/T1059/001/
+* Sub-technique:
+** Name: AppleScript
+** ID: T1059.002
+** Reference URL: https://attack.mitre.org/techniques/T1059/002/
+* Sub-technique:
+** Name: Windows Command Shell
+** ID: T1059.003
+** Reference URL: https://attack.mitre.org/techniques/T1059/003/
+* Sub-technique:
+** Name: Unix Shell
+** ID: T1059.004
+** Reference URL: https://attack.mitre.org/techniques/T1059/004/
+* Sub-technique:
+** Name: Visual Basic
+** ID: T1059.005
+** Reference URL: https://attack.mitre.org/techniques/T1059/005/
+* Sub-technique:
+** Name: Python
+** ID: T1059.006
+** Reference URL: https://attack.mitre.org/techniques/T1059/006/
+* Sub-technique:
+** Name: JavaScript
+** ID: T1059.007
+** Reference URL: https://attack.mitre.org/techniques/T1059/007/

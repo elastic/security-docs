@@ -1,0 +1,122 @@
+[[openai-chatgpt-enterprise-custom-agent-trigger-changed]]
+=== OpenAI ChatGPT Enterprise Custom Agent Trigger Changed
+
+Detects ChatGPT Enterprise custom-agent events that create or update a trigger. Triggers can schedule or event-drive agent runs without interactive user presence, enabling persistence and automation abuse.
+
+*Rule type*: esql
+
+*Rule indices*: None
+
+*Severity*: medium
+
+*Risk score*: 47
+
+*Runs every*: 5m
+
+*Searches indices from*: now-9m ({ref}/common-options.html#date-math[Date Math format], see also <<rule-schedule, `Additional look-back time`>>)
+
+*Maximum alerts per execution*: 100
+
+*References*: 
+
+* https://www.elastic.co/docs/reference/integrations/openai_chatgpt_enterprise
+* https://platform.openai.com/docs/compliance
+
+*Tags*: 
+
+* Domain: GenAI
+* Platform: OpenAI
+* Data Source: OpenAI ChatGPT Enterprise
+* Service: OpenAI ChatGPT Enterprise
+* Use Case: Threat Detection
+* Resources: Investigation Guide
+* Rule Type: ES|QL
+* Tactic: Persistence
+* Mitre Atlas: AML.T0081
+
+*Version*: 1
+
+*Rule authors*: 
+
+* Elastic
+
+*Rule license*: Elastic License v2
+
+
+==== Investigation guide
+
+
+
+*Triage and analysis*
+
+
+
+*Investigating OpenAI ChatGPT Enterprise Custom Agent Trigger Changed*
+
+
+An agent trigger was created or updated. Triggers can schedule or event-drive agent runs without interactive user presence.
+
+Escalate when the schedule or event scope is overly broad, required actions are sensitive, or the actor is unauthorized. Close as a false positive for approved recurring operational workflows.
+
+
+*Possible investigation steps*
+
+
+- Identify the actor, agent, and trigger configuration on the alert.
+- Confirm schedule or event scope and the actions the trigger can invoke.
+- Review recent agent runs associated with the trigger or agent.
+- Correlate with agent publish or connector-link events from the same actor.
+
+
+*False positive analysis*
+
+
+- Operations teams create approved triggers for recurring agent workflows.
+
+
+*Response and remediation*
+
+
+- Delete unauthorized triggers and review recent agent runs for unexpected automation.
+
+
+==== Setup
+
+
+
+*Setup*
+
+
+This rule requires the OpenAI ChatGPT Enterprise integration to collect compliance logs into Elasticsearch.
+
+https://www.elastic.co/docs/reference/integrations/openai_chatgpt_enterprise
+
+
+==== Rule query
+
+
+[source, js]
+----------------------------------
+from logs-openai_chatgpt_enterprise.custom_agents_log-* metadata _id, _version, _index
+| where
+    data_stream.dataset == "openai_chatgpt_enterprise.custom_agents_log" and
+    event.action in ("trigger_created", "trigger_updated")
+| keep
+    _id, _version, _index, @timestamp, event.action, user.id, user.email,
+    gen_ai.agent.id,
+    openai_chatgpt_enterprise.custom_agents_log.client_id,
+    openai_chatgpt_enterprise.custom_agents_log.event_details.trigger_fields.required_actions,
+    data_stream.*
+
+----------------------------------
+
+*Framework*: MITRE ATT&CK^TM^
+
+* Tactic:
+** Name: Persistence
+** ID: TA0003
+** Reference URL: https://attack.mitre.org/tactics/TA0003/
+* Technique:
+** Name: Scheduled Task/Job
+** ID: T1053
+** Reference URL: https://attack.mitre.org/techniques/T1053/

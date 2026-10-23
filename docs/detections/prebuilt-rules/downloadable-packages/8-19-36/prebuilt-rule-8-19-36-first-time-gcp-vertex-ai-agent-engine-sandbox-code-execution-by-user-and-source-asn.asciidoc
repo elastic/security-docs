@@ -1,0 +1,134 @@
+[[prebuilt-rule-8-19-36-first-time-gcp-vertex-ai-agent-engine-sandbox-code-execution-by-user-and-source-asn]]
+=== First Time GCP Vertex AI Agent Engine Sandbox Code Execution by User and Source ASN
+
+Detects the first time a Vertex AI Agent Engine caller executes code in a sandboxEnvironment from a given source autonomous system. First-time sandbox execution by a user and source ASN can indicate a new workload, stolen credentials used from an unusual network, or early Agent Engine abuse before broader sandbox reuse is visible.
+
+*Rule type*: new_terms
+
+*Rule indices*: 
+
+* logs-gcp_vertexai.auditlogs-*
+
+*Severity*: low
+
+*Risk score*: 21
+
+*Runs every*: 10m
+
+*Searches indices from*: now-60m ({ref}/common-options.html#date-math[Date Math format], see also <<rule-schedule, `Additional look-back time`>>)
+
+*Maximum alerts per execution*: 100
+
+*References*: 
+
+* https://www.beyondtrust.com/blog/entry/vertex-ai-agent-engine-sandbox-hijack
+* https://docs.cloud.google.com/gemini-enterprise-agent-platform/scale/sandbox/code-execution-quickstart
+* https://www.elastic.co/docs/reference/integrations/gcp_vertexai
+
+*Tags*: 
+
+* Domain: GenAI
+* Domain: Cloud
+* Data Source: GCP Vertex AI
+* Data Source: GCP
+* Data Source: Google Cloud Platform
+* Platform: GCP
+* Service: GCP Vertex AI
+* Use Case: Threat Detection
+* Tactic: Execution
+* Threat: Unauthorized AI Usage
+* Mitre Atlas: AML.T0053
+* Mitre Atlas: AML.T0110
+* Mitre Atlas: AML.T0110.002
+* Resources: Investigation Guide
+* Rule Type: New Terms
+
+*Version*: 1
+
+*Rule authors*: 
+
+* Elastic
+
+*Rule license*: Elastic License v2
+
+
+==== Investigation guide
+
+
+
+*Triage and analysis*
+
+
+
+*Investigating First Time GCP Vertex AI Agent Engine Sandbox Code Execution by User and Source ASN*
+
+
+This new-terms rule alerts when `client.user.email` combined with `source.as.number` first appears on a successful
+Agent Engine `ExecuteSandboxEnvironment` call in the history window. It is an informational starting point for
+reviewing who is running code in sandboxes and from where, not proof of hijacking.
+
+
+*Possible investigation steps*
+
+
+- Review `client.user.email`, `source.ip`, `source.as.number`, `source.as.organization.name`, and
+  `gcp.vertexai.audit.resource_name` (sandbox path).
+- Confirm whether the principal is expected to use Agent Engine and whether the ASN matches approved office, VPN, or
+  cloud egress.
+- Hunt nearby CreateSandboxEnvironment and additional ExecuteSandboxEnvironment events for the same sandbox or
+  principal. Inspect application traces or captured code when available; audit logs omit submitted Python.
+
+
+*False positive analysis*
+
+
+- First-time legitimate developers, CI service accounts, and research projects commonly match until identities and
+  ASNs are baselined.
+- Shared automation identities that rotate egress networks can create recurring first-seen pairs; prefer
+  principal-scoped exceptions after ownership review.
+
+
+*Response and remediation*
+
+
+- If the principal or ASN is unexpected: restrict or rotate credentials, review IAM grants, and inspect recent
+  sandbox activity for unauthorized code execution.
+- Prefer separate sandboxes across users or tenants and treat tool output as untrusted input to the agent.
+
+
+==== Setup
+
+
+
+*Setup*
+
+
+Requires GCP Vertex AI `auditlogs` for `aiplatform.googleapis.com`, including
+`SandboxEnvironmentExecutionService.ExecuteSandboxEnvironment`, with `client.user.email` and `source.as.number`
+populated. Submitted code is not present in these events; obtain application code records or traces separately when
+available.
+
+
+==== Rule query
+
+
+[source, js]
+----------------------------------
+data_stream.dataset:gcp_vertexai.auditlogs and event.action:*SandboxEnvironmentExecutionService.ExecuteSandboxEnvironment* and gcp.vertexai.audit.resource_name:*/sandboxEnvironments/* and gcp.vertexai.audit.service_name:aiplatform.googleapis.com and client.user.email:* and source.as.number:* and gcp.vertexai.audit.status.code:(0 or not *)
+
+----------------------------------
+
+*Framework*: MITRE ATT&CK^TM^
+
+* Tactic:
+** Name: Execution
+** ID: TA0002
+** Reference URL: https://attack.mitre.org/tactics/TA0002/
+* Technique:
+** Name: Command and Scripting Interpreter
+** ID: T1059
+** Reference URL: https://attack.mitre.org/techniques/T1059/
+* Sub-technique:
+** Name: Python
+** ID: T1059.006
+** Reference URL: https://attack.mitre.org/techniques/T1059/006/

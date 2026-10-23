@@ -1,0 +1,114 @@
+[[prebuilt-rule-8-19-36-esxi-virtual-machine-powered-off]]
+=== ESXi Virtual Machine Powered Off
+
+Detects `vim-cmd vmsvc/power.off` on an ESXi host. Powering a virtual machine off releases the lock the hypervisor holds on its virtual disks. With the guest stopped, those disks can be rewritten or encrypted while the machine is down.
+
+*Rule type*: query
+
+*Rule indices*: 
+
+* logs-vsphere.log-*
+
+*Severity*: medium
+
+*Risk score*: 47
+
+*Runs every*: 5m
+
+*Searches indices from*: now-9m ({ref}/common-options.html#date-math[Date Math format], see also <<rule-schedule, `Additional look-back time`>>)
+
+*Maximum alerts per execution*: 100
+
+*References*: 
+
+* https://lolesxi-project.github.io/LOLESXi/#
+* https://blogs.vmware.com/security/2022/10/esxi-targeting-ransomware-tactics-and-techniques-part-2.html
+* https://detect.fyi/vmware-esxi-logging-detection-opportunities-4fb56411ec21
+
+*Tags*: 
+
+* Domain: Endpoint
+* Data Source: VMware vSphere
+* Use Case: Threat Detection
+* Tactic: Impact
+* Resources: Investigation Guide
+* Rule Type: Custom Query (KQL)
+* Platform: VMware ESXi
+* Threat: Ransomware
+
+*Version*: 1
+
+*Rule authors*: 
+
+* Elastic
+
+*Rule license*: Elastic License v2
+
+
+==== Investigation guide
+
+
+
+*Triage and analysis*
+
+
+
+*Investigating ESXi Virtual Machine Powered Off*
+
+
+vim-cmd vmsvc/power.off is the guest-aware shutdown path ransomware uses when esxcli vm process kill is not enough. A for loop over getallvms powers off every guest on the host.
+
+
+*Possible investigation steps*
+
+
+- Read message for a single VM id versus a loop over vim-cmd vmsvc/getallvms.
+- Correlate with snapshot removal, vm process kill, and find commands for *.vmdk on the same host.
+- Ask the VM owner whether that power-off was scheduled.
+
+
+*False positive analysis*
+
+
+One VM powered off by a known administrator during a change window is commonly benign. Powering off every VM in one shell loop is the ransomware pattern.
+
+
+*Response and remediation*
+
+
+- If the power-off was not approved, isolate the host and do not reboot it.
+- Power guests back on only after confirming their disks were not encrypted, or restore them from backup.
+- Preserve shell and hostd logs for the session that issued power.off.
+
+
+==== Setup
+
+
+
+*Setup*
+
+
+This rule requires ESXi host logs collected by the Elastic vSphere integration: https://www.elastic.co/docs/reference/integrations/vsphere
+
+
+==== Rule query
+
+
+[source, js]
+----------------------------------
+data_stream.dataset: "vsphere.log" and (
+  message: "vmsvc/power.off"
+)
+
+----------------------------------
+
+*Framework*: MITRE ATT&CK^TM^
+
+* Tactic:
+** Name: Impact
+** ID: TA0040
+** Reference URL: https://attack.mitre.org/tactics/TA0040/
+* Technique:
+** Name: System Shutdown/Reboot
+** ID: T1529
+** Reference URL: https://attack.mitre.org/techniques/T1529/

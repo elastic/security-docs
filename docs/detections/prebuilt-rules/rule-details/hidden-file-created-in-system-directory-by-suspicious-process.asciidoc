@@ -1,0 +1,162 @@
+[[hidden-file-created-in-system-directory-by-suspicious-process]]
+=== Hidden File Created in System Directory by Suspicious Process
+
+Identifies an executable from a suspicious or writable location creating a hidden file in a system binary, configuration, or library directory. Adversaries may place dot-prefixed files in trusted system locations to conceal payloads, configuration, or persistence artifacts.
+
+*Rule type*: eql
+
+*Rule indices*: 
+
+* logs-endpoint.events.file*
+
+*Severity*: high
+
+*Risk score*: 73
+
+*Runs every*: 5m
+
+*Searches indices from*: now-9m ({ref}/common-options.html#date-math[Date Math format], see also <<rule-schedule, `Additional look-back time`>>)
+
+*Maximum alerts per execution*: 100
+
+*References*: None
+
+*Tags*: 
+
+* Domain: Endpoint
+* OS: Linux
+* Use Case: Threat Detection
+* Tactic: Defense Evasion
+* Data Source: Elastic Defend
+* Rule Type: Event Correlation (EQL)
+* Resources: Investigation Guide
+* Platform: Linux
+
+*Version*: 1
+
+*Rule authors*: 
+
+* Elastic
+
+*Rule license*: Elastic License v2
+
+
+==== Investigation guide
+
+
+
+*Triage and analysis*
+
+
+> **Disclaimer**:
+> This investigation guide was created using generative AI technology and has been reviewed to improve its accuracy and relevance. While every effort has been made to ensure its quality, we recommend validating the content and adapting it to suit your specific environment and operational needs.
+
+
+*Investigating Hidden File Created in System Directory by Suspicious Process*
+
+
+Linux dot-prefixed files are hidden from default directory listings. An attacker may run a payload from a temporary,
+shared-memory, web, home, or memory-backed location and create a hidden file under a trusted system directory to conceal
+malware, configuration, credentials, or a persistence component.
+
+
+*Possible investigation steps*
+
+
+- Review the hidden file's full path, owner, permissions, timestamps, size, hash, and file type.
+- Examine the creating process, its parent and ancestor chain, command line, user, working directory, and executable hash.
+- Determine how the suspicious executable reached the host by reviewing earlier file, process, and network events.
+- Inspect the file safely for executable content, scripts, credentials, configuration, or references from services,
+  scheduled tasks, shell profiles, or dynamic linker configuration.
+- Check whether the file was later read, executed, renamed, loaded, deleted, or observed on other systems.
+
+
+*False positive analysis*
+
+
+- Administrative scripts, security products, software installers, and configuration-management tools may create legitimate
+  hidden files. Validate the exact file purpose, process lineage, deployment record, and host scope before adding an
+  exception.
+- Development, build, or container workflows may create dotfiles in unusual filesystem layouts. Confirm the destination
+  is expected for the workflow and that the process and resulting artifact are trusted.
+
+
+*Response and remediation*
+
+
+- Isolate the affected host if the process or hidden file is unauthorized.
+- Terminate malicious processes, quarantine the file, and remove related persistence only after preserving evidence.
+- Hunt for matching file and process hashes, names, paths, and related network indicators across the environment.
+- Identify and remediate the initial access vector, and rotate any credentials or secrets exposed by the compromise.
+- Restore affected system files and configuration from a trusted source and monitor for recurrence.
+
+
+==== Setup
+
+
+
+*Setup*
+
+
+This rule requires data coming in from Elastic Defend.
+
+
+*Elastic Defend Integration Setup*
+
+Elastic Defend is integrated into the Elastic Agent using Fleet. Upon configuration, the integration allows the Elastic Agent to monitor events on your host and send data to the Elastic Security app.
+
+
+*Prerequisite Requirements:*
+
+- Fleet is required for Elastic Defend.
+- To configure Fleet Server refer to the https://www.elastic.co/guide/en/fleet/current/fleet-server.html[documentation].
+
+
+*The following steps should be executed in order to add the Elastic Defend integration on a Linux System:*
+
+- Go to the Kibana home page and click "Add integrations".
+- In the query bar, search for "Elastic Defend" and select the integration to see more details about it.
+- Click "Add Elastic Defend".
+- Configure the integration name and optionally add a description.
+- Select the type of environment you want to protect, either "Traditional Endpoints" or "Cloud Workloads".
+- Select a configuration preset. Each preset comes with different default settings, which can be customized by configuring the Elastic Defend integration policy. Select "Complete EDR (Endpoint Detection and Response)" to collect all events and preventions.
+- Enter a name for the agent policy, or select an existing agent policy.
+- Click "Save and Continue".
+- To complete the integration, select "Add Elastic Agent" and follow the instructions to install the Elastic Agent on your hosts.
+
+
+==== Rule query
+
+
+[source, js]
+----------------------------------
+file where host.os.type == "linux" and event.action in ("rename", "creation") and
+process.executable like (
+  "/tmp/*", "/var/tmp/*", "/dev/shm/*", "/run/*", "/var/run/*", "/boot/*", "/sys/*", "*/www/html/*",
+  "/lost+found/*", "/proc/*", "/var/mail/*", "/var/www/*", "/mnt/*", "/media/*", "*/wp-content/*",
+  "*/wp-includes/*", "*/wp-admin/*", "?memfd:*", "memfd:*", "/home/*", "/root/*"
+) and
+file.name like ".*" and
+file.path like (
+  "/bin/*", "/usr/bin/*", "/usr/local/bin/*", "/sbin/*", "/usr/sbin/*", "/usr/local/sbin/*", "/etc/*",
+  "/lib/*", "/lib32/*", "/lib64/*", "/libx32/*", "/usr/lib/*", "/usr/lib32/*", "/usr/lib64/*",
+  "/usr/libx32/*", "/usr/local/lib/*", "/usr/local/lib32/*", "/usr/local/lib64/*", "/usr/local/libx32/*",
+  "/libexec/*", "/usr/libexec/*", "/usr/local/libexec/*", "/var/lib/*"
+)
+
+----------------------------------
+
+*Framework*: MITRE ATT&CK^TM^
+
+* Tactic:
+** Name: Defense Evasion
+** ID: TA0005
+** Reference URL: https://attack.mitre.org/tactics/TA0005/
+* Technique:
+** Name: Hide Artifacts
+** ID: T1564
+** Reference URL: https://attack.mitre.org/techniques/T1564/
+* Sub-technique:
+** Name: Hidden Files and Directories
+** ID: T1564.001
+** Reference URL: https://attack.mitre.org/techniques/T1564/001/

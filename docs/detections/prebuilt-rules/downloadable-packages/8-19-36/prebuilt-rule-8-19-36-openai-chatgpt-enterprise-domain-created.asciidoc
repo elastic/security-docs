@@ -1,0 +1,125 @@
+[[prebuilt-rule-8-19-36-openai-chatgpt-enterprise-domain-created]]
+=== OpenAI ChatGPT Enterprise Domain Created
+
+Detects ChatGPT Enterprise audit events that create a workspace domain boundary entry. Domain changes can expand who is allowed to join or access the tenant and may establish persistence for attacker-controlled domains.
+
+*Rule type*: esql
+
+*Rule indices*: None
+
+*Severity*: high
+
+*Risk score*: 73
+
+*Runs every*: 5m
+
+*Searches indices from*: now-9m ({ref}/common-options.html#date-math[Date Math format], see also <<rule-schedule, `Additional look-back time`>>)
+
+*Maximum alerts per execution*: 100
+
+*References*: 
+
+* https://www.elastic.co/docs/reference/integrations/openai_chatgpt_enterprise
+* https://platform.openai.com/docs/compliance
+
+*Tags*: 
+
+* Domain: GenAI
+* Platform: OpenAI
+* Data Source: OpenAI ChatGPT Enterprise
+* Service: OpenAI ChatGPT Enterprise
+* Use Case: Threat Detection
+* Resources: Investigation Guide
+* Rule Type: ES|QL
+* Domain: Identity
+* Use Case: Identity and Access Audit
+* Tactic: Persistence
+* Mitre Atlas: AML.T0125
+
+*Version*: 1
+
+*Rule authors*: 
+
+* Elastic
+
+*Rule license*: Elastic License v2
+
+
+==== Investigation guide
+
+
+
+*Triage and analysis*
+
+
+
+*Investigating OpenAI ChatGPT Enterprise Domain Created*
+
+
+A domain was added to the workspace boundary. Domain changes can expand who is allowed to join or access the tenant.
+
+Escalate when the domain is not corporate-owned, the change lacks approval, or invites from that domain follow quickly. Close as a false positive for documented onboarding or merger-related domain additions.
+
+
+*Possible investigation steps*
+
+
+- Identify the actor and the domain value on the alert.
+- Validate ownership of the domain and whether a change request exists.
+- Search for subsequent invites, role changes, or ownership transfers involving that domain.
+- Review other IAM changes by the same actor in the surrounding window.
+
+
+*False positive analysis*
+
+
+- Administrators add legitimate corporate domains during onboarding or merger activity when the request is approved.
+
+
+*Response and remediation*
+
+
+- Remove unauthorized domains and audit subsequent invites associated with that domain.
+- Rotate credentials for the actor if the change appears malicious.
+
+
+==== Setup
+
+
+
+*Setup*
+
+
+This rule requires the OpenAI ChatGPT Enterprise integration to collect compliance logs into Elasticsearch.
+
+https://www.elastic.co/docs/reference/integrations/openai_chatgpt_enterprise
+
+
+==== Rule query
+
+
+[source, js]
+----------------------------------
+from logs-openai_chatgpt_enterprise.audit_log-* metadata _id, _version, _index
+| where
+    data_stream.dataset == "openai_chatgpt_enterprise.audit_log" and
+    event.action == "domain_create"
+| keep
+    _id, _version, _index, @timestamp, event.action, user.id, user.email, source.ip,
+    openai_chatgpt_enterprise.audit_log.action_data.hostname,
+    openai_chatgpt_enterprise.audit_log.action_data.domains,
+    openai_chatgpt_enterprise.audit_log.action_data.domain_id,
+    openai_chatgpt_enterprise.audit_log.action_privilege, data_stream.*
+
+----------------------------------
+
+*Framework*: MITRE ATT&CK^TM^
+
+* Tactic:
+** Name: Persistence
+** ID: TA0003
+** Reference URL: https://attack.mitre.org/tactics/TA0003/
+* Technique:
+** Name: Account Manipulation
+** ID: T1098
+** Reference URL: https://attack.mitre.org/techniques/T1098/

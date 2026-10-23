@@ -1,0 +1,116 @@
+[[prebuilt-rule-8-19-36-esxi-ssh-session-from-vpxuser]]
+=== ESXi SSH Session from vpxuser
+
+Identifies a successful SSH session opened by the privileged vpxuser account. vpxuser is a service account used by VMware vCenter Server to manage ESXi hosts. An SSH session from that account reaches the host shell directly, outside the vCenter management path, and is a sign the credential is being reused with malicious intent.
+
+*Rule type*: query
+
+*Rule indices*: 
+
+* logs-vsphere.log-*
+
+*Severity*: high
+
+*Risk score*: 73
+
+*Runs every*: 5m
+
+*Searches indices from*: now-9m ({ref}/common-options.html#date-math[Date Math format], see also <<rule-schedule, `Additional look-back time`>>)
+
+*Maximum alerts per execution*: 100
+
+*References*: 
+
+* https://lolesxi-project.github.io/LOLESXi/#
+* https://blogs.vmware.com/security/2022/10/esxi-targeting-ransomware-tactics-and-techniques-part-2.html
+* https://detect.fyi/vmware-esxi-logging-detection-opportunities-4fb56411ec21
+
+*Tags*: 
+
+* Domain: Endpoint
+* Data Source: VMware vSphere
+* Use Case: Threat Detection
+* Tactic: Lateral Movement
+* Resources: Investigation Guide
+* Rule Type: Custom Query (KQL)
+* Platform: VMware ESXi
+
+*Version*: 1
+
+*Rule authors*: 
+
+* Elastic
+
+*Rule license*: Elastic License v2
+
+
+==== Investigation guide
+
+
+
+*Triage and analysis*
+
+
+
+*Investigating ESXi SSH Session from vpxuser*
+
+
+Hostd records SSH session was opened for 'vpxuser@<address>' when that account gets a shell. vpxuser is created for vCenter and is not an interactive operator account.
+
+
+*Possible investigation steps*
+
+
+- Read the address after vpxuser@ in message and compare it with the vCenter server.
+- Review shell commands in the same session, especially copies to /tmp, vm process, and datastore paths.
+- Check whether SSH was enabled on this host just before the session.
+- Ask whether anyone used vpxuser for a documented console session.
+
+
+*False positive analysis*
+
+
+An approved break-glass SSH session with vpxuser should be rare and tied to a ticket. A session from an address that is not the vCenter server deserves review.
+
+
+*Response and remediation*
+
+
+- If the session was not approved, disable SSH and terminate the session.
+- Rotate the vpxuser credential from vCenter and review other hosts for the same account.
+- Preserve hostd.log and shell.log for the session.
+
+
+==== Setup
+
+
+
+*Setup*
+
+
+This rule requires ESXi host logs collected by the Elastic vSphere integration: https://www.elastic.co/docs/reference/integrations/vsphere
+
+
+==== Rule query
+
+
+[source, js]
+----------------------------------
+data_stream.dataset:vsphere.log and event.module:vsphere and message:("SSH session was opened for" and vpxuser)
+
+----------------------------------
+
+*Framework*: MITRE ATT&CK^TM^
+
+* Tactic:
+** Name: Lateral Movement
+** ID: TA0008
+** Reference URL: https://attack.mitre.org/tactics/TA0008/
+* Technique:
+** Name: Remote Services
+** ID: T1021
+** Reference URL: https://attack.mitre.org/techniques/T1021/
+* Sub-technique:
+** Name: SSH
+** ID: T1021.004
+** Reference URL: https://attack.mitre.org/techniques/T1021/004/

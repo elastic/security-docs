@@ -1,0 +1,119 @@
+[[prebuilt-rule-8-19-36-first-occurrence-of-a-php-fatal-error-on-a-web-server]]
+=== First Occurrence of a PHP Fatal Error on a Web Server
+
+This rule identifies the first PHP fatal error observed on a web server during the configured history window. PHP fatal errors are not inherently malicious, but a newly observed fatal condition can indicate exploitation of a previously unseen application or PHP engine failure. The rule is intentionally generic so it can identify both known and novel exploit attempts that terminate PHP request processing.
+
+*Rule type*: new_terms
+
+*Rule indices*: 
+
+* logs-apache.error-*
+* logs-apache_tomcat.catalina-*
+* logs-apache_tomcat.localhost-*
+* logs-nginx.error-*
+
+*Severity*: medium
+
+*Risk score*: 47
+
+*Runs every*: 5m
+
+*Searches indices from*: now-9m ({ref}/common-options.html#date-math[Date Math format], see also <<rule-schedule, `Additional look-back time`>>)
+
+*Maximum alerts per execution*: 100
+
+*References*: None
+
+*Tags*: 
+
+* Domain: Web
+* Use Case: Threat Detection
+* Tactic: Initial Access
+* Data Source: Nginx
+* Data Source: Apache
+* Data Source: Apache Tomcat
+* Resources: Investigation Guide
+* Rule Type: New Terms
+* Service: Nginx
+* Service: Apache Tomcat
+* Service: Apache HTTP Server
+
+*Version*: 1
+
+*Rule authors*: 
+
+* Elastic
+
+*Rule license*: Elastic License v2
+
+
+==== Investigation guide
+
+
+
+*Triage and analysis*
+
+
+
+*Investigating First Occurrence of a PHP Fatal Error on a Web Server*
+
+
+This rule establishes first-seen state by `host.id`, so it alerts when a host with no matching event in the history window
+produces a PHP fatal error. The alert does not establish malicious activity; it prioritizes a previously unseen condition
+for investigation and can provide generic coverage for exploitation paths that intentionally trigger fatal PHP states.
+
+
+*Possible investigation steps*
+
+
+- Review the complete error text and identify the affected host, virtual host, PHP script, application, and PHP version.
+- Examine `source.ip` when present. It represents the immediate requester seen by the web server and may be a proxy,
+  load balancer, CDN node, NAT gateway, or container bridge rather than the original external client.
+- Correlate access logs for the same host and time with request methods, URLs, response codes, multipart bodies, session
+  activity, and unusual cookies. Determine whether many hosts or requests produced the same error.
+- Review endpoint telemetry for web-server or PHP-worker crashes, unusual child processes, file writes, and outbound
+  connections after the fatal error.
+- Compare the error with recent deployments, configuration changes, memory-limit changes, and application test activity.
+
+
+*False positive analysis*
+
+
+- Fatal errors commonly result from application bugs, missing dependencies, incompatible upgrades, and resource limits.
+  Validate the stack trace and deployment history before treating the alert as exploitation.
+- Consider excluding tightly scoped, well-understood development hosts or known error strings rather than disabling the
+  rule across production PHP servers.
+
+
+*Response and remediation*
+
+
+- Patch or roll back the affected application or PHP runtime after preserving relevant logs and process telemetry.
+- If the request or surrounding host behavior is suspicious, isolate the server, block the confirmed origin at the edge,
+  rotate exposed secrets, and scope similar errors across the environment.
+
+
+==== Rule query
+
+
+[source, js]
+----------------------------------
+agent.id:* and
+event.dataset:(
+  "apache.error" or "nginx.error" or "apache_tomcat.catalina" or "apache_tomcat.localhost"
+) and (
+  message:(PHP and Fatal and error)
+)
+
+----------------------------------
+
+*Framework*: MITRE ATT&CK^TM^
+
+* Tactic:
+** Name: Initial Access
+** ID: TA0001
+** Reference URL: https://attack.mitre.org/tactics/TA0001/
+* Technique:
+** Name: Exploit Public-Facing Application
+** ID: T1190
+** Reference URL: https://attack.mitre.org/techniques/T1190/

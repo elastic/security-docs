@@ -50,7 +50,7 @@ Adversaries may install legitimate remote monitoring and management (RMM) tools 
 * Rule Type: New Terms
 * Platform: Windows
 
-*Version*: 119
+*Version*: 120
 
 *Rule authors*: 
 
@@ -377,7 +377,23 @@ host.os.type: "windows" and
             "ZohoURSService.exe"
         )
   ) and
-  not (process.pe.original_file_name : ("G2M.exe" or "Updater.exe" or "powershell.exe") and process.code_signature.subject_name : "LogMeIn, Inc.")
+  not (process.pe.original_file_name : ("G2M.exe" or "Updater.exe" or "powershell.exe") and process.code_signature.subject_name : "LogMeIn, Inc.") and
+  not (
+    process.code_signature.subject_name : ("TeamViewer Germany GmbH" or "TeamViewer GmbH" or "TeamViewer") and
+    process.code_signature.trusted : true and process.name : "crashpad_handler.exe"
+  ) and
+  not (
+    process.code_signature.subject_name : "ZOHO Corporation Private Limited" and process.code_signature.trusted : true and
+    process.executable : (
+      C\:\\Program Files\\ManageEngine\\UEMS_Agent\\* or
+      C\:\\Program Files \(x86\)\\ManageEngine\\UEMS_Agent\\* or
+      C\:\\Program Files\\DesktopCentral_Agent\\* or
+      C\:\\Program Files \(x86\)\\DesktopCentral_Agent\\*
+    ) and
+    not process.name.caseless : (
+      "dcondemand.exe" or "dcrdservice.exe" or "dc_rds.exe" or "dcrdsagentwindow.exe"
+    )
+  )
 
 ----------------------------------
 

@@ -1,0 +1,128 @@
+[[openai-chatgpt-enterprise-workspace-log-file-deleted]]
+=== OpenAI ChatGPT Enterprise Workspace Log File Deleted
+
+Detects ChatGPT Enterprise audit events where a workspace compliance log file is deleted (`delete_workspace_log_file`). Adversaries with privileged access may delete exported audit or conversation log archives to remove evidence from compliance workflows and hinder investigation.
+
+*Rule type*: esql
+
+*Rule indices*: None
+
+*Severity*: medium
+
+*Risk score*: 47
+
+*Runs every*: 5m
+
+*Searches indices from*: now-9m ({ref}/common-options.html#date-math[Date Math format], see also <<rule-schedule, `Additional look-back time`>>)
+
+*Maximum alerts per execution*: 100
+
+*References*: 
+
+* https://www.elastic.co/docs/reference/integrations/openai_chatgpt_enterprise
+* https://platform.openai.com/docs/compliance
+
+*Tags*: 
+
+* Domain: GenAI
+* Platform: OpenAI
+* Data Source: OpenAI ChatGPT Enterprise
+* Service: OpenAI ChatGPT Enterprise
+* Use Case: Threat Detection
+* Resources: Investigation Guide
+* Rule Type: ES|QL
+* Tactic: Defense Evasion
+* Mitre Atlas: AML.T0092
+
+*Version*: 1
+
+*Rule authors*: 
+
+* Elastic
+
+*Rule license*: Elastic License v2
+
+
+==== Investigation guide
+
+
+
+*Triage and analysis*
+
+
+
+*Investigating OpenAI ChatGPT Enterprise Workspace Log File Deleted*
+
+
+A workspace compliance log archive was deleted. That can remove investigator access to authentication, conversation, or
+Codex exports and may be used to cover tracks after misuse.
+
+Escalate when the actor is unexpected, deletions follow downloads or privileged changes, or there is no retention-policy
+ticket. Close as a false positive for documented retention cleanup by approved admins.
+
+
+*Possible investigation steps*
+
+
+- Identify the actor (`user.id`, `user.email`) and source IP.
+- Note `openai_chatgpt_enterprise.audit_log.action_data.log_file_id` and related event type fields.
+- Correlate with nearby `list_workspace_log_files` or `download_workspace_log_file` activity from the same actor.
+- Confirm whether the deletion matches an approved retention or purge job.
+- Review other privileged audit activity by the same actor, such as role changes, invites, or feature toggles.
+
+
+*False positive analysis*
+
+
+- Retention policies may delete aged workspace log archives on a schedule using approved admin accounts.
+
+
+*Response and remediation*
+
+
+- Preserve remaining exports, review the actor's recent privileged activity, and tighten who can delete workspace logs.
+- If the deletion appears unauthorized, inventory other exports or deletions by the same actor and revoke sessions or
+  admin access as appropriate.
+
+
+==== Setup
+
+
+
+*Setup*
+
+
+This rule requires the OpenAI ChatGPT Enterprise integration to collect compliance logs into Elasticsearch.
+
+https://www.elastic.co/docs/reference/integrations/openai_chatgpt_enterprise
+
+
+==== Rule query
+
+
+[source, js]
+----------------------------------
+from logs-openai_chatgpt_enterprise.audit_log-* metadata _id, _version, _index
+| where
+    data_stream.dataset == "openai_chatgpt_enterprise.audit_log" and
+    event.action == "delete_workspace_log_file" and
+    openai_chatgpt_enterprise.audit_log.actor.type == "ACCOUNT_USER"
+| keep
+    _id, _version, _index, @timestamp, event.action, user.id, user.email, source.ip,
+    openai_chatgpt_enterprise.audit_log.action_data.event_type,
+    openai_chatgpt_enterprise.audit_log.action_data.log_file_id,
+    openai_chatgpt_enterprise.audit_log.action_privilege,
+    openai_chatgpt_enterprise.audit_log.actor.type, data_stream.*
+
+----------------------------------
+
+*Framework*: MITRE ATT&CK^TM^
+
+* Tactic:
+** Name: Defense Evasion
+** ID: TA0005
+** Reference URL: https://attack.mitre.org/tactics/TA0005/
+* Technique:
+** Name: Indicator Removal
+** ID: T1070
+** Reference URL: https://attack.mitre.org/techniques/T1070/

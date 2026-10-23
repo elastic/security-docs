@@ -1,0 +1,114 @@
+[[esxi-virtual-machine-snapshot-removed]]
+=== ESXi Virtual Machine Snapshot Removed
+
+Detects removal of all snapshots for an ESXi virtual machine. Snapshots are on-host recovery points for a guest. Removing all of them deletes those recovery points, so the virtual machine cannot be reverted to an earlier disk state.
+
+*Rule type*: query
+
+*Rule indices*: 
+
+* logs-vsphere.log-*
+
+*Severity*: high
+
+*Risk score*: 73
+
+*Runs every*: 5m
+
+*Searches indices from*: now-9m ({ref}/common-options.html#date-math[Date Math format], see also <<rule-schedule, `Additional look-back time`>>)
+
+*Maximum alerts per execution*: 100
+
+*References*: 
+
+* https://lolesxi-project.github.io/LOLESXi/#
+* https://blogs.vmware.com/security/2022/10/esxi-targeting-ransomware-tactics-and-techniques-part-2.html
+* https://detect.fyi/vmware-esxi-logging-detection-opportunities-4fb56411ec21
+
+*Tags*: 
+
+* Domain: Endpoint
+* Data Source: VMware vSphere
+* Use Case: Threat Detection
+* Tactic: Impact
+* Resources: Investigation Guide
+* Rule Type: Custom Query (KQL)
+* Platform: VMware ESXi
+* Threat: Ransomware
+
+*Version*: 1
+
+*Rule authors*: 
+
+* Elastic
+
+*Rule license*: Elastic License v2
+
+
+==== Investigation guide
+
+
+
+*Triage and analysis*
+
+
+
+*Investigating ESXi Virtual Machine Snapshot Removed*
+
+
+Snapshots are the local recovery point on a datastore. snapshot.removeall deletes them for one VM id. Ransomware wraps that command in a loop over every VM.
+
+
+*Possible investigation steps*
+
+
+- Read the VM id in message. A loop that calls removeall for every id from getallvms is higher severity than one VM.
+- Check whether VM processes were killed or disks were enumerated in the same session.
+- Ask the backup or virtualization owner whether snapshot consolidation was underway.
+
+
+*False positive analysis*
+
+
+Backup products and administrators delete snapshots after a successful consolidate. Match the account and the change ticket before closing the alert.
+
+
+*Response and remediation*
+
+
+- If removal was not approved, isolate the host and stop the shell session.
+- Restore affected VMs from an off-host backup. Datastore snapshots removed by this command are gone.
+- Preserve shell history and hostd logs.
+
+
+==== Setup
+
+
+
+*Setup*
+
+
+This rule requires ESXi host logs collected by the Elastic vSphere integration: https://www.elastic.co/docs/reference/integrations/vsphere
+
+
+==== Rule query
+
+
+[source, js]
+----------------------------------
+data_stream.dataset: "vsphere.log" and (
+  message: "snapshot.removeall"
+)
+
+----------------------------------
+
+*Framework*: MITRE ATT&CK^TM^
+
+* Tactic:
+** Name: Impact
+** ID: TA0040
+** Reference URL: https://attack.mitre.org/tactics/TA0040/
+* Technique:
+** Name: Inhibit System Recovery
+** ID: T1490
+** Reference URL: https://attack.mitre.org/techniques/T1490/
