@@ -1,0 +1,125 @@
+[[github-advanced-security-disabled]]
+=== GitHub Advanced Security Disabled
+
+Detects GitHub Advanced Security being disabled for an enterprise, for all or new repositories in an organization, for existing or new user-namespace repositories, or for selected members via enterprise policy. Disabling GHAS removes secret scanning, code scanning, and related controls.
+
+*Rule type*: esql
+
+*Rule indices*: None
+
+*Severity*: medium
+
+*Risk score*: 47
+
+*Runs every*: 5m
+
+*Searches indices from*: now-9m ({ref}/common-options.html#date-math[Date Math format], see also <<rule-schedule, `Additional look-back time`>>)
+
+*Maximum alerts per execution*: 100
+
+*References*: 
+
+* https://docs.github.com/en/get-started/learning-about-github/about-github-advanced-security
+
+*Tags*: 
+
+* Domain: Cloud
+* Domain: SaaS
+* Platform: GitHub
+* Use Case: Threat Detection
+* Tactic: Defense Evasion
+* Data Source: Github
+* Data Source: GitHub Audit Logs
+* Rule Type: ESQL
+* Resources: Investigation Guide
+
+*Version*: 1
+
+*Rule authors*: 
+
+* Elastic
+
+*Rule license*: Elastic License v2
+
+
+==== Investigation guide
+
+
+
+*Triage and analysis*
+
+
+
+*Investigating GitHub Advanced Security Disabled*
+
+
+Enterprise `business_advanced_security.*` disable actions (for the business, new repositories, and existing or new user-namespace repositories) and org-level `org.advanced_security_*` disable actions (all repos, new repos, and selected-member policy) strip scanning coverage. This is separate from a single-repo `repository_secret_scanning.disable`.
+
+
+*Possible investigation steps*
+
+
+- Identify `user.name`, `event.action`, and `github.org`.
+- Check secret scanning, Dependabot, and code scanning on critical repositories.
+
+
+*False positive analysis*
+
+
+- License downsizing with a finance ticket.
+
+
+*Response and remediation*
+
+
+- Re-enable Advanced Security. Review commits made while scanning was off.
+
+
+==== Rule query
+
+
+[source, js]
+----------------------------------
+from logs-github.audit-* metadata _id, _index, _version
+| where
+  event.module == "github" and data_stream.dataset == "github.audit"
+    and event.action in (
+      "business_advanced_security.disabled",
+      "business_advanced_security.disabled_for_new_repos",
+      "business_advanced_security.disabled_for_new_user_namespace_repos",
+      "business_advanced_security.user_namespace_repos_disabled",
+      "org.advanced_security_disabled_on_all_repos",
+      "org.advanced_security_disabled_for_new_repos",
+      "org.advanced_security_policy_selected_member_disabled"
+    )
+| keep
+    _id,
+    _index,
+    _version,
+    @timestamp,
+    event.action,
+    user.name,
+    github.org,
+    github.repo,
+    github.actor_ip,
+    github.hashed_token,
+    github.programmatic_access_type,
+    github.user_agent,
+    github.business
+
+----------------------------------
+
+*Framework*: MITRE ATT&CK^TM^
+
+* Tactic:
+** Name: Defense Evasion
+** ID: TA0005
+** Reference URL: https://attack.mitre.org/tactics/TA0005/
+* Technique:
+** Name: Impair Defenses
+** ID: T1562
+** Reference URL: https://attack.mitre.org/techniques/T1562/
+* Sub-technique:
+** Name: Disable or Modify Tools
+** ID: T1562.001
+** Reference URL: https://attack.mitre.org/techniques/T1562/001/

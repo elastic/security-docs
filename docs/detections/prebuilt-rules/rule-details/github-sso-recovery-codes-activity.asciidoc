@@ -1,0 +1,139 @@
+[[github-sso-recovery-codes-activity]]
+=== GitHub SSO Recovery Codes Activity
+
+Detects viewing, downloading, printing, generating, or using GitHub enterprise or organization SSO recovery codes. These codes bypass the IdP and are break-glass credentials.
+
+*Rule type*: esql
+
+*Rule indices*: None
+
+*Severity*: high
+
+*Risk score*: 73
+
+*Runs every*: 5m
+
+*Searches indices from*: now-9m ({ref}/common-options.html#date-math[Date Math format], see also <<rule-schedule, `Additional look-back time`>>)
+
+*Maximum alerts per execution*: 100
+
+*References*: 
+
+* https://docs.github.com/en/enterprise-cloud@latest/admin/identity-and-access-management/managing-recovery-codes-for-your-enterprise/downloading-your-enterprise-accounts-single-sign-on-recovery-codes
+
+*Tags*: 
+
+* Domain: Cloud
+* Domain: SaaS
+* Platform: GitHub
+* Use Case: Threat Detection
+* Tactic: Credential Access
+* Tactic: Persistence
+* Data Source: GitHub Audit Logs
+* Rule Type: ESQL
+* Resources: Investigation Guide
+
+*Version*: 1
+
+*Rule authors*: 
+
+* Elastic
+
+*Rule license*: Elastic License v2
+
+
+==== Investigation guide
+
+
+
+*Triage and analysis*
+
+
+
+*Investigating GitHub SSO Recovery Codes Activity*
+
+
+Recovery-code events are rare. Download/view/print/generate often precede an SSO bypass. Use/fail events indicate an actual sign-in attempt with a recovery code.
+
+
+*Possible investigation steps*
+
+
+- Identify `user.name`, `event.action`, and `github.actor_ip`.
+- Correlate with `business.disable_saml` / MFA disable and new owner invites.
+
+
+*False positive analysis*
+
+
+- Scheduled recovery-code rotation with two-person integrity.
+
+
+*Response and remediation*
+
+
+- Rotate recovery codes, review SSO configuration, and force re-authentication of enterprise owners.
+
+
+==== Rule query
+
+
+[source, js]
+----------------------------------
+from logs-github.audit-* metadata _id, _index, _version
+| where
+  event.module == "github" and data_stream.dataset == "github.audit"
+    and event.action in (
+      "business.recovery_codes_downloaded",
+      "business.recovery_codes_generated",
+      "business.recovery_codes_printed",
+      "business.recovery_codes_viewed",
+      "business.recovery_code_used",
+      "business.recovery_code_failed",
+      "org.recovery_codes_downloaded",
+      "org.recovery_codes_generated",
+      "org.recovery_codes_printed",
+      "org.recovery_codes_viewed",
+      "org.recovery_code_used",
+      "org.recovery_code_failed"
+    )
+| keep
+    _id,
+    _index,
+    _version,
+    @timestamp,
+    event.action,
+    user.name,
+    github.org,
+    github.actor_is_bot,
+    github.repo,
+    github.actor_ip,
+    github.hashed_token,
+    github.programmatic_access_type,
+    github.user_agent,
+    github.business
+
+----------------------------------
+
+*Framework*: MITRE ATT&CK^TM^
+
+* Tactic:
+** Name: Credential Access
+** ID: TA0006
+** Reference URL: https://attack.mitre.org/tactics/TA0006/
+* Technique:
+** Name: Unsecured Credentials
+** ID: T1552
+** Reference URL: https://attack.mitre.org/techniques/T1552/
+* Tactic:
+** Name: Persistence
+** ID: TA0003
+** Reference URL: https://attack.mitre.org/tactics/TA0003/
+* Technique:
+** Name: Valid Accounts
+** ID: T1078
+** Reference URL: https://attack.mitre.org/techniques/T1078/
+* Sub-technique:
+** Name: Cloud Accounts
+** ID: T1078.004
+** Reference URL: https://attack.mitre.org/techniques/T1078/004/

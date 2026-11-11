@@ -1,0 +1,152 @@
+[[prebuilt-rule-8-19-37-github-saml-sso-disabled]]
+=== GitHub SAML SSO Disabled
+
+Detects when SAML single sign-on (SSO) is disabled for a GitHub enterprise or organization. SAML SSO delegates authentication to an external identity provider (IdP) and lets administrators enforce IdP-side controls such as MFA, conditional access, and centralized deprovisioning. Disabling it removes those controls and allows members to authenticate with GitHub credentials alone. Following an account takeover, an adversary may disable SSO to evade IdP-enforced access policies and maintain access that survives IdP-side session revocation and deprovisioning, making this a high-impact identity-control change.
+
+*Rule type*: esql
+
+*Rule indices*: None
+
+*Severity*: high
+
+*Risk score*: 73
+
+*Runs every*: 5m
+
+*Searches indices from*: now-9m ({ref}/common-options.html#date-math[Date Math format], see also <<rule-schedule, `Additional look-back time`>>)
+
+*Maximum alerts per execution*: 100
+
+*References*: 
+
+* https://docs.github.com/en/enterprise-cloud@latest/admin/identity-and-access-management/using-saml-for-enterprise-iam/configuring-saml-single-sign-on-for-your-enterprise
+
+*Tags*: 
+
+* Domain: Cloud
+* Domain: SaaS
+* Platform: GitHub
+* Use Case: Threat Detection
+* Tactic: Credential Access
+* Tactic: Defense Evasion
+* Tactic: Persistence
+* Data Source: Github
+* Data Source: GitHub Audit Logs
+* Rule Type: ES|QL
+* Resources: Investigation Guide
+
+*Version*: 1
+
+*Rule authors*: 
+
+* Elastic
+
+*Rule license*: Elastic License v2
+
+
+==== Investigation guide
+
+
+
+*Triage and analysis*
+
+
+> **Disclaimer**:
+> This investigation guide was created using generative AI technology and has been reviewed to improve its accuracy and relevance. While every effort has been made to ensure its quality, we recommend validating the content and adapting it to suit your specific environment and operational needs.
+
+
+*Investigating GitHub SAML SSO Disabled*
+
+
+This rule triggers on `business.disable_saml` and `org.disable_saml`, which record the disabling of SAML single sign-on at the enterprise or organization level. SAML SSO delegates authentication to an external identity provider (IdP) and lets administrators enforce IdP-side controls such as MFA, conditional access, and centralized deprovisioning. Disabling it removes those controls and allows members to authenticate with GitHub credentials alone, which is a common defense-evasion and persistence step after an owner account is compromised: it severs IdP-enforced policy and keeps access alive even if the IdP later revokes sessions or deprovisions the user. These events only apply to enterprises/orgs that have SAML configured and will not fire on a personal-account GHEC trial without SSO.
+
+
+*Possible investigation steps*
+
+
+- Identify the actor from `user.name`, `github.actor_ip`, `github.user_agent`, and `github.programmatic_access_type`, and confirm whether they legitimately hold enterprise or organization owner privileges.
+- Determine the scope from `event.action` (`org.disable_saml` vs `business.disable_saml`) and the affected `github.org`/`github.business`, and verify whether the change was approved in an IdP-migration or SAML-reconfiguration change ticket.
+- Pivot on `github.hashed_token` and `github.programmatic_access_type` to determine whether the change was made interactively in the UI or via a token, and treat token-driven changes as a stronger compromise signal.
+- Check for correlated account-takeover indicators in the same window: recovery-code usage, new owner or member additions, PAT grants, OAuth App authorizations, 2FA requirement changes, and sign-ins from unusual IPs or ASNs.
+- Review membership, access, and credential changes made while SSO was disabled, since members could authenticate without IdP enforcement during that period.
+- If the change is unauthorized, re-enable SAML SSO before continuing the investigation to restore IdP-enforced access control.
+
+
+*False positive analysis*
+
+
+- A planned IdP cutover or SAML provider reconfiguration performed within an approved change window; this should be ticketed, keep a second owner session active, and re-enable SSO as soon as the new provider is ready.
+- A governance or migration change (for example, consolidating organizations under an enterprise) performed by a known administrator can generate this event as expected activity.
+
+
+*Response and remediation*
+
+
+- Re-enable SAML SSO and require SSO for all members as soon as the change is confirmed unauthorized.
+- Invalidate active sessions and force re-authentication through the IdP so that access is re-gated by IdP-enforced controls.
+- Review and reverse any membership, access, or credential changes made while SSO was disabled, and revoke tokens created during that period.
+- Review org and enterprise audit logs for other changes made by the actor after the disable event, and revert any unauthorized modifications.
+- Escalate to incident response if the actor is unknown or unauthorized, or if the disable event is accompanied by new owner additions, token grants, recovery-code usage, or sign-ins from unfamiliar infrastructure.
+- Harden by requiring SSO for all members, restricting who can change enterprise/organization authentication settings, and alerting on future changes to the SAML configuration.
+
+
+==== Rule query
+
+
+[source, js]
+----------------------------------
+from logs-github.audit-* metadata _id, _index, _version
+| where
+  event.module == "github" and data_stream.dataset == "github.audit"
+    and event.action in ("business.disable_saml", "org.disable_saml")
+| keep
+    _id,
+    _index,
+    _version,
+    @timestamp,
+    event.action,
+    user.name,
+    github.org,
+    github.repo,
+    github.actor_ip,
+    github.hashed_token,
+    github.programmatic_access_type,
+    github.user_agent,
+    github.business
+
+----------------------------------
+
+*Framework*: MITRE ATT&CK^TM^
+
+* Tactic:
+** Name: Defense Evasion
+** ID: TA0005
+** Reference URL: https://attack.mitre.org/tactics/TA0005/
+* Technique:
+** Name: Impair Defenses
+** ID: T1562
+** Reference URL: https://attack.mitre.org/techniques/T1562/
+* Tactic:
+** Name: Credential Access
+** ID: TA0006
+** Reference URL: https://attack.mitre.org/tactics/TA0006/
+* Technique:
+** Name: Modify Authentication Process
+** ID: T1556
+** Reference URL: https://attack.mitre.org/techniques/T1556/
+* Sub-technique:
+** Name: Hybrid Identity
+** ID: T1556.007
+** Reference URL: https://attack.mitre.org/techniques/T1556/007/
+* Tactic:
+** Name: Persistence
+** ID: TA0003
+** Reference URL: https://attack.mitre.org/tactics/TA0003/
+* Technique:
+** Name: Modify Authentication Process
+** ID: T1556
+** Reference URL: https://attack.mitre.org/techniques/T1556/
+* Sub-technique:
+** Name: Hybrid Identity
+** ID: T1556.007
+** Reference URL: https://attack.mitre.org/techniques/T1556/007/

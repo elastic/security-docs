@@ -1,0 +1,143 @@
+[[github-ip-allow-list-modified]]
+=== GitHub IP Allow List Modified
+
+Detects changes to a GitHub organization IP allow list: creating, updating, or deleting allow-list entries, or enabling/disabling allow-list enforcement (including enforcement for installed GitHub Apps, the IdP-provided web allow list, and user-level enforcement). Adversaries with org-owner access may add or modify their own address, then enable enforcement, or weaken enforcement and remove legitimate entries to lock out administrators.
+
+*Rule type*: esql
+
+*Rule indices*: None
+
+*Severity*: medium
+
+*Risk score*: 47
+
+*Runs every*: 5m
+
+*Searches indices from*: now-9m ({ref}/common-options.html#date-math[Date Math format], see also <<rule-schedule, `Additional look-back time`>>)
+
+*Maximum alerts per execution*: 100
+
+*References*: 
+
+* https://docs.github.com/en/organizations/keeping-your-organization-secure/managing-security-settings-for-your-organization/managing-allowed-ip-addresses-for-your-organization
+
+*Tags*: 
+
+* Domain: Cloud
+* Domain: SaaS
+* Platform: GitHub
+* Use Case: Threat Detection
+* Tactic: Defense Evasion
+* Tactic: Persistence
+* Data Source: Github
+* Data Source: GitHub Audit Logs
+* Rule Type: ESQL
+* Resources: Investigation Guide
+
+*Version*: 1
+
+*Rule authors*: 
+
+* Elastic
+
+*Rule license*: Elastic License v2
+
+
+==== Investigation guide
+
+
+
+*Triage and analysis*
+
+
+
+*Investigating GitHub IP Allow List Modified*
+
+
+IP allow list entries are often staged before enforcement. An attacker can add a malicious egress IP, then enable the list to persist access and lock out responders.
+
+
+*Possible investigation steps*
+
+
+- Identify `user.name`, `github.actor_ip`, and `github.programmatic_access_type`.
+- In GitHub org authentication security settings, review the entry that was added or removed and whether the allow list is enabled.
+- Treat `ip_allow_list.enable` as higher urgency than an entry create: enforcement can lock out responders.
+- Correlate with unusual `git.clone` / `git.push` from new source IPs.
+
+
+*False positive analysis*
+
+
+- Adding and removing a test entry during network onboarding.
+- Automation that syncs allow list entries from a CMDB.
+
+
+*Response and remediation*
+
+
+- Remove unauthorized entries and confirm enforcement state matches policy.
+- Do not enable enforcement until trusted egress IPs are present, to avoid lockout.
+- Rotate credentials for the actor if the change was not approved.
+
+
+==== Rule query
+
+
+[source, js]
+----------------------------------
+from logs-github.audit-* metadata _id, _index, _version
+| where
+  event.module == "github" and data_stream.dataset == "github.audit"
+    and event.action in (
+      "ip_allow_list_entry.create",
+      "ip_allow_list_entry.update",
+      "ip_allow_list_entry.destroy",
+      "ip_allow_list.enable",
+      "ip_allow_list.disable",
+      "ip_allow_list.enable_for_installed_apps",
+      "ip_allow_list.disable_for_installed_apps",
+      "ip_allow_list.enable_idp_ip_allowlist_for_web",
+      "ip_allow_list.disable_idp_ip_allowlist_for_web",
+      "ip_allow_list.enable_user_level_enforcement",
+      "ip_allow_list.disable_user_level_enforcement"
+    )
+| keep
+    _id,
+    _index,
+    _version,
+    @timestamp,
+    event.action,
+    user.name,
+    github.org,
+    github.repo,
+    github.actor_ip,
+    github.hashed_token,
+    github.programmatic_access_type,
+    github.user_agent,
+    github.name
+
+----------------------------------
+
+*Framework*: MITRE ATT&CK^TM^
+
+* Tactic:
+** Name: Defense Evasion
+** ID: TA0005
+** Reference URL: https://attack.mitre.org/tactics/TA0005/
+* Technique:
+** Name: Impair Defenses
+** ID: T1562
+** Reference URL: https://attack.mitre.org/techniques/T1562/
+* Sub-technique:
+** Name: Disable or Modify Cloud Firewall
+** ID: T1562.007
+** Reference URL: https://attack.mitre.org/techniques/T1562/007/
+* Tactic:
+** Name: Persistence
+** ID: TA0003
+** Reference URL: https://attack.mitre.org/tactics/TA0003/
+* Technique:
+** Name: Modify Authentication Process
+** ID: T1556
+** Reference URL: https://attack.mitre.org/techniques/T1556/

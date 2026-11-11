@@ -1,0 +1,135 @@
+[[prebuilt-rule-8-19-37-github-api-failed-access-burst]]
+=== GitHub API Failed Access Burst
+
+Detects a burst of failed GitHub API requests (HTTP 4xx/5xx) recorded as `api.request`, where a single non-bot actor and source IP generate a high volume of failures spread across many distinct API routes within a short window. An adversary probing private repositories, secrets, or admin routes produces clusters of 401/403/404 responses across many endpoints, whereas broken automation usually hammers a small number of routes. Grouping by actor and source IP and requiring both a high failure count and a high number of distinct routes separates broad enumeration from a single misconfigured integration. Requires API Request Events on GitHub audit log streaming.
+
+*Rule type*: esql
+
+*Rule indices*: None
+
+*Severity*: low
+
+*Risk score*: 21
+
+*Runs every*: 10m
+
+*Searches indices from*: now-11m ({ref}/common-options.html#date-math[Date Math format], see also <<rule-schedule, `Additional look-back time`>>)
+
+*Maximum alerts per execution*: 100
+
+*References*: 
+
+* https://securitylabs.datadoghq.com/articles/mapping-out-your-unknown-threat-hunters-guide-to-github/
+* https://docs.github.com/en/enterprise-cloud@latest/admin/monitoring-activity-in-your-enterprise/reviewing-audit-logs-for-your-enterprise/streaming-the-audit-log-for-your-enterprise#enabling-api-request-events
+
+*Tags*: 
+
+* Domain: Cloud
+* Domain: SaaS
+* Platform: GitHub
+* Use Case: Threat Detection
+* Tactic: Discovery
+* Data Source: Github
+* Data Source: GitHub Audit Logs
+* Rule Type: ES|QL
+* Resources: Investigation Guide
+
+*Version*: 1
+
+*Rule authors*: 
+
+* Elastic
+
+*Rule license*: Elastic License v2
+
+
+==== Investigation guide
+
+
+
+*Triage and analysis*
+
+
+> **Disclaimer**:
+> This investigation guide was created using generative AI technology and has been reviewed to improve its accuracy and relevance. While every effort has been made to ensure its quality, we recommend validating the content and adapting it to suit your specific environment and operational needs.
+
+
+*Investigating GitHub API Failed Access Burst*
+
+
+Failed `api.request` status codes often precede successful enumeration after the attacker finds a valid path or token. This rule groups failed requests by `user.name` and `github.actor_ip` and fires when a single actor/IP produces at least 15 failures spread across 10 or more distinct API routes in the window, which distinguishes broad enumeration from a single broken integration hammering one endpoint.
+
+
+*Possible investigation steps*
+
+
+- Review the alerting `user.name` and `github.actor_ip`, and inspect `Esql.distinct_route_count` and `Esql.github_route_values` to see which routes were probed.
+- Review `Esql.github_status_code_values` to confirm the mix of 401/403/404 responses typical of access probing.
+- Pivot on `Esql.github_token_id_values` and `Esql.github_programmatic_access_type_values` to identify the token and access method used.
+- Check `Esql.distinct_repo_count` and `Esql.github_org_values` to gauge how broadly the actor is probing across repositories and organizations.
+- Look for a later run of 200s on secrets, trees, or contents from the same actor or token, which indicates successful enumeration.
+
+
+*False positive analysis*
+
+
+- CI or inventory tooling using a token that lacks repo scope against private repositories. These typically hit a small number of routes, so review `Esql.distinct_route_count` and the route values before dismissing.
+- Expired or rotated tokens causing widespread 401s from a known automation IP.
+
+
+*Response and remediation*
+
+
+- Revoke the token if the actor is not a known automation identity. Tighten org PAT policies.
+- Block or monitor the source IP if the activity is clearly reconnaissance.
+- Review whether any probed route later returned a success for the same actor.
+
+
+==== Setup
+
+
+
+*Setup*
+
+
+Requires the Elastic GitHub integration, GitHub Enterprise audit log streaming, and **Enable API Request Events**.
+
+
+==== Rule query
+
+
+[source, js]
+----------------------------------
+from logs-github.audit-* metadata _id, _index, _version
+| where
+  data_stream.dataset == "github.audit" and event.action == "api.request" and github.status_code >= 400
+    and (github.actor_is_bot == false or github.actor_is_bot is null)
+| stats
+  Esql.event_count = COUNT(*),
+  Esql.distinct_route_count = COUNT_DISTINCT(github.route),
+  Esql.distinct_repo_count = COUNT_DISTINCT(github.repo),
+  Esql.github_route_values = values(github.route),
+  Esql.github_status_code_values = values(github.status_code),
+  Esql.github_org_values = values(github.org),
+  Esql.github_programmatic_access_type_values = values(github.programmatic_access_type),
+  Esql.github_user_agent_values = values(github.user_agent),
+  Esql.agent_id_values = values(agent.id),
+  Esql.data_stream_dataset_values = values(data_stream.dataset),
+  Esql.data_stream_namespace_values = values(data_stream.namespace),
+  Esql.github_token_id_values = values(github.token_id)
+  by user.name, github.actor_ip
+| keep user.name, github.actor_ip, Esql.*
+| where Esql.event_count >= 15 and Esql.distinct_route_count >= 10
+
+----------------------------------
+
+*Framework*: MITRE ATT&CK^TM^
+
+* Tactic:
+** Name: Discovery
+** ID: TA0007
+** Reference URL: https://attack.mitre.org/tactics/TA0007/
+* Technique:
+** Name: Cloud Service Discovery
+** ID: T1526
+** Reference URL: https://attack.mitre.org/techniques/T1526/

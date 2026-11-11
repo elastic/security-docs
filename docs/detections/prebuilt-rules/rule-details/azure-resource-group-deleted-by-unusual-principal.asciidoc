@@ -1,0 +1,163 @@
+[[azure-resource-group-deleted-by-unusual-principal]]
+=== Azure Resource Group Deleted by Unusual Principal
+
+Identifies Azure resource group deletions by a principal that has not performed this operation in the prior 7 days. Deletion of a resource group is permanent and removes all resources in the group. This rule uses an ES|QL first-seen (new terms) approach keyed on the acting principal so routine infrastructure-as-code teardown is suppressed after the first occurrence, while still surfacing first-time or unusual identities performing the delete.
+
+*Rule type*: esql
+
+*Rule indices*: None
+
+*Severity*: medium
+
+*Risk score*: 47
+
+*Runs every*: 5m
+
+*Searches indices from*: now-7d ({ref}/common-options.html#date-math[Date Math format], see also <<rule-schedule, `Additional look-back time`>>)
+
+*Maximum alerts per execution*: 100
+
+*References*: 
+
+* https://docs.microsoft.com/en-us/azure/azure-resource-manager/management/manage-resource-groups-portal
+
+*Tags*: 
+
+* Domain: Cloud
+* Data Source: Azure
+* Use Case: Log Auditing
+* Tactic: Impact
+* Resources: Investigation Guide
+* Noise: Low
+* Performance: Fast
+* Profile: Recommended
+* Tactic: Defense Evasion
+* Rule Type: ES|QL
+* Platform: Azure
+* Data Source: Azure Activity Logs
+* Service: Azure Resource Manager
+
+*Version*: 112
+
+*Rule authors*: 
+
+* Elastic
+
+*Rule license*: Elastic License v2
+
+
+==== Investigation guide
+
+
+
+*Triage and analysis*
+
+
+
+*Investigating Azure Resource Group Deleted by Unusual Principal*
+
+
+Azure Resource Groups contain related resources for a solution. Deleting a group is irreversible and removes every resource in it. This rule aggregates successful `RESOURCEGROUPS/DELETE` operations over a 7-day lookback and alerts when a principal's first delete in that window falls in the current schedule interval. Repeat deletes by the same automation identity are suppressed; a newly seen user or service principal is not.
+
+
+*Possible investigation steps*
+
+
+- Identify the acting principal from `azure.activitylogs.identity.authorization.evidence.principal_id` and check `Esql.principal_type_values` (User vs ServicePrincipal vs Group). Resolve the human-readable name from `Esql.initiated_by_user_values`.
+- Review `Esql.appid_values` and `Esql.role_values` to distinguish first-party / IaC identities from interactive clients such as Azure Portal or Azure CLI. `Esql.role_assignment_id_values` shows which assignment granted delete.
+- Pivot on `Esql.session_id_values` (`azure.activitylogs.identity.claims.sid`) and `Esql.unique_token_id_values` to Entra sign-in logs and Microsoft Graph activity for the same session.
+- Use `Esql.correlation_id_values` to find related ARM operations (lock removal, mass deletes, RBAC changes) in the same activity-log transaction.
+- Inspect `Esql.resource_group_values` and `Esql.resource_id_values` for the groups that were deleted and whether they look like lab, ephemeral, or production naming.
+- Check `Esql.source_ip_values`, `Esql.source_country_values`, and `Esql.source_as_number_values`, then correlate Entra ID sign-in logs for the same principal around `Esql.first_time_seen`.
+- Look for related activity by the same principal: role assignments, lock removal, mass resource deletes, or snapshot/backup deletion.
+- Confirm whether the delete was ticketed or matches a known pipeline / GitOps controller.
+
+
+*False positive analysis*
+
+
+- Crossplane, Terraform, GitHub Actions, and similar automation will alert on the first resource-group delete per principal in 7 days, then go quiet. Exclude verified automation principals after review.
+- AKS and other Microsoft-owned control-plane identities may delete managed node resource groups as part of cluster lifecycle.
+- Newly provisioned automation identities performing expected teardown will fire once; do not allowlist by tenant or user GUID.
+
+
+*Response and remediation*
+
+
+- If unauthorized, disable the principal, revoke standing Contributor/Owner on the subscription, and place resource locks on remaining critical groups.
+- Restore from backup or IaC state if the deleted group hosted production resources.
+- Audit other deletes and RBAC changes by the same principal during the same window.
+- Require privileged delete operations to go through PIM or a change-control pipeline.
+
+
+==== Rule query
+
+
+[source, js]
+----------------------------------
+FROM logs-azure.activitylogs-*, filebeat-*
+| WHERE data_stream.dataset == "azure.activitylogs"
+    AND event.action == "MICROSOFT.RESOURCES/SUBSCRIPTIONS/RESOURCEGROUPS/DELETE"
+    AND event.outcome IN ("success", "Success")
+    AND azure.activitylogs.identity.authorization.evidence.principal_id IS NOT NULL
+| STATS Esql.first_time_seen = MIN(@timestamp),
+        Esql.last_time_seen = MAX(@timestamp),
+        Esql.event_count = COUNT(*),
+        Esql.resource_group_values = VALUES(azure.resource.group),
+        Esql.resource_name_values = VALUES(azure.resource.name),
+        Esql.resource_id_values = VALUES(azure.resource.id),
+        Esql.principal_type_values = VALUES(azure.activitylogs.identity.authorization.evidence.principal_type),
+        Esql.initiated_by_user_values = VALUES(azure.activitylogs.identity.claims_initiated_by_user.name),
+        Esql.appid_values = VALUES(azure.activitylogs.identity.claims.appid),
+        Esql.session_id_values = VALUES(azure.activitylogs.identity.claims.sid),
+        Esql.unique_token_id_values = VALUES(azure.activitylogs.identity.claims.uti),
+        Esql.correlation_id_values = VALUES(azure.correlation_id),
+        Esql.role_values = VALUES(azure.activitylogs.identity.authorization.evidence.role),
+        Esql.role_assignment_id_values = VALUES(azure.activitylogs.identity.authorization.evidence.role_assignment_id),
+        Esql.source_ip_values = VALUES(source.ip),
+        Esql.source_country_values = VALUES(source.geo.country_name),
+        Esql.source_as_number_values = VALUES(source.`as`.number),
+        Esql.subscription_id_values = VALUES(azure.subscription_id)
+        BY azure.activitylogs.identity.authorization.evidence.principal_id
+// new terms emulation: fire when this principal's first_seen falls in the current interval
+// (schedule + ingest-lag buffer), i.e. it was absent from the rest of the 7-day window
+| EVAL Esql.recent_minutes = DATE_DIFF("minute", Esql.first_time_seen, NOW())
+| WHERE Esql.recent_minutes <= 10
+| KEEP azure.*, Esql.*
+
+----------------------------------
+
+*Framework*: MITRE ATT&CK^TM^
+
+* Tactic:
+** Name: Impact
+** ID: TA0040
+** Reference URL: https://attack.mitre.org/tactics/TA0040/
+* Technique:
+** Name: System Shutdown/Reboot
+** ID: T1529
+** Reference URL: https://attack.mitre.org/techniques/T1529/
+* Technique:
+** Name: Inhibit System Recovery
+** ID: T1490
+** Reference URL: https://attack.mitre.org/techniques/T1490/
+* Technique:
+** Name: Service Stop
+** ID: T1489
+** Reference URL: https://attack.mitre.org/techniques/T1489/
+* Technique:
+** Name: Data Destruction
+** ID: T1485
+** Reference URL: https://attack.mitre.org/techniques/T1485/
+* Tactic:
+** Name: Defense Evasion
+** ID: TA0005
+** Reference URL: https://attack.mitre.org/tactics/TA0005/
+* Technique:
+** Name: Impair Defenses
+** ID: T1562
+** Reference URL: https://attack.mitre.org/techniques/T1562/
+* Sub-technique:
+** Name: Disable or Modify Tools
+** ID: T1562.001
+** Reference URL: https://attack.mitre.org/techniques/T1562/001/
