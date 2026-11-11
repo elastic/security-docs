@@ -1,0 +1,137 @@
+[[prebuilt-rule-8-19-37-github-webhook-created-or-configuration-changed]]
+=== GitHub Webhook Created or Configuration Changed
+
+Detects creation or configuration change of a GitHub webhook. Attackers can add a hook to copy push, pull request, and workflow payloads (including secrets that land in those events) to an external URL.
+
+*Rule type*: esql
+
+*Rule indices*: None
+
+*Severity*: low
+
+*Risk score*: 21
+
+*Runs every*: 5m
+
+*Searches indices from*: now-9m ({ref}/common-options.html#date-math[Date Math format], see also <<rule-schedule, `Additional look-back time`>>)
+
+*Maximum alerts per execution*: 100
+
+*References*: 
+
+* https://docs.github.com/en/webhooks/about-webhooks
+* https://docs.github.com/en/organizations/keeping-your-organization-secure/managing-security-settings-for-your-organization/audit-log-events-for-your-organization
+
+*Tags*: 
+
+* Domain: Cloud
+* Domain: SaaS
+* Platform: GitHub
+* Use Case: Threat Detection
+* Tactic: Collection
+* Tactic: Exfiltration
+* Data Source: Github
+* Data Source: GitHub Audit Logs
+* Rule Type: ES|QL
+* Resources: Investigation Guide
+
+*Version*: 1
+
+*Rule authors*: 
+
+* Elastic
+
+*Rule license*: Elastic License v2
+
+
+==== Investigation guide
+
+
+
+*Triage and analysis*
+
+
+
+*Investigating GitHub Webhook Created or Configuration Changed*
+
+
+`hook.create` adds a webhook. `hook.config_changed` updates the payload URL or other hook settings. Either action can send repository events to an attacker-controlled endpoint.
+
+
+*Possible investigation steps*
+
+
+- Identify `user.name`, `github.repo`, `github.actor_ip`, and `github.programmatic_access_type`.
+- In repository Settings → Webhooks, inspect the payload URL, content type, and subscribed events. Treat unknown hosts as compromised.
+- Pivot to `git.push`, `repo.download_zip`, and Actions secret creates by the same actor.
+
+
+*False positive analysis*
+
+
+- First-time install of Slack, Jira, or a deploy bot that registers a webhook.
+- Terraform or GitHub App automation that manages hooks.
+
+
+*Response and remediation*
+
+
+- Delete unauthorized webhooks. Rotate secrets that may have been delivered in payloads.
+- Revoke the actor's tokens if the hook was not approved.
+
+
+==== Rule query
+
+
+[source, js]
+----------------------------------
+from logs-github.audit-* metadata _id, _index, _version
+| where
+  data_stream.dataset == "github.audit"
+    and (github.actor_is_bot is not null and github.actor_is_bot == false)
+    and event.action in ("hook.create", "hook.config_changed")
+| keep
+    _id,
+    _index,
+    _version,
+    @timestamp,
+    event.action,
+    user.name,
+    github.org,
+    github.repo,
+    github.actor_ip,
+    github.hashed_token,
+    github.programmatic_access_type,
+    github.user_agent,
+    github.hook_id,
+    github.name,
+    github.actor_is_bot
+
+----------------------------------
+
+*Framework*: MITRE ATT&CK^TM^
+
+* Tactic:
+** Name: Collection
+** ID: TA0009
+** Reference URL: https://attack.mitre.org/tactics/TA0009/
+* Technique:
+** Name: Data from Information Repositories
+** ID: T1213
+** Reference URL: https://attack.mitre.org/techniques/T1213/
+* Sub-technique:
+** Name: Code Repositories
+** ID: T1213.003
+** Reference URL: https://attack.mitre.org/techniques/T1213/003/
+* Tactic:
+** Name: Exfiltration
+** ID: TA0010
+** Reference URL: https://attack.mitre.org/tactics/TA0010/
+* Technique:
+** Name: Exfiltration Over Web Service
+** ID: T1567
+** Reference URL: https://attack.mitre.org/techniques/T1567/
+* Sub-technique:
+** Name: Exfiltration Over Webhook
+** ID: T1567.004
+** Reference URL: https://attack.mitre.org/techniques/T1567/004/

@@ -1,0 +1,132 @@
+[[first-time-gcp-vertex-ai-inference-by-caller-from-source-asn]]
+=== First Time GCP Vertex AI Inference by Caller from Source ASN
+
+Detects the first time in 14 days that a Vertex AI caller (user or service account) runs model inference (GenerateContent, StreamGenerateContent, Predict, or RawPredict) from a source autonomous system (ASN). Stolen Google Cloud credentials, including exported service account keys and OAuth tokens, are used for LLMjacking from attacker infrastructure, which shows up as the victim identity calling models from a hosting provider, VPN, or residential proxy network it has never used before.
+
+*Rule type*: new_terms
+
+*Rule indices*: 
+
+* logs-gcp_vertexai.auditlogs-*
+
+*Severity*: low
+
+*Risk score*: 21
+
+*Runs every*: 10m
+
+*Searches indices from*: now-60m ({ref}/common-options.html#date-math[Date Math format], see also <<rule-schedule, `Additional look-back time`>>)
+
+*Maximum alerts per execution*: 100
+
+*References*: 
+
+* https://cloud.google.com/vertex-ai/docs/general/audit-logging
+* https://www.elastic.co/docs/reference/integrations/gcp_vertexai
+
+*Tags*: 
+
+* Domain: GenAI
+* Domain: Cloud
+* Data Source: GCP Vertex AI
+* Data Source: GCP
+* Data Source: Google Cloud Platform
+* Platform: GCP
+* Service: GCP Vertex AI
+* Use Case: Threat Detection
+* Tactic: Initial Access
+* Threat: LLMjacking
+* Threat: Unauthorized AI Usage
+* Mitre Atlas: AML.T0012
+* Resources: Investigation Guide
+* Rule Type: New Terms
+
+*Version*: 1
+
+*Rule authors*: 
+
+* Elastic
+
+*Rule license*: Elastic License v2
+
+
+==== Investigation guide
+
+
+
+*Triage and analysis*
+
+
+
+*Investigating First Time GCP Vertex AI Inference by Caller from Source ASN*
+
+
+A Vertex AI caller (`client.user.email`) made a successful inference call from a source ASN (`source.as.number`) that
+it has not used for inference in the last 14 days. For a stolen credential this is often the first visible sign of
+abuse, because the attacker calls models from their own infrastructure.
+
+
+*Possible investigation steps*
+
+
+- Review `source.as.organization.name`, `source.ip`, and `source.geo.country_name`. Hosting providers, VPN services,
+  and residential proxy networks are more suspicious than a known corporate or home ISP.
+- Determine whether `client.user.email` is a human user or a service account (`*.gserviceaccount.com`). A service
+  account normally runs from a fixed set of networks, so a new ASN is a stronger signal.
+- Compare `user_agent.original` with the caller's previous inference activity. A switch from the Google SDK or console
+  to a generic HTTP client is a common LLMjacking pattern.
+- Check `gcp.vertexai.audit.resource_name` for the model being called, and look for a jump in request volume from the
+  new ASN using GCP Vertex AI High Request and Token Volume or the integration's metrics.
+- Review GCP audit logs for service account key creation, key download, or IAM changes for the caller shortly before
+  this event.
+
+
+*False positive analysis*
+
+
+- Users on new networks. Confirm with the user before acting.
+- Workloads that legitimately move between networks. Exclude these service accounts by email.
+
+
+*Response and remediation*
+
+
+- If the activity is not authorized, disable or delete the service account key, revoke the user's sessions and OAuth
+  tokens, and review IAM bindings that grant `aiplatform.endpoints.predict`.
+- Review Vertex AI usage and billing for the project and set quotas or budgets to limit abuse.
+
+
+==== Setup
+
+
+
+*Setup*
+
+
+Requires GCP Vertex AI `auditlogs` with Data Access audit logs enabled for `aiplatform.googleapis.com`, and with
+`client.user.email` and `source.as.number` populated by the integration.
+
+
+==== Rule query
+
+
+[source, js]
+----------------------------------
+data_stream.dataset:gcp_vertexai.auditlogs and event.action:(*PredictionService.GenerateContent* or *PredictionService.StreamGenerateContent* or *PredictionService.Predict* or *PredictionService.RawPredict*) and gcp.vertexai.audit.service_name:aiplatform.googleapis.com and client.user.email:* and source.as.number:* and gcp.vertexai.audit.status.code:(0 or not *)
+
+----------------------------------
+
+*Framework*: MITRE ATT&CK^TM^
+
+* Tactic:
+** Name: Initial Access
+** ID: TA0001
+** Reference URL: https://attack.mitre.org/tactics/TA0001/
+* Technique:
+** Name: Valid Accounts
+** ID: T1078
+** Reference URL: https://attack.mitre.org/techniques/T1078/
+* Sub-technique:
+** Name: Cloud Accounts
+** ID: T1078.004
+** Reference URL: https://attack.mitre.org/techniques/T1078/004/
