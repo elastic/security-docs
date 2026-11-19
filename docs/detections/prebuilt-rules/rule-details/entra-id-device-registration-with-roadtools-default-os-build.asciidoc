@@ -1,7 +1,7 @@
 [[entra-id-device-registration-with-roadtools-default-os-build]]
 === Entra ID Device Registration with ROADtools Default OS Build
 
-Identifies a Microsoft Entra ID device registration where the recorded cloud device operating system build is "10.0.19041.928" and the device display name follows the default "DESKTOP-" pattern. This combination is the default device profile that ROADtools (roadtx) uses when registering a device, and it is uncommon for the OS build to match the hardcoded value across an environment of otherwise patched hosts. Adversaries register rogue devices in Entra ID to acquire a Primary Refresh Token (PRT), establish persistence, and obtain trusted, programmatic access to the tenant. Because the OS build is a tool default, this is a high-fidelity but evadable indicator; baseline approved provisioning tooling and device naming conventions before relying on it.
+Identifies a Microsoft Entra ID device registration where the recorded cloud device operating system build is "10.0.19041.928" and the device display name follows the default "DESKTOP-" pattern. This combination is the default device profile that ROADtools (roadtx) uses when registering a device, and it is uncommon for the OS build to match the hardcoded value across an environment of otherwise patched hosts. Adversaries register rogue devices in Entra ID to acquire a Primary Refresh Token (PRT), establish persistence, and obtain trusted, programmatic access to the tenant. Because the OS build is a tool default, this is a high-fidelity but evadable indicator; baseline approved provisioning tooling and device naming conventions before relying on it. This rule also flags a device registration via Windows Hello for Business (WHfB) whose user agent carries the ROADtools hardcoded Dsreg build "10.0.19044.1826" ("Dsreg/10.0 (Windows 10.0.19044.1826)"), which is a separate tool tell from the device OS build and survives a change to the registered OS version or device name.
 
 *Rule type*: query
 
@@ -41,7 +41,7 @@ Identifies a Microsoft Entra ID device registration where the recorded cloud dev
 * Rule Type: Custom Query (KQL)
 * Platform: Entra ID
 
-*Version*: 3
+*Version*: 4
 
 *Rule authors*: 
 
@@ -117,9 +117,17 @@ require MFA for registration).
 
 [source, js]
 ----------------------------------
-data_stream.dataset:"azure.auditlogs" and event.action:"Add device" and
+data_stream.dataset:"azure.auditlogs" and 
+(
+   (
+    event.action:"Add device" and
     azure.auditlogs.properties.target_resources.0.modified_properties.3.new_value:*10.0.19041.928* and
     azure.auditlogs.properties.target_resources.0.modified_properties.4.new_value:*DESKTOP-*
+   ) or ( 
+    event.action: "Add Windows Hello for Business credential" and
+    azure.auditlogs.properties.userAgent: "Dsreg/10.0 (Windows 10.0.19044.1826)"
+ )
+)
 
 ----------------------------------
 
